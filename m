@@ -1,77 +1,81 @@
-Received: from fhigh-a3-smtp.messagingengine.com (fhigh-a3-smtp.messagingengine.com [103.168.172.154])
+Received: from fout-a8-smtp.messagingengine.com (fout-a8-smtp.messagingengine.com [103.168.172.151])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8439208D0
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 00:28:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.154
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB06136A009
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 00:28:16 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.151
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790641696; cv=none; b=U/FzIbWI4O6bwg9oG0KJVcK09lo0YoYtQsyK+AskBFlecBRBNq4Iwag/9nuC2/PjTj4pXeBIqAIWMN3q05t9yPLgjqkBOICc7FsgEhZDxosHEksvCIcVx9WQgUYSbdqlmQvLHfn/k6lrxM+86eBveLypgUf4qr8YP3nMRN7ELLA=
+	t=1790641698; cv=none; b=KkowQwXLnuLDlk30s3lU96+mEovD9T6afNvsb73f9t2u5owElRdXd9GbrMLP9/Y5lQFhLEandn0FR1wswj1BPky0fdpdPHngDcMfka1dT/bEwBb8Lcf5jLUAe5IXHgXWDOdhipg36vP2NpKwdA4+Vcol0rED3SVt59NUSSb/aTE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790641696; c=relaxed/simple;
-	bh=j8XP2E3VMFztqpHb5FzoSCz92hRp2ZQMZAuvQCKYM6U=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=k6Dnvn1qlIqbsyEweDxwUdhe4VP1lmr0i0xnZwQMoPw2vVYcemzT0EnugisWmZhdcA6WHARAweqwgczMrjpHZ4udMrcLUS+wCAlEoqmt4SnwvVMbVKFNNJa+B/WqCfCZr0Ok7FdOK3t9xFidMpxgg37Mk9WO9McZohj8E1ffs54=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=WhqxTM2r; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=iOTT6+xE; arc=none smtp.client-ip=103.168.172.154
+	s=arc-20240116; t=1790641698; c=relaxed/simple;
+	bh=zINgcovID2ugq3H4w96QpOGL1/wZ3umUaf9wzOZYTTQ=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=MHKnFdroJF/V3KMFzdW8jdBO5rdKaxWp5JPiwBXRjUGEV71pp24wbv1iOcDdLcGOVIjao5pF84M5Kdm9O9oa08Wrw1POyxhSPuV/kkcHrJJOntdY22L+WL6BVdq+lRk6wsyKeBk8+YK7kaciC+me9ygNe43H4kKJm+N9KfaFmPA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=U9Kr23pG; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=puCTEOLn; arc=none smtp.client-ip=103.168.172.151
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="WhqxTM2r";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="iOTT6+xE"
-Received: from phl-compute-04.internal (phl-compute-04.internal [10.202.2.44])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id EDAF01400083;
-	Mon, 28 Sep 2026 20:28:13 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-04.internal (MEProxy); Mon, 28 Sep 2026 20:28:13 -0400
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="U9Kr23pG";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="puCTEOLn"
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfout.phl.internal (Postfix) with ESMTP id BD74FEC01CA;
+	Mon, 28 Sep 2026 20:28:15 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-03.internal (MEProxy); Mon, 28 Sep 2026 20:28:15 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
-	:to; s=fm2; t=1790641693; x=1790728093; bh=tjebcKQEJydX4Qtpd+/9x
-	b9Pc04WNAKST1CssWP51BM=; b=WhqxTM2rKIG3y6BlbkZQ82nIyL3gz+Ff/JauG
-	Ng6HZ2QIF4xPuNVnJeRtU1kUiKQKpoFNIXbK8PL50r+geG2NWVTyFdgN7SXbmuxM
-	s1RKWCDStaJISqLv4Ua9UcBWZs5QY2esFD9pFknkj7N/DNyFQtniD4dhMC0Yp2RB
-	QF3hKv7ROp95hRfM/7ZetKBfzFsZZngshSXtLnhwvvXl1CfsakwFgvfAhjf7pAvB
-	Hv/UKK9frO6Ufge3NzFzuBYEOVJH4vV+DULsb85+ivID/U9slqv2ueI71+HQMeKq
-	Fr8xHLHJfN8YZvcvk9S8ZcMDmWxoUSynf9PeoCxxKGwpF4ZGg==
+	:in-reply-to:in-reply-to:message-id:mime-version:references
+	:reply-to:subject:subject:to:to; s=fm2; t=1790641695; x=
+	1790728095; bh=pWoG0yKvXhk/DYor9NNI5RS4xccUG96vW185dHHmioI=; b=U
+	9Kr23pGlm+V3fy0X763kOpJ+fLywEy2JCMS9jmxL5dWx4A/fHMgKtvoXXbVmLcfi
+	XzEceG/nyHAVv9Uu7ts0ZYjW0gDJ9A1jnGsadSdsKyPC2wjt+KoYJDmwIYVHWK91
+	WZmSd9R/RDOTIgI2YowabBPAgFqT+lY6anER07DrwtB0GF2rnmQuyFPsBxIq/lS6
+	yX2sHt/TMPq7ov2sGISWoWGqzXkYa8QNilFUfLOWLwf/sjee4fyr9kfoL9vFdqH8
+	MSEI5BE5YlDjq1/CFaTWCyMElKKqOtBV2uNOb1eoL01FGWmgU4vB9Fml9+VGs08V
+	3Z6yzqWdtSxRekTCeyAiw==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
-	:message-id:mime-version:reply-to:subject:subject:to:to
-	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
-	1790641693; x=1790728093; bh=tjebcKQEJydX4Qtpd+/9xb9Pc04WNAKST1C
-	ssWP51BM=; b=iOTT6+xEjJngzd0AvHwVgZigGkxtgXfH6PbWlaFPBnnITCpZwCw
-	kKj2kpF4pPJQWzx/kwmQa6IYzGnlbkbDlYc3Lty65UWMIwPGMPUEYmgD8Asu8Jdj
-	BQF8Q4pDfW8/5w4JWP2j6p8aOGBZOtYAcFmOqB4CK0Y0RCzbpL0ZmtpSNpSkyRkN
-	AwQFkF0A/IuK+Oo21tsnTxDwzxr/TWi0K5gJlIwXxemyDjudwa67ls1RUVitBg3O
-	kIBDt1OdzXvpSgirTrlKdXQP57NlSi5yzsWgqn814PHLxudVvCW90KsRPQCM+OPf
-	imGLNeevXZz2Wfh3D7D5iILS8xKwfwObmkA==
-X-ME-Sender: <xms:HQa7asn0QM2oItrfpTSWk_bMB0G3rAnjqERZFs3UjtJQfYmk1t8ddA>
-    <xme:HQa7ah1vdJBhLXGl_xVEeq_uH2Mixp7Nov8POUi9KWJeo77SQ91DPj9NWQCp4KVRY
-    lrcjkgNJ8WnVPi6XzNn90022LJemSYVP_WEaf9q0q75CMyYeBcLLb8>
-X-ME-Received: <xmr:HQa7aoRTbOZXyGnnsOpWqUwhBRZJbPGAV7rWuvhaYdhaWwjvF8i_PZ8>
-X-ME-Proxy-Cause: dmFkZTF+YiuEnJHGL81G6hNofAoza6DI+3BsrbWzqroBhPJt7vFXKHY9f79SgTPOAlc1zp
-    IaTPdgH1FS43stozkrj42si1hJAnnW5sezXMOEvO59hTrPDqzI1JeTgcN188SgSXD6nUAY
-    +wa0h1Zg2vw8zNOreEunZ8p5QgINq9Z3ieT6J4dYhbtSM2VbbsLrigtI4kFRfinDBmUe4x
-    TXYFd8WNRHV5MiNWhr1n9+ihKMwKU9+WdprhUrDttAPfb7FAc8xGSOb84eJeMirVIyAlVC
-    ClqToGCeEbOsLnAgNTF7vFWPx8pk7Bea1F9wSJqbY5v1R3VhMg6j1aQ51nCrVBo6idFtIy
-    w4sRhynern+/S2J0WFWkLYItLdnyRIdfBaKobdWtezibVSX7YJ9rnCSVKGqQSSIH2tUUa6
-    68Ov6jO4Td7QEi40uw/DEiiInJL7jLa+eyFOR0F28AH0kWR4Z4sW/ABJw7Ko1ujrWJLoDC
-    z5mYk+cA9C32wOiIpQn3NGAvCmr2/laiYSW8ttYETtfkMkzo3ykEtmMna5inb7KZAp8tt0
-    akWMg4sEJR8s9Fgxrqs0npMi4nVlHV//f5NKu3/0FaK37qecoxzL1KZM0zPKP6nG3opQzt
-    j+1PEIG9t5AgnFEjkxvMrSzu6qq5p6upL/J+sxTpaINEgYjLPDgG6INcSU4w
-X-ME-Proxy: <xmx:HQa7ajtwsgwILLGZjZVYALKnkDIqHbw-ZHSHo59L-cR-H_KVkQCCqA>
-    <xmx:HQa7atZI-UK6P3oCrZDTQNb64qn2nYLOMLeJlSABSb-kifzuyl-2dA>
-    <xmx:HQa7aosydNIPDuXFHN7e6SNrY5M19wuDHgMVwS0tYKuBbwq2t5qUbA>
-    <xmx:HQa7avEZm_6o218GKG-gzfBImjwPFBKMu7PBYyCdhWf-nPrn6Rrw9A>
-    <xmx:HQa7aqk2Qtg4W7VMbVN1A5Gw0EInBN98WX98hFsaxpxA_hxeJhbdLx8H>
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
+	fm1; t=1790641695; x=1790728095; bh=pWoG0yKvXhk/DYor9NNI5RS4xccU
+	G96vW185dHHmioI=; b=puCTEOLnRdAqfUSPkTnuV353LninyljWbURqewWFetCm
+	fpiBs4v0QTusj0oxgdwMfrgG2NPDQvYaEEygSJ2M1W9Dzfc1j5FFYfGD2NoSjR+I
+	ZBGgpY4ZPsroS2KKs+3gudW0u2jto7OQxUjjncrzp9/CLwifGeIVFDxWGuk7kIfh
+	KLlIsxob8DamJSvWTGUgAyYCgVKlrSo3Q3dz3qrVTrrdWcMktqVtHX+HQWefmvua
+	lWuAjCqwSFfT3TQ52YtM6GuSlSyfwDb+tDkJ9Hvdi6gtskb/rii1Tm/LfmIJCAfh
+	aBzOpqck2R+uLT7bFJX9Z+SkvtByHMV91nMCrZaMuw==
+X-ME-Sender: <xms:Hwa7anfN63vGDCN8iHttxKn2cXH_bSx6QZ0_Vz9QPM6NaA1AB7vs0Q>
+    <xme:Hwa7ajMFRxLr5ZBhJgdSjF9H6aEvq3zmGZ5pvjB6qWHO9klTu903hE5PNt3ecIT1P
+    R2bx9T-csYpfcQJuj_j-i2nX-nuQYShMVebibYkO_B2SLkmY4wAp58H4Q>
+X-ME-Received: <xmr:Hwa7auL-NdD4qJjMMeUEAxrEEkxSHTLSlFFOmf4khK5YT_ksO6lqdMU>
+X-ME-Proxy-Cause: dmFkZTEofP8WGqf2EtdVMzKPCCLwEu0pfHaE1w4A8JANlNiIYKsml1WMqn4tMt4LPPFwt2
+    2/ICfQw+EmKsZYICPJM7nzFgFGIkO2TYDk/1PP3A98HHKWRMqzFlfBLEWvGq+Tqbkd4Rqu
+    5cZUMPPPKRoDepRicY7ztA3brMLqflRCdaXL0p8bPfXuGkO4U2M8M9I30xHRxbtVp83aBu
+    V9HW/0C67w85Xghbbsq+ISxT57sOdwZgM+H5yfUsAPQyCmPag+aqyboItYF1E2rz5KLc25
+    J7rW9fDDzor0dd/AQxap+nc+R8mHht2xKyj4WXV/ooL8A0HbB0VsmhTsE2Twae4EAFK9p4
+    FNhFcPtDgqoUtQnB3ukZYW12rllBJ7h/0XvVXgiqCcSTXC0r9fpNSF21NBEMNTtZk5e6xE
+    qYfl3442/73l0kxAFBtM4v3wVEAV0QnFPZyzs6XrTwTqPCaSaFZGXgnPveGfZ4CIBGhdWh
+    TI4xjzLaFMRIWrLwf4VoRUGrrRv8sFyAqUzVsicvX6BMEAn7097/0pUR9ADO2lcKCUUey7
+    T2RBgMqAOoaE0a98yHKEoBpY8eResxoEvrI4fbCE/2Z5p14P9aUCn7Tez0PdcUlOwVowwL
+    uX+WnGl2+whV2q9CiY5I6asqFtrbaG+zn5fKQPY6PAxGeckic8yNqe8nqDag
+X-ME-Proxy: <xmx:Hwa7akHbLkZFT-NOuGF2VNyCJ2gKWl62Y9xwWyFy-irsUYeFV94V2g>
+    <xmx:Hwa7amQ-omKnUnrxF-v4oQYwlenq-ptSEjmK1WQG-TR96YkDj6CHWw>
+    <xmx:Hwa7agFU6pwcpjX-kYXh_4dEwJYuAkOp5e8S1dLTy9-VVRR3Q_lDZQ>
+    <xmx:Hwa7ai9dv4FPcnDDpj9fNC9x-oY9HYQagulOY7twX3drx1var1c_uA>
+    <xmx:Hwa7atdFdpE-NwyrBd27AcLy89TSxqIhJR-0Htp7903Tv8TYmX5yGg8q>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 28 Sep 2026 20:28:13 -0400 (EDT)
+ 28 Sep 2026 20:28:15 -0400 (EDT)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 0/6] btrfs: allocator perf improvements
-Date: Mon, 28 Sep 2026 17:28:01 -0700
-Message-ID: <cover.1790641462.git.boris@bur.io>
+Subject: [PATCH 1/6] btrfs: skip unhelpful size class relaxing allocation loops
+Date: Mon, 28 Sep 2026 17:28:02 -0700
+Message-ID: <d117b99b7cdb006ee7f8b3376ed94d2ee039174a.1790641462.git.boris@bur.io>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <cover.1790641462.git.boris@bur.io>
+References: <cover.1790641462.git.boris@bur.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -80,30 +84,83 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Working on the bugs to do with large fs-es and unused block groups
+When size class was not a factor on a previous loop, there is no real
+point to running a loop with relaxed size class rules. So track whether
+we ever actually skipped a bg due to size class and only do those loops
+when it is relevant.
 
-https://lore.kernel.org/linux-btrfs/20260916230447.GA1706558@zen.localdomain/T/#t
-and
-https://lore.kernel.org/linux-btrfs/cover.1790641111.git.boris@bur.io/T/#t
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+ fs/btrfs/extent-tree.c | 12 +++++++++++-
+ fs/btrfs/extent-tree.h |  3 +++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
-revealed some low hanging fruit in allocation performance for very large
-mostly full fs-es. The gist is to try to skip unnecessary operations per block
-group which adds up with 10s of thousands of obviously skippable block
-groups. Running 20k fallocates in a loop on a sparse file fs improved from
-~40s to ~7s.
-
-Boris Burkov (6):
-  btrfs: skip unhelpful size class relaxing allocation loops
-  btrfs: don't take block group references in find_free_extent()
-  btrfs: remove redundant checks in find_free_extent() hint path
-  btrfs: factor the find_free_extent() block group skip into a helper
-  btrfs: find_free_extent checks full block groups unlocked
-  btrfs: find_free_extent checks size class unlocked
-
- fs/btrfs/extent-tree.c | 88 +++++++++++++++++++++++++++++-------------
- fs/btrfs/extent-tree.h |  3 ++
- 2 files changed, 65 insertions(+), 26 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a0d5ab03aae2..f43ee0ab24bc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4365,6 +4365,9 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+ 	    (!ffe_ctl->orig_have_caching_bg && full_search))
+ 		ffe_ctl->loop++;
+ 	ffe_ctl->loop++;
++	/* Relaxing the size class cannot help if no block group was skipped for it. */
++	if (ffe_ctl->loop == LOOP_UNSET_SIZE_CLASS && !ffe_ctl->size_class_skipped)
++		ffe_ctl->loop++;
+ 
+ 	if (ffe_ctl->loop == LOOP_ALLOC_CHUNK) {
+ 		struct btrfs_trans_handle *trans;
+@@ -4404,6 +4407,9 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+ 			return ret;
+ 	}
+ 
++	if (ffe_ctl->loop == LOOP_WRONG_SIZE_CLASS && !ffe_ctl->size_class_skipped)
++		ffe_ctl->loop++;
++
+ 	if (ffe_ctl->loop == LOOP_NO_EMPTY_SIZE) {
+ 		if (ffe_ctl->policy != BTRFS_EXTENT_ALLOC_CLUSTERED)
+ 			return -ENOSPC;
+@@ -4418,6 +4424,7 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
+ 		ffe_ctl->empty_cluster = 0;
+ 	}
+ 
++	ffe_ctl->size_class_skipped = false;
+ 	return 1;
+ }
+ 
+@@ -4581,6 +4588,7 @@ static noinline int find_free_extent(struct btrfs_root *root,
+ 	ffe_ctl->index = btrfs_bg_flags_to_raid_index(ffe_ctl->flags);
+ 	ffe_ctl->loop = 0;
+ 	ffe_ctl->retry_uncached = false;
++	ffe_ctl->size_class_skipped = false;
+ 	ffe_ctl->cached = 0;
+ 	ffe_ctl->max_extent_size = 0;
+ 	ffe_ctl->total_free_space = 0;
+@@ -4742,8 +4750,10 @@ static noinline int find_free_extent(struct btrfs_root *root,
+ 			goto loop;
+ 		}
+ 
+-		if (!find_free_extent_check_size_class(ffe_ctl, block_group))
++		if (!find_free_extent_check_size_class(ffe_ctl, block_group)) {
++			ffe_ctl->size_class_skipped = true;
+ 			goto loop;
++		}
+ 
+ 		bg_ret = NULL;
+ 		ret = do_allocation(block_group, ffe_ctl, &bg_ret);
+diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+index ff330d4896d6..ecb2a1bf2435 100644
+--- a/fs/btrfs/extent-tree.h
++++ b/fs/btrfs/extent-tree.h
+@@ -59,6 +59,9 @@ struct find_free_extent_ctl {
+ 	/* Whether or not the allocator is currently following a hint. */
+ 	bool hinted;
+ 
++	/* A block group was skipped for its size class during this loop. */
++	bool size_class_skipped;
++
+ 	/* RAID index, converted from flags */
+ 	int index;
+ 
 -- 
 2.55.0
 

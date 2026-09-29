@@ -1,124 +1,92 @@
-Received: from fout-a8-smtp.messagingengine.com (fout-a8-smtp.messagingengine.com [103.168.172.151])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from va-2-60.ptr.blmpb.com (va-2-60.ptr.blmpb.com [209.127.231.60])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9688549620
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 00:28:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=103.168.172.151
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1CC3937A821
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2026 04:33:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.60
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790641707; cv=none; b=vDV2DUiacVLg6KmU7RGSubn1NpJ48cRt74HGxpT9O5Ab3gdbDbwoA07B41VTsqiQj3y5Ept9QubfeHKVcDvxrZ8hye2W/vsD65N+ZbJYKspzvAGPxctImLJEH9/SclhwXwOyCILrtVx30GufcKdZrN7kOu2sfC2Wz69xizmdqVs=
+	t=1790656423; cv=none; b=U1g2m6iavG0UcUdZ288M0tlFAvZeP7b1qklXipmyi0ha2kzh2zawdg95TxiYIMj7wnGMF5jSeyXkjVlKwJunLYMaBkO5udiMP5oebAQvqH2Z4XSpK25vCoExQ9SAV68LwocmHspTwYNSn1SQP47lJpwitzH8QyUW/dBZ6M0kT2A=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790641707; c=relaxed/simple;
-	bh=Ly664MnXtjOYs6lZD5CGZdKvcP3GA+qRUpso5gHSphs=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=aFnKRSGEZDmxq8EHqFG/M2D6QKvorbNDIpMqlrFkQlBEm7RFyUhGRSRDNnZO0eCuHM/pBBSn4VT4sozeRLjwdUkxv1VkqPV2fS0rpXWMf7OiiNt7qQ74BybQExjFDr7zo902Rk/8qO6LCOl9x4R6OlB7oLJeuKMKHcqGO0HfnXA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=mIg0rkal; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=hpdaP8gx; arc=none smtp.client-ip=103.168.172.151
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	s=arc-20240116; t=1790656423; c=relaxed/simple;
+	bh=NMuRxajFxwKYAXK9ArsorGbUohYZKZjb15h9d67zcsU=;
+	h=To:Content-Type:From:Subject:References:Date:Message-Id:
+	 Mime-Version:In-Reply-To; b=EW3M8E4W+d7m/vTqHvm2QqkDoyHqIgvN9/etytE7BvUOOo4rwi704FOpIFYU/8E8Jp6jTD4teP0FFQc68cmK3xEqge3F1tUyVNyyad66oR0YteboxmIpj08LJL165yWBkaEcZh8gxuItjv7eHFrYnyqWmhoNqfEUm/jWRczXH5M=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=OW213ao1; arc=none smtp.client-ip=209.127.231.60
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="mIg0rkal";
-	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="hpdaP8gx"
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfout.phl.internal (Postfix) with ESMTP id 8E535EC0174;
-	Mon, 28 Sep 2026 20:28:25 -0400 (EDT)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Mon, 28 Sep 2026 20:28:25 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
-	:content-transfer-encoding:content-type:date:date:from:from
-	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm2; t=1790641705; x=
-	1790728105; bh=oHi5+htec0R5C7gMxRVS3JTqUJ6UXChqF+h3OAEBsK4=; b=m
-	Ig0rkalYtNfd8uoRpItyEk5it3tFBv/6s2gd4udsMLPthsuyH2Nq3ekcvlSEGEz5
-	v/U/+hGIUFQxBAndQjW3PZtS8RhQppTJp1cVbESf9Bx78kp0ekQucsQh9Of62YhO
-	6Rw1Bn/jokkQr+IukzbOhcrtLAByEzLfbprmWWO1if8yQv8l73bzIKisAT5LLC2P
-	p/rs6jSaLnZ8dKuBeYqtL1uPfftsftX3S1DkVyT9zm2WaJvjD02GCF/mkmC1yj4c
-	WTqjE6aTJ9FeIf3TMsp89xObYIYA7EvHAngqwt2xcmM24ez4NJYzTCl3rruzHQH0
-	5eKb2tXeDM1d3F3/t+Clw==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:date:date:feedback-id:feedback-id:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm1; t=1790641705; x=1790728105; bh=oHi5+htec0R5C7gMxRVS3JTqUJ6U
-	XChqF+h3OAEBsK4=; b=hpdaP8gxdrYG/U5kOlAcWbAaEfDRz8S1ja5lknTYqdbu
-	XNbttbV8scqAZDnmykK0SgEuPGiiBkWllTrrAyfg2aMusX+sVUvI5wuC3HuPVGxY
-	+36QN90PEP1u2A3xePtCV1jCCla6rgOBLuPesklY4NMpBKJW8VMV8MeSgHl6CCyF
-	Ua19NzpdSqku5/QjrNbflbvWp9FWCs+t2nfjEzP1WBFXp5aPyiVpAIbSnBC76Lwk
-	HUOdYM9D2RYRLlotQ38e5jOCenCr0WmzHXqBZPWeD9qA6umrdY4x0K4vspz56Pkb
-	BFpYJBzR9Rc1i/qQKMH/Vmevy7tq+LdnVpmHAZaa4Q==
-X-ME-Sender: <xms:KQa7aq3TXkqHv6qiHcKJ03Fv1zPsiM19dbZAeye39EER-Rd0IZ0-cA>
-    <xme:KQa7ajEund5lWSfrl6Jn90ptAO416UGOA4dNh7aopo2H3lKTpIA5B9FEyjLOEP3la
-    raZecewa6ySSgQeKCj3btMn_qUiTKc0Z19uwG6U2miMiIOzV0ZlxuyD>
-X-ME-Received: <xmr:KQa7agin4UcOu9k7CnEpnTZ88LUb6ISSFJA4MoeyD8kSeLC2RQ9HDsU>
-X-ME-Proxy-Cause: dmFkZTExuF93JGdXfiGgW7nhIqu51hI8C5kNPxAejyYwywaiQdYYJWeJi45RH2Q3gCPa55
-    VjA+ay/YFd/3pyl8KBeEfpt9QEJvrAosJUDjL4V6R+2haUET5XnHu73J4Q5b45C4HB/iIz
-    RNT2T1+2L2LIxqlgyrrQlkjjODfNAxhX0/mc/NasjTh10Z3dHNiS/LO8GoXPoTpyRa+/jQ
-    eSwiMTT1t6iRITMpyX7CIBaOxBehrbpLtNmxtIblZXMQrQUB1/pzyoZXtqtaUj7R82UdMI
-    6d9FjH8VfZhN/8J8o+38loyKAtAaePXcnHUstIw4xJhFl+boltZk+r8HvaJoa84gUlwKn9
-    F4Q0eAS3loE7suAUnOG91ZbvHTOOxutBuXmrQHj0Gh1dqjDvt9c8de88bfZU83z3UsJOOW
-    yUq5SnuKQ4SreBxoHUZ4ythvWeNSaE3cvYO+a+0bjwv5DPPp+b+HyJSXOYHcgz3RIahnG5
-    sXNLlYu+Ukv+BpE9N8JKinLZFpM5ZNAIlNA7CNB4ePFgF6r55OI9pG0pGOVaZiYWqZxTla
-    d9/RIKGiQqbB6jckw+Odei1OEeSNZeEpX6jIpnkBDx8/KEUh87tsP1I3pkNR7Fn0w9N8Dq
-    P/EU1nvwoOHfdi7Z4C8M4bK+YManIHU3xKrWK2lgt4ex+JW7fmmeC+1s8CrQ
-X-ME-Proxy: <xmx:KQa7am-XX2r0tU7Cs14ddP20D7qMWRwMQNjDqlN6ZpsLWRSQaPOcwg>
-    <xmx:KQa7avqx2_JJyMwiGZMw8PVrB1ijTK4pRLc91VYq204vLobAYZ8sig>
-    <xmx:KQa7at9OgUUrFwbASDh6q7VtxskeNpo9ZYkG_GjZPfmr4a2mYBR_2A>
-    <xmx:KQa7arWhE7hh7ZcyrGPjEUF7qU6SUNMaV7aQD6cyq4rDNTEkZ27QkA>
-    <xmx:KQa7ao1YJ5uGEtrOegIcVM3Wss74jRoxGL-N4TcB5pV1LlurMzwgZNAN>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Mon,
- 28 Sep 2026 20:28:25 -0400 (EDT)
-From: Boris Burkov <boris@bur.io>
-To: linux-btrfs@vger.kernel.org,
-	kernel-team@fb.com
-Subject: [PATCH 6/6] btrfs: find_free_extent checks size class unlocked
-Date: Mon, 28 Sep 2026 17:28:07 -0700
-Message-ID: <9ebabdc4d62fc8824c675396ca7436bb333ee9c6.1790641462.git.boris@bur.io>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1790641462.git.boris@bur.io>
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="OW213ao1"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790656281;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=Nktp1vxaXNUfSzQGOg3Ym5Y8XH3CfCjvDTF57f3Kk9M=;
+ b=OW213ao1rJ8gKu5AbGnlGuRgtZAMyEVK7tMrzuJw9+bKNSUfKjoWNl13Oo5kigUf6sq/it
+ sUBZDSjbJkuQW/QT2cZAg6TugNbnYD0G/7nDikDbNlb4vHUdut6JMQ08hpVF7Ey43B2sF2
+ v+fVDNz0DEe5mBLC8OdB1Z1A6gxZKMhUFNT75xCZ8qgKqPccYWXSkf6SDne5QIUp/gTDls
+ elp4p3HYXjhP+cPct5v4cK9fk5UJgrhrYUaknmNPOYbK6z1P2sWbJ6KCp0l7VTCTkWZfNe
+ QIvla6p9N1QFsEVjzADb1apJmFTQ7wkn5mT6FyzWd6xBUOZ6Gwa7Etq9wBGSTQ==
+X-Original-From: Sun YangKai <sunyangkai@fygo.io>
+To: "Boris Burkov" <boris@bur.io>, <linux-btrfs@vger.kernel.org>, 
+	<kernel-team@fb.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+From: "Sun YangKai" <sunyangkai@fygo.io>
+Subject: Re: [PATCH 0/6] btrfs: allocator perf improvements
 References: <cover.1790641462.git.boris@bur.io>
+Date: Tue, 29 Sep 2026 12:31:16 +0800
+Message-Id: <5736105a-5ba3-463d-90a7-5c70bb034621@fygo.io>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Content-Language: en-US
+X-Lms-Return-Path: <lba+26abb3f18+762e79+vger.kernel.org+sunyangkai@fygo.io>
+Received: from [192.168.10.251] ([183.34.163.142]) by smtp.larksuite.com with ESMTPS; Tue, 29 Sep 2026 04:31:19 +0000
+In-Reply-To: <cover.1790641462.git.boris@bur.io>
 
-Similar to the free space check, it doesn't hurt to skip a block group
-for having the wrong size class even if it maybe was just about to
-get reset to no size class. Furthermore, setting the size class already
-admits that races are possible and that there is no guarantee of
-perfection of matching size classes, just that we only set it once per
-bg per reset.
+On 2026/9/29 08:28, Boris Burkov wrote:
+> Working on the bugs to do with large fs-es and unused block groups
+> 
+> https://lore.kernel.org/linux-btrfs/20260916230447.GA1706558@zen.localdomain/T/#t
+> and
+> https://lore.kernel.org/linux-btrfs/cover.1790641111.git.boris@bur.io/T/#t
+> 
+> revealed some low hanging fruit in allocation performance for very large
+> mostly full fs-es. The gist is to try to skip unnecessary operations per block
+> group which adds up with 10s of thousands of obviously skippable block
+> groups. Running 20k fallocates in a loop on a sparse file fs improved from
+> ~40s to ~7s.
 
-This can also help quickly iterate past thousands of wrong size class
-bgs in a large fs without taking bg locks on each pass.
+Hi Boris,
 
-Measured on a 30T single-device filesystem on a tmpfs-backed loop device:
-  20k sequential 1G fallocates:                            6.7s -> 7.0s
-  sync of 20k new 64K files after 20k full 1G bgs:         3.7s -> 3.8s
-  sync of 20k new 64K files after 20k 1000M fallocates:   13.2s -> 4.8s
+Glad to see this patchset resolves the long existing blockgroup 
+allocator performance issue and I'm really impressed by the numbers of 
+performance improvement.
 
-Assisted-by: LLM
-Signed-off-by: Boris Burkov <boris@bur.io>
----
- fs/btrfs/extent-tree.c | 3 +++
- 1 file changed, 3 insertions(+)
+IMO we currently go along the list to look for a proper bg that have 
+enough free space, which means we may have to go through thousands of 
+bgs during the allocation, I wonder if it is worthy to use a more 
+efficient method like something sorted by bg's free space to improve the 
+lookup process?
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d96de10348c1..10beb78a5ba3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4338,6 +4338,9 @@ static bool find_free_extent_skip_block_group(struct btrfs_block_group *block_gr
- 			ffe_ctl->total_free_space = max(ffe_ctl->total_free_space,
- 							free_space);
- 			skip = true;
-+		} else if (!find_free_extent_check_size_class(ffe_ctl, block_group)) {
-+			ffe_ctl->size_class_skipped = true;
-+			skip = true;
- 		}
- 	}
- 	if (!skip)
--- 
-2.55.0
+Please correct me if I got anything wrong.
 
+And thanks for bringing these great patches.
+
+Sun Yangkai
+
+> Boris Burkov (6):
+>    btrfs: skip unhelpful size class relaxing allocation loops
+>    btrfs: don't take block group references in find_free_extent()
+>    btrfs: remove redundant checks in find_free_extent() hint path
+>    btrfs: factor the find_free_extent() block group skip into a helper
+>    btrfs: find_free_extent checks full block groups unlocked
+>    btrfs: find_free_extent checks size class unlocked
+> 
+>   fs/btrfs/extent-tree.c | 88 +++++++++++++++++++++++++++++-------------
+>   fs/btrfs/extent-tree.h |  3 ++
+>   2 files changed, 65 insertions(+), 26 deletions(-)

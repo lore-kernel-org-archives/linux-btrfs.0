@@ -1,39 +1,37 @@
-Received: from m16.mail.163.com (m16.mail.163.com [220.197.31.3])
+Received: from m16.mail.163.com (m16.mail.163.com [220.197.31.4])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5F0925237AE;
-	Tue, 29 Sep 2026 12:28:39 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.3
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E249C51AEC7;
+	Tue, 29 Sep 2026 12:36:31 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.4
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790684929; cv=none; b=jk+Y9yZEYGrDzK23GMKEVsItM239YtDIOg7HWWRONxGE46Jz918nhNJHnJxuqzWkImvRMvcrVFFmMfTl7yrxT2nhhtvsq7ai21fIQtonKvsrHsTlOijSm9IIuvQb4I5dNP5psWN6JNBGiU5nKQ7NEDlCzjxZElIOpEj9GryziWY=
+	t=1790685396; cv=none; b=YGMOjVM5J1qlXI6mPe/Xb4MMTPfrZnZz5+kO/2IqCPN4eS8Iy56rZgquJlGSPDwiLWgGdH3NVGgbB/yslGoCJUg90NgDkMWtGS2jbB+8aQoFERUB30yRGXT+IKo518OXWj/n8vOX8M/dFm4nH/KHKC7wFOdY/W2/loQ4AWhtsTE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790684929; c=relaxed/simple;
+	s=arc-20240116; t=1790685396; c=relaxed/simple;
 	bh=bmBBlXJUGQ7njJjiDQqU6/nJ0qeXLnyewGYp077riLA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Rqr+OHks+fYHCHcNoJ2jb5pTHqNN+U9bCHAWbztmZxmj5PstyGHXOnCABW5+82ydQ10GsUobTsOlRnRn8+6Pt+LdC6NvdTxzEjuDo3KR9Gxnbs/ARKY9DTEHjy2pAKKvdRRZRERjD1+Myrm1HNCIuQWmMHxj/rVDZv6fOvOGmSU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=Xgr6puIG; arc=none smtp.client-ip=220.197.31.3
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=rfTIaBGKLH5VJkvGo0tuXyg5nt6UlVr/9L0OfgT07yGf4cN9QZFxM3tTQP17LqDsBL6FKwysDrFSSHcoYykJsDfLFvGYO6JkEFI1jk1YO1slitA4rCER95ROFiw5tsW9KFSE+88veZ0+aQuM2Gs+uzsJXOnFthNnPPkt7ixuFec=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=KJsgL5jW; arc=none smtp.client-ip=220.197.31.4
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="Xgr6puIG"
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="KJsgL5jW"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
 	s=s110527; h=From:To:Subject:Date:Message-ID:MIME-Version; bh=ok
-	7gh8hzf9xWkM6boOicySDPEGNZXm3WdCWyqq9eqXo=; b=Xgr6puIGa+YhjwEyUY
-	68G9r3G6+1moVeUgsJGEpUrgRPJhUwLlE8eZqhVCRemcts2D0tM5Zy7b79TZ2Mhv
-	jlcnHAGeAAisiEz6hX0003byr8A90bVD2m4RagVANje7tztcUmBc1IZcgBNuzizH
-	jqpL1Q4l5FPk3AowR94sdVngc=
+	7gh8hzf9xWkM6boOicySDPEGNZXm3WdCWyqq9eqXo=; b=KJsgL5jWNmsytuwUBj
+	7BVcIDzXgJpwvj9bUwxhPx+8JaUJPIQwWBSrCmd6aVRyxO463KCn9ZKTJUfOz9yr
+	5YtNzy9AdAMVI2t+6NhK5FYzS8BI5rT2neu9IDyRw7Rj6RwN/Q70fJw1QQ9akm6a
+	XbSu5sx3R7vCzFwf1ds+TyNfE=
 Received: from colol4bi5.localdomain (unknown [])
-	by gzga-smtp-mtada-g1-1 (Coremail) with SMTP id _____wD3_03crrtqUYcxBg--.43947S2;
-	Tue, 29 Sep 2026 20:28:13 +0800 (CST)
+	by gzga-smtp-mtada-g1-3 (Coremail) with SMTP id _____wD3FxTCsLtq_tizBg--.36992S2;
+	Tue, 29 Sep 2026 20:36:19 +0800 (CST)
 From: Binbin Deng <18983559317@163.com>
-To: chris.mason@oracle.com,
-	dave@jikos.cz,
-	patchwork-bot@kernel.org
+To: dsterba@suse.com
 Cc: linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org,
 	Binbin Deng <18983559317@163.com>
 Subject: [PATCH v1] btrfs: wait for a grace period before freeing a new device
-Date: Tue, 29 Sep 2026 20:28:10 +0800
-Message-ID: <20260929122810.139057-1-18983559317@163.com>
+Date: Tue, 29 Sep 2026 20:36:16 +0800
+Message-ID: <20260929123616.139759-1-18983559317@163.com>
 X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -42,12 +40,12 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wD3_03crrtqUYcxBg--.43947S2
+X-CM-TRANSID:_____wD3FxTCsLtq_tizBg--.36992S2
 X-Coremail-Antispam: 1Uf129KBjvJXoWxAF4kGw13KF45ZrW5ZF4fKrg_yoW5WryUpr
 	9Iga45JFyDJr1kAr4xCw4I9r1rX39Y9a9Ikrn3Kr4I9a4fA34Yvryvk34UuasxCrWrJFyU
 	Za4DJwn8Jw4jyw7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07UF1v-UUUUU=
-X-CM-SenderInfo: jprymmytvvmjmrxbiqqrwthudrp/xtbC+x1sUGq7rt3LLQAA3e
+	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x0zRtxhXUUUUU=
+X-CM-SenderInfo: jprymmytvvmjmrxbiqqrwthudrp/xtbC4APlyWq7sMOBsAAA3c
 
 KASAN reports a slab-use-after-free in btrfs_statfs() walking
 fs_devices->devices. btrfs_init_new_device() publishes the new device

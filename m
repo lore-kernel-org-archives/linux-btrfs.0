@@ -1,138 +1,127 @@
-Received: from mail-wm2-f12.google.com (mail-wm2-f12.google.com [74.125.225.140])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.5])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EEB74CEE4D
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 12:29:02 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.225.140
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790771345; cv=pass; b=IhM6MFdRm/dt+JLEkbz0PLfyhs8oI7Msz2jkpha7yWojc9z3jX6uEwvZ/2oWhQeNnXM5uKpl/Yk23lsSApbdA/AMHYVJQuNi/gNyo27Mj1jUBprEWdM29m9SboccEbwLhkIuxSlqFjJQ/3yUgBBvPPNj3a2C+alcqJh3qgUYNTc=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790771345; c=relaxed/simple;
-	bh=m478kFP+nf4kBoRucOq4/8H+Rs2m3iv3Fo1tYmV3TTw=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=KuIsq2Np4Es/b+Ya9uBPFzardqmDdm+/ZdwtjJoWRgUkC10nDYyST5mqvT81H8LBe4C2w4vQQnEA5SaxTXv0KBNRuclPmVN2AjqwijfPlZankfOzKjFmBZmjtyBfE+PaAsutJVTmTKLZ6JfPY3aWXvUPw8XSmFYI3X3cFKGpJWU=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fdpULLdE; arc=pass smtp.client-ip=74.125.225.140
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BD87A4052AA;
+	Wed, 30 Sep 2026 13:48:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.5
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1790776117; cv=none; b=DgUR/yabBDQCkXcbnvZ6IKtiGdz7q0zkedgBIu4veb91rGlE08p1cffjFxlAR5njw1Ygd5lPgQINQWFzCPle1HBP7LWhCyr5lhmbmWmX3MK5fJjmLOv7Z72gK7USir/E8ofnI+hkvyIWFfuoJiO3/sCI1so2UZgS2ODBf27mEVM=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1790776117; c=relaxed/simple;
+	bh=pkB6/5hZzgcXQKjgmrM9Sz7wKnMX+bQryKgQj1q8vng=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=YG3npRm0+J5v5D7Cj1PuiDj9FL9UYUX8JtgvCqTKhm0h8Wi+i0bVpR60622FEXoHg85/a4tRaV+JjwbcNwIMWVWT7eXF2SV/oEdSGf6AAJCJ6k4gZTxFJrrrlz8P0oTx8bU6ypOA9s25CQXx7h+QrqdZydPl7dB6QVdtx+trTf0=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=Uem5XHpZ; arc=none smtp.client-ip=117.135.210.5
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fdpULLdE"
-Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49b912d391aso40299665e9.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 05:29:02 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1790771339; cv=none;
-        d=google.com; s=arc-20260327;
-        b=AAiX7/sLXky7qZAZlslthZlgIxlYfO8W+UZNnHr6m++8hdCaslkIlDuagVpNwfNXwm
-         J6vWkF9Ydb2DBwSnE22R19xzUgEz+PWMjNlnofii/0SqQ+nEjmcAX26IbaFkCaQjPwMf
-         iZhuUhU03fcBuu/AeL3y0KKHZoOiR06gL2cP32elsujLyp3/yix7ma0bnNN7h/+TDX+t
-         nVv7yQ6DUmjsWwjpKkI1kcv+AFYuo3N0EofAYHHGfBi8DXUCj3jCGCDinMs+HAr3xuIC
-         zwDprI8oekzON6vuBRkx7hqt3vUKFqKnWlcDPtE1k/cakzNirV3aP72GBHiDEbJBvNS8
-         T5gw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
-        fh=DNhRoUogv4njemsTPAOB4Tb4wfg3Mu7IYlLDA9H4+4Y=;
-        b=cBZFtT4n3wSPgReKF6qekGIDCQ+fZsj6wuUJNhZoH0L+uSOyZgwOLeXEMPiVXBK5Ub
-         TT3/qECGrlxKg6a/hDeWa+OSWvlSK6GooF4sv9lznkOzm5PIYnvTFCCr7OmqPJR5wyhv
-         RgDIfN7tmP3TPAPr4osX+21HflC93zBnvSB4BldgYXE3ylkKqc/2cnSng2kt6oKb651b
-         a9QBykFtBk6puWbmEHvTAkKiLbM0aM3HHzidTaIX5nxcXxRghDQb9Sjxk2aYLVVqX86G
-         wlTdyvG9s/TY0XcKO4FciTpZGmmwcMOCf+RAEDa6+JsaLSjMuHAkNMCO4mP35xsXUIFt
-         afcA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790771339; x=1791376139; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
-        b=fdpULLdE5eq8T9sXadMyZcwSFxdNhlwiemyy9bij/uJJ2v3DSsnGuerfMri3VBIm1Z
-         qRe3i+GnwL/+g9Y6ibzvVAcNwa+3tLysArd6VAn4RaGzog0cOyJ7O7crzBjTMYySnD/E
-         G5KmCCzdu1NoubNjwXJYeKLmsXutSa3g1qMbf8a5pgO1tM5IHX5lfA9PyAb3/oizQnC8
-         MG4g+sO3HJdBr0pIJ1UOFHBWuPO82hj4AbD3E8OBFi/lOW3PYCDMl4ve5EGYlcN4+FRT
-         bEs4Tr6hHQGErHmDMHwsC9dVgXGjR0SbKW9ifNTjV2IXJKOG6KDNidAySc0O5Q0aeB8v
-         h04g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790771339; x=1791376139;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
-        b=mEmz86Yy5VGZXGnskN6D8Tp3wQSZ/oI7Lw2a8wleGYW0UqRBBeEydiiEeNkg+I5YLp
-         mvrOQC/U690+W58laK67CzymisvjTTzy3R7bx72FoRT6E9FF76x5DfJBB5p2ECj8PaaM
-         XZ6rCdiUmKPaeiiyEbanZJR4EnvrSOyRud0J9JN6auEKYcGENh9wWU6XuJ4RWmPoQbA/
-         Uj2DlpXHgvuchSzdfpgw2g4mNwf80ttfyKCM70t7Xk7co/bhkgZgDhRl0x1duqjZKRmZ
-         iyQLzpI1uhZdk1YOPKtXIse57/uW0qn40YITpb2PyNmiOlaXaW9ETBePcMuFr+iZQ6TY
-         cnGw==
-X-Gm-Message-State: AFuF++mq1rP1doxKVowVddZvsfqNLcJMHdER/eRkyUGQ0jKNXhYoEk0W
-	bjdwkpY2uwV9/2KfnsU7EIIRbTB7o552IDQRNNBUrbr343Q5iuBOR+w7kLGS5VulPrKl6GmxuWp
-	yGoUod4Odbfm9QtHqVzy5OmhZ7KB1HEGYfv723B//mA==
-X-Gm-Gg: AYBFou1sv/OH0NSA1evIx6f+LEnybuieW9W9zQgK84WCkHMEVT4TrhyNOZr/cCvc4Eb
-	edwDRSklpMJRqQVYrKfzgh2A3sdjYr+UhOeytmZmtSx7NYglY4h5EZjWsItHxMWrpZ0qVYPMaUd
-	/CW/dcMYTLaEauiGESTX8tRGAx+aeViIS/9dN9e1Sh5iR4ccnbhhAc6Kt80nxf8e816efJPBizD
-	YIsGBr0NbYmRxPgotTasaCpylOORmuJigDIo5GMynlJY073+tG3fdkFojTkJ4V93iOgbsLzGreE
-	vFvJ0RGThAHto0MwCmfE5Izbvj+HN96LkJky/4cahMKAZ7dWKPsCXQeOYBPqJNWZftXXD0BFvYV
-	RE7ax1mP/OgdtjBWLZROLTaF4B+XuEtJ1CWXi9y4HGKU62ylK32vX
-X-Received: by 2002:a05:600c:1c10:b0:4a0:168f:d962 with SMTP id
- 5b1f17b1804b1-4a01ad8f2eamr26643895e9.3.1790771339506; Wed, 30 Sep 2026
- 05:28:59 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="Uem5XHpZ"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
+	s=s110527; h=From:To:Subject:Date:Message-ID:MIME-Version; bh=Q0
+	gZLMEc4C0n9kzdgUlgW8sbkQMWmg6TPJ5uQSubmeM=; b=Uem5XHpZdEsSW5QUrl
+	2+JodKEEFJozxaeFKMa3sIShxIQtnrtyGgPmvx51YY9smRk0V269FZz98diauGBh
+	fJ9qehgMAZhNMr5ZnwqfHMnzaKF0hIdbdhtxNJbnYd3vs6Y/vzScSaE3YaXHa/QX
+	Ct8BMlSLkv76SWSmgk3Ctzp1Q=
+Received: from colol4bi5.localdomain (unknown [])
+	by gzsmtp2 (Coremail) with SMTP id PSgvCgAnRq4aE71qvX4iCA--.2823S2;
+	Wed, 30 Sep 2026 21:48:11 +0800 (CST)
+From: Binbin Deng <18983559317@163.com>
+To: dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Binbin Deng <18983559317@163.com>
+Subject: [PATCH v2] btrfs: wait for a grace period before freeing a new device
+Date: Wed, 30 Sep 2026 21:48:08 +0800
+Message-ID: <20260930134808.399544-1-18983559317@163.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20260929140219.3412519-1-johannes.thumshirn@wdc.com>
-In-Reply-To: <20260929140219.3412519-1-johannes.thumshirn@wdc.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 30 Sep 2026 14:28:47 +0200
-X-Gm-Features: AclHuK_F4JxOyB3_tFi5errPGzvhHrZDZo6-QqeDT5xO6YzBxE3bpdpurYCs5NI
-Message-ID: <CAPjX3FdHEN=3frHPtoENakrcPrtYzL8R7wPn+9noEG97Eibktg@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: zoned: fix double list add in btrfs_load_block_group_zone_info
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-CM-TRANSID:PSgvCgAnRq4aE71qvX4iCA--.2823S2
+X-Coremail-Antispam: 1Uf129KBjvJXoWxAF4kGw13KF45ZrW5ZF4fKrg_yoW5Xw1fpr
+	9Igas8JFyUJr1kCr4Ik3y29r1rX39Y9a9akrn3Gr4I9a4fA34Yvr92k34Duas8CrW8JFy8
+	Za4DJwn8JwsFyw7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
+	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x0zR_sqAUUUUU=
+X-CM-SenderInfo: jprymmytvvmjmrxbiqqrwthudrp/xtbC-BvUuGq9ExuJEwAA3O
 
-On Tue, 29 Sept 2026 at 16:05, Johannes Thumshirn
-<johannes.thumshirn@wdc.com> wrote:
-> For DUP and RAID profiles with zones in a mismatching active state, i.e.
-> due to one of the zones of the block-group being on a conventional
-> zone, btrfs_zone_activate() has already put the block group on the list.
->
-> This leads to a double list add and refcounting problems.
->
-> Fixes: 265f7237dd25 ("btrfs: zoned: allow DUP on meta-data block groups")
-> Fixes: 568220fa9657 ("btrfs: zoned: support RAID0/1/10 on top of raid stripe tree")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+KASAN reports a slab-use-after-free in btrfs_statfs() walking
+fs_devices->devices. btrfs_init_new_device() publishes the new device
+with list_add_rcu() and can fail afterwards, for example with -ENOSPC
+in init_first_rw_device() when a user with CAP_SYS_ADMIN adds a device
+that is too small to a seeding filesystem mounted read-only. The error
+path removes the entry with list_del_rcu() and frees the object in
+btrfs_free_device() without waiting for a grace period, while
+btrfs_calc_avail_data_space() and btrfs_ioctl_fs_info() keep reading
+the device list under rcu_read_lock().
 
-LGTM.
+BUG: KASAN: slab-use-after-free in btrfs_statfs+0x11af/0x14a0
+Read of size 8 at addr ffff8880096be858 by task poc/252
+Call Trace:
+ <TASK>
+ dump_stack_lvl+0x53/0x70
+ print_report+0xd0/0x630
+ ? __pfx__raw_spin_lock_irqsave+0x10/0x10
+ ? filename_lookup+0x1a9/0x540
+ ? btrfs_statfs+0x11af/0x14a0
+ kasan_report+0xce/0x100
+ ? btrfs_statfs+0x11af/0x14a0
+ btrfs_statfs+0x11af/0x14a0
+ statfs_by_dentry+0x117/0x1e0
+ user_statfs+0xac/0x130
+ ? __pfx_user_statfs+0x10/0x10
+ __do_sys_statfs+0x80/0xe0
+ ? __pfx___do_sys_statfs+0x10/0x10
+ do_syscall_64+0xf9/0x540
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
 
-Reviewed-by: Daniel Vacek <neelx@suse.com>
+Allocated by task 256:
+ kasan_save_stack+0x33/0x60
+ kasan_save_track+0x14/0x30
+ __kasan_kmalloc+0x8f/0xa0
+ __kmalloc_cache_noprof+0x158/0x370
+ btrfs_alloc_device+0xad/0x3e0
+ btrfs_init_new_device+0x3e8/0x36e0
+ btrfs_ioctl+0x150d/0x6c20
+ __x64_sys_ioctl+0x134/0x1c0
+ do_syscall_64+0xf9/0x540
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
 
-> ---
->  fs/btrfs/zoned.c | 8 +++++---
->  1 file changed, 5 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index eefc283dfed0..dbb3ce626dba 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -2024,10 +2024,12 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
->         if (!ret) {
->                 cache->meta_write_pointer = cache->alloc_offset + cache->start;
->                 if (test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags)) {
-> -                       btrfs_get_block_group(cache);
->                         spin_lock(&fs_info->zone_active_bgs_lock);
-> -                       list_add_tail(&cache->active_bg_list,
-> -                                     &fs_info->zone_active_bgs);
-> +                       if (list_empty(&cache->active_bg_list)) {
-> +                               btrfs_get_block_group(cache);
-> +                               list_add_tail(&cache->active_bg_list,
-> +                                             &fs_info->zone_active_bgs);
-> +                       }
->                         spin_unlock(&fs_info->zone_active_bgs_lock);
->                 }
->         } else {
-> --
-> 2.55.0
->
->
+Freed by task 256:
+ kasan_save_stack+0x33/0x60
+ kasan_save_track+0x14/0x30
+ kasan_save_free_info+0x3b/0x60
+ __kasan_slab_free+0x43/0x70
+ kfree+0x121/0x380
+ btrfs_init_new_device+0x4a0/0x36e0
+ btrfs_ioctl+0x150d/0x6c20
+ __x64_sys_ioctl+0x134/0x1c0
+ do_syscall_64+0xf9/0x540
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+
+Fix by waiting for an RCU grace period after the device is removed
+from the list and before it is freed.
+
+Fixes: 1f78160ce1b1 ("Btrfs: using rcu lock in the reader side of devices list")
+Signed-off-by: Binbin Deng <18983559317@163.com>
+---
+ fs/btrfs/volumes.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 85ea9c5d4536..ec89dc3dc4cd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3174,6 +3174,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ error_free_zone:
+ 	btrfs_destroy_dev_zone_info(device);
+ error_free_device:
++	synchronize_rcu();
+ 	btrfs_free_device(device);
+ error:
+ 	btrfs_release_device_allow_freeze(bdev_file);
+-- 
+2.43.0
+

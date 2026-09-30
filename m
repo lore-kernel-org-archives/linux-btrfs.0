@@ -1,61 +1,61 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mailgw.kylinos.cn (mailgw.kylinos.cn [124.126.103.232])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A857719067C;
-	Wed, 30 Sep 2026 01:11:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 63FB22D5436
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 02:22:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=124.126.103.232
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790730708; cv=none; b=HGMUC3zvFTVCPwNiw8SPcxb1/AC6nZ/HJzLa3u5iW4u+Q2XLY+s0U0497wspFaVxS7t97HstXSwORSW3hg/ZEnGnnh8Ni3MFfsLWF4LYimp731qGRBsRsdjzrAG9cG7FjKNCS85qjoQdLjMqyXQchPJZiyF/a+5aPd2o7U7Ra+Y=
+	t=1790734951; cv=none; b=tAudpC0WmLRA1ev9rK+N7b65iHvesMhVVyoWPFIp8wpYfnUEdOcPJ9Ey3Y/jO2bnBTcLXS/K7Md2QDxdfWOQFYsBikNH6DTphAqKZe/C/Ui4vhDetbXe/Sm17EtKfiCgBWf6dnJPIyP7G6V/cczFtGJexVFviNtAJk8aojXg18s=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790730708; c=relaxed/simple;
-	bh=lnFlkAgbqG3i9PTWmV5t+5Vf2eSuw7VGoezcD0oekBg=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=nsAykRpRysJXEmdjnbgbIK/H+gmKI8/geHClg/bQb6vfosIEad7h6nW0NY7Wrh1SPUeTw5CEho6q1jvPhcX5IERkdiWTfEsS0X3RYNPggXngVyB4RYL72+mG2eCM8mKqPr8jWCbMiBpJsJAZhjzp7+TFMnlZEYaSvILNt1iAMVo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=c5o2Setz; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=N5qLDJ1k; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="c5o2Setz";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="N5qLDJ1k"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 19B6021DC2;
-	Wed, 30 Sep 2026 01:11:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790730700; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Aol+61QQXd1wmBRGoBNUTd1HUGPp6EPG8b3ctCKkIpo=;
-	b=c5o2SetzB9ZchfjxLGux+/Aos8iZA3UCaBVrfIfHiRnhfMzy22f3XMUpW8+bmsbkfVexKa
-	wnVgYdcPrrp5E9OTOg7BRNSEYPNwSDZCYtRDdBg0+ZQEadisqVs08zJsPpIahml9C0Ouip
-	u6IvIHA/7JOAlBP3vMcS1H/mI4TG0sU=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=N5qLDJ1k
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790730696; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Aol+61QQXd1wmBRGoBNUTd1HUGPp6EPG8b3ctCKkIpo=;
-	b=N5qLDJ1kwzcqn4EztiaPLtaZXzbPjstnTfUvxRCx6k5plcLNFUkDvh4gxs42UX0+KzLxaz
-	xSkLlf9FNo7nUxVwPp8B2FO7M0IRAZE+4K5GN8L/MTFoJ97EJABYrGDsa2pnVSLUV0ybY0
-	EQSG7aFoqD0zBLOSR9kUoqAO7IIjfOI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3BA14136AE;
-	Wed, 30 Sep 2026 01:11:33 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id glKXIcVhvGrOBAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Wed, 30 Sep 2026 01:11:33 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Bartosz Fenski <bartosz@fenski.pl>,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: raid56: do not verify the content if there is no data checksum
-Date: Wed, 30 Sep 2026 10:41:15 +0930
-Message-ID: <2989cda015c8673ccd463a5225cb985dc9e36825.1790730674.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	s=arc-20240116; t=1790734951; c=relaxed/simple;
+	bh=Z65XJ5C0eVAnrWSBiINI4QoPbGaYRS3c+iRTkf+UoGI=;
+	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=MzdXlsLfMFAwjXntISaQCthY1PI130S+2QOa6FUyo2Q2XMyaP2VE/Psa/YVaGYBQOrLKJRfooapkM63xjPy2Dacbsm2oi5ImmzthlTZY2qDbppc0dg7d+ioj/pjrimkdTTt2lPTNyRtcU5OFiA7EmmMwkwvR0vg+WhmCZFr0iR4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn; spf=pass smtp.mailfrom=kylinos.cn; arc=none smtp.client-ip=124.126.103.232
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=kylinos.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=kylinos.cn
+X-UUID: c2afb6cabc7511f19a56ed5b684f684d-20260930
+X-CTIC-Tags:
+	HR_CC_COUNT, HR_CC_DOMAIN_COUNT, HR_CC_NO_NAME, HR_CTE_8B, HR_CTT_MISS
+	HR_DATE_H, HR_DATE_WKD, HR_DATE_ZONE, HR_FROM_DIGIT_LEN, HR_FROM_NAME
+	HR_SJ_DIGIT_LEN, HR_SJ_LANG, HR_SJ_LEN, HR_SJ_LETTER, HR_SJ_NOR_SYM
+	HR_SJ_PHRASE, HR_SJ_PHRASE_LEN, HR_SJ_WS, HR_TO_COUNT, HR_TO_DOMAIN_COUNT
+	HR_TO_NO_NAME, IP_UNTRUSTED, SRC_UNTRUSTED, IP_UNFAMILIAR, SRC_UNFAMILIAR
+	SA_TRUSTED, SA_EXISTED, SN_UNTRUSTED, SN_UNFAMILIAR, SPF_NOPASS
+	DKIM_NOPASS, DMARC_NOPASS, CIE_BAD, CIE_GOOD_SPF, CIE_UNKNOWN
+	GTI_FG_BS, GTI_RG_INFO, GTI_C_BU, AMN_GOOD, ABX_MISS_RDNS
+X-CID-P-RULE: Release_Ham
+X-CID-O-INFO: VERSION:1.3.19,REQID:8dbf4c76-8c2d-4be8-aa18-84b38f7ffb34,IP:10,
+	URL:0,TC:0,Content:0,EDM:25,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTIO
+	N:release,TS:35
+X-CID-INFO: VERSION:1.3.19,REQID:8dbf4c76-8c2d-4be8-aa18-84b38f7ffb34,IP:10,UR
+	L:0,TC:0,Content:0,EDM:25,RT:0,SF:0,FILE:0,BULK:0,RULE:Release_Ham,ACTION:
+	release,TS:35
+X-CID-META: VersionHash:7db8b62,CLOUDID:ddc372602bc83bc0f7579cb7e7d8cc28,BulkI
+	D:2609301004325T6UMBU8,BulkQuantity:1,SF:17|19|66|78|81|82|102|127|136|865
+	|898,TC:nil,Content:0|15|16|50|99,EDM:5|-100,IP:-2,URL:0,File:nil,RT:nil,B
+	ulk:40,QS:nil,BEC:nil,COL:0,OSI:0,OSA:0,AV:0,LES:1,SPR:NO,DKR:0,DKP:0,BRR:
+	0,BRE:0,ARC:0
+X-CID-BVR: 2,SSN|SDN
+X-CID-BAS: 2,SSN|SDN,0,_
+X-CID-FACTOR: TF_CID_SPAM_SNR,TF_CID_SPAM_FAS,TF_CID_SPAM_FSD
+X-CID-RHF: D41D8CD98F00B204E9800998ECF8427E
+X-UUID: c2afb6cabc7511f19a56ed5b684f684d-20260930
+X-User: liuhuan01@kylinos.cn
+Received: from fs [(39.144.26.197)] by mailgw.kylinos.cn
+	(envelope-from <liuhuan01@kylinos.cn>)
+	(Generic MTA with TLSv1.3 TLS_AES_256_GCM_SHA384 256/256)
+	with ESMTP id 1399333041; Wed, 30 Sep 2026 10:22:18 +0800
+From: liuh0329 <liuhuan01@kylinos.cn>
+To: quwenruo.btrfs@gmx.com
+Cc: linux-btrfs@vger.kernel.org,
+	liuhuan01@kylinos.cn
+Subject: [PATCH v2] btrfs-progs: receive: fix unused variable warning without LZO
+Date: Wed, 30 Sep 2026 10:21:43 +0800
+Message-ID: <20260930022142.26073-2-liuhuan01@kylinos.cn>
+X-Mailer: git-send-email 2.54.0
+In-Reply-To: <1ba84f08-92d8-4add-9e19-82f47446de87@gmx.com>
+References: <1ba84f08-92d8-4add-9e19-82f47446de87@gmx.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -63,128 +63,61 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 19B6021DC2
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	ARC_NA(0.00)[];
-	TO_DN_SOME(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[3];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
-X-Spam-Level: 
 
-[BUG]
-There is a bug report that fio can fail to sync the data on a degraded
-RAID56 mount:
+When btrfs-progs is built without LZO support, sector_shift is still
+declared in decompress_and_write(), while all its uses are guarded by
+COMPRESSION_LZO. This results in an unused variable warning.
 
- # mkfs.btrfs -m raid1 -d raid5 -f $dev1 $dev2 $dev3
- # mount $dev1 $mnt
- # btrfs balance start -d $mnt
- # umount $mnt
- # btrfs dev scan -u $dev2
- # wipefs -fa $dev2
- # mount -o degraded $dev1 $mnt
- # fio --name=degraded-write --directory=$mnt --rw=randwrite --fdatasync=4 \
-		--bs=4k --size=512M --randrepeat=1
+Move the sector_shift declaration to the LZO-specific code path so it is
+only declared when LZO support is enabled.
 
-The run will fail at fsync:
+Fixes: 345731fff32d ("btrfs-progs: receive: optional build for lzo, zstd")
+Signed-off-by: liuh0329 <liuhuan01@kylinos.cn>
 
- fio: io_u error on file /mnt/btrfs/degraded-write.0.0: Input/output error: datasync offset=142254080, buflen=0
- fio: pid=2064, err=5/file:io_u.c:2008, func=io_u error, error=Input/output error
-
-[CAUSE]
-With extra debug output, it shows the problem pretty well:
-
- rbio=2876243968 faila=0 sectornr=0
- rbio=2876243968 error=0-15 csum=2 bio=15
-
-The first line shows the rbio's full stripe logical, and stripe/sector
-number when verify_one_sector() failed.
-
-The second line shows more detail about the rbio, the sector range [0, 16)
-is corrupted, which indicates the first data stripe is corrupted, matching
-the missing device.
-
-The important part is that the csum bitmap shows the data csum is only
-for sector number 2, meanwhile the failed verification is at sector
-number 0.
-
-This means we did the checksum verification even if no corresponding
-checksum is populated.
-
-[FIX]
-There is already a similar check at verify_bio_data_sectors(), but
-unfortunately there is no such check at verify_one_sector().
-
-Add the missing check to skip the csum verification if there is no
-corresponding data checksum.
-
-Reported-by: Bartosz Fenski <bartosz@fenski.pl>
-Link: https://lore.kernel.org/linux-btrfs/a72409af-45ef-45df-9970-2e38bcb22ea6@fenski.pl/
-Fixes: 7a3150723061 ("btrfs: raid56: do data csum verification during RMW cycle")
-Cc: stable@vger.kernel.org
-Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/raid56.c | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+Changes in v2:
+- Move sector_shift declaration to its only usage, as suggested by Qu Wenruo.
+- Add a local scope for sector_shift.
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index 8ec24dbb180f..38b48e53e11d 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -1889,6 +1889,8 @@ static int verify_one_sector(struct btrfs_raid_bio *rbio,
+ cmds/receive.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/cmds/receive.c b/cmds/receive.c
+index 49103ea3..02c864a6 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -1186,7 +1186,6 @@ static int decompress_and_write(struct btrfs_receive *rctx,
  {
- 	struct btrfs_fs_info *fs_info = rbio->bioc->fs_info;
- 	phys_addr_t *paddrs;
-+	const unsigned int total_sector_nr =
-+		stripe_nr + rbio->stripe_nsectors + sector_nr;
- 	u8 csum_buf[BTRFS_CSUM_SIZE];
- 	u8 *csum_expected;
+ 	int ret = 0;
+ 	char *unencoded_data;
+-	int sector_shift = 0;
+ 	u64 written = 0;
  
-@@ -1898,6 +1900,11 @@ static int verify_one_sector(struct btrfs_raid_bio *rbio,
- 	/* No way to verify P/Q as they are not covered by data csum. */
- 	if (stripe_nr >= rbio->nr_data)
- 		return 0;
+ 	unencoded_data = calloc(unencoded_len, 1);
+@@ -1220,13 +1219,16 @@ static int decompress_and_write(struct btrfs_receive *rctx,
+ 	case BTRFS_ENCODED_IO_COMPRESSION_LZO_32K:
+ 	case BTRFS_ENCODED_IO_COMPRESSION_LZO_64K:
+ #if COMPRESSION_LZO
+-		sector_shift =
+-			compression - BTRFS_ENCODED_IO_COMPRESSION_LZO_4K + 12;
+-		ret = decompress_lzo(encoded_data, encoded_len, unencoded_data,
+-				     unencoded_len, 1U << sector_shift);
+-		if (ret)
+-			goto out;
+-		break;
++		{
++			int sector_shift =
++				compression - BTRFS_ENCODED_IO_COMPRESSION_LZO_4K + 12;
 +
-+	/* No data checksum for this sector. */
-+	if (!test_bit(total_sector_nr, rbio->csum_bitmap))
-+		return 0;
-+
- 	/*
- 	 * If we're rebuilding a read, we have to use pages from the
- 	 * bio list if possible.
-@@ -1908,9 +1915,7 @@ static int verify_one_sector(struct btrfs_raid_bio *rbio,
- 		paddrs = rbio_stripe_paddrs(rbio, stripe_nr, sector_nr);
- 	}
- 
--	csum_expected = rbio->csum_buf +
--			(stripe_nr * rbio->stripe_nsectors + sector_nr) *
--			fs_info->csum_size;
-+	csum_expected = rbio->csum_buf + total_sector_nr * fs_info->csum_size;
- 	calculate_block_csum_paddrs(fs_info, paddrs, csum_buf);
- 	if (unlikely(memcmp(csum_buf, csum_expected, fs_info->csum_size) != 0))
- 		return -EIO;
++			ret = decompress_lzo(encoded_data, encoded_len, unencoded_data,
++					     unencoded_len, 1U << sector_shift);
++			if (ret)
++				goto out;
++			break;
++		}
+ #else
+ 		error("LZO compression for stream not compiled in");
+ 		ret = -EOPNOTSUPP;
 -- 
-2.55.0
+2.54.0
 

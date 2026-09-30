@@ -1,130 +1,121 @@
-Received: from mail-wr2-f34.google.com (mail-wr2-f34.google.com [74.125.225.98])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fout-b3-smtp.messagingengine.com (fout-b3-smtp.messagingengine.com [202.12.124.146])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 289E051A747
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 17:33:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.225.98
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790789628; cv=pass; b=OpOJBQBU46qzu8hDLj5/QQhqR7QEwDlAXN/bG84A4F1NKndouxMQ/+ha/7EQ7mCL3f9Ireda3NvYBpauNzxFnPcoWYKzSmkYUr2dGhpVcg0BeKXGDiHuVRIXom3KLb510G14GUfG15KjJ33/YltjGaEUW5Hsi0QB2rsNJKsQRTE=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790789628; c=relaxed/simple;
-	bh=f+eP9eg1LSm0z4XawwkxflBfTSrP6g+K4kFzr9Xfpbw=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=LHSpO2NJqJaxcbH53yVoH/zu5fvnxYCEzwcxb/VYs64WHGhl1siuLcN2MpcTeRnsPKRSbp2dB4zPwh6IrS7XYDPBNMPco7BmVSed36WP5PhRI7WMV5DqhXr12xhArrn5pfqbMZuk7uAW9c5VLxkhT6q+g+ZZaj6s71CDM6ifsgI=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=OQKVc2mx; arc=pass smtp.client-ip=74.125.225.98
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E09335208DE
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 18:23:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.146
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1790792623; cv=none; b=JzA/DGO9ZHabXm51E8pP9+WWftFWQyLbQ3OD3I+7F/5jAn3/M5l+3tVp1W/VXgumZ1gtdAjTmFfNzPVWxopBcZR96Aj6h9a47d/m2fCPUPKEgW3s+dezgbpMtP3i8bZ62MbIt5HAZeVYKBBDvBIRvklrj4+1uERJNrZpoIXXfu8=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1790792623; c=relaxed/simple;
+	bh=Gqa2Hzn1vbJaug9IYttLXJEbVr4ZX10Xx4CeqyP0PZs=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=I7o9FejnnfDBAC13dsPv+R5W/83DhbtdR2O/3PugWQFeUHI6PANctPYwK7mkXhGd/SScQqrr2+1temhLi/2FUK0I8XOtzSElTeIXsnp3i0cFaw3jk8W8sMBHx/rQORbkAaDmLU/Bx/6XCW7K2ndydMbP/LIOlCpG0ZhA/UKvlHk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io; spf=pass smtp.mailfrom=bur.io; dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b=umydw8jq; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=jYrzGWH1; arc=none smtp.client-ip=202.12.124.146
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="OQKVc2mx"
-Received: by mail-wr2-f34.google.com with SMTP id ffacd0b85a97d-48b00a0ac65so623350f8f.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 10:33:46 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1790789625; cv=none;
-        d=google.com; s=arc-20260327;
-        b=SBqgimpzn35v7Jauj8rPZYC2/6LyXQWbvrAG3Av9I/wTuQWKb1e6WeG0qf81xfGNb0
-         Eik0/dBNT1/1EtjWUqV4cYwC7cVi2q45j8scKzSi263ww0UJMSmK3JmE5xZ5hcbHv4EF
-         OFdrH4PjwnFat6I3nbxiX0IUjq4GpiMuGwPc5brQH8AfbITf4HP7TwgVbsA1NjWYdglK
-         0NLcDuIajTkm2H/lQq6HMQ9QYX3ZH0EXCO/anlSB91RkToIWfRgZQodsLb1Wyy8j3kQA
-         Ipq0RxlI54+66k4Yfdadbk9P9NZsMXqOXdFHU0GBaRsafAQPYMrkNziBU4hy2gO09yF6
-         JaJg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=WxXwNRvrrHD//OC3rgwnpm5uifEc6/akA6lCXtxMkuk=;
-        fh=RhFuKwp73/x8KksFPnzjZEYxDQ9t3rFtnoJ8q5GIsWE=;
-        b=VANluYnecvTVwtXgfwjBs6D3lIy0ET+sIM4OG3ZSVsL67pc26vmQGA+LxK4PQMDToi
-         LD8+246m9C69oL+r5AzUMjvGsyZnvUU6o5YsUkjIbQmq64uZ3y8AkVE/AZALbVvhPEEH
-         5/+YEJ4tboPR82bNpqxqTnYQmREuTlot/P1tHF+b09c+5Qqr/wCT7U4cI9TEo/XuQxv1
-         1QRKYA8JD4TzzJR3AJ21rMHHNyN8O1vYR0fEiqrhFqZ1qg6TGasH6qwUnswsCqYcM1b/
-         O31JicC2LfLaGQrXMrACWps+yKotD6XYSWyuH5XNVnHvL9DaI8yx7Q0uDyKw0Tm7lq6d
-         dEBg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790789625; x=1791394425; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=WxXwNRvrrHD//OC3rgwnpm5uifEc6/akA6lCXtxMkuk=;
-        b=OQKVc2mxujHmU9pes425tNVYeY3e/7LRxyiUzGpO+1DEJRM9hGz6vKYBvUX9xVsLze
-         VHaY5qoFsSxQKeN2NS/crSuU53QH5OXNe0z/puFhJy1yU4ninZnPF5LVMT9/n7JHhKxR
-         EWmdLmnIzAZjlaiPjlNozJpBSpxmhASvZ9Zd3bns0IzeDanD8zEjHDYiPCr+IYSU3qwh
-         qFOl29e0M+8FIsnGEqBVSDw1eBmkC+zIgCJjLFjpaSxnUGlyDVCKxmzyIJnSFfROoYba
-         nOUDUJwItnjy3Bmg01bMnUg3ZCwUMCW86srXF0eC4v5JUl31z3hYBbuqJiBxPBcNdA8Q
-         Gpfw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790789625; x=1791394425;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=WxXwNRvrrHD//OC3rgwnpm5uifEc6/akA6lCXtxMkuk=;
-        b=t5LQaLKyLfuR7MMCLoB0rgmzUf+QpudBrUux2yFwAYWC1SbNK3Z0hn1oai4h+YJ/xR
-         uiuKe9W5I4GzAkuRf4rsrqJHI2PqeB4jGuuQMFrQneTCyy0J+9s82hYHrmnITV+JhEjK
-         2MJktoACsovyRfGmhdZYs1M5ZeDrCZv85nsGBut4iNttFX2v5rihStBGjCFU3sXijYLS
-         xJqP6tA/Mrs978cH+ZsUm8gp48joV3nlG2NcPtvKL4338wiNqgRBONrNmzEGaV45ZWsn
-         rsGgeHki/H5WwSMraIs9zKwgRyc7sR/nhGJr159xF6nN9UzP1FQBH/zKrlFzXMBuQH5z
-         sovg==
-X-Gm-Message-State: AFq9FYLNMjpc/EHe2BJVsuj2ziDnfBf1UzdqcE77j/JEWyvAC8jgHtdV
-	FsgUtQdiMayE6DL6d6taC9OWyJMeaCikWqNStUTyL2bS4w73qncaqcsAIEt/VbRRrlDHyJcpsuk
-	WuG3muiZEiubwEQEmAynYupeeIWgOLddgj0BgOxXlkn4xOVzH0E5O3w8=
-X-Gm-Gg: AYBFou3z1PB14Pl4YX/Fs+JDOcnPrbz7mgT18g6b7P7PKfDgUZdQubDUNay+cW4j83U
-	n1kcfQzVPdTrG2jV2s8VebwDC9/DZFPAqPnyPLTOMlkhFyva8zDqvzVSpAt1alBVmk66Iy26m2/
-	105m1ciouTBzX9A8b0iLYj99tSewPdfamzxgpGOZANNAjmTd8XO5FGSmHkMVK2o8y4x35wswTQj
-	LM/gNXAHP/9KvgkV7K3oZLT/XTELF+xv2iaZCvXBScbPddQOki/4UemSJvjmfnaJrZ5QHZTP9Po
-	37SszJGDN1cGSAWKihyF4YGQRROdqDzHVhsMLE6iyY1/JOveDXJJecrf1MZ3Kx2P26ie3MhVQBk
-	PiOT18R+qU6/W9HYg8xB/hq524CzmLaym3UTa3XCyMzI+O4qk8qR6
-X-Received: by 2002:a05:6000:4387:b0:48a:efc9:2428 with SMTP id
- ffacd0b85a97d-48b0250b16dmr5059670f8f.33.1790789625237; Wed, 30 Sep 2026
- 10:33:45 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=bur.io header.i=@bur.io header.b="umydw8jq";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="jYrzGWH1"
+Received: from phl-compute-11.internal (phl-compute-11.internal [10.202.2.51])
+	by mailfout.stl.internal (Postfix) with ESMTP id BDE321D00009;
+	Wed, 30 Sep 2026 14:23:39 -0400 (EDT)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-11.internal (MEProxy); Wed, 30 Sep 2026 14:23:39 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
+	:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm2; t=1790792619; x=1790879019; bh=wjF98rn73H
+	FDRXAxlG5Nt/9P+YCQo5ijKfFMLlXBthk=; b=umydw8jqqPm23CEhYUjYeTfheX
+	SBrvoJvCoYiGhZ8yNywssRTkh6j/Mf/SVsP5kovwSceIy0gfmzvIOlHtxzw0//PH
+	ZcZ11Gtp/IhjDXSROzVvgOwAabOvJ+YFzToud3sb2iqVW+OGN5BXrONijfFXUcXR
+	vLVHpwKNzs8KkQjzriyiQfH0nnxQIQCGfzk7qS2MXxH8+vFmMw2k3mhw7FOzT4xn
+	qsAm0B7oFM7qSPUDqWGrDl2xOFDjhYhGkAxoOVRE8egEUxyUrahgO2xBuAiBo644
+	Rk8IC6hQw0KMHESrBOM3BtymVRUpBaL2hmdNLiEjlYsTwqT9GSxJRQaER5Jw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm1; t=
+	1790792619; x=1790879019; bh=wjF98rn73HFDRXAxlG5Nt/9P+YCQo5ijKfF
+	MLlXBthk=; b=jYrzGWH1C33CHm5Frx2Ot7/L5LsTJfYPh7MgQwCva5tsUUHwORp
+	tPTO8HMAlqufD8LGqbome0ZOZLy9G/kdL4Z4niMhEJW3e0umDwCn5P47MSYok3Wi
+	4bt2LYdd9xGTb/psx4Fe0+Mm8y1LOkwgjk5NYCBRC9Mo1P+4e5Qs34wpFKn4HyXL
+	+Hrs8FYZhpKIcoo3jRQuWM4kM0mlEyKjBX0riYOm/Ih57F8SFtTSY6GHFSv+KYf9
+	81yWvmf8ZkoxvNRD08WR4zWxg422kcA2FTXAARDqoYsRZkztis0qVp6YoPikmMQT
+	/602jxOFV2ayMSIUzGf4LeVH4+FjZfMs3ZA==
+X-ME-Sender: <xms:q1O9aiADl7XE8diAm3RyroDkyNwHF2VFCxfMzFoHsI0cb-XCTv2BQA>
+    <xme:q1O9aii0Lniw71qQ6VIpfURY2axZD2y2PnPRocUYzPV_VqF3b67gzrkK5Yq4BreWI
+    XF4QUl42FC7sEsIWXpk6sWMMSreDJ0lVIvuqmzxXc9ue9NpsyBsrHo>
+X-ME-Received: <xmr:q1O9ajOb5xpM5Atk8kIjNp0hm9A-RSGHm8xaY2iPGAVtVKnF36uHuDY>
+X-ME-Proxy-Cause: dmFkZTGQ0xzT3N0tenB4a1ef4oR2emIIMddpLAVUtVH3dl/L3a96zgYmHR2KjuRbHliPS+
+    IWCGjYuFVmyb0fMT9pYuOHCKaTLg/3QGpQISs0xkfkufa2m3bRN5kOg7KB5kEYwBVDoJ23
+    pOHbW8Vijc5ldhVvJMxDDOGuz8CiXcyxNlin/9R+Nw7aH42bL6Dx4hPCx/un0EQoTO/LI3
+    Dd/gJi0x/gaE95ylVpuwcVoOOCfcamCdUgsAWaRVWlSrwNV4VXgXk28+l3akFqZqvsIRTT
+    ZzbmiTQMUya3YClknGdQdRoPcswSY9jJJI+0ZPWSyxdOCkFLq/KlXeWt+JaaMxZb/L80e8
+    JKXYDWNdGBXQRAgsX9E73/wQbziViAFqB6gM9ruKuqqWvVByJ7oxH6KajXWHLT149Bo/xE
+    h45KJewCtRSKqK/wvS4krQHZwJZM3G0tXvBCLsjx5U4lwNWiQP2bWtvybDDjlnuOdAz91v
+    X2mpvEvKj/FPMRCnjhY28TPb8QVk509xyeeiccISlB2dI3hUug/EGTHqo+RulM3J8hgAIy
+    XiAgSRpkZitpeihk8aZz4iFrpwKb1ZFTez8g37pkr0bLy4bkABg7SRWLMlMFvepsUmC5tc
+    4pKrWJSAq8m/PmFSkF6khgZxcn4uIc5GZE04goK3O4h2fanK4t4MIVuytiLA
+X-ME-Proxy: <xmx:q1O9ar4v6_6n6iQnJYryVayvepMS6sv3jXN2pMpKDvrYxwhxV17y4A>
+    <xmx:q1O9ap2F9ofVAlLbbXMThA6fXmdiewrITnp0MkX8aIpssxCfzmCgVA>
+    <xmx:q1O9akbdVVDlH2Wlo53cmRO1ScAzsY3PlGWh9A3oQ8wCAVkuDPH6mQ>
+    <xmx:q1O9apDNeOWl7nq6mIad5qfeKWCkT8ZrrxMvoG7hOi4QSLnCSjHfWw>
+    <xmx:q1O9asOj_TOXABIFKT0JsKzu7yB-BBUIJ6fYihkqogj0Z9fl713loZiz>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 30 Sep 2026 14:23:39 -0400 (EDT)
+Date: Wed, 30 Sep 2026 11:23:25 -0700
+From: Boris Burkov <boris@bur.io>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] btrfs: introduce more accurate usebackuproot
+ options
+Message-ID: <20260930182325.GA3186434@zen.localdomain>
+References: <cover.1788678078.git.wqu@suse.com>
+ <9c907c139ede11a4b3026bd15b310de034690bc6.1788678078.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <d424b06da106d3e4bc54416eca428701647e8f08.1790781569.git.fdmanana@suse.com>
-In-Reply-To: <d424b06da106d3e4bc54416eca428701647e8f08.1790781569.git.fdmanana@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 30 Sep 2026 19:33:33 +0200
-X-Gm-Features: AclHuK-FCQc3S1ZtN50ZF5_0Qr_urW1fylEq13tohpcJuEV4veWA5zYsa7WKHbI
-Message-ID: <CAPjX3Fc-PEuwwOCoHS2q-Nz8wwfi3=P0jB=oQPdyaXJgGTCZ-A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix off-by-one end offset check in report_setget_bounds()
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <9c907c139ede11a4b3026bd15b310de034690bc6.1788678078.git.wqu@suse.com>
 
-On Wed, 30 Sept 2026 at 17:20, <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> The addressable range with an extent buffer goes from byte 0 to byte
-> eb->len - 1, so if a byte address matches eb->len, it's already beyond
-> the addressable range and we should log that it's bad start address
-> and not end address.
->
-> Fixes: 234fdd2815ce ("btrfs: remove redundant check in up check_setget_bounds")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+On Sun, Sep 06, 2026 at 04:33:38PM +0930, Qu Wenruo wrote:
+> Previously we had no way to tell btrfs to use which backup slot, but
+> always use the newest backup, and retry until all backup roots are
+> exhausted.
+> 
+> This doesn't give any control to the end user, even if the end user
+> wants to use a specific backup slot.
+> 
+> To address this problem, allow more fine-control on usebackuproot rescue
+> option by introducing the following 4 rescue mount options:
+> 
+> - rescue=usebackuproot_0
+> - rescue=usebackuproot_1
+> - rescue=usebackuproot_2
+> - rescue=usebackuproot_3
 
-I agree, looks good to me.
+What do you think about mirroring the compression levels and having the
+option parse as rescue=usebackuproot[:N] rather than 4 options?
 
-Reviewed-by: Daniel Vacek <neelx@suse.com>
-
-> ---
->  fs/btrfs/accessors.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/accessors.c b/fs/btrfs/accessors.c
-> index 1248aa2535d3..d63ac6eb92de 100644
-> --- a/fs/btrfs/accessors.c
-> +++ b/fs/btrfs/accessors.c
-> @@ -16,7 +16,7 @@ static void __cold report_setget_bounds(const struct extent_buffer *eb,
->
->         btrfs_warn(eb->fs_info,
->                    "bad eb member %s: ptr 0x%lx start %llu member offset %lu size %d",
-> -                  (member_offset > eb->len ? "start" : "end"),
-> +                  (member_offset >= eb->len ? "start" : "end"),
->                    (unsigned long)ptr, eb->start, member_offset, size);
->  }
->
-> --
-> 2.47.2
->
->
+> 
+> The number 0 means the newest slot, which should be the same as the one
+> recorded in the super block and no need to load any backup root.
+> 
+> 1/2/3 means the second/third/fourth(oldest) backup slot to use.
+> 
+> The existing "rescue=usebackuproot" is just an alias of
+> "rescue=usebackuproot_1".
+> 
+> This will allow users to choose which backup root to use, thus can have
+> a better control than blindly choose any slot that can pass the very
+> basic root node checks.
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+ 

@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EE89A4F6477
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 14:25:48 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAB1850B8C6
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 14:25:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790778355; cv=none; b=eLPly2ItBWiTwZyfg6xqPJBbEfCviv5fdcCskOvX1R+B2hg20MOehsEQbEtjHSL23+j0ZsVBpTorYfRmevxX1kKzx7AzPmj4FB5lKLbbMJi64GjnhWWGhyhUTGF1Y5Ay4M9AU6J3cZDwZ5rmJEik1P1I5Y7mP5trzIBQKYUPeIY=
+	t=1790778355; cv=none; b=fGqYumWF00Qw5omJZY3tTga0LcDNlEal5BzoB6ICVupVjMzME+Cp6XPBl6l1Q78hoalnzzpbi6Tcp31zK3laf+GhT8cxDZVOpccIlBdZD9wa8DAIrYMQwCL4cTtzelG23rp4asDfDFoHMxXOw6JxggMTuauIqKiS+Jp1w+KLJpM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
 	s=arc-20240116; t=1790778355; c=relaxed/simple;
-	bh=ucqadmAvti71Rl/Cc9YP8gPZbtixKAzPNpvToSnap+M=;
+	bh=ELtEL8ElH/3LRc+xH5OoUKUzINlyycI7tli4KiEN2P0=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=fuQb+VIQ/jycNU4fdlvrBFryfid2faPEdoIwYIKLkIuBMbx69o+wOgV2iuXz09vBZTzK5Ep0qAE9Fn9yr22JUCLUEKgG4FXfomQYcv4AQJh82zpi7wohmfZS1Z5UhmHBvFKOS8HQlLvQuN2JdZKawCABYm78t3PrcTDaQf6ak44=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=ExlC8Ddy; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=LCDASH/2iAJPfTvdrLs02UwQjXMdX7Uz48P0If0yx5lsy40RW+t6sIywlT6ugc39938bCneYYI0D8XTPQZD7gJ5ae9J5N2PgonBj90ZA1NuIapLxt5dyKKgF+4l79matxtYzTrTTPlUga2gZLwbvO+veQSUT6Q7mFBE+qL0gQ8k=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=MHhBa+/C; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="ExlC8Ddy"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8C32B1F0089B
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 14:25:45 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="MHhBa+/C"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 811321F0089A
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 14:25:46 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790778346;
-	bh=psTlW9stRgIELpImcV/H6t9C7xbzWKHZxB6Y0GC6dlk=;
+	s=k20260515; t=1790778347;
+	bh=olbwS/oe4ZGSuACUxO9x+fZxSB6h6ZjCLrzrZRfolow=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=ExlC8DdycRxEOKKBen6hMG7idN7eXMpo8zlWcaIwuc47oVja4rg1AV1M209DVNhXL
-	 PVCThuLTJWsGViru1gRpowISNVasglMJM1v5Qax2I0mN2lwNUJyj/0UMFTEwQ1Vq18
-	 4Y7RAqsErYK6S8hpA1WDCIukwUzDmHAakPoI82IN/qlEBMXklGinB8ooQ6DXD6dlPM
-	 cKkr8QzqfrIMZrBbjBnxAR9LoRm9fCaE/zzIpqBlVQhXpsMeftz95ULWAv2w659By9
-	 kuEbfRD0SskHCRw6YfhcoG1jeMw0WNB5IeUchB+ZhN8onD9K/oJUwZTNyDr+d0ywpU
-	 JjeQWupqhbGdA==
+	b=MHhBa+/CfrXkUyrXcbNse9KGx5ntpAeDHOor/WnI03xdhnU3Z5KFgOwXzoXlQ7eH+
+	 C2UMocMGaZ5XITCXX3rdAplZcsNzdDcgIi/yFIAghk0vJ5/hxZlLlKAekeZ0paMUTk
+	 X2QEUMwvrpNvfqjtGYdo2RUOaZTIc0hNx4V6YbkSEGKW+MhGTbnD4Pc4Bvcw5SS8Z+
+	 cGb3fI95fGa/rtLy7eIoZFQZIQ7yIlpTUCqWOi5EQIpsx+yV0vmaGUxamsXZK5FhQ8
+	 Wgy/0lVqKE55lO91wY8T/EpP5kAomGg/CN3Y96/tV6x7Eh8qwsf+cVkZOwuLbDtnzJ
+	 WNOOP+vczUPBA==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: add missing code for no delayed iput fs state in log messages
-Date: Wed, 30 Sep 2026 15:25:36 +0100
-Message-ID: <11a60116458a1ea6618b8e5e648863ec98c20702.1790772326.git.fdmanana@suse.com>
+Subject: [PATCH 4/5] btrfs: remove unncessary pointer increment in btrfs_state_to_string()
+Date: Wed, 30 Sep 2026 15:25:37 +0100
+Message-ID: <bb12808ee4b92d6451552ef3ff2741647786bec2.1790772326.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1790772326.git.fdmanana@suse.com>
 References: <cover.1790772326.git.fdmanana@suse.com>
@@ -44,25 +44,26 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Add a letter code for the BTRFS_FS_STATE_NO_DELAYED_IPUT fs state, which
-is currently missing and it's useful to have.
+There's no point in incrementing the local pointer after we set the NUL
+terminator, as we don't use the pointer anymore after that.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/messages.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/messages.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
-index 5fe5d34ab629..2610b447165e 100644
+index 2610b447165e..c42a12139377 100644
 --- a/fs/btrfs/messages.c
 +++ b/fs/btrfs/messages.c
-@@ -26,6 +26,7 @@ static const char fs_state_chars[] = {
- 	[BTRFS_FS_STATE_NO_DATA_CSUMS]		= 'C',
- 	[BTRFS_FS_STATE_SKIP_META_CSUMS]	= 'S',
- 	[BTRFS_FS_STATE_LOG_CLEANUP_ERROR]	= 'L',
-+	[BTRFS_FS_STATE_NO_DELAYED_IPUT]	= 'I',
- 	[BTRFS_FS_STATE_EMERGENCY_SHUTDOWN]	= 'H',
- };
+@@ -56,7 +56,7 @@ static void btrfs_state_to_string(const struct btrfs_fs_info *info, char *buf)
+ 	if (!states_printed)
+ 		curr = buf;
+ 
+-	*curr++ = 0;
++	*curr = 0;
+ }
+ #endif
  
 -- 
 2.47.2

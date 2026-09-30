@@ -1,288 +1,138 @@
-Received: from mout02.posteo.de (mout02.posteo.de [185.67.36.66])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm2-f12.google.com (mail-wm2-f12.google.com [74.125.225.140])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51AFA47728F
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 09:22:08 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=185.67.36.66
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790760132; cv=none; b=bDs0qtgKeUxLTFgcsSvv+gKppxfOofHF6SaZBUnNLTJqLxGrTC6hT7f/DiP00a0UrcNBwUHBAr94d4g7vHXCeAF5wPzmx/1xZO0M3Jg54PxfAToeytDwNiN/c8FoGC6PSPsQanoya85crPUQbois4mDFWVCi4TjMhOnJI48fuLc=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790760132; c=relaxed/simple;
-	bh=X5qlsvyKeoI1IrgX9pMbXP6T7BPBJbFZqbc7VshmAmA=;
-	h=Message-ID:Date:MIME-Version:From:Subject:To:Content-Type; b=KD4SsCFX7YiV7AF+XgbX2EWm5kARmnSRVhOPeFWwlR7C4/TX8QvOLI1RhQOvYgUt2ELlLIcbGOE17t6ju71TaDnR1ZMAvCrFv2/I96I7GKWYc/YY5Gli8viU/1j+ePKUw3Z55Uo2UIx7ok0jJ+3okR0WIrSi/6NK1mj7xysj2fI=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=posteo.de; spf=pass smtp.mailfrom=posteo.de; dkim=pass (2048-bit key) header.d=posteo.de header.i=@posteo.de header.b=U8K1Ya9/; arc=none smtp.client-ip=185.67.36.66
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=posteo.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=posteo.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EEB74CEE4D
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 12:29:02 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.225.140
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1790771345; cv=pass; b=IhM6MFdRm/dt+JLEkbz0PLfyhs8oI7Msz2jkpha7yWojc9z3jX6uEwvZ/2oWhQeNnXM5uKpl/Yk23lsSApbdA/AMHYVJQuNi/gNyo27Mj1jUBprEWdM29m9SboccEbwLhkIuxSlqFjJQ/3yUgBBvPPNj3a2C+alcqJh3qgUYNTc=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1790771345; c=relaxed/simple;
+	bh=m478kFP+nf4kBoRucOq4/8H+Rs2m3iv3Fo1tYmV3TTw=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=KuIsq2Np4Es/b+Ya9uBPFzardqmDdm+/ZdwtjJoWRgUkC10nDYyST5mqvT81H8LBe4C2w4vQQnEA5SaxTXv0KBNRuclPmVN2AjqwijfPlZankfOzKjFmBZmjtyBfE+PaAsutJVTmTKLZ6JfPY3aWXvUPw8XSmFYI3X3cFKGpJWU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fdpULLdE; arc=pass smtp.client-ip=74.125.225.140
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=posteo.de header.i=@posteo.de header.b="U8K1Ya9/"
-Received: from submission (posteo.de [185.67.36.169]) 
-	by mout02.posteo.de (Postfix) with ESMTPS id 7AC48240103
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 11:22:01 +0200 (CEST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=posteo.de;
-	s=1984.8680eb; t=1790760121;
-	bh=UC9zZNsJQMhq6WcIxnUV5RD4ELfYPbLfMPhTVXbeOoI=;
-	h=Message-ID:Date:MIME-Version:From:Subject:To:Content-Type:
-	 Content-Transfer-Encoding:From;
-	b=U8K1Ya9/JHBpd2YYEkCDtIDs/A0xz+1eVsLNl4GgN8IhRtmC/J2IJhTeXITSKwEBf
-	 NMd8DtMHs2MIVMjW46lL5W8DP0jXJ8Kv8IknelK7pmFvDJsGSkSqMZuoA1AHvv5xME
-	 pEed9jOSTfPhX/TUsw4zziKLG3zzyrT6vyb6nypG5B4CHsBRJbIvp4XIKr4Ei/WYTn
-	 vVkp5/knnSIAzNUaNcB8wjjEwj4bwqCli9lG/RxFl6DGxcUk7BAVtZXEi3NRNg4Gr9
-	 pwJb1AIrccjmhe8CIgReJodOK4PGrnUe1IXj+tHo+PJDt9Vsh3KwGpNWX77dM/2UNo
-	 Loo/k1g8A3v/w==
-Received: from customer (localhost [127.0.0.1])
-	by submission (posteo.de) with ESMTPSA id 4hvqLd13qTz6ty0
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 11:22:01 +0200 (CEST)
-Message-ID: <14846642-85d3-4afb-ad99-1b74b22f5f90@posteo.de>
-Date: Wed, 30 Sep 2026 09:22:01 +0000
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fdpULLdE"
+Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49b912d391aso40299665e9.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2026 05:29:02 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1790771339; cv=none;
+        d=google.com; s=arc-20260327;
+        b=AAiX7/sLXky7qZAZlslthZlgIxlYfO8W+UZNnHr6m++8hdCaslkIlDuagVpNwfNXwm
+         J6vWkF9Ydb2DBwSnE22R19xzUgEz+PWMjNlnofii/0SqQ+nEjmcAX26IbaFkCaQjPwMf
+         iZhuUhU03fcBuu/AeL3y0KKHZoOiR06gL2cP32elsujLyp3/yix7ma0bnNN7h/+TDX+t
+         nVv7yQ6DUmjsWwjpKkI1kcv+AFYuo3N0EofAYHHGfBi8DXUCj3jCGCDinMs+HAr3xuIC
+         zwDprI8oekzON6vuBRkx7hqt3vUKFqKnWlcDPtE1k/cakzNirV3aP72GBHiDEbJBvNS8
+         T5gw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
+        fh=DNhRoUogv4njemsTPAOB4Tb4wfg3Mu7IYlLDA9H4+4Y=;
+        b=cBZFtT4n3wSPgReKF6qekGIDCQ+fZsj6wuUJNhZoH0L+uSOyZgwOLeXEMPiVXBK5Ub
+         TT3/qECGrlxKg6a/hDeWa+OSWvlSK6GooF4sv9lznkOzm5PIYnvTFCCr7OmqPJR5wyhv
+         RgDIfN7tmP3TPAPr4osX+21HflC93zBnvSB4BldgYXE3ylkKqc/2cnSng2kt6oKb651b
+         a9QBykFtBk6puWbmEHvTAkKiLbM0aM3HHzidTaIX5nxcXxRghDQb9Sjxk2aYLVVqX86G
+         wlTdyvG9s/TY0XcKO4FciTpZGmmwcMOCf+RAEDa6+JsaLSjMuHAkNMCO4mP35xsXUIFt
+         afcA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1790771339; x=1791376139; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
+        b=fdpULLdE5eq8T9sXadMyZcwSFxdNhlwiemyy9bij/uJJ2v3DSsnGuerfMri3VBIm1Z
+         qRe3i+GnwL/+g9Y6ibzvVAcNwa+3tLysArd6VAn4RaGzog0cOyJ7O7crzBjTMYySnD/E
+         G5KmCCzdu1NoubNjwXJYeKLmsXutSa3g1qMbf8a5pgO1tM5IHX5lfA9PyAb3/oizQnC8
+         MG4g+sO3HJdBr0pIJ1UOFHBWuPO82hj4AbD3E8OBFi/lOW3PYCDMl4ve5EGYlcN4+FRT
+         bEs4Tr6hHQGErHmDMHwsC9dVgXGjR0SbKW9ifNTjV2IXJKOG6KDNidAySc0O5Q0aeB8v
+         h04g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1790771339; x=1791376139;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=Oc1k3Z5WZVYZfjHfMlGFGik5mt6cfOcVLEe2vnSFnDA=;
+        b=mEmz86Yy5VGZXGnskN6D8Tp3wQSZ/oI7Lw2a8wleGYW0UqRBBeEydiiEeNkg+I5YLp
+         mvrOQC/U690+W58laK67CzymisvjTTzy3R7bx72FoRT6E9FF76x5DfJBB5p2ECj8PaaM
+         XZ6rCdiUmKPaeiiyEbanZJR4EnvrSOyRud0J9JN6auEKYcGENh9wWU6XuJ4RWmPoQbA/
+         Uj2DlpXHgvuchSzdfpgw2g4mNwf80ttfyKCM70t7Xk7co/bhkgZgDhRl0x1duqjZKRmZ
+         iyQLzpI1uhZdk1YOPKtXIse57/uW0qn40YITpb2PyNmiOlaXaW9ETBePcMuFr+iZQ6TY
+         cnGw==
+X-Gm-Message-State: AFuF++mq1rP1doxKVowVddZvsfqNLcJMHdER/eRkyUGQ0jKNXhYoEk0W
+	bjdwkpY2uwV9/2KfnsU7EIIRbTB7o552IDQRNNBUrbr343Q5iuBOR+w7kLGS5VulPrKl6GmxuWp
+	yGoUod4Odbfm9QtHqVzy5OmhZ7KB1HEGYfv723B//mA==
+X-Gm-Gg: AYBFou1sv/OH0NSA1evIx6f+LEnybuieW9W9zQgK84WCkHMEVT4TrhyNOZr/cCvc4Eb
+	edwDRSklpMJRqQVYrKfzgh2A3sdjYr+UhOeytmZmtSx7NYglY4h5EZjWsItHxMWrpZ0qVYPMaUd
+	/CW/dcMYTLaEauiGESTX8tRGAx+aeViIS/9dN9e1Sh5iR4ccnbhhAc6Kt80nxf8e816efJPBizD
+	YIsGBr0NbYmRxPgotTasaCpylOORmuJigDIo5GMynlJY073+tG3fdkFojTkJ4V93iOgbsLzGreE
+	vFvJ0RGThAHto0MwCmfE5Izbvj+HN96LkJky/4cahMKAZ7dWKPsCXQeOYBPqJNWZftXXD0BFvYV
+	RE7ax1mP/OgdtjBWLZROLTaF4B+XuEtJ1CWXi9y4HGKU62ylK32vX
+X-Received: by 2002:a05:600c:1c10:b0:4a0:168f:d962 with SMTP id
+ 5b1f17b1804b1-4a01ad8f2eamr26643895e9.3.1790771339506; Wed, 30 Sep 2026
+ 05:28:59 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Language: de-DE
-From: c.f.a@posteo.de
-Subject: [BUG] qgroup: btrfs_remove_qgroup() can leave an in-memory qgroup,
- without on-disk items, every later rescan gets cancelled
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <20260929140219.3412519-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20260929140219.3412519-1-johannes.thumshirn@wdc.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Wed, 30 Sep 2026 14:28:47 +0200
+X-Gm-Features: AclHuK_F4JxOyB3_tFi5errPGzvhHrZDZo6-QqeDT5xO6YzBxE3bpdpurYCs5NI
+Message-ID: <CAPjX3FdHEN=3frHPtoENakrcPrtYzL8R7wPn+9noEG97Eibktg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: zoned: fix double list add in btrfs_load_block_group_zone_info
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>
+Content-Type: text/plain; charset="UTF-8"
 
-Hi,
+On Tue, 29 Sept 2026 at 16:05, Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
+> For DUP and RAID profiles with zones in a mismatching active state, i.e.
+> due to one of the zones of the block-group being on a conventional
+> zone, btrfs_zone_activate() has already put the block group on the list.
+>
+> This leads to a double list add and refcounting problems.
+>
+> Fixes: 265f7237dd25 ("btrfs: zoned: allow DUP on meta-data block groups")
+> Fixes: 568220fa9657 ("btrfs: zoned: support RAID0/1/10 on top of raid stripe tree")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-on a laptop with full qgroups and snapper I repeatedly end up with a
-level-0 qgroup that still exists in memory (it is listed in
-/sys/fs/btrfs/<uuid>/qgroups/) while its INFO and LIMIT items are gone from
-the quota tree. From then on every transaction commit fails to update that
-qgroup's items, marks the qgroups inconsistent and thereby cancels any
-running rescan. The rescan never gets past the first commit (~30 s) and
-the qgroups stay inconsistent until the qgroup is destroyed by hand or
-the filesystem is remounted.
+LGTM.
 
-Environment
------------
-   kernel      7.2.7-arch1-1 (line numbers below refer to v7.2.7)
-   btrfs-progs 7.1
-   snapper     0.13.2, four configs, hourly timeline snapshots,
-               QGROUP=1/<subvolid> per config (the group contains the
-               subvolume and all its snapshots)
-   qgroups     full mode, drop_subtree_threshold raised to 8
+Reviewed-by: Daniel Vacek <neelx@suse.com>
 
-Symptom
--------
-   BTRFS info (device dm-0): qgroup scan paused
-
-~30 s after every 'btrfs quota rescan', no other message. A kprobe on
-qgroup_mark_inconsistent() (reason string from %si) plus a stacktrace
-trigger shows who cancels it:
-
-   qmi: (qgroup_mark_inconsistent+0x0/0xe0) reason="qgroup info item 
-update error %d"
-    => qgroup_mark_inconsistent
-    => btrfs_run_qgroups
-    => commit_cowonly_roots
-    => btrfs_commit_transaction
-    => transaction_kthread
-   qmi: (qgroup_mark_inconsistent+0x0/0xe0) reason="qgroup limit item 
-update error %d"
-    (same stack)
-
-Probing update_qgroup_limit_item() on entry (qgroupid) and return:
-
-   610 limit item updates traced, 1 failed
-   qgroup 0/8750: error -2
-
-0/8750 belonged to a snapper snapshot that had been deleted and fully
-dropped ('btrfs subvolume list' no longer showed it); its sysfs directory
-still existed with rfer = excl = 0. 'btrfs qgroup destroy 0/8750 /'
-failed with ENOENT, but the qgroup was gone from sysfs afterwards, and
-the next rescan completed ("qgroup scan completed (inconsistency flag
-cleared)").
-
-Analysis
---------
-btrfs_remove_qgroup() (qgroup.c:1806) does, in this order:
-
-   1839  del_qgroup_item()             - deletes the INFO and LIMIT items
-   1843  loop over qgroup->groups:
-   1846    __del_qgroup_relation()
-   1848    if (ret) goto out;
-   1889  del_qgroup_rb()               - only reached on success
-   1897  btrfs_sysfs_del_one_qgroup()
-
-__del_qgroup_relation() (qgroup.c:1628) returns the result of
-quick_update_accounting() (qgroup.c:1674) when the relation was found.
-quick_update_accounting() (qgroup.c:1540) starts with ret = 1 and only
-clears it when the member's excl == rfer (1549); otherwise it sets
-BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT and returns 1. So 1 means "needs a
-rescan", not failure, but btrfs_remove_qgroup() treats it as an error and
-bails out after the items have already been deleted. The transaction is
-not aborted (btrfs_ioctl_qgroup_create() just ends it, ioctl.c:3737ff), so
-the item deletion is committed while the struct btrfs_qgroup stays in the
-rbtree and in sysfs. Its relation to the parent is already gone from the
-rbtree (del_relation_rb() at 1673), which is why a later destroy succeeds
-in removing it but reports -ENOENT from __del_qgroup_relation().
-
-The same happens if __del_qgroup_relation() returns -ENOENT because
-neither relation item exists and the relation was not found.
-
-Once the stale qgroup gets dirtied (a rescan zeroes and dirties all
-qgroups in qgroup_rescan_zero_tracking(), qgroup.c:4028),
-btrfs_run_qgroups() fails in update_qgroup_info_item() and
-update_qgroup_limit_item() with -ENOENT (qgroup.c:3144-3151) and calls
-qgroup_mark_inconsistent(), which sets
-BTRFS_QGROUP_RUNTIME_FLAG_CANCEL_RESCAN (qgroup.c:391-393), so
-rescan_should_stop() (qgroup.c:3839) stops the rescan worker. Because the
-qgroups are already inconsistent at that point, qgroup_mark_inconsistent()
-does not print its reason, which makes this hard to diagnose: the only
-visible message is "qgroup scan paused".
-
-How it gets triggered
----------------------
-Any removal of a level-0 qgroup that is a member of a higher-level qgroup
-while the member's rfer != excl. One path that needs no user action:
-btrfs_drop_snapshot() calls btrfs_qgroup_cleanup_dropped_subvolume()
-(extent-tree.c:6498), which commits and then calls btrfs_remove_qgroup().
-If the qgroups are inconsistent at that time, the dropped subvolume's
-numbers are stale and non-zero, quick_update_accounting() returns 1, and
-the caller only warns on ret < 0, so the stale qgroup appears silently.
-
-With snapper this is easy to hit: creating a snapshot into a group
-qgroup marks the qgroups inconsistent as soon as the group shares any
-extent with a subvolume outside it ("qgroup inherit needs a rescan"), and
-snapper's cleanup then deletes old snapshots before a rescan has run. On
-my machine the first occurrence was exactly that sequence (snapshot at
-14:00 marked the qgroups inconsistent, snapper-cleanup at 14:35 deleted
-snapshots, every rescan afterwards was cancelled).
-
-Rescans are being cancelled the same way again since this morning, after
-snapper-cleanup deleted four snapshots at 06:59 (followed by its usual
-'btrfs qgroup clear-stale'). As far as I can tell the qgroups were
-consistent at that time, so this would be a different trigger. I have
-not traced this occurrence yet; sysfs shows three level-0 qgroups with
-rfer = excl = 0 as candidates.
-
-Reproducer
-----------
-The script below (loop device, needs root) follows the snapper pattern:
-create a snapshot with '-i 1/100' from a subvolume outside 1/100, which
-goes through qgroup_mark_inconsistent() ("qgroup inherit needs a rescan")
-and thereby stops accounting, then delete that snapshot, wait for the
-drop and run a rescan.
-
-Note that making the qgroups inconsistent via 'qgroup assign --no-rescan'
-instead does not reproduce it: quick_update_accounting() only sets
-BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT, accounting continues, the dropped
-snapshot's numbers reach zero and the removal succeeds.
-
-Output on 7.2.7 (trimmed):
-
-   == setup: subvolume a, snapshot s created into parent qgroup 1/100
-   snapshot s = 0/257, inconsistent = 1
-   BTRFS warning (device loop2): qgroup marked inconsistent, qgroup 
-inherit needs a rescan
-   Qgroupid    Referenced    Exclusive Parent   Child   Path
-   0/256         64.02MiB     16.00KiB -        -       a
-   0/257         64.02MiB     16.00KiB 1/100    -       s
-   1/100            0.00B        0.00B -        0/257   <0 member qgroups>
-
-   == delete s and wait until it is dropped
-   Subvolume id 257 is gone (1/1)
-   0/257 in sysfs (in memory):  yes
-   0/257 in quota tree (on disk): no
-
-   == destroy 0/257 by hand, rescan again
-   ERROR: unable to destroy quota group: No such file or directory
-   0/257 in sysfs: no
-
-So after the drop, 0/257 is half-removed exactly as on my real
-filesystem. On this tiny filesystem the rescan itself still finishes
-(presumably because it is done within a single commit); on the real one 
-(~700 GiB,
-~80 subvolumes) it is cancelled at the first transaction commit every
-time, as described above.
-
-Possible fixes
---------------
-- In btrfs_remove_qgroup(), do not treat a positive return of
-   __del_qgroup_relation() as an error (the qgroups are already flagged
-   inconsistent), and tolerate -ENOENT for a relation that no longer
-   exists; or
-- remove the relations before deleting the INFO/LIMIT items, so that a
-   failure leaves the qgroup intact instead of half-deleted.
-
-Workaround
-----------
-Destroy the qgroup by hand ('btrfs qgroup destroy 0/<id>', ignoring
-ENOENT) or remount; the stale qgroups can be found by comparing
-/sys/fs/btrfs/<uuid>/qgroups/0_* with 'btrfs subvolume list -a'.
-
-Thanks,
-Carl Ahring
-
-
-
----8<--- btrfs-qgroup-repro.sh ---8<---
-#!/usr/bin/env bash
-# Reproducer for a half-removed qgroup: deleting a snapshot whose level-0
-# qgroup is a member of a parent qgroup while qgroup accounting is off
-# (inconsistent after a snapshot inherit that needs a rescan).
-# Works on a throwaway loop device, touches nothing else. Needs root.
-set -eu
-
-img=$(mktemp /tmp/qg-repro.XXXXXX.img)
-mnt=$(mktemp -d /tmp/qg-repro.XXXXXX)
-truncate -s 2G "$img"
-dev=$(losetup -f --show "$img")
-cleanup() { umount "$mnt" 2>/dev/null || true; losetup -d "$dev"; rm -f 
-"$img"; rmdir "$mnt"; }
-trap cleanup EXIT
-
-mkfs.btrfs -q -f "$dev"
-mount "$dev" "$mnt"
-uuid=$(findmnt -no UUID "$mnt")
-q=/sys/fs/btrfs/$uuid/qgroups
-step() { printf '\n== %s\n' "$1"; }
-
-step "setup: subvolume a, snapshot s created into parent qgroup 1/100"
-btrfs quota enable "$mnt"
-btrfs subvolume create "$mnt/a" >/dev/null
-dd if=/dev/urandom of="$mnt/a/f" bs=1M count=64 status=none
-sync
-btrfs quota rescan -w "$mnt" >/dev/null
-btrfs qgroup create 1/100 "$mnt"
-# What snapper does with QGROUP=1/100. a is not in 1/100, so the kernel
-# cannot inherit quickly and calls qgroup_mark_inconsistent() ("qgroup
-# inherit needs a rescan"), which also sets NO_ACCOUNTING: from now on the
-# numbers of s stay frozen at rfer = 64 MiB, excl = 16 KiB.
-btrfs subvolume snapshot -i 1/100 "$mnt/a" "$mnt/s" >/dev/null
-sync
-sid=$(btrfs inspect-internal rootid "$mnt/s")
-echo "snapshot s = 0/$sid, inconsistent = $(cat "$q/inconsistent")"
-dmesg | grep -i 'btrfs' | tail -1
-btrfs qgroup show -pc "$mnt"
-
-step "delete s and wait until it is dropped"
-btrfs subvolume delete "$mnt/s" >/dev/null
-btrfs subvolume sync "$mnt"
-sleep 2   # btrfs_qgroup_cleanup_dropped_subvolume() runs right after 
-the drop
-sync
-echo "0/$sid in sysfs (in memory):  $([ -e "$q/0_$sid" ] && echo yes || 
-echo no)"
-echo "0/$sid in quota tree (on disk): $(btrfs qgroup show "$mnt" 
-2>/dev/null | awk '{print $1}' | grep -qx "0/$sid" && echo yes || echo no)"
-
-step "rescan"
-start=$(date +%s)
-btrfs quota rescan -w "$mnt" || true
-echo "returned after $(( $(date +%s) - start ))s, inconsistent = $(cat 
-"$q/inconsistent")"
-dmesg | grep -i 'btrfs' | tail -4
-
-step "destroy 0/$sid by hand, rescan again"
-btrfs qgroup destroy "0/$sid" "$mnt" || true
-echo "0/$sid in sysfs: $([ -e "$q/0_$sid" ] && echo yes || echo no)"
-btrfs quota rescan -w "$mnt" || true
-echo "inconsistent = $(cat "$q/inconsistent")"
-dmesg | grep -i 'btrfs' | tail -2
+> ---
+>  fs/btrfs/zoned.c | 8 +++++---
+>  1 file changed, 5 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index eefc283dfed0..dbb3ce626dba 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -2024,10 +2024,12 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
+>         if (!ret) {
+>                 cache->meta_write_pointer = cache->alloc_offset + cache->start;
+>                 if (test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags)) {
+> -                       btrfs_get_block_group(cache);
+>                         spin_lock(&fs_info->zone_active_bgs_lock);
+> -                       list_add_tail(&cache->active_bg_list,
+> -                                     &fs_info->zone_active_bgs);
+> +                       if (list_empty(&cache->active_bg_list)) {
+> +                               btrfs_get_block_group(cache);
+> +                               list_add_tail(&cache->active_bg_list,
+> +                                             &fs_info->zone_active_bgs);
+> +                       }
+>                         spin_unlock(&fs_info->zone_active_bgs_lock);
+>                 }
+>         } else {
+> --
+> 2.55.0
+>
+>

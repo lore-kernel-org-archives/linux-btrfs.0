@@ -1,93 +1,191 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8F494ABBB2
-	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 08:59:38 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 426E84ABBB2
+	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 09:03:07 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790845180; cv=none; b=iicmNNEs6yJf/6q0Yo0o7x8IvI1n3OrrRG2s4kNGbIXF0v2VrsUoQPxY+Av2PXRyjkiBEjUwggbqvpUYGmElnguxSOKA//p73/Xld0nnZshb/h5mh36O/tNmzvy1OGr+Hb9tIfru2kluUzxqlLmi81NnHaJHv2cfNQr+tOwULWQ=
+	t=1790845390; cv=none; b=JkqqD95BN1TZKLEJzFgdgHNP6N7epuVsrqW3LW4QBSKAjQ/V0/449yrJFiTNUQGG2ZQPRENDg+73SoElMqkCWWTWgwjbalkfFG0G8Gg9sHK2ZSN/IYhaJ8jzbXW66SGAAw4mJmDJEQL/2TckM4yE7t9HQJoX0h/h1Ul8fHc7bLc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790845180; c=relaxed/simple;
-	bh=joqA6yky6MA/PGDPDZl1W+wqvipr6E7HW6XyufOaV2o=;
+	s=arc-20240116; t=1790845390; c=relaxed/simple;
+	bh=WIxDIG4TyiPEF8cCXYtoM5quoKhAafLriJwrav1T4ao=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=XMGg7e32XW9A/k2rh7am0dlYo5auncMGWTbY1E76u/9kIFYrnzSiB7PHIfb8drzqZa95TH9eLiWG/fdfclGw1bA5bBRyFE+Mp8eBGrQWX6yO3a/3Ui1uJVAs0uLb/wyOzjqMEtP2IbCaZo07WixeBBg+bdh3aI5V2dhfP0xNNkU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Fi3nozpY; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=KXGZtb2KB+xuJWBo+l8eTqGqZOtcBC6djpZ6WpDX9j5SiBMqMathIM2/UqCF/h5YLKLKWFxSrAdMK3IBxYRYFAZn5NJ13Dkm+Za5odxtZgShjqfWS+IIvOLnDlv2QSiL3kJgotNhPOkmYssaJnItyxCBOiur5EktqC/lWPUeNn8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=EHgVpZYH; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Fi3nozpY"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 807E51F00898
-	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 08:59:38 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="EHgVpZYH"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DB85A1F000FF
+	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 09:03:07 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790845178;
-	bh=dbKDkO5sc2blN7nLolaRttIamhXgI567L5jAEFuc/mY=;
+	s=k20260515; t=1790845387;
+	bh=6ZiS/EF6u2m2ExrKmxU/pR7BGQvwAGmRySaGgDNgJ+c=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=Fi3nozpYsQ8S7ptobe1ouFHqecw8qcgfFhHxn13B56V7UqQ2RbjtYUYRg2E2iaBP3
-	 LW7R70CiHIa9PxJYMkjMw9DdnpLqEm+U7U9l3ejbqeTc1fQwJuo9KSX7oFD5583Bl0
-	 aWVYzAUu6FDU/+AhtOJ/7KcP3vqGl8/y3++gmu5dDLrCHgulwNYV6HUgKTLdxlAm6w
-	 OGaT7/QnMum9IvLmmvUW5zzp8yBJFTK+H4E6+EBqCASpd41xutdaBxSldRHaz+8+Hh
-	 XzH8jpILFX21jpJyVIvYCNVoYG1oXs04o3ylMavIfinjfsNiaNVpYc471iH0ZSYdMP
-	 EhgKC96dOW2xQ==
-Received: by mail-vs2-f36.google.com with SMTP id ada2fe7eead31-7bf43e81472so403993137.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2026 01:59:38 -0700 (PDT)
-X-Gm-Message-State: AFq9FYIWy16gMW2qzF0p2GvH9GCIl70xD2ZJov1u2pxMEwWDnvDAs2ao
-	KDKLbKtksuiJhL53zARb97mYyttC6UTzkiHzaZEmyOYpyF1qEJnEMziPxBRO8KI005sC7YFNGot
-	Aj7eEXHlBF+pr6r+rD+sKl1919NR0H5I=
-X-Received: by 2002:a05:6102:390d:b0:7a7:ad9f:53c4 with SMTP id
- ada2fe7eead31-7be72cb40e8mr1111057137.15.1790845177700; Thu, 01 Oct 2026
- 01:59:37 -0700 (PDT)
+	b=EHgVpZYHFBnAkvDunaxwG233mppGdtvve9m0uVEWTkq8xIN/QXXcwWWpFUr1B73bj
+	 RAAeWlfeen32LO6VVVZ58vFt0+J+Eyn4y1FAj0jJIwtCJ/AhyFnJ/CZtRNQBDDiIjh
+	 rSpcXZbNCSpYqIJA0xUKfB1jRHKHFQnod9FBpoxgEKAQMV0VQgGRTVLsNFJnn1K6d/
+	 xDSXOsh0xrfPhmzSS8OzhHHLhLVQMN4a5xFbE51/CDHGmI+44DngaKda0skghRcueJ
+	 6HNJlgCi8KSzCr5CeXkOwF8HMkCdTaXhufNzPVXKvmugvrNGF6pL9FGWnOtAYRYgDn
+	 Ho7M4pMWPrBtw==
+Received: by mail-vs2-f36.google.com with SMTP id ada2fe7eead31-7bf5b0e3d13so604106137.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2026 02:03:07 -0700 (PDT)
+X-Gm-Message-State: AFq9FYITjDeWNEhJ6m+GXwO5k+RmJWOzuRIA09Vme92VmZWPdiuTPCBf
+	7v8Np0BTG5TdAm4fmCNHfnIBUEP46BSw1OQumX4Re1xyPC+k2ftZVZofc5ZgkCmjKwfb8x+8D7b
+	NFnIjpvx3E/sd6cgKmqdmZO91UblXccc=
+X-Received: by 2002:a05:6102:c10:b0:7a7:19aa:8a83 with SMTP id
+ ada2fe7eead31-7be73e9aae5mr1261470137.30.1790845387082; Thu, 01 Oct 2026
+ 02:03:07 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1790831600.git.wqu@suse.com>
-In-Reply-To: <cover.1790831600.git.wqu@suse.com>
+References: <20261001041008.39697-1-wqu@suse.com>
+In-Reply-To: <20261001041008.39697-1-wqu@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 1 Oct 2026 09:59:01 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H4bc4K0vy+yFHGHdsOsW88VRFYTy1EGE_GVfJ57M9M3iQ@mail.gmail.com>
-X-Gm-Features: AclHuK-tlL6-pp6pcXW0qCPpjbInA8WPvoCm1MvUqBygQF76U1SP0YlFQDb5ujk
-Message-ID: <CAL3q7H4bc4K0vy+yFHGHdsOsW88VRFYTy1EGE_GVfJ57M9M3iQ@mail.gmail.com>
-Subject: Re: [PATCH 0/3] btrfs: small fixes related to qgroup deletion
+Date: Thu, 1 Oct 2026 10:02:30 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H43RxYEF-Ye5B_Qc1VpiG+L06eP27xcg7gnmvF-_7KagA@mail.gmail.com>
+X-Gm-Features: AclHuK_YyTZlMPPP1pxj257QODloX2gIwyUO-RNVpJY34F1j4suTsrKArk3kZbQ
+Message-ID: <CAL3q7H43RxYEF-Ye5B_Qc1VpiG+L06eP27xcg7gnmvF-_7KagA@mail.gmail.com>
+Subject: Re: [PATCH] fstests: btrfs: add a new test case to verify degraded
+ RMW writes
 To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Oct 1, 2026 at 6:17=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On Thu, Oct 1, 2026 at 5:10=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
 >
-> There is a recent bug report that when deleting a qgroup that is not
-> fully exclusively owned, it can make all future qgroup operations to
-> fail.
+> This is a regression test for a recent reported bug.
 >
-> It turns out to be a problem handling "ret > 0" cases when deleting a
-> qgroup.
-> The first patch is the root fix.
+> The test workload is pretty straightforward:
 >
-> The seconds patch is to improve the error reporting of
-> quick_update_accounting().
+> - Create a 4 disks RAID5 or RAID6 btrfs
 >
-> Finally there is a pre-existing problem exposed by that "ret > 0"
-> handling, that if we use btrfs_remove_qgroup() on a qgroup that only
-> exists in the rb-tree, it will return -ENOENT meanwhile still deletes
-> the in-memory qgroup.
+> - Destroy one disk and mount the btrfs degraded
 >
-> Fix that -ENOENT leak in the last patch.
+> - Use fio to do a workload meeting all the following conditions
+>   * Triggering a RMW write
+>     This is done by using buffered write with 8 4K writes.
+>     The total write will not fulfill a full stripe, thus it will
+>     always go through RMW.
 >
-> Qu Wenruo (3):
->   btrfs: qgroup: do not treat "ret > 0" as error when deleting a qgroup
->   btrfs: qgroup: use qgroup_mark_inconsistent() in
->     quick_update_accounting()
->   btrfs: qgroup: do not leak -ENOENT from btrfs_remove_qgroup()
+>   * Some blocks of the full stripe have csum and some do not
+>     This is done by pre-allocating the target file before testing, so
+>     every full stripe does not have any csum by default.
+>
+>     Then after some writes, there will be checksum for those new writes,
+>     resulting blocks with mixed data checksum.
+>
+>   * Detect RMW failure
+>     This is done through fdatasync.
+>
+> For unpatched kernels, the fio will always fail pretty early, meanwhile
+> patched kernels can finish the full 15 seconds runs on both RAID5 and
+> RAID6 profiles.
+>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  tests/btrfs/357     | 65 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/357.out |  2 ++
+>  2 files changed, 67 insertions(+)
+>  create mode 100755 tests/btrfs/357
+>  create mode 100644 tests/btrfs/357.out
+>
+> diff --git a/tests/btrfs/357 b/tests/btrfs/357
+> new file mode 100755
+> index 00000000..f2c04285
+> --- /dev/null
+> +++ b/tests/btrfs/357
+> @@ -0,0 +1,65 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 357
+> +#
+> +# Make sure on degraded RAID5/6, RMW writes won't return false errors
+> +# when some blocks do not have checksums.
+> +#
+> +. ./common/preamble
+> +
+> +_begin_fstest auto raid volume
+> +
+> +_fixed_by_kernel_commit xxxxxxxxxxxx \
+> +       "btrfs: raid56: do not verify the content if there is no data che=
+cksum"
+> +
+> +_require_command "$WIPEFS_PROG" wipefs
+> +_require_scratch_dev_pool 4
+> +_scratch_dev_pool_get 4
+> +
+> +fio_job_file=3D$tmp.fio
+> +cat > $fio_job_file << EOF
+> +[sync_randwrite]
+> +directory=3D$SCRATCH_MNT
+> +rw=3Drandwrite
+> +filesize=3D512M
+> +bs=3D4K
+> +fdatasync=3D8
+
+There's no need for fdatasync, a regular fsync would trigger the issue.
+On btrfs fdatasync does the same as a regular fsync.
+
+Anyway:
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Looks good, thanks.
+Thanks.
 
->
->  fs/btrfs/qgroup.c | 8 ++++++--
->  1 file changed, 6 insertions(+), 2 deletions(-)
->
+> +time_based
+> +fallocate=3Dposix
+> +runtime=3D15
+> +EOF
+> +
+> +_require_fio "$fio_job_file"
+> +
+> +# The target to remove for degraded mount.
+> +dev2=3D"${SCRATCH_DEV_NAME[1]}"
+> +
+> +workload()
+> +{
+> +       local profile=3D$1
+> +       _scratch_pool_mkfs "-m raid1 -d $profile" >> $seqres.full 2>&1
+> +       $WIPEFS_PROG -fa "$dev2" >> $seqres.full 2>&1
+> +       _scratch_mount -o degraded
+> +
+> +       # The fio job will do fsync after 8 4K writes, which is not enoug=
+h to
+> +       # fill a full stripe and always trigger RMW.
+> +       # And the target file is preallocated, after some writes a full s=
+tripe
+> +       # can have blocks with csum and some blocks without csum.
+> +       #
+> +       # Unpatched kernels will try to verify the checksum even if there=
+ is no
+> +       # csum and fail the RMW, causing fio to fail.
+> +       $FIO_PROG $fio_job_file >> $seqres.full 2>&1
+> +       if [ $? -ne 0 ]; then
+> +               echo "fio failed on degraded $profile"
+> +       fi
+> +       _scratch_unmount
+> +}
+> +
+> +workload raid5
+> +workload raid6
+> +
+> +_scratch_dev_pool_put
+> +echo "Silence is golden"
+> +_exit 0
+> diff --git a/tests/btrfs/357.out b/tests/btrfs/357.out
+> new file mode 100644
+> index 00000000..25875c6d
+> --- /dev/null
+> +++ b/tests/btrfs/357.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 357
+> +Silence is golden
 > --
-> 2.55.0
+> 2.51.2
 >
 >

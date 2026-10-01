@@ -1,66 +1,66 @@
-Received: from mail-ej2-f41.google.com (mail-ej2-f41.google.com [74.125.228.169])
+Received: from mail-wm2-f13.google.com (mail-wm2-f13.google.com [74.125.225.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78CCB3EB819
-	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 09:05:24 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.228.169
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D8AE4AEBE4
+	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 09:08:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.141
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790845525; cv=none; b=PZtD9W59qqClSgreI+GTHvkDMAbW7gCUhrMcA3U2GTS9ZgNYaZn2t4oQvIA4lHa/cnIw0dVZqB2NqUFXB0oZJnpjCssEVFkXBvfPET6JD37ziFD8BLjm2aZmJe5lIqbpPbTkBwjIckzdaAQD7IwLaUPMDTmbWuqi5gAbxyV6I6U=
+	t=1790845699; cv=none; b=H6VtshH+MTbSe4XHQNGRksYWLcAl9LfcSyFk0YDY/51xVEmWrL6lsE1I4hCshQn4yM4iEm9oML4NX/NBaW2D0WmEZBd8gDm65yQ+Ndnz+oJVN7UzPK4dWM9xlTfBUAR9oIJJUjjV1NBCVbxkutdRo16HpyaQxgvZDmh2LpIPwA8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790845525; c=relaxed/simple;
-	bh=fNTh46ner8LWLwW7E2vqLpKQujKaZ/KjqpqK4mdy6J4=;
+	s=arc-20240116; t=1790845699; c=relaxed/simple;
+	bh=+gr9N+0n/YMstjEMHs2cI+npcg1r6rkzSzW3+NtgSBQ=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=XVyeFpXSyPlP3Y8ZzJNBO4m7C/k5niul7MHJhyHvkTrsVCvAFoF+Bgb98/7Xvf7DYcLRh0HOChuYI9DHFPbvUaeEQhfartCGBLyH2yW+axKkUUiky2rp6qtnh8Y59pARguF9FJaUGq0R3oFEiT3++DaY8WHR9lMGMPqKkUHkE78=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=V9UUHaUN; arc=none smtp.client-ip=74.125.228.169
+	 In-Reply-To:Content-Type; b=PRCji3Udwr0TRnMIg7p6X25QkxYxkJ7vBh9FPKruxzypCS9zc9IrJY1NULolTWnfV9UJiCXRE3+MMz0MFC6W4CP2sjxbVbYgMUML2OkAne8rFRtf/djeTER6xOMR3ClBhxO2h3+DTLMhPQ1AeUnyqItVf6BUBq1Z6h8Rm/YftgA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=R3VVPMvr; arc=none smtp.client-ip=74.125.225.141
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="V9UUHaUN"
-Received: by mail-ej2-f41.google.com with SMTP id a640c23a62f3a-c2e0f2c945eso266506366b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2026 02:05:24 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="R3VVPMvr"
+Received: by mail-wm2-f13.google.com with SMTP id 5b1f17b1804b1-49b912d37b6so34934785e9.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2026 02:08:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790845523; x=1791450323; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1790845696; x=1791450496; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=xSuZoWtSZH3B1ewIN5Hf3UN7n5JDVlDW00+TCHIr1Ug=;
-        b=V9UUHaUNQzphLfZrPQzHm5j7RFAsm4L3He1UWdu8zO794lZ9LtA5BlVaPcFEVXWknn
-         7FKHHo5Y6iW9Cr7ymwYTh13DEzIzbQGL6XAwY0ThYi8qNA3jU8GF69XwdvUBbmBttbzb
-         8teAedyYK7R8S2cb4xFH8qQKiBFn/OV5IvaiEx887P01sb7jExsqpTmWk0C5p/7aEVjP
-         HF19IK0xkiCtzvBvHGbRrx4pNX8MwK8AlvkRMvNUxnx5yNLMnqDvcDjvAfeRGGxXl3Zk
-         1tM54UjoP5a89hp3ltm9VGoh+zDr3nfCtE6dDwSxi7EIdVwTdFuW18CywahOMH/RlRfb
-         GAGw==
+        bh=+9cAl0KGK4cnEFgVrPJsbfBt66rTqpNttjVHTgDQgEI=;
+        b=R3VVPMvrd3RUggFC7JsKeB8b4Y3gZIcdezLiG/Toj6jQuk5zZg3Mjyp8GubMaGokd1
+         AI52SZYjOlVAHI5GUW9Z3BCpQKmx9udnb0OOvxpbmd0LRVTLC2PQwmgBCVZHC/aG4zq6
+         LS5DV8sgnfeA8Z06sh1Zf0B+zP4Iqc+SiChXJlBtjAlVlr9YVDQi+eBOLZReQ8j4zKNu
+         /FIIyXP1RXT0copnBRS8LpTBwNSbOV4zkrpVsljXLevWJLZDdlhGD95tF/p5c2Pt9e43
+         E7TOnTsmn8k+30rekUXhR+xC3vYUOMOILoW7NhefVpiN1Uxi1yu7+uFQ19ziFvuSgSee
+         FH0g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790845523; x=1791450323;
+        d=1e100.net; s=20260707; t=1790845696; x=1791450496;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=xSuZoWtSZH3B1ewIN5Hf3UN7n5JDVlDW00+TCHIr1Ug=;
-        b=gQN/NPI0NRxP7FNpT2IK8uImCku2k+1JTTmK3z40vHdORySN3EUCUrN3j9nXREQFSR
-         3T4kfgsmkCBM4LeeBj9xjh3/iPLEHwxrSgZvmOjmIGLMM41fAJaoPZOQ+Zr0Ozbd0b1M
-         RSPy/ICkUo5UqzEgKXGYgMX2kompu3FNduYPAOl4C6zjC15kIRa5QCG2THJcS3bZ+N8H
-         xRF2qbfE+7hSdt7PYhpL5MeFBTHZsh/OQuumlPUNFN/rgypgOiVFDKq+wSI73L7Qzy7g
-         uwa8YxLuTlBwJgYzMXtKRSEVPj/SOz/xQHXfvBnmBDQAmX07HBxvK0gwuzaJ3nZRexdY
-         27VA==
-X-Forwarded-Encrypted: i=1; AKwUvBy962/bl6NI+vSpK05d3C49RWMCUlEYrPqRn0dv3ufd/idqva2qogAKXm82scBqOxr+NDTg58LXfv53Eg==@vger.kernel.org
-X-Gm-Message-State: AFuF++mRUOjkNIEf2hiXObC2s9Nn/tIb/cgY62uGTkBtk7S4gMz/oq7Z
-	jus6DaqxjDb1Zh/l8EGOOoFz/RJ3XlLIXuDT2M+A2I6oixh0HB0JtfnaioZC9aXkFBw=
-X-Gm-Gg: AYBFou1jMo9ZTcA2C1srVLflydQceW+b3lnz6on9FGc/CQGVDgrbuWu7M5m0T0YCaSJ
-	aLdf6L5Nz3l9YEbCdKH9+eS+qnXXAbdmysfbfydCpw/bLJNxCEXpdinkhvt5myFwINC6n2/hUNn
-	0GkYz2GwH/BIfEUvsyGLSCTqozwzM1l/bVpIU31XqoOd23X7xqvFDKiP3NSZYXO3hTWSlK/w0yF
-	R7/1RwkMMq+hirkh821DMFtKPMmhJQN3xVc2gJKrCKlc5fUrMhNQKSrVdvyy9P1dRtXNqGJ3mDD
-	Dte3kgdDWj1gSuX4scV8exW907P2XpBt1BITcd29hqvGpu/tThyDny9Q42hWVOPmxzYVPq0fnLF
-	RvJECXfIwiD6Cd1sCW/6tkCdijpBt3v3lcnM11Q5TBUP4AfT2Ydyto5zV7iyckqDd2Xb6k+Yfx/
-	srd2wepm5O6HCreE8aVbzZvuOyRBR7qoiG1hSzAaVpNxSR/96ogJALZrquLf9QiA==
-X-Received: by 2002:a17:907:e00e:20b0:c2e:2720:8f74 with SMTP id a640c23a62f3a-c2e27209337mr216791266b.28.1790845519849;
-        Thu, 01 Oct 2026 02:05:19 -0700 (PDT)
+        bh=+9cAl0KGK4cnEFgVrPJsbfBt66rTqpNttjVHTgDQgEI=;
+        b=yZ6ZdK3qadh65TYJ/J5/S3opyLZw89eGyjrlRZwFV6jIphAGIzRI82aRaVpRNDpnS0
+         yQ/NzFNfbaaegx7a/E/bh3a3Z7c1XzD7WA1lm2eVUbus0f/PvveRZr8mv7zFD6yuqE9x
+         5NqSvy8IAaqdqf6OpJyoeAIK8Y07LHCR0HRA4Arrq2OuMfgMbchSsa4lUzpVLJOUoH0p
+         42YtEk02R7Ojg9a80br3NfymT3BmCCKKFgHJngQ6F86x0Sq311I+lg1bvomd7XJIssx0
+         tILjHPIUmzOAkF5wyW/2Q2iG+Q8tUy5RxReDCVbIszxT5P2KEp4lrRyQZo8a0hFylHlU
+         dhfA==
+X-Forwarded-Encrypted: i=1; AKwUvBzRRjGAuyPCuaCI7S6cjTWttMxy/gth4UwyR1PbDEO7OvE401etUn96zjlCgeSo6z1stIyY+chb3+0YzQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++lKoqc6DXWonDJ93oVEHXAKTEJu5Q/+Py2FEe/ajOmk7wPJdM7/
+	1gaE8Ot2HZFtlCRdofyHDG+PvlvfYCVeGKM5JFWiwW5ENee3/vsSzTWawEVddTl+krg=
+X-Gm-Gg: AYBFou2Arv9L4GVk+iDLT4K+NDGk21URAXCIbkIeJmw1q925yjtkOtQvZp7M3wxsLhW
+	dfR7/eWzhcL8mVCqr1g7XbeWHjOEbBJ9dmQbGYWTurzxvuKS9EReNoFx5l4FoB6U+6ACrcBuy/s
+	88wmbQJMhNR82xxADFnqBjZWSdUys3gwSLoiY7Hn6Y+5vStsL/sO9IlFEf9q7hXZZ42FKkWH08C
+	hEbc4N4lt0NpstJMLKvOmqtELFHwZnJTESo0Xdh9gPyBiJhvhAW4yla2zmKZlucsoQrrOQdlkjv
+	ubDdozbNKJFxHo1SOnyYUXyoU6Cw6oNGRfwTB0MlE9gyLxYUMaPD6fk6nlfG3ZsrONLeLcgf7Q5
+	8K3jwwzra+tgyQFulRsGIrmDm4HUV5ExY/IWslSzgbfK/PZch+OV3C2iF/A/BOCSvTRO+heZEvg
+	vtURAm8CQFEzyxZtXtMg1T0sIXDrcqwCguwnZJT3iNwF1CLiB7+Uu9O29p7XBTzw==
+X-Received: by 2002:a05:600c:628b:b0:49f:fe7e:dc61 with SMTP id 5b1f17b1804b1-4a01ab4e424mr65524745e9.0.1790845695604;
+        Thu, 01 Oct 2026 02:08:15 -0700 (PDT)
 Received: from [10.86.128.19] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-88815996973sm784457b3a.6.2026.10.01.02.05.17
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a4f43720f6sm3419232a91.3.2026.10.01.02.08.13
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 01 Oct 2026 02:05:18 -0700 (PDT)
-Message-ID: <7f63da46-e755-458c-b846-e5d555eb5169@suse.com>
-Date: Thu, 1 Oct 2026 18:35:15 +0930
+        Thu, 01 Oct 2026 02:08:14 -0700 (PDT)
+Message-ID: <95cca09f-70ca-444a-b8c9-a1f6af81fac4@suse.com>
+Date: Thu, 1 Oct 2026 18:38:11 +0930
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,10 +68,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: remove unnecessary forward struct declarations in
- volumes.h
+Subject: Re: [PATCH 0/3] btrfs: remove unused arguments and code in
+ block-rsv.c
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <0be3914031faf9bf34dd86daf884e42f7352d848.1790785074.git.fdmanana@suse.com>
+References: <cover.1790783086.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,41 +98,37 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <0be3914031faf9bf34dd86daf884e42f7352d848.1790785074.git.fdmanana@suse.com>
+In-Reply-To: <cover.1790783086.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/10/1 01:48, fdmanana@kernel.org 写道:
+在 2026/10/1 01:17, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> There is no need to forward declare the structures as their definitions
-> are brought in by the include of the linux/blkdev.h and fs.h files.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Remove unnecessary code and arguments from a few functions in block-rsv.c.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
 
-> ---
->   fs/btrfs/volumes.h | 3 ---
->   1 file changed, 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 337d7007d9e2..6eddda239221 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -24,9 +24,6 @@
->   #include "extent-io-tree.h"
->   #include "fs.h"
->   
-> -struct block_device;
-> -struct bdev_handle;
-> -struct btrfs_fs_info;
->   struct btrfs_block_group;
->   struct btrfs_trans_handle;
->   struct btrfs_transaction;
+> Filipe Manana (3):
+>    btrfs: remove fs_info argument from btrfs_block_rsv_add()
+>    btrfs: remove fs_info argument from btrfs_block_rsv_refill()
+>    btrfs: remove pointless qgroup assignment in block_rsv_release_bytes()
+> 
+>   fs/btrfs/block-group.c   |  5 ++---
+>   fs/btrfs/block-rsv.c     | 12 +++---------
+>   fs/btrfs/block-rsv.h     |  6 ++----
+>   fs/btrfs/delayed-inode.c |  3 +--
+>   fs/btrfs/inode.c         |  4 ++--
+>   fs/btrfs/props.c         |  3 +--
+>   fs/btrfs/relocation.c    | 13 +++++--------
+>   fs/btrfs/root-tree.c     |  3 +--
+>   fs/btrfs/transaction.c   |  3 +--
+>   9 files changed, 18 insertions(+), 34 deletions(-)
+> 
 

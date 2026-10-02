@@ -1,240 +1,126 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from out198-156.us.a.mail.aliyun.com (out198-156.us.a.mail.aliyun.com [47.90.198.156])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D43484611E5;
-	Fri,  2 Oct 2026 12:00:37 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CFC44DEC2B
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 15:54:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=47.90.198.156
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790942439; cv=none; b=AMbTnbSegyJQYXgudYTkNgCorcALsrM5UfLC32xu/mnsaxQpvV9J6IwW0xl5vKNz+DTmZeGcO23bCIJn8ug5IFSncmMdmn/IeXLTI7hCp/Ot5QE/0CGzRj4nNQtdmJZ6fPRI7dj1PRI56s7IPYA2JGRKBy1XCmrvsdOMHC3n/ps=
+	t=1790956494; cv=none; b=Y8FBCx3qoaRNWt5czbJ1CR2isdkTNHVo2GaaANh07M6+63dZV2Jn0E1RaKl44M3OAbz+W73fHLRAQZev5/nzm3QxNe/D3dn989VZmK92cg88rmevjjO9CilinUf3NFuNN8U+uIJZtnuWbqC4JVvPifDVby8Dmdzgw/3scBuHJTs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790942439; c=relaxed/simple;
-	bh=u996lQyz5UZnZAec+cXTXl9Vfm1TXApv6wRmZvZYM/A=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=ORyfZdTCVyYuNAEuGuJCG4NrwYg5Muz44/IJulFg/2gSZTiNc7m2zYkqezrLIrjKIWoo1PX14Pss0IR6HV8CImhgo+DwZ/0aWlhgga1vCnfkfbB47T93yTMtU4fN66Hde4vG8uPlPMXfzjr1W1Ep5RCRXIp62t78xC1RhmiRiOQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=hyTcTRHj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=YCsCT+0Z; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="hyTcTRHj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="YCsCT+0Z"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 6DAB521F22;
-	Fri,  2 Oct 2026 12:00:27 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790942431; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=0rhHSsbNL6T96kcHqwKPYX2a7rnoikMN51Br4NbNdo8=;
-	b=hyTcTRHjjw6AEQMkNDzkurC4X6TKCThfydLirFFyBtr/INHX9l8bPlxfxb9jLDgDQ2FZ44
-	+r7rU0Jl6YFgwCV43dRpcEp5CCWd9B8rLy0vJGvhOmXOvEgmNKM2vWEY+lGdQDcHIPRnMN
-	fDf+7t11vgUTpJ6GmEsKMx/eRVPEvP4=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=YCsCT+0Z
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1790942427; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=0rhHSsbNL6T96kcHqwKPYX2a7rnoikMN51Br4NbNdo8=;
-	b=YCsCT+0ZWFl7yPRbzjErNtvI3cmaZQoZA+JyDC/U3NKLK0MNnBkoliNt3mzwcFMIumzu5u
-	FlYZ5lKe5ueHVVKUOZMc0Jvpr21K/0EfuZZz4yZmyjV7k9f5+6FHO3U82lTNkYDsXYz2S3
-	dmHeWpa7JRiu5qfO9EIcrMXJsunzzRg=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EC24013C6C;
-	Fri,  2 Oct 2026 12:00:25 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id riWUEdmcv2qkIAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Fri, 02 Oct 2026 12:00:25 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	fstests@vger.kernel.org
-Subject: [PATCH] fstests: btrfs: add a test case for deleting partially owned qgroup
-Date: Fri,  2 Oct 2026 21:29:59 +0930
-Message-ID: <20261002115959.7011-1-wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
+	s=arc-20240116; t=1790956494; c=relaxed/simple;
+	bh=H3+BgUWUi/bYzbJ4v9X6cYlKbCYEmIrkiTuHKeCz/0w=;
+	h=Date:From:To:Subject:Cc:In-Reply-To:References:Message-Id:
+	 MIME-Version:Content-Type; b=uGvrkZW4DGNmRZsS1UG2y2FQ/KAyHhhcgCTS/Qt4hxyqclsunBvhXoNKCVeQwTu6ZiO2SWxohX2KwrXYfLXyMQqrd/B1ePe7zfyehw2BJBqAtvDsS14/BRRku709TXgSFP/ajN5PuDbpht8PJQtFfcgjjegfMC9U0V6aAIKorTI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=e16-tech.com; spf=pass smtp.mailfrom=e16-tech.com; arc=none smtp.client-ip=47.90.198.156
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=e16-tech.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=e16-tech.com
+X-Alimail-AntiSpam:AC=CONTINUE;BC=0.04443379|-1;CH=green;DM=|CONTINUE|false|;DS=CONTINUE|ham_system_inform|0.580679-0.000214871-0.419106;FP=1205038819756476153|0|0|0|0|-1|-1|-1;HT=maildocker-contentspam033037021217;MF=wangyugui@e16-tech.com;NM=1;PH=DS;RN=3;RT=3;SR=0;TI=SMTPD_---.jThF4DX_1790955534;
+Received: from 192.168.2.112(mailfrom:wangyugui@e16-tech.com fp:SMTPD_---.jThF4DX_1790955534 cluster:ay29)
+          by smtp.aliyun-inc.com;
+          Fri, 02 Oct 2026 23:38:55 +0800
+Date: Fri, 02 Oct 2026 23:38:57 +0800
+From: Wang Yugui <wangyugui@e16-tech.com>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: Re: [PATCH v2 1/4] btrfs: zoned: only change active zone counter on successful (de)activation
+Cc: linux-btrfs@vger.kernel.org,
+ Naohiro Aota <naohiro.aota@wdc.com>
+In-Reply-To: <20261002073715.2191177-2-johannes.thumshirn@wdc.com>
+References: <20261002073715.2191177-1-johannes.thumshirn@wdc.com> <20261002073715.2191177-2-johannes.thumshirn@wdc.com>
+Message-Id: <20261002233856.C191.409509F4@e16-tech.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 6DAB521F22
-X-Rspamd-Action: no action
-X-Spamd-Result: default: False [-3.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.19)[-0.928];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:mid,suse.com:email,suse.com:dkim];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Flag: NO
-X-Spam-Score: -3.00
-X-Spam-Level: 
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+X-Mailer: Becky! ver. 2.83.03 [en]
 
-There is a bug report that, when deleting a partially owned qgroup,
-btrfs will delete the on-disk items but leave the in-memory rb-tree and
-sysfs entries untouched.
+Hi,
 
-Introduce a regression test for it, verifying the behavior by:
+> btrfs_zone_activate() unconditionally decrements the reserved_active_zones
+> counter regardless if btrfs_dev_set_active_zone() fails to set the zone
+> active, i.e. because it raced with another call that already set the bit
+> in the bitmask, or not.
+> 
+> This can lead to a double decrement of the counter in case the bit has
+> already been set.
+> 
+> Only decrement the counter *iff* btrfs_dev_set_active_zone() successfully
+> marked the zone in the bitmap.
+> 
+> Mirror this behaviour when clearing the bit again.
+> 
+> Fixes: a7e1ac7bdc5a ("btrfs: zoned: reserve zones for an active metadata/system block group")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/zoned.c | 27 +++++++++++++++++++--------
+>  1 file changed, 19 insertions(+), 8 deletions(-)
+> 
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 9f562cc34e38..d68b91008e76 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -1126,11 +1126,13 @@ u64 btrfs_find_allocatable_zones(struct btrfs_device *device, u64 hole_start,
+>  	return pos;
+>  }
+>  
+> -static bool btrfs_dev_set_active_zone(struct btrfs_device *device, u64 pos)
+> +static bool btrfs_dev_set_active_zone(struct btrfs_device *device, u64 pos, bool *new)
+>  {
+>  	struct btrfs_zoned_device_info *zone_info = device->zone_info;
+>  	unsigned int zno = (pos >> zone_info->zone_size_shift);
+>  
+> +	*new = false;
+> +
+>  	/* We can use any number of zones */
+>  	if (zone_info->max_active_zones == 0)
+>  		return true;
+> @@ -1142,23 +1144,30 @@ static bool btrfs_dev_set_active_zone(struct btrfs_device *device, u64 pos)
+>  		if (test_and_set_bit(zno, zone_info->active_zones)) {
+>  			/* Someone already set the bit */
+>  			atomic_inc(&zone_info->active_zones_left);
+> +		} else {
+> +			*new = true;
+>  		}
+>  	}
+>  
+>  	return true;
+>  }
+>  
+> -static void btrfs_dev_clear_active_zone(struct btrfs_device *device, u64 pos)
+> +static bool btrfs_dev_clear_active_zone(struct btrfs_device *device, u64 pos)
+>  {
+>  	struct btrfs_zoned_device_info *zone_info = device->zone_info;
+>  	unsigned int zno = (pos >> zone_info->zone_size_shift);
+>  
+> +
+>  	/* We can use any number of zones */
+>  	if (zone_info->max_active_zones == 0)
+> -		return;
+> +		return false;
+>  
+> -	if (test_and_clear_bit(zno, zone_info->active_zones))
+> +	if (test_and_clear_bit(zno, zone_info->active_zones)) {
+>  		atomic_inc(&zone_info->active_zones_left);
+> +		return true;
+> +	}
+> +
+> +	return false;
+>  }
+>  
+>  int btrfs_reset_device_zone(struct btrfs_device *device, u64 physical,
+> @@ -2411,6 +2420,7 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+>  	u64 physical;
+>  	const bool is_data = (block_group->flags & BTRFS_BLOCK_GROUP_DATA);
+>  	bool ret;
+> +	bool new;
 
-- Create a btrfs with a specific qgroup layout
+'new' is not a good var name because it is a keyword in C++/Java.
 
-              2/1
-               |
-              1/1
-               |
-   0/subv1  0/snap1
+'is_new' just like above 'is_data'  maybe a better var name.
 
-   All involved qgroups will have "1M + nodesize" as reference number,
-   and "nodesize" as exclusive number.
-
-   For the remaining example I'll use 16K as nodesize.
-
-- Remove the qgroup relationship between 0/snap1 and 1/1
-  This will mark qgroup inconsistent, but leave the old numbers.
-
-              2/1 (rfer: 1M+16K, excl: 16K)
-               |
-              1/1 (rfer: 1M+16K, excl: 16K)
-
-- Remove qgroup 1/1
-  Which will automatically remove the relationship between 1/1 and 2/1.
-
-  And since qgroup 1/1 is not fully owned (rfer > excl), this will mark
-  qgroup inconsistent and return 1.
-
-  For unpatched kernels, that positive return value is treated as an
-  error, causing on-disk metadata items removed but still leave
-  the rb-tree and sysfs entries untouched.
-
-- Check if /sys/fs/btrfs/<fsid>/qgroups/1_1/ still exists
-  If exists, the kernel is not yet patched.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/btrfs/358     | 79 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/358.out |  2 ++
- 2 files changed, 81 insertions(+)
- create mode 100755 tests/btrfs/358
- create mode 100644 tests/btrfs/358.out
-
-diff --git a/tests/btrfs/358 b/tests/btrfs/358
-new file mode 100755
-index 00000000..642b0808
---- /dev/null
-+++ b/tests/btrfs/358
-@@ -0,0 +1,79 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 358
-+#
-+# Verify that when deleting a partially owned qgroup (excl != rfer),
-+# the sysfs and in-memory rb-tree entries are also properly removed.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick qgroup
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: qgroup: do not treat \"ret > 0\" as error when deleting a qgroup"
-+
-+_require_btrfs_sysfs_fsid
-+_require_btrfs_command qgroup remove --no-rescan
-+_require_scratch
-+_require_btrfs_qgroup_report
-+
-+# This implies making a btrfs and enables full qgroup mode.
-+_require_scratch_qgroup
-+_scratch_mount
-+
-+fsid=$(_btrfs_get_fsid "$SCRATCH_MNT")
-+
-+# We require /sys/fs/btrfs/<fsid>/qgroups/ directory
-+if [ ! -d "/sys/fs/btrfs/$fsid/qgroups/0_5" ]; then
-+	_scratch_unmount
-+	_notrun "No sysfs qgroups directory"
-+fi
-+
-+_btrfs subvolume create "$SCRATCH_MNT/subv1"
-+_pwrite_byte 0x00 0 1M "$SCRATCH_MNT/subv1/data1" &> /dev/null
-+_btrfs subvolume snapshot "$SCRATCH_MNT/subv1" "$SCRATCH_MNT/snap1"
-+snap1id=$(_btrfs_get_subvolid $SCRATCH_MNT snap1)
-+
-+# Create the following qgroup layout and rescan.
-+#                    2/1
-+#                     |
-+#                    1/1
-+#                     |
-+#  0/subv1           0/snap1
-+#
-+# Since snap1 is a snapshot of subv1, both will have 1M shared data
-+# plus nodesize as exclusive metadata.
-+# This means neither of them is fully exclusive (rfer > excl).
-+_btrfs qgroup create 1/1 "$SCRATCH_MNT"
-+_btrfs qgroup create 2/1 "$SCRATCH_MNT"
-+_btrfs qgroup assign 1/1 2/1 "$SCRATCH_MNT"
-+_btrfs qgroup assign 0/$snap1id 1/1 "$SCRATCH_MNT"
-+
-+# Do a rescan, as the above assign will mark the qgroup inconsistent.
-+_btrfs quota rescan -w "$SCRATCH_MNT"
-+
-+# Now remove the qgroup relationship between 0/snap1 and 1/1
-+# This will mark qgroup inconsistent but we do not want to trigger a rescan
-+# automatically.
-+# This will leave the old numbers (rfer > excl) for 1/1.
-+_btrfs qgroup remove --no-rescan "0/$snap1id" 1/1 "$SCRATCH_MNT"
-+
-+# Now delete qgroup 1/1, which will automatically remove the relationship
-+# between 1/1 and 2/1.
-+# Since qgroup 1/1 still has stale values where rfer doesn't match excl,
-+# the kernel marks the qgroups inconsistent and returns 1 to indicate a
-+# rescan is needed.
-+_btrfs qgroup destroy 1/1 "$SCRATCH_MNT"
-+
-+# For unpatched kernels, that positive return value is treated as an error,
-+# causing btrfs to delete on-disk items for qgroup 1/1, but leaving the
-+# in-memory rb-tree and sysfs entries untouched.
-+# Check if the sysfs qgroup directory still has a directory for qgroup 1/1.
-+if [ -d "/sys/fs/btrfs/$fsid/qgroups/1_1" ]; then
-+	echo "Qgroup 1/1 still exists in sysfs qgroups directory"
-+fi
-+
-+echo "Silence is golden"
-+_scratch_unmount
-+_exit 0
-diff --git a/tests/btrfs/358.out b/tests/btrfs/358.out
-new file mode 100644
-index 00000000..8bcf2699
---- /dev/null
-+++ b/tests/btrfs/358.out
-@@ -0,0 +1,2 @@
-+QA output created by 358
-+Silence is golden
--- 
-2.51.2
+Best  Regards
+Wang Yugui
 

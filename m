@@ -1,174 +1,264 @@
-Received: from sg-3-41.ptr.tlmpb.com (sg-3-41.ptr.tlmpb.com [101.45.255.41])
+Received: from va-2-16.ptr.blmpb.com (va-2-16.ptr.blmpb.com [209.127.231.16])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53BB83A6B6F
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 05:43:44 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FF753E49C3
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 06:17:41 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.16
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790919827; cv=none; b=bnPiwD+wbjisWVtIG0t3TXwQSKwvqQrR0S4eo4gw4nyglAVEz9aTg+CSuKahsoTltzK+DPV8+P1fj7fPq7VKtGD24f6XLxSjAVAsiHr+XUej7I2zcUX2djwZ/Z5hB/qMqRS7G/xjowxGg06+HMT07HcmHPIm+BgiURzNaCqgvpI=
+	t=1790921870; cv=none; b=Z3bbjeeMhOk/lMnG/zRCv+Pr3g8QqVEuOya/DIc1I8Fx21aPUhIh4xEJTuRQPyh1B9xDr3FfbLS6rnp0FWBj8O0nNh26bYZy/XQWUZ3/0oal2JDRAmXJ44Mons9oOAI2B0R2w4N6JN3pFi6ZNof8rv0jLayKJgZF4CnnYduHxGA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790919827; c=relaxed/simple;
-	bh=3sgJo4lO6+sqNr+5GQ6q0WZdBmSh/xFcsv44Z3tfIqc=;
-	h=Subject:Date:Mime-Version:To:Message-Id:References:In-Reply-To:Cc:
-	 From:Content-Type; b=l2lH/Rhhn8JMpQSSpKq/BeF4qt5CWDljFDgdytlkeZMYEPBM6JOB5qxymFWXzY5sZAeUslHWnNa+A2wELXvV99U2vc62VZ1LRQRnkZH2s2iujQDTGYmv6FEECzJNbMlFBfq66pdFCNFrSsupZ4hJ8z98rI03idPdLAEF2uNrrXc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=olWl+1tg; arc=none smtp.client-ip=101.45.255.41
+	s=arc-20240116; t=1790921870; c=relaxed/simple;
+	bh=bNzZyY/mdJEHGL3pQmuyRoCYkEy28nIFyR0ZudzWqwA=;
+	h=Cc:To:From:Date:Mime-Version:Content-Type:Message-Id:References:
+	 Subject:In-Reply-To; b=Y1JpayEZzV4hWGzdYFbsshNuD6Akr2GKG3up2sfdRAjRUB7M8OwHOXxI4g33P38I4EUMF7Tkiwk6VZUc2HxcpFhc9iFZBwZ4uNBY0Ofkz1mROpzhKLkWof/HLgXi+H+dyfKkLW8XEse5ykop/GBtAYgYBKk1F1Ed2pkCriZisBc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=UvudIY4v; arc=none smtp.client-ip=209.127.231.16
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="olWl+1tg"
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="UvudIY4v"
 DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790919771;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790920997;
   h=from:subject:mime-version:from:date:message-id:subject:to:cc:
  reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=MSV2vzTXjAvuG3Rr4uxTEVVQfQzdDjvnZCgZSVbhgNM=;
- b=olWl+1tgXKWVTJsfxh1ZADQrdiDbwEoLMINCbZWRAPmscdiY/ReR5gELOVg8bZYDzN92yq
- NGWSfh+4pJBZPhLcMoyWBR1IqIBblKleZu+MRBbfxJv/GnxPKSmlfv+2adXL+HHuBqu9vg
- qcde8gU352wTMWV9Df58AalN4t1uEvNm2xx6wpZ5oMLaqrNgiSzWZxMdCrOJf1nrwVJy40
- KVjKqXBgkA4QNT7O+mgmyRmLINripM22lipOfCLkphjc0zGIn317Bp31VAggBfwwrE08i4
- rZcgOrKl480HkPBi1IBAVj86y0P1KTwWzedcBhZdzDxhVS6qwzQTy9pPu/CtNw==
-Received: from [192.168.8.64] ([183.34.167.12]) by smtp.larksuite.com with ESMTPS; Fri, 02 Oct 2026 05:42:50 +0000
-X-Lms-Return-Path: <lba+26abf445b+0b30b3+vger.kernel.org+zhudongjiang@fygo.io>
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/4] btrfs: zoned: track only sequential zones as active
-Date: Fri, 2 Oct 2026 13:42:45 +0800
+ bh=V49Cz38MwVfWSQRnamq5l6kFNmL4wvqHOvDx/5YWnjg=;
+ b=UvudIY4vUCXVtZSD+WLP297i52u0XFvY/+py6kJRJ1kli4FhcyojCXgHfhsultitFn3uy+
+ yReW18K3BoPx4rXOFJbpO+7fmJT8Uif8PFAbNs+F/4kDSm5C4oZK7nItV2mABCsCIHEhbw
+ hT+vGNS1JyIHlIYGIn+659eiqvXsEIqdmbgI5ueLK6cT1YrenFtC8CwAXn8lmDWuM+JTcO
+ glGc+6IYTDiO78vJa8+12CA74I7GfanrkgygL+xmU9GT0rx420VuNvLQT/K1DzWNgkmOrm
+ HlEN3DeMHqCAKLAWjbTOkvZv/sBT6lUBL+UwjyJ/7xRZkt9lc5t4GGszG+CDAg==
+Cc: <johannes.thumshirn@wdc.com>
+X-Lms-Return-Path: <lba+26abf4924+79a4c4+vger.kernel.org+zhudongjiang@fygo.io>
+Received: from [192.168.8.64] ([183.34.167.12]) by smtp.larksuite.com with ESMTPS; Fri, 02 Oct 2026 06:03:15 +0000
+To: "Naohiro Aota" <Naohiro.Aota@wdc.com>, <linux-btrfs@vger.kernel.org>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Date: Fri, 2 Oct 2026 14:03:11 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 Mime-Version: 1.0
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-To: "Naohiro Aota" <Naohiro.Aota@wdc.com>, <linux-btrfs@vger.kernel.org>
-Message-Id: <c41ec3b1-ec5f-4407-b45a-f831fd091351@fygo.io>
-References: <cover.1787717573.git.zhudongjiang@fygo.io> <c51aaf7f4621dedc36c275bfa9ba1ec884de09c4.1787717573.git.zhudongjiang@fygo.io> <DL0AVDP5O9C2.1VT2TYQXCL4B4@wdc.com> <3604f3af-2a44-4b8a-8b6b-67e8070308ed@fygo.io>
-In-Reply-To: <3604f3af-2a44-4b8a-8b6b-67e8070308ed@fygo.io>
-Cc: <johannes.thumshirn@wdc.com>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
 Content-Type: text/plain; charset=UTF-8
+Message-Id: <2e4c0dbd-2553-4515-8818-f8da8366ceb9@fygo.io>
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+References: <cover.1787887776.git.zhudongjiang@fygo.io> <65f5e1ca743e6c224009c4fe639945ee6c851d0c.1787887776.git.zhudongjiang@fygo.io> <DL0C63K7IW67.257PVUA638Z6E@wdc.com> <7364a62a-a6be-458a-8d46-f101434235a0@fygo.io>
+Subject: Re: [PATCH v3 2/4] btrfs: zoned: recover active non-data block group roles on mount
+User-Agent: Mozilla Thunderbird
 Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <7364a62a-a6be-458a-8d46-f101434235a0@fygo.io>
 
-=E5=9C=A8 2026/8/28 20:03, Dongjiang Zhu =E5=86=99=E9=81=93:
-> =E5=9C=A8 2026/8/28 12:42, Naohiro Aota =E5=86=99=E9=81=93:
->> On Wed Aug 26, 2026 at 1:27 PM JST, Dongjiang Zhu wrote:
->>> The runtime activation and finish paths apply active-zone accounting to
->>> both conventional and sequential stripes.
+=E5=9C=A8 2026/8/28 20:07, Dongjiang Zhu =E5=86=99=E9=81=93:
+> =E5=9C=A8 2026/8/28 13:43, Naohiro Aota =E5=86=99=E9=81=93:
+>> On Fri Aug 28, 2026 at 12:51 PM JST, Dongjiang Zhu wrote:
+>>> After a remount, a later write can activate a new metadata or system
+>>> block group without finishing the recovered one.  Repeating this across
+>>> remounts consumes additional active-zone slots and reservations, and ca=
+n
+>>> eventually exhaust all active-zone slots.
 >>>
->>> At mount, however, active_zones_left is rebuilt from device zone
->>> conditions.=C2=A0 Conventional zones report NOT_WP and are therefore no=
-t
->>> included.=C2=A0 Meanwhile, all-conventional block groups are marked act=
-ive
->>> and added to zone_active_bgs, so mount recovery still decreases
->>> reserved_active_zones for their metadata and system stripes.
+>>> Once no slot is available, activation of a metadata or system block gro=
+up
+>>> fails.  During synchronous transaction writeback this propagates as
+>>> -EAGAIN, aborting the transaction and forcing the filesystem read-only.
 >>>
->>> The two counters can therefore diverge across a remount.
+>>> A remount/fsync/remount reproducer on an HC620 left two partially used
+>>> sequential metadata block groups active while active_meta_bg remained
+>>> NULL:
 >>>
->>> Each unmatched reservation decrement lets data consume one more
->>> sequential active-zone slot.=C2=A0 Once the reservation becomes negativ=
-e,
->>> data can exhaust all such slots.
+>>>    bg=3D343865819136 alloc=3D176095232 cap=3D268435456
+>>>    bg=3D344402690048 alloc=3D3260416   cap=3D268435456
 >>
->> Yes, apparently, this was not a problem previously, Because,
->> max_active_zones > 0 mostly means there is no conventional zones. But,
->> we changed the btrfs_get_max_active_zones() behavior to also use
->> bdev_max_open_zones() to set the max_active_zones. This is a regressio
->> introduced by that change, which deserves Fixes tag.
+>> Please show the reproducer.
 >>
 >=20
-> Agreed.=C2=A0 I will add the Fixes tag in the next revision.
+> Sure.  The two block groups were not both for normal metadata.  One was
+> the existing partially used normal metadata block group, while the other
+> was newly allocated for the tree log, as confirmed by the tree-log
+> allocation trace.
+>=20
+> The original reproducer contains a fairly large setup stage.  I will
+> simplify it and include the exact reproducer in the next revision of the
+> commit message.
 >=20
 >>>
->>> [...]
+>>> active_meta_bg and active_system_bg assign active block groups to the
+>>> normal metadata and system write roles.  These runtime-only pointers ar=
+e
+>>> reset to NULL on every mount.
 >>>
->>> +static inline bool btrfs_needs_active_zone_tracking(struct btrfs_devic=
-e *dev,
->>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0 u64 physical)
->>> +{
->>> +=C2=A0=C2=A0=C2=A0 if (!btrfs_dev_is_sequential(dev, physical))
->>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return false;
->>> +
->>> +=C2=A0=C2=A0=C2=A0 if (dev->zone_info->max_active_zones =3D=3D 0)
->>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return false;
+>>> Mount reconstructs partially used sequential block groups in
+>>> zone_active_bgs and adjusts their reservations, but does not recover th=
+e
+>>> role assignments.
+>>>
+>>> The write-time pivot can finish the previous block group only when the
+>>> corresponding role pointer is set.  If it is NULL, activation proceeds
+>>> without releasing an already active block group of the same role.
 >>
->> Apparently, since we use bdev_max_open_zones() to populate
->> zone_info->max_active_zones, we won't have max_active_zones =3D=3D 0 now=
-?
+>> True. But, it is set to the written block group if e.g, active_meta_bg
+>> =3D=3D NULL. Given that metadata is properly written to partially used b=
+lock
+>> group, isn't it no problem with that? Apparently, this write-time
+>> setting can be considered as the role recovery.
+>>
+>> If it is writing into another block group leaving partially used one
+>> intact, then that is an issue on metadata allocation.
 >>
 >=20
-> It can still be zero.=C2=A0 btrfs_get_max_active_zones() initially assign=
-s a
-> non-zero value, but btrfs_get_dev_zone_info() resets it to zero for
-> backward compatibility when nactive exceeds the derived limit and the
-> device reports no hardware max_active_zones limit.=C2=A0 The per-device c=
-heck
-> is therefore still needed.
+> Thanks for pointing this out.  You are right that the commit message
+> overstates the problem.  With the current allocation behavior, normal
+> metadata continues to use the existing partially used block group, so
+> the sequence described in the commit message should not occur for normal
+> metadata.
 >=20
->>>
->>> [...]
->>>
->>
->> Also, as you dropped a BG on conventional zones from the
->> zone_active_bgs, prepare_allocation_zoned() will never return the
->> conventional BG to allocate with.
+> A lazy recovery model can therefore work with the current allocator.
+> However, I still think restoring the role at mount is preferable, as it
+> keeps the write-time pivot state independent of allocator behavior.
 >=20
-> Thanks for pointing this out.
+> Also, since the tree-log role is not persisted, mount must select one
+> metadata block group and finish the extras.  Restoring the normal
+> metadata role at the same time is straightforward.
 >=20
-> I intentionally changed zone_active_bgs so that conventional-only block
-> groups are excluded.=C2=A0 I understood that this would also affect the
-> candidates used by prepare_allocation_zoned().
->=20
-> As I understand it, this is only an initial allocation hint.=C2=A0 Conven=
-tional
-> block groups are no longer preferred through this path, but can still be
-> selected by the subsequent block group scan.=C2=A0 Am I missing anything =
-here?
->=20
-> My original plan was to address the allocation policy separately after th=
-is
-> series.=C2=A0 I also compared the baseline and the full series with conve=
-ntional
-> and sequential data/metadata workloads and did not observe a measurable
-> performance regression.
->=20
-> As a separate question, on devices with both conventional and sequential
-> zones, should allocation generally prefer conventional zones, or balance
-> them with active sequential zones?=C2=A0 Besides preserving active-zone s=
-lots,
-> are there performance or endurance differences that should guide this
-> policy?
 
 Hi Naohiro,
 
-A gentle ping before I send v4: could we clarify whether it is
-acceptable to keep zone_active_bgs limited to sequential-zone
-block groups?
+A gentle ping before I send v4: I'd appreciate your thoughts on
+restoring the non-data block group roles at mount time.
 
-I used dm-linear on an HC620 to construct a device with 4 GiB of
-conventional zones and 128 GiB of sequential zones. Each sample
-was independently prepared on baseline, using either a fresh or
-an aged filesystem, before rebooting into the kernel under test.
+I agree that lazy recovery works with the current allocation
+behavior. My preference is still to restore the roles when
+reconstructing the active block groups at mount time, so that
+role recovery does not depend on which block group the allocator
+selects for the first write.
 
-I compared baseline and patch 1 with five A/B pairs per filesystem
-state. The table shows the change in median throughput with
-patch 1 relative to baseline; positive values mean faster:
-
-+---------------------------+---------+---------+
-| Workload                  | Fresh   | Aged    |
-+---------------------------+---------+---------+
-| 1 MiB sequential writes   |  -0.03% |  +1.74% |
-| 4 KiB sequential writes   |  +0.05% |  -0.66% |
-| 4 KiB mixed random R/W    |  +0.22% |  +0.70% |
-| Postmark                  |  +0.87% |  -1.76% |
-+---------------------------+---------+---------+
-
-The median differences were small, suggesting no substantial
-performance regression in these four workloads.
-
-I'd still prefer to keep zone_active_bgs tracking only
-sequential-zone block groups for now and address allocation-policy
-changes separately.
+Would you consider this a reasonable approach, or would you
+prefer to keep the recovery in the write path?
 
 Thanks,
 Dongjiang
+
+> I will correct the commit message accordingly.
+>=20
+>>>
+>>> Restore the role assignments by selecting one active block group for th=
+e
+>>> normal metadata role and one for the system role from zone_active_bgs.
+>>> For each role, keep the block group with the largest writable tail and
+>>> finish the others.
+>>>
+>>> The tree-log block group role is runtime-only and cannot be recovered
+>>> after a remount.  Use the selected metadata block group for the normal
+>>> metadata role and leave one metadata reservation for a new tree-log blo=
+ck
+>>> group.
+>>>
+>>> Run the recovery on every mount.  ZONE_FINISH preserves existing extent=
+s
+>>> but abandons the unused tail, so account that tail as zone unusable
+>>> immediately.
+>>>
+>>> Assisted-by: LLM
+>>> Signed-off-by: Dongjiang Zhu <zhudongjiang@fygo.io>
+>>> ---
+>>>   fs/btrfs/disk-io.c |  7 +++-
+>>>   fs/btrfs/zoned.c   | 97 ++++++++++++++++++++++++++++++++++++++++++---=
+-
+>>>   fs/btrfs/zoned.h   |  7 +++-
+>>>   3 files changed, 101 insertions(+), 10 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>> index e6bbb0b1b38c..cd1f46ec62f0 100644
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -3713,7 +3713,12 @@ int __cold open_ctree(struct super_block *sb, st=
+ruct btrfs_fs_devices *fs_device
+>>>  =20
+>>>   	btrfs_free_zone_cache(fs_info);
+>>>  =20
+>>> -	btrfs_check_active_zone_reservation(fs_info);
+>>> +	ret =3D btrfs_restore_active_nondata_bgs(fs_info);
+>>> +	if (ret) {
+>>> +		btrfs_err(fs_info, "failed to restore active non-data block groups: =
+%pe",
+>>> +			  ERR_PTR(ret));
+>>> +		goto fail_sysfs;
+>>> +	}
+>>>  =20
+>>>   	if (!sb_rdonly(sb) && fs_info->fs_devices->missing_devices &&
+>>>   	    !btrfs_check_rw_degradable(fs_info, NULL)) {
+>>> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+>>> index 0d964ada3ad4..ee7d518bec15 100644
+>>> --- a/fs/btrfs/zoned.c
+>>> +++ b/fs/btrfs/zoned.c
+>>> @@ -3056,22 +3056,77 @@ int btrfs_zoned_activate_one_bg(struct btrfs_sp=
+ace_info *space_info, bool do_fin
+>>>   	return 0;
+>>>   }
+>>>  =20
+>>> +static int finish_extra_active_nondata_bgs(struct btrfs_fs_info *fs_in=
+fo)
+>>> +{
+>>> +	struct btrfs_block_group *block_group;
+>>> +	struct btrfs_block_group *next;
+>>> +	u64 tail_unusable;
+>>> +	int ret;
+>>> +
+>>> +	list_for_each_entry_safe(block_group, next, &fs_info->zone_active_bgs=
+,
+>>> +				 active_bg_list) {
+>>> +		if (!(block_group->flags &
+>>> +		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
+>>> +			continue;
+>>> +
+>>> +		if (block_group =3D=3D fs_info->active_meta_bg ||
+>>> +		    block_group =3D=3D fs_info->active_system_bg)
+>>> +			continue;
+>>> +
+>>> +		btrfs_get_block_group(block_group);
+>>
+>> Why do we need to do this?
+>>
+>=20
+> I added the extra reference because do_zone_finish() removes the block
+> group from zone_active_bgs and drops the active-list reference before the
+> caller-side accounting.
+>=20
+> However, the block group remains in the block-group cache and cannot be
+> removed concurrently in this mount-time context, so the extra reference
+> is not necessary.  Moving the tail accounting into do_zone_finish() also
+> removes all post-finish accesses here.  I will remove the get/put pair.
+>=20
+>>> +		spin_lock(&block_group->lock);
+>>> +		tail_unusable =3D block_group->zone_capacity - block_group->alloc_of=
+fset;
+>>> +		spin_unlock(&block_group->lock);
+>>> +
+>>> +		ret =3D do_zone_finish(block_group, true);
+>>> +		if (!ret) {
+>>> +			struct btrfs_space_info *space_info =3D block_group->space_info;
+>>> +
+>>> +			/* Account for the unused tail abandoned by ZONE_FINISH. */
+>>> +			spin_lock(&space_info->lock);
+>>> +			spin_lock(&block_group->lock);
+>>> +			block_group->zone_unusable +=3D tail_unusable;
+>>> +			btrfs_space_info_update_bytes_zone_unusable(space_info,
+>>> +								    tail_unusable);
+>>> +			spin_unlock(&block_group->lock);
+>>> +			spin_unlock(&space_info->lock);
+>>> +		}
+>>
+>> So, basically, do_zone_finish() should have handled this...
+>>
+>=20
+> Yes.  The fully_written=3Dfalse path already updates zone_unusable throug=
+h
+> the temporary read-only transition, while the fully_written=3Dtrue path
+> assumes that no allocatable tail remains.
+>=20
+> Mount recovery intentionally finishes partially used block groups, so
+> that assumption no longer holds for this caller.  I will move the unused
+> tail accounting into do_zone_finish() and remove the caller-side
+> accounting.
+>=20
+> Thanks,
+> Dongjiang Zhu

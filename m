@@ -1,264 +1,169 @@
-Received: from va-2-16.ptr.blmpb.com (va-2-16.ptr.blmpb.com [209.127.231.16])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FF753E49C3
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 06:17:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.127.231.16
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790921870; cv=none; b=Z3bbjeeMhOk/lMnG/zRCv+Pr3g8QqVEuOya/DIc1I8Fx21aPUhIh4xEJTuRQPyh1B9xDr3FfbLS6rnp0FWBj8O0nNh26bYZy/XQWUZ3/0oal2JDRAmXJ44Mons9oOAI2B0R2w4N6JN3pFi6ZNof8rv0jLayKJgZF4CnnYduHxGA=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790921870; c=relaxed/simple;
-	bh=bNzZyY/mdJEHGL3pQmuyRoCYkEy28nIFyR0ZudzWqwA=;
-	h=Cc:To:From:Date:Mime-Version:Content-Type:Message-Id:References:
-	 Subject:In-Reply-To; b=Y1JpayEZzV4hWGzdYFbsshNuD6Akr2GKG3up2sfdRAjRUB7M8OwHOXxI4g33P38I4EUMF7Tkiwk6VZUc2HxcpFhc9iFZBwZ4uNBY0Ofkz1mROpzhKLkWof/HLgXi+H+dyfKkLW8XEse5ykop/GBtAYgYBKk1F1Ed2pkCriZisBc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=UvudIY4v; arc=none smtp.client-ip=209.127.231.16
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 786894399D0
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 07:32:21 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.144
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1790926344; cv=fail; b=hL4iFFBnmYEJU4chXsI4hiTPlXgJ40Fum9GD22j/QMJp3Z3raf1ZIH2pHx6mTWJ67plcmQuCMjzWmX91WBIZ1rjIQ9jhaW6FHhgKiK8OMpCCVx+hRqgS3Fh323KYeRoTSB4EOrwekgwCK8t6mrJp44BxELTCn5hDaEgpyqRu8zY=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1790926344; c=relaxed/simple;
+	bh=wAatctlN/3JBhd9O09hszosn8+a2kuYYdu1x6BeyHss=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:Content-Type:
+	 Content-Disposition:In-Reply-To:MIME-Version; b=ELX69TTK7jQc1LfY5MRkkDkwEj768IFYNMmVyHzQEBYQAUkGrtoKOcqoXF3CeCOQal/xT10/HPbMpYL8mbYvyqFYOAwLzOOXiHr3tSJbz1s1g7BCidyQL8gG7zGTCxSGtqQ8EqTAooaRwUz1/k1zAhg7m8vsKR1002D9xYYR+8k=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=eX8bXKCB; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=Dd83skT5; arc=fail smtp.client-ip=216.71.153.144
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="UvudIY4v"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790920997;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=V49Cz38MwVfWSQRnamq5l6kFNmL4wvqHOvDx/5YWnjg=;
- b=UvudIY4vUCXVtZSD+WLP297i52u0XFvY/+py6kJRJ1kli4FhcyojCXgHfhsultitFn3uy+
- yReW18K3BoPx4rXOFJbpO+7fmJT8Uif8PFAbNs+F/4kDSm5C4oZK7nItV2mABCsCIHEhbw
- hT+vGNS1JyIHlIYGIn+659eiqvXsEIqdmbgI5ueLK6cT1YrenFtC8CwAXn8lmDWuM+JTcO
- glGc+6IYTDiO78vJa8+12CA74I7GfanrkgygL+xmU9GT0rx420VuNvLQT/K1DzWNgkmOrm
- HlEN3DeMHqCAKLAWjbTOkvZv/sBT6lUBL+UwjyJ/7xRZkt9lc5t4GGszG+CDAg==
-Cc: <johannes.thumshirn@wdc.com>
-X-Lms-Return-Path: <lba+26abf4924+79a4c4+vger.kernel.org+zhudongjiang@fygo.io>
-Received: from [192.168.8.64] ([183.34.167.12]) by smtp.larksuite.com with ESMTPS; Fri, 02 Oct 2026 06:03:15 +0000
-To: "Naohiro Aota" <Naohiro.Aota@wdc.com>, <linux-btrfs@vger.kernel.org>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Date: Fri, 2 Oct 2026 14:03:11 +0800
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="eX8bXKCB";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="Dd83skT5"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1790926341; x=1822462341;
+  h=date:from:to:cc:subject:message-id:references:
+   in-reply-to:mime-version;
+  bh=wAatctlN/3JBhd9O09hszosn8+a2kuYYdu1x6BeyHss=;
+  b=eX8bXKCBMRr2RMflti/x/i5r3w5RqjfRTyjuqfNvqG1L8CVYH4HnyPfh
+   g0MpJ5p0ZLr8olvIuivBcu7TJU2fvnFvGpwY5opkGnpB/i/u7eum5nDS2
+   4AhO/CgTdNj+IbEcGtoTIO786eq1h2UQuz2AT0ja9OD0i3ACPRXXvgVBG
+   nOd9G9IIc8eWpukIEvbwyDFPOPUXxbCswTKruq3bIHYgjuqe3GCQlHPI6
+   NQeltSjvKLaeFvN0w2+OueDL6Kmy0pxGOQ1+cIvO824FP8xoVs5YzIUNf
+   9DDbGfGk9qoB5Y3iP9/X9MaP06Qxf6rQPcLQxJIaCTB//h2CaOcTPoCER
+   g==;
+X-CSE-ConnectionGUID: rtib26v0RSOv7s1Vh1AQ1A==
+X-CSE-MsgGUID: cI1zyQ6KSeigRDw2RenmYA==
+X-IronPort-AV: E=Sophos;i="6.27,136,1786982400"; 
+   d="scan'208";a="156152475"
+Received: from mail-eastus2azon11011000.outbound.protection.outlook.com (HELO BN8PR05CU002.outbound.protection.outlook.com) ([52.101.57.0])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 02 Oct 2026 15:32:17 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=mtkXvOA7FOPG9RCYjyXC35w+DNnr0xk2Ssdz6lc/6MG7azmzkBA68ExWLCzie9wahU5jmKUJxZw/mAt5nly44buJstkFXCSxSmMHZjI3Eguo3pPQ5e61bjR5rUP9tKw0BmrnOP48vOTGtTGbOrNnCB5lf5mqCrHx0IsQNe+aryxIDJaG3ADUkOF/8B3+Dkeo5tWkONUmxHVGKX75I1XaLSObY+uDKyXCQWOdES9BT9N43Zm8bBFBxqLSSzW8dBD0E+9tOUlVna/4HCTXEl+o0A7SD9KcEeOG3m2gXFs/57snfxru43TRPIdHoodjIsMsWpBhr2XoArCWlDEPhwTBKg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=Bw5UlzGB9l1sfMKQznJw+QOJKhPEdtCVJ+lOyMOax70=;
+ b=gSdynBGMMPPxKrb2nPdn1elPQSvd8rRkuFLlCbCtAjB749pg2i8QdvGueauTtYvxUDSaMHUw6dIxE2NrCs0SGOYMrBwpna8JIbYlm+VYLUtCoIIE5Mhh8yYeVTFxqxZyWe6+6lJQSl+9RUGh8/00hco3bSNIvORjePKtovjhkxP05FFQqDjB/OVYPTmdSL3j8+RfEFJjHdCFbDyP111Bm8Nqq9YHIo3kTnMT417ClKrlJrzNt+Aq/ulQ+u+NmY/mCnUKHKMtSzZBuG/+vQMHMvAPlSE5Bkt7zJs+RpRB39VBuFFaheUbBsxKH3sT9nLEQKqYRutG0cwfVqbJber/Vw==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=Bw5UlzGB9l1sfMKQznJw+QOJKhPEdtCVJ+lOyMOax70=;
+ b=Dd83skT5i2K0MP72dE49Ps/+rpnQXZ79wWVZsHUn4EYeL1YK5kvydpewoyIjhtSaJK4prMlC4MBNv7diDEiERvNCIlE6DWn1bJFRCWSuQAfpFyQuJcmcLL8OAeygD+CpEYsqLyuVUdplbTq94BPpor11cEq3r6cJd/cngFqZIK4=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by DM6PR04MB6283.namprd04.prod.outlook.com (2603:10b6:5:1ee::14) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.472.18; Fri, 2 Oct
+ 2026 07:32:13 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0472.016; Fri, 2 Oct 2026
+ 07:32:13 +0000
+Date: Fri, 2 Oct 2026 09:32:04 +0200
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>, 
+	David Sterba <dsterba@suse.com>, Qu Wenruo <wqu@suse.com>
+Subject: Re: [PATCH 4/4] btrfs: zoned: avoid underflow of bytes_zone_unusable
+Message-ID: <ar9dTrpxbbJ2ha9D@mayhem.fritz.box>
+References: <20260914085248.347198-1-johannes.thumshirn@wdc.com>
+ <20260914085248.347198-5-johannes.thumshirn@wdc.com>
+ <20260914150811.GJ54722@twin.jikos.cz>
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260914150811.GJ54722@twin.jikos.cz>
+X-ClientProxiedBy: FR4P281CA0232.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:e9::13) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Message-Id: <2e4c0dbd-2553-4515-8818-f8da8366ceb9@fygo.io>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-References: <cover.1787887776.git.zhudongjiang@fygo.io> <65f5e1ca743e6c224009c4fe639945ee6c851d0c.1787887776.git.zhudongjiang@fygo.io> <DL0C63K7IW67.257PVUA638Z6E@wdc.com> <7364a62a-a6be-458a-8d46-f101434235a0@fygo.io>
-Subject: Re: [PATCH v3 2/4] btrfs: zoned: recover active non-data block group roles on mount
-User-Agent: Mozilla Thunderbird
-Content-Transfer-Encoding: quoted-printable
-In-Reply-To: <7364a62a-a6be-458a-8d46-f101434235a0@fygo.io>
+MIME-Version: 1.0
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DM6PR04MB6283:EE_
+X-MS-Office365-Filtering-Correlation-Id: e63f2227-0ab6-42af-721e-08df205746da
+X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+ BCL:0;ARA:13230040|10070799003|376014|366016|23010399003|1800799024|19092799006|11063799006|56012099006|4143699003|10067099003|22082099003|18002099003|6133799003;
+X-Microsoft-Antispam-Message-Info:
+ g7D3aSVbgOOcQFYFl6iZiHO9v6dG70GZEnkFb8mgsV6fLCOOcERspU3D1WFyAQlpHUAbAQCQR6kFdYLOXTEmZYF8RDcHWDl6bWzVwMgoj/mlfVDA2GUr+uAeyWy20BVwGjf1rNBI07VUBwFowWYol+IuAuKgxLRZNWcOGfQJZ/tJPG3n+9/gYGYBgjr4HeBqDfuPfIxzR69u6KDiH4b6piufcQIEt+psytEHlJ8zc2Q1SwvpEPLVfzhPqF5ovJ/v0ImlxAE65SI+IAk5p/2Szd660qjRJoGO4wtv/i8UmeuSsorT6T4nRW11RTKLEiVXhfT2rFlwZKnFUsfo2n/QCt21SrV6X6GZT+FQL9/tIhrTyGh9OIhuY0FCgoHYd130S3W0ZCkntcno07JNI5AQ4KE99m3v74SbJ/grLqIePIiaorKwqWKi5f4U94Mx6/uzXwhYFchkY+R7ufmOFDQshmvrBRx9cfW81Nc18TcESFqzBICdFjP5zjocZ5HBs5VH+5GN6UDoM5JByESW//JDUw/L8ew0jWkgSa1TiI1UNouwKjoi4mIxoCH7hJc5CyrU2ak9KYLCzJ8SydHx38DMKZpi+xZakKr5sBqvRsMOeg0RDaIjdSJHSebUriPNy99kyfiWbH+sTpXz5KnxlSlVvL/szIS5muMBOp+gVar4BgQ=
+X-Forefront-Antispam-Report:
+ CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(10070799003)(376014)(366016)(23010399003)(1800799024)(19092799006)(11063799006)(56012099006)(4143699003)(10067099003)(22082099003)(18002099003)(6133799003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+ =?us-ascii?Q?EY3TouCJ7mJCADWaxMswbLUOx1f13NuTO5l6wJIAfPMNkQwM1dX24CLC/NzO?=
+ =?us-ascii?Q?IKRgsjxrNTXR4OGH/SwOoBYMU3FPUr/KWBrFJoU4JGxJbvb/WZAZ7gv0kqYS?=
+ =?us-ascii?Q?Df5qBuEXUSQA6GXUFp6OrYUx5nkZsi8Vb44P87IEBzNxPX7vNf4Un9owjW6i?=
+ =?us-ascii?Q?q04Pm5r+ce9VdwYTuKDI8iwmyT3BWA2xCi8O0GySTI3b1yKfJTqLyOOg4xNt?=
+ =?us-ascii?Q?aSP2CnZxgQw6+6oG9dBu5nKu5ttlGIN1heIf8CS8FlVQ6UpbL+GOoymPjo7z?=
+ =?us-ascii?Q?XoAosOtBWt+D3dXpeRTBFtDwKXqDUoIqxjIeWNQzXp93OvNtCD4+e5H0b072?=
+ =?us-ascii?Q?/ZtYjEqmepNK02ngS7/FHYHS3dSXle7G1ERfn54FAtFBlaF76zGCBq3shn/E?=
+ =?us-ascii?Q?Gfx73ioJzpAmUFOQXYJMZZ1aLJ+i4S5zwFAB3x3EKNAJGTdHK1CvRdQTDLTU?=
+ =?us-ascii?Q?i1QA2O2kz1OoAdZYQTwmHHYEApUgg6B9VPwQwC8iMRS4+vC4kkML5Z7fHCUY?=
+ =?us-ascii?Q?hTK98yI3iO2sJlMkwEwM0QzXlExL6ao3Y3ljDy40QqojtMm5w7PmtFmBw/o2?=
+ =?us-ascii?Q?pHLTpTvkyUwT/NML9Sh4HHiRPUiMTOVgPaZ1PCQMS4IIm7k668SEx4w3327v?=
+ =?us-ascii?Q?5XLxtRnYtDXfLGWPxNi2ZMxFlwZtX21hOgggeMDkPl4gT+nCjikNBz9DWzWV?=
+ =?us-ascii?Q?VNlCfe4rtP5s3XQRT+splhaXwUCQrb5tSW7ejBHHhqdANftbDq9eEiq5mWhr?=
+ =?us-ascii?Q?QsqG2445eo0Mz+Z7d2FoV2ReDWVMxvR/OMnufoSJHi/KCR/2cT6UbT1Uk5H5?=
+ =?us-ascii?Q?18P1WdrTNTdPD5NE+/5wrBBG3FdkUXJ1AwxPTx7JvGjltHBSRWXGWtk3jVwi?=
+ =?us-ascii?Q?mnAgXTdmGl0mCcgzH/bjVT8sXjd22WuCcl1DUH0qpZ4ie2vt5L9XSqve7dhP?=
+ =?us-ascii?Q?94djgs4GuBQwm9YQGLU19Oibs2Lxgd/Js1dIK0fZNMrt5An4sVFObC7np2gU?=
+ =?us-ascii?Q?4tZyRePq5QX8PdPOkBpV0hPasjEg3n9gFqVYj11zw1DtuD6eigZqWKkIKZhC?=
+ =?us-ascii?Q?Eb3ZGJS1j82ok0EhLTzHP+J7TFtZ8MLEwdEb/10g7e2Rid3WYjSE0f83EXk2?=
+ =?us-ascii?Q?CH31M/F9amJ8Vt3STmsL1Deh4p/JncwnhmXOifSDdFFWNYSmz1Ze5lDgpjnN?=
+ =?us-ascii?Q?ZJfqIe2GE+08Zza1SW1v2kouijGiMCyYxjyxvoqlUrxwFTE1qS25mWUmW7mX?=
+ =?us-ascii?Q?0AbQvy2Ni2G3O249ZYhnWPEN7qzTiEEQyvSK2YdU+U+t8jzNM/BbM2P7s5qk?=
+ =?us-ascii?Q?IUWz7au+Gcb2xWUa3GJUrSLYtoQ0y3MIY4JYKNF8cd+jAkWz6s/wQO9Q1S9/?=
+ =?us-ascii?Q?SlDQ8/mNbE4m6gkHLTOTrC/DJE0o5KglUK691HHRRSTvBS0iT1dera4Vg4YT?=
+ =?us-ascii?Q?L6ZfzDlgIfDLWoWXLRrZeFmBydUoJ2bDwmUWksK7DISqXieRoxL+SjmzBfnv?=
+ =?us-ascii?Q?h47Uz8NkcU5IFnoIHSqVKYPSEJRX4FzicJDIUguriMkYnMwCdrWSpqvV4g92?=
+ =?us-ascii?Q?Nub+ZHLJRIYi116p3Oj99zaIBZV/WwbV6i+pI92VWz8l0mR9HGcbfM0InpP0?=
+ =?us-ascii?Q?OkLVkBbimVsE026JQe0Ypp3nxdakBVdiNohpg7933SyJLUvOt0wnIszBcEWa?=
+ =?us-ascii?Q?hCldUj5WoaWeqePjOGIJbDNJ6bl4UaCgemAQpOitU8U9k3HQltzFIZFSkaoC?=
+ =?us-ascii?Q?otOEBQQVyxA30Qz/z3Qu3JNaNmkUe6I1YmBlDU7TB8dTU38nZOsZxc6cLVv1?=
+X-MS-Exchange-AntiSpam-MessageData-1: sVmv/xD023wBy2deEuj0NGdz5860c1UOgyo=
+X-Exchange-RoutingPolicyChecked:
+	uCNqb0AP0B62qSusNUnJPITvNZe1axmAHclIT3YLZE4B8kQwn7pChL7/gjLYRO4dti8eveHQNd6rn7TRUxK8MBcw6inWoHaB/Yo539jiH1d0xHH1mTJvT/MAb61d0b/f4tlb0dx284M2GdRTEA8MP+D82V+2V22hT40FqW++MdY5RmNX6D0cwkbQ20H1j7ZfrymwQB2sAhXXFkZQFn/8aIKscdJLvwcUyUYAo1o8wZqC1zmq3Z1ABR066Ml1fQ1Js7zOvebZ75ijIDU3ETbOYgLVySIWyHCIBlMWTMqTCwSIArJoi0VDweq2FyAMPMXMTGZMEEgGKGUKdLHDzkc37w==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	UN3XGF0Cw7U+pBA9yYv43J6+IsRRA3gYPlcFPzofHysYGru84VDt7Gd7VJxURJ/l74NpiKzJZslsgITHf3kCboOaf78PK8EoINk2L2+JJ7kNAOLslOiCOgtuG1K2U7BmuQVvMYxCaqytdykemeeCIA9Dc/6L5SKyB53NYDp/slRdoMKMDyn0Wbx7zMhOD+cznh3U/HPQW+Bxxe/FVviD2KC+8Ks/KXBA7iUP5KPznlGSX9BBvQl8ra1pRu3WMKwEG/V/+KbNKKyTdrOtVLPXxPK+QUUGiz0GzQO0M3BQg/lmrvUid/xA8IBaVOkxE+rKqSJEaEhLj14BPY5rZcV67npJptaBVQehbwi3T0BymxFwKOoZ4vZNrT0apidGUvBLWhPUQ2LECVonTwfHajZafRgqygT1E5aTJFs6azF0zE+HLX6ALSxLtJzLYi3VImIiEx4LGA61bxaClsqEMvh3+N6vgWwT5XAUTfIRVRypSIjrguxSNA3Kp/yhL5RoBKXioSpqijLFQc5eWPRY11mD8FEn0dX6F3QoZeE2qoO8oxxReItVVlt4Zh8raGz58wsazaDZG+XkotFW+I38c0UVne2cPcIKmjbWaoC7AmGXIoYwWxnkAO0BwxrRPb0BRN/l
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: e63f2227-0ab6-42af-721e-08df205746da
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 02 Oct 2026 07:32:13.4683
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 8BJaVFA+oPyuM7n3ziviyPhlfY5bBXQO+gzwcFeoRHw6+3Pwbdrf3w6dmI3ILDt8aH0IYiW3/YYeQL42qd6frmdoTebW8voVd3Owxsn46qk=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR04MB6283
 
-=E5=9C=A8 2026/8/28 20:07, Dongjiang Zhu =E5=86=99=E9=81=93:
-> =E5=9C=A8 2026/8/28 13:43, Naohiro Aota =E5=86=99=E9=81=93:
->> On Fri Aug 28, 2026 at 12:51 PM JST, Dongjiang Zhu wrote:
->>> After a remount, a later write can activate a new metadata or system
->>> block group without finishing the recovered one.  Repeating this across
->>> remounts consumes additional active-zone slots and reservations, and ca=
-n
->>> eventually exhaust all active-zone slots.
->>>
->>> Once no slot is available, activation of a metadata or system block gro=
-up
->>> fails.  During synchronous transaction writeback this propagates as
->>> -EAGAIN, aborting the transaction and forcing the filesystem read-only.
->>>
->>> A remount/fsync/remount reproducer on an HC620 left two partially used
->>> sequential metadata block groups active while active_meta_bg remained
->>> NULL:
->>>
->>>    bg=3D343865819136 alloc=3D176095232 cap=3D268435456
->>>    bg=3D344402690048 alloc=3D3260416   cap=3D268435456
->>
->> Please show the reproducer.
->>
->=20
-> Sure.  The two block groups were not both for normal metadata.  One was
-> the existing partially used normal metadata block group, while the other
-> was newly allocated for the tree log, as confirmed by the tree-log
-> allocation trace.
->=20
-> The original reproducer contains a fairly large setup stage.  I will
-> simplify it and include the exact reproducer in the next revision of the
-> commit message.
->=20
->>>
->>> active_meta_bg and active_system_bg assign active block groups to the
->>> normal metadata and system write roles.  These runtime-only pointers ar=
-e
->>> reset to NULL on every mount.
->>>
->>> Mount reconstructs partially used sequential block groups in
->>> zone_active_bgs and adjusts their reservations, but does not recover th=
-e
->>> role assignments.
->>>
->>> The write-time pivot can finish the previous block group only when the
->>> corresponding role pointer is set.  If it is NULL, activation proceeds
->>> without releasing an already active block group of the same role.
->>
->> True. But, it is set to the written block group if e.g, active_meta_bg
->> =3D=3D NULL. Given that metadata is properly written to partially used b=
-lock
->> group, isn't it no problem with that? Apparently, this write-time
->> setting can be considered as the role recovery.
->>
->> If it is writing into another block group leaving partially used one
->> intact, then that is an issue on metadata allocation.
->>
->=20
-> Thanks for pointing this out.  You are right that the commit message
-> overstates the problem.  With the current allocation behavior, normal
-> metadata continues to use the existing partially used block group, so
-> the sequence described in the commit message should not occur for normal
-> metadata.
->=20
-> A lazy recovery model can therefore work with the current allocator.
-> However, I still think restoring the role at mount is preferable, as it
-> keeps the write-time pivot state independent of allocator behavior.
->=20
-> Also, since the tree-log role is not persisted, mount must select one
-> metadata block group and finish the extras.  Restoring the normal
-> metadata role at the same time is straightforward.
->=20
+On Mon, Sep 14, 2026 at 05:08:11PM +0200, David Sterba wrote:
+> On Mon, Sep 14, 2026 at 10:52:48AM +0200, Johannes Thumshirn wrote:
+> > The two functions btrfs_free_reserved_bytes() and
+> > btrfs_reset_unused_block_groups() both manipulate
+> > space_info->bytes_zone_unusable without using the accessor function
+> > btrfs_space_info_update_bytes_zone_unusable() potentially risking an
+> > underflow (in case of btrfs_reset_unused_block_groups()).
+> > 
+> > Use btrfs_space_info_update_bytes_zone_unusable() in both function, in
+> > the case of btrfs_free_reserved_bytes() it is mostly for documenting
+> > purposes.
+> > 
+> > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> 
+> The two cases cover all modifications of the bytes_zone_unusable, it
+> could make sense to force using that wrapper, eg. renaming the
+> identifier and providing only a get/set helpers.
 
-Hi Naohiro,
-
-A gentle ping before I send v4: I'd appreciate your thoughts on
-restoring the non-data block group roles at mount time.
-
-I agree that lazy recovery works with the current allocation
-behavior. My preference is still to restore the roles when
-reconstructing the active block groups at mount time, so that
-role recovery does not depend on which block group the allocator
-selects for the first write.
-
-Would you consider this a reasonable approach, or would you
-prefer to keep the recovery in the write path?
-
-Thanks,
-Dongjiang
-
-> I will correct the commit message accordingly.
->=20
->>>
->>> Restore the role assignments by selecting one active block group for th=
-e
->>> normal metadata role and one for the system role from zone_active_bgs.
->>> For each role, keep the block group with the largest writable tail and
->>> finish the others.
->>>
->>> The tree-log block group role is runtime-only and cannot be recovered
->>> after a remount.  Use the selected metadata block group for the normal
->>> metadata role and leave one metadata reservation for a new tree-log blo=
-ck
->>> group.
->>>
->>> Run the recovery on every mount.  ZONE_FINISH preserves existing extent=
-s
->>> but abandons the unused tail, so account that tail as zone unusable
->>> immediately.
->>>
->>> Assisted-by: LLM
->>> Signed-off-by: Dongjiang Zhu <zhudongjiang@fygo.io>
->>> ---
->>>   fs/btrfs/disk-io.c |  7 +++-
->>>   fs/btrfs/zoned.c   | 97 ++++++++++++++++++++++++++++++++++++++++++---=
--
->>>   fs/btrfs/zoned.h   |  7 +++-
->>>   3 files changed, 101 insertions(+), 10 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index e6bbb0b1b38c..cd1f46ec62f0 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -3713,7 +3713,12 @@ int __cold open_ctree(struct super_block *sb, st=
-ruct btrfs_fs_devices *fs_device
->>>  =20
->>>   	btrfs_free_zone_cache(fs_info);
->>>  =20
->>> -	btrfs_check_active_zone_reservation(fs_info);
->>> +	ret =3D btrfs_restore_active_nondata_bgs(fs_info);
->>> +	if (ret) {
->>> +		btrfs_err(fs_info, "failed to restore active non-data block groups: =
-%pe",
->>> +			  ERR_PTR(ret));
->>> +		goto fail_sysfs;
->>> +	}
->>>  =20
->>>   	if (!sb_rdonly(sb) && fs_info->fs_devices->missing_devices &&
->>>   	    !btrfs_check_rw_degradable(fs_info, NULL)) {
->>> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
->>> index 0d964ada3ad4..ee7d518bec15 100644
->>> --- a/fs/btrfs/zoned.c
->>> +++ b/fs/btrfs/zoned.c
->>> @@ -3056,22 +3056,77 @@ int btrfs_zoned_activate_one_bg(struct btrfs_sp=
-ace_info *space_info, bool do_fin
->>>   	return 0;
->>>   }
->>>  =20
->>> +static int finish_extra_active_nondata_bgs(struct btrfs_fs_info *fs_in=
-fo)
->>> +{
->>> +	struct btrfs_block_group *block_group;
->>> +	struct btrfs_block_group *next;
->>> +	u64 tail_unusable;
->>> +	int ret;
->>> +
->>> +	list_for_each_entry_safe(block_group, next, &fs_info->zone_active_bgs=
-,
->>> +				 active_bg_list) {
->>> +		if (!(block_group->flags &
->>> +		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
->>> +			continue;
->>> +
->>> +		if (block_group =3D=3D fs_info->active_meta_bg ||
->>> +		    block_group =3D=3D fs_info->active_system_bg)
->>> +			continue;
->>> +
->>> +		btrfs_get_block_group(block_group);
->>
->> Why do we need to do this?
->>
->=20
-> I added the extra reference because do_zone_finish() removes the block
-> group from zone_active_bgs and drops the active-list reference before the
-> caller-side accounting.
->=20
-> However, the block group remains in the block-group cache and cannot be
-> removed concurrently in this mount-time context, so the extra reference
-> is not necessary.  Moving the tail accounting into do_zone_finish() also
-> removes all post-finish accesses here.  I will remove the get/put pair.
->=20
->>> +		spin_lock(&block_group->lock);
->>> +		tail_unusable =3D block_group->zone_capacity - block_group->alloc_of=
-fset;
->>> +		spin_unlock(&block_group->lock);
->>> +
->>> +		ret =3D do_zone_finish(block_group, true);
->>> +		if (!ret) {
->>> +			struct btrfs_space_info *space_info =3D block_group->space_info;
->>> +
->>> +			/* Account for the unused tail abandoned by ZONE_FINISH. */
->>> +			spin_lock(&space_info->lock);
->>> +			spin_lock(&block_group->lock);
->>> +			block_group->zone_unusable +=3D tail_unusable;
->>> +			btrfs_space_info_update_bytes_zone_unusable(space_info,
->>> +								    tail_unusable);
->>> +			spin_unlock(&block_group->lock);
->>> +			spin_unlock(&space_info->lock);
->>> +		}
->>
->> So, basically, do_zone_finish() should have handled this...
->>
->=20
-> Yes.  The fully_written=3Dfalse path already updates zone_unusable throug=
-h
-> the temporary read-only transition, while the fully_written=3Dtrue path
-> assumes that no allocatable tail remains.
->=20
-> Mount recovery intentionally finishes partially used block groups, so
-> that assumption no longer holds for this caller.  I will move the unused
-> tail accounting into do_zone_finish() and remove the caller-side
-> accounting.
->=20
-> Thanks,
-> Dongjiang Zhu
+I have a local version of this, but I don't really like it, sorry. It's a lot
+of churn.

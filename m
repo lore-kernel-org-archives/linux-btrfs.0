@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B7253E4C66
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B88C3E5A0E
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:53 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790967353; cv=none; b=H2/0Mkz7ZsX+Xw1efHt2G6zGQW4YbBL4gyEcGGaHmn3soTieU68/r8zlo99sWyKmH2o/zjl0245Z+SXMPTW/PhsTkdWPzjFN1mUwwpJ2atTKxR/nKSSTdxF/CSh73ByhMwS7gPeNtlAKpYiTKDHgy6b18qPbrBbszOGb0uTLxuE=
+	t=1790967354; cv=none; b=iiGkRAdoGHV8B8h8Xwy1KLPV32DJJOtCnd75msGl3jhFeJWuzv6qok+ZbtGA5DPPzCD7eIpVfZA4RpdQvXDy+fwZZ3podnwVqohoq4Fi3q9NFQLk/oWWEEMEbdIEXgts9LwDzCYEbnupGhhZFwLRhAT+83atBi0HKONSmNS998U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790967353; c=relaxed/simple;
-	bh=l30z+V9Z8qT1ISXBhamCDYORyO2Fy+uwFcEZ1Zl6mf0=;
+	s=arc-20240116; t=1790967354; c=relaxed/simple;
+	bh=axR8p1uFEQiK36kKzP8ueUu0hbcWJpFJN8fsEJerhuE=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=mnc+NfU5Lse9coRVVuYtTklUdABNeN125DAL/HL9rvVaIia3kz9RaNO+Se4mt/1OvUf68OWlk2al13ido3C9koyh6yzQ3BlWcrtgnFpZ0kQ0BpwBY5yH2nGlqqkT4i4LOx8K1TJZuTq/8/oS0ffYrcrD2hBdBAKRUiAbaU78c7Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=Bmq7aBFk; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=YTw6NlCDzknWWSW2qUGChvJU17njOVT/DHI+ovXC829JuA2NLfUW7pEybV8UQz1xou467X42nsfDWbtpxd6qWyQR/HGxK36V6calTX5yUuagOnIxaM5Dik2PoneRoEn1wST5TTt5ncxR3luMWq9S4/R+Z626yPsfxS1UBmP8AN8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UeN/Z3y5; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="Bmq7aBFk"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AEA0F1F000FF
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:51 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UeN/Z3y5"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9B1121F00898
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790967352;
-	bh=ryVpsELI5ewiEQt1ixv5OuCcvGOzAXFK8YUbLBNeY7E=;
+	s=k20260515; t=1790967353;
+	bh=uu+GKScYyPfEHXnePXxla6bh+aCLLpFwu9iCUKXMgW8=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=Bmq7aBFkF7PL6OW6FQgRplmPOqCzlZdFveXW83auDermkjkXIn6DS+8hX9NKPgKQS
-	 5oxMBvZiUn85n8P7mmBKZE1ipyXkgTUX2lCiYk1J3QpRKHhAtQxWRzxNcR0KtiA2vO
-	 Kul/RCPiC89HxC9HGREdVtNDlFGWb97aRQ9GbdBiXo/mWFHi9Fna/8i5K/4N3ItuMR
-	 OSIPUav2I8Sz93jrHifpV81uw6IBJV+zzWEwmn143HVm7L4EoPLvQTh3OFHbrWvb7U
-	 yvU+3Cb/lM3G8H8APq04egMSLNecYkgjDvi1KiuG707xrayDB92SQRXApl3BGbpHko
-	 mrZXSCXj+FgYg==
+	b=UeN/Z3y5dY7OBshkx7klBG0pdCvDIZIGo2kuQSuf1VFrgx3u2U74XmfklezLUiYCK
+	 j6PYcjGEqEmegVJ4a7Mcz3+caEcK+7fmqvJ4GmgpiYch9wdEENX7XjG13TiUum7utc
+	 FKPbrMo0jE+ip2bii425hAZFTsnCwVBkXwo+9UxMj4n/VCEs5BxSY2XRPJduCOPBe4
+	 Dh4ghMOowSxwSEVaN5f4ZPirroGawcvesGfu8VBJtoqUqyRbQmj82j3A5b3OqlvuI3
+	 oghwsQ22Wj2qLWlWqMFherxlf4In89XKOt+R9dxSH8yma8W9mgpfYH5uM6iKOdpr4h
+	 59N1nBbFPhcnQ==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: qgroup: fix race between subvolume creation and adding/removing relations
-Date: Fri,  2 Oct 2026 19:55:41 +0100
-Message-ID: <1a8c03f1c6777f2cafa76ff9c4309e381c6f761a.1790954970.git.fdmanana@suse.com>
+Subject: [PATCH 1/6] btrfs: qgroup: fix swapped blocks existence check when tracing after COW
+Date: Fri,  2 Oct 2026 19:55:42 +0100
+Message-ID: <13d832272a848474d479cd21f6d3f3f6eff54bc6.1790967259.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1790967259.git.fdmanana@suse.com>
 References: <cover.1790967259.git.fdmanana@suse.com>
@@ -44,104 +44,38 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When using simple quotas, we can have a race between creating a subvolume
-and auto inheriting quotas and the ioctls to add or remove qgroup
-relations.
+In btrfs_qgroup_trace_subtree_after_cow(), after we erase the swapped
+block, iterate over all possible tree levels to check if we sill have
+other swapped blocks. However the check is wrong, it considers that there
+are other swapped blocks if any rbtree for any level is empty, instead of
+not empty. As a consequence we set blocks->swapped to true basically every
+time since we always find an empty rbtree at least at level 7, since in
+practice it's nearly impossible to find such a huge btree. This makes
+every future call to btrfs_qgroup_trace_subtree_after_cow() do an
+unnecessary rbtree search instead of returning immediately.
 
-This happens like this:
+Fix this by updating the condition to set swapped to true if we find an
+rbtree that is not empty.
 
-1) Task A is doing subvolume creation and calls btrfs_qgroup_inherit()
-   with the "inherit" parameter as NULL (since BTRFS_SUBVOL_QGROUP_INHERIT
-   was not passed in the flags of the subvolume creation ioctl).
-
-2) Task A enters qgroup_auto_inherit() and calls list_count_nodes() to
-   get the number of nodes in a qgroup's list, then allocates an array
-   with a size matching that number of nodes.
-
-3) Task B enters the BTRFS_IOC_QGROUP_ASSIGN ioctl to add a qgroup
-   relation and enters btrfs_add_qgroup_relation() where it locks
-   fs_info->qgroup_lock before calling __add_relation_rb() where it
-   adds to the list of the same qgroup that is being processed by
-   task A.
-
-4) Task A iterates over the qgroup's list elements and assigns to an
-   array that has an insufficient size, since the number of elements in
-   the list is now larger, by 1, compared to the count it got in step 2,
-   resulting in an out of bounds array access.
-
-This all happens because btrfs_qgroup_inherit() does not take the lock
-fs_info->qgroup_lock before counting the number of elements in a qgroup's
-list and iterating it. So all sorts of other races can happen, like
-iterating the list while another task is calling either
-btrfs_add_qgroup_relation() or btrfs_del_qgroup_relation() and modifying
-the same qgroup list concurrently.
-
-So make btrfs_qgroup_inherit() take fs_info->qgroup_lock.
-
-Fixes: 5343cd9364ea ("btrfs: qgroup: simple quota auto hierarchy for nested subvolumes")
+Fixes: f616f5cd9da7 ("btrfs: qgroup: Use delayed subtree rescan for balance")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/qgroup.c | 27 +++++++++++++++++++--------
- 1 file changed, 19 insertions(+), 8 deletions(-)
+ fs/btrfs/qgroup.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index c07cf6041cb9..195326ef0388 100644
+index 46de0a5e80d5..798f21608de5 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -3256,26 +3256,34 @@ static int qgroup_auto_inherit(struct btrfs_fs_info *fs_info,
- 	struct btrfs_qgroup_inherit *res;
- 	size_t struct_sz;
- 	u64 *qgids;
-+	int ret = 0;
- 
- 	if (*inherit)
- 		return -EEXIST;
- 
-+	spin_lock(&fs_info->qgroup_lock);
- 	inode_qg = find_qgroup_rb(fs_info, inode_rootid);
--	if (!inode_qg)
--		return -ENOENT;
-+	if (!inode_qg) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
- 
- 	num_qgroups = list_count_nodes(&inode_qg->groups);
- 
- 	if (!num_qgroups)
--		return 0;
-+		goto out;
- 
- 	struct_sz = struct_size(res, qgroups, num_qgroups);
--	if (struct_sz == SIZE_MAX)
--		return -ERANGE;
-+	if (struct_sz == SIZE_MAX) {
-+		ret = -ERANGE;
-+		goto out;
-+	}
- 
- 	res = kzalloc(struct_sz, GFP_NOFS);
--	if (!res)
--		return -ENOMEM;
-+	if (!res) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
- 	res->num_qgroups = num_qgroups;
- 	qgids = res->qgroups;
- 
-@@ -3283,7 +3291,10 @@ static int qgroup_auto_inherit(struct btrfs_fs_info *fs_info,
- 		qgids[i++] = qg_list->group->qgroupid;
- 
- 	*inherit = res;
--	return 0;
-+out:
-+	spin_unlock(&fs_info->qgroup_lock);
-+
-+	return ret;
- }
- 
- /*
+@@ -4913,7 +4913,7 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
+ 	/* Found one, remove it from @blocks first and update blocks->swapped */
+ 	rb_erase(&block->node, &blocks->blocks[level]);
+ 	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
+-		if (RB_EMPTY_ROOT(&blocks->blocks[i])) {
++		if (!RB_EMPTY_ROOT(&blocks->blocks[i])) {
+ 			swapped = true;
+ 			break;
+ 		}
 -- 
 2.47.2
 

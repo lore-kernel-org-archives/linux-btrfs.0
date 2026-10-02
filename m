@@ -1,36 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0E62A3E558A
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D96743E51D4
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790967356; cv=none; b=Um4/uswCcgVFRGsO3eEBrIO8uxYnxUmYYYzDc5ItEKko1VBPFK0Mgu86aAdKhdwLKR3JtPbwPmqrRm/EdBPmptfJLC6eVdqQLts1rDf149uZZWHGd9CHxd6cY9BBalOSwe4tQLUcoVA+bhhhVP1Qe489n2VcuAAxDmTmPtL0Vyk=
+	t=1790967358; cv=none; b=cTIVvGTw+DesjLqjvWexJ9kK8ZOj1QTt76NayV7j0RBWEg81nXDFusktKZFwuyO7Nx2LiMp5dkVygheQ/Xnj3hwOaLeVE+V9KoQrd/yZ7qNS3tMsOOkmKt5al3ser786MYtGM/U2+Yr2hoiajJ7R4W3QWI04M2MYF6+WgsppTHs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790967356; c=relaxed/simple;
-	bh=Rbg8ZriW/dHoW8h+2MsW+JuOg1ndGL9N5K+u7iYbfkA=;
+	s=arc-20240116; t=1790967358; c=relaxed/simple;
+	bh=PVUQY6aK4BxvrrUFNqzsjCa+1z+ijISWXom3h30Zh98=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=R0oWEFMZtkuSUtnDYg0BqHuKAERAiGCbV9duT0ywF64KYQn6kgLCdGjuMs28CWktk3wWIteo7oTEX8d5SyXl/rUsTgfI1wWN5BVGpr4Jh+xAGfJrUvYPQOjN8EzWRI8jKvnVj0tTU0tr8VJsphH9+pPQwbojvwxZIcqQ3QdMhps=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=e0bNSe9y; arc=none smtp.client-ip=100.103.45.18
+	 MIME-Version; b=h/8lmejxxzi7mK5afbY+0ESpknHObng6TLvFwumkSBWICSSDq89/Nalhcpa3+iX5zuHW7x/rMfM/sUCt6E1C1gaRW34dVdOS6H5Fn9CliTBtla5mow5NfEpx5EZ/UlY5cYR7ibUPMhPycsKqV2ZikZJgN6CC5COsjMrGr2SAUPg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=nI4I7EAM; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="e0bNSe9y"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 722491F000FF
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:54 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="nI4I7EAM"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4985C1F000FF
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 18:55:56 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1790967354;
-	bh=PNMB88vm83Mhr2XZ62OGaPMYLBfVi5W1R+QC28Rq7Pg=;
+	s=k20260515; t=1790967356;
+	bh=YwfCV59i6Z8UoYiP6oIJ1Tf7RFu8XKkf/lbY7Qwejdo=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=e0bNSe9yOqCyKtX+mHhdA99UNWg4KSOT2jtlCzvzVIUafUWSBtwp97UE3QyTDLsYN
-	 P12aUPc8+sKCW2ieyFJobU7suSm0QcSQ9G23cXnV+ojshE/qdycj0PZ8hTHUZh6dH/
-	 f1tYuOXa8LoHx1FEG1vnQrO0pJT0TvPwo4+mrmNa9fGVe9VQPytgSrLKXP7wft/TjU
-	 2d5nHdrpLyoBn2248ksDiBaN3nWEyJ733xFn7txyESBivFwThF8AGj1/qLN8LUFu7Y
-	 e8VDxdlIzcsdfb+8mnGl8dNMNdjHOxrf7sME3CmDGaL8R89g/nl2jE08jdmFO5C7wx
-	 31VLp2WYiAKDg==
+	b=nI4I7EAM1QI+KrlvE5kwSvH9l55zCzcQOtSUiqNHk6B31lbGlpWR2jPG7topHot3J
+	 D7qwdC3Nb6Y8c+V5y9jflLQXVVSSdB9TgDGYWrsyLUKDybGnYCb/Ipx0c3+p7EiHiL
+	 UnKMQ3eGEXWlhhfhGMNRQKMdQYdrZiy/lKnxUMDy5CKEVIylv/tRWgT6CJKKukwwg9
+	 l71ufxMHbTXIFVzDU52pEJnZa0IEcUJY4GQ6sSjvXtMzNnzMDQXApaNnCQBXkQDQ3I
+	 P8ZC8FeBdFpWE4StlUJOkAust7m9cA+jdGNk/TdNCitBgYN/96gLRUYlZ8XrX+PwXP
+	 bBIRCkvk18s0Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/6] btrfs: qgroup: fix leak of qgroups in rb tree after failure to enable quotas
-Date: Fri,  2 Oct 2026 19:55:44 +0100
-Message-ID: <f88973fbdc498f7e9363e7202ba53963608f7b33.1790967259.git.fdmanana@suse.com>
+Subject: [PATCH 5/6] btrfs: abort transaction on qgroup failures in create_pending_snapshot()
+Date: Fri,  2 Oct 2026 19:55:46 +0100
+Message-ID: <2709bf35200a66c31d1523ab2bd76def4ffbdeeb.1790967259.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
 In-Reply-To: <cover.1790967259.git.fdmanana@suse.com>
 References: <cover.1790967259.git.fdmanana@suse.com>
@@ -44,39 +44,50 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When enabling quotas we add struct btrfs_qroup items to the rbtree
-fs_info->qgroup_tree, however if there's an error during the quota enable
-operation after adding those items, we exit without removing the items
-from the rbtree and freeing them.
-
-Fix this by calling btrfs_free_qgroup_config() on error, which also
-deletes all sysfs entries (it calls btrfs_sysfs_del_qgroups()).
+If we get an error when calling one of the qgroup functions, we jump to
+the 'fail' label without aborting the transaction. This is not a bug as up
+the call chain (transaction commit path), we will end up aborting the
+transaction. However having the explicit transaction abort in
+create_pending_snapshot() allows us to get a stack trace and log message
+that tells us exactly where we failed, useful for troubleshooting, and
+also adds consistency since in that function we abort the transaction in
+every other error path.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/qgroup.c | 9 +++++++--
- 1 file changed, 7 insertions(+), 2 deletions(-)
+ fs/btrfs/transaction.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 4b6c82a24bc5..9f21b091c545 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1293,8 +1293,13 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
- 	if (ret)
- 		btrfs_put_root(quota_root);
- out:
--	if (ret)
--		btrfs_sysfs_del_qgroups(fs_info);
-+	if (ret) {
-+		/*
-+		 * Free all qgroups previously added with add_qgroup_rb() and
-+		 * sysfs entries.
-+		 */
-+		btrfs_free_qgroup_config(fs_info);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index da4ffa7bda00..fcbcb4a208be 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1920,14 +1920,21 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	 * To co-operate with that hack, we do hack again.
+ 	 * Or snapshot will be greatly slowed down by a subtree qgroup rescan
+ 	 */
+-	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_FULL)
++	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_FULL) {
+ 		ret = qgroup_account_snapshot(trans, root, parent_root,
+ 					      pending->inherit, objectid);
+-	else if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE)
++		if (unlikely(ret < 0)) {
++			btrfs_abort_transaction(trans, ret);
++			goto fail;
++		}
++	} else if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE) {
+ 		ret = btrfs_qgroup_inherit(trans, btrfs_root_id(root), objectid,
+ 					   btrfs_root_id(parent_root), pending->inherit);
+-	if (unlikely(ret < 0))
+-		goto fail;
++		if (unlikely(ret < 0)) {
++			btrfs_abort_transaction(trans, ret);
++			goto fail;
++		}
 +	}
- 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
- 	if (ret && trans)
- 		btrfs_end_transaction(trans);
+ 
+ 	ret = btrfs_insert_dir_item(trans, &fname.disk_name,
+ 				    parent_inode, &key, BTRFS_FT_DIR, index, NULL);
 -- 
 2.47.2
 

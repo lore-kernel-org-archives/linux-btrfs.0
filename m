@@ -1,154 +1,174 @@
-Received: from mail-oi1-f200.google.com (mail-oi1-f200.google.com [209.85.167.200])
+Received: from sg-3-41.ptr.tlmpb.com (sg-3-41.ptr.tlmpb.com [101.45.255.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96D7D466B44
-	for <linux-btrfs@vger.kernel.org>; Thu,  1 Oct 2026 21:38:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.167.200
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53BB83A6B6F
+	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2026 05:43:44 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790890709; cv=none; b=iAbhEuDGC+mTDYZs5rfoRH3WI3Xfx8typ6L7tHdT/Zw1+879SoUZM4M8GSCKeQvjidmZUuczJ1ZIZZW+QhX7o7QD0kBlg0v6VKBkAIv2duZw+TCwskS39kR9SnJAiTP2gIXlecoFl0fr68IIfDc4HW1N4pnYqwU47t4L7PRd0nE=
+	t=1790919827; cv=none; b=bnPiwD+wbjisWVtIG0t3TXwQSKwvqQrR0S4eo4gw4nyglAVEz9aTg+CSuKahsoTltzK+DPV8+P1fj7fPq7VKtGD24f6XLxSjAVAsiHr+XUej7I2zcUX2djwZ/Z5hB/qMqRS7G/xjowxGg06+HMT07HcmHPIm+BgiURzNaCqgvpI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790890709; c=relaxed/simple;
-	bh=/lZxEh665BikeST0L+xJJ/DMpe47LhzV4ONcfDWIfmA=;
-	h=MIME-Version:Date:Message-ID:Subject:From:To:Content-Type; b=lAGHedREreyuH+DKZPRkYg9qidmKGmaBO+dOsxeiamUALc18hGv9OKlIo0Ahr7x092JGMBR2RZkmVrA/ooKLlgaeuIN/PAfenrqVImDweBg2Bh+Q1MKVuzcFsGOZ+rJV0eANsVSbuqmHCdUCFEJK32CISYRVo7E3IAedGK+uuF8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com; arc=none smtp.client-ip=209.85.167.200
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f200.google.com with SMTP id 5614622812f47-4b597558c4cso11672846b6e.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2026 14:38:27 -0700 (PDT)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790890706; x=1791495506;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=uST/fJA8PntdH+iehUrW7X8BNz4nkb3lh+gtfS1Ap2U=;
-        b=bzvSnXCFnQtvhalnhUcCfy1iaIVFeQSwWtuOwhReXC2Okr6akYoZQdp9Yfvp/6qb7R
-         0ooVN8eqGE5O464Kr+ZY1+dQ2xYWU9GKA+mZdcDRqK/EzhMiJ/73CSki7IBxcFTNm/cA
-         B6yAFibWylaZwFWu35Aszr8l5uykD1H1f4UZTPhHhaJ20LUR36zlE7T7XY3Fwsd0mfim
-         SXTduN1kjGXZDvGyTirY4UKBdb5okzIVJoSj1tRYs63dZWWzFxpaG12MfyzCaiq9xhsC
-         8iz8bzngnYoSQjPSRCoCBsCr9tZnd96pG8HRvhwhxM4/lE1Bo43u97FzzEJblltckRuj
-         IjTg==
-X-Forwarded-Encrypted: i=1; AKwUvByHP/JpdMvg7qbN67/r0Jq2DjT67co8zqqeITTYbPqK1GirnCRo3440ITuL+DXJUP9qx1NswnOuzgl0sQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++mGVeuPEUFd0ImAwDlMadduoM9+ZNRdR0f0YbPNTdsfwrAcDXrg
-	0lObj2cM9Y/nhSMmgFjJOjOOtN+8i8lXpFz8EFipsMqg3zYAIK2N1RfIogbtuBfL0xdMjBauhZS
-	kHRqBJBg5LGbDB/BN7lglLra8lPQLeeWT1TYbjQRFhD/1nQ2ZrfJTyC9uW8o=
+	s=arc-20240116; t=1790919827; c=relaxed/simple;
+	bh=3sgJo4lO6+sqNr+5GQ6q0WZdBmSh/xFcsv44Z3tfIqc=;
+	h=Subject:Date:Mime-Version:To:Message-Id:References:In-Reply-To:Cc:
+	 From:Content-Type; b=l2lH/Rhhn8JMpQSSpKq/BeF4qt5CWDljFDgdytlkeZMYEPBM6JOB5qxymFWXzY5sZAeUslHWnNa+A2wELXvV99U2vc62VZ1LRQRnkZH2s2iujQDTGYmv6FEECzJNbMlFBfq66pdFCNFrSsupZ4hJ8z98rI03idPdLAEF2uNrrXc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=olWl+1tg; arc=none smtp.client-ip=101.45.255.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="olWl+1tg"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1790919771;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=MSV2vzTXjAvuG3Rr4uxTEVVQfQzdDjvnZCgZSVbhgNM=;
+ b=olWl+1tgXKWVTJsfxh1ZADQrdiDbwEoLMINCbZWRAPmscdiY/ReR5gELOVg8bZYDzN92yq
+ NGWSfh+4pJBZPhLcMoyWBR1IqIBblKleZu+MRBbfxJv/GnxPKSmlfv+2adXL+HHuBqu9vg
+ qcde8gU352wTMWV9Df58AalN4t1uEvNm2xx6wpZ5oMLaqrNgiSzWZxMdCrOJf1nrwVJy40
+ KVjKqXBgkA4QNT7O+mgmyRmLINripM22lipOfCLkphjc0zGIn317Bp31VAggBfwwrE08i4
+ rZcgOrKl480HkPBi1IBAVj86y0P1KTwWzedcBhZdzDxhVS6qwzQTy9pPu/CtNw==
+Received: from [192.168.8.64] ([183.34.167.12]) by smtp.larksuite.com with ESMTPS; Fri, 02 Oct 2026 05:42:50 +0000
+X-Lms-Return-Path: <lba+26abf445b+0b30b3+vger.kernel.org+zhudongjiang@fygo.io>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 1/4] btrfs: zoned: track only sequential zones as active
+Date: Fri, 2 Oct 2026 13:42:45 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-X-Received: by 2002:a05:6809:2ca:10b0:4f5:4780:582 with SMTP id
- 5614622812f47-4f5478f7e75mr118947b6e.50.1790890706629; Thu, 01 Oct 2026
- 14:38:26 -0700 (PDT)
-Date: Thu, 01 Oct 2026 14:38:26 -0700
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6abed2d2.eb639fcc.2b981.0006.GAE@google.com>
-Subject: [syzbot] [btrfs?] kernel BUG in btrfs_backref_release_cache (4)
-From: syzbot <syzbot+918038c3f9425b05dcd3@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, mason@kernel.org, 
-	syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+To: "Naohiro Aota" <Naohiro.Aota@wdc.com>, <linux-btrfs@vger.kernel.org>
+Message-Id: <c41ec3b1-ec5f-4407-b45a-f831fd091351@fygo.io>
+References: <cover.1787717573.git.zhudongjiang@fygo.io> <c51aaf7f4621dedc36c275bfa9ba1ec884de09c4.1787717573.git.zhudongjiang@fygo.io> <DL0AVDP5O9C2.1VT2TYQXCL4B4@wdc.com> <3604f3af-2a44-4b8a-8b6b-67e8070308ed@fygo.io>
+In-Reply-To: <3604f3af-2a44-4b8a-8b6b-67e8070308ed@fygo.io>
+Cc: <johannes.thumshirn@wdc.com>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-Hello,
+=E5=9C=A8 2026/8/28 20:03, Dongjiang Zhu =E5=86=99=E9=81=93:
+> =E5=9C=A8 2026/8/28 12:42, Naohiro Aota =E5=86=99=E9=81=93:
+>> On Wed Aug 26, 2026 at 1:27 PM JST, Dongjiang Zhu wrote:
+>>> The runtime activation and finish paths apply active-zone accounting to
+>>> both conventional and sequential stripes.
+>>>
+>>> At mount, however, active_zones_left is rebuilt from device zone
+>>> conditions.=C2=A0 Conventional zones report NOT_WP and are therefore no=
+t
+>>> included.=C2=A0 Meanwhile, all-conventional block groups are marked act=
+ive
+>>> and added to zone_active_bgs, so mount recovery still decreases
+>>> reserved_active_zones for their metadata and system stripes.
+>>>
+>>> The two counters can therefore diverge across a remount.
+>>>
+>>> Each unmatched reservation decrement lets data consume one more
+>>> sequential active-zone slot.=C2=A0 Once the reservation becomes negativ=
+e,
+>>> data can exhaust all such slots.
+>>
+>> Yes, apparently, this was not a problem previously, Because,
+>> max_active_zones > 0 mostly means there is no conventional zones. But,
+>> we changed the btrfs_get_max_active_zones() behavior to also use
+>> bdev_max_open_zones() to set the max_active_zones. This is a regressio
+>> introduced by that change, which deserves Fixes tag.
+>>
+>=20
+> Agreed.=C2=A0 I will add the Fixes tag in the next revision.
+>=20
+>>>
+>>> [...]
+>>>
+>>> +static inline bool btrfs_needs_active_zone_tracking(struct btrfs_devic=
+e *dev,
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0 u64 physical)
+>>> +{
+>>> +=C2=A0=C2=A0=C2=A0 if (!btrfs_dev_is_sequential(dev, physical))
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return false;
+>>> +
+>>> +=C2=A0=C2=A0=C2=A0 if (dev->zone_info->max_active_zones =3D=3D 0)
+>>> +=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0 return false;
+>>
+>> Apparently, since we use bdev_max_open_zones() to populate
+>> zone_info->max_active_zones, we won't have max_active_zones =3D=3D 0 now=
+?
+>>
+>=20
+> It can still be zero.=C2=A0 btrfs_get_max_active_zones() initially assign=
+s a
+> non-zero value, but btrfs_get_dev_zone_info() resets it to zero for
+> backward compatibility when nactive exceeds the derived limit and the
+> device reports no hardware max_active_zones limit.=C2=A0 The per-device c=
+heck
+> is therefore still needed.
+>=20
+>>>
+>>> [...]
+>>>
+>>
+>> Also, as you dropped a BG on conventional zones from the
+>> zone_active_bgs, prepare_allocation_zoned() will never return the
+>> conventional BG to allocate with.
+>=20
+> Thanks for pointing this out.
+>=20
+> I intentionally changed zone_active_bgs so that conventional-only block
+> groups are excluded.=C2=A0 I understood that this would also affect the
+> candidates used by prepare_allocation_zoned().
+>=20
+> As I understand it, this is only an initial allocation hint.=C2=A0 Conven=
+tional
+> block groups are no longer preferred through this path, but can still be
+> selected by the subsequent block group scan.=C2=A0 Am I missing anything =
+here?
+>=20
+> My original plan was to address the allocation policy separately after th=
+is
+> series.=C2=A0 I also compared the baseline and the full series with conve=
+ntional
+> and sequential data/metadata workloads and did not observe a measurable
+> performance regression.
+>=20
+> As a separate question, on devices with both conventional and sequential
+> zones, should allocation generally prefer conventional zones, or balance
+> them with active sequential zones?=C2=A0 Besides preserving active-zone s=
+lots,
+> are there performance or endurance differences that should guide this
+> policy?
 
-syzbot found the following issue on:
+Hi Naohiro,
 
-HEAD commit:    d266640c6c76 Merge tag 'driver-core-7.3-rc5' of git://git...
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=16cc3315580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=2b924f079099ba6e
-dashboard link: https://syzkaller.appspot.com/bug?extid=918038c3f9425b05dcd3
-compiler:       Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77), Debian LLD 22.1.8
+A gentle ping before I send v4: could we clarify whether it is
+acceptable to keep zone_active_bgs limited to sequential-zone
+block groups?
 
-Unfortunately, I don't have any reproducer for this issue yet.
+I used dm-linear on an HC620 to construct a device with 4 GiB of
+conventional zones and 128 GiB of sequential zones. Each sample
+was independently prepared on baseline, using either a fresh or
+an aged filesystem, before rebooting into the kernel under test.
 
-Downloadable assets:
-disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-d266640c.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/25e4cb4d0962/vmlinux-d266640c.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/ea6eec983242/bzImage-d266640c.xz
+I compared baseline and patch 1 with five A/B pairs per filesystem
+state. The table shows the change in median throughput with
+patch 1 relative to baseline; positive values mean faster:
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+918038c3f9425b05dcd3@syzkaller.appspotmail.com
++---------------------------+---------+---------+
+| Workload                  | Fresh   | Aged    |
++---------------------------+---------+---------+
+| 1 MiB sequential writes   |  -0.03% |  +1.74% |
+| 4 KiB sequential writes   |  +0.05% |  -0.66% |
+| 4 KiB mixed random R/W    |  +0.22% |  +0.70% |
+| Postmark                  |  +0.87% |  -1.76% |
++---------------------------+---------+---------+
 
-BTRFS info (device loop0): balance: start -d -m
-BTRFS info (device loop0): relocating block group 6881280 flags data|metadata
-BTRFS info (device loop0): relocating block group 5242880 flags data|metadata
-BTRFS info (device loop0): found 9 extents, stage: move data extents
-assertion failed: !cache->nr_nodes, in fs/btrfs/backref.c:3163 (cache->nr_nodes=2)
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/backref.c:3163!
-Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
-CPU: 0 UID: 0 PID: 5328 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-RIP: 0010:btrfs_backref_release_cache+0x1fe/0x230 fs/btrfs/backref.c:3163
-Code: 0f 0b e8 75 da 90 fd 48 c7 c7 20 c8 5b 8c 48 c7 c6 80 c8 5b 8c 48 c7 c2 80 bf 5b 8c b9 5b 0c 00 00 41 89 e8 e8 23 9e f0 fc 90 <0f> 0b e8 4b da 90 fd 48 c7 c7 c0 c8 5b 8c 48 c7 c6 20 c9 5b 8c 48
-RSP: 0018:ffffc9000eb7f7e8 EFLAGS: 00010246
-RAX: 0000000000000052 RBX: ffff88801fa82020 RCX: 980914ae5784ef00
-RDX: 0000000000000000 RSI: 8000000000000000 RDI: 0000000000000000
-RBP: 0000000000000002 R08: ffffc9000eb7f567 R09: 1ffff92001d6feac
-R10: dffffc0000000000 R11: fffff52001d6fead R12: dffffc0000000000
-R13: 1ffff11003f50404 R14: ffff88801fa820f0 R15: ffff8880525fd3b0
-FS:  00007facfea6b6c0(0000) GS:ffff88808c2bc000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000200000001000 CR3: 000000001235c000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- relocate_block_group+0xb84/0xeb0 fs/btrfs/relocation.c:3756
- do_nonremap_reloc+0xa7/0x560 fs/btrfs/relocation.c:5391
- btrfs_relocate_block_group+0x6e2/0xaf0 fs/btrfs/relocation.c:5558
- btrfs_relocate_chunk+0x114/0x810 fs/btrfs/volumes.c:3729
- __btrfs_balance+0x1b5f/0x29d0 fs/btrfs/volumes.c:4668
- btrfs_balance+0xaa6/0x1180 fs/btrfs/volumes.c:5055
- btrfs_ioctl_balance+0x3da/0x640 fs/btrfs/ioctl.c:3494
- vfs_ioctl fs/ioctl.c:51 [inline]
- __do_sys_ioctl fs/ioctl.c:597 [inline]
- __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
- do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
- do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7facfdb9e159
-Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-RSP: 002b:00007facfea6afe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-RAX: ffffffffffffffda RBX: 00007facfde26090 RCX: 00007facfdb9e159
-RDX: 0000200000000180 RSI: 00000000c4009420 RDI: 0000000000000006
-RBP: 00007facfdc3506b R08: 0000000000000000 R09: 0000000000000000
-R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-R13: 00007facfde26128 R14: 00007facfde26090 R15: 00007fff41f35e48
- </TASK>
-Modules linked in:
----[ end trace 0000000000000000 ]---
-RIP: 0010:btrfs_backref_release_cache+0x1fe/0x230 fs/btrfs/backref.c:3163
-Code: 0f 0b e8 75 da 90 fd 48 c7 c7 20 c8 5b 8c 48 c7 c6 80 c8 5b 8c 48 c7 c2 80 bf 5b 8c b9 5b 0c 00 00 41 89 e8 e8 23 9e f0 fc 90 <0f> 0b e8 4b da 90 fd 48 c7 c7 c0 c8 5b 8c 48 c7 c6 20 c9 5b 8c 48
-RSP: 0018:ffffc9000eb7f7e8 EFLAGS: 00010246
-RAX: 0000000000000052 RBX: ffff88801fa82020 RCX: 980914ae5784ef00
-RDX: 0000000000000000 RSI: 8000000000000000 RDI: 0000000000000000
-RBP: 0000000000000002 R08: ffffc9000eb7f567 R09: 1ffff92001d6feac
-R10: dffffc0000000000 R11: fffff52001d6fead R12: dffffc0000000000
-R13: 1ffff11003f50404 R14: ffff88801fa820f0 R15: ffff8880525fd3b0
-FS:  00007facfea6b6c0(0000) GS:ffff88808c2bc000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 0000200000001000 CR3: 000000001235c000 CR4: 0000000000352ef0
+The median differences were small, suggesting no substantial
+performance regression in these four workloads.
 
+I'd still prefer to keep zone_active_bgs tracking only
+sequential-zone block groups for now and address allocation-policy
+changes separately.
 
----
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
-
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
-
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup
+Thanks,
+Dongjiang

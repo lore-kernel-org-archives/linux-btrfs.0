@@ -1,67 +1,67 @@
-Received: from mail-wm2-f12.google.com (mail-wm2-f12.google.com [74.125.225.140])
+Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C20254785
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2026 21:36:04 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.140
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2A16C39890A
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2026 21:36:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791063366; cv=none; b=i5uCFsbVoJplTO6GWbr/PwM2m9u+7sXxOyO2gCVgqAf/zMNFok8hVSzhwt6Xkb5xxkLG12gctHAOXgM8Hw9k87tuZbpX+sXxHj8yIzzJNfN0QbLPKU47lyzcPy2Go2AhCXasy+sbV0JiSfchn6yz9Buq3+dC37KFi7WtwlB96Fk=
+	t=1791063390; cv=none; b=EUUcq15wX+zHI5+LxX4QndGrTYsQYHA5ynZaRh+1R/HOoL7MzKoCGueOD8cyf7VUraJ8ad0+mwtzNVJul+aEdUfA6J47kbhS3EXgyN0MYYcUDD003HXmN9DDTOszX6yh7+YK/u1JPtjZ8E4UZKDAql/AJPuwIgEWpKEkUs3jDD4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791063366; c=relaxed/simple;
-	bh=DJxW2wfDu6bubPRDIyjz57zvXFjJOi5njIStX2VsVtU=;
+	s=arc-20240116; t=1791063390; c=relaxed/simple;
+	bh=uXJyJct4a9RpZd42S9VWhCfNvaVbHFDd6clqOLPyl4M=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=rNnpJ8lm4neqhrQO89v70fEeuyuDj/lihpiCHL1h2r4WLFks4U7XAafVORUpzMTetypvgcPsm9rMgohWjL3F228DzQmAwtzGr8F5PB6rmJa0O+bRAfRrAUpaO7hUjptXmFWr37Ek+TOJ8g7vNRIO1juhpJKw8FzS8qkVqxAQh9c=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TxJnWwf/; arc=none smtp.client-ip=74.125.225.140
+	 In-Reply-To:Content-Type; b=RxK4CdQ3XSeP7P6BlZ0UmIlQOLDnFXlWxbGNx8+GCH5shbJ4h0RjnHbstXeNNpifjP5zir5sTx0mZjB6DoKqAnfTDd7DAKfLsKlbhsGp2NPdly/R0lTMQyMlt1lEcfajN+b5fMw71841nt9ccmjjTK7HbXWAAXVfJ8ZxTKj7GY8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=X8qTvamp; arc=none smtp.client-ip=209.85.128.50
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TxJnWwf/"
-Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49e66390995so4731205e9.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 03 Oct 2026 14:36:04 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="X8qTvamp"
+Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4a16c1608faso2563795e9.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Oct 2026 14:36:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791063363; x=1791668163; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1791063387; x=1791668187; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=okrz1AScyQw1sqru72c8SvlHHsLR2Z86m3kd7J6/KE0=;
-        b=TxJnWwf/4118Y709g6ugb9J6vvNZjpI+kd3wNSup0VZzml8JRmOXKFinEYF6AAGm/K
-         wq8zCeOGQbN1MUtmIS1YS3fRCVEZVzuY1oBPYRjOabSQ371cnkiuJw9fNcAvs2zIUjhz
-         KvAFIebjk0THaD4kvOimy39UB/k4PG23nQKShTKsRsI8HJwlqA1PC+JbfkBNxrd0FyLA
-         FVGVTBy2bS6xHEQ5eIXU8yxxuHJF9Cvn7w6O2V2TTHKKYgvrLY9NDJsjRM74VgT9cgxW
-         QaPB3MH3+k0Q/sVGh0h8Bqx4ln4O5MjOg8+uv+5a48ddZjzXay1a6Zaz4ob2aU9I6PTK
-         qFNg==
+        bh=GslxcUUavKHlTdFwaar0hu27Mm5uFqzdCxZ5qCSULms=;
+        b=X8qTvampenB7RB6XN4bFcs8VaqXt64gWgwENqFNh2deJIf3MAsqhVRBgSj3H66TdoR
+         HmiPa/MajNV39dajlWypA7kTmh+wiF8FTAbqADv1mJtpQylYsfM5Y24AggzF550/32Rz
+         GVOPrRNsOTVrgZREPuDS0/UlgZlj3jRi4L+LTbnmA5pLxZc1Rrjg9WwspMqlXy8/Kpfn
+         KCNS14swSOsEDyNK3DaGDFWwmQeFG+6EdCsEgK3Ult+Ll9ae0mG8hrce4F/G+NrL47ns
+         ZERYB3kx8zF70FzTI3RRF6wvT4iOkItHHWEGuq1qGcHPgGM3EB/DwzY0aw/Oys8NDfKF
+         bvww==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791063363; x=1791668163;
+        d=1e100.net; s=20260707; t=1791063387; x=1791668187;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=okrz1AScyQw1sqru72c8SvlHHsLR2Z86m3kd7J6/KE0=;
-        b=UhhnpjDJSshVQxokzwKDuyE/EIRoFyXzk75UlTC7ElQSxL3/xVqDEpSdtG3yJg+Yb0
-         ytFn8aOwtNAlqZ4W4CDlGSkWcfA01k2nsO6/ofwPKaMnsEvqSaIcHmAG4as8VheIpPd5
-         FU5/QffZWnvnr96Ij6Lo2Eh7bbDl8sjH5tEM7Iku7ux+YkiHkgvRGPPUPeEuwBwrPWSq
-         ndIDmzjdzivEdgy0JjeGutzSji3/5YR1fvw0sBEx6XueBmXNfZWGqkS3PsciAVp8O25d
-         KTEaPPbl5+LTnrRb/X52wJMqcbs5Eu1fKtb6hyJZSq75xsCvrvFCUrxs5yfhvIF64PzM
-         MaCg==
-X-Forwarded-Encrypted: i=1; AKwUvBwG0Ou30hFnvUO2Tr+YyhruYEtAKZ+DTpkoHRFOikvCqP/Fdxnvufo9i5S6VLRV3cifknzRT+0jE+h6vQ==@vger.kernel.org
-X-Gm-Message-State: AFuF++lBX7Dqoxp/qoDmdgvqG2lnVrytOmblEUn/FF357gMfNVLGlMsy
-	CP2Gzk+VCs5bolnp+MRm8arYTsulMSmO3wO8OMA6T+fbLI5VC/7B38YWrgOLq0gSIO0d6tj+TGm
-	wOqgqFKSUbQ==
-X-Gm-Gg: AYBFou1P3tQsChtddRjfrmhQz4JnAA2D1CUfhSX6oV++I/+odNWd7zH+DSmtEsI5S5C
-	OvZ2QmIOF9letA/xuVIzxW4P3bsXDnvjK5eDemqnSCHrTFW/H/IXmKkQ0K8fgWSjDcx0ntD67UX
-	RKNAmFx/QdaoxkOddz6om6B/oB375PSZjb2Jc21QOgmEZRw1rSz89+sJK7bZzvOmNxDQIwZqcRc
-	lqiHeAUcOTGd2IWJDTUwYmr46prKjVYQrFsfgoQCNrjhk1DKAUGnCBZetgty2j5X4wA4FqTKf1u
-	RsUdWBSmXAmfID4/A9SGORT6nDOSOu6V08OYgbEJ7/2kuA3pMYy0fD24r89PG5sNjnU7QqNTgk3
-	bTkA0XjyjyXwn4OdzOvoN1IPB93rULiisVPcwVMIvLvJfUxHSw8+8cdnt9OjRDFlZH2DwxwBXVP
-	05+jx8G8b5t6vWid2Z6sDAg7mYJHozt1aDarSKr+BDOlNmPAKMI7ddNfTYooN132E=
-X-Received: by 2002:a05:600c:5489:b0:49c:fea3:8633 with SMTP id 5b1f17b1804b1-4a02769f2f6mr122586625e9.24.1791063363234;
-        Sat, 03 Oct 2026 14:36:03 -0700 (PDT)
+        bh=GslxcUUavKHlTdFwaar0hu27Mm5uFqzdCxZ5qCSULms=;
+        b=OJaPYJX3ykUr+86n1Tbu36KbonJBWrAk2YEhmwEPJckrgYbvKunGDCDegpM+QtECx5
+         YBb+5fKLA9fiNwzYZkfP6zIq3nLOvAddb6BSla5/Eqktph+Du3YPRnh7SeYX3x0dnXqW
+         TaQjKBIEEMkgJdMMewx3EKNtDkIBt00fkqE6ypuQVyHcKdubqNciwSXNrGbkGup4g1HX
+         1ePS8ymxBKEvAvLH/UVusnocktzfft8X9KJxjsGUeg30zJPI0wqJ4gEjYOWoJOdp4iQx
+         prPwUbj+c3DIUnchka0k6zpv6Bj0Wv28xJ/8U0YpGJvYD6pCQJC5V+euSzpP8yAhxxFx
+         /MRA==
+X-Forwarded-Encrypted: i=1; AKwUvBwrfZoiM9tmszZQC17uZPpy3RQQOzMSETx7XBYCi96CkeD/CABuVlT6p6jg2tUw0JINuU+Ou3mbZ83iXQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++n+mDPKmSSVTQw6v0F7pwdd1LPN5h8lullh2tKrQiz2wT6JCwhH
+	+vkP8UEaseLewOCHttHWi5koUKsswYanu7D2De/alVuYvo9VVugpH1d4w3LGVKJR83T+KXF+SOq
+	Tp/fzk6hnKg==
+X-Gm-Gg: AYBFou2K7n4BgKG7pkTfFnzlCtqg6EPYJnqjfzH3BaO206dt72oV5W6e5oO3OOdXAjk
+	E5DzVCWTkguufIsibWx6Ij80AuvVFVGQiCWdELFSKgVi8GGQ5JbNQYsCeYIpwJKqKzRuk6pYK5I
+	paBHOUxDImiP147VbqX3of8PZFFslitEdHfTwDLffpmphW78vH+VDoFT8P/EHkWCcr8gsQN7Tgc
+	q4JeUHR8T3yukznNgaIRDh8Oh6lvLBVnf0lDYCtXd5eHiRZjSFrD9rXVJZbRwfCykg5sQvwWzRm
+	FHfRVjThapS4mDWBvn/d0yw1q7iEOz/fsxIJNtxJDX5qjtyTl0C6DutYkBqahUmdPHtTTdoNu3v
+	l3Q08gvmsXto2EsFPgzbtlTgjaYE6lVh68JPHXjUKTyAPT92sC0kjKo5uukW0J9u0mDYkGqBydA
+	b0x2i4R0dY/ixMSO4LFaj3cu/OhsXNagbuNIfaUee8mYInphE3hknlA4fxE8HkcDY=
+X-Received: by 2002:a05:600c:ad7:b0:49c:f13d:ffed with SMTP id 5b1f17b1804b1-4a01eb4c01dmr143351775e9.17.1791063387350;
+        Sat, 03 Oct 2026 14:36:27 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a78e4f3911sm4214844a91.15.2026.10.03.14.35.59
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2e49f70be7esm19246305ad.67.2026.10.03.14.36.25
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 03 Oct 2026 14:36:02 -0700 (PDT)
-Message-ID: <62697432-fef9-4e5d-bbe2-36e661439430@suse.com>
-Date: Sun, 4 Oct 2026 08:05:57 +1030
+        Sat, 03 Oct 2026 14:36:26 -0700 (PDT)
+Message-ID: <d6f47c04-cf2c-4a52-899f-744d5843b010@suse.com>
+Date: Sun, 4 Oct 2026 08:06:23 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,11 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 3/6] btrfs: qgroup: fix leak of qgroups in rb tree
- after failure to enable quotas
+Subject: Re: [PATCH v2 6/6] btrfs: qgroup: fix off-by-one max level check in
+ qgroup_trace_new_subtree_blocks()
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <cover.1791046651.git.fdmanana@suse.com>
- <2435981dcde450de7ffedc604e39168c19c2c4ab.1791046651.git.fdmanana@suse.com>
+ <866f66a876b64f392fd225f0cb291dc8eae0ac7e.1791046651.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -100,7 +100,7 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <2435981dcde450de7ffedc604e39168c19c2c4ab.1791046651.git.fdmanana@suse.com>
+In-Reply-To: <866f66a876b64f392fd225f0cb291dc8eae0ac7e.1791046651.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
@@ -109,41 +109,42 @@ Content-Transfer-Encoding: 8bit
 在 2026/10/4 03:30, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> When enabling quotas we add struct btrfs_qroup items to the rbtree
-> fs_info->qgroup_tree, however if there's an error during the quota enable
-> operation after adding those items, we exit without removing the items
-> from the rbtree and freeing them.
+> We have maximum of 8 (BTRFS_MAX_LEVEL) levels in a btree, going from 0 to
+> 7, so the upper bound checks should be:
 > 
-> Fix this by calling btrfs_free_qgroup_config() on error, which also
-> deletes all sysfs entries (it calls btrfs_sysfs_del_qgroups()).
+>    >= BTRFS_MAX_LEVEL
+> 
+> and not:
+> 
+>    >= BTRFS_MAX_LEVEL - 1
+> 
+> In practice this will hardly ever be a problem since having a btree with
+> 8 levels would imply a massively huge fs.
 > 
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
-Qu> ---
->   fs/btrfs/qgroup.c | 9 +++++++--
->   1 file changed, 7 insertions(+), 2 deletions(-)
+Qu
+
+> ---
+>   fs/btrfs/qgroup.c | 4 ++--
+>   1 file changed, 2 insertions(+), 2 deletions(-)
 > 
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 4b6c82a24bc5..9f21b091c545 100644
+> index c9fc3b6a5132..54d82d6fd4bb 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -1293,8 +1293,13 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
->   	if (ret)
->   		btrfs_put_root(quota_root);
->   out:
-> -	if (ret)
-> -		btrfs_sysfs_del_qgroups(fs_info);
-> +	if (ret) {
-> +		/*
-> +		 * Free all qgroups previously added with add_qgroup_rb() and
-> +		 * sysfs entries.
-> +		 */
-> +		btrfs_free_qgroup_config(fs_info);
-> +	}
->   	mutex_unlock(&fs_info->qgroup_ioctl_lock);
->   	if (ret && trans)
->   		btrfs_end_transaction(trans);
+> @@ -2491,8 +2491,8 @@ static int qgroup_trace_new_subtree_blocks(struct btrfs_trans_handle* trans,
+>   	int i;
+>   
+>   	/* Level sanity check */
+> -	if (unlikely(cur_level < 0 || cur_level >= BTRFS_MAX_LEVEL - 1 ||
+> -		     root_level < 0 || root_level >= BTRFS_MAX_LEVEL - 1 ||
+> +	if (unlikely(cur_level < 0 || cur_level >= BTRFS_MAX_LEVEL ||
+> +		     root_level < 0 || root_level >= BTRFS_MAX_LEVEL ||
+>   		     root_level < cur_level)) {
+>   		btrfs_err_rl(fs_info,
+>   			"%s: bad levels, cur_level=%d root_level=%d",
 

@@ -1,67 +1,67 @@
 Received: from mail-wm2-f12.google.com (mail-wm2-f12.google.com [74.125.225.140])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B762F472F7D
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2026 21:29:31 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C20254785
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2026 21:36:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.225.140
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791062973; cv=none; b=DlHJW8ytlpM8Q37J+v7Sn8tGlvu3CLlVTYeyKFBUNEQinMK6teyoYBtEU56lwflMa4lK9a48+SIh+TwM3YGYhoDFfbZZDsRT3TerTlcaQwiF7mleiHr5j2L4xdd/65S8q6d7ntRSuwvUKf451vZJd9X28GDyE0nfRR0vwIKW6j8=
+	t=1791063366; cv=none; b=i5uCFsbVoJplTO6GWbr/PwM2m9u+7sXxOyO2gCVgqAf/zMNFok8hVSzhwt6Xkb5xxkLG12gctHAOXgM8Hw9k87tuZbpX+sXxHj8yIzzJNfN0QbLPKU47lyzcPy2Go2AhCXasy+sbV0JiSfchn6yz9Buq3+dC37KFi7WtwlB96Fk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791062973; c=relaxed/simple;
-	bh=75h9TbYs2URy0Myh9C665oc6CbTF4h6p4hZVcXTfNmk=;
+	s=arc-20240116; t=1791063366; c=relaxed/simple;
+	bh=DJxW2wfDu6bubPRDIyjz57zvXFjJOi5njIStX2VsVtU=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=IgXEachSAFpx0jRkLcwTjX+FeegVF/VC8xy7uYkksFvDGb/+gw0RRbc0Rm92SRO/VcWogDyROuCZiH+5b1oI9fA3Az7/hkGtDUpYyBvbCZkj0iZtTQxvRJkWfcE4hnKOpgmFEGDfhPqsDaX5YaQMakAp7PdjH3JvyOf4ctl3N00=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=OcmE5cuy; arc=none smtp.client-ip=74.125.225.140
+	 In-Reply-To:Content-Type; b=rNnpJ8lm4neqhrQO89v70fEeuyuDj/lihpiCHL1h2r4WLFks4U7XAafVORUpzMTetypvgcPsm9rMgohWjL3F228DzQmAwtzGr8F5PB6rmJa0O+bRAfRrAUpaO7hUjptXmFWr37Ek+TOJ8g7vNRIO1juhpJKw8FzS8qkVqxAQh9c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=TxJnWwf/; arc=none smtp.client-ip=74.125.225.140
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="OcmE5cuy"
-Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49b912d37b6so4719695e9.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 03 Oct 2026 14:29:31 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="TxJnWwf/"
+Received: by mail-wm2-f12.google.com with SMTP id 5b1f17b1804b1-49e66390995so4731205e9.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 03 Oct 2026 14:36:04 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791062970; x=1791667770; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1791063363; x=1791668163; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=G1wTGTtJdOYnTt77FpTvkTt9cYqIQVDRlVCTunfZSFg=;
-        b=OcmE5cuyAqPIvtql9w3rKsL9K49SW2kGz+Ub7x6iW0rNdqaTRWKBbB5cVbH4Ns+Zwy
-         LXL1um9Ls2d8S/U9yALeI+UDZDwmAEx/g0GQn9vhxHpvMrOuV7yTRBhNQgdG8VogQhH6
-         x2b/+qpeRz28AaG9yvLyZATfSm6jp2ocgXGEiRr74/POjNpF8xd+fXjH+3kSnkDbkXqK
-         lB5WdgJu0DTvWc2y/6BJMU7YxyY6IdDiU8GlOoux8jAG5I8bIRYLAVL35RKU7ZuRG5Ut
-         JsOfO1BA+YfldFOz6R/s88CjNQuQodvOuEhwEY8OlYL1qDQ1USqs0Eubq+ymtJpFS63b
-         obyw==
+        bh=okrz1AScyQw1sqru72c8SvlHHsLR2Z86m3kd7J6/KE0=;
+        b=TxJnWwf/4118Y709g6ugb9J6vvNZjpI+kd3wNSup0VZzml8JRmOXKFinEYF6AAGm/K
+         wq8zCeOGQbN1MUtmIS1YS3fRCVEZVzuY1oBPYRjOabSQ371cnkiuJw9fNcAvs2zIUjhz
+         KvAFIebjk0THaD4kvOimy39UB/k4PG23nQKShTKsRsI8HJwlqA1PC+JbfkBNxrd0FyLA
+         FVGVTBy2bS6xHEQ5eIXU8yxxuHJF9Cvn7w6O2V2TTHKKYgvrLY9NDJsjRM74VgT9cgxW
+         QaPB3MH3+k0Q/sVGh0h8Bqx4ln4O5MjOg8+uv+5a48ddZjzXay1a6Zaz4ob2aU9I6PTK
+         qFNg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791062970; x=1791667770;
+        d=1e100.net; s=20260707; t=1791063363; x=1791668163;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=G1wTGTtJdOYnTt77FpTvkTt9cYqIQVDRlVCTunfZSFg=;
-        b=krMoqXhf50ePDfCWugpfbsPrtTIxiSMJ+BREw25xBFPv9tftK6iAHBaAR5XQnJAkjE
-         ILCE4cblAjCxv7z1rc8taz9eBFyXFG3xSHJjO9lJy3iluox+D9VMo4wQ0kKPK/F63QYa
-         9gD/EOXAL4I7v6bDmBXgrH3fA6HKj/YlYnylTaduedpPX3Q6+TxrFeqGJt3LFa+eoUq3
-         8CeTiIbHAXNjuAPDBUZdZk3GA29UHJxm+5rwHfveZ7mhrtb1G04dXA84maosbIGlAvkM
-         5pfAFB6+n5MRZciHUDdBb9e43+oSLaST1QtPdJoZd85vg42UO6czW6OvFmv6j9wH1xxI
-         70bg==
-X-Forwarded-Encrypted: i=1; AKwUvBwEi3evCQFV1Jl3OruHAn5kaoPKKkAK+bNf9XNIrL7Lb7VbFSgPso3jSWueIdRK1If6fSht4iQze9jeug==@vger.kernel.org
-X-Gm-Message-State: AFuF++n3MPqM3NB5vyBtkx1Ly+T3HVfOuw6+usbP1ZBubf9Y2bZYQx+k
-	3V7Jsie5RwMJsyC6ta4abiE4OJ6Fb6ZMaU4Sp+79AWCw8fnRmtMiFR/xU44QREx6Zm3o9ip7DUl
-	CtI32f3EegQ==
-X-Gm-Gg: AYBFou1CZMQbHpj3qzDc/ZSEDTd6pGwcBhvlf5UsngC5iItp2gChOG2Tb6a1n0vceJ3
-	FZRKTUrVsuAn8I6W7MieTrPCGFxq0Nu1HS2n5uWQr1/Akn30ECn/rxCRH96btMSeuDD2JyVboUD
-	FaAlT+Ekj6SDl6j8mfwtxMpn9XRj7MtBT6lJATYz09muno4CW/DhPSY+wEkgdmU3QfeuBb/t4AN
-	rEMoyBrzhcH8drCTz/qbjlLcRXGu2Cb/nkqja7vD40eAgsqgKyt+fdJS3bvVDdUuPy4QPut755i
-	pVFwX1pY6rAbNxbWw9ZGu60M/05WdGEFcKNYNATrlV6rUu586Upr3x7PUzqGKPP0WYnz+u8TM5B
-	yJx2uDISkYirgZbzhR4UO5w2hoMG8k2qmlQB1TLZnwBtsc2MG23JDBtGsjINvvKs/0gFHGO7uHW
-	fDfZNbJ8Uqi6l9IXoWF5m8xizTJ+jJitxhgsuiZqsEYATNsxY1E+EubLgnUzDlFpo=
-X-Received: by 2002:a05:600c:a011:b0:49f:ce78:356f with SMTP id 5b1f17b1804b1-4a0276b869fmr98099065e9.32.1791062969616;
-        Sat, 03 Oct 2026 14:29:29 -0700 (PDT)
+        bh=okrz1AScyQw1sqru72c8SvlHHsLR2Z86m3kd7J6/KE0=;
+        b=UhhnpjDJSshVQxokzwKDuyE/EIRoFyXzk75UlTC7ElQSxL3/xVqDEpSdtG3yJg+Yb0
+         ytFn8aOwtNAlqZ4W4CDlGSkWcfA01k2nsO6/ofwPKaMnsEvqSaIcHmAG4as8VheIpPd5
+         FU5/QffZWnvnr96Ij6Lo2Eh7bbDl8sjH5tEM7Iku7ux+YkiHkgvRGPPUPeEuwBwrPWSq
+         ndIDmzjdzivEdgy0JjeGutzSji3/5YR1fvw0sBEx6XueBmXNfZWGqkS3PsciAVp8O25d
+         KTEaPPbl5+LTnrRb/X52wJMqcbs5Eu1fKtb6hyJZSq75xsCvrvFCUrxs5yfhvIF64PzM
+         MaCg==
+X-Forwarded-Encrypted: i=1; AKwUvBwG0Ou30hFnvUO2Tr+YyhruYEtAKZ+DTpkoHRFOikvCqP/Fdxnvufo9i5S6VLRV3cifknzRT+0jE+h6vQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++lBX7Dqoxp/qoDmdgvqG2lnVrytOmblEUn/FF357gMfNVLGlMsy
+	CP2Gzk+VCs5bolnp+MRm8arYTsulMSmO3wO8OMA6T+fbLI5VC/7B38YWrgOLq0gSIO0d6tj+TGm
+	wOqgqFKSUbQ==
+X-Gm-Gg: AYBFou1P3tQsChtddRjfrmhQz4JnAA2D1CUfhSX6oV++I/+odNWd7zH+DSmtEsI5S5C
+	OvZ2QmIOF9letA/xuVIzxW4P3bsXDnvjK5eDemqnSCHrTFW/H/IXmKkQ0K8fgWSjDcx0ntD67UX
+	RKNAmFx/QdaoxkOddz6om6B/oB375PSZjb2Jc21QOgmEZRw1rSz89+sJK7bZzvOmNxDQIwZqcRc
+	lqiHeAUcOTGd2IWJDTUwYmr46prKjVYQrFsfgoQCNrjhk1DKAUGnCBZetgty2j5X4wA4FqTKf1u
+	RsUdWBSmXAmfID4/A9SGORT6nDOSOu6V08OYgbEJ7/2kuA3pMYy0fD24r89PG5sNjnU7QqNTgk3
+	bTkA0XjyjyXwn4OdzOvoN1IPB93rULiisVPcwVMIvLvJfUxHSw8+8cdnt9OjRDFlZH2DwxwBXVP
+	05+jx8G8b5t6vWid2Z6sDAg7mYJHozt1aDarSKr+BDOlNmPAKMI7ddNfTYooN132E=
+X-Received: by 2002:a05:600c:5489:b0:49c:fea3:8633 with SMTP id 5b1f17b1804b1-4a02769f2f6mr122586625e9.24.1791063363234;
+        Sat, 03 Oct 2026 14:36:03 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a7ae260f19sm1076639a91.4.2026.10.03.14.29.25
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a78e4f3911sm4214844a91.15.2026.10.03.14.35.59
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 03 Oct 2026 14:29:27 -0700 (PDT)
-Message-ID: <bc377417-8c26-4982-9668-94d5e4368cf7@suse.com>
-Date: Sun, 4 Oct 2026 07:59:16 +1030
+        Sat, 03 Oct 2026 14:36:02 -0700 (PDT)
+Message-ID: <62697432-fef9-4e5d-bbe2-36e661439430@suse.com>
+Date: Sun, 4 Oct 2026 08:05:57 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,11 +69,11 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/6] btrfs: qgroup: fix swapped blocks existence check
- when tracing after COW
+Subject: Re: [PATCH v2 3/6] btrfs: qgroup: fix leak of qgroups in rb tree
+ after failure to enable quotas
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
 References: <cover.1791046651.git.fdmanana@suse.com>
- <59dc69757209cf74399ee29786aee0f5392f1a47.1791046651.git.fdmanana@suse.com>
+ <2435981dcde450de7ffedc604e39168c19c2c4ab.1791046651.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -100,7 +100,7 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <59dc69757209cf74399ee29786aee0f5392f1a47.1791046651.git.fdmanana@suse.com>
+In-Reply-To: <2435981dcde450de7ffedc604e39168c19c2c4ab.1791046651.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
@@ -109,56 +109,41 @@ Content-Transfer-Encoding: 8bit
 在 2026/10/4 03:30, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> In btrfs_qgroup_trace_subtree_after_cow(), after we erase the swapped
-> block, iterate over all possible tree levels to check if we sill have
-> other swapped blocks. However the check is wrong, it considers that there
-> are other swapped blocks if any rbtree for any level is empty, instead of
-> not empty. As a consequence we set blocks->swapped to true basically every
-> time since we always find an empty rbtree at least at level 7, since in
-> practice it's nearly impossible to find such a huge btree. This makes
-> every future call to btrfs_qgroup_trace_subtree_after_cow() do an
-> unnecessary rbtree search instead of returning immediately.
+> When enabling quotas we add struct btrfs_qroup items to the rbtree
+> fs_info->qgroup_tree, however if there's an error during the quota enable
+> operation after adding those items, we exit without removing the items
+> from the rbtree and freeing them.
 > 
-> Fix this by updating the condition to set swapped to true if we find an
-> rbtree that is not empty.
+> Fix this by calling btrfs_free_qgroup_config() on error, which also
+> deletes all sysfs entries (it calls btrfs_sysfs_del_qgroups()).
 > 
-> Fixes: f616f5cd9da7 ("btrfs: qgroup: Use delayed subtree rescan for balance")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
-Qu
-
-> ---
->   fs/btrfs/ctree.h  | 2 +-
->   fs/btrfs/qgroup.c | 2 +-
->   2 files changed, 2 insertions(+), 2 deletions(-)
+Qu> ---
+>   fs/btrfs/qgroup.c | 9 +++++++--
+>   1 file changed, 7 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 22ba2b4505b3..00d4c4184e76 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -160,7 +160,7 @@ enum {
->    */
->   struct btrfs_qgroup_swapped_blocks {
->   	spinlock_t lock;
-> -	/* RM_EMPTY_ROOT() of above blocks[] */
-> +	/* True if any of the rbtrees in the blocks array below is not empty. */
->   	bool swapped;
->   	struct rb_root blocks[BTRFS_MAX_LEVEL];
->   };
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 46de0a5e80d5..798f21608de5 100644
+> index 4b6c82a24bc5..9f21b091c545 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -4913,7 +4913,7 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
->   	/* Found one, remove it from @blocks first and update blocks->swapped */
->   	rb_erase(&block->node, &blocks->blocks[level]);
->   	for (i = 0; i < BTRFS_MAX_LEVEL; i++) {
-> -		if (RB_EMPTY_ROOT(&blocks->blocks[i])) {
-> +		if (!RB_EMPTY_ROOT(&blocks->blocks[i])) {
->   			swapped = true;
->   			break;
->   		}
+> @@ -1293,8 +1293,13 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+>   	if (ret)
+>   		btrfs_put_root(quota_root);
+>   out:
+> -	if (ret)
+> -		btrfs_sysfs_del_qgroups(fs_info);
+> +	if (ret) {
+> +		/*
+> +		 * Free all qgroups previously added with add_qgroup_rb() and
+> +		 * sysfs entries.
+> +		 */
+> +		btrfs_free_qgroup_config(fs_info);
+> +	}
+>   	mutex_unlock(&fs_info->qgroup_ioctl_lock);
+>   	if (ret && trans)
+>   		btrfs_end_transaction(trans);
 

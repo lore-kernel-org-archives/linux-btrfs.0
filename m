@@ -1,162 +1,237 @@
-Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3BB9B282F2C
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2026 00:23:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D42592E7F3A;
+	Sat,  3 Oct 2026 07:18:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1790986986; cv=none; b=lb9whHX3LpmXJovPPDp/U9VhVjnQGJr9F40B0SX7o81mkOG+GVLWJBOR6WQWf82ZT+sKGmLs/nhPI13CIz+KeqIl8LNO2pkK5zO7bnB0dMKSZnEBoKX4Q+pcSMxNW5zy1TcoA94U7hB9jFREwOCb5JCBg3s4ciHio0P8u3qQIyY=
+	t=1791011892; cv=none; b=RV19hKAHbIqjnBAjLesxKHo4ZqEzf95DY3n3epcMzQURYpWAwtJSDooW+7BkbSKhFFof3EA1tV09I+zKXQ2ziJPMMV7G0FABN+bdCW/yOxEwENiIkbI/YbRUo/kZa0t/Qb26548tdcOpW8JJARJVvxFNeby+Fjl43Dc9K1PFNUU=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1790986986; c=relaxed/simple;
-	bh=mZXrnCgxIDPszD63BZXTsF/mM8KzeQUdXuSiPKo0Bc8=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=Xmug1YeNeICR5twvlchfcLFxn/meT9edcVB7TZ7bG6j0oE7tgHxodOHVdrmb9t4TpN4cM89YmyYkVm+nFBVX/ahMnJGA+S1Ck6CnONCWRzucQEamuMhiKA1z/j3AHIDo4Y1AuQ4Fda6fWQdfLG+ly9VQmziYaZvd4Elo/MORaBY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fWXeNjtq; arc=none smtp.client-ip=209.85.218.41
+	s=arc-20240116; t=1791011892; c=relaxed/simple;
+	bh=AiwVH+iy0cQpUFN9UX6xCm4n1A3gtLJYEpLpyGyU8Ys=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=pvM7FJY984ifAARJsaZhgBcgAE8MHWAtxSeowIRT6V42LHJnQrJv+kLKh27Vm4/eisW4TlKzmof+tBMbWy/sAR1L6beiy+YSHTdDLJcI2GIynqjG2bVS/tqI6u+72NJDiLrf8mqe3OaCIz+2qUDJkbJ82nevKED0n+5jTgo5zqU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=lMB5N8iW; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=KVS/46N/; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fWXeNjtq"
-Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-c20ce3c118aso45327666b.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 02 Oct 2026 17:23:05 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1790986983; x=1791591783; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=hlpEwepT4T+M/yFHsMgxum/NH81DvJqk4Iikt3e7lLY=;
-        b=fWXeNjtqJC3/y+X9+uVetzvYCsBlVz/7tMaxfbS2ewcpZ2BEN/LZRXydpv/OV+0EWl
-         kwwIp9N0oR1NQqQLsYLc++4gx7y3EnHJp0/0/buDt5bVielyWrCqmL0j1RInZIgHAaQE
-         Kuqr3edrIrWuathyuMtH5lKBm6vAmHIE4PBzQwQDJ0XPsK9Sbd6vNqzEp3nHKT9FVblT
-         RfltzomXXTXr5nDr0xPIC8AkqALgmZVpHIvKuJV8rxv0cTZ3SlZEGC4tnMpZ1PsW/2PR
-         DnfKNWdv8mJnZ4kbb9P9Ae6px18uBHqzVizof3GOQIRGCL4OJtew8GuYm47NXQNUOw68
-         ELWQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1790986983; x=1791591783;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=hlpEwepT4T+M/yFHsMgxum/NH81DvJqk4Iikt3e7lLY=;
-        b=PRin/2HQhCw8aop2yj0oXxDbuNl76wu7Kv8Y7Cr9bWTGy9hO4N426bNB1RDZ4leZ5o
-         gLHk3QW1JSvfxl6+2uGw0DtQ0spwgmHXMh8Y1Ylh/wvuvz1s0uTGgHVE18jdg1taKDya
-         1Hwpypm3OR8tiIV0b+wR5i4i6pneO1PqqQDd1E6dFulUrQDLsFTf4DRoZ4wAEkQ2nTY0
-         LQ+wyPT4yVN2kRP5qna/BHJhTtQcZADpiZ7ZVZpL1eAI31EYXinzmJHbssM8WMLpg0h5
-         6Uxffu7oacknyVgIzQxXc2AA1ytpFET3LeyFhMYFRlGSYfJ0tMEe46azqrMv6A1MQvlO
-         saaw==
-X-Forwarded-Encrypted: i=1; AKwUvBzkKlkoGyQopcNRZ9UMFbPZ+o6vGWMUvyXYHkvoRYdeaXPiOFF9iWy0vu9hREWdL8pHyK0PSkT3TIR75A==@vger.kernel.org
-X-Gm-Message-State: AFuF++lIgoRENkf0VUtX5Q50H6H7WDmbXfgPHXGPbpcOhMSn6kmlukiP
-	mbaD20cHyoWPR6Kgh6I5gD65kqOxvaKOFuoGIZiSqFqj/plbQMHuL+MH7nut237GeBZNEGCFs43
-	cnCQcfUk9AA==
-X-Gm-Gg: AYBFou02XdxcrfmRHIQAG6RAEa4c3LoLqsDxIf/KpIrEUbIMGstXXbyIOsOaP36nNHo
-	wjF+jFIR2T4YeF8h9ViCxlrFHBTLe4zoloB6JQEV9c/IMmrHr7HGOFwy7g4TB3al2quHXvbuawK
-	r2ZCZWfWfOAbjgGMB+A95jUimOuZJOIcVpbaXNb5X046pX4Ek/uM6vg78a8PZEJX0PoCPmxwt5X
-	7Kc+xOh0oe1Pqhpi7nmAQ42500KxHS71e4tnqKdY7oXOGQbws+onCBIstFrQK3P0NJte+2WSrEo
-	1hPSt1GeMdE/1aDvmRyDFsIBJmLPkpc8/6JOLDXQOyfTqCZHX+trcncyVJPuc/rR9d+b6ovJ+Tl
-	1mqGMaAU9T3RO55wvR5Tek0RKsJGfkc49c+1p6GELLiylBSjdp2FoZbRxJVqUTBimCfEjSIdltH
-	YWEOhV0OyubShaIrVc7d35X3/4NgWcSVHTjRbQpZRULmLGnjdCJhAbr/CUsHbfJ3o=
-X-Received: by 2002:a17:907:94d1:b0:c29:519b:3aee with SMTP id a640c23a62f3a-c2e340e2e71mr622447766b.33.1790986983356;
-        Fri, 02 Oct 2026 17:23:03 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cc9f739a977sm1527933a12.26.2026.10.02.17.22.58
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 02 Oct 2026 17:23:01 -0700 (PDT)
-Message-ID: <88b6530f-9345-49a7-9793-8cdf4ca57fab@suse.com>
-Date: Sat, 3 Oct 2026 09:52:55 +0930
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="lMB5N8iW";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="KVS/46N/"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 9E4E521BE2;
+	Sat,  3 Oct 2026 07:18:00 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1791011884; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=o7ZUaldMy/K15ptisu20fb6jH29+NyFiaQPfiLjMbeA=;
+	b=lMB5N8iWZO4ANuwzD8HQMUsHC+PPFXbLez8hdScUc7Qf1zsTen7l9K17i6Dsby01P/ZgAS
+	ot8zC8+JaQdG3+KhYcW3JmgnFqcPj92x0TPa4EjYy9DHUaGZuHpmvE1dWdzutM1zo2fljO
+	ArdAMnIDT9lr43+wj4Tg0KZy/uVXAXg=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1791011880; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=o7ZUaldMy/K15ptisu20fb6jH29+NyFiaQPfiLjMbeA=;
+	b=KVS/46N/g7lXHre87DANhnPEO70iHcPlM1UAxxK/EpcI3q6zqUSioU5ZQVMNQy6ZNcbBoM
+	Dpxc2ML5GZDFwRY9JiNZk21r91pMYn2Oo27tevMVhSUHB/iFxxG8WwUW+mlhC9M/XHvcLr
+	0XyXMV+kkkFUGGsCtL+6JOBorAvwyJQ=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A7DD013712;
+	Sat,  3 Oct 2026 07:17:58 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id vuRIOyWswGr3MAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 03 Oct 2026 07:17:58 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	fstests@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] fstests: btrfs: add a test case for deleting partially owned qgroup
+Date: Sat,  3 Oct 2026 16:47:24 +0930
+Message-ID: <20261003071724.50671-1-wqu@suse.com>
+X-Mailer: git-send-email 2.55.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 5/6] btrfs: abort transaction on qgroup failures in
- create_pending_snapshot()
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <cover.1790967259.git.fdmanana@suse.com>
- <2709bf35200a66c31d1523ab2bd76def4ffbdeeb.1790967259.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <2709bf35200a66c31d1523ab2bd76def4ffbdeeb.1790967259.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-0.998];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_THREE(0.00)[3];
+	TO_DN_SOME(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:mid,suse.com:email,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
+There is a bug report that, when deleting a partially owned qgroup,
+btrfs will delete the on-disk items but leave the in-memory rb-tree and
+sysfs entries untouched.
 
+Introduce a regression test for it, verifying the behavior by:
 
-在 2026/10/3 04:25, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> If we get an error when calling one of the qgroup functions, we jump to
-> the 'fail' label without aborting the transaction. This is not a bug as up
-> the call chain (transaction commit path), we will end up aborting the
-> transaction. However having the explicit transaction abort in
-> create_pending_snapshot() allows us to get a stack trace and log message
-> that tells us exactly where we failed, useful for troubleshooting, and
-> also adds consistency since in that function we abort the transaction in
-> every other error path.
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+- Create a btrfs with a specific qgroup layout
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+              2/1
+               |
+              1/1
+               |
+   0/subv1  0/snap1
 
-Thanks,
-Qu
+   All involved qgroups will have "1M + nodesize" as reference number,
+   and "nodesize" as exclusive number.
 
-> ---
->   fs/btrfs/transaction.c | 15 +++++++++++----
->   1 file changed, 11 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index da4ffa7bda00..fcbcb4a208be 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1920,14 +1920,21 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->   	 * To co-operate with that hack, we do hack again.
->   	 * Or snapshot will be greatly slowed down by a subtree qgroup rescan
->   	 */
-> -	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_FULL)
-> +	if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_FULL) {
->   		ret = qgroup_account_snapshot(trans, root, parent_root,
->   					      pending->inherit, objectid);
-> -	else if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE)
-> +		if (unlikely(ret < 0)) {
-> +			btrfs_abort_transaction(trans, ret);
-> +			goto fail;
-> +		}
-> +	} else if (btrfs_qgroup_mode(fs_info) == BTRFS_QGROUP_MODE_SIMPLE) {
->   		ret = btrfs_qgroup_inherit(trans, btrfs_root_id(root), objectid,
->   					   btrfs_root_id(parent_root), pending->inherit);
-> -	if (unlikely(ret < 0))
-> -		goto fail;
-> +		if (unlikely(ret < 0)) {
-> +			btrfs_abort_transaction(trans, ret);
-> +			goto fail;
-> +		}
-> +	}
->   
->   	ret = btrfs_insert_dir_item(trans, &fname.disk_name,
->   				    parent_inode, &key, BTRFS_FT_DIR, index, NULL);
+   For the remaining example I'll use 16K as nodesize.
+
+- Remove the qgroup relationship between 0/snap1 and 1/1
+  This will mark qgroup inconsistent, but leave the old numbers.
+
+              2/1 (rfer: 1M+16K, excl: 16K)
+               |
+              1/1 (rfer: 1M+16K, excl: 16K)
+
+- Remove qgroup 1/1
+  Which will automatically remove the relationship between 1/1 and 2/1.
+
+  And since qgroup 1/1 is not fully owned (rfer > excl), this will mark
+  qgroup inconsistent and return 1.
+
+  For unpatched kernels, that positive return value is treated as an
+  error, causing on-disk metadata items removed but still leave
+  the rb-tree and sysfs entries untouched.
+
+- Check if /sys/fs/btrfs/<fsid>/qgroups/1_1/ still exists
+  If exists, the kernel is not yet patched.
+
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Do not redirect stderr when writing the 1M data
+- Remove unnecessary _scratch_unmount for _notrun branch
+  As "check" script will do it for us.
+---
+ tests/btrfs/358     | 78 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/358.out |  2 ++
+ 2 files changed, 80 insertions(+)
+ create mode 100755 tests/btrfs/358
+ create mode 100644 tests/btrfs/358.out
+
+diff --git a/tests/btrfs/358 b/tests/btrfs/358
+new file mode 100755
+index 00000000..3e9f2783
+--- /dev/null
++++ b/tests/btrfs/358
+@@ -0,0 +1,78 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 358
++#
++# Verify that when deleting a partially owned qgroup (excl != rfer),
++# the sysfs and in-memory rb-tree entries are also properly removed.
++#
++. ./common/preamble
++_begin_fstest auto quick qgroup
++
++_fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: qgroup: do not treat \"ret > 0\" as error when deleting a qgroup"
++
++_require_btrfs_sysfs_fsid
++_require_btrfs_command qgroup remove --no-rescan
++_require_scratch
++_require_btrfs_qgroup_report
++
++# This implies making a btrfs and enabling full qgroup mode.
++_require_scratch_qgroup
++_scratch_mount
++
++fsid=$(_btrfs_get_fsid "$SCRATCH_MNT")
++
++# We require /sys/fs/btrfs/<fsid>/qgroups/ directory
++if [ ! -d "/sys/fs/btrfs/$fsid/qgroups/0_5" ]; then
++	_notrun "No sysfs qgroups directory"
++fi
++
++_btrfs subvolume create "$SCRATCH_MNT/subv1"
++_pwrite_byte 0x00 0 1M "$SCRATCH_MNT/subv1/data1" >> $seqres.full
++_btrfs subvolume snapshot "$SCRATCH_MNT/subv1" "$SCRATCH_MNT/snap1"
++snap1id=$(_btrfs_get_subvolid "$SCRATCH_MNT" snap1)
++
++# Create the following qgroup layout and rescan.
++#                    2/1
++#                     |
++#                    1/1
++#                     |
++#  0/subv1           0/snap1
++#
++# Since snap1 is a snapshot of subv1, both will have 1M shared data
++# plus nodesize as exclusive metadata.
++# This means neither of them is fully exclusive (rfer > excl).
++_btrfs qgroup create 1/1 "$SCRATCH_MNT"
++_btrfs qgroup create 2/1 "$SCRATCH_MNT"
++_btrfs qgroup assign 1/1 2/1 "$SCRATCH_MNT"
++_btrfs qgroup assign 0/$snap1id 1/1 "$SCRATCH_MNT"
++
++# Do a rescan, as the above assign will mark the qgroup inconsistent.
++_btrfs quota rescan -w "$SCRATCH_MNT"
++
++# Now remove the qgroup relationship between 0/snap1 and 1/1.
++# This will mark qgroup inconsistent but we do not want to trigger a rescan
++# automatically.
++# This will leave the old numbers (rfer > excl) for 1/1.
++_btrfs qgroup remove --no-rescan "0/$snap1id" 1/1 "$SCRATCH_MNT"
++
++# Now delete qgroup 1/1, which will automatically remove the relationship
++# between 1/1 and 2/1.
++# Since qgroup 1/1 still has stale values where rfer doesn't match excl,
++# the kernel marks the qgroups inconsistent and returns 1 to indicate a
++# rescan is needed.
++_btrfs qgroup destroy 1/1 "$SCRATCH_MNT"
++
++# For unpatched kernels, that positive return value is treated as an error,
++# causing btrfs to delete on-disk items for qgroup 1/1, but leaving the
++# in-memory rb-tree and sysfs entries untouched.
++# Check if the sysfs qgroup directory still has a directory for qgroup 1/1.
++if [ -d "/sys/fs/btrfs/$fsid/qgroups/1_1" ]; then
++	echo "Qgroup 1/1 still exists in sysfs qgroups directory"
++fi
++
++echo "Silence is golden"
++_scratch_unmount
++_exit 0
+diff --git a/tests/btrfs/358.out b/tests/btrfs/358.out
+new file mode 100644
+index 00000000..8bcf2699
+--- /dev/null
++++ b/tests/btrfs/358.out
+@@ -0,0 +1,2 @@
++QA output created by 358
++Silence is golden
+-- 
+2.51.2
 

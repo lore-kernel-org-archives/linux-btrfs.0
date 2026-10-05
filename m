@@ -1,151 +1,84 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CFE7E426694
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 09:01:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48169477E20;
+	Mon,  5 Oct 2026 11:26:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791190912; cv=none; b=HYQWXYcHc8jcQZV0n5L6mcFD1B0vodWYvF7r9bBVG3+4wNDGk/cKQszGrLnRH5ywAcV8ec+4uD22HSiEdKe1sp4353sUziUU1TjbOCUc9ZX5EhRsF2IJzABpAp6xL9EDaR3g4JuhWbtjdQmj9Wguewwmi5RB3a/hD95+xaW93lk=
+	t=1791199585; cv=none; b=Vq5un9MZE2FyhIzS86PL4ul7v+ZgyR88Im8Uu4FzXcQ6aTTc4ketZDk1GDGdL2bBQT2qr6hLqrChs+RkvEiGSTtS8DoyqzHkF/xFJmq9aW05VZ8Wf2Y9ZIpzhGz3yzslZs2ZS8gTLXNQrreAr1XRja1B4Tbcr6Cu1TiwG01JTJc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791190912; c=relaxed/simple;
-	bh=IisHSeeh4PFq8iqaklNnKnOO5Wiw1sE46RriBY5WxUA=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=QcKt+27c4r36oumLEjyX9B4vYnVBg/C2QV7LRQLerYOHa6ZXh/WZSXr853bwsjgYsKi2KmVL4P5M9UnYsztNxUr2cjZdUQBVXQKf8IUXuVJODd1OKxpb0VNKTsM5T6lDjwf7c2iD5pLB8nojiO9iaHkH7m7JUkz77t8O4H7NOhc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=GtOMtndr; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=UgMc1jVW; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1791199585; c=relaxed/simple;
+	bh=uuS+4VNJNVGqobXQ9R2K3Iau9vnH4lmRz07PVfqR+EE=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=jxZbDVLbjNXnVCH3lk5YHqrZd5ybO/SOCKB+gDJRbzIOoLRE5OqoxlZj9B7PcMrqI+/Y+bhjZ+kvq85SebacNJkp4o+aUg3YY67vTx/VW8RmrHCN8oqpPQP0O3Om4+Nhm2HX5nIcG+IGEnD6OKE2+edW8PyiPs283ziVCveiXbU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dnxfPnlE; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="GtOMtndr";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="UgMc1jVW"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 52BEA21E8D
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 09:01:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791190904; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=omXfvF5pHfGw1ngW8/o1Gouq2Ws/vNbskePns4D8sqE=;
-	b=GtOMtndrUMLWUV1Ala1GY1f3JEYX45rHJu05OSXUZAS7QY98JS9ezTHXAX/Q6eZTd9D+s3
-	znSleptsmKA6d58u5JDF0I1wQhO+1jKftzfI8ssBwwLXXX7w8pPjCN1S5o3hRqBaIdUcPh
-	gvrkJCDOdwjtpB7H1z5xmYZXiCVQmp8=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791190900; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=omXfvF5pHfGw1ngW8/o1Gouq2Ws/vNbskePns4D8sqE=;
-	b=UgMc1jVWRnrKjVUWAf4zz1NnSqfVenSUCaEdBXbMqk3WScUbPrvcyyskbGZ/hJx5VOAbnj
-	NVEfWKUWXUeyPdGHuxxoV2XXNoh2mRCWCvw0c40hwL9RvGfxNv7P4/X9n+b+Gm0tpQTByw
-	VeCyNeCm8QlgtzOFFH6rOwd7RqTGlQY=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0AEE713A20
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 09:01:38 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ngyMK2tnw2qpRwAAD6G6ig:T5
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2026 09:01:38 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 4/4] btrfs-progs: fsck-tests: add a new test case for qgroup tree check
-Date: Mon,  5 Oct 2026 19:31:13 +1030
-Message-ID: <e1fbd6af461300d7ab8c5316544f4aa9b80ee374.1791190852.git.wqu@suse.com>
-X-Mailer: git-send-email 2.55.0
-In-Reply-To: <cover.1791190852.git.wqu@suse.com>
-References: <cover.1791190852.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dnxfPnlE"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 215401F000FF;
+	Mon,  5 Oct 2026 11:26:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1791199583;
+	bh=m/RFPJLbxCCsKLCIEVyjoB1hnKSFrK8qIznZiVq7CJE=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=dnxfPnlE+42vQT4C95ek8OLdUjS7Wr+HWYBSC+aAPDlopzSF1LVHjdHGQG+pdYac3
+	 po8ww2oKHe78fL5qpW5UgPRkJjcCevWbsJyTl80sK/nzOMDpJJOcA+qzWRK19Uh8dc
+	 VGzIQY6FnyMegIqHrQDOthh2MkzdPhG6+aoyQn40ZPvbeivJyaVq/YtCcPqziPclrp
+	 qb8kUAMutvVmCzMUHS9/wPHMC/RgDuF9/HkMRX9jFbG9Jjcxusl3UHKwyumbzuEsPB
+	 SjLOML9rTeRWBawSXYy2FE0+7y/Gy6y9srnpvqZ4R1UUZeExPVrT+VfS+1vGmHH/dY
+	 gwYR82EHOcl6w==
+Date: Mon, 5 Oct 2026 13:26:18 +0200
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: Carlos Maiolino <cem@kernel.org>
+Cc: Eric Biggers <ebiggers@kernel.org>, djwong@kernel.org, hch@lst.de, 
+	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-unionfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v17 00/21] fs-verity support for XFS with post EOF merkle
+ tree
+Message-ID: <asN8lCPmZpA0tp5S@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20261002223705.2175542-1-aalbersh@kernel.org>
+ <20261002232542.GA15366@quark>
+ <asDvqctUgrxflcCa@nidhogg.toxiclabs.cc>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.984];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:mid,imap1.dmz-prg2.suse.org:helo];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <asDvqctUgrxflcCa@nidhogg.toxiclabs.cc>
 
-The workload is straight forward:
+On 2026-10-03 14:07:23, Carlos Maiolino wrote:
+> On Fri, Oct 02, 2026 at 04:25:42PM -0700, Eric Biggers wrote:
+> > On Sat, Oct 03, 2026 at 12:36:41AM +0200, Andrey Albershteyn wrote:
+> > > Andrey Albershteyn (19):
+> > >   fsverity: report validation errors through fserror to fsnotify
+> > >   fsverity: expose ensure_fsverity_info()
+> > >   fsverity: pass digest size and hash of the all-zeroes block to ->write
+> > >   fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
+> > >   fsverity: don't allow setting DAX file attribute on fsverity files
+> > >   fsverity: hoist statx reporting of fs-verity flag
+> > 
+> > Would it be helpful if I applied these six patches to fsverity/for-next
+> > for 7.4, or do you want to wait for the full series to go in at once
+> > (presumably through the XFS tree)?
+> > 
+> > - Eric
+> > 
+> 
+> It's your call, I *think*, this is too late for xfs 7.4, so I want to
+> queue it as soon as possible for 7.5.
+> 
+> If you want to take the fsverity patches into 7.4, go for it, then the
+> xfs ones I'll pull in once yours are merged.
+> 
+> Sounds reasonable?
+> 
+> Carlos
+> 
 
-- Create a btrfs with qgroup full mode
+Fine with me too
 
-- Create 512 subvolumes
-  This should cause at least 2 leaves, even using 64K nodesize.
-
-- Create qgroup 1/1 and assign 0/5 to it
-
-- Run btrfs-check on the fs
-  Unpatched progs will load the last leaf first, add the qgroup relation
-  item without loading the qgroups in the previous leaf.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- tests/fsck-tests/076-large-quota-tree/test.sh | 28 +++++++++++++++++++
- 1 file changed, 28 insertions(+)
- create mode 100644 tests/fsck-tests/076-large-quota-tree/test.sh
-
-diff --git a/tests/fsck-tests/076-large-quota-tree/test.sh b/tests/fsck-tests/076-large-quota-tree/test.sh
-new file mode 100644
-index 000000000000..0697fa06795b
---- /dev/null
-+++ b/tests/fsck-tests/076-large-quota-tree/test.sh
-@@ -0,0 +1,28 @@
-+#!/bin/bash
-+#
-+# Make sure "btrfs check" can properly handle a quota tree whose level
-+# is larger than 0.
-+
-+source "$TEST_TOP/common" || exit
-+
-+check_prereq btrfs
-+check_prereq mkfs.btrfs
-+
-+setup_root_helper
-+prepare_test_dev
-+
-+run_check_mkfs_test_dev -O quota
-+run_check_mount_test_dev
-+# Create 512 subvolumes, which should cause at least 2 leaves even for 64K nodesize.
-+for ((i = 0; i < 512; i++)); do
-+	run_check $SUDO_HELPER "$TOP/btrfs" subvolume create "$TEST_MNT/subv_$i"
-+done
-+
-+# Create qgroup 1/1 and add 0/5 to it, which should cause unpatched
-+# btrfs-check to only load the last leaf for relation items, without
-+# loading the involved qgroups.
-+run_check $SUDO_HELPER "$TOP/btrfs" qgroup create 1/1 "$TEST_MNT"
-+run_check $SUDO_HELPER "$TOP/btrfs" qgroup assign 0/5 1/1 "$TEST_MNT"
-+run_check_umount_test_dev
-+
-+run_check $SUDO_HELPER "$TOP/btrfs" check "$TEST_DEV"
 -- 
-2.55.0
-
+- Andrey

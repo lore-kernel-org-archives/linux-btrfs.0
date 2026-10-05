@@ -1,84 +1,58 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48169477E20;
-	Mon,  5 Oct 2026 11:26:24 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 20DCC2264A7
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:13:42 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791199585; cv=none; b=Vq5un9MZE2FyhIzS86PL4ul7v+ZgyR88Im8Uu4FzXcQ6aTTc4ketZDk1GDGdL2bBQT2qr6hLqrChs+RkvEiGSTtS8DoyqzHkF/xFJmq9aW05VZ8Wf2Y9ZIpzhGz3yzslZs2ZS8gTLXNQrreAr1XRja1B4Tbcr6Cu1TiwG01JTJc=
+	t=1791202424; cv=none; b=bbXVGI/NmYEJBleu5tMD8B20XtZKozX3ccuyOTyOYCJ4EGoUXRPJPRY2JR1qoNY/QBcHSe+HTHlcL7znZuyPY/eIFWMpMXo89ET61TQjlD7zG5UMafeDHWlManubi+Nz3d0DB/34LeBaLjdg3Hc68CbguZ0HDhc0SUBUBXWN/Qs=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791199585; c=relaxed/simple;
-	bh=uuS+4VNJNVGqobXQ9R2K3Iau9vnH4lmRz07PVfqR+EE=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=jxZbDVLbjNXnVCH3lk5YHqrZd5ybO/SOCKB+gDJRbzIOoLRE5OqoxlZj9B7PcMrqI+/Y+bhjZ+kvq85SebacNJkp4o+aUg3YY67vTx/VW8RmrHCN8oqpPQP0O3Om4+Nhm2HX5nIcG+IGEnD6OKE2+edW8PyiPs283ziVCveiXbU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dnxfPnlE; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1791202424; c=relaxed/simple;
+	bh=ysmfHAt0C3rWgyAFZiVq85jN/IRKM+3ZmK93hrcSEEo=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=WadY0XzySx+u6byRPehLTx98O2JYpkjlEniIdsRdGegW+ZJInnPvbKAw1vVg+rPsY1hpP97TDnK+m5OYHxNjuOFFlPsPcwlU4Fdt7J2uFnQWGzXsoEn/GzaFVAqmuU0kLynpc634GqJ7ejCARuB4rMLGHrF76h+ngahSyLZL6ws=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=hHXDai0A; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dnxfPnlE"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 215401F000FF;
-	Mon,  5 Oct 2026 11:26:20 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="hHXDai0A"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 40E921F000FF
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:13:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791199583;
-	bh=m/RFPJLbxCCsKLCIEVyjoB1hnKSFrK8qIznZiVq7CJE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=dnxfPnlE+42vQT4C95ek8OLdUjS7Wr+HWYBSC+aAPDlopzSF1LVHjdHGQG+pdYac3
-	 po8ww2oKHe78fL5qpW5UgPRkJjcCevWbsJyTl80sK/nzOMDpJJOcA+qzWRK19Uh8dc
-	 VGzIQY6FnyMegIqHrQDOthh2MkzdPhG6+aoyQn40ZPvbeivJyaVq/YtCcPqziPclrp
-	 qb8kUAMutvVmCzMUHS9/wPHMC/RgDuF9/HkMRX9jFbG9Jjcxusl3UHKwyumbzuEsPB
-	 SjLOML9rTeRWBawSXYy2FE0+7y/Gy6y9srnpvqZ4R1UUZeExPVrT+VfS+1vGmHH/dY
-	 gwYR82EHOcl6w==
-Date: Mon, 5 Oct 2026 13:26:18 +0200
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: Carlos Maiolino <cem@kernel.org>
-Cc: Eric Biggers <ebiggers@kernel.org>, djwong@kernel.org, hch@lst.de, 
-	fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-unionfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v17 00/21] fs-verity support for XFS with post EOF merkle
- tree
-Message-ID: <asN8lCPmZpA0tp5S@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20261002223705.2175542-1-aalbersh@kernel.org>
- <20261002232542.GA15366@quark>
- <asDvqctUgrxflcCa@nidhogg.toxiclabs.cc>
+	s=k20260515; t=1791202422;
+	bh=9z91S4QtQMrhFNHJ04GqYjKAgycfR/GfAVVKS9J7swY=;
+	h=From:To:Subject:Date;
+	b=hHXDai0ABL+9bYkOzsEPT9sJtztwfq96faRzrvhZkfA5C28yfrqsIM94deVAsgksb
+	 muihHfm7WWfI2w78qmlaO8LZzAiSBv0xHOeI4QwQi63DSE5wyrhYLkXjDgjNxFVCCL
+	 ePbZM6NbJu1BzpuNhcUDd5FHF51dspNcc6rguuUSCyIX3IoGwLK0HNt5Nsx8TRrGdz
+	 relbVVRupnvTUUsidlwG+tt2l/P0FXTCmUNTzR8Sjk3GSQZgHQV1Aa+TWHpcQkgtol
+	 6PgqNCx2dO+xDOcV7JiGisq5rV4fEbY/M5Sb5S6lor48SsDg7LAq5/KWRNg52dlU6G
+	 UhOydWthn2LZw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: fix a bug with the squotas code and cleanup.
+Date: Mon,  5 Oct 2026 13:13:36 +0100
+Message-ID: <cover.1791202322.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.47.2
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <asDvqctUgrxflcCa@nidhogg.toxiclabs.cc>
+Content-Transfer-Encoding: 8bit
 
-On 2026-10-03 14:07:23, Carlos Maiolino wrote:
-> On Fri, Oct 02, 2026 at 04:25:42PM -0700, Eric Biggers wrote:
-> > On Sat, Oct 03, 2026 at 12:36:41AM +0200, Andrey Albershteyn wrote:
-> > > Andrey Albershteyn (19):
-> > >   fsverity: report validation errors through fserror to fsnotify
-> > >   fsverity: expose ensure_fsverity_info()
-> > >   fsverity: pass digest size and hash of the all-zeroes block to ->write
-> > >   fsverity: hoist pagecache_read from f2fs/ext4 to fsverity
-> > >   fsverity: don't allow setting DAX file attribute on fsverity files
-> > >   fsverity: hoist statx reporting of fs-verity flag
-> > 
-> > Would it be helpful if I applied these six patches to fsverity/for-next
-> > for 7.4, or do you want to wait for the full series to go in at once
-> > (presumably through the XFS tree)?
-> > 
-> > - Eric
-> > 
-> 
-> It's your call, I *think*, this is too late for xfs 7.4, so I want to
-> queue it as soon as possible for 7.5.
-> 
-> If you want to take the fsverity patches into 7.4, go for it, then the
-> xfs ones I'll pull in once yours are merged.
-> 
-> Sounds reasonable?
-> 
-> Carlos
-> 
+From: Filipe Manana <fdmanana@suse.com>
 
-Fine with me too
+Fix a bug during log replay (regardless if quotas are enabled or not) and
+a cleanup.
+
+Filipe Manana (2):
+  btrfs: fix lost error return value in btrfs_alloc_logged_file_extent()
+  btrfs: qgroup: make btrfs_record_squota_delta() return void
+
+ fs/btrfs/extent-tree.c | 11 ++++-------
+ fs/btrfs/qgroup.c      | 14 +++++---------
+ fs/btrfs/qgroup.h      |  4 ++--
+ 3 files changed, 11 insertions(+), 18 deletions(-)
 
 -- 
-- Andrey
+2.47.2
+

@@ -1,39 +1,36 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0158947CC61
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:13:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85FE93DAAB9
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:24:26 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791202428; cv=none; b=O+FB+ah5ZydCNVpk5oh37u9ALhTL2p55RIrPUGp0Xqfx87EX783UCtwfQeZkmHAreyX9LGIkZm6J2fCa4ZYmAcMOdC8IkB6rj22O26N1cD1Tvh6shLbFAxnPgL1D94PvBd04nzPgMtTtOwlrwMtchgwSWQljgMniswcrQgn7UVo=
+	t=1791203067; cv=none; b=hN59DtpralFb2bid0eD0rLguuZp7bITrYERUsXUaVILjTFcpuhqaDc/Duv1Ep2JK9bFOG4KlF0VBNNCfbS5TzpKDH2/bUbGMYt7JB0FuE/QUxNkm2KFo3pZLi2MvDCRACSEQKvDbVb4nc58StP5n/jV9KpYuwtLmo/T1F7MhrIA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791202428; c=relaxed/simple;
-	bh=vRA/eOQE4NSWYIZblVX1GdK7M0/1v+fc7J3iQ+RnelA=;
-	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=NMiiLE9DPfJOBWSGPVri4CKtCBSWhSzH5hQiKY1bgWqpz0jcDA1TKhChT3jgPOj93kV6s8CjM/5uIVN/HeQCSJIOjW2CtqxFnLt+GVlZKUnvsf5o1c9D3kHZAquACEV7kfqCj5rIccc4ATi5nXf0gbIBqPhVG0GWC2WOw1QOwaM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=TeoNAVyl; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1791203067; c=relaxed/simple;
+	bh=NGSN7o0EwOePwtpRT7gvF3u1QoCGKVLMA/QxpjbQUbs=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qFdo6Y5XVUAAfzjrxF6k/sfKQpUzMs55lIsUal7nVWIWqnyMtjxpeCAaunjxWUOJjxLDYOYC3keVlpsPQf17aGTogTN8uYsls9I1llw8hbj2dW5s6shB+lA0wa/cH9vjj8sD4epL47BXU+HBopFtiaSZRFBKJNwOZt/IwsK9lNc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dWdomhnj; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="TeoNAVyl"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 211A01F00898
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:13:43 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dWdomhnj"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AADE11F000FF
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:24:25 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791202424;
-	bh=+dJQ6UA7fCzhV+jrb6XMt47/+VYQi3ADt4G28LBBR9I=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=TeoNAVyl4tR/HN1RuUxaHEwdJSyDgq7yJYwNOxEm4BvPYlAoKIZMQfHq5265znXO+
-	 /9p2Toruc/iaj3DsaK3aIahPzKYE7h4meN4EzTv6Q2249K2d64w+isMGALfyhpRZw2
-	 KzBC46KdCaYc2LOmWaBL9Vd76qABWaKZ/IJb6n7rtCT6ehmEP6ZOXhyrg88NRSrcCW
-	 /oxHg+QweR3+zt96gA3XrNosFwLpIf3bGdLqlBgnit2Ot9+fA8yVUwcRykhBnRtLaT
-	 6ltfwa2Mh+HwS0qR5afPtM4FAmW1GHXUayYLRqOjBQf3YqM5LPpp3tZFryWXOBXyiV
-	 EjgK7u2DkVtUw==
+	s=k20260515; t=1791203066;
+	bh=i4yv/a0nHJT7jresUoYeLiTXLDIRHpysyYoVTd9xJsk=;
+	h=From:To:Subject:Date;
+	b=dWdomhnj1PfbtChKj90EDN4cH5pEzx+3DzlkPrg23cQoQPbgi4fV7U1OE2B2Q3kTa
+	 lCtvV0OW8Mob1N0CB43aJ9RaQyJisqlQ0byY88RJoznrX70QKOapOBi23fvy66F0Qu
+	 Wn+fGOTnxTSy/pEMJwio0yQgcj14SyEpRdXI4USIIfQ5mOrGS/m1Xj8NT7d2ORwlik
+	 rTztsTna1V65w6smAjChrEmwP7I75y66Gedglv3N//kHMRlZY9yaejnzkg7BRSxzJy
+	 M8jqImTdWzmmYLjrS4aZKbyTZCKtrzaYhwXc+0oEEKmO2O/2hbTZVlrUoUASSM6Sw3
+	 h0TPjIOcxvDuw==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: qgroup: make btrfs_record_squota_delta() return void
-Date: Mon,  5 Oct 2026 13:13:38 +0100
-Message-ID: <7ee129528cb761e212c063fb333e17aa4654cc89.1791202322.git.fdmanana@suse.com>
+Subject: [PATCH] btrfs: use READ_ONCE() to read the chunk size from the data space_info
+Date: Mon,  5 Oct 2026 13:24:23 +0100
+Message-ID: <7345c87bc7ec38c7d71aff8ae0542ad177b3dce2.1791203029.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.47.2
-In-Reply-To: <cover.1791202322.git.fdmanana@suse.com>
-References: <cover.1791202322.git.fdmanana@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -44,116 +41,32 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The function never returns any error, so simplify it and its callers by
-making it return void.
+The chunk size of a space_info is always updated with WRITE_ONCE() (see
+btrfs_update_space_info_chunk_size()), so when reading it in
+calc_effective_data_chunk_size() we should use READ_ONCE() to prevent
+load tearing. We are already using READ_ONCE() in every other function
+that accesses the chunk size of a space_info.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 10 +++-------
- fs/btrfs/qgroup.c      | 14 +++++---------
- fs/btrfs/qgroup.h      |  4 ++--
- 3 files changed, 10 insertions(+), 18 deletions(-)
+ fs/btrfs/space-info.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 15b4ed56ce71..9b0a5c6b96f3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1658,7 +1658,7 @@ static int run_delayed_data_ref(struct btrfs_trans_handle *trans,
- 						 href->owning_root);
- 		free_head_ref_squota_rsv(trans->fs_info, href);
- 		if (!ret)
--			ret = btrfs_record_squota_delta(trans->fs_info, &delta);
-+			btrfs_record_squota_delta(trans->fs_info, &delta);
- 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
- 		ret = __btrfs_inc_extent_ref(trans, node, extent_op);
- 	} else if (node->action == BTRFS_DROP_DELAYED_REF) {
-@@ -3180,11 +3180,7 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 
--	ret = btrfs_record_squota_delta(trans->fs_info, delta);
--	if (unlikely(ret)) {
--		btrfs_abort_transaction(trans, ret);
--		return ret;
--	}
-+	btrfs_record_squota_delta(trans->fs_info, delta);
- 
- 	/* If remapped, FST has already been taken care of in remove_range_from_remap_tree(). */
- 	if (!remapped) {
-@@ -5228,7 +5224,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		btrfs_pin_extent(trans, ins->objectid, ins->offset);
- 	else
--		ret = btrfs_record_squota_delta(fs_info, &delta);
-+		btrfs_record_squota_delta(fs_info, &delta);
- 	btrfs_put_block_group(block_group);
- 	return ret;
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 39a28e1bec8a..72fa01502461 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -443,8 +443,8 @@ static u64 calc_effective_data_chunk_size(const struct btrfs_fs_info *fs_info)
+ 	 */
+ 	data_sinfo = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA);
+ 	if (btrfs_is_zoned(fs_info))
+-		return data_sinfo->chunk_size;
+-	data_chunk_size = min(data_sinfo->chunk_size,
++		return READ_ONCE(data_sinfo->chunk_size);
++	data_chunk_size = min(READ_ONCE(data_sinfo->chunk_size),
+ 			      mult_perc(fs_info->fs_devices->total_rw_bytes, 10));
+ 	return min_t(u64, data_chunk_size, SZ_1G);
  }
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 54d82d6fd4bb..cf8dfd5c692b 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -4966,10 +4966,9 @@ void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans)
- 	xa_destroy(&trans->delayed_refs.dirty_extents);
- }
- 
--int btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
--			      const struct btrfs_squota_delta *delta)
-+void btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
-+			       const struct btrfs_squota_delta *delta)
- {
--	int ret;
- 	struct btrfs_qgroup *qgroup;
- 	struct btrfs_qgroup *qg;
- 	LIST_HEAD(qgroup_list);
-@@ -4979,24 +4978,22 @@ int btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
- 
- 	if (btrfs_qgroup_mode(fs_info) != BTRFS_QGROUP_MODE_SIMPLE &&
- 	    !test_bit(BTRFS_FS_SQUOTA_ENABLING, &fs_info->flags))
--		return 0;
-+		return;
- 
- 	if (!btrfs_is_fstree(root))
--		return 0;
-+		return;
- 
- 	/* If the extent predates enabling quotas, don't count it. */
- 	if (delta->generation < fs_info->qgroup_enable_gen)
--		return 0;
-+		return;
- 
- 	spin_lock(&fs_info->qgroup_lock);
- 	qgroup = find_qgroup_rb(fs_info, root);
- 	if (WARN_ON_ONCE(!qgroup)) {
- 		btrfs_warn(fs_info, "squota failed to find qgroup for root %llu", root);
--		ret = 0;
- 		goto out;
- 	}
- 
--	ret = 0;
- 	qgroup_iterator_add(&qgroup_list, qgroup);
- 	list_for_each_entry(qg, &qgroup_list, iterator) {
- 		struct btrfs_qgroup_list *glist;
-@@ -5022,5 +5019,4 @@ int btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
- 
- out:
- 	spin_unlock(&fs_info->qgroup_lock);
--	return ret;
- }
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index c64b26b09c22..a29b4e216f25 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -427,7 +427,7 @@ int btrfs_qgroup_trace_subtree_after_cow(struct btrfs_trans_handle *trans,
- 		struct btrfs_root *root, struct extent_buffer *eb);
- void btrfs_qgroup_destroy_extent_records(struct btrfs_transaction *trans);
- bool btrfs_check_quota_leak(const struct btrfs_fs_info *fs_info);
--int btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
--			      const struct btrfs_squota_delta *delta);
-+void btrfs_record_squota_delta(struct btrfs_fs_info *fs_info,
-+			       const struct btrfs_squota_delta *delta);
- 
- #endif
 -- 
 2.47.2
 

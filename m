@@ -1,133 +1,251 @@
-Received: from mail-wr2-f34.google.com (mail-wr2-f34.google.com [74.125.225.98])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE4494BD11E
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 15:03:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=74.125.225.98
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791212635; cv=pass; b=BLyRV9BbZEVDnchugA6Fak8q9YN9/8c3s4sBgJw5njJ6bVwiKAAfaQzGWDVHNl3oIeMZngGBIKo5Yv2zOpKM+xOYHxgLQsREWgxQ0RFeRiQPM77FdW3uVnEtcFyFUUN/WpxSuzvNEDaxjXuXVUd91GOMLujTmE6VfMp6SKPYhXU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791212635; c=relaxed/simple;
-	bh=yD8XQbbTyLm97cGlb8syX/uEVsQ4jH73YIwLTqUPi94=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=AeAcZ24+nLMn6SCz/ojjrjNiuezGVOe05B1nHlkK1lYNRAKEX61fXKP4yQj/6Zfc3B3tkqYbAxhUDT5JCLmrl/YXUEkvOH1eC1oIvlpkftzD/zq1AiHqtfuEmmurPBnV2TCSQS3yS9fAGOTdF3Ju7BHNAIeEMnEd7jsSM/vRh6E=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=az50O2RZ; arc=pass smtp.client-ip=74.125.225.98
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F2C2A4E80AD;
+	Mon,  5 Oct 2026 17:18:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791220722; cv=none; b=pByAg/JDCEKwvO2Bph0Ivc6XSu9oHTDMYG3AEh8l+dA/yAv23v1yUH6hUmMPMcH3yaaFdoFecod8DQKTwZFKQ1zZ8dIJaWj1EKAhwFTlzXe1v9EYCc6TeHAumaSqb3BlFY9mt7/TNZ3CRwOdRPeImJN2cOOuu29c2Ah2MPU3vRQ=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791220722; c=relaxed/simple;
+	bh=p8y2SWLkQ0bsXNgah/d2jg4U+TCB44ub7sLKZF6IxnA=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=fcg0vcOE5iz6YPFr6vSQX9f4YlAJQWAL1w1iyqMOPTjvmBN2IHLmE+78m1qkw4kNUtLn2stvMlm24zqs+9E4Gu0mQvhIzVImwe0FkWbstUEuobirsnd2jD/6IsV23XcMijLv6fkZxudqJWpT479NUpXj2+nYnp/yK+KAtRKa5F4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=VUEJgA4P; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="az50O2RZ"
-Received: by mail-wr2-f34.google.com with SMTP id ffacd0b85a97d-48b01c4f4daso1518983f8f.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2026 08:03:53 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791212632; cv=none;
-        d=google.com; s=arc-20260327;
-        b=hnsJWpVgIzPTzUMidTCaCL50/U+E39ReyLsnj8Bc8/uEz2YUQI8B5tD5XHrc/VNq7R
-         UMiOUe4F9dqnrWZptxWMxH6WmVuNIV7Y5ISGyu9yaXtfAubS6cGr8XQp3m0xXrNjTJCp
-         CVxDMXzhYuQ2jp7is45J+Y4lXzqt1F5TSVIMbn7h6IzuC6dARHOXb2rp2zM/XpMui769
-         YRiFy5Vtv84ev7oVebCcMeZ/cwHZ5+SXpSy0jGl9Y/GNVDBsdybOgZHkk8ek7cE+cepq
-         HqXwZqAK9MdCF68ojzNRGczYB8Z4tHusu3958qGrW01uHSULbag2ITlaLIG9HBxC99jO
-         D07A==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=Y4mcSPKMZKNcM3gx2xMdSCseJ8ZaFqzZAMH//ExjYCc=;
-        fh=RhFuKwp73/x8KksFPnzjZEYxDQ9t3rFtnoJ8q5GIsWE=;
-        b=GbaeAp0BYkV0XOjgwod5d+w4gmXQCS7cwSHbDntPshK7s1+CdU1Eeu5ES0gwtqpHO/
-         +zXa5NeLebB+zMS0++jHP+0taRHc7VNIoYrmhg8WBKtRlXJjGuoXdq6EOZ1csH5BI2hn
-         NRTqyewtSbGmhc/wInBL+VJVlzccoago6De6Ju66X4x+EBLblrmqZ6iZ9EvIZayFi3xr
-         zY52mqt9K/rb281v81m+zOcykH2/Of20ERvi0KmL77+cjFPRU8323GzrcpSq47irhVsy
-         ksufyuY+3Jtjh+z8ukbzyg6l4JceqEvDB6GnuOU0b108E59rQGg/GmYe2+Ud2Oa6zfYX
-         sAtQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791212632; x=1791817432; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Y4mcSPKMZKNcM3gx2xMdSCseJ8ZaFqzZAMH//ExjYCc=;
-        b=az50O2RZcvVm3bTvI2193UKzmzfCUFTtben+DR2YPEYKEoypoPniyFWWXvSRZKpvM+
-         M8Kavxt8igYC+4zlUuWlc9dv1rMKiaM9pVOo87OOgQWi/W02GlJsU3EbdFNCyMRrH+un
-         pDKsIjyaHNvFf8TSszwLxB/XeEC2cEEgqQXzy9HmDeuApL71D+E4m7zDjsX1l5RuJdQ8
-         LGtZSpdYsuLA+CVvAkxtjnfAEQ4L/LTk3bfVzTExs7img6YG4pKnU12n5jBfPiaoAh+r
-         qMnIge6y8oa+yVu375BVBdIGQO1RY7rQibL6T/BUuRO90UGKXy7SrQV/hyx0QQNoERP6
-         GhEQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791212632; x=1791817432;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Y4mcSPKMZKNcM3gx2xMdSCseJ8ZaFqzZAMH//ExjYCc=;
-        b=Ml6nDa55rAAXwK2QEDnLtzfYdyCecfqJiDq7v9n0lLGWcxsodeO0k91WGaD4WbQ+xQ
-         YWf2ONKgQe7L4noa5DakqgjN+HAePyMhskQHTD2N3xnRNv0M+q8FOmNgYwGyUeONV3Nj
-         gKC2nl602362rr0PFY+8eg8EOf0Au0E1rfPrn/2ako5vaib363483XGK70gMX3D7jHEQ
-         nNZF78RvZLKFtfAxyDSltSJs37qt5UYfdxy74Y660jOda8bOKoddoLidOTTrgK38larw
-         jMSRxYIPnJiEUGGivAHoo6LLC5RmHi6hLtx3wpZWfG3lwscNxlww+y/Q+1n43DbuZmS4
-         FAYA==
-X-Gm-Message-State: AFq9FYINZHUXXizZDka4mdtpOjUwm9rKJCcM0izKrY0iwgT72Ae5HfPi
-	f0s5lQFJtVvo5S692Eiw2ta6clgNMS5z5HaTXABaBih2kd0hEu+o34F/tdRoDdXuyu4fLiPDVLX
-	5yiT1ckFsreHhPbVLKrXS8Sn07gSXZ/C09xfhL34U3w==
-X-Gm-Gg: AYBFou1p4nVVcXYgdyDYk5BMCcjZ61IOBUnqBQav+8QJ36ekRifMAGNVOuOhYTZ43IY
-	Mi6Hg4Uur+WTZW48iVDMasVhI2kCUXenbGPE7IqMuI4am0TcUE9gkLvJm9wb6UQeEEHdaIXbXWF
-	NHJ8vWeZUkjqFIgrLUk3XHTgB2yfvImtRogaon3GhJjECkmsVRbgmNaikfLUCzh3gNXqH2hwpDV
-	AFuqxjquen33infD/l8tbZ2WD880UeBzH6Ld6QjbhFZCs1VOdq51Z120P56+v6nyCkkO5r9MJpe
-	dPjheKnLsPd0jHsj/9lKGA4SX/yjoJlWVOyr2qVe7zYIoiy+Aph9+4ofw2bZed34rveEcWu/Dxp
-	AU4h/qBAutC9YAcc1zjqn+Ku+moGWxi/Xi39e94SNUJil1lanYv6y
-X-Received: by 2002:a05:6000:2dc6:b0:488:8ad2:e169 with SMTP id
- ffacd0b85a97d-48b1274ae04mr22553617f8f.56.1791212632111; Mon, 05 Oct 2026
- 08:03:52 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="VUEJgA4P"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 02AB71F00898;
+	Mon,  5 Oct 2026 17:18:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1791220720;
+	bh=g6msS6X1Nm9a4FfZxp/QaUWM7UJBVtBa+hinGO0mETc=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=VUEJgA4PKsah0xZT1lr870C9hqSqsRunnnz04WlLURfD/UJTmN2lwjvFaHrddePZ6
+	 AqhbxYIsXMxfNHO7b+56xgy5Zo/jCpIrLLpnxjdp0ZdCdC7E8h0G2PzWnKJr6GB0EV
+	 /c+uo8VabxCcfoNi/iFpE7WFI41xxZYVncIFZalb1AMdiDe3t3UosVDI5kc5UWCixe
+	 3dwxa8cVGNKvsWJ4Tw+5i9b/BrMGdnLCshVqHpBLaWbukNMK45WiuXKIHH2gTvPzdh
+	 M/GZGdStGehJ5buPe6Toee94Xfg0c7bp1TuXjTn/MhYrHixG6otjZ4wpts+PbgX4qA
+	 qVxVficX6gx4Q==
+Date: Mon, 5 Oct 2026 19:18:35 +0200
+From: Andrey Albershteyn <aalbersh@kernel.org>
+To: djwong@kernel.org, ebiggers@kernel.org, hch@lst.de, 
+	Carlos Maiolino <cem@kernel.org>
+Cc: fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, 
+	linux-xfs@vger.kernel.org, linux-unionfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, linux-btrfs@vger.kernel.org, david@fromorbit.com
+Subject: Re: [PATCH v17 15/21] xfs: add fs-verity support
+Message-ID: <asPEIapeSklgcsUa@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
+References: <20261002223705.2175542-1-aalbersh@kernel.org>
+ <20261002223705.2175542-16-aalbersh@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <7345c87bc7ec38c7d71aff8ae0542ad177b3dce2.1791203029.git.fdmanana@suse.com>
-In-Reply-To: <7345c87bc7ec38c7d71aff8ae0542ad177b3dce2.1791203029.git.fdmanana@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Mon, 5 Oct 2026 17:03:40 +0200
-X-Gm-Features: AclHuK_IWvso9VyUOUk6tgs10R9cDhIM2I30PLUtGMRKzrg9cgYVpdMWCztJLW8
-Message-ID: <CAPjX3Fdp4niu6BNUAJCcvmNfyOZaDiZRrro7-wEmhE7jvuZsnQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: use READ_ONCE() to read the chunk size from the
- data space_info
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261002223705.2175542-16-aalbersh@kernel.org>
 
-On Mon, 5 Oct 2026 at 14:26, <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> The chunk size of a space_info is always updated with WRITE_ONCE() (see
-> btrfs_update_space_info_chunk_size()), so when reading it in
-> calc_effective_data_chunk_size() we should use READ_ONCE() to prevent
-> load tearing. We are already using READ_ONCE() in every other function
-> that accesses the chunk size of a space_info.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Reviewed-by: Daniel Vacek <neelx@suse.com>
-
---nX
-
+On 2026-10-03 00:36:56, Andrey Albershteyn wrote:
+> Add integration with fs-verity. XFS stores fs-verity descriptor and
+> Merkle tree in the inode data fork at first block aligned to 64k past
+> EOF.
+> 
+> The Merkle tree reading/writing is done through iomap interface. The
+> data itself is read to the inode's page cache. When XFS reads from this
+> region iomap doesn't call into fsverity to verify it against Merkle
+> tree. For data, verification is done at ioend completion in a workqueue.
+> 
+> When fs-verity is enabled on an inode, the XFS_IVERITY_CONSTRUCTION
+> flag is set meaning that the Merkle tree is being build. The
+> initialization ends with storing of verity descriptor and setting
+> inode on-disk flag (XFS_DIFLAG2_VERITY). Lastly, the
+> XFS_IVERITY_CONSTRUCTION is dropped and I_VERITY is set on inode.
+> 
+> The descriptor is stored in a new block aligned to 64k after the last
+> Merkle tree block. The size of the descriptor is stored at the end of
+> the last descriptor block (descriptor can be multiple blocks).
+> 
+> Pro-actively remove any unwritten extents as we use last extent to
+> locate descriptor.
+> 
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> Reviewed-by: Christoph Hellwig <hch@lst.de>
 > ---
->  fs/btrfs/space-info.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-> index 39a28e1bec8a..72fa01502461 100644
-> --- a/fs/btrfs/space-info.c
-> +++ b/fs/btrfs/space-info.c
-> @@ -443,8 +443,8 @@ static u64 calc_effective_data_chunk_size(const struct btrfs_fs_info *fs_info)
->          */
->         data_sinfo = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA);
->         if (btrfs_is_zoned(fs_info))
-> -               return data_sinfo->chunk_size;
-> -       data_chunk_size = min(data_sinfo->chunk_size,
-> +               return READ_ONCE(data_sinfo->chunk_size);
-> +       data_chunk_size = min(READ_ONCE(data_sinfo->chunk_size),
->                               mult_perc(fs_info->fs_devices->total_rw_bytes, 10));
->         return min_t(u64, data_chunk_size, SZ_1G);
+>  fs/xfs/xfs_fsverity.c | 425 +++++++++++++++++++++++++++++++++++++++++-
+>  fs/xfs/xfs_fsverity.h |   2 +
+>  fs/xfs/xfs_message.c  |   4 +
+>  fs/xfs/xfs_message.h  |   1 +
+>  fs/xfs/xfs_mount.h    |   2 +
+>  fs/xfs/xfs_super.c    |   7 +
+>  6 files changed, 440 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/xfs/xfs_fsverity.c b/fs/xfs/xfs_fsverity.c
+> index 976e05257bf9..8cffcafc19aa 100644
+> --- a/fs/xfs/xfs_fsverity.c
+> +++ b/fs/xfs/xfs_fsverity.c
+> @@ -6,13 +6,22 @@
+>  #include "xfs_fs.h"
+>  #include "xfs_shared.h"
+>  #include "xfs_format.h"
+> -#include "xfs_log_format.h"
+>  #include "xfs_trans_resv.h"
+>  #include "xfs_mount.h"
+>  #include "xfs_inode.h"
+> +#include "xfs_log_format.h"
+> +#include "xfs_trans.h"
+> +#include "xfs_trace.h"
+> +#include "xfs_quota.h"
+>  #include "xfs_fsverity.h"
+> +#include "xfs_iomap.h"
+> +#include "xfs_error.h"
+> +#include "xfs_health.h"
+> +#include "xfs_bmap_util.h"
+> +#include "xfs_icache.h"
+>  #include <linux/fsverity.h>
+>  #include <linux/iomap.h>
+> +#include <linux/pagemap.h>
+>  
+>  struct kmem_cache *xfs_fsverity_ioend_cache;
+>  mempool_t xfs_fsverity_ioend_pool;
+> @@ -51,3 +60,417 @@ xfs_fsverity_is_file_data(
+>  	return fsverity_active(VFS_IC(ip)) &&
+>  			offset < xfs_fsverity_metadata_offset(ip);
 >  }
-> --
-> 2.47.2
->
->
+> +
+> +/*
+> + * Retrieve the verity descriptor.
+> + */
+> +static int
+> +xfs_fsverity_get_descriptor(
+> +	struct inode		*inode,
+> +	void			*buf,
+> +	size_t			buf_size)
+> +{
+> +	struct xfs_inode	*ip = XFS_I(inode);
+> +	struct xfs_mount	*mp = ip->i_mount;
+> +	__be32			d_desc_size;
+> +	u32			desc_size;
+> +	u64			desc_size_pos;
+> +	int			error;
+> +	u64			desc_pos;
+> +	struct xfs_bmbt_irec	rec;
+> +	int			is_empty;
+> +	uint32_t		blocksize = i_blocksize(VFS_I(ip));
+> +	xfs_fileoff_t		last_block_offset;
+> +
+> +	xfs_ilock(ip, XFS_ILOCK_EXCL);
+> +	/*
+> +	 * Serialize reading of inode->i_flags with xfs_scrub clearing of this
+> +	 * flag if inode is corrupted.
+> +	 */
+> +	if (!(inode->i_flags & S_VERITY)) {
+> +		xfs_iunlock(ip, XFS_ILOCK_EXCL);
+> +		return -ENODATA;
+> +	}
+> +	error = xfs_bmap_last_extent(NULL, ip, XFS_DATA_FORK, &rec, &is_empty);
+> +	xfs_iunlock(ip, XFS_ILOCK_EXCL);
+> +	if (error)
+> +		return error;
+> +
+> +	if (is_empty)
+> +		return -ENODATA;
+> +
+> +	last_block_offset =
+> +		XFS_FSB_TO_B(mp, rec.br_startoff + rec.br_blockcount);
+> +	if (last_block_offset <= xfs_fsverity_metadata_offset(ip))
+> +		return -ENODATA;
+> +
+> +	desc_size_pos = last_block_offset - sizeof(__be32);
+> +	error = fsverity_pagecache_read(inode, (char *)&d_desc_size,
+> +			sizeof(d_desc_size), desc_size_pos);
+> +	if (error)
+> +		return error;
+> +
+> +	desc_size = be32_to_cpu(d_desc_size);
+> +	if (XFS_IS_CORRUPT(mp, desc_size > FS_VERITY_MAX_DESCRIPTOR_SIZE))
+> +		return -ERANGE;
+> +	if (XFS_IS_CORRUPT(mp, desc_size > desc_size_pos))
+> +		return -ERANGE;
+> +
+> +	if (!buf_size)
+> +		return desc_size;
+> +
+> +	if (XFS_IS_CORRUPT(mp, desc_size > buf_size))
+> +		return -ERANGE;
+> +
+> +	desc_pos = round_down(desc_size_pos - desc_size, blocksize);
+> +	if (desc_pos < xfs_fsverity_metadata_offset(ip))
+> +		return -ERANGE;
+> +
+> +	error = fsverity_pagecache_read(inode, buf, desc_size, desc_pos);
+> +	if (error)
+> +		return error;
+> +
+> +	return desc_size;
+> +}
+> +
+> +static int
+> +xfs_fsverity_write_descriptor(
+> +	struct file		*file,
+> +	const void		*desc,
+> +	u32			desc_size,
+> +	u64			merkle_tree_size)
+> +{
+> +	int			error;
+> +	struct inode		*inode = file_inode(file);
+> +	struct xfs_inode	*ip = XFS_I(inode);
+> +	unsigned int		blksize = ip->i_mount->m_sb.sb_blocksize;
+> +	u64			tree_last_block =
+> +			xfs_fsverity_metadata_offset(ip) + merkle_tree_size;
+> +	u64			desc_pos =
+> +			round_up(tree_last_block, XFS_FSVERITY_START_ALIGN);
+> +	u64			desc_end = desc_pos + desc_size;
+> +	__be32			desc_size_disk = cpu_to_be32(desc_size);
+> +	u64			desc_size_pos =
+> +			round_up(desc_end + sizeof(desc_size_disk), blksize) -
+> +			sizeof(desc_size_disk);
+> +
+> +	error = iomap_fsverity_write(file, desc_size_pos, sizeof(__be32),
+> +			(const void *)&desc_size_disk,
+> +			&xfs_buffered_write_iomap_ops,
+> +			&xfs_iomap_write_ops);
+> +	if (error)
+> +		return error;
+> +
+> +	return iomap_fsverity_write(file, desc_pos, desc_size, desc,
+> +			&xfs_buffered_write_iomap_ops,
+> +			&xfs_iomap_write_ops);
+> +}
+> +
+> +/*
+> + * Try to remove all the fsverity metadata after a failed enablement.
+> + */
+> +static int
+> +xfs_fsverity_delete_metadata(
+> +	struct xfs_inode	*ip)
+> +{
+> +	struct xfs_trans	*tp;
+> +	struct xfs_mount	*mp = ip->i_mount;
+> +	int			error;
+> +
+> +	xfs_ilock(ip, XFS_MMAPLOCK_EXCL);
+> +	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_itruncate, 0, 0, 0, &tp);
+> +	if (error) {
+> +		xfs_iunlock(ip, XFS_MMAPLOCK_EXCL);
+> +		return error;
+> +	}
+> +
+> +	truncate_inode_pages(VFS_I(ip)->i_mapping, XFS_ISIZE(ip));
+
+Oh I haven't paid enough attention here, it has to be moved before
+xfs_ilock(ip, XFS_MMAPLOCK_EXCL) not just before the lock, to exclude
+ABBA with writeback/reclaim taking folio lock and waiting for trans
+space.
+
+I will send v18 if more feedback will arrive, otherwise, I can
+resend just this patch (or could be fixed during merge?).
+
+-- 
+- Andrey

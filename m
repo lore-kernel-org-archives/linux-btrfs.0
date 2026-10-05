@@ -1,72 +1,64 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85FE93DAAB9
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:24:26 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF96E484250;
+	Mon,  5 Oct 2026 13:17:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=213.95.11.211
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791203067; cv=none; b=hN59DtpralFb2bid0eD0rLguuZp7bITrYERUsXUaVILjTFcpuhqaDc/Duv1Ep2JK9bFOG4KlF0VBNNCfbS5TzpKDH2/bUbGMYt7JB0FuE/QUxNkm2KFo3pZLi2MvDCRACSEQKvDbVb4nc58StP5n/jV9KpYuwtLmo/T1F7MhrIA=
+	t=1791206241; cv=none; b=r2h+I8IknCLjVJbYtU4dY+cOOLewTt/f3mctLKYVEua19/n8b9zeYjBjim5DnAowqQrFJEb+9ECThXc9ADUXExVw9dJGMPEu0X1s+UZxhxFwcBPXoYG8H6sImNsAHJaIX6/WarWqZWPqtRlIHlStHbIzoW9LI93drxx+VS2qJ+Q=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791203067; c=relaxed/simple;
-	bh=NGSN7o0EwOePwtpRT7gvF3u1QoCGKVLMA/QxpjbQUbs=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=qFdo6Y5XVUAAfzjrxF6k/sfKQpUzMs55lIsUal7nVWIWqnyMtjxpeCAaunjxWUOJjxLDYOYC3keVlpsPQf17aGTogTN8uYsls9I1llw8hbj2dW5s6shB+lA0wa/cH9vjj8sD4epL47BXU+HBopFtiaSZRFBKJNwOZt/IwsK9lNc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dWdomhnj; arc=none smtp.client-ip=100.103.45.18
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dWdomhnj"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id AADE11F000FF
-	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2026 12:24:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791203066;
-	bh=i4yv/a0nHJT7jresUoYeLiTXLDIRHpysyYoVTd9xJsk=;
-	h=From:To:Subject:Date;
-	b=dWdomhnj1PfbtChKj90EDN4cH5pEzx+3DzlkPrg23cQoQPbgi4fV7U1OE2B2Q3kTa
-	 lCtvV0OW8Mob1N0CB43aJ9RaQyJisqlQ0byY88RJoznrX70QKOapOBi23fvy66F0Qu
-	 Wn+fGOTnxTSy/pEMJwio0yQgcj14SyEpRdXI4USIIfQ5mOrGS/m1Xj8NT7d2ORwlik
-	 rTztsTna1V65w6smAjChrEmwP7I75y66Gedglv3N//kHMRlZY9yaejnzkg7BRSxzJy
-	 M8jqImTdWzmmYLjrS4aZKbyTZCKtrzaYhwXc+0oEEKmO2O/2hbTZVlrUoUASSM6Sw3
-	 h0TPjIOcxvDuw==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: use READ_ONCE() to read the chunk size from the data space_info
-Date: Mon,  5 Oct 2026 13:24:23 +0100
-Message-ID: <7345c87bc7ec38c7d71aff8ae0542ad177b3dce2.1791203029.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.47.2
+	s=arc-20240116; t=1791206241; c=relaxed/simple;
+	bh=0seYcxoXkRoQkb1AQZ3v8FeRal9z3G5Tn8ySUmAebug=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=gPYmGMg12Gb5t3fRDNfL7tTG9j5EjUCjw6j4D8Jlp/wmhly//TRu5XyVyknzotwo1ChxXTb+lPMCNecQ/JpJTNcKVwSd0i19c3cwSWf+ghM1i73bSFf4j7nDJvD/2ImF94Yy02AfEH+dTaLYBDYGRhf8zwvwcyPJICTc/wfGFKU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de; spf=pass smtp.mailfrom=lst.de; arc=none smtp.client-ip=213.95.11.211
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 1A5BE68AFE; Mon,  5 Oct 2026 15:17:12 +0200 (CEST)
+Date: Mon, 5 Oct 2026 15:17:11 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: "Darrick J. Wong" <djwong@kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>, Zorro Lang <zlang@kernel.org>,
+	fstests@vger.kernel.org, linux-xfs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 01/13] add a "datacsum" group
+Message-ID: <20261005131711.GH26805@lst.de>
+References: <20260924100855.2734089-1-hch@lst.de> <20260924100855.2734089-2-hch@lst.de> <20260929013121.GD2705364@frogsfrogsfrogs>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20260929013121.GD2705364@frogsfrogsfrogs>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Sep 28, 2026 at 06:31:21PM -0700, Darrick J. Wong wrote:
+> On Thu, Sep 24, 2026 at 12:07:42PM +0200, Christoph Hellwig wrote:
+> > Add a group for test exercising data checksum functionality.
+> > 
+> > Signed-off-by: Christoph Hellwig <hch@lst.de>
+> > ---
+> >  doc/group-names.txt | 1 +
+> >  1 file changed, 1 insertion(+)
+> > 
+> > diff --git a/doc/group-names.txt b/doc/group-names.txt
+> > index ef6b8f51cf87..101c72688c02 100644
+> > --- a/doc/group-names.txt
+> > +++ b/doc/group-names.txt
+> > @@ -34,6 +34,7 @@ dangerous		dangerous test that can crash the system
+> >  dangerous_fuzzers	fuzzers that can crash your computer
+> >  dangerous_selftest	selftests that crash/hang
+> >  data			data loss checkers
+> > +datacsum		data checksumming
+> 
+> Seems like a reasonable addition to me.  That said ... I bet at least
+> btrfs/282 is a data checksum test that's incorrectly in the (metadata)
+> scrub group.
 
-The chunk size of a space_info is always updated with WRITE_ONCE() (see
-btrfs_update_space_info_chunk_size()), so when reading it in
-calc_effective_data_chunk_size() we should use READ_ONCE() to prevent
-load tearing. We are already using READ_ONCE() in every other function
-that accesses the chunk size of a space_info.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/space-info.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index 39a28e1bec8a..72fa01502461 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -443,8 +443,8 @@ static u64 calc_effective_data_chunk_size(const struct btrfs_fs_info *fs_info)
- 	 */
- 	data_sinfo = btrfs_find_space_info(fs_info, BTRFS_BLOCK_GROUP_DATA);
- 	if (btrfs_is_zoned(fs_info))
--		return data_sinfo->chunk_size;
--	data_chunk_size = min(data_sinfo->chunk_size,
-+		return READ_ONCE(data_sinfo->chunk_size);
-+	data_chunk_size = min(READ_ONCE(data_sinfo->chunk_size),
- 			      mult_perc(fs_info->fs_devices->total_rw_bytes, 10));
- 	return min_t(u64, data_chunk_size, SZ_1G);
- }
--- 
-2.47.2
+I didn't really add any existing btrfs tests, but there's probably
+a few.  Maybe the btrfs maintainers can help to populate the list?
 

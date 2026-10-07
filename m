@@ -1,67 +1,67 @@
-Received: from mail-ej1-f54.google.com (mail-ej1-f54.google.com [209.85.218.54])
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B3FA475348
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Oct 2026 09:22:40 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.54
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD47F473C84
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Oct 2026 09:59:22 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.43
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791365000; cv=none; b=kmFkUevnQKFNr+BQZzqybFX842fS64NkGOWmE4BH3hEANPEnutg66IiBVf2uqDKYtLxYVOo93SU6ZP4UNIXhLk/iUY99PlGt1qc2z1ZzBvnWyhYmrUdoaD8Q19t1v15oYCDHv7QtWTOUuG6pGa7MfVP+aMkv8XYyD7MZf14pYtQ=
+	t=1791367171; cv=none; b=MzFnLvwRtT32NbMqEHxlXsKY1qwszcjIfs7U1opMklnLAxSCgSK6cbErXmWsw3h3Q5lKbOQqaw1Knur6m738xm3svnFSA7brN7NP2WuAWwKjImMVTTilyX6MNFbFLwiV1KS6e7+HK8Qxk2pb35cBKeFPMf0jjloqxdsbG6x6prk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791365000; c=relaxed/simple;
-	bh=49loMnyNZXHZDHY6ztGRcoRDezmZT04atOA8t1D0ziA=;
+	s=arc-20240116; t=1791367171; c=relaxed/simple;
+	bh=7bGn4hzYuOiNl03NQRVJsJ8Gc8tm3kDOThzL5Ps6sac=;
 	h=Message-ID:Date:MIME-Version:Subject:From:To:Cc:References:
-	 In-Reply-To:Content-Type; b=q+0CLEfXdyWV1QMPjIc8WsNqsqPt5gQaBFgl4Bnplvj8/JX6kFit/brW2oQMMsRHHeSf+RDchnTOABDtoBgICb2V3iyKi8tMMV47XPRK2CIlFIG+Ef5nbjTg/W0VpUHock8HlXKiR7v9ZzuP9vGFNY+mjP2P8QPy1UMcAE2gpGU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=fbDkFjd4; arc=none smtp.client-ip=209.85.218.54
+	 In-Reply-To:Content-Type; b=bNT/H/eRISC+1VvSm0pcUPmgISyF9E40Ss5bF/n+VK04ghr19WM7EL/i+/8iTfNTcRwbYp/In2UiSlrBFuzZ3OfMoCZk90sfTeVh6eubWqEVbFarN89UIIC0HHE/gb84Iihy1TD2HXnkj0/MXcNcmSJdm3r+g2CdalBq+fuhOqU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=df7mLzRB; arc=none smtp.client-ip=209.85.128.43
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="fbDkFjd4"
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-c2a4e013a44so564741066b.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2026 02:22:40 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="df7mLzRB"
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-4995b0343c1so26925665e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2026 02:59:22 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791364958; x=1791969758; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1791367161; x=1791971961; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt
          :content-language:references:cc:to:from:subject:user-agent
          :mime-version:date:message-id:from:to:cc:subject:date:message-id
          :reply-to:content-type;
-        bh=IoO2GmgQqTbMIzbKjbtZGqeaqfQkkwtp1dXjhHu5kRk=;
-        b=fbDkFjd41UkA7k2HqyH0LTg1uWTMqSET/3QlPobgmrScSYCeELOTmbf5mRCJN70w21
-         PIfZNGpW3e8cWNxSUFmKsjsnMwVwXYWSNryuyBbMAA+PyYTrNuz0Q4u2OtFPctOE5Ecn
-         v9DRGDzOORAYIKp2MFbLgsqKjgyXtbsZbzy/cQBCdlsUzerkiBqYKf/1A15xZ3/DyGV0
-         KULVneYwmBM3WzZ8qZfCT1goL1cT0Rt1mAgZGNcjh+DIjRf4D5DgM/+L8hn/BPrzUHsB
-         +GWGWGNBoRLJQg57bI263k9etLOCv2RuAm5eUNPUIoVSThdZRt6BVREZnB1lnjl2ICbg
-         wl2g==
+        bh=sTw1DYJ/lie8TNqbfg32Xyb6W/CErQFnYS5LqwGE1n8=;
+        b=df7mLzRBcHJmRZN1UZ17d8JzdKL793PmGk0bkhjaxs9huTNVOdzU6LvuNEvbi7rb8e
+         fnLEQT0fOn179ZtnCsnNUX2/w2tfokXncHaBGRxizGHUS8LQxGpUIV5dOE9hKRCoubYL
+         8PLYtGXkYc02H1FeqDnZRFSZoSyAPwrqwJQZU+GecM4CS0d1GDtQdk3A+Ko6dwTelfDw
+         zPMZAkC/473cVS/yAZDJT8GcQB8pPboa4Spy/jncvpw4ZrFNHbOziw91I2tiyZURX5rB
+         s9j8K6m6bbUHKKqJUr70MODMUVocXGpoQS6NwWeWT6DJEoBKw8KyUY732S1mWVHk6WbT
+         vo/g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791364958; x=1791969758;
+        d=1e100.net; s=20260707; t=1791367161; x=1791971961;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt
          :content-language:references:cc:to:from:subject:user-agent
          :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=IoO2GmgQqTbMIzbKjbtZGqeaqfQkkwtp1dXjhHu5kRk=;
-        b=CuP+ITCPkxpLqW3OdZMEeMT1cN1gLR3VbhUUVLTfqvMFEvHDl2SDHQ/sPEr87m53HV
-         6kQVHDrBOSC/4wfj3k4QhMUY4vs8CAs8XEGYsfKXcQskxR//sMTzeL4IUMYJEOPRwPj1
-         3rnBhF0+1SLicoUVZtTUZev499KGuvoLVbDvjH2rItaB/kmcv2OEw2DFdXyjp0clO2QH
-         4h4sSW1AnFtxRpKkI9MC52o042hf0VyrwM14Fikqdw0PHmL3wBZQdftJibwgiDW9OWJw
-         CXfL1HLTCzhfUrauSW3gqTN+Cc5LN1UYdJ0+Zg9rQP/ti0s2C65QxP8txMwz1+yxgZq5
-         kvdw==
-X-Forwarded-Encrypted: i=1; AKwUvBwZZCt1/i5TA2XGklOuznYOkTPdHBSw4Jhnbyq1VQbKYzM5jwW/NuxsOEMOi6qXW5G0xga9XC5OJkwEtw==@vger.kernel.org
-X-Gm-Message-State: AFuF++kPNa3GnQvinN2rQQcI2g0W2y7zdj4fdFYQJpUE43tJmeDWc3Ct
-	sZ4MwrQ17OXRGnxmszX1yOXanWejw+iHAB2bId+rqrl6B9D7mnz8+w6w67WrlMnCrYU=
-X-Gm-Gg: AYBFou2/MYamhNU3/+uBmFgq8yAB7WTmcNRo4HqFA2gPlUgqrfVPVE1275aNIEi+zOE
-	BcOowCFFIKviVh+33yDALJVxFgtYNOxLb07ExgXxqlN4T0F440SJIjeMDq25TpEQEb9GT7ino66
-	YKAYv94UPfMrOzc6A7ztwtSOCj6O89bVWNftmV0WbS0l37RsXOCkZ4G6Y0bP5hU0w0fWBv0X1ab
-	CdCesAvvQcmEXgK780uclcipThm2rdz1JHfkfcWPKU+epruLpUoiDMI9biu3oQeUgYZAZ3PKX7T
-	X0DO+EwjI0BYljNWt3ggkHQbJBQ+0O5kkjM6ES0zc20yy/zJsdHLRV6Cr9Xr5vFqyyHnBYBZutR
-	xG+OEUeTyEj5xbs9BM3TxNEGDNQ6zcWcPv2khu1Ii7H9VflVT+yd+PQU8rkDR6+NPV2DGLtR6WZ
-	1xOni5R6YcOwkNum2oo+dpcr+8NX0wTOMJ4LULpGRkAjtKaBVzS9Cr65onWL/Dt04=
-X-Received: by 2002:a17:907:6d1f:b0:c2a:704c:8c74 with SMTP id a640c23a62f3a-c317c080ff4mr157588066b.28.1791364958384;
-        Wed, 07 Oct 2026 02:22:38 -0700 (PDT)
+        bh=sTw1DYJ/lie8TNqbfg32Xyb6W/CErQFnYS5LqwGE1n8=;
+        b=ARr0M9X8H665J1tC8Tpf38mc8nbqm0ows9NUM7QecuCAZRWvj+9LaMCMavdeDJPfMW
+         0agy65bJuI37Jyf39+9jbI+8474oCC5KNFdgsOV+c2S4uFJUVQSrgp9ZXQs01JbCLTHV
+         YeHcvbSd41ras1+i2dFSpuSF/3kFSaPRGPWnd7oMun46KaYFivUhHZeZn7EaDW4T2V3b
+         RX1PKgLr1FoYrseMmLC7WXk56W9I1nylasplFLv2Ysq6KPTiqYDRwEluHPkIO7FBVEmZ
+         uLNko5EDBWZe1dSXYZzzRE05S4QoF71SlaBknDb+QlXK6sJ8I2aw6oprcXQjZK3xpyWZ
+         auyg==
+X-Forwarded-Encrypted: i=1; AKwUvBwnSanCbgAUAo8d452dSQiY9Pqi++xaTpQwpjoupOTtD0CGvGU1SxfKAWCW1n8sQjEHahPgzlK60AXMuQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++myDBnDKne9W/0SwZapPMXX3vAQ0EE/+bEAumMsDJpXqrJ5YZJo
+	kkQVqnWBay1+lJcIfUoFey+6NUnwodUkl1P8KpcnSCWSIhLTzC+eAFRXYkos7FrU5wc=
+X-Gm-Gg: AYBFou3ISXir3145czjCLgbcW/0YrmNBAZbGLNM/IEIlZMIyjTOZtKqpbXfrCVVpqeH
+	WDrv6ocAfew3AqxcdyLQNflle3u9cJR/yDL/1/sopEC0h1FAXxBrUL80zaZIQuRyDx/B8FlA0Zl
+	QqPc0aE2CW0RDtmQjFGAdKrDPjuv0p4bDv8EKv/zaBiN8GT/b7eHm54zumhhFeh7l/htxe5mNju
+	qUp9hE3pq3R9Cwj6dcQvnxnZgwUN5W98v0Kl69yq8F9s+yvxi1ICqkhQ8PJRNm8ZkDwKtS2R0wu
+	/1nUI4ir59WuK7X/fPCKfmF8mxq763YIL2AenbON+M+91YgvZilR6E9J0NAS7DHawG/8O0UbtfF
+	Z0vudWtXXIX8VGsY5JuByo2dEDyaQSIoFZx9iJZLiXboV/36jqn7eGDIc8yIr/+qW9qVYZ9Ur8s
+	fjw9e2TPZoZjTRTm5k8UUIuimPbJ9NxjLMLIUi5pzuFVLdkFlGn2nqZfSd6PmIKxU=
+X-Received: by 2002:a05:600c:46d3:b0:49c:dada:30b7 with SMTP id 5b1f17b1804b1-4a1800d42abmr23981425e9.2.1791367160821;
+        Wed, 07 Oct 2026 02:59:20 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8921cbe37desm440650b3a.37.2026.10.07.02.22.33
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2e604852563sm7217615ad.62.2026.10.07.02.59.16
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 07 Oct 2026 02:22:37 -0700 (PDT)
-Message-ID: <896c621b-441f-4d46-96b9-fcc209d78a7f@suse.com>
-Date: Wed, 7 Oct 2026 19:52:31 +1030
+        Wed, 07 Oct 2026 02:59:19 -0700 (PDT)
+Message-ID: <55739226-436a-42c3-a5fa-c699b01f819e@suse.com>
+Date: Wed, 7 Oct 2026 20:29:14 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -130,6 +130,23 @@ Content-Transfer-Encoding: 8bit
 >> Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
 > 
 > Reviewed-by: Qu Wenruo <wqu@suse.com>
+
+My bad, Sashiko exposed a valid but very rare race that the temporary 
+quota_root can be added to fs_info->dirty_cowonly_roots list.
+
+This requires enough subvolumes to make quota_root to be higher than 
+level 0 in the first place, which is not common but definitely possible.
+
+Although all readers of fs_info->dirty_cowonly_roots won't be reached 
+after the transaction is aborted, there is still a very small window 
+that another thread is already holding a trans handler just after the 
+transaction is aborted and the quota root is freed.
+
+In that case the other thread may access the already freed quota_root 
+through fs_info->dirty_cowonly_roots->next.
+
+I'm afraid we need to call list_del(&quota_root->dirty_list) with proper 
+trans_lock hold during error handling.
 > 
 >> ---
 >>   fs/btrfs/qgroup.c | 1 +
@@ -146,14 +163,6 @@ Content-Transfer-Encoding: 8bit
 >>           ret = -ENOMEM;
 >> +        btrfs_abort_transaction(trans, ret);
 >>           goto out_free_path;
-
-BTW, you are on an older branch.
-
-The latest for-next branch has the commit "btrfs: qgroup: merge error 
-labels in btrfs_quota_enable()", which changed the branch.
-
-Next time check the MAINTAINERS file to grab the latest devel branch.
-
 >>       }
 >>       qgroup = add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTID);
 > 

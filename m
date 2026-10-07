@@ -1,66 +1,67 @@
-Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 810983E49EC
-	for <linux-btrfs@vger.kernel.org>; Wed,  7 Oct 2026 21:05:23 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.218.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2670640F734
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Oct 2026 21:06:12 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.45
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791407125; cv=none; b=ROH54fAMGuPvmLgR+Dlf4DSDSTf1z3d2wr1FpZvj7VXPJl2tcHSNrhBLvM3QK5hSAlgJiM/xf5ax3E4CQzmNzrbwy0RoicP7etxRTCfBmyTkOV+Jfuh6ua3vRnEp8QwehtWYIy2dgHuSyU938r8aCOY+xI30yI41Tux/v51hYG0=
+	t=1791407176; cv=none; b=LwP+qmOr11XoHdHf6/KfSK1TDbdjFISB515+00RSTE1sf8qThmC5LtLSuQiUHG6fkK6u6bEXo9HNOCX7tDMbFzGhmUXkeF0tb6EoljKWOsHx2n0pZmWZJsJ3HZke+FjRRSWZJA1ELEDtmn0tUKTwPRpkIITuf1Xf7LK4eNzO+1o=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791407125; c=relaxed/simple;
-	bh=xS/ky5t2ImWSC04Lp1rBwnQJwrelkruNQiYkKiMXcko=;
+	s=arc-20240116; t=1791407176; c=relaxed/simple;
+	bh=Z9VpridfUlR+82fO8wAtuS3BcoFUmdlYax1A9vet5AY=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=iiXw3p4hoQaa7biJj9TdTEkKZg0zwfbaylfeW71qfrCcxYhvq8GbcST1lcYN3aGs2RHEn/Si+2gtABDDmEJ83ecLS4SrrmMmQB1GV0ovKLZG3OZKyMaqHE1tIU50zuh8h4PQlgWcsghnRZaAhFqNi3mMLjwqoJuPwUBACAj3tXA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=S5ZPGjJz; arc=none smtp.client-ip=209.85.218.44
+	 In-Reply-To:Content-Type; b=YCt6oTeG32C69hzCvFK0aKy+WBjaeBYefP5zbQrdo2ytR37Zjk+Mc4xIMg8EzwkCsXw2FDW7yRkJ21IWjbwqvK5V86vmkA0TAiccD3Z5WkIEqzOtJQ6oqloquQxn7NqpvAkqnrWLhdeRulDOEMLl9l+DuM4aNAucNhl52KP1/6o=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=BZic8qcU; arc=none smtp.client-ip=209.85.128.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="S5ZPGjJz"
-Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-c2e36c3478aso674536366b.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2026 14:05:23 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="BZic8qcU"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4a180fbeef5so11085345e9.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2026 14:06:12 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791407122; x=1792011922; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1791407171; x=1792011971; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=ZB8ePJJ5vG+DOYZ4nM5G8Cik/BT6PRRvvVa/2N1PPYc=;
-        b=S5ZPGjJzffGkWbMs0QWgNoFiW1sj0NrZWv0XbZP+PKN2t+Z342qet80q8i7m+I6kye
-         nvxtEEnqfzsUXlwgzYnxMqt+XiUKz7SwvQEb87UnEy4vhZlF60SI7o9fALDmGZq8pdTI
-         ixa9bHTWriiliNtv/hxu5h4AtqT4QGUtFP4ThCDtAvBVWnUupKwca/EHm6b9/Y7dvPSp
-         hu7l9B9qfBblA1NNFhROWZlrbzZ6MMZU8LMJ90vnmzorfm4h8J+EfVSDSM3WsH1D4YWO
-         bi6HO4EtH45hm9o+pNG1NcCsGkiNi0ZYfk+vmWl5EYaSmumjRjHugdU+OMemkWzNPAHW
-         WD0w==
+        bh=bHD2Cp/w/DMT73usVuT37Swqxuwc6wEMA724WvbswUQ=;
+        b=BZic8qcUM90Mfv58nXB8TLkHJRVwRCdn5ttFezrvc1ueSt4+Pu3eKIXiYJXgVO4eHY
+         5AD8ubPqhh2gGgRKihFOlvEtW+XhtKwSmVlna5qlcp7N1ufXeOBVh6KgPVfNDjgVAfFk
+         lSz8XFkAcC+Kp4kOqt9cKzxTZ4IwBLv/QNWycz5zPMnVP2ar0x3UDAcZ9Rc4AxZcT4Nk
+         wXY3E8fkHZPvt95c2+0ezbaXGch4VEkHlZy8rk1Ey2/g0hvphJTR0poRsSAnEGrWBzdv
+         kEkIpXsfA9wD5lo4ZkhHmrTdS4ewdKavO4h5sAGz7ibKyD8g2fPgLGaA4ig3ymg/IhLP
+         DntQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791407122; x=1792011922;
+        d=1e100.net; s=20260707; t=1791407171; x=1792011971;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=ZB8ePJJ5vG+DOYZ4nM5G8Cik/BT6PRRvvVa/2N1PPYc=;
-        b=yL5XFFy81qahCsDvuoN075x8LVxNI0wBSO2A5NscIkddUJ7PyLj+2fubMBH20NkuSy
-         b/OQQx03YmvB6+k5DjgnFpyP60PRx0naaPBlRPz6inTwtzXsVCJ6ap0kSkWf/JuGEo1L
-         DGpeh09k28RauqrPc+NSAe3ceJLtNrc//gRfYsXh79Jn/onwUPp3sDfh1TGNVsnHVZ/y
-         tMhEaBxQMdFw2G69V7xLxNTyqY6bf9ShobljnTN//A2LkGsjjXw21NhZd8TLRds6OmjP
-         herCOrZMw/JGnWc+Y4QC1elc+HMg3qcCkWguGxAaLtmyqIvSU/n0HHEK95MGdLNR3f5I
-         h8bA==
-X-Forwarded-Encrypted: i=1; AKwUvBwj7Zff7kWHuk9Rex6asi+yJTjz8RAhs63MpruB1gwaGyGY2vHTp8hScf3iOaS3wCXtP+A2cIY9NaioXg==@vger.kernel.org
-X-Gm-Message-State: AFuF++lwp98jz5tdqx7RbxRnid0V7B+CNXGgtgZD7TAjLMEiVevJ7cuQ
-	qBzmmJHY3evykcQXEQ5/92bvB6T+sKKUML7xzl2rVDMFJcXyoFP9bPuTuGjtxS0wxq0=
-X-Gm-Gg: AYBFou0qsgS4+PRPVtxH3y1ycll/1AvRUZLdgjr5Cu76VQWSnyrxuIoL4uBKbIUrAEf
-	OGS8v8FmKS1dLhtLd7JZDrfYnQI//jYzyiIGjDKD0Pwn9z1497MkhkmQFrIlGS4ZhiDPQX6HDYU
-	zNJWFZuLbg3/4YvmWWuROq1HOuGk8B9uH3PJmZ5djURWVzLSb1Dd8OYpA1k0RLHvNCOi1D9TGnd
-	OEOku6ox1HhnYw2xgBo2YRve6X67oL4IFhQenMv6zeh+ryUmH49nZlcF6zFvr/k0r5ke26uXX99
-	OxXgWfNkw//SJAopKC/n6Y7OvXWF7CEILZHkWpYtbkRUyaRX8tkQY5jt6krrZcJ8S3Dh67NGKrG
-	ZfrXVJxWTeBF1lcFXOuinjiQciENe+sr2PVKI+0lCGyihvRC4bPplcjBrGDNVDwwbUXA2BcyhvM
-	Ni3ZzXaResH3+nM5L7AdK32dhDDFXRwRzWCeGOalxue1+IyygIBa1LUWZtf/OV7A==
-X-Received: by 2002:a17:907:c0d:b0:c2d:d019:d414 with SMTP id a640c23a62f3a-c317c07dd5cmr304872166b.29.1791407121648;
-        Wed, 07 Oct 2026 14:05:21 -0700 (PDT)
+        bh=bHD2Cp/w/DMT73usVuT37Swqxuwc6wEMA724WvbswUQ=;
+        b=SxVHv0BULT2ceD1PlUl+M3xKfbulu9qlnxV0A5XrnjAibWBvRlrSN06ZkLk7WF9ERb
+         LNLjFSxfjv0pYsKfh6JSKoA+e4qGxQ7MMPyMhBP+7iv0VIXsMun8UqI8kmJBM1HdiB2b
+         iJUtrk/OQ64/c5+xsEsqp2PH4Nu55mvfVcSpXuhDOTAIulteH3MzlX9/h+p7jrA4cmGr
+         CFPrYJScPMaLk4rioFiWZnZ/HVTTO9q6qlogOnwEprufHTMlakEpmY1OqXuQbSjNZXBi
+         amxxgcsFa7NNIq3vBj4InzCEcMRD7Q5Ng1EgV1EVYtDEXmRAP2/4rXy2PN2xA++xTnfq
+         Go5w==
+X-Forwarded-Encrypted: i=1; AKwUvBy8Sk2+/kcIb79NMoTS0OTAOddHjMxxv2N8OU2HL1AmEQo87ZVgDL9XilIkzNY8NWaUnDUejW7YXevCIg==@vger.kernel.org
+X-Gm-Message-State: AFuF++mQE0aCCP0/uIWMrFf029FC1HdgQ1tHwFU0jVpw1yfwgT9mrvvK
+	knTNU4s8sNG9/kn4PDsxblqFnmBnZkiTuARx47tU+VCOrcIFObgucZc6wSlPa9GDAL/r+iQSTm6
+	GVJ0d0s+o0w==
+X-Gm-Gg: AYBFou1BrX8vi6nX8c3A3dTpVbcLmhaH+pVBOaf5d+Sy1vo85OZkJPPHDIbSdDueHFn
+	MVzde9hwS4wc/YZwqzu1fIJfnZQUFtLluoAJPoW5yxucEhPOuFWTRVuqMQW4PDDwLVcWIrX3oQx
+	xYF668tQjWEGoJiF3HVC2MdpP9w7oVZMT8wIUkZqei1pXc8mELUzOPWmSDjQ4uBejThVR2pt3Y5
+	k7/c5AGhAZ1jxUUphX0weTQqwwmFxEBWbuU/9wHtSvoVci/1uyF3d094yFSlklI0XkvH4vCJKLf
+	7nvUmWkKvp95hVTsMbSdFwYwMpu3CnbiDg1+xvjhD3qEOxCI6WLaUSDrciYnGEvE3mk2PELikVq
+	5VhX4nBBbg/0QW4nx11knq1ZIAIfJH3caBqUfU/gfoeAEYn2Yf/5KECLZtN3Sykxs9vHLpI1Nr1
+	CnQMbbTd8Xw55uF9VexlLqRlTRhTuxzgBCHbXVEm15wWklu5PvNjygneXefCpfWg==
+X-Received: by 2002:a05:600c:3b0a:b0:4a1:70da:3350 with SMTP id 5b1f17b1804b1-4a180679e58mr54501055e9.32.1791407171087;
+        Wed, 07 Oct 2026 14:06:11 -0700 (PDT)
 Received: from [10.86.128.17] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-892bc276d97sm770291b3a.61.2026.10.07.14.05.19
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a9f1a7e9e4sm1148612a91.7.2026.10.07.14.06.08
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 07 Oct 2026 14:05:20 -0700 (PDT)
-Message-ID: <0c109786-2c48-4225-8f17-a64112d97711@suse.com>
-Date: Thu, 8 Oct 2026 07:35:16 +1030
+        Wed, 07 Oct 2026 14:06:10 -0700 (PDT)
+Message-ID: <44c7d7f9-8ca5-4f55-92d2-debc8c22a612@suse.com>
+Date: Thu, 8 Oct 2026 07:36:06 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -68,10 +69,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: defrag: fix key comparison with max defrag key in
- btrfs_defrag_leaves()
+Subject: Re: [PATCH] btrfs: defrag: fix check to see if next extent can be
+ defragged too
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <7c5964a3dc1d6cfef098dd3d4f1abdfac068aafe.1791384948.git.fdmanana@suse.com>
+References: <28749bc33ebb6dbb85b0acd298fbff300fc5d731.1791386424.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,24 +99,24 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <7c5964a3dc1d6cfef098dd3d4f1abdfac068aafe.1791384948.git.fdmanana@suse.com>
+In-Reply-To: <28749bc33ebb6dbb85b0acd298fbff300fc5d731.1791386424.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/10/8 01:26, fdmanana@kernel.org 写道:
+在 2026/10/8 01:50, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> The comparison can not be done in isolation for each key component (type
-> and offset) after the objectid component. For example if the defrag_max
-> key is (300 2 0) and the defrag_progress key is (301 1 0), the existing
-> comparison makes us jump to the 'done' label with 'ret' set to -EAGAIN
-> because 2 > 1, resulting in continuing to defrag despite having passed
-> the objectid of 300.
+> We want to check if the next extent is at maximum capacity but we are
+> passing the current extent map to get_extent_max_capacity() and not
+> the next extent map. For example if the current extent is compressed (its
+> maximum capacity is 128K) and the next extent is uncompressed (its
+> maximum capacity is 128M), then we can bail out and not defrag the next
+> extent too - when for example the next extent as a size of 128K, is
+> uncompressed, and the extent threshold is >= 256K.
 > 
-> Fix this by doing the comparison correctly with btrfs_comp_cpu_keys().
-> 
+> Fixes: 979b25c300db ("btrfs: defrag: don't defrag extents which are already at max capacity")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
@@ -124,24 +125,20 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/defrag.c | 6 +-----
->   1 file changed, 1 insertion(+), 5 deletions(-)
+>   fs/btrfs/defrag.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
 > 
 > diff --git a/fs/btrfs/defrag.c b/fs/btrfs/defrag.c
-> index 6ec5dd760d42..75c87aee5de9 100644
+> index 75c87aee5de9..7010d714cfe1 100644
 > --- a/fs/btrfs/defrag.c
 > +++ b/fs/btrfs/defrag.c
-> @@ -530,11 +530,7 @@ static int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
->   out:
->   	btrfs_free_path(path);
->   	if (ret == -EAGAIN) {
-> -		if (root->defrag_max.objectid > root->defrag_progress.objectid)
-> -			goto done;
-> -		if (root->defrag_max.type > root->defrag_progress.type)
-> -			goto done;
-> -		if (root->defrag_max.offset > root->defrag_progress.offset)
-> +		if (btrfs_comp_cpu_keys(&root->defrag_max, &root->defrag_progress) > 0)
->   			goto done;
->   		ret = 0;
->   	}
+> @@ -811,7 +811,7 @@ static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em,
+>   	 * If the next extent is at its max capacity, defragging current extent
+>   	 * makes no sense, as the total number of extents won't change.
+>   	 */
+> -	if (next->len >= get_extent_max_capacity(fs_info, em))
+> +	if (next->len >= get_extent_max_capacity(fs_info, next))
+>   		goto out;
+>   	/* Skip older extent */
+>   	if (next->generation < newer_than)
 

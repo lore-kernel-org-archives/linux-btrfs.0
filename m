@@ -1,275 +1,135 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-pj1-f50.google.com (mail-pj1-f50.google.com [209.85.216.50])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4ED0E44AB64;
-	Wed,  7 Oct 2026 15:31:12 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30C9D221F24
+	for <linux-btrfs@vger.kernel.org>; Wed,  7 Oct 2026 15:56:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.216.50
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791387080; cv=none; b=ISHh5CUdg4pTN7M0/s+z6KmKqib/NBvGeOoqPDjeMxaY6NUXYrJoGcYWWs3MZkCJwk/lsEE1OGAQhAxGcpcg/PBdGXp5WCkl2H+sU6M4EJwDPtTMX+FwaohRCxOEWIdBM0AtTOoywojKid2k0k6QWx16iz0oZpovWToON3iNQo0=
+	t=1791388608; cv=none; b=ibv+Wj6fi3ru1ipnjj+AeEQ9/xQkAJ+mNyvfb5+AVkCQfIMELAdx4wN0/eW0bjtXzuo1GDueCJH+sSZ8rEqfLgs61O0fweIvgM8nckTLRTSXxbMvRbO9WSOA8op5d3hcYlkb9pmrGVW6M0bh7lKscnyR/ZIw49BnHb+/zye+TwA=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791387080; c=relaxed/simple;
-	bh=aRj3qKC1pO5o1cHwnlEFRT21pLKGYED6aSYcFKNLgTc=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=izk3lxbkVLaIrwa5kk8hbf9PsuW/EHiFZegs5aP1j2gFg4wAruDbWSdC/oeHz3iFr9s5ywnzqWorJuetNLPG0ddVOvu8h2jnhl/Y0mobdRtivi0a7LSYI4P4MLAEbA0T3kNhIiFY+5pucyYfPFCaYD+nPZy7swMt267t5Fe4YwY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=0ZxXHC4k; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HQFpAvIU; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=ZPoMcQDL; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=/O5ZdOKZ; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1791388608; c=relaxed/simple;
+	bh=pPVrV/2WzL7N96nw0kgeAidh+olLE1M63O2AzyLesmM=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Y9yoNDlDI3ksPINutTsjpXNxAWP+2J8RWYKUxkK0mSAIlvEMEAVBCl7idPvF5nKTdgwtFB0/NfwWRYXL+x1FRkiwnpJCADAmxl15nYooJe801PMP3GW4dX0Y7iVqO/bHiVKeNbhZBsR5f+yb61uZ6GRJAWgxU3Xt+atmSFKCnJA=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=VA6vG+JW; arc=none smtp.client-ip=209.85.216.50
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="0ZxXHC4k";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HQFpAvIU";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="ZPoMcQDL";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="/O5ZdOKZ"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id BF4E41F38E;
-	Wed,  7 Oct 2026 15:31:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791387069; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kKPUfCJhlflk0uwX+KBsM4WKm16aQOajsgQ44BW6Qm8=;
-	b=0ZxXHC4ka1xuQYUrXRi0OminyAcERHub3QqJZ6kybfU/BHYdhBaSPKDkYh3Eel9mp0ufl6
-	I5UinFg9T/QuoncK4qHK7YdmtrFmplNx+35PB6C9GXcL5BHpxIgjorhzKNwyQLwy9pE4UM
-	Tr1nPAiKmOlGI21wmjrXeS3XptgdEyw=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791387069;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kKPUfCJhlflk0uwX+KBsM4WKm16aQOajsgQ44BW6Qm8=;
-	b=HQFpAvIUhV+r3v7TjyntctRoJcFSQRcwWtHW5X7aD5HSR90/1E4wFoirjCDBRhFqZc6jOo
-	VsKLBQ0ai0Fy3eCw==
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=ZPoMcQDL;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b="/O5ZdOKZ"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791387068; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kKPUfCJhlflk0uwX+KBsM4WKm16aQOajsgQ44BW6Qm8=;
-	b=ZPoMcQDLwiG2EUx3rlHqPar6RcaGeZPSSX9V5Z9OZpJCP5DcMb6FWLq+EEoPl+FZpNIS5v
-	7hSrpfLbHLDnwKvIfpG9ufDd+2Bh4qh5dZEFNxSjucFtBUrya6K/UvztmD19iJdecPE4SN
-	yoCQOxFEa9VecTjxgnlha0YYfaHjz78=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791387068;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=kKPUfCJhlflk0uwX+KBsM4WKm16aQOajsgQ44BW6Qm8=;
-	b=/O5ZdOKZft35nGNZM+hjzrbwAlwXK7038yjNaxihe87F9ne9VrG+5zJwJBatp8+bhaJSuk
-	emUiJqoSKBVBODCQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7CA9713354;
-	Wed,  7 Oct 2026 15:31:08 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id vdkkFbxlxmp7EgAAD6G6ig
-	(envelope-from <jack@suse.cz>); Wed, 07 Oct 2026 15:31:08 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id D3F9DA13FE; Wed, 07 Oct 2026 17:30:59 +0200 (CEST)
-Date: Wed, 7 Oct 2026 17:30:59 +0200
-From: Jan Kara <jack@suse.cz>
-To: Joanne Koong <joannelkoong@gmail.com>
-Cc: Jan Kara <jack@suse.cz>, akpm@linux-foundation.org, hannes@cmpxchg.org, 
-	shakeel.butt@linux.dev, roman.gushchin@linux.dev, willy@infradead.org, mhocko@suse.com, 
-	muchun.song@linux.dev, david@kernel.org, ljs@kernel.org, vbabka@kernel.org, 
-	liam@infradead.org, rppt@kernel.org, surenb@google.com, riel@surriel.com, 
-	linux-mm@kvack.org, cgroups@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	"open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH v1 0/3] mm/readahead: avoid per-folio memcg reclaim
-Message-ID: <vp2tbdccb3kpxk3xrpcsytqqfq5dk6ugnvccb5hyh7bucgrzfl@wwajglc2ckeb>
-References: <20261003001555.3498357-1-joannelkoong@gmail.com>
- <gz7cxhldkfkinbzpx4goa6rhdqpzldpaenzhtfoxcztpzj5avw@hkzo4fbdbck3>
- <CAJnrk1ZaYAy_81OVxZ74wF1EXF8j13giGdu_CD7Q3XLzX-XThQ@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="VA6vG+JW"
+Received: by mail-pj1-f50.google.com with SMTP id 98e67ed59e1d1-3a4b9732d5aso1933890a91.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2026 08:56:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1791388606; x=1791993406; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=7giGpQ+uI3o2xiXlAINjrMFLTWGSCC1i0BPrzI4PYPE=;
+        b=VA6vG+JWzgrr02Ijgd+ho5+jzaTovoNHQG+5oW3S+LCPODY7sVqXBYv0+vlb6VHCQ8
+         vsRUzOXBHoXctQoN3SHqsIRbG5n1xNicsMoPOsv34uqG4FyjcPKTU3xx0U6g+MyxPr/R
+         zx0HPmJCiTesdwpeuW01I/HzWNdTYSvDHwUeOv5jAyQXFC2GxdicydKFmJMYkWQNxrbu
+         /sHjAS6OEk0v45tpzf8tNobX9zuBD/Vua9K9g0GVyeEINum/4H8fh5uHRJW2SJjS/eYC
+         rxnWUPfjuQBNko9V839kycpy56+f6cse+zDq+/N2ZeoKNmEgUApCTpCMMk1z8b/tyrrD
+         X46g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791388606; x=1791993406;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=7giGpQ+uI3o2xiXlAINjrMFLTWGSCC1i0BPrzI4PYPE=;
+        b=fByoRd2Q20vIz9fxOkP1CWUW+XUoCPcGi30AqGlm0qw9Nq1Vxj/Fs2Khfiliu5gmON
+         QEERc1N/odKa69Os6e5VckK6+iT3KL3vxhPMYabj44peDVU+nncr2r71SG/qu1RBrr38
+         0UisldYBSScjua9rs5E+5tISvN8HQkVPvQkBTJaz6eFFJdKMTAVixn6zowO9Ymj3dses
+         YuUsww8VQilqdAyPdOx/bMDSi0ItA/GzdMf2SNf+iYODKhS/bDqKcR8aJXXi3UwHQ0tG
+         feOCJeF5gL/TEvA7hDEUjMzjvuRqOmDdlb3SFqZ9YRxMrdV/Zc8MdAp7JFeJKt/yW2wH
+         vmqw==
+X-Forwarded-Encrypted: i=1; AKwUvBzI0JHb9XPYiwF8kPaVxaWkQ3mK3Uwv63r2ly+vmiEbk5XKzYTIbL2ZAF7xoJNhj232nMzVSPCwwPVBCA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIbJvlItouNkvg7RTe02h7k2GuxDEqN7gfOTcPuDPu0HWVwrWq0
+	0Cm6BJ1LXZ+aAOnqKrMa54vcpRFo2eq4tRnOWlVD2UktyUoQUQ6Wq9IZ
+X-Gm-Gg: AYBFou2yEWCfsOxBPjJU5uSm8uapRjiKlC2F3JyK/3OYKJfG+p9O04PL4hvKrstIMWS
+	jdJtxrEoP9mabO0eKLt1xjBfW9+uU9cfTzgrWMV08W7OGRWz8Z5gZjB2z0BwhOerpv0e4hN/q+j
+	m13nGIweanyDXEY9gObZM5vRdFMU7BKnx2IoHlTvIVZ0Le/9iNwPRwXmUih4WT55XJIJ79vbSyF
+	edUtT3DeIGOyXlWpykc9rXeGizrSOjBUDQJ/nXog/5njqmEfr4fYFWE0tIYSXf9ZkBEp5T9R3Bp
+	wUqbSoWxJK511WX6EbnFlEkC7edvjFIAoOQBQ+QWK6F2lRaVSKUliq3DpFulA/uHqvCJk8hS21j
+	8j0ww7AFO+/7ky20ZiH8CXHQRbJ8kMgaIgjZQnNFOzS6t/qoclAGOm+WiT6iORug8LfDzjtTKRh
+	yeuDnRwV0UhLkQ2M1ij+73OAwJrto4Me2ebj01VYqb94xNnEgOZIzqJvwKyODISoOpgOnqyaovO
+	X+Kew==
+X-Received: by 2002:a17:90b:3809:b0:3a8:6e79:6e35 with SMTP id 98e67ed59e1d1-3a8a0851561mr2418450a91.19.1791388606298;
+        Wed, 07 Oct 2026 08:56:46 -0700 (PDT)
+Received: from user.. ([2405:201:c052:b00b:836d:b1f5:934e:51ea])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3a9ff8d5896sm22432a91.12.2026.10.07.08.56.42
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 07 Oct 2026 08:56:45 -0700 (PDT)
+From: pavankumaryalagada@gmail.com
+To: dsterba@suse.com
+Cc: mason@kernel.org,
+	wqu@suse.com,
+	fdmanana@suse.com,
+	shuah@kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>,
+	syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
+Subject: [PATCH v2] btrfs: fix use-after-free on quota enable allocation failure
+Date: Wed,  7 Oct 2026 21:26:32 +0530
+Message-ID: <20261007155632.155645-1-pavankumaryalagada@gmail.com>
+X-Mailer: git-send-email 2.43.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAJnrk1ZaYAy_81OVxZ74wF1EXF8j13giGdu_CD7Q3XLzX-XThQ@mail.gmail.com>
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Rspamd-Queue-Id: BF4E41F38E
-X-Spam-Level: 
-X-Spam-Flag: NO
-X-Spam-Score: -4.01
-X-Spamd-Result: default: False [-4.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_COUNT_THREE(0.00)[3];
-	FREEMAIL_TO(0.00)[gmail.com];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCPT_COUNT_TWELVE(0.00)[20];
-	MIME_TRACE(0.00)[0:+];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_LAST(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	MISSING_XM_UA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.cz:dkim,suse.cz:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
 
-Hi Joanne!
+From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
 
-On Tue 06-10-26 16:01:28, Joanne Koong wrote:
-> On Mon, Oct 5, 2026 at 2:27 PM Jan Kara <jack@suse.cz> wrote:
-> > On Fri 02-10-26 17:15:52, Joanne Koong wrote:
-> > > Readahead adds the folios in its window to the page cache one at a time. Each
-> > > folio is charged separately. When the memcg is at its limit, each one of those
-> > > charges triggers reclaim. With many tasks faulting in the same cgroup, the
-> > > margin one reclaim pass frees gets consumed by the others, so the faulting
-> > > tasks keep reclaiming, all to make room for speculative folios, and in the
-> > > worst case, reclaim livelocks.
-> > >
-> > > On Meta's fleet, this per-folio reclaim is a large cost. From fleet-wide CPU
-> > > profiles at Meta:
-> > >
-> > >  - Page cache insertion (filemap_add_folio()) triggers about half of all
-> > >    memcg limit reclaim CPU, more than anonymous faults, swap-in and
-> > >    memory.high combined.
-> > >
-> > >  - 93% of that comes from mmap fault readahead: filemap_fault() ->
-> > >    do_sync_mmap_readahead() -> page_cache_ra_unbounded() ->
-> > >    filemap_add_folio() -> mem_cgroup_charge() -> try_charge_memcg() ->
-> > >    try_to_free_mem_cgroup_pages().
-> > >
-> > >  - In filemap_add_folio(), 83% of the CPU is memcg reclaim while the page
-> > >    cache insertion itself is 6%.
-> > >
-> > > Most of it comes from services whose worker cgroups run at their limit while
-> > > many threads fault in mmapped files, mostly on btrfs, which our hosts mount
-> > > with compress-force=zstd:3.
-> > >
-> > > This series adds readahead folios to the page cache without direct
-> > > reclaim. When the memcg is at its limit, readahead reclaims for the rest of
-> > > its window all at once instead of once per folio, and tries a second time if
-> > > the window runs out of room again. Please note that this only applies to
-> > > speculative readahead folios. For the folio a fault or read actually needs to
-> > > read in, it is still charged with the mapping's normal gfp mask (with the
-> > > reclaim flag set), like before.
-> >
-> > I cannot really comment on how much sense this makes from memcg POV (I'll
-> > defer to people understanding that area better). When I'm reading your
-> > problem description I'm wondering about one thing: Are the folios we are
-> > faulting around really used in your workloads before they get reclaimed?
-> 
-> I ran some traces on two production hosts and am roughly seeing:
-> * of the readahead folios that reclaim dropped during runs, ~66-78%
-> had never been mapped
-> * running a 60 second sample: mmap read-around accounts for ~86% of
-> readahead on both hosts. 77% of the folios it adds are never mapped.
-> Around 10-15% are faulted on directly and the rest are mapped by
-> fault-around. mmap_miss skipped read-around for only ~2-4% of major
-> faults. For faults that triggered read-around, mmap_miss was below 10
-> for 74%-96% of them.
-> 
-> This looks specific to mmap-readaround though. On these same hosts,
-> I'm seeing much better utilization by buffered read readaheads (only
-> ~30% never accessed).
-> 
-> I think a big part of what's causing this is that btrfs by default
-> sets ra_pages to at least 4M (in open_ctree() in fs/btrfs/disk-io.c).
-> In do_sync_mmap_readahead(), I see "ra->size = ra->ra_pages;". So it
-> looks like mmap uses this same value directly for how many pages to
-> read-around (with 4M ra_pages, this is 1024 pages), even if the faults
-> are random accesses. I think this also accounts for why mmap_miss is
-> so low too, since with the readaround windows that large, most faults
-> land on pages that are already in the page cache, and each of those
-> minor faults count as up to 16 hits, while each major fault only adds
-> one miss and happens a lot less frequently. With many processes
-> mapping the same file, I think it makes the problem worse (eg each
-> process has minor faults to map it to its page tables, but there was
-> only 1 major fault to load it into the cache).
-> (Adding the btrfs list to cc. Apologies for not doing this from the
-> beginning. The full thread is at
-> https://lore.kernel.org/linux-fsdevel/20261003001555.3498357-1-joannelkoong@gmail.com/).
+The quota root remains on the transaction's dirty root list when
+btrfs_quota_enable() fails to allocate a qgroup structure and releases the
+quota root. Later add_root_to_dirty_list() accesses the freed dirty_list,
+causing a slab-use-after-free.
 
-Thanks for looking into this quickly! So basically your tracing seems to
-confirm my suspicion our read-around logic for mmap is quite bad.
+Abort the transaction on allocation failure to clean up the dirty root
+before releasing the quota root. Also remove the quota root from the dirty
+root list under trans_lock before releasing it.
 
-> Instead of having the mmap readaround size coupled 1:1 with ra_pages,
-> do you think it makes sense to compute it differently? Like either
-> having some sort of fixed cap (readaround never bigger than
-> VM_READAHEAD_PAGES) or dynamically adapting the window where it starts
-> small and grows if/when readaround folios get used and shrinking when
-> they don't? I don't think this would degrade sequential mmap access
-> (eg async readahead would ramp the window back up to ra_pages in a few
-> steps once the fault hits the PG_readahead marker) and I think it
-> could be beneficial in general too, as less pages need to get read in
-> speculatively that wouldn't be used, which would also lead to less
-> reclaim.
+Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
+Closes: https://syzkaller.appspot.com/bug?extid=947286c775f432b073a8
+Fixes: 8d54518b5e52 ("btrfs: qgroup: pre-allocate btrfs_qgroup to reduce GFP_ATOMIC usage")
+Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+---
+v2:
+- Keep the transaction abort from v1.
+- Remove the quota root from the dirty root list under trans_lock before
+  releasing it, as suggested by Qu.
+---
+ fs/btrfs/qgroup.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-So I think we definitely need to fix the detection whether the fault-around
-pages are getting used or not because since we've added filemap_map_pages()
-the mmap_miss accounting was broken. And once that signal is fixed, we can
-come up with some logic to size the readaround sensibly.
-
-> > Because what I'd expect to happen in cases under heavy memory pressure is
-> > that ra->mmap_miss would quickly grow over the limit (100) and we'd just
-> > stop doing mmap readahead for the files. If the read-around pages aren't
-> > getting used before being evicted, then the first natural thing would be to
-> > actually stop reading them in the first place :) The mmap_miss logic is
-> > actually rather dumb so I wouldn't be surprised if it doesn't work in your
-> > case...
-> 
-> Do you think it'd be better to have mmap_miss count pages read vs
-> pages used instead of counting misses and hits seen at fault time? I
-> think the problem we're running into here at Meta which mmap_miss is
-> not detecting is that there's lots of wasted pages that never reach a
-> fault. It also seems to overcount hits, eg a single fault can subtract
-> mmap_miss by up to 16 if there are nearby cached pages (which might
-> have been cached by buffered reads, not mmap), even if those cached
-> pages never actually get touched. And the same cached page can be
-> counted as a hit several times, once for each process that minor
-> faults it in.
-
-Yes, these are mostly the problems I was hinting at above :).
-
-> Or maybe there's some simple way to get the info from
-> reclaim instead? Where if reclaim is evicting a readahead page that
-> was never accessed, that's counted as a miss? imo that seems a lot
-> more accurate as a signal though that also seems a lot more invasive,
-> like needing a new page flag.
-
-Yes, something like that would be a good indication our readahead isn't
-working as it should. But the problem he is how to track this information
-with the folio... Maybe as an xarray tag? Liam was mentioning to me a few
-days ago that with maple tree we have more xarray tags available ;).
-
-> As I understand it, both these improvements (detangling mmap
-> readaround size from ra_pages and improving mmap_miss heuristics)
-> would be complementary to this series rather than a replacement for
-> the per-folio reclaim fix. Does this match your view?
-
-Yes, they are related but mostly independent from the issue you're
-addressing in this series.
-
-								Honza
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index cf8dfd5c692b..d5eaed5eec03 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+ 	prealloc = kzalloc_obj(*prealloc, GFP_NOFS);
+ 	if (!prealloc) {
+ 		ret = -ENOMEM;
++		btrfs_abort_transaction(trans, ret);
+ 		goto out;
+ 	}
+ 	qgroup = add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTID);
+@@ -1296,6 +1297,14 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+ 		 * sysfs entries.
+ 		 */
+ 		btrfs_free_qgroup_config(fs_info);
++
++		if (quota_root) {
++			spin_lock(&fs_info->trans_lock);
++			if (!list_empty(&quota_root->dirty_list))
++				list_del_init(&quota_root->dirty_list);
++			spin_unlock(&fs_info->trans_lock);
++		}
++
+ 		btrfs_put_root(quota_root);
+ 	}
+ 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.43.0
+

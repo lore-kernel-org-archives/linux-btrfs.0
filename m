@@ -1,43 +1,46 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30C323D4119
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CB0F23E00A9
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791495917; cv=none; b=jDREX6vrBvg9QTDH22OwgOZsvzC1wlDHlT+hFFbj05H6ontIp8HgMADqu4idB6ofZlrv6uPx3XQJewI12TrOji5+hoTlVfIEtCHHdjyI/DTPSOJvsHaWJA64W+XB/ABipEGSuyyVr3YOYcrun/ujomgB/8tJ8/D9aNtvN/t9E5g=
+	t=1791495919; cv=none; b=SHxTrOxmGPdWDsr/n3SqsyywFIuHfH66IWEnLZbJ7gxX99D1fPbEy0BNZcHd/lL5IbkjhNQvg96dHZ0uow4OgGAB/LgidKftXj66EVKPw9oF7iHMrjbk/EJWhhzoeScjMUcc1X3u7SL3LIomEH5nLSejRHYCv/Ejl8VM2myHc3Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791495917; c=relaxed/simple;
-	bh=V3Pa1vWu6q3wl1gkGfF8Rs1rAvYGLcfGVfXxKkjFR8w=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=P+hCAxMXviNJeiPTFB+Uc3ogHa5ct1WuFje0BgmgFdpgKgb4atljia8XqgmJfruJAX1kDoHfEJrZys7mcArFN0WvSCCTRNVvOT/c7tf/kaZlqZBTr6uHoA2yRFfcnFE7+EpHeACFPGGMuZDbtrqguKlreobtBHr0KUjNB5Sb/hw=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1791495919; c=relaxed/simple;
+	bh=IObY+nO5iNMtYttGwsxOHf1el/3fg8VdA0RiWFBW2no=;
+	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
+	 MIME-Version; b=FUEE6qv+TiPD+r/Wj+Wpm27K+kynVJlqP4UNg81DRx+AaRN3k2TuQyqTpVCO3ZAVExweixuUrXllOcXBLud4SfHKlZO2RMGlbRgVu/tl7FYrf31C//FpTMyVj6e3OOz6xEqGCK1L31+T37NQbTwaxYvPExQ9TwFPyfk8KlL+ZGM=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 11D5C1F7E3
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:14 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
+	by smtp-out1.suse.de (Postfix) with ESMTPS id B457A21CA6
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:15 +0000 (UTC)
+Authentication-Results: smtp-out1.suse.de;
 	none
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EA75E13354
-	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:12 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9996013354
+	for <linux-btrfs@vger.kernel.org>; Thu,  8 Oct 2026 21:45:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id wNpSEegOyGpBFQAAD6G6ig
+	id wNpSEegOyGpBFQAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2026 21:45:12 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2026 21:45:14 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/3] btrfs: fix a UAF where btrfs_root::dirty_list is freed but still referred
-Date: Fri,  9 Oct 2026 08:14:47 +1030
-Message-ID: <cover.1791495862.git.wqu@suse.com>
+Subject: [PATCH v3 1/3] btrfs: protect dirty_cowonly_roots, switch_commits and root->dirty_list
+Date: Fri,  9 Oct 2026 08:14:48 +1030
+Message-ID: <0c39386362f588e7ad240959f87632242b8b26c7.1791495862.git.wqu@suse.com>
 X-Mailer: git-send-email 2.55.0
+In-Reply-To: <cover.1791495862.git.wqu@suse.com>
+References: <cover.1791495862.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -48,48 +51,162 @@ Content-Transfer-Encoding: 8bit
 X-Rspamd-Pre-Result: action=no action;
 	module=Unknown lua;
 	unknown reason
-X-Spamd-Bar: /
-X-Rspamd-Queue-Id: 11D5C1F7E3
-X-Rspamd-Pre-Result: action=no action;
-	module=Unknown lua;
-	unknown reason
-X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: 0.00
 X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Pre-Result: action=no action;
+	module=Unknown lua;
+	unknown reason
 X-Spamd-Result: default: False [0.00 / 50.00]
 
-The first patch is to make lock consistent when accessing
-btrfs_root::dirty_list, btrfs_fs_info::dirty_cowonly_roots and
+Currently root->dirty_list is accessed with inconsistent locking.
+
+Several call sites hold fs_info->trans_lock when modifying
+root->dirty_list, including:
+
+- add_root_to_dirty_list()
+- btrfs_delete_free_space_tree()
+- btrfs_quota_disable()
+
+On the other hand there are also several call sites not holding that lock:
+
+- switch_commit_roots()
+- commit_cowonly_roots()
+- btrfs_commit_transaction()
+
+Those are also fine, because in their context they are the only
+process committing the transaction.
+The lock-holding callers are all holding a transaction handle, thus they
+cannot race with transaction commit.
+
+But for the sake of consistency, still hold the trans_lock for the call
+sites that read and modify btrfs_root::dirty_list,
+btrfs_fs_info::dirty_cowonly_roots and
 btrfs_transaction::switch_commits.
 
-Normally it's not a big deal as the existing lock-holding callers are
-also holding a trans handle, thus they can not race with transaction
-committing.
-But the last commit will change the cleanup timing, and Sashiko is not
-happy with that, so make it more consistent and shut Sashiko up.
+And for several list_for_each_entry_safe() call sites, since we need to
+unlock the trans_lock for functions that can sleep, convert them to use
+"while (!list_empty()) { }" loop instead to be extra safe.
 
-The second patch is an existing bug exposed by Sashiko, which also
-affects the last UAF fix.
+This is a preparation for an incoming UAF fix, which will move the
+btrfs_root::dirty_list cleanup into btrfs_put_root().
 
-The last one is the final UAF fix for the bug reported by syzbot, which
-is from Yalagada.
-The commit message is changed as it requires the previous two patches.
+That incoming fix will change the timing of cleanup, thus a consistent
+lock scheme will help to shut Sashiko up.
 
-Qu Wenruo (2):
-  btrfs: protect dirty_cowonly_roots, switch_commits and
-    root->dirty_list
-  btrfs: prevent use-after-free in btrfs_transaction::switch_commits
-
-Yalagada Pavan Kumar (1):
-  btrfs: fix use-after-free on quota enable allocation failure
-
- fs/btrfs/disk-io.c     | 10 ++++++++++
- fs/btrfs/qgroup.c      |  7 +++++++
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
  fs/btrfs/transaction.c | 30 ++++++++++++++++++++++++++----
- 3 files changed, 43 insertions(+), 4 deletions(-)
+ 1 file changed, 26 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8df7b47b09e0..03c52566d65e 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -213,7 +213,6 @@ static noinline void switch_commit_roots(struct btrfs_trans_handle *trans)
+ {
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+-	struct btrfs_root *root, *tmp;
+ 
+ 	/*
+ 	 * At this point no one can be using this transaction to modify any tree
+@@ -227,18 +226,27 @@ static noinline void switch_commit_roots(struct btrfs_trans_handle *trans)
+ 	if (test_bit(BTRFS_FS_RELOC_RUNNING, &fs_info->flags))
+ 		fs_info->last_reloc_trans = trans->transid;
+ 
+-	list_for_each_entry_safe(root, tmp, &cur_trans->switch_commits,
+-				 dirty_list) {
++	spin_lock(&fs_info->trans_lock);
++	while (!list_empty(&cur_trans->switch_commits)) {
++		struct btrfs_root *root;
++
++		root = list_first_entry(&cur_trans->switch_commits,
++					struct btrfs_root, dirty_list);
+ 		list_del_init(&root->dirty_list);
++		spin_unlock(&fs_info->trans_lock);
+ 		free_extent_buffer(root->commit_root);
+ 		root->commit_root = btrfs_root_node(root);
+ 		btrfs_extent_io_tree_release(&root->dirty_log_pages);
+ 		btrfs_qgroup_clean_swapped_blocks(root);
++		spin_lock(&fs_info->trans_lock);
+ 	}
++	spin_unlock(&fs_info->trans_lock);
+ 
+ 	/* We can free old roots now. */
+ 	spin_lock(&cur_trans->dropped_roots_lock);
+ 	while (!list_empty(&cur_trans->dropped_roots)) {
++		struct btrfs_root *root;
++
+ 		root = list_first_entry(&cur_trans->dropped_roots,
+ 					struct btrfs_root, root_list);
+ 		list_del_init(&root->root_list);
+@@ -1439,6 +1447,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 		return ret;
+ 
+ again:
++	spin_lock(&fs_info->trans_lock);
+ 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
+ 		struct btrfs_root *root;
+ 
+@@ -1447,11 +1456,14 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 		clear_bit(BTRFS_ROOT_DIRTY, &root->state);
+ 		list_move_tail(&root->dirty_list,
+ 			       &trans->transaction->switch_commits);
++		spin_unlock(&fs_info->trans_lock);
+ 
+ 		ret = update_cowonly_root(trans, root);
+ 		if (ret)
+ 			return ret;
++		spin_lock(&fs_info->trans_lock);
+ 	}
++	spin_unlock(&fs_info->trans_lock);
+ 
+ 	/* Now flush any delayed refs generated by updating all of the roots */
+ 	ret = btrfs_run_delayed_refs(trans, U64_MAX);
+@@ -1474,8 +1486,12 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans)
+ 			return ret;
+ 	}
+ 
+-	if (!list_empty(&fs_info->dirty_cowonly_roots))
++	spin_lock(&fs_info->trans_lock);
++	if (!list_empty(&fs_info->dirty_cowonly_roots)) {
++		spin_unlock(&fs_info->trans_lock);
+ 		goto again;
++	}
++	spin_unlock(&fs_info->trans_lock);
+ 
+ 	/* Update dev-replace pointer once everything is committed */
+ 	fs_info->dev_replace.committed_cursor_left =
+@@ -1588,8 +1604,10 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans)
+ 			smp_mb__after_atomic();
+ 
+ 			if (root->commit_root != root->node) {
++				spin_lock(&fs_info->trans_lock);
+ 				list_add_tail(&root->dirty_list,
+ 					&trans->transaction->switch_commits);
++				spin_unlock(&fs_info->trans_lock);
+ 				btrfs_set_root_node(&root->root_item,
+ 						    root->node);
+ 			}
+@@ -2578,13 +2596,17 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 
+ 	btrfs_set_root_node(&fs_info->tree_root->root_item,
+ 			    fs_info->tree_root->node);
++	spin_lock(&fs_info->trans_lock);
+ 	list_add_tail(&fs_info->tree_root->dirty_list,
+ 		      &cur_trans->switch_commits);
++	spin_unlock(&fs_info->trans_lock);
+ 
+ 	btrfs_set_root_node(&fs_info->chunk_root->root_item,
+ 			    fs_info->chunk_root->node);
++	spin_lock(&fs_info->trans_lock);
+ 	list_add_tail(&fs_info->chunk_root->dirty_list,
+ 		      &cur_trans->switch_commits);
++	spin_unlock(&fs_info->trans_lock);
+ 
+ 	switch_commit_roots(trans);
+ 
 -- 
 2.55.0
 

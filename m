@@ -1,41 +1,68 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3E51313277
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2026 21:00:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.17.21
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BD063546EB
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2026 21:04:23 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791579637; cv=none; b=oRmGmgkLWJMRks6bl27xEw6xI5i4cfrQd18KA4+ukQn2OpwPMRhodsnhSCmK4jUsbKGF6C0SgdOJMQo/WZ6tPipYWY1okq0MmixHyidtTA01O7EHha9blnoKMk+CDudIvBnHYVs4FeccSdw6UXe8Nf4Fe+CRTCmiewbFHcdVCDI=
+	t=1791579865; cv=none; b=jaIvSY8PuPY8nv8HSrsCHF8XhvUzbLjtwZr4EyzD3CvR+hYlEnGXuTdVh0WTGpP2AkRWipjGuGDMIq/BTq13fw1Qst2jPeo9STwO7NuSn1ZEbVnVslgCWBRiq3ebxDH6jSfpCEzFwnV3D3l9ajKD8lqxXQUfEQnkV5ISK35wZmQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791579637; c=relaxed/simple;
-	bh=pHWehTIGXofQDIZvScNOkWRZrGcph12E61l8Rp4BCts=;
+	s=arc-20240116; t=1791579865; c=relaxed/simple;
+	bh=qN6wTt6esSVYwsfd775JJM+9/nreJkmrqFCaV4SlCAs=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=LCipWqXOpnK61zRdKE8OlmPXHjjZ8j8SbTjG+z6x8Eb2+jCzh6xppHLgKQrcj5htKkfeltmnocji9hxjq23IEnVCpHyl3GLINjraC3dcZeX8MJAKoqBioO6s/m2HZks9lB3Klezj+xg83gRMzEG1vMoR27+l7tyDzF8ItPod/DM=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=Wsf8lIcb; arc=none smtp.client-ip=212.227.17.21
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	 In-Reply-To:Content-Type; b=Uwp86JiwyiywoRHSQF/CIaBqaI4cDRKV3tObibXhTsbUUifNn4+/n2YY0DhPy+Z5cqubhqsVd+jBaZRMZArtE/BKqUAqhS4rrmM7GCUiMIvCLU+HutkZ1++H/HBu6P077wsEfSF4een2qzBZoJYf8oOtxiBBv2ezFH3eHrfTPf4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=PpgYCpNl; arc=none smtp.client-ip=209.85.128.52
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="Wsf8lIcb"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1791579629; x=1792184429; i=quwenruo.btrfs@gmx.com;
-	bh=MiY9d3Jlq96t0ttJrbG1GodivspBjkDj0yiTVULT/A4=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=Wsf8lIcbFbMvxiltBr5TPFlihoZwX74wsSvP3+lM7//vlDdDq4/9y/7rgqfSQKVi
-	 q/wALsSYKqopF9aWeusCEyM3qDcWI0LBbjkcD6Z9ZwaAgmfV/5Zk450PyNHjhpxiI
-	 Hd4Z7rIYjowHY5nGt1ZoFAqCnqWhOz0Q41muOXnUJR04llEY2blwoffePqirxJJfi
-	 4IayDBlRR95DBVOA+8z3YTCoDYczK7996vcu+cUQf+6aKXPKEfGAFXE6cO4djfJBe
-	 WffxUuMonan2/CLNVSM3oWAiu34V3/YH/FZ34jzpF9WdJgGE8Hh9uh7bfzCVGWAAR
-	 DpfkTEuX2LXlFYdGGA==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1N4hzj-1wYlFz3jx1-013cEC; Fri, 09
- Oct 2026 23:00:29 +0200
-Message-ID: <2754e520-ae09-4c1a-a5a7-c46cafffea73@gmx.com>
-Date: Sat, 10 Oct 2026 07:30:25 +1030
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="PpgYCpNl"
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4a0286c981dso2114245e9.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2026 14:04:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1791579862; x=1792184662; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=YL0mzFwQsFAIJ3BQgODpXdK53+kc5uCfH8dR9lXMlSQ=;
+        b=PpgYCpNlcN6xqx4hSvp6+7G+ne44tQlbCxYqn1tOpkEG8g3Cii1NnmCG9dQ0D3PfG4
+         5Yvjfzcmf5ac2chIUN1ChGDf8VkbEaejE0axP04dWoD9IBUXf02xGrQ/P5AVQFGeIgIc
+         EALUWdjBiwNCzYGcUQQ7m9ZARvh+DszmV+DsM6Mdr1h4stqUw0TPnf1uvWcTEt1qN/Pr
+         H+Kt/HsglHSjNdvbt2VOfu2gpLsqsmB4P9F9yD22ZDAAX5zLOITjeU8B+yX4ccf6/TXf
+         kZqSVbWXrRTAdSbBfF8IlEw0TmxPqTgvoBzkNWQNd2ri85qh/6XryTHXO/tj51meY4vx
+         w6iQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791579862; x=1792184662;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=YL0mzFwQsFAIJ3BQgODpXdK53+kc5uCfH8dR9lXMlSQ=;
+        b=gjXt2v4ZszgL+Nxrq45FqyEhZuOVSoIFR2ez9VpnPc+5uVXIUcIuEbOhl1oS4W9df4
+         AtosILXUS8580JBU0Uc9txyr+bYue26j1DLdVAuGnbGkDqfh5PIc99c7YXwoi9t89enK
+         fHehLQI9y0fTC6HhiLpDX+4sCFrK30Q8RriBVVxFZP9cd3VqgvLQkJzEdYIumt/kMzS0
+         WhxjVLf+V0pP7sGA0TLoca0yuRktnmiIrEOYhXCs2hv0f38JDjvxDbnklyvNQ0wTH72J
+         kdJo1KI/qY9rivcI0DtdXv8Es/sRc9fPeaIgUUg00HvNUNUEAss1wIyEzv3m5y7xh0Zp
+         Gwng==
+X-Forwarded-Encrypted: i=1; AKwUvByg6eehXTL4LEt6h3RvmuCxXw86kH1d5OIPb1zY6TxV6TXWUBOAIzy/9tSte4Qlfu6lOyeuxcWn4q7iqQ==@vger.kernel.org
+X-Gm-Message-State: AFuF++nRNiEKdG0DGVQrtWVr2sTpHHMXH47/2W99TxDnkF07064bt412
+	cpNuxwcngqIa2xOE/6ltRc5NkD6I++Vf/s4cLBirA6/sCGxYAoR5T/vSdzGKQJckGidAFUOOI0X
+	d2DKNIuI3uw==
+X-Gm-Gg: AYBFou0UGOySzE0u65qtsQXtmT8EwK5qn8DuCT0GVhCoH8sgOtsql7S5za+3A3EWFwK
+	zjJd2XffNWgGv7BdAH0UHOmc/9zW63x4Sl2lTS580lhFnRpJtQsQeN0jHICvb8bT+K314afq4h/
+	CiVrjnvC7XNgjEmt/HeR016ZVunzI6uMwHfMoHitGTEkK6AXYjLQhysUaaAa0OOKVIcm2KpX3Hy
+	Q42FrImbkLKVzFZfeS11NlXu1LV6+DdEoossmiJy3mSh3NDTe24G8mgemXz/l4gw8sij4Zdu1lk
+	5BWR4A/poziw7QApUO7fT7o4RQgaBkx1AORvkv8XJ20luv4gPnl0hllfhjG8fgWOJfZLfjxjNso
+	nN/50NhoytfbZawJOiAed8jXmtoCmJM36RTcf0EgbypAu7IXPR0BWDF4XaSVulAwiJxwpfdjBkR
+	VsZba1GR9JJh/PeLj1+97Y354684snecZPxVduRyVikW4lIkrd9tZnAkwcLCMIRTs=
+X-Received: by 2002:a05:600c:83c7:b0:4a1:7733:5102 with SMTP id 5b1f17b1804b1-4a18e4a3fc8mr56932985e9.15.1791579861503;
+        Fri, 09 Oct 2026 14:04:21 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2e84219e6cdsm16113685ad.28.2026.10.09.14.04.17
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 09 Oct 2026 14:04:20 -0700 (PDT)
+Message-ID: <5f16e819-f9e9-432a-9544-9277c356ce09@suse.com>
+Date: Sat, 10 Oct 2026 07:34:15 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,221 +70,111 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 0/3] btrfs: fix a UAF where btrfs_root::dirty_list is
- freed but still referred
-To: Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-References: <cover.1791497576.git.wqu@suse.com>
- <20261009163051.GA2648158@zen.localdomain>
+Subject: Re: [PATCH] btrfs: return -ENOTTY for unknown ioctls on the control
+ device
+To: Hengyu Liang <hengyul@cs.unc.edu>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>, Boris Burkov <boris@bur.io>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ stable@vger.kernel.org
+References: <20261009173359.3486877-1-hengyul@cs.unc.edu>
 Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCaqsNDQUJFJfy
- XgAKCRDCPZHzoSX+qPcICACxEFp2nh6g7JQyRkN855kqXeAYiWGZRWbCo+QQcGU0vjlm6s5K
- 4CRT8U6RtY0Ou1Ss/MYrpf3z0joYh0hoWDgiVqhUXLG5jM2FeBY6bHl8WHKsMOiVpcB6yJqu
- Umqira0lLmg0V+9zHkijuH9cqxIYURsDNNkUueMy3ZBBxLq14w5JFcqOU7tdHxa2NZoO/pck
- qEZSL9lrsmRFe2dzFnxw4nOhikr9tkAqQN2wpW2OG8D1oLNARDx3hnhMYj9pKZ0ICZDtl6J3
- ACi9ZIWLNGqwb8ayizmyKmCGouN0gLAuwGFq2qRpXGCxe2lTYknUk71CvBcCzFgCX8qlobxF
- NCYXzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCZxF1gQUJEP5a0gAK
- CRDCPZHzoSX+qHGpB/kB8A7M7KGL5qzat+jBRoLwB0Y3Zax0QWuANVdZM3eJDlKJKJ4HKzjo
- B2Pcn4JXL2apSan2uJftaMbNQbwotvabLXkE7cPpnppnBq7iovmBw++/d8zQjLQLWInQ5kNq
- Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
- +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
- HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <20261009163051.GA2648158@zen.localdomain>
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
+ Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
+ SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
+ YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
+ 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
+ vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20261009173359.3486877-1-hengyul@cs.unc.edu>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:zsPwyncLsQru/B3iW7g8Xdi2h04qVCQayUdNh6YkfEAn8Fvtgur
- RLUVk2qO54UL6xKdJvK1QrejVWRFsh4LsznhQcgQB/U2Jwqa1SNzEYn1mWyJXIZaRqS0vPN
- ljtgLMWJHNEBNVmFtl7zdcG2ja8BWHP5T6BM4e7fnS6It7beDhVzXJp5MfnTC3yIwVNhiSy
- ZC+m3i6gXq11SYLTu+ybQ==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:W3YU8PCh9Wg=;wVyfHbQGNDlhVnS3gPadIaXt7lU
- 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
+Content-Transfer-Encoding: 8bit
 
 
 
-=E5=9C=A8 2026/10/10 03:00, Boris Burkov =E5=86=99=E9=81=93:
-> On Fri, Oct 09, 2026 at 08:43:37AM +1030, Qu Wenruo wrote:
->> [CHANGELOG]
->> v4:
->> - Also cleanup qgroup swapped blocks and dirty_log_pages
->>    Which are only released during switch_commit_roots().
->>
->> v3:
->> - Use Yalagada's v2 fix as the final UAF fix
->>    The delayed list_del_init() call inside btrfs_put_root() is not
->>    safe as another racing ioctl can grab the quota root, extending
->>    its lifespan.
->>
->> v2:
->> - Add extra patches to address Sashiko's comment
->>    * Make all root->dirty_list users to hold trans_lock
->>    * Release root->dirty_list from cur_trans->switch_commits during
->>      transaction cleanup
->>
->> The first patch is to make lock consistent when accessing
->> btrfs_root::dirty_list, btrfs_fs_info::dirty_cowonly_roots and
->> btrfs_transaction::switch_commits.
->>
->> Normally it's not a big deal as the existing lock-holding callers are
->> also holding a trans handle, thus they can not race with transaction
->> committing.
->> But the last commit will change the cleanup timing, and Sashiko is not
->> happy with that, so make it more consistent and shut Sashiko up.
->=20
-> As far as I can tell, it is possible but unlikely (rescan + squota?) for
-> the new callsite to actually do the removal outside a trans handle. Is
-> that your understanding?
+在 2026/10/10 04:03, Hengyu Liang 写道:
+> Commit 5ab2b180884c ("btrfs: factor out validation of
+> btrfs_ioctl_vol_args::name") made btrfs_control_ioctl() store the result
+> of btrfs_check_ioctl_vol_args_path() in ret before it looks at the
+> command.
+> 
+> However, ret is initialized to -ENOTTY and the switch has no default
+> case, so this initial value was what an unknown command returned. As of
+> now, every unknown ioctl on /dev/btrfs-control returns 0. A tool that
+> tries a control ioctl which the running kernel does not have is told
+> that the ioctl succeeded.
+> 
+> The issue can be reproduced with a simple C program, run as root:
+> 
+>      #include <fcntl.h>
+>      #include <stdio.h>
+>      #include <sys/ioctl.h>
+> 
+>      int main(void)
+>      {
+>              static char buf[4096];
+>              int fd = open("/dev/btrfs-control", O_RDWR);
+> 
+>              if (ioctl(fd, TCGETS, buf) < 0)
+>                      perror("ioctl");
+>              else
+>                      printf("ioctl succeeded\n");
+>              return 0;
+>      }
+> 
+> Before commit 5ab2b180884c ("btrfs: factor out validation of
+> btrfs_ioctl_vol_args::name"), the result is:
+> 
+>      ioctl: Inappropriate ioctl for device
+> 
+> After that commit, the result is:
+> 
+>      ioctl succeeded
+> 
+> This patch will add a default case that returns -ENOTTY.
+> 
+> Fixes: 5ab2b180884c ("btrfs: factor out validation of btrfs_ioctl_vol_args::name")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
 
-That part (the first patch) is a little overkilled.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-The main reason that patch is introduced is to prepare for calling=20
-"list_del_init(&root->dirty_list);" during btrfs_put_root().
-
-As we have some call sites that doesn't hold a trans handler.
-
-But later I switched back to the v2 fix from Yalagada, which does the=20
-manual list_del_init() call instead of relying on btrfs_put_root().
-
->=20
-> I would prefer to have the bar for "shutting sashiko up" to be at real
-> bugs, even if they are sort of unlikely. If I misunderstood and it's
-> fully a false alarm, I would sort of rather not make changes to satisfy
-> its misconceptions.
-
-I'll remove the first patch from the series.
-
-Thanks for the review,
+Thanks,
 Qu
 
->=20
-> Fixes look good overall, thanks.
-> Reviewed-by: Boris Burkov <boris@bur.io>
->=20
->>
->> The second patch is an existing bug exposed by Sashiko, which also
->> affects the last UAF fix.
->>
->> The last one is the final UAF fix for the bug reported by syzbot.
->>
->> Qu Wenruo (2):
->>    btrfs: protect dirty_cowonly_roots, switch_commits and
->>      root->dirty_list
->>    btrfs: prevent use-after-free in btrfs_transaction::switch_commits
->>
->> Yalagada Pavan Kumar (1):
->>    btrfs: fix use-after-free on quota enable allocation failure
->>
->>   fs/btrfs/disk-io.c     | 14 ++++++++++++++
->>   fs/btrfs/qgroup.c      |  7 +++++++
->>   fs/btrfs/transaction.c | 30 ++++++++++++++++++++++++++----
->>   3 files changed, 47 insertions(+), 4 deletions(-)
->>
->> --=20
->> 2.55.0
->>
->=20
+> ---
+>   fs/btrfs/super.c | 3 +++
+>   1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 823a58bd2685..acb704b20c2b 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -2291,6 +2291,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>   	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
+>   		ret = btrfs_ioctl_get_supported_features((void __user*)arg);
+>   		break;
+> +	default:
+> +		ret = -ENOTTY;
+> +		break;
+>   	}
+>   
+>   out:
 

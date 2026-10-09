@@ -1,132 +1,143 @@
-Received: from mail-ed1-f41.google.com (mail-ed1-f41.google.com [209.85.208.41])
+Received: from mail-qk1-f170.google.com (mail-qk1-f170.google.com [209.85.222.170])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0084C38838F
-	for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2026 17:33:15 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.208.41
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791567197; cv=pass; b=XGAbyC8Us/tKb6SOpRYIfd79kyZIPnppFn3mhpvCLYW4JLzggd+bzX7TEr9Ov2vzLrSS/Kq2xtd3qVEL0zRDm5g/ZMz69sMs2atKE+RRT7Bn/IipRDtSWxmWGZqmP1CGKoqSCGOcq5QmBmZFMpoolK1nUyLzQGvoUAKKaqT8gUU=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791567197; c=relaxed/simple;
-	bh=CEKsos3Nrj4zhMS+kSPK10eCZ894/ktNWLSqlQgiVd8=;
-	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=cMFtEmbng57JvqhLp0m0RwtiJ8ilQskSVn7KlfnT7tJTynUGDO9RwzUxQW4qopjta51TbKDySn8sc4YY9BAUWK1Tfr6D6EPG+FcxTTqhLDbfprw36eEFxrOvXCiUg1XDxBwX6N1QNAm+3Qk16ItX6KoTaC3WnWj1zPZj3u11Fag=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=hl2kvgIp; arc=pass smtp.client-ip=209.85.208.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C45DC3ECBC7
+	for <linux-btrfs@vger.kernel.org>; Fri,  9 Oct 2026 17:34:17 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.170
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791567260; cv=none; b=XfdC2iDqsuL22S1AnlIBnzoexrDgsNgd5s9GbNn8i5ADsRU+r+b5lM+BMfl4gTUAnBlk3aTnhVYP5fqaMSILbCl0SEJ0dsep4TrA0YB6+g1qKf7rq5Yc9BGJgBhm9EzoHkqrjFvKM0f6tMCrZV0fhy5YfDKEAsDf1QjCcuw64q0=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791567260; c=relaxed/simple;
+	bh=4QzvFpJrMIBOFL1LClfdnGhTbQVQVWWI+SlIcvg95ZY=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=N1WSVfLQgKNiTqyihCTgBv4n0aq5CnvuowUN80bbMykBzOFvEcvElB85+xf+P/7Y6fY1QrfHQL/WJe7K3/5VS6f0MCgrCBeFkOhaQ3QirlKA2H9heucQ0otADYFRA41lVtwX7xcZFrbgWaqPqKyrRcVlaTCzX7V/THMz3AXD0+I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu; spf=pass smtp.mailfrom=cs.unc.edu; dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b=Yua6chXR; arc=none smtp.client-ip=209.85.222.170
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="hl2kvgIp"
-Received: by mail-ed1-f41.google.com with SMTP id 4fb4d7f45d1cf-6a642495d81so6965661a12.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2026 10:33:15 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791567194; cv=none;
-        d=google.com; s=arc-20260327;
-        b=V9Iktl/JMoF1pkCWY9FeF1LMdEc0sxdS6fftgfhs+0Q8xxiFhJT2ExvhOt5xOfp7xZ
-         tYVdFIzJ70IHTEiWYdt5rDg6G+RemGVv3MrXpd56iICGj+BuP4Z7rLAMb0ZIKUphscwu
-         8xDoViXvGjW5eJC5voivBQf4n0FVK4/wMkDwd4cNHqO5emDIcLLzJoP2WZnLQckMExqY
-         uuKAcSM/a9XzwpDkl3y6uRgOEuHzNHFg/78+YAcGCYtDdRJR0kV7IYIfzJ83NaZm+OBI
-         uz4emYYb/ANcQN1oEU9eDiRnsjoI068xiceP9JDVTKwSd+2ZEAqDS7gRTwvoigCf3Eav
-         bTeQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=to:subject:message-id:date:from:mime-version:dkim-signature;
-        bh=GycCquNCIErKH8LdXhnEO5uZpHcepA4syTHfWTAjLwo=;
-        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
-        b=BtMNyd9g36Rg4TUuo1YjaOhbVr8bl3YswCKl6Mc3tE4/vYCIV+eS+o1tevdhEXJ9qY
-         ExTwLBbSS9bzPkhwASOvl2wnWoCDxofHevccRN4/cZsnO6r2Q5+UIKMKIazARXvEB9/I
-         Eb2n5hHiT9iyEdO7E5AFaXo1l/+gaPwqT9PDE/LtIpGU/6ZzW5N50wccuJST04UoCyq3
-         9qu71AHcf+7eik3gPYpzTPMmtFAwS3rDXVuhyt0K66cfe+DM7QPpEDtz3sl+2MKxSY+0
-         38nTMrtnABAa17OxaSnNXUHS6osy32cEli94xtH8js/lfkDegBjINqzZlEwb9oqBwwvB
-         0QZw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b="Yua6chXR"
+Received: by mail-qk1-f170.google.com with SMTP id af79cd13be357-93e441e14a1so500509885a.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2026 10:34:17 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1791567194; x=1792171994; darn=vger.kernel.org;
-        h=content-type:to:subject:message-id:date:from:mime-version:from:to
-         :cc:subject:date:message-id:reply-to:content-type;
-        bh=GycCquNCIErKH8LdXhnEO5uZpHcepA4syTHfWTAjLwo=;
-        b=hl2kvgIpgXhsU5FlzkglUcSPJYYiNFscNQPGsm4ghyXI8VtPzOrzYWCb2tgx8hqxPZ
-         ztLUlD7EUfG7ZqUiRwE20yY90zADDD1hiZ83DG0nL6kbtdck5TTZ3gqv9OAVkxc0SUvg
-         wyBoLzbHbE84DKzmRnMw4zmb0BdCJq++6Pi3ntxozILxF4tI8JgbknFaTLNR3z4HB6fP
-         sYtTfT2UtJbD7I6sSAI3MefD4IIklIvApEVvVpAXBn2jjnUhXWMC5HHb7fkhkBAHv5+y
-         PAaQLg0rPMSF0BfWCB+4cQD5EJ5bIFFlPqKRz0vd6b54GLwn7gZZVj7J+a8GobYLb6Sn
-         Yteg==
+        d=cs.unc.edu; s=google; t=1791567256; x=1792172056; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=UwD4Whw0BsO3CL4xljsuE9wjdul1Y3ABr5wVzug+v1w=;
+        b=Yua6chXRFeG43IGQ6rz0wJwiS+ZsJikqXnfwVGzxSfvLPCe7rUkCI7RUJnau9bjhl8
+         kgeRz43OUXNSSQphvMOsc8C6fqI+gmaXG9JUniliBBItKjwMSTvubTLoM7MIkcRIaaaf
+         6HW/HdLJrQdmBquzkQdNLkRhr+jhoDRtfAKfLTzgKSqPC949wEXIZUNG5NqPtoKpyckc
+         L14LbKpMBzpa+m3LB0OdqchuYSmxVDqipcyb94C3+otykzdii3LnJJds81LlEgYoTP/N
+         SBjkb0HMcv+71o39WTMUPAvNVkdsm2FewHCkMvJiT4gJW614hOQwcVbBrqFbFpUQQClP
+         pD3g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791567194; x=1792171994;
-        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=GycCquNCIErKH8LdXhnEO5uZpHcepA4syTHfWTAjLwo=;
-        b=kOob1AV2pZzUF4HYr03eNWQACjNIWfj4IVqgmcuxZ1bCPiZSCuTknSD6C6Uhgoac3R
-         rAQVIcEBbY3jDkt4evSRQ0M2jIKzri8epiyeMlk2LzEMVM6u8YZycUI7+VbVX17R/pfg
-         9WPgr/UFMxioJgpce2Cs9RPNmBT8inPsOQdi6xsq/QzjPb9HdkEEzyEQ9cLoWhZKcHYG
-         FKfOvaGiHjn+ZGsiVX1SWyLOcIxvNnDMHnR1/Aplf+9ewHl68NMuEUJ6ecktwYjWrRk3
-         wjS5NCm/Ve8CcDMxtgK6Y9WgLPZ/ddqCIgdd5FsqM/VpbRdCOvS5Nal0y7mFmJvmwFLp
-         Zj4A==
-X-Gm-Message-State: AFq9FYLWIYJCzLG57NWyXd9eBDJggLPHzOCr4leMzSLHR5w/Kt2FZt8w
-	9ZjGt4cLHhkivA0HojCWl9ZjYI7dazFihRTSvCVSlVs4caKJ0eAtyhDMUfDSR29rmxVkSsl9KKb
-	aMOSQn5Qvr1/Vky6XvyUC3IGH0cbnveLpUbN3
-X-Gm-Gg: AYBFou1JCmtdY06XnZJKQMCrNTyJCe+GQgTwriHg+AHl8L8UPy/pCkDlJ7pBqulA2NL
-	M916UUeqtg1Oar5JdKm4M2xNWfcg4XR0rFDvLjOdTPuZ9ekdiL70qBPHk//75mf/qMHZhSWnkoQ
-	4EFjU6hwi79YoWOnWbsynyY/neK59bXkrQdEyoSn1a8I9OHcsj2aZfn9lZ9TzbPahN6o8M2N7EI
-	WG9DFYM6UaJ3RgT+CeUybLXs4rRbHKPPDA2i9iC6bGeAmvaamUGKNX5dqVCeCiRDMhxvwVV5zWn
-	RqojBlVl7pquirYkrQco5D8VNQMA6JA1sYmCHyaGTn9SY/40+WwjSo7o399aykk8HNDoEdzsRQa
-	dAOPalm3eP/bEGjlyV8SLxvd9X0+gYWBtEGNCUuiv
-X-Received: by 2002:a17:907:2d12:b0:c2d:b9b4:f4d1 with SMTP id
- a640c23a62f3a-c31a9a29d5bmr253961366b.6.1791567194128; Fri, 09 Oct 2026
- 10:33:14 -0700 (PDT)
+        d=1e100.net; s=20260707; t=1791567256; x=1792172056;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=UwD4Whw0BsO3CL4xljsuE9wjdul1Y3ABr5wVzug+v1w=;
+        b=um2d84Ydsrfiy9/97USe69kFlJ56puv4B1Mm3/C36pxtJiXfT7URRrVgQ1khop6oTk
+         sINxmSLGiwKpr3RLpRSUV6Q/KXKI0rJ6SSNYXedTm/9UogmzAoJaRL+6OjN+gYiffbVB
+         8zHkOM8kCCOR4CzaBaK0B//BLNme3B44l/kMgpThmyGqG8PSbxPa2F1JWgMdIG56sldl
+         T/M7lo9V0+E9yfPxskRZWv4us+0pIRttqlekBU4AF5R3+gBizlu4e7suqNjNJs1sQtzD
+         hJ/Uaskb2+g9m2Q24E8anOoEMeUuYQdmzrKeTp8uIc+q4JbHXmTZan16U8Xi5GNOzJkN
+         BT1g==
+X-Forwarded-Encrypted: i=1; AKwUvBwIEKqKnb048IYAAy6ijfZcHVzKMx4Zv10GjjFyj1HfqudqmWRgQmniLSRsri28XtBN2qO4cl7OZO4u+Q==@vger.kernel.org
+X-Gm-Message-State: AFuF++k4i7Zz/pfuplJG78wk7+7RCWjYFlWuZ23cDNHk3c9a+lnM83VY
+	2rbmvYBFcd4zZZR/vPM2b8yMR599mWONXzIxEabR80qgkc5WfQ22uurrAmCKGdnetg==
+X-Gm-Gg: AYBFou3Ha76ZvRcWmub5W1AISPjCygEYIknisHFixcG+blRiGMLUsQjncLiuma/+w9x
+	ubhhFShKABAIu44wzZ0ywVYjrs6+BaZTz8Xac+sO2uPWrVRo9wm2nJ25DuA8+uo3vGx/WSkFaDY
+	O4lHN/fJW2m9QFpEe/EMYJQPaMZQhoo2EhU83sBx5WC85AhW79LzRj6h7TpVUvGiJc/xwiG/UbN
+	5LyfWaqyFsxofAbMRigYhmHEKZCu31AkgKoXxfDzguYZ1oPoyOvAIxRyPmkCizt6zWwdYSTpk+s
+	j/CLmyb2ox7s/zfyzdqLiBUVuymUGYqk6upZhFNiJpdCNmI2L8TYZqoXLbynKHVSieIQ2E5Wltd
+	EkoJA8ByDk35fYuHdGMMLDnsG0kFIURACZtmV7gSlZ03Rd7BZOabMq0SKMUqeWq84T3qhZikrd1
+	pqAZDnsIVKfsYJKIel5Q3BY0MMgD2hU9qqK64DMhqSj0hjDiRan4jdB7B2kwc0WlFjHseinvQXs
+	VG8YjfOtjoO0dUnMHzPuTmQ0kILNesH
+X-Received: by 2002:a05:620a:44c8:b0:93a:14c:32ad with SMTP id af79cd13be357-93ebcd339d8mr378214385a.0.1791567255058;
+        Fri, 09 Oct 2026 10:34:15 -0700 (PDT)
+Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-93eb9720f19sm238494785a.4.2026.10.09.10.34.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 09 Oct 2026 10:34:14 -0700 (PDT)
+From: Hengyu Liang <hengyul@cs.unc.edu>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Boris Burkov <boris@bur.io>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Hengyu Liang <hengyul@cs.unc.edu>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: return -ENOTTY for unknown ioctls on the control device
+Date: Fri,  9 Oct 2026 13:33:59 -0400
+Message-ID: <20261009173359.3486877-1-hengyul@cs.unc.edu>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-From: =?UTF-8?B?Um9nZXIgQWxhc8Og?= <vonbloom@gmail.com>
-Date: Fri, 9 Oct 2026 19:33:01 +0200
-X-Gm-Features: AclHuK8I26_gHo-Jf0qOWJC_wgIMpY6_Eldz-XfGaSX-a_zyg8_yzTJ4IKYL778
-Message-ID: <CAELqY9=eoM-v816v2otCNitOgAFnrWZ776F3RECwPOwKveA=zw@mail.gmail.com>
-Subject: fsverity@lists.linux.dev, regressions@lists.linux.dev
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Hi,
+Commit 5ab2b180884c ("btrfs: factor out validation of
+btrfs_ioctl_vol_args::name") made btrfs_control_ioctl() store the result
+of btrfs_check_ioctl_vol_args_path() in ret before it looks at the
+command.
 
-Since 7.2, reading an fs-verity file on btrfs mounted with
-compress=zstd:1 logs "FILE CORRUPTED" for compressed extents read
-through readahead, although every read succeeds:
+However, ret is initialized to -ENOTTY and the switch has no default
+case, so this initial value was what an unknown command returned. As of
+now, every unknown ioctl on /dev/btrfs-control returns 0. A tool that
+tries a control ioctl which the running kernel does not have is told
+that the ioctl succeeded.
 
-  fs-verity (vda3, inode 58996): FILE CORRUPTED! pos=8912896,
-  level=-1, want_hash=sha512:...
+The issue can be reproduced with a simple C program, run as root:
 
-(one line in dmesg, wrapped here). The positions are mostly multiples
-of 128 KiB. read() returns no error and the data is correct: the
-synchronous re-read passes verification. We hit it with composefs
-(bootc) objects on the root filesystem of a laptop, and reproduced it
-on a second machine and in a VM.
+    #include <fcntl.h>
+    #include <stdio.h>
+    #include <sys/ioctl.h>
 
-Reproducer (root, any btrfs mounted with compress=zstd:1):
+    int main(void)
+    {
+            static char buf[4096];
+            int fd = open("/dev/btrfs-control", O_RDWR);
 
-  cd /mnt/btrfs-zstd
-  find /usr/lib -maxdepth 1 -name '*.so*' -size +500k -print0 |
-    xargs -0 cat | head -c 60M > f
-  sync
-  fsverity enable --hash-alg=sha512 f
-  echo 3 > /proc/sys/vm/drop_caches
-  cat f > /dev/null
-  dmesg | grep -c 'FILE CORRUPTED'     # 10 here
+            if (ioctl(fd, TCGETS, buf) < 0)
+                    perror("ioctl");
+            else
+                    printf("ioctl succeeded\n");
+            return 0;
+    }
 
-Same data with chattr +m before writing (uncompressed): no messages.
-Reading with POSIX_FADV_RANDOM: no messages.
+Before commit 5ab2b180884c ("btrfs: factor out validation of
+btrfs_ioctl_vol_args::name"), the result is:
 
-Tested on Arch Linux's kernels (no out-of-tree patches) in a KVM
-guest, virtio disk:
+    ioctl: Inappropriate ioctl for device
 
-- bad: 7.2.2-arch1, 7.2.7-arch1, 7.2.9-arch1
-- good: 7.1.11-arch1, 7.0.14-arch1, 6.18.55-lts
+After that commit, the result is:
 
-Also on bare metal (two NVMe laptops, Intel and AMD) with
-7.2.9-cachyos. A similar symptom in 6.16.8 was fixed by "btrfs: fix
-incorrect readahead expansion length" (Oct 2025).
+    ioctl succeeded
 
-#regzbot introduced: v7.1..v7.2.2
+This patch will add a default case that returns -ENOTTY.
 
-I can test patches.
+Fixes: 5ab2b180884c ("btrfs: factor out validation of btrfs_ioctl_vol_args::name")
+Cc: stable@vger.kernel.org
+Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
+---
+ fs/btrfs/super.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-Roger
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 823a58bd2685..acb704b20c2b 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -2291,6 +2291,9 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 	case BTRFS_IOC_GET_SUPPORTED_FEATURES:
+ 		ret = btrfs_ioctl_get_supported_features((void __user*)arg);
+ 		break;
++	default:
++		ret = -ENOTTY;
++		break;
+ 	}
+ 
+ out:
+-- 
+2.53.0
+

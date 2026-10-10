@@ -1,100 +1,135 @@
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+Received: from mail-qv1-f54.google.com (mail-qv1-f54.google.com [209.85.219.54])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FC1D2DECBF
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 09:10:36 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D5192403B00
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 10:54:45 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.219.54
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791623437; cv=none; b=fhTN53iu75lK8Y7d5sJdfeL1A+xJ7UtVmVkxBwCBfE3mQB5NOX7+DZf83VmCEz6HYS8aBxpD9NAcX9Yx+y2iNcBmlYuqOjA8iATbwA+L7G4EixlNfteRylz131lVrNZjUBxehwnk0o527pdjwmdOTxakezo+xNIq3AwuzxuHgbk=
+	t=1791629687; cv=none; b=iyZm/J+HHh7aInrlq42HLXUXXJSl4PXAOraRS3Pbj3a8sSgkr6hreOfjxtm9cutFP6j15dQw0P6yiUCpde/odd0NpS701H3Mgh+wE4RjKS0yC5KQ52JqfwSC3PpEIPrmVv4nSgLE58hnsLTo+wItVWsyw2VA8RwKroatsSZnaAk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791623437; c=relaxed/simple;
-	bh=wSKi6gZX9Pbj2TkdKWCzVAat1mvcc1tUgaLMYNNccRY=;
-	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
-	 MIME-Version:Content-Type; b=nQtkD69CtSm8Iw1tUCNHnrBAuEKfw8TprcCWQjRfwCokAn3gLq6pK7zkg05hKqI7xz8CWTZQEj8PlTLN1niH2hUvHoK+DnHgknI1HYEfx0rDaMnKTUI3qqfIhpV2tLmp4hhDBp5pGFuppeHVAHO3gW0kpdg9jsHvGwkcxX39nag=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=j2C6SOaS; arc=none smtp.client-ip=209.85.128.41
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1791629687; c=relaxed/simple;
+	bh=Lx4pYf7ox2ftKijZw338RFHnP5fJrmBZaR9iQNhr5fE=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=TXQbdUQE4DdULvicCdI7DDKa+2IYUzQqe7fkRUY7QsbMOgCGMYNIp+UGNpxekQUUH4ifq7WsYF0p/tUPtzsQfrjFE3In3eOnZAde547MMTXGuVfSuN2vngNS2Vu5gvvFrPR3OO6bHEcGMKPHTzK6ZEWSfX/DW+LuQjMinECAgXw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu; spf=pass smtp.mailfrom=cs.unc.edu; dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b=m2mxfjzZ; arc=none smtp.client-ip=209.85.219.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="j2C6SOaS"
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4a0213948d3so2907165e9.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 02:10:36 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b="m2mxfjzZ"
+Received: by mail-qv1-f54.google.com with SMTP id 6a1803df08f44-91b52ba422cso8029556d6.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 03:54:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1791623434; x=1792228234; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:date:subject:cc:to:from:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=NxZS7crcJhSd2qjR9sZhtM5Y0kmcp5e+rvpK7gfXJgI=;
-        b=j2C6SOaS/XNDOQi0sQlzrpRxs95nzQYH9YoM0nCMq1eF0gm9B4vbbmLtFaxp1Mf5p4
-         DZ98B145dHYqQ9ml1Wgj7qC8VSkZsqNYv6YVVFoW0QWbNIZJkAayLQeUwY+Ec+0YICol
-         MpW72sCnjJGvIJUOCnaTtbsylpPmz8A99ec03l2S+JLUgc71S/AAsdmxQidDQJi5nYlw
-         nWmZYzNjYqafoyqGIrX7BX8kdpvc8J1UINSWCGEW0ANnl42iz5TeEsLYJI82enNH1oyT
-         N70n8hj5IP4pnokFPZK96gmmndZ4NFR0KKn3vz5c5EDIn9ajellqPCWHvLFEvGG1e6eu
-         u6YA==
+        d=cs.unc.edu; s=google; t=1791629684; x=1792234484; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=q++ROavf5Dntc+2Fvf5HgOibvKYoyzYPl6CilCM+dkk=;
+        b=m2mxfjzZix1oEhOzoj2ZW6wmgD/o7IARnsVTgaza9BEdIbkJlDHdOKp2llm1VeL1w9
+         5cOBxOU/GXJQyS59F0dnsvFnAVPqUun5GhQFN8BNDR+2xvqkDxkk+mxTPadUvMM1/I1a
+         vV5UVqtxe6aR9PKJFaMdwBWdakGebYKkWC4UE+EBNiNLIXzKDCuGlSK4ZtRtyQY5VBvM
+         sRUcnTX4ay7aMQgVsaQ0twmv1JWWjZOYREWM8oao4QAM0/bM972lFeFgLlR8I2kJrIZX
+         0N42M1k4r66epuESs0wx1a4iJdKfLBcX/az8MfGO6yUzhW+/S4W0DclOAr+iGLhKPsmt
+         llug==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791623434; x=1792228234;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:date:subject:cc:to:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=NxZS7crcJhSd2qjR9sZhtM5Y0kmcp5e+rvpK7gfXJgI=;
-        b=GeEqc++MzZtxvpMjN9AkejFwiyOxXfwhmTOWYAhBQWzDhdj8Oj+erwaGL9ZtdfoFvc
-         B7RxrPerLFwL4ypw+HSp3PdG+mgEBV9e2etemPijDDLz8zzy2fZYBNOuzthONGbhvf/C
-         532uHdmCqYNJxmn49+31p8mCsWfINkfDNAtYewlXn5OiK7T164fuFtm1K20OTwBcNGCp
-         RssK8+A019tzi1Uu9EDvDkz1+4DhgA9KsGFXru+D135ECHCVjFO6kcVJFJGn3pRxIbgU
-         89m0DIDmBTZOoJojv4UAxgZvznMhTD7OVNx3i37n0cYc0jm/IlDtX8gmEGQL7L90Vg37
-         uCAw==
-X-Gm-Message-State: AFq9FYLZMuHUg5CIMRptnUf39tOMoELNyq/1vumcehiHyyWegmq+F4Rl
-	Im2C9IqPzo0k6GeFr3ZfM1bDSRT35vMv45VU9jUzPxmVB4YvGvfgCK3m
-X-Gm-Gg: AYBFou3TZcz/6G/UakbEmhtuoFBEQkhUqRF4boeMVWezQEFsF4E0GGDIFa8glOysBBB
-	qdNZBE1XRKrBldvq1VmvCjK5BRwkzZVG1Q60em4348C+tSfPFN66pdSOG8XkVPgOivdPiNOis9a
-	HHao/DMdApJN4Ntl6wp9iDC9vgthEAviSKriiE7nCDKTZcg/LIRcgYJxUGIjUqAaf1bz1AUgHtn
-	SUPoOl66CeFAU/6sD6Q9/We+HHG3gN2haXWGSGK7QXf0iBDl/poFU7cP9bmudgeSz9Vl/vjofhp
-	xlFSPM1qmYp3oxMqw+TY1pU7Z84DN5V2wVBOmGJ9sd6x79l5ZWoGsZjZiII+VZ0xOLjTEeni2a6
-	ElnYvTXqh+9JzIoXnZAZMqTqNnX0Ws68bqvg73uD1K43nLgzNSLfzyaBZbHo1MACZSmP7aXZZJL
-	NUTCeGr1mPqZKeb7jr1VeaQ6Eu80mVXpqwNwGkKb+/htnMu+sEWkx0ONLIIa0H4FMNlcGnI+VUN
-	VklKzo9wAZVFQ8o0JXFg/dIvUy265zPEtppIzuH89Au+Lafg2Knl/D4+Ea9juiQkA==
-X-Received: by 2002:a05:600c:3e0a:b0:49e:6050:9fbe with SMTP id 5b1f17b1804b1-4a18e49c52bmr77420555e9.15.1791623434169;
-        Sat, 10 Oct 2026 02:10:34 -0700 (PDT)
-Received: from localhost.localdomain ([2001:8a0:dd02:d000:99f:cbbb:1e16:ca53])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a19471edd5sm70865545e9.11.2026.10.10.02.10.33
+        d=1e100.net; s=20260707; t=1791629684; x=1792234484;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=q++ROavf5Dntc+2Fvf5HgOibvKYoyzYPl6CilCM+dkk=;
+        b=zUr8zchLeNsKw+iA7pqazyi7xOJDYFtsp6u1VwJbEVK2/N0V4VKpZzeB9e0kFsZTe+
+         E24aOKSkjWws5v+L0k6Pfga+7vOTZdFyWvvUFF+vP/CLVTU1hOQAzS1w4kPQt//6o1Zy
+         YsgF2neyoMxm/9q0yhIGE/4wEMoHKx0xlFCpprwo1xRYo7uwYGk+wpq4WOeZLntp6N6E
+         YrEmCa2UN02ErpQmYc8c59kigKDER1ETEhhU1e+EPALzaBeJCZEysCS2yhA2yLyAwDxd
+         j5OXgWuz8BrneydfD80HNYtF0nBovq6LBi3E/rrzPcxdiBBGtI0/iwF2t/0u2E1UoHiK
+         mo2g==
+X-Forwarded-Encrypted: i=1; AKwUvBzT6OqQnCLt5j8jqy4q2r/mWSoGWXBdjOdBNhXo+UA7o0JAT0emXSPHvrFlhoRVVY2rEhUbN4q+h1v3Sg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYL4Z+nimhLwlUc0Rewcj2pVKhVSO3cCpjWL2F9abuBtAqsf5/Wc
+	KfcTdIqqkL88qAmV/RJcs0xbe/VmqoaNMK0B+aFKpdDdncMfFimVBh/IO6Rp/xKxQg==
+X-Gm-Gg: AYBFou2QqdS2mTWj7DaHa2a3NZZdSNPB48snEFg9o+AZmSc4Mi5v9SIvNa5aXw+OOFp
+	p9ZKS/D7FqoBMicIRFB5F1OSjATSDk9spP8796HuBAzLdgulzqgQElumVkuZw+g7vBtN+rb4Itw
+	Zx8wZCmwi239+PIl3lAjScyODhozjfcVmv3M0B39/zvdgD5s0m9GfRbDLHrRNfAIrCKH/8Hm9ud
+	pGsD5iQcTsAZsjvyThxe9YNpnZAx7tHxzj9YA5+oyFi+GAC7PXIaNnqaG8md13UQaVP7gnawY4v
+	9dy8iPCpM2gM1Dpu8cE7dqWBTw5c3XezvDQ2tLSZhzYmQ/Yy21pNCwKvSr5Vfp6QntvW6yfsIxA
+	8bboF4t5DFeqGC6H5Mcfrsr4K4QT/aP2p36C77b9e92McmlodQvbCrOUBueBEk3ZdbmX/MtXQsw
+	AxapEDyCSXVrOGmkzjDjldyQWw8WNXiT8vNgqwTizMlx8oEsV/XTR4QK85TgYAvbDADyjlU9JfW
+	T5xp9z3a//yXPEMpUtDDQ==
+X-Received: by 2002:a05:620a:17a0:b0:93e:c12c:f13b with SMTP id af79cd13be357-93ec12d085amr605390185a.69.1791629684570;
+        Sat, 10 Oct 2026 03:54:44 -0700 (PDT)
+Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-93eb9898b5fsm394602785a.32.2026.10.10.03.54.43
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 10 Oct 2026 02:10:33 -0700 (PDT)
-From: Tito Duarte <duartito@gmail.com>
-To: wqu@suse.com
-Cc: linux-btrfs@vger.kernel.org,
-	ebiggers@kernel.org,
-	vonbloom@gmail.com
-Subject: Re: [PATCH v2] btrfs: fix the fsverity callback where unexpected range is verified
-Date: Sat, 10 Oct 2026 10:10:31 +0100
-Message-Id: <20261010091031.41686-1-duartito@gmail.com>
-X-Mailer: git-send-email 2.33.0
-In-Reply-To: <15f4ef9f50e1f4af375e45cf976717041f1a96d4.1791613764.git.wqu@suse.com>
-References: <15f4ef9f50e1f4af375e45cf976717041f1a96d4.1791613764.git.wqu@suse.com>
+        Sat, 10 Oct 2026 03:54:44 -0700 (PDT)
+From: Hengyu Liang <hengyul@cs.unc.edu>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Filipe Manana <fdmanana@suse.com>,
+	Qu Wenruo <wqu@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: fix chattr failing on nodatasum files that have the compress flag
+Date: Sat, 10 Oct 2026 06:54:25 -0400
+Message-ID: <20261010105425.165104-1-hengyul@cs.unc.edu>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-On Sat, Oct 10, 2026 at 04:59:49PM +1030, Qu Wenruo wrote:
-> [FIX]
-> Instead of calling fsverity_verify_folio(), call
-> fsverity_verify_blocks() to verify only the read range.
+Commit cf1afec09e9f ("btrfs: validate properties before setting them")
+made btrfs_set_prop() validate a property before setting it. For the
+compression property, the validation fails with -EINVAL when the inode
+has NODATASUM.
 
-Tested on Debian's 7.2.8-1 kernel with this change applied, 4K pages:
+However, a file created on a filesystem mounted with nodatasum has
+NODATASUM and still inherits the compress flag from its directory, and
+btrfs_fileattr_set() sets the compression property whenever the new
+flags include FS_COMPR_FL. As of now, chattr fails on such a file, even
+when it only changes another flag.
 
-- arm64 VM (virtio-blk), the reproducer from my report [1]: from 10
-  spurious "FILE CORRUPTED" reports per 30 mount/read cycles to 0
-  (0 in 120 cycles over four runs)
-- boots from a composefs root with overlayfs verity=require on btrfs:
-  arm64 previously 7-10 reports per test run (three boots), now none;
-  x86_64 with Secure Boot and lockdown also clean
+The issue can be reproduced with:
 
-Sorry for the duplicate report, I had missed your patch.
+    mkfs.btrfs -f /dev/sdb
+    mount -o nodatasum /dev/sdb /mnt
+    mkdir /mnt/dir
+    chattr +c /mnt/dir
+    touch /mnt/dir/file
+    chattr +A /mnt/dir/file
 
-Tested-by: Tito Duarte <duartito@gmail.com>
+Before commit cf1afec09e9f ("btrfs: validate properties before setting
+them"), the last command succeeds.
 
-[1] https://lore.kernel.org/linux-btrfs/20261010083827.27604-1-duartito@gmail.com/
+After that commit, it fails with EINVAL.
+
+This patch will make btrfs_fileattr_set() set the compression property
+only when the inode can be compressed.
+
+Fixes: cf1afec09e9f ("btrfs: validate properties before setting them")
+Cc: stable@vger.kernel.org # 7.2+
+Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
+---
+ fs/btrfs/ioctl.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 52aab510aea0..347509043f2e 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -421,7 +421,12 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+ 
+-	if (comp) {
++	/*
++	 * An inode with NODATASUM can not be compressed but can still have the
++	 * compress flag, inherited from its parent directory. Setting the
++	 * property fails validation for such an inode, so leave it unset.
++	 */
++	if (comp && btrfs_inode_can_compress(inode)) {
+ 		ret = btrfs_set_prop(trans, inode, "btrfs.compression",
+ 				     comp, strlen(comp), 0);
+ 		if (ret)
+-- 
+2.53.0
+

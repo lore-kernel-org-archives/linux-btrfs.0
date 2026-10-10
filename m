@@ -1,205 +1,100 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 951B3331ED5;
-	Sat, 10 Oct 2026 09:04:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FC1D2DECBF
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 09:10:36 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.41
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791623088; cv=none; b=PSV2a4IMJqGPbt6IKO4ymzKqL9QUvpeZcwkCM9hXt0SaFi1XKfwPzNZMFTivF4uXzqd5ptcCyp+Dwb3B6so/f75/xlO+ECupsijE1fuIIrGBxeTTPvR0zjJztRjvgb25oXQn6OyJXzONuc/yrhd0MBiwLSi2XaDG1g0KwwYWKsI=
+	t=1791623437; cv=none; b=fhTN53iu75lK8Y7d5sJdfeL1A+xJ7UtVmVkxBwCBfE3mQB5NOX7+DZf83VmCEz6HYS8aBxpD9NAcX9Yx+y2iNcBmlYuqOjA8iATbwA+L7G4EixlNfteRylz131lVrNZjUBxehwnk0o527pdjwmdOTxakezo+xNIq3AwuzxuHgbk=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791623088; c=relaxed/simple;
-	bh=jQTXPp1rH07ts20LkA181vM2lobDaOVeAB+9V1Sm27w=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=OoYoVCDbF1BCic002fpTcfsxbQ68ytHzQg7lQZKige2eJ8wvYwbqixKBpabcmLsXsPed+/PnD5hcgEf72m5bHOAJDowGheglWts9TifiHhA0Pfhv9jXk+8+5qtZ3tsliwtwdsjFCuYmhaXDYDTGLA1S41E3xrLG99gQ4aM9Gdws=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=vTrW5rjs; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=nhr02LM6; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1791623437; c=relaxed/simple;
+	bh=wSKi6gZX9Pbj2TkdKWCzVAat1mvcc1tUgaLMYNNccRY=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version:Content-Type; b=nQtkD69CtSm8Iw1tUCNHnrBAuEKfw8TprcCWQjRfwCokAn3gLq6pK7zkg05hKqI7xz8CWTZQEj8PlTLN1niH2hUvHoK+DnHgknI1HYEfx0rDaMnKTUI3qqfIhpV2tLmp4hhDBp5pGFuppeHVAHO3gW0kpdg9jsHvGwkcxX39nag=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=j2C6SOaS; arc=none smtp.client-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="vTrW5rjs";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="nhr02LM6"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 770831F388;
-	Sat, 10 Oct 2026 09:04:43 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791623084; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=SaxexIkoeW4OeZZXsx6q4jzPvvYyfX3/ArS70U7xZ1A=;
-	b=vTrW5rjsip3Z/LD0SIzV+lZwboRiJRCn+bHr1h1sGjrokesLBrNBV9DnlSe1qye4d5Hjr0
-	sn2eVdDj9gVALVu1oKvLtn6DZKx5xlrAUJYE7hGU7tWmwu/ycyO4UJWkoCGANfRXpqhmDO
-	AV7yKGWFIu7hr6io+C5aBBgorPPNWe4=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791623083; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=SaxexIkoeW4OeZZXsx6q4jzPvvYyfX3/ArS70U7xZ1A=;
-	b=nhr02LM6+UEGY5jAbH3nJvnYRLkA7+37atn3nfBpn6LtmEW9m8NpelHz61BtQFPKvOKdjd
-	jUVZjX4ygMSo1hlM+meogX7OvxXHzG/j2g+/bRRMsdGl15HRxKAjxH1q+zapbOh9iGShnU
-	jMGzFC6Ue/YxlArCRvQA4Nu5PxW7mOU=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 935911326D;
-	Sat, 10 Oct 2026 09:04:41 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id QVt+L6j/yWrXDAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sat, 10 Oct 2026 09:04:41 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	fstests@vger.kernel.org
-Subject: [PATCH v2] fstests: generic: add a test case to check fsverity reads
-Date: Sat, 10 Oct 2026 19:34:22 +1030
-Message-ID: <20261010090422.59743-1-wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="j2C6SOaS"
+Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4a0213948d3so2907165e9.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 02:10:36 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1791623434; x=1792228234; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:date:subject:cc:to:from:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=NxZS7crcJhSd2qjR9sZhtM5Y0kmcp5e+rvpK7gfXJgI=;
+        b=j2C6SOaS/XNDOQi0sQlzrpRxs95nzQYH9YoM0nCMq1eF0gm9B4vbbmLtFaxp1Mf5p4
+         DZ98B145dHYqQ9ml1Wgj7qC8VSkZsqNYv6YVVFoW0QWbNIZJkAayLQeUwY+Ec+0YICol
+         MpW72sCnjJGvIJUOCnaTtbsylpPmz8A99ec03l2S+JLUgc71S/AAsdmxQidDQJi5nYlw
+         nWmZYzNjYqafoyqGIrX7BX8kdpvc8J1UINSWCGEW0ANnl42iz5TeEsLYJI82enNH1oyT
+         N70n8hj5IP4pnokFPZK96gmmndZ4NFR0KKn3vz5c5EDIn9ajellqPCWHvLFEvGG1e6eu
+         u6YA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791623434; x=1792228234;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:date:subject:cc:to:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=NxZS7crcJhSd2qjR9sZhtM5Y0kmcp5e+rvpK7gfXJgI=;
+        b=GeEqc++MzZtxvpMjN9AkejFwiyOxXfwhmTOWYAhBQWzDhdj8Oj+erwaGL9ZtdfoFvc
+         B7RxrPerLFwL4ypw+HSp3PdG+mgEBV9e2etemPijDDLz8zzy2fZYBNOuzthONGbhvf/C
+         532uHdmCqYNJxmn49+31p8mCsWfINkfDNAtYewlXn5OiK7T164fuFtm1K20OTwBcNGCp
+         RssK8+A019tzi1Uu9EDvDkz1+4DhgA9KsGFXru+D135ECHCVjFO6kcVJFJGn3pRxIbgU
+         89m0DIDmBTZOoJojv4UAxgZvznMhTD7OVNx3i37n0cYc0jm/IlDtX8gmEGQL7L90Vg37
+         uCAw==
+X-Gm-Message-State: AFq9FYLZMuHUg5CIMRptnUf39tOMoELNyq/1vumcehiHyyWegmq+F4Rl
+	Im2C9IqPzo0k6GeFr3ZfM1bDSRT35vMv45VU9jUzPxmVB4YvGvfgCK3m
+X-Gm-Gg: AYBFou3TZcz/6G/UakbEmhtuoFBEQkhUqRF4boeMVWezQEFsF4E0GGDIFa8glOysBBB
+	qdNZBE1XRKrBldvq1VmvCjK5BRwkzZVG1Q60em4348C+tSfPFN66pdSOG8XkVPgOivdPiNOis9a
+	HHao/DMdApJN4Ntl6wp9iDC9vgthEAviSKriiE7nCDKTZcg/LIRcgYJxUGIjUqAaf1bz1AUgHtn
+	SUPoOl66CeFAU/6sD6Q9/We+HHG3gN2haXWGSGK7QXf0iBDl/poFU7cP9bmudgeSz9Vl/vjofhp
+	xlFSPM1qmYp3oxMqw+TY1pU7Z84DN5V2wVBOmGJ9sd6x79l5ZWoGsZjZiII+VZ0xOLjTEeni2a6
+	ElnYvTXqh+9JzIoXnZAZMqTqNnX0Ws68bqvg73uD1K43nLgzNSLfzyaBZbHo1MACZSmP7aXZZJL
+	NUTCeGr1mPqZKeb7jr1VeaQ6Eu80mVXpqwNwGkKb+/htnMu+sEWkx0ONLIIa0H4FMNlcGnI+VUN
+	VklKzo9wAZVFQ8o0JXFg/dIvUy265zPEtppIzuH89Au+Lafg2Knl/D4+Ea9juiQkA==
+X-Received: by 2002:a05:600c:3e0a:b0:49e:6050:9fbe with SMTP id 5b1f17b1804b1-4a18e49c52bmr77420555e9.15.1791623434169;
+        Sat, 10 Oct 2026 02:10:34 -0700 (PDT)
+Received: from localhost.localdomain ([2001:8a0:dd02:d000:99f:cbbb:1e16:ca53])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a19471edd5sm70865545e9.11.2026.10.10.02.10.33
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 10 Oct 2026 02:10:33 -0700 (PDT)
+From: Tito Duarte <duartito@gmail.com>
+To: wqu@suse.com
+Cc: linux-btrfs@vger.kernel.org,
+	ebiggers@kernel.org,
+	vonbloom@gmail.com
+Subject: Re: [PATCH v2] btrfs: fix the fsverity callback where unexpected range is verified
+Date: Sat, 10 Oct 2026 10:10:31 +0100
+Message-Id: <20261010091031.41686-1-duartito@gmail.com>
+X-Mailer: git-send-email 2.33.0
+In-Reply-To: <15f4ef9f50e1f4af375e45cf976717041f1a96d4.1791613764.git.wqu@suse.com>
+References: <15f4ef9f50e1f4af375e45cf976717041f1a96d4.1791613764.git.wqu@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 
-There is a bug report that with the recently enabled large folios
-support, fsverity enabled files on btrfs can trigger reproducible
-warnings about file corruption, but in the end no error is returned to
-user space.
+On Sat, Oct 10, 2026 at 04:59:49PM +1030, Qu Wenruo wrote:
+> [FIX]
+> Instead of calling fsverity_verify_folio(), call
+> fsverity_verify_blocks() to verify only the read range.
 
-It turns out to be a bug in the btrfs fsverity integration, where blocks
-not included in the read range are passed to be verified.
+Tested on Debian's 7.2.8-1 kernel with this change applied, 4K pages:
 
-This is a long-standing bug where btrfs fsverity always assumed that one
-folio contains exactly one fs block, ignoring the fact that btrfs had
-block size < page size support before fsverity support was added.
+- arm64 VM (virtio-blk), the reproducer from my report [1]: from 10
+  spurious "FILE CORRUPTED" reports per 30 mount/read cycles to 0
+  (0 in 120 cycles over four runs)
+- boots from a composefs root with overlayfs verity=require on btrfs:
+  arm64 previously 7-10 reports per test run (three boots), now none;
+  x86_64 with Secure Boot and lockdown also clean
 
-Add a new regression test case for it. The workload is pretty simple:
+Sorry for the duplicate report, I had missed your patch.
 
-- Create a 32M file
+Tested-by: Tito Duarte <duartito@gmail.com>
 
-- Punch a 64K hole for every 128K
-  This will limit the read bio size to 64K, which is smaller than
-  a lot of large folios, and thus can trigger the btrfs bug.
-
-- Enable fsverity digest and drop page cache
-
-- Read that file
-
-- Verify there is no "FILE CORRUPTED!" warning
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog
-v2:
-- Do not use btrfs specific mount options to limit read bio size
-  Use holes to limit the size of read bios instead, now the test case
-  can be generic other than btrfs specific.
-
-- Add the missing _require_check_dmesg call
-
-v1:
-https://lore.kernel.org/linux-btrfs/20261010032508.36935-1-wqu@suse.com/
----
- tests/generic/807     | 56 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/807.out |  2 ++
- 2 files changed, 58 insertions(+)
- create mode 100755 tests/generic/807
- create mode 100644 tests/generic/807.out
-
-diff --git a/tests/generic/807 b/tests/generic/807
-new file mode 100755
-index 00000000..24e22e8c
---- /dev/null
-+++ b/tests/generic/807
-@@ -0,0 +1,56 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 807
-+#
-+# Verify that reading a large file with holes won't trigger fsverity warnings
-+#
-+. ./common/preamble
-+_begin_fstest auto quick verity
-+
-+_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-+	"btrfs: fix the fsverity callback where unexpected range is verified"
-+
-+. ./common/verity
-+
-+_require_xfs_io_command "fpunch"
-+_require_check_dmesg
-+_require_scratch_verity
-+
-+filesize=$(( 32 * 1024 * 1024 ))
-+interval=$(( 128 * 1024 ))
-+holesize=$(( 64 * 1024 ))
-+
-+_scratch_mkfs_verity >> $seqres.full
-+_scratch_mount
-+
-+# Create a large enough file so that readahead is triggered, and
-+# large folios are allocated during readahead.
-+_pwrite_byte "0xcd" 0 "$filesize" "$SCRATCH_MNT/foobar" > /dev/null
-+
-+# Create a hole for every $interval bytes. This should limit the read to
-+# $(( $interval - $holesize)), which should be much smaller than the maximum
-+# folio size (2M for x86_64).
-+for (( i = 0; i < $(( $filesize / $interval )); i++ )); do
-+	$XFS_IO_PROG -c "fpunch $(( $i * $interval )) $holesize" \
-+		"$SCRATCH_MNT/foobar" > /dev/null
-+done
-+
-+_fsv_enable "$SCRATCH_MNT/foobar"
-+
-+# Cycle mount to drop page cache
-+_scratch_cycle_mount
-+
-+# Read the file, unpatched btrfs will verify blocks outside the read range and
-+# trigger fs-verity warnings.
-+# But the read itself should still be fine, as the failed part will be retried.
-+cat "$SCRATCH_MNT/foobar" > /dev/null
-+
-+# Check for any kernel warnings from fs-verity on file corruption.
-+if _check_dmesg_for "FILE CORRUPTED!"; then
-+	echo "fs-verity detected corruption"
-+fi
-+echo "Silence is golden"
-+
-+_exit 0
-diff --git a/tests/generic/807.out b/tests/generic/807.out
-new file mode 100644
-index 00000000..3752a5f7
---- /dev/null
-+++ b/tests/generic/807.out
-@@ -0,0 +1,2 @@
-+QA output created by 807
-+Silence is golden
--- 
-2.56.0
-
+[1] https://lore.kernel.org/linux-btrfs/20261010083827.27604-1-duartito@gmail.com/

@@ -1,195 +1,225 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C1562D322E
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 08:13:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 392D235C6B5
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 08:38:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.42
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791620013; cv=none; b=UEno22o9jhZhybtROsB0Snm/0N4egcJzqvyioUIFVHBDoU9/tDhjrvpyGv5LVdZfea14PoGdS+gLEqW60hcntq8Zyzw/D+qYOQ8zeGdLXu3hL+1m/p/c0SfDsa9Fk3LulEQqN72tzFv6sRZYnokgpsNgVWnCr+AfP1NLOIHz86E=
+	t=1791621517; cv=none; b=KotWptsm6zWxTAUKLwP6/ofj6SzAEXUNvpdNEWByTLNxAKvmaGPeRk10XJWJRNrLDyqn/kioDam1901ZMEA4CA9Lzh3/zsS25byRwVDCUOQmn2QWpbdhTdysW/QwCawgj8NhVj+2grcs3K/fYXVzR6I+Wajb2nJflYOT1k9j0xc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791620013; c=relaxed/simple;
-	bh=7rTIIgKaddi4hDM6fJnPwE8ZbnQao3d1oom38sjqL/Y=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=nlTvhaFBkVeA3CbLerueCYLjwPFWvJjDS9AKhyIqOvW2MIxP3JI8Jze0t9u5FeOspmBZqHXFSAh/5yb1589OLhudJsEp70ovT4R4Vgs1FlBdBM5QgyWUxDqSPCfAssvasd+gSqKqQQCLjrGxUP0LhRHp6N4vBp7pOPBxR/Eb0SU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=dKh+FayB; arc=none smtp.client-ip=209.85.128.50
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1791621517; c=relaxed/simple;
+	bh=9xpNnQqLXytp8X44PR1h7MI2cuBxO7fOJMEPyGlkPkw=;
+	h=From:To:Cc:Subject:Date:Message-Id:MIME-Version:Content-Type; b=IEXMcxPikm0De/4py3DRWNYY/NfdwXL3PQbY8xM6Fw96PJ25uigOuu25a+rujorzRkLiQO4Me3F+6Tx+jjRQDdQDdq5x1eNFDlgw1qIY+M+AflyyPs20RqDJEEvnsa4zB3oQc8nKflGWP8w34ubWrK9vivrwGpRdfiLMTofXras=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=PNkJHXQG; arc=none smtp.client-ip=209.85.128.42
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="dKh+FayB"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4a02667ccebso3223695e9.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 01:13:32 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="PNkJHXQG"
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-49fbb2acc90so820485e9.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 01:38:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791620010; x=1792224810; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+        d=gmail.com; s=20251104; t=1791621510; x=1792226310; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:message-id:date
+         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=YMRSDuE4mes3IXuNa4LOHgfmDiOgpCBCgNtD7mtyjl4=;
-        b=dKh+FayBz36cmP6L1XRSxt61rWx5pAktFzBZMeMCf09FouyKZPRozNBXziu5merATD
-         b7UyYUw3rt0WRV/xhrmCzISM8aAYXIqfHA8hWdzjh//9BR7FFq1X/55BfYGU38zh6Neq
-         eCeYzImisRIg1XUB1Zmxpk4zT4wQx+eveCgraY4L95TH3wxqOSH8M1jnL9sAbBlUldF8
-         dYzlF6yqeDn2uJKgr9HH368rG1QRmVI2TsHFs32QJ4PlAzfV2Bg+pHrH+z5yvzSZfWR4
-         gSdlsODcogUFb1/WRKIsFaHLV0AQbg1r1KyYFd5smwPibbtsJcK9u9lLaNzY91rW/7Kc
-         tbqQ==
+        bh=0Rob4i7+V27nvvWkDOfWCSkRqomqDqBc4VZBhr7ZnSA=;
+        b=PNkJHXQGwNxibWP1OdapZfnHFzs0rr/O/AO7MHKLVlznxQhpHiKUQ2VcNWEGQms80C
+         ItG0MqayhjooPyfets7PQUoOo2VRb2QIoJhw59LhNcdoSrfBPpg7/P5kQdUDotIhhiSR
+         MrgMoIBHj5Z1jwSiJeywy2X/YvRnm812Cou7S+bvjisSz5uUeerjnFTAB9MkO6TWJjCf
+         06zKJ52uVpZYYQZmhMxOZF4ekQPPfkN5/hO7+W+rIkoy/I9GABojnk07zufrU871dI5A
+         sVkAFixFDchRNHRFK2bnm+Gd4rtksviHkbgo/xjzROA+GmnfftfksWzXB6MNvhtXZ/VU
+         gvqQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791620010; x=1792224810;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=YMRSDuE4mes3IXuNa4LOHgfmDiOgpCBCgNtD7mtyjl4=;
-        b=Xe+v0xz4rl7JYszF5BW4EpD7ipjA0pnIPU/Ww0nVZyTF8GG4qofrfkCh1RWGd5Kv4/
-         ugrDp6IDBB5HHLdBikGH9o6pZzhD4l1QD+XcEmxZlpEerFgmRwZSb0kXdZjwSkcNiqPp
-         7kJM7LykkwY1C43aEl8ewliWO65+LOYUKUCoTkFOEYryUcjHZna9b5bVdSInCJgu9/D+
-         2PwdbxSDelr+EeqClvkE2Y9jJJxG1amFsMYOu4JI5kliGWbXfIfCQzngvwqd8PxZ//At
-         sLklbuybiNer4y6fHKKxm1ynoGnW7A84VlK+RjL2soxwPXewPr3QwPDcE4i8L7hsYv93
-         toGw==
-X-Gm-Message-State: AFq9FYK1wTJ/kLU4Dy+u5mFiqu3VkyFthg/M9edk+vCXLVKEaj0ZCWo7
-	C4A40Ybw/SSFIBBQvf3hMv7HvrUGI7gHA2uAjSEBdRVgicmd5mzlFWI7VtoD/66+L2A=
-X-Gm-Gg: AYBFou3YD7003pakIWoDMc8vSmMI3LGqD/N5njji1c9Tfd1RpdXiCtr9sS5mwAfvNri
-	El8Z0GoVUR+RD0LFdGLYGoMFT24Mmp68TjWGUBFl7UeseNH1fgm9Ar+1Dk7mm2poUkinPMfqNUW
-	RgLV4pHTCv6wuSZsl27BF12W+xk8XKwj7+58LHuHOEECCYrm3wVmw5X92XCjSgyyoncut1aJ/mD
-	i/MenMTVT32ja4fbQ+6sIqqhv5RCHiuusxpOwR4pY7C1xrVOTRIe/swQzmY6U1x6Sj0T2gIM2QR
-	ZA17qe4znCkvXgdJ3ztTlkH3qIePAKSg4238ZWtq5db+JLTQa2QQsGUUZvaiBgA60oc3RnXagJ1
-	qUFP6CDwqOBNigkSLR3fhgKGovrXDoSB8KdpULsM/xmtL/TKndKqSVDXVsKleSg/2tAhAuGegR8
-	bAjTHVCqg1YJNZgJ6g31j7rlJM7qjvb/UkgSpHJzaCgZPTM00iLsDaPkwa0hOsj78nYv2LdcRH
-X-Received: by 2002:a05:600c:c0c6:b0:4a1:96cd:2f6b with SMTP id 5b1f17b1804b1-4a196cd31fbmr6954665e9.2.1791620010509;
-        Sat, 10 Oct 2026 01:13:30 -0700 (PDT)
-Received: from [10.86.128.17] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ab38fc9e52sm7137428a91.13.2026.10.10.01.13.27
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 10 Oct 2026 01:13:29 -0700 (PDT)
-Message-ID: <d2fccd43-877c-4797-a221-833d37ff4b8f@suse.com>
-Date: Sat, 10 Oct 2026 18:43:25 +1030
+        d=1e100.net; s=20260707; t=1791621510; x=1792226310;
+        h=content-transfer-encoding:content-type:mime-version:message-id:date
+         :subject:cc:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=0Rob4i7+V27nvvWkDOfWCSkRqomqDqBc4VZBhr7ZnSA=;
+        b=xsEicLhZUc6TYZ/HX7F8rOV3lnDXiBoqd2+er2HwHa6PebmTgWQWRIQslpG3N6izk1
+         AinINklKZ2wHxfl0jD+ArhXiCgNsy6cAxJRt12BjZ3P2SAqC1B4Twd2CMZQBsUnrsDvQ
+         Y+J2zb1FVbper8pp3AvzevIId6k3G670RDxRqdcg8+EUfaR4Midg2Eg2/+CO7qjUxihG
+         q89DrLLGaNENYPbJEhBQqETGWO6V3B4Qhw1MFUweGGPEybLCWrB/EWFkv6n+UICKkld/
+         +slnGnZZ95yo1+Puy64PuaIqP8DauNg98sYfvirzwfprTQERMGCi3i/923So4RzjziQ7
+         7aKQ==
+X-Gm-Message-State: AFq9FYIA3nhYL6qUvzitNr04hNy2c58e5dw71un5NPvlMJVGiwoloQ7b
+	aqnppxjVcqN1SUDtMWa6mW0ziQlcur0dbJybrhYTlamLfoep57nZA96F+wpm+A==
+X-Gm-Gg: AYBFou2SB+LhPSXIhei6iTmSl31/DQNEYaXP4icfw6HiJZ/6jrF0B5MWf6YcWmb6Cmq
+	w+4GxCgTDuE8sxVRtWrFR0u2xI5QIW54jNJuwnwhEvoaYvJv9hiDMdt1TYJ/5ScYjyRCdUmvdqS
+	RKRDdE53L71HC8oTdrsRdM8RIG4V+G6Drhi2KrC6mCPAKmiKeLAYmWNeW2RyJN3JeD84mOJjMK1
+	vZklIy4mYQZ33ZamiOkdpt/727XscrvH/KgI8OkYEvHLQ0mQpI9olF/9pBw+J0T4mJQkEv2gfQi
+	Da1xFL0wuZnQtyHr2vCmDbbelESq+C/PjCR/QS2aU0oBJNIzJIaDKRMyzw7iZtjEwyWZt4zWhOm
+	hcTH7jDIJSJJYHbcYdCnp0uaX53WPBOfqQkXp21SNFxULFtMN+JNePxWwW4dVy6Jam5jLv2qaQS
+	RhsrP/YKF81KmJ/l1kLGe5vlCjGXVZBo7XKZundlHaANAr3r+WVh8mpkPRArC79/4r8GuLEYrvz
+	UrmLNeG6np/RbEHBef+66u/M765CTG1NeulJWmY4nNUqQelKDQKtRo0zATlau5DYk8=
+X-Received: by 2002:a05:600c:8a09:20b0:4a1:9687:bbd4 with SMTP id 5b1f17b1804b1-4a19687bdcamr7741535e9.31.1791621510074;
+        Sat, 10 Oct 2026 01:38:30 -0700 (PDT)
+Received: from localhost.localdomain ([2001:8a0:dd02:d000:8107:32ab:9faa:8dd7])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a18bf35930sm113847525e9.13.2026.10.10.01.38.28
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 10 Oct 2026 01:38:29 -0700 (PDT)
+From: Tito Duarte <duartito@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: fsverity@lists.linux.dev
+Subject: btrfs: spurious fs-verity "FILE CORRUPTED" with large data folios (v7.2+)
+Date: Sat, 10 Oct 2026 09:38:27 +0100
+Message-Id: <20261010083827.27604-1-duartito@gmail.com>
+X-Mailer: git-send-email 2.33.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fstests: btrfs: add a test case to verify fsverity on
- compressed files
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
-References: <20261010032508.36935-1-wqu@suse.com>
- <20261010080203.GB1946@quark>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20261010080203.GB1946@quark>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
+Hi,
 
+Since v7.2, reading fs-verity files on btrfs intermittently logs fs-verity
+verification failures although the data is intact:
 
-在 2026/10/10 18:32, Eric Biggers 写道:
-> On Sat, Oct 10, 2026 at 01:55:08PM +1030, Qu Wenruo wrote:
->> There is a bug report that with the recently enabled large folios
->> support, compressed files on btrfs can give random but reproducible
->> warnings about file corruption.
->>
->> It turns out to be a bug in the verification range, where blocks not
->> included in the read range are passed to be verified.
->>
->> Add a new regression test case for it, the workload is pretty simple:
->>
->> - Create a 64M file with compressed file extents
->> - Enable fsverity digest on that file
->> - Drop page cache
->> - Read that file
->> - Verify there is no "FILE CORRUPTED!" warning
->>
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   tests/btrfs/359     | 45 +++++++++++++++++++++++++++++++++++++++++++++
->>   tests/btrfs/359.out |  6 ++++++
->>   2 files changed, 51 insertions(+)
->>   create mode 100755 tests/btrfs/359
->>   create mode 100644 tests/btrfs/359.out
->>
->> diff --git a/tests/btrfs/359 b/tests/btrfs/359
->> new file mode 100755
->> index 00000000..2047d965
->> --- /dev/null
->> +++ b/tests/btrfs/359
->> @@ -0,0 +1,45 @@
->> +#! /bin/bash
->> +# SPDX-License-Identifier: GPL-2.0
->> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
->> +#
->> +# FS QA Test 359
->> +#
->> +# Test if btrfs handles fsverity read correctly without corruption warning
->> +#
->> +. ./common/preamble
->> +_begin_fstest auto quick verity compress
->> +
->> +_fixed_by_kernel_commit xxxxxxxxxxxx \
->> +	"btrfs: fix the fsverity callback where unexpected range is verified"
->> +
->> +. ./common/filter
->> +. ./common/verity
->> +
->> +_require_scratch_verity
-> 
-> Missing _require_check_dmesg?
+  fs-verity (loop0p2, inode 2980): FILE CORRUPTED! pos=1355776, level=-1,
+    want_hash=sha512:8c662f97..., real_hash=sha512:2d23913d3759ef01...
 
-Right, thanks for pointing out this.
-> 
-> Also, sourcing common/verity adds nodatasum to the mount options.
-> Doesn't that disable compression too?
+The read is retried and userspace gets correct data, btrfs logs no csum
+error, and a file without fs-verity on the same filesystem always reads
+back correctly. Both SHA-256 and SHA-512 files are affected.
 
-It can still be override by the extra "-o compress" option at later 
-_scratch_mount() call.
+Cause
+-----
 
-In fact after the run, the fs still has compressed extents, e.g:
+end_folio_read() -> btrfs_verify_folio() calls fsverity_verify_folio(),
+which verifies the whole folio; start/len are only used for the
+uptodate check (fs/btrfs/extent_io.c in v7.2, unchanged in master as of
+2026-10-07). With large data folios, a folio can span two extents and is
+then filled by two bios. When the first bio completes, the whole folio is
+hashed, including blocks the second bio has not read yet.
 
-	item 201 key (257 EXTENT_DATA 66977792) itemoff 5577 itemsize 53
-		generation 9 type 1 (regular)
-		extent data disk byte 15724544 nr 4096
-		extent data offset 0 nr 131072 ram 131072
-		extent compression 1 (zlib)
-		extent encryption 0
+Large data folios came with cc38d178ff33 (v6.17-rc1, behind
+CONFIG_BTRFS_EXPERIMENTAL) and became the default with 9bce95edb1b4
+("btrfs: move large data folios out of experimental features", v7.2).
+Neither commit is wrong in itself; they expose the whole-folio verification.
+In v6.12 a data folio is one page, so whole-folio and per-block
+verification are the same thing.
 
-On the hand, I believe it's possible to craft a generic test case that 
-doesn't require any btrfs specific mount option.
+Evidence
+--------
 
-Using holes can still force btrfs to split the reads and trigger the 
-warning.
+1. Natural occurrence, arm64 VM (Apple Virtualization, virtio-blk,
+   4K pages), reproducer below, 30 mount/read cycles each:
 
-I'll send out a generic test instead.
+     6.12.111 (Debian trixie)                     0 reports
+     7.2.6    (Debian trixie-backports)          10
+     7.2.8    (Debian testing)                   10, twice
+     7.3-rc3  (Ubuntu mainline build)            10, twice
+     7.2.8    (Debian) + the change below         0, three runs (90 cycles)
+
+   On this machine real_hash was always the hash of a 4 KiB zero block
+   and the failing block was always the first block of an extent (10 of
+   10 checked). That fits the first bio completing first: the first
+   unread block is then the start of the next extent in the folio.
+
+2. Forced reordering, x86_64 QEMU/TCG: delaying every second read bio of
+   a verity inode by 20 ms, 10 cycles each:
+
+     9bce95edb1b4^                                  0 reports
+     9bce95edb1b4                                 100
+     cc38d178ff33^  (BTRFS_EXPERIMENTAL=y)          0
+     cc38d178ff33   (BTRFS_EXPERIMENTAL=y)         91
+     v7.2                                          99
+     v7.2 + the change below                        0
+
+   In all failures (160 logged) the folio had blocks that were not
+   uptodate yet, and the failing block lay inside the folio but outside
+   the range whose bio had just completed. Here real_hash was not the
+   zero-block hash: the unread blocks held stale page contents.
+
+3. Distribution kernel: openSUSE Tumbleweed kernel-default 7.2.8-1.1,
+   unmodified, with dm-delay reordering reads: 13 and 12 reports in 10
+   cycles. Without the delay x86_64 hits it rarely here (0 to 1 in 120
+   cycles under TCG), which I attribute to TCG's timing, not to the
+   architecture.
+
+No checksum mismatches and no btrfs errors in any run.
+
+Suggested change
+----------------
+
+Verify only the range whose read completed. Each completion then hashes
+its own blocks, independent of completion order, and the folio stays
+locked and not uptodate until the last range is done.
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f032f08..6b6cf0e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -482,7 +482,13 @@ static bool btrfs_verify_folio(struct fsverity_info *vi, struct folio *folio,
+ 
+ 	if (!vi || btrfs_folio_test_uptodate(fs_info, folio, start, len))
+ 		return true;
+-	return fsverity_verify_folio(vi, folio);
++	/*
++	 * Only verify the range whose read just completed.  With large folios
++	 * the other blocks of the folio may belong to a different extent and
++	 * bio that has not completed yet, so verifying the whole folio here
++	 * would hash blocks that have not been read.
++	 */
++	return fsverity_verify_blocks(vi, folio, len, offset_in_folio(folio, start));
+ }
+ 
+ static void end_folio_read(struct fsverity_info *vi, struct folio *folio,
+
+Not covered by my testing:
+- Subpage: fsverity_verify_blocks() needs offset and length aligned to
+  the Merkle tree block size. With a Merkle block larger than the sector
+  size (e.g. 64K pages, 4K sectors, 64K Merkle blocks) a single-sector
+  range is not aligned; that case would need verification deferred until
+  the whole Merkle block is read.
+- Compressed extents and holes (same end_folio_read() path, untested).
+
+If the approach is right I can send it as a proper patch with a Fixes:
+tag, or leave it to whoever prefers to handle the subpage case.
+
+Reproducer (root, scratch machine; needs btrfs-progs, fsverity-utils)
+---------------------------------------------------------------------
+
+-----8<-----
+#!/bin/bash
+set -euo pipefail
+CYCLES=${1:-30}
+T=$(mktemp -d /var/tmp/btrfs-verity-repro.XXXX)
+cleanup() { umount "$T/mnt" 2>/dev/null || true; rm -rf "$T"; }
+trap cleanup EXIT
+mkdir "$T/mnt"; truncate -s 2G "$T/img"; mkfs.btrfs -q "$T/img"; mount -o loop "$T/img" "$T/mnt"
+head -c 40M /dev/urandom > "$T/src"
+off=0; i=0
+while [ $off -lt 10240 ]; do
+  n=$(( 97 + (i * 137) % 331 ))          # 97..427 blocks: extent starts not folio-aligned
+  for f in a b c; do
+    dd if="$T/src" of="$T/mnt/$f" bs=4096 skip=$off seek=$off count=$n conv=notrunc status=none
+    sync
+  done
+  off=$((off + n)); i=$((i + 1))
+done
+fsverity enable "$T/mnt/a" --hash-alg=sha512
+fsverity enable "$T/mnt/b" --hash-alg=sha256   # c stays without fs-verity
+sync
+want=$(sha256sum < "$T/src" | cut -d' ' -f1)
+reports=0; mismatches=0
+for c in $(seq 1 "$CYCLES"); do
+  umount "$T/mnt"; mount -o loop,ro "$T/img" "$T/mnt"
+  dmesg -C; echo 3 > /proc/sys/vm/drop_caches
+  for f in a b c; do
+    [ "$(sha256sum < "$T/mnt/$f" | cut -d' ' -f1)" = "$want" ] || mismatches=$((mismatches + 1))
+  done
+  reports=$((reports + $(dmesg | grep -c 'FILE CORRUPTED' || true)))
+done
+echo "$(uname -r): $CYCLES cycles: $reports fs-verity reports, $mismatches checksum mismatches"
+-----8<-----
+
+Disclosure: I used an AI coding assistant (Claude) for parts of the
+analysis, the test harness and this write-up. The numbers above are from
+real runs on my machines; logs are available on request.
 
 Thanks,
-Qu
-
-
-
-
-
-> 
-> - Eric
-
+Tito Duarte

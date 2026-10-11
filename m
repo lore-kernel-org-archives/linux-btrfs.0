@@ -1,59 +1,59 @@
 Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B2943ACF1D;
-	Sun, 11 Oct 2026 22:26:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11BEE46AED1;
+	Sun, 11 Oct 2026 23:07:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791757582; cv=none; b=oDAL8xXEzW6OjViDNc3CzKsPGxc8VigZyvCx/Z0DnoC8wHifUqRnBdhKeQIyhjsyZgy6JJxTHVTTcC9Ux4I2jUXVmU4rHANlUcWllLfA1gjWsnLrZFQiHzQEL3lOUI8qztG4nVBTsztwceBS35DSBQO7MmXtOXKrayuF8gpZSXc=
+	t=1791760069; cv=none; b=e3yWtPmw4AqicnNyvBFhhvFGPJmJeHetTNWucgfM7DipUeK2QDQViHDpS/0l2Ye8uE8D3N16uwbYbdhxDTjqCBbkoFG1gYY0WEFoVuadT4mbu+6bGanwu9VJy5rm9ObHFu5heTx9+kO9mgCRjlxw6+dVV/g5TBKCaxgu7K1tjjI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791757582; c=relaxed/simple;
-	bh=pJR1ZmiltcCOxWszjuM/58LbFYRwhqJMKwNJ1wAVFN8=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=WPFqCHy3MBYJk1XTT8H64Pb8Yr+tzSSRHF6llmEZu7rXSmlPY9CaPdGOn83A5+A1uK72BDSthCeU1ywwhnpfrFLlJtehHgoiXbnYJRofy6171NzD8e+4wd2A/+93RqpNVdiNDgBnc4Ybc+tJ/kwxPTHTV1XnJYGUG9uMW+R895w=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CYPfaant; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=CYPfaant; arc=none smtp.client-ip=195.135.223.130
+	s=arc-20240116; t=1791760069; c=relaxed/simple;
+	bh=wTUcoaooCGpWK9DcCeN7rOdQklu4Ed77T5mGoahW2QU=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=WT8TiT8jks8QjirU4al1pr0+xel8L9DhcTi8CPTAjgNy4I/9Cr8Suifd1LxikSZ0PPRMrdOwxeMB1RIAB9FqWeecIgqywSEP5O8jYUoXsOlWHJRTG+s0OtBgT7HepI29ACvqAGsp8+j29QrXvrpLqhkLQlaTJ8xyWvlkTIijvQc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EAonVRPy; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=EAonVRPy; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CYPfaant";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="CYPfaant"
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EAonVRPy";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="EAonVRPy"
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 7CDF921E36;
-	Sun, 11 Oct 2026 22:26:18 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D7F5C21E2F;
+	Sun, 11 Oct 2026 23:07:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791757578; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1791760064; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=3zCS5xZmKSkdFGKgk1yjPi48a14RI3AW1bJJtMLpgms=;
-	b=CYPfaantWi4pSij8zMDohaH9C8itdz51WC1enawBmtZT0HfFlliUSvSIOnOBMRjw8VL2cA
-	UU3hY7teY0tIQZEg32DCoQMkUppcEIz0QecyAexLfGJtvXvCHnZy9NkjlUJJ/Rf38aqgaG
-	rlOi13fwKjksEE3ZSeWWQMS79EAWif0=
+	bh=ih3u3637LYMFs46cx2BtyrLir/Gb82cGgbDN0GAiC2E=;
+	b=EAonVRPy39BvZ65TH7WXlj7gXzxe3R508SzqCT02EmZHTAYGYYwd1M9lKdLvdA8jTPwCna
+	a8eMuZprje60HfAKEBkK/T2/RZorSb6uHmL/1xx7wp/IMLE4n+C45hTyt/g3bSFyvglb/c
+	wVBfTeA6qBBwTgETJbGM2xBVrFBX9jI=
 Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791757578; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1791760064; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=3zCS5xZmKSkdFGKgk1yjPi48a14RI3AW1bJJtMLpgms=;
-	b=CYPfaantWi4pSij8zMDohaH9C8itdz51WC1enawBmtZT0HfFlliUSvSIOnOBMRjw8VL2cA
-	UU3hY7teY0tIQZEg32DCoQMkUppcEIz0QecyAexLfGJtvXvCHnZy9NkjlUJJ/Rf38aqgaG
-	rlOi13fwKjksEE3ZSeWWQMS79EAWif0=
+	bh=ih3u3637LYMFs46cx2BtyrLir/Gb82cGgbDN0GAiC2E=;
+	b=EAonVRPy39BvZ65TH7WXlj7gXzxe3R508SzqCT02EmZHTAYGYYwd1M9lKdLvdA8jTPwCna
+	a8eMuZprje60HfAKEBkK/T2/RZorSb6uHmL/1xx7wp/IMLE4n+C45hTyt/g3bSFyvglb/c
+	wVBfTeA6qBBwTgETJbGM2xBVrFBX9jI=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E6C3B13408;
-	Sun, 11 Oct 2026 22:26:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5E83D13408;
+	Sun, 11 Oct 2026 23:07:43 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id osDREAgNzGqLPgAAD6G6ig
-	(envelope-from <wqu@suse.com>); Sun, 11 Oct 2026 22:26:16 +0000
+	id 6XaHKr4WzGo4ZwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sun, 11 Oct 2026 23:07:43 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org,
 	fstests@vger.kernel.org
-Subject: [PATCH v3] fstests: generic: add a test case to check fsverity reads
-Date: Mon, 12 Oct 2026 08:56:13 +1030
-Message-ID: <20261011222613.10793-1-wqu@suse.com>
+Subject: [PATCH] fstests: btrfs: test if btrfs control file rejects unknown ioctls
+Date: Mon, 12 Oct 2026 09:37:16 +1030
+Message-ID: <20261011230716.16860-1-wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -70,13 +70,13 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	RCPT_COUNT_TWO(0.00)[2];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -85,133 +85,67 @@ X-Spamd-Result: default: False [-2.80 / 50.00];
 	RCVD_COUNT_TWO(0.00)[2];
 	RCVD_TLS_ALL(0.00)[]
 
-There is a bug report that with the recently enabled large folios
-support, fsverity enabled files on btrfs can trigger reproducible
-warnings about file corruption, but in the end no error is returned to
-user space.
+This is a regression test for a recent bug fix, where unsupported ioctls
+are not properly rejected for btrfs control file (normally at
+"/dev/btrfs-control").
 
-It turns out to be a bug in the btrfs fsverity integration, where blocks
-not included in the read range are passed to be verified.
+The test case itself is super simple, which doesn't even require test or
+scratch device, it just run the "btrfs_ioctl" program using
+"get_subvol_info" ioctl on "/dev/btrfs-control", which should fail as
+that ioctl only makes sense on a mounted btrfs, not the btrfs control
+file.
 
-This is a long-standing bug where btrfs fsverity always assumed that one
-folio contains exactly one fs block, ignoring the fact that btrfs had
-block size < page size support before fsverity support was added.
-
-Add a new regression test case for it. The workload is pretty simple:
-
-- Create a 32M file
-
-- Punch a 64K hole for every 128K
-  This will limit the read bio size to 64K, which is smaller than
-  a lot of large folios, and thus can trigger the btrfs bug.
-
-- Enable fsverity digest and drop page cache
-
-- Read that file
-
-- Verify there is no "FILE CORRUPTED!" warning
+The error will be outputted to the golden output so that we can catch
+any unexpected success.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-Changelog
-v3:
-- Disable signature verification temporarily for the test
-  Pointed out by Dhruva, as it's a user configurable behavior that if
-  signature is required, reading the file without a signature will lead
-  to an EPERM error.
+ tests/btrfs/359     | 26 ++++++++++++++++++++++++++
+ tests/btrfs/359.out |  2 ++
+ 2 files changed, 28 insertions(+)
+ create mode 100755 tests/btrfs/359
+ create mode 100644 tests/btrfs/359.out
 
-v2:
-- Do not use btrfs specific mount options to limit read bio size
-  Use holes to limit the size of read bios instead, now the test case
-  can be generic other than btrfs specific.
-
-- Add the missing _require_check_dmesg call
----
- tests/generic/807     | 65 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/807.out |  2 ++
- 2 files changed, 67 insertions(+)
- create mode 100755 tests/generic/807
- create mode 100644 tests/generic/807.out
-
-diff --git a/tests/generic/807 b/tests/generic/807
+diff --git a/tests/btrfs/359 b/tests/btrfs/359
 new file mode 100755
-index 00000000..bdd89a08
+index 00000000..46457f57
 --- /dev/null
-+++ b/tests/generic/807
-@@ -0,0 +1,65 @@
++++ b/tests/btrfs/359
+@@ -0,0 +1,26 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
 +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
 +#
-+# FS QA Test 807
++# FS QA Test 359
 +#
-+# Verify that reading a large file with holes won't trigger fsverity warnings
++# Make sure the btrfs control file (/dev/btrfs-control) properly rejects
++# an unsupported ioctl.
 +#
 +. ./common/preamble
-+_begin_fstest auto quick verity
++_begin_fstest auto quick ioctl
 +
-+_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-+	"btrfs: fix the fsverity callback where unexpected range is verified"
++_fixed_by_kernel_commit xxxxxxxxxxxx \
++	"btrfs: return -ENOTTY for unknown ioctls on the control device"
 +
-+. ./common/verity
++_require_test_program btrfs_ioctl
 +
-+# Override the default cleanup function.
-+_cleanup()
-+{
-+	cd /
-+	_restore_fsverity_signatures
-+	rm -f $tmp.*
-+}
-+
-+_require_xfs_io_command "fpunch"
-+_require_check_dmesg
-+_require_scratch_verity
-+_disable_fsverity_signatures
-+
-+filesize=$(( 32 * 1024 * 1024 ))
-+interval=$(( 128 * 1024 ))
-+holesize=$(( 64 * 1024 ))
-+
-+_scratch_mkfs_verity >> $seqres.full
-+_scratch_mount
-+
-+# Create a large enough file so that readahead is triggered, and
-+# large folios are allocated during readahead.
-+_pwrite_byte "0xcd" 0 "$filesize" "$SCRATCH_MNT/foobar" > /dev/null
-+
-+# Create a hole for every $interval bytes. This should limit the read to
-+# $(( $interval - $holesize)), which should be much smaller than the maximum
-+# folio size (2M for x86_64).
-+for (( i = 0; i < $(( $filesize / $interval )); i++ )); do
-+	$XFS_IO_PROG -c "fpunch $(( $i * $interval )) $holesize" \
-+		"$SCRATCH_MNT/foobar" > /dev/null
-+done
-+
-+_fsv_enable "$SCRATCH_MNT/foobar"
-+
-+# Cycle mount to drop page cache
-+_scratch_cycle_mount
-+
-+# Read the file, unpatched btrfs will verify blocks outside the read range and
-+# trigger fs-verity warnings.
-+# But the read itself should still be fine, as the failed part will be retried.
-+cat "$SCRATCH_MNT/foobar" > /dev/null
-+
-+# Check for any kernel warnings from fs-verity on file corruption.
-+if _check_dmesg_for "FILE CORRUPTED!"; then
-+	echo "fs-verity detected corruption"
++path="/dev/btrfs-control"
++if [ ! -c "$path" ]; then
++	_notrun "No btrfs control file at \"$path\""
 +fi
-+echo "Silence is golden"
++
++# This should fail with -ENOTTY error.
++$here/src/btrfs_ioctl get_subvol_info "$path" >> $seqres.full
 +
 +_exit 0
-diff --git a/tests/generic/807.out b/tests/generic/807.out
+diff --git a/tests/btrfs/359.out b/tests/btrfs/359.out
 new file mode 100644
-index 00000000..3752a5f7
+index 00000000..89090e22
 --- /dev/null
-+++ b/tests/generic/807.out
++++ b/tests/btrfs/359.out
 @@ -0,0 +1,2 @@
-+QA output created by 807
-+Silence is golden
++QA output created by 359
++ioctl failed: Inappropriate ioctl for device
 -- 
 2.56.0
 

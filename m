@@ -1,67 +1,66 @@
-Received: from mail-dl1-f48.google.com (mail-dl1-f48.google.com [74.125.82.48])
+Received: from mail-dl1-f49.google.com (mail-dl1-f49.google.com [74.125.82.49])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0A911A682C
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 18:49:47 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.48
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6A57D3E2768
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 19:34:39 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.49
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791744589; cv=none; b=kR9kv8KUE4EzKW2B/3Vs92pNyfpjLbfv+Z9+7Qk/vmPAys35lffNT8uTt2C9qjiPtiC/Eiw1VYwLuNcqDaE9HNSivcjfy0jxNt/IXVqXJ4uwlgyiGFVLlUZjpcUh+vj9Bj9xkb2p6QSAKgX4IQuFvlCmjQZoW/Yq/jEXI6ilSG0=
+	t=1791747282; cv=none; b=jCxdGjXU/4Jbl1o0QK4KwobRHx+J07MPzX+s7wbU1o8EieB9Gh9+NuWlo0Cbol+e/TV5vAQrJW6m9L3r/I7fn25wEen0ER0s+QYA0Kfgf/+Fnc2WpWFUhU1Ik/x9/7WLfDI6uJk+2w2I3bOPiJGukhTrgi+sUgKvH3UR4kRG8GM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791744589; c=relaxed/simple;
-	bh=Lp6+d/IGB88XdPb53ZhjjVQcpkm7KzdJTkf4vwFUUhQ=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=I+i4T5HZt5nk2DwdME8xx4kjc934VV608uLSNCnOTwA+ig7CS8fReExdcMIaELwSJutPW6Lnc7RFjIiDmeNWt3nz+6V50it23mslpGNkH/7aeXJeLOKKTLUc9hM4PWxBwwUcHB+HLMjuQPZ/HACwnUllbdC66KEvOly5ia3j6fo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dJwia5xT; arc=none smtp.client-ip=74.125.82.48
+	s=arc-20240116; t=1791747282; c=relaxed/simple;
+	bh=mSlKojaJ/5BbVVbMlPvqSJumEQy5p12nXdcD/TldjSk=;
+	h=Message-ID:Date:MIME-Version:From:Subject:To:Cc:Content-Type; b=nUk6ehZNkwrL3SQ1Lsbqs9jPUlsOYGzwtF/q5E43NL3yLdLsUREWxLOFTjeMth2tj0zwNKQP5DNDZ/V3c/CK7jM/DXMUvfvmLilzEsQMld20A/luUGtNTJoFYX8n4h1zBReIXYyXrdLHJwgBBKe9Vw+qztlhOOrfVZF5NqfEVnc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=NENhho3U; arc=none smtp.client-ip=74.125.82.49
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dJwia5xT"
-Received: by mail-dl1-f48.google.com with SMTP id a92af1059eb24-15ea896ddc8so1736754c88.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 11:49:47 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="NENhho3U"
+Received: by mail-dl1-f49.google.com with SMTP id a92af1059eb24-16ad92569b5so1106704c88.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 12:34:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1791744587; x=1792349387; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=tKRpzrghFngBRJcUHTjfSey90EYzjLArlerIP3BVno8=;
-        b=dJwia5xTpV7HopvZf79gHbQxpA+hJ7xEZ6baAT0+47MyJ6OtK2ImZGbS/9aNzJpwrA
-         vOMByQkzcRZtxATTJBxipPq65wYKGazhdQKGFnO3NVS10Vhx0BmsiSZtkzfB3tGrQV9o
-         /4DFnWoYsNBHEW3bVzdIjz+BQmzS6QoYrEndZ8SDrOVBDFeWy0ajWEq2MlAD+Ghsw0VH
-         SOKhsnbkD3nZXj7D9o7OyPCqkH9+O+NVzelLcmIuz4xofPcsYfoZZhkGLHZtDUtGqL/t
-         /2azQk/HLFqQy38UuFcxYB5Ray0SZPGRAs4F9YtajVGN11bb+1FH5ctQM6Umg4Sfb6f6
-         00Mw==
+        d=gmail.com; s=20251104; t=1791747278; x=1792352078; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:content-language:cc:to
+         :subject:from:user-agent:mime-version:date:message-id:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=pnD0Hgtv2sGUnb5jt+kZQOEUFtoaln33lp1iRDSYtFo=;
+        b=NENhho3U5lqPM+fYReD1DLaRbAmQbVhah0xAdBo9AucqXg6MsOl37gnfR6B/Tyixmg
+         i3id/edLHCTpVmNCSQgfu2i4sgcS7ctHNfD3X6O+7DVYGu5aH6eENDGtH3cNG/meAVbf
+         ictFhwbl7RqovjQDESW90cNPL500URgchT4B6mHpjMBKdebeLj66aWlXvZXwawXhKKvv
+         ZQBWQ5WBpMOb+slmdnDiuxB4kxrwh2j+OAphJPisCY/zejWxeyxJQ6XqElfG9sGhwHpb
+         eKZ+xMrXlpF+Sq6Zfmdj1QjCFQqdMwNDE0l3gEVnYlXXh1B1GF8ylabp7dQLts8VqOqM
+         7Icw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791744587; x=1792349387;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=tKRpzrghFngBRJcUHTjfSey90EYzjLArlerIP3BVno8=;
-        b=V+JcGnIaAtKzmam8RkeO7tqS2UrAhDo68fS3MIctptF3Ym1m4N5ilxoa49HbTqjeAF
-         W7eNfPXDhJu+VyjCgC0AZTwZZIHVYrvGgZbYhhcMZTdzMVjvOX6q4UnyQDsyaJQdieCF
-         8Ndmsp0m/Na7j+8uYXNOqeT9B/7DOMquIgu0B/3l71kwSmofdCCex7vb3ncT52LBY06O
-         9EGJzPF7GvkD4lpreGs7O+DUxVGzG4nUO+nCAXuyzWZGDz9Tn1qVUuAnl2sweEuG8t9w
-         dOApxjxDVd3Fyd6mL0R3Fc7cR2IXzfHTHwCPn8ga505zgLGeoDBI9O5CFQgrx7tll14O
-         eefQ==
-X-Forwarded-Encrypted: i=1; AKwUvByJFShJyJQ2oNH+65dLEAVQFyVEl7H2WYHAePggHOgI9EzjOzT95troado4iTpLzGeFEj4Tv7YcghDjew==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKgRvOCTlfHAb07GYmYFqMuNfeYRQW8sl73ilnqXGjWyxph8xl/
-	rhPnx7mxDnq8J0wZoei5+zElYmsjHJ7bqcPc0TTN26ECsjb1j+Rz23KdJVgKaBWt
-X-Gm-Gg: AYBFou2nJaRKP5ALsCd3e9Cx9n4LXG6ekcNoCRGQrCOOXHPFiVjon5dkMFc4/VHBsMz
-	19zg++8RNWowZjDdNlm2+mhYwx5wik9Nh8752QS5G0vI4FuUHO0x+nLU72P7isCzKD2PLOexUOK
-	7iOf092CP8kp1LzLtdo05WzlzYC0+10SI1NYeXP/k6VrkeV6ZgX4UJ2LVSGQaQf0pBtDoercipK
-	BN/SDizsriJAKloL0D1yudWNvrItVXsTCfhv4JdeVFVcC+1Soz3WQ5zzG2IjDp7mtrI3hKl63Op
-	s/cQPf1/hB0d96G0EdHiXxhS3dIW40jN6H6lVIyCXn8yvvdQbXs43xAaw1G7Mxxw68jR7U0hvpl
-	3CsDUsAwtVDltR/7wqwxqsws4RbDvZs4BuLWbj7tdO+92NmYqo+ldgM1DlBhBJzaSs8TVjrueHj
-	6vCu7mVs/OV5tzG29aSkx2JUHVlgu/nylDk6kz934PKdNkxgX5M90Ir5kadsTAP8sT1BK6HtwNP
-	37mRPoXUOKBemuS6kvQYWrijrmvk3JWFFzaCe+/ZLyv8aCM
-X-Received: by 2002:a05:7022:3d14:b0:143:7001:7645 with SMTP id a92af1059eb24-16a62600d3emr14165453c88.47.1791744586804;
-        Sun, 11 Oct 2026 11:49:46 -0700 (PDT)
+        d=1e100.net; s=20260707; t=1791747278; x=1792352078;
+        h=content-transfer-encoding:content-type:content-language:cc:to
+         :subject:from:user-agent:mime-version:date:message-id:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=pnD0Hgtv2sGUnb5jt+kZQOEUFtoaln33lp1iRDSYtFo=;
+        b=WVP/I5a/ZunHuRHgxVDrmzzmIXsAhzfjhyOAASZdkg/zNVTZnCOiSKRzVln+MGzHHz
+         N08Q72hq9Xlu4DLQ/7EoFWYFheClU0/s4Oc4EwjwzQejC/4cwcoEKTPivXCfC5jUrVUE
+         cYpAgNES+89aoSLXk9mifWpfbivKr3YhtbjzaOqpUAklKPYDFyo8sbhVsXAumB1KwC71
+         VNhgpRZwf2YdpSsWC205wu4MC5gztLuZcN9U7Lvo6nPzYQLZCmb+1MAv+RbkUZO82Cuk
+         Y2V13xhVcEroe3dmjFa6RgF65NXRnp3DDdb9xPMAphLFIlfFtIJMMFtr0umsgcsgGBfX
+         X0Bw==
+X-Forwarded-Encrypted: i=1; AKwUvBzhsZ8j6b/omrJtRrymXNkcXwyANk8xpuz0d0MbdP00rq47uE5H2oH6NqpwCzU/T5mZg+JwWTr9/uatYQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYK2sTNAeiV1/ghA8c8o1CkmVhpBIana54/+R3mqXUF+NM/SUB4n
+	QGjzDVQnJ1eRZMo8XOyAda+mXe9JWo1D9NuSjV4l7IIbd6mG+wLuspeO
+X-Gm-Gg: AYBFou2/xJqXg5kgN2k4XcDEsvoD+C9l6xGqh+8TLX6FeKudnIvE7S51f7gh7GmdoQb
+	kgXfzh0eCM3jJ6PYUaP+rrVv0fVq2lUNeDGy4UQrd7zTAzVfaXWZICgwC29hpU1oPnN2fLYG6ZE
+	H0YZtyZ1LJ0X7YdEk8ognZ2u4y6r4/lDz8MaKfjyJQ9H3tTBvjvSF24njkt0EYHGAZKAUdeAQM5
+	oVlw8w4RFU69D/Ym/6Ar5vBtNE/sREInng7gTXNnAfchWnGFbhDm0z5L7KDWoegDK95gzWyprW0
+	jeT4eAkEpR6UkRorVi1jLgAZqsLsFpwiHMWnXLFZVkACgE72NAhJGQkP8reBxeKr/eqhwUiHIag
+	GUSUeEgsqMLePC510bI8XwZIA5No4U0Q8AYCNQ/VRwQz8duQDOYMr1smfktN9vSY5D49zNLtqPv
+	UlRMD6qDIozyQ1f4RKcRs6eV6WYYVCKfnEdmLnCoaiwkbzvSnt8A2cWq6IESCIg5+mrMK9KkNoB
+	8hjHKsD4AXrixcakqEIlWgawJdz/ONIcpkjYQ42wtNLG4rJAWCPN93BsZ0=
+X-Received: by 2002:a05:701b:261b:b0:154:dc96:c1d8 with SMTP id a92af1059eb24-16a54ad2602mr14769671c88.2.1791747278258;
+        Sun, 11 Oct 2026 12:34:38 -0700 (PDT)
 Received: from ?IPV6:2406:7400:56:97af:bd42:ace4:1245:4b57? ([2406:7400:56:97af:bd42:ace4:1245:4b57])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-169a5866477sm22605308c88.22.2026.10.11.11.49.44
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-169a442ac67sm37177580c88.18.2026.10.11.12.34.35
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 11 Oct 2026 11:49:46 -0700 (PDT)
-Message-ID: <745a6dae-ff3c-45de-8bba-1e2efd45ca47@gmail.com>
-Date: Mon, 12 Oct 2026 00:19:42 +0530
+        Sun, 11 Oct 2026 12:34:37 -0700 (PDT)
+Message-ID: <51964611-cd9b-48ad-b6ca-45373a96f64a@gmail.com>
+Date: Mon, 12 Oct 2026 01:04:33 +0530
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,145 +68,64 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] fstests: generic: add a test case to check fsverity
- reads
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- fstests@vger.kernel.org
-References: <20261010090422.59743-1-wqu@suse.com>
-Content-Language: en-US
 From: Dhruva G <goledhruva@gmail.com>
-In-Reply-To: <20261010090422.59743-1-wqu@suse.com>
+Subject: [PATCH 0/3] btrfs: add NOCOMPRESS defrag regression coverage
+To: fstests@vger.kernel.org
+Cc: Anand Jain <asj@kernel.org>, Filipe Manana <fdmanana@suse.com>,
+ Zorro Lang <zlang@kernel.org>, linux-btrfs@vger.kernel.org,
+ quwenruo.btrfs@gmx.com
+Content-Language: en-US
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 10-10-2026 14:34, Qu Wenruo wrote:
-> There is a bug report that with the recently enabled large folios
+Add regression coverage for BTRFS_DEFRAG_RANGE_NOCOMPRESS, introduced by
+kernel commit 009b2056cb25 ("btrfs: defrag: add flag to force
+no-compression").
 
-Do you want to perhaps add a link to this bug report? Just for more context,
-no hard requirement as such.
+The series checks bounded conversion and EOF handling, preservation of
+holes and preallocated extents, and inline extent eligibility and short
+EOF tails. FIEMAP assertions inspect every overlapping extent and require
+complete range coverage. File contents, sizes, and extent state are
+checked again after remounting.
 
-> support, fsverity enabled files on btrfs can trigger reproducible
-> warnings about file corruption, but in the end no error is returned to
-> user space.
-> 
-> It turns out to be a bug in the btrfs fsverity integration, where blocks
-> not included in the read range are passed to be verified.
-> 
-> This is a long-standing bug where btrfs fsverity always assumed that one
-> folio contains exactly one fs block, ignoring the fact that btrfs had
-> block size < page size support before fsverity support was added.
-> 
-> Add a new regression test case for it. The workload is pretty simple:
-> 
-> - Create a 32M file
-> 
-> - Punch a 64K hole for every 128K
->   This will limit the read bio size to 64K, which is smaller than
->   a lot of large folios, and thus can trigger the btrfs bug.
-> 
-> - Enable fsverity digest and drop page cache
-> 
-> - Read that file
-> 
-> - Verify there is no "FILE CORRUPTED!" warning
-> 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
-> Changelog
-> v2:
-> - Do not use btrfs specific mount options to limit read bio size
->   Use holes to limit the size of read bios instead, now the test case
->   can be generic other than btrfs specific.
-> 
-> - Add the missing _require_check_dmesg call
-> 
-> v1:
-> https://lore.kernel.org/linux-btrfs/20261010032508.36935-1-wqu@suse.com/
-> ---
->  tests/generic/807     | 56 +++++++++++++++++++++++++++++++++++++++++++
->  tests/generic/807.out |  2 ++
->  2 files changed, 58 insertions(+)
->  create mode 100755 tests/generic/807
->  create mode 100644 tests/generic/807.out
-> 
-> diff --git a/tests/generic/807 b/tests/generic/807
-> new file mode 100755
-> index 00000000..24e22e8c
-> --- /dev/null
-> +++ b/tests/generic/807
-> @@ -0,0 +1,56 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 807
-> +#
-> +# Verify that reading a large file with holes won't trigger fsverity warnings
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick verity
-> +
-> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
-> +	"btrfs: fix the fsverity callback where unexpected range is verified"
-> +
-> +. ./common/verity
-> +
-> +_require_xfs_io_command "fpunch"
-> +_require_check_dmesg
-> +_require_scratch_verity
-> +
-> +filesize=$(( 32 * 1024 * 1024 ))
-> +interval=$(( 128 * 1024 ))
-> +holesize=$(( 64 * 1024 ))
-> +
-> +_scratch_mkfs_verity >> $seqres.full
-> +_scratch_mount
-> +
-> +# Create a large enough file so that readahead is triggered, and
-> +# large folios are allocated during readahead.
-> +_pwrite_byte "0xcd" 0 "$filesize" "$SCRATCH_MNT/foobar" > /dev/null
-> +
-> +# Create a hole for every $interval bytes. This should limit the read to
-> +# $(( $interval - $holesize)), which should be much smaller than the maximum
-> +# folio size (2M for x86_64).
-> +for (( i = 0; i < $(( $filesize / $interval )); i++ )); do
-> +	$XFS_IO_PROG -c "fpunch $(( $i * $interval )) $holesize" \
-> +		"$SCRATCH_MNT/foobar" > /dev/null
-> +done
-> +
-> +_fsv_enable "$SCRATCH_MNT/foobar"
+Patch 1 adds the shared helpers and a small raw-ioctl program used for
+feature probing and errno checks. Patches 2 and 3 add sparse-layout and
+inline/tail coverage. The tests require 4K sectors and btrfs-progs with
+--nocomp support; unsupported configurations skip.
 
-Could this disable signature enforcement with _disable_fsverity_signatures
-and restore it from _cleanup(), as generic/572 and generic/788 do?
+Tested on an x86_64 QEMU/KVM guest with:
 
-With fs.verity.require_signatures=1, _require_scratch_verity() succeeds:
-_fsv_can_enable() temporarily disables signature enforcement and then
-restores it. The later _fsv_enable() therefore fails with EPERM because
-foobar is unsigned. I reproduced the output mismatch in the local Btrfs
-VM; the same test passed with require_signatures=0
+  Linux 7.3.0-rc3-next-20260918-btrfs-lab
+  btrfs-progs v7.1
+  4K Btrfs scratch sectors
 
-> +
-> +# Cycle mount to drop page cache
-> +_scratch_cycle_mount
-> +
-> +# Read the file, unpatched btrfs will verify blocks outside the read range and
-> +# trigger fs-verity warnings.
-> +# But the read itself should still be fine, as the failed part will be retried.
-> +cat "$SCRATCH_MNT/foobar" > /dev/null
-> +
-> +# Check for any kernel warnings from fs-verity on file corruption.
-> +if _check_dmesg_for "FILE CORRUPTED!"; then
-> +	echo "fs-verity detected corruption"
-> +fi
-> +echo "Silence is golden"
-> +
-> +_exit 0
-> diff --git a/tests/generic/807.out b/tests/generic/807.out
-> new file mode 100644
-> index 00000000..3752a5f7
-> --- /dev/null
-> +++ b/tests/generic/807.out
-> @@ -0,0 +1,2 @@
-> +QA output created by 807
-> +Silence is golden
 
+Dhruva Gole (3):
+  btrfs: exercise NOCOMPRESS range and EOF handling
+  btrfs: check NOCOMPRESS preserves holes and preallocation
+  btrfs: cover NOCOMPRESS inline eligibility and short tails
+
+ .gitignore                |   1 +
+ common/btrfs_nocomp       | 134 ++++++++++++++++++++++++++++++++++++++
+ src/Makefile              |   2 +-
+ src/btrfs_defrag_nocomp.c |  63 ++++++++++++++++++
+ tests/btrfs/355           |  80 +++++++++++++++++++++++
+ tests/btrfs/355.out       |   2 +
+ tests/btrfs/356           |  71 ++++++++++++++++++++
+ tests/btrfs/356.out       |   2 +
+ tests/btrfs/357           |  59 +++++++++++++++++
+ tests/btrfs/357.out       |   2 +
+ 10 files changed, 415 insertions(+), 1 deletion(-)
+ create mode 100644 common/btrfs_nocomp
+ create mode 100644 src/btrfs_defrag_nocomp.c
+ create mode 100755 tests/btrfs/355
+ create mode 100644 tests/btrfs/355.out
+ create mode 100755 tests/btrfs/356
+ create mode 100644 tests/btrfs/356.out
+ create mode 100755 tests/btrfs/357
+ create mode 100644 tests/btrfs/357.out
+
+
+base-commit: 56c410ad0f69da5b13c5807bc47b4876dcfa02b2
+-- 
+2.43.0

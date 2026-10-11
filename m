@@ -1,201 +1,137 @@
-Received: from mail-wm1-f50.google.com (mail-wm1-f50.google.com [209.85.128.50])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D4392FD69A
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 05:53:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.50
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B20E81F09AD
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:22:26 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791697995; cv=none; b=U1IxCzMQb36TRZH7UUkzThdINtC+kKs+b7U/8fUBRIYO4tOZRokf3LH8VOhGcOmtwN+WxT54DR6lhIsDKN3rubQ4UNOoBVPVQvV3SiR8FtwoQHuAJKHVF4aS+poBc3qEO4pe5c4aSV80uwNadcqcD9RIa842JyKDW9msZAZFHO0=
+	t=1791706951; cv=none; b=UEbKyaEKboW4sss6EyRzpMsB9yq5P2eKFpUCn14tGets7FZC/ZiVFK7JDIAzHX7wYquqJR9BGbfUkE6b12HOatWEuU+EjYG6BHfIypD18UFwKi/Aums82UmDehVhTOxC1qsB8wUR+JHia4Ih0yDe1YxxeI9lcRVdSEoKs/GBt3g=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791697995; c=relaxed/simple;
-	bh=Q2pNT5QI49/eCQ+6LLxDbJY+NZld/P+BgMZAKwL3VzA=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=sD+clKeSmDSazXvAkDLVRAp4CnzF7cY52nAplGZoLHTlIjG7EdewZ9mPK+K8f/gJgFeDtYcVrLgcObiigsTOXQVwX28fLYt5slobiOAvcLOXhzkGOLNtds/Jq4weO5srpErKxoixYt8y2OTip1ou4w2Zf2vpbfuZyRcbYVrJJwg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ClvGAhPA; arc=none smtp.client-ip=209.85.128.50
+	s=arc-20240116; t=1791706951; c=relaxed/simple;
+	bh=TnxkzVdE1pUTPPSxzoq2RwC//Cns+YpK4r7L+IveyS0=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=VBi6kfBZmUEOUGOlPAGHRQMUTtAXtTkDXzNSuPHRmFC5ClErlh9owKrF2hsLwfyhgkCm+3bDXR2WpNLZjYgcdUUWQDJqDOAmZU6S8QlixDX36IChApo3UCUT9Cqogayl26bGOlkUe19OQwpD0ot14rA0yLEyFN2hyxoBrBMz1Ac=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dtcIjrAE; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=dtcIjrAE; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ClvGAhPA"
-Received: by mail-wm1-f50.google.com with SMTP id 5b1f17b1804b1-4a018792ab3so7853805e9.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2026 22:53:13 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791697991; x=1792302791; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=C4KwlwLxNiXywZ3YcnnEn9jaLW3rrEnQf5taDjKIMYs=;
-        b=ClvGAhPAfssUR/xlnZnbnwRB6ugcACk7FOwS1T94ZblOFyXB5UJ6qMsPoa08Z+AVYR
-         V5n+MEhTdYgBVrBytqlS1f3cXIqEU43jU56GDMaxw8AzN2Bn9iCT5iVgjxiihu6gYWfw
-         sVhxsvr5WrvEWaVr01paiR7SdzYJuNqsgMYS5v+joNzLCda+LNTBgJ9NL4UgQs7ZfmkC
-         oZVop6lxSR3PfhKpzu5+eN6wC8VWU2Gbsd1rYFACbti26VHImHsbIVr62Ketakdy4H6f
-         nidGFeLQWkupaudGQudawdupXbfWY2T+e+XB7i52n3qA+2ilSvEiua7YT/+/RZt6OqAP
-         ttAw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791697991; x=1792302791;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=C4KwlwLxNiXywZ3YcnnEn9jaLW3rrEnQf5taDjKIMYs=;
-        b=fBRDvlzCvtec+pT8JmnFMY4TTfmcjta9UEBVtkXYmY65hasJ2VmQgC/rtZFCXrhsq0
-         ZuFUwLPZrrrLi0GGGzjjz6cXCa9b+Ualu5YLApMIli+eSiuLbhl/RzOzk7eiNSJcGF4p
-         cOmCgPMY+BnWYDanpEJV8a7e4qxX8HoTwLlqBvUr4YCYWMQDE8kC6XD45GD2U39D5Fs9
-         Tgl9f02Ej+F5H4N4RHhm1Ipi4qtoJzUJiopXueMnmZBf/MHD+7lKu2f3IaDYXbquiAqY
-         VkLaTmqZ8PZF3L3Vm8tfIf0xHG9oTty6oTBO0bULmgjPGKe1EGT8y3zXKAGAxOfwctAJ
-         9vKw==
-X-Forwarded-Encrypted: i=1; AKwUvByOzWgxbP3QHoJSWhoYu+HsYbMQWjlnN+bICNK+MgE1T5QeoVWjf3CsY1QYYmene4dAU3kIP8nnx+oURQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYK/H58O+P0H+do+LX18kQ2E1gmzuZBnAiKJ6gErUmuFaz7DgqUC
-	npgc7rlJIYO+KVuhRTKCUTbcDiRdQHHhX4I7tkMt82ZVFGKMG7nL8lE8+wdqV8ZQjeg=
-X-Gm-Gg: AYBFou1fvmzBUZAA2iJzH/ycNwhwVQ10xiiJNkxUjDFXVAkxFL2ovsPP42jYMJls1Ow
-	wcA5Ez0PgwnOe8V/ZUlc+CGG0YzBqlp71x3F8qDky/Ie2GnADPw3kJqrb4TPXBwEMsywjSXp57G
-	+et1Tmq4OsWJq+IDESAKS8lHa/0rRhPaf3Kul6+vbE2SzU7r/XRRcX1ESDOKKHtXXfc9reJKdez
-	A2TjFuqpof56syMuVB8pmWWcGZTefsVqPaBtov1u7PxEMef/Zm6ZLi5MnyuWA7rYUXUknDV65tY
-	95cBR40F5yYy6uiMbSXZSLrtyxaoWFM+tY9vGl2PFNni0N/AzjwqRZAJWNoGciz3Waap7KXnCaI
-	mNcuZxgp3NeVFHe4cZiL7UKXhA/d6zRk3z0drpom7kxSYesAf8Cp6Z61ByvQHLnLN7tmOMY9REi
-	ktoKeiCeL2hiKwM+LvMFa9YfthNgqs19WMxhkJ/Py22rstZLvMv/oR7YhpIG1ygCU=
-X-Received: by 2002:a05:600c:3e83:b0:4a1:6d35:779a with SMTP id 5b1f17b1804b1-4a18e446880mr95813325e9.3.1791697991391;
-        Sat, 10 Oct 2026 22:53:11 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2e8422e1c89sm28468345ad.75.2026.10.10.22.53.06
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 10 Oct 2026 22:53:10 -0700 (PDT)
-Message-ID: <841e395e-f85d-4359-b680-1eee502ec2f0@suse.com>
-Date: Sun, 11 Oct 2026 16:23:03 +1030
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dtcIjrAE";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="dtcIjrAE"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6FB0221E3D
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:22:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1791706939; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=JZUWoLMqMVGt3NKgMLb4Xz67nfm5ymRjH6F12/ML8l8=;
+	b=dtcIjrAE9CkHL3RGEGfvGHsvWMU+8X3yG00lE4R4VriC7z6NWI1XVBlDgnLp9jtMp7ejmU
+	wpjwUzuW0uEAzXWWBBbUkb4ndd6gHZz24DzAkCPEJuBu9eHn7nnn3CndPaoUPge07wZd4x
+	B8jjUWgiDXf+TQHm/g2/aQ3WnRCmxpQ=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1791706939; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=JZUWoLMqMVGt3NKgMLb4Xz67nfm5ymRjH6F12/ML8l8=;
+	b=dtcIjrAE9CkHL3RGEGfvGHsvWMU+8X3yG00lE4R4VriC7z6NWI1XVBlDgnLp9jtMp7ejmU
+	wpjwUzuW0uEAzXWWBBbUkb4ndd6gHZz24DzAkCPEJuBu9eHn7nnn3CndPaoUPge07wZd4x
+	B8jjUWgiDXf+TQHm/g2/aQ3WnRCmxpQ=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2153F13408
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:22:17 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id JViNFDlHy2oHdgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:22:17 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v5 0/2] btrfs: fix a UAF where btrfs_root::dirty_list is freed but still referred
+Date: Sun, 11 Oct 2026 18:51:56 +1030
+Message-ID: <cover.1791706855.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix chattr failing on nodatasum files that have
- the compress flag
-To: Hengyu Liang <hengyul@cs.unc.edu>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, stable@vger.kernel.org
-References: <41987a33-f2dd-4ffe-b35f-d669d36dbcfe@suse.com>
- <20261011034731.1054465-1-hengyul@cs.unc.edu>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20261011034731.1054465-1-hengyul@cs.unc.edu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+
+[CHANGELOG]
+v5:
+- Drop the first patch
+  As we no longer put the list_del_init() call inside
+  btrfs_put_root(), the existing code is already safe without the need
+  for extra spinlock, as the existing callers are already holding a
+  trans handle, thus won't race with transaction cleanup/committing.
+
+- Also drop the spinlock from the 2nd patch
+  As we are already safe without that lock.
+
+- Update the commit message of the last commit
+  As we no long hold trans_lock for every btrfs_root::dirty_list caller.
+
+v4:
+- Also cleanup qgroup swapped blocks and dirty_log_pages
+  Which are only released during switch_commit_roots().
+
+v3:
+- Use Yalagada's v2 fix as the final UAF fix
+  The delayed list_del_init() call inside btrfs_put_root() is not
+  safe as another racing ioctl can grab the quota root, extending
+  its lifespan.
+
+v2:
+- Add extra patches to address Sashiko's comment
+  * Make all root->dirty_list users to hold trans_lock
+  * Release root->dirty_list from cur_trans->switch_commits during
+    transaction cleanup
+
+The first patch is an existing bug exposed by Sashiko, which also
+affects the last UAF fix.
+
+The last one is the final UAF fix for the bug reported by syzbot.
 
 
+Qu Wenruo (1):
+  btrfs: prevent use-after-free in btrfs_transaction::switch_commits
 
-在 2026/10/11 14:17, Hengyu Liang 写道:
-> On 2026/10/11 07:47, Qu Wenruo wrote:
->> This is very LLM-like, and very LLM's objective-oriented behavior.
->> Disclose it first.
-> 
-> Yes, and sorry for not saying so in the patch. I found this while
-> comparing the behaviour of different kernel versions. I used an LLM to
-> analyse the difference, write the patch and the changelog and run the
-> tests in VMs.
-> 
->> Explain the reason why it fails.
-> 
-> chattr reads the flags and writes the whole set back, so FS_COMPR_FL is
-> in the new flags. btrfs_fileattr_set() then calls btrfs_set_prop() for
-> btrfs.compression, and since cf1afec09e9f that runs
-> prop_compression_validate(), which returns -EINVAL because
-> btrfs_inode_can_compress() is false for a NODATASUM inode.
-> 
->> So when setting compress in the first place, the NODATASUM/NODATACOW
->> flag should be cleared.
-> 
-> OK, I will do it this way: a new inode that inherits the compress flag
-> does not get NODATASUM/NODATACOW from the mount options, and chattr +c
-> on an empty file clears NODATASUM.
-> 
-> This differs from the documentation in one place. btrfs(5) says that
-> all files created under nodatasum have no checksums and that
-> compression is disabled when nodatasum is enabled.
+Yalagada Pavan Kumar (1):
+  btrfs: fix use-after-free on quota enable allocation failure
 
-Prop has higher priority than mount option, and defrag has even higher 
-priority than prop.
-That's the long existing behavior.
+ fs/btrfs/disk-io.c | 10 ++++++++++
+ fs/btrfs/qgroup.c  |  7 +++++++
+ 2 files changed, 17 insertions(+)
 
-> With this change a
-> file created in a +c directory on a nodatasum mount has checksums and
-> is compressed. Is that what you intend?
-> 
-> In chattr there are two cases where I would not clear the flag:
-> 
-> - The file has NODATASUM and already has data. The existing extents
->    have no checksums, so clearing NODATASUM would make them unreadable.
->    chattr +c would return -EINVAL here, the same as setting the
->    btrfs.compression property does since commit 0e852ab8974c ("btrfs:
->    do not allow compression on nodatacow files").
-
-That's expected. Non-empty files can not change their 
-NODATASUM/NODATACOW flags.
-
-Thus in that case, adding compression to a nodatasum/nodatacow inode 
-should fail.
-
-> 
-> - The file has +C. check_fsflags() already rejects chattr +c on it
->    with -EINVAL and I would keep that.
-> 
-> One more question before v2. Files with both flags and data can already
-> exist on disk,
-
-In that case NODATASUM/NODATACOW overrides the COMPRESS inode flags, and 
-no compressed extent will be generated.
-
-That's a much safer default behavior.
-
-If we go the other way, we will trigger a log problems like odd csum items.
-
-Although setting COMPRESS flag on NODATASUM/NODATACOW is a much bigger 
-change, it should be addressed in a dedicated series, with a lot of 
-extra corner cases to consider.
-
-> and chattr +A on them fails since 7.2. Is it OK to leave
-> the compress flag and the property alone on these files when only other
-> flags change?
-
-Yes, that's why unlike other properties, compression has both 
-FS_NOCOMP_FL and FS_COMPR_FL.
-
-If neither FS_NOCOMP_FL nor FS_COMPR_FL is set, COMPRESS flag should not 
-be touched.
-
-Obviously the code just before update_flags: label is not properly 
-following that behavior.
-
-If your objective is only to not return error, then that's what you 
-should touch, skipping the btrfs_set_prop() completely when neither 
-FS_NOCOMP_FL nor FS_COMPR_FL is set.
-
-> 
-> Thanks,
-> Hengyu
+-- 
+2.56.0
 

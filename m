@@ -1,69 +1,74 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-qk1-f177.google.com (mail-qk1-f177.google.com [209.85.222.177])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5FBE370AFC
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:22:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C2E1831D362
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 15:58:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.177
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791706957; cv=none; b=lLVHiEZrFKK1ZMiLbi359/GMixXaKSZgcs9bxMmY6aaWFstHtXf3CYmZk5xxLPayF2tRg/g/uSSqaupsZJoweX9jVlX4Roa9l/SGiCX7OhV8BQOTZrtfsHDlburK5BakvOh7jX1kmvhEMA74RCiFW6uGxUTNY5bZHUhExJOxP6w=
+	t=1791734309; cv=none; b=QaBSwAYMs+r7aNjzFkfb0g1xJbaXYKClWtYhsacQIXpkCsNZrMh222MORa1MP8O4uI0jWK3vUs89jJzL3lJpN5sQ9ktgi0+kjY5WHY3E+1y3i2fRPPaGZY9N7Ru3aNvCwOk1pjnzfBjBXPs9X4p8ohe0pGh8wGU9FWt4Eekd+Vo=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791706957; c=relaxed/simple;
-	bh=cbcHrS7Hr8G5coMB/ruBPPTE6SydfTLZ+cZHKfYlBAk=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=douMm6xdAmZ/YA1bHIEuOwl3R65qhnw/36YxbDsLrqV11XhX47R4KNQ004RuwiY53bywqKY2n5gvZxCpIRz3WWac1/5mmTA+ATRm3/0xa+MU2BG6wuVLVgR2QFmAXTOBpSX/4cNr8vrdkAbHggN/g8gimQH4skdzfDrORT1RK9M=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WXagfGiY; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WXagfGiY; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1791734309; c=relaxed/simple;
+	bh=IvIXragyDbXsVrZjUB1QpSAn+NSlJROmmj4LKC38QJU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=csZc2T/w3eTJT5RZsymiXlY6PQibyAePXB0exavguxuKDGQWnOFqrMpFj2rJ9qvD7IqLg2yEUr2VmXr5hautzH4RNp63JiQPWv43qIcjxyYflVyZMTVfEv3Xqb/scdjUnvnZT8JCFXVff78Oxl1zgUt0a2vnxOH1qNzu2Dj7Byc=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu; spf=pass smtp.mailfrom=cs.unc.edu; dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b=QmR8G/g2; arc=none smtp.client-ip=209.85.222.177
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WXagfGiY";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WXagfGiY"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 95B1D1F750;
-	Sun, 11 Oct 2026 08:22:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791706945; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8N9dFcj3nb1YvDNjMsU8C22/Vzn25YzDatu4tsp3Gtw=;
-	b=WXagfGiYWoZsjsPsA9dppL51vKhNxLOuI/5iXVipnz4QcdjcTkOojSYXejiZZSFpCr9k9+
-	O9sl+WZoZJ5JTPDGgCsng5e/+KfYeAwwhwrADz04SFvzjx34d4QpInGapgFEjE6Vm3PoUP
-	z8ZjnHb1qjNTmV3MyBmnrupzx230/4M=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=WXagfGiY
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1791706945; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=8N9dFcj3nb1YvDNjMsU8C22/Vzn25YzDatu4tsp3Gtw=;
-	b=WXagfGiYWoZsjsPsA9dppL51vKhNxLOuI/5iXVipnz4QcdjcTkOojSYXejiZZSFpCr9k9+
-	O9sl+WZoZJ5JTPDGgCsng5e/+KfYeAwwhwrADz04SFvzjx34d4QpInGapgFEjE6Vm3PoUP
-	z8ZjnHb1qjNTmV3MyBmnrupzx230/4M=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 20C0E13408;
-	Sun, 11 Oct 2026 08:22:22 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id JViNFDlHy2oHdgAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>); Sun, 11 Oct 2026 08:22:22 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>,
-	syzbot+947286c775f432b073a8@syzkaller.appspotmail.com,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH v5 2/2] btrfs: fix use-after-free on quota enable allocation failure
-Date: Sun, 11 Oct 2026 18:51:58 +1030
-Message-ID: <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1791706855.git.wqu@suse.com>
-References: <cover.1791706855.git.wqu@suse.com>
+	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b="QmR8G/g2"
+Received: by mail-qk1-f177.google.com with SMTP id af79cd13be357-93d92abf38dso114707385a.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:58:27 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=cs.unc.edu; s=google; t=1791734306; x=1792339106; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=ossy4ZlqAnnaACaITPaVVTxzs5zkLFNVTZN6qPcgS+c=;
+        b=QmR8G/g20zJzKEgVvQnPGkK8JAEEBp3Px0hdefHXYLj1iDgR5q/Y0IOSRm7ZrqiL9g
+         JF+U2kpsJ7My/xHNF7QGC3PN3aPRHP/77b4KMW1vhU2Q/zuOUJ5ZWpg4v2liVg9R7V+b
+         +aA5CM+7jV0ViVup3ryqUKbYw942PjWy++MbDde4axbCg7NUV2L8ancUD5dWXc6wxMIL
+         VXbwsAA+o0xCxIk39O/R0IUWA7SW3hX6uLv4oW22PgbEfpBpxudaPsq41k5gt3C4LCte
+         nmNetlZuJhpDMwJGqbJHuFhpcIf63hyHfZrAZR1dsPSlHwR6RKffnMqIu/6D9dx7MHUf
+         ZQXQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791734306; x=1792339106;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=ossy4ZlqAnnaACaITPaVVTxzs5zkLFNVTZN6qPcgS+c=;
+        b=Mhu8FRs5iyfTUx9b7RXzGuFwtgqz8xVk03nkvzdDmDdKsPNhalb+pHE8NluQnX8JdY
+         qlD636AYewOryP2gbx+6h07K55Al/S1vLT1x5etwTaRZKJ6EuD8lUKKgwB2yy/3RrSCz
+         BobxbsGgzmJ+Grn0/qXY8AmSF6GrWXzQu39AEXCTlRTrVtpeFKdaucfryJmEO4Ose9os
+         ps+eTxSaKgK0DFqlYzzaR1j7rnjk5kkHKo9MuQXIxQcmcJTDylmDHJRG7+vmHMbx8JGS
+         rDLkM4QLLNUj81Dto7ER1A7iogztPesRdYywjrsuB5SZ4AXP4ffOQGvL8Sct8sjDfn+9
+         XiYw==
+X-Forwarded-Encrypted: i=1; AKwUvBwLMUxeATeALyPE8CGiWQqxzGWFOzXZj2RRHXp1XEWdQd9IggGs/CKRspUShZA0Bt59ri5rQm7fQcggRg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIMdUzpJEVLJJQ4Blo1bDlQLs3xGDrWLjWj8b0oLCDtrYBJEMbv
+	MuG7FY5x8VXPbEPO9XXplIGcbEbM0NSaVRg8R0wapFth/0g0wbJhn9YaVY7jt763Uw==
+X-Gm-Gg: AYBFou1nmoyb7bO4aDAAeVUFN18bUG2SYYLEOXKM5/ZrC1bH8/Ig+HclabCsK7JZM6H
+	hBBuwBMxqDa86S3O5G24J1iBHjmnR5jSeyFIGw/EK+uEHQdor0fn60FvTPqOYmHLEyhJVEdYyPe
+	F0qTWAvhJozNq8uAHjH77/jWV+TRredOj+HMkHXcDvXVNigeqjFgjopgUhFcPPTnLcS7V9FTeSx
+	7v1/lkYb2GDLGcdJ8JtVbSBxmfDz6vNqyVftVXOYAoln1Z4NHpQxPKDD5Ex5sHpn7+GOQSETPpr
+	60S4ZlG5qQuaPjVh1XJRvs37wjCr4lVNLQnmSJgaXI+eqo2qbKPktkt4pv/pGZa+jO4hL5Rscjn
+	yufX6Ni4cxyneT7xueTxPqQ8X+sOS0vS+3JNwrmZ8/Jft2bLT2IlkkIkvqZLeFtEpQz5cqX99N2
+	tAifNH1V2VkEIuIQMUAlTT7xpqEY1HOiLt+queRnD2MVcqlXidU7QQV7B6Pn4J5CcgxSnx3nAR6
+	u8CONbnblJqgtxOCHMwsXwnHjhkKMH7
+X-Received: by 2002:a05:620a:2681:b0:93b:d79b:9a5c with SMTP id af79cd13be357-93ebd28bb9emr1226124585a.61.1791734306512;
+        Sun, 11 Oct 2026 08:58:26 -0700 (PDT)
+Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-93eb984889fsm666517185a.13.2026.10.11.08.58.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 11 Oct 2026 08:58:26 -0700 (PDT)
+From: Hengyu Liang <hengyul@cs.unc.edu>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Filipe Manana <fdmanana@suse.com>,
+	Qu Wenruo <wqu@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	stable@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix chattr failing on nodatasum files that have the compress flag
+Date: Sun, 11 Oct 2026 11:58:15 -0400
+Message-ID: <20261011155815.1563812-1-hengyul@cs.unc.edu>
+X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -71,197 +76,87 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Spam-Score: -1.51
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-1.51 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_DN_SOME(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	FREEMAIL_CC(0.00)[gmail.com,syzkaller.appspotmail.com,bur.io];
-	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TAGGED_RCPT(0.00)[947286c775f432b073a8];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCPT_COUNT_THREE(0.00)[4];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com]
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 95B1D1F750
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 
-From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+Commit cf1afec09e9f ("btrfs: validate properties before setting them")
+made btrfs_set_prop() validate a property before setting it. For the
+compression property, the validation fails with -EINVAL when the inode
+has NODATASUM.
 
-[BUG]
-There is a syzbot report that a use-after-free bug is triggered after a
-failed btrfs_quota_enable():
+However, chattr writes back all the flags it read from the file, and
+btrfs_fileattr_set() sets the compression property whenever the new
+flags include FS_COMPR_FL, even when the compression flags do not
+change. A file created on a filesystem mounted with nodatasum has
+NODATASUM and still inherits the compress flag from its directory. As
+of now, chattr fails on such a file when it changes any other flag.
 
- loop0: detected capacity change from 32768 to 0
- ==================================================================
- BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
- Read of size 8 at addr ffff888040e0a528 by task syz.0.0/5324
+The issue can be reproduced with:
 
- CPU: 0 UID: 0 PID: 5324 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
- Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
- Call Trace:
-  <TASK>
-  dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
-  print_address_description+0x55/0x1e0 mm/kasan/report.c:378
-  print_report+0x58/0x70 mm/kasan/report.c:482
-  kasan_report+0x117/0x150 mm/kasan/report.c:595
-  __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
-  __list_add_valid include/linux/list.h:104 [inline]
-  __list_add include/linux/list.h:169 [inline]
-  list_add include/linux/list.h:192 [inline]
-  list_move include/linux/list.h:345 [inline]
-  add_root_to_dirty_list+0x38b/0x470 fs/btrfs/ctree.c:232
-  btrfs_force_cow_block+0xf09/0x1bf0 fs/btrfs/ctree.c:553
-  btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
-  btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
-  btrfs_search_prev_slot fs/btrfs/free-space-tree.c:134 [inline]
-  remove_free_space_extent fs/btrfs/free-space-tree.c:732 [inline]
-  __btrfs_remove_from_free_space_tree fs/btrfs/free-space-tree.c:837 [inline]
-  btrfs_remove_from_free_space_tree+0x4d6/0xda0 fs/btrfs/free-space-tree.c:866
-  alloc_reserved_extent+0x4a/0x2b0 fs/btrfs/extent-tree.c:4976
-  alloc_reserved_tree_block fs/btrfs/extent-tree.c:5155 [inline]
-  run_delayed_tree_ref fs/btrfs/extent-tree.c:1815 [inline]
-  run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
-  btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
-  __btrfs_run_delayed_refs+0x18b5/0x43b0 fs/btrfs/extent-tree.c:2134
-  btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
-  btrfs_commit_transaction+0x28a/0x3170 fs/btrfs/transaction.c:2267
-  sync_filesystem+0x1d2/0x240 fs/sync.c:66
-  btrfs_reconfigure+0x2dc/0x2100 fs/btrfs/super.c:1511
-  reconfigure_super+0x232/0x8f0 fs/super.c:1128
-  do_remount fs/namespace.c:3410 [inline]
-  path_mount+0xd4e/0x1050 fs/namespace.c:4160
-  do_mount fs/namespace.c:4181 [inline]
-  __do_sys_mount fs/namespace.c:4397 [inline]
-  __se_sys_mount+0x31d/0x420 fs/namespace.c:4374
-  do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
-  do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
-  entry_SYSCALL_64_after_hwframe+0x77/0x7f
- RIP: 0033:0x7f9c8dd9f3ca
-  </TASK>
+    mkfs.btrfs -f /dev/sdb
+    mount -o nodatasum /dev/sdb /mnt
+    mkdir /mnt/dir
+    chattr +c /mnt/dir
+    touch /mnt/dir/file
+    chattr +A /mnt/dir/file
 
- Allocated by task 5323:
-  kasan_save_stack mm/kasan/common.c:57 [inline]
-  kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
-  poison_kmalloc_redzone mm/kasan/common.c:409 [inline]
-  __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:426
-  kasan_kmalloc include/linux/kasan.h:263 [inline]
-  __kmalloc_cache_noprof+0x321/0x600 mm/slub.c:5563
-  _kmalloc_noprof include/linux/slab.h:991 [inline]
-  _kzalloc_noprof include/linux/slab.h:1312 [inline]
-  btrfs_alloc_root+0x75/0x840 fs/btrfs/disk-io.c:638
-  btrfs_create_tree+0xa8/0x5c0 fs/btrfs/disk-io.c:832
-  btrfs_quota_enable+0x3d6/0x1e20 fs/btrfs/qgroup.c:1074
-  btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
-  vfs_ioctl fs/ioctl.c:51 [inline]
-  __do_sys_ioctl fs/ioctl.c:597 [inline]
-  __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
-  do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
-  do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
-  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+Before commit cf1afec09e9f ("btrfs: validate properties before setting
+them"), the last command succeeds.
 
- Freed by task 5323:
-  kasan_save_stack mm/kasan/common.c:57 [inline]
-  kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
-  kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:584
-  poison_slab_object mm/kasan/common.c:264 [inline]
-  __kasan_slab_free+0x5c/0x80 mm/kasan/common.c:296
-  kasan_slab_free include/linux/kasan.h:235 [inline]
-  slab_free_hook mm/slub.c:2748 [inline]
-  slab_free mm/slub.c:6508 [inline]
-  kfree+0x1c5/0x650 mm/slub.c:6801
-  btrfs_quota_enable+0x1208/0x1e20 fs/btrfs/qgroup.c:1292
-  btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
-  vfs_ioctl fs/ioctl.c:51 [inline]
-  __do_sys_ioctl fs/ioctl.c:597 [inline]
-  __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
-  do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
-  do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
-  entry_SYSCALL_64_after_hwframe+0x77/0x7f
+After that commit, it fails with EINVAL.
 
-[CAUSE]
-During btrfs_quota_enable(), a temporary quota_root is created, then
-qgroup items are created for each subvolume and inserted into that root.
+This patch will make btrfs_fileattr_set() leave the compression flags
+and the compression property alone when the call changes neither
+FS_COMPR_FL nor FS_NOCOMP_FL.
 
-If there are enough subvolumes, the level of quota_root will be bumped,
-and add_root_to_dirty_list() will be called, adding
-quota_root->dirty_list into fs_info->dirty_cowonly_roots.
-
-But if a problem is hit during btrfs_quota_enable() later, that
-quota_root will be released through btrfs_put_root(), causing the whole
-quota_root structure to be released, while leaving
-fs_info->dirty_cowonly_roots still pointing to the released
-quota_root->dirty_list.
-
-Later access through fs_info->dirty_cowonly_roots will trigger a
-use-after-free bug.
-
-[FIX]
-We can just call list_del_init(&root->dirty_list) when
-btrfs_quota_enable() failed.
-
-Also to follow the existing error handling behavior, abort the
-transaction when the memory preallocation failed.
-
-Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/linux-btrfs/6ac5a5e1.9ad129c8.3ce5b3.0010.GAE@google.com/
-Closes: https://syzkaller.appspot.com/bug?extid=947286c775f432b073a8
-Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-[ Change the commit message to include a proper analysis. ]
-Reviewed-by: Boris Burkov <boris@bur.io>
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: cf1afec09e9f ("btrfs: validate properties before setting them")
+Cc: stable@vger.kernel.org # 7.2+
+Suggested-by: Qu Wenruo <wqu@suse.com>
+Assisted-by: LLM
+Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
 ---
- fs/btrfs/qgroup.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+Changelog
+v2:
+- Do not test whether the inode can be compressed. Leave the compression
+  flags and the property alone when the call does not change them, as
+  suggested by Qu Wenruo. Setting the compress flag on a NODATASUM inode
+  still fails with -EINVAL.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index cf8dfd5c692b..a0651fbfe778 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
- 	prealloc = kzalloc_obj(*prealloc, GFP_NOFS);
- 	if (!prealloc) {
- 		ret = -ENOMEM;
-+		btrfs_abort_transaction(trans, ret);
- 		goto out;
+- In the failing call FS_COMPR_FL is set, because chattr writes back the
+  flags it read. A test for "neither FS_NOCOMP_FL nor FS_COMPR_FL is
+  set" does not catch it and would stop chattr -c from removing the
+  flag, so the check compares the old and the new flags.
+
+- Explain why the call fails.
+
+v1:
+https://lore.kernel.org/linux-btrfs/20261010105425.165104-1-hengyul@cs.unc.edu/
+
+ fs/btrfs/ioctl.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 52aab510aea0..43a945345cbe 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -375,6 +375,19 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
+ 		}
  	}
- 	qgroup = add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTID);
-@@ -1296,6 +1297,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
- 		 * sysfs entries.
- 		 */
- 		btrfs_free_qgroup_config(fs_info);
+ 
++	/*
++	 * Callers write back the whole flag set, so only touch the compression
++	 * flags and the compression property if FS_COMPR_FL or FS_NOCOMP_FL
++	 * changes.
++	 */
++	if (!((fsflags ^ old_fsflags) & (FS_COMPR_FL | FS_NOCOMP_FL))) {
++		/* 1 item for the inode */
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans))
++			return PTR_ERR(trans);
++		goto update_flags;
++	}
 +
-+		if (quota_root) {
-+			spin_lock(&fs_info->trans_lock);
-+			list_del_init(&quota_root->dirty_list);
-+			spin_unlock(&fs_info->trans_lock);
-+		}
- 		btrfs_put_root(quota_root);
- 	}
- 	mutex_unlock(&fs_info->qgroup_ioctl_lock);
+ 	/*
+ 	 * The COMPRESS flag can only be changed by users, while the NOCOMPRESS
+ 	 * flag may be changed automatically if compression code won't make
 -- 
-2.56.0
+2.53.0
 

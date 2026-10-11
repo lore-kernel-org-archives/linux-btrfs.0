@@ -1,162 +1,213 @@
-Received: from mail-qk1-f177.google.com (mail-qk1-f177.google.com [209.85.222.177])
+Received: from mail-dl1-f48.google.com (mail-dl1-f48.google.com [74.125.82.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C2E1831D362
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 15:58:27 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.222.177
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0A911A682C
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 18:49:47 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791734309; cv=none; b=QaBSwAYMs+r7aNjzFkfb0g1xJbaXYKClWtYhsacQIXpkCsNZrMh222MORa1MP8O4uI0jWK3vUs89jJzL3lJpN5sQ9ktgi0+kjY5WHY3E+1y3i2fRPPaGZY9N7Ru3aNvCwOk1pjnzfBjBXPs9X4p8ohe0pGh8wGU9FWt4Eekd+Vo=
+	t=1791744589; cv=none; b=kR9kv8KUE4EzKW2B/3Vs92pNyfpjLbfv+Z9+7Qk/vmPAys35lffNT8uTt2C9qjiPtiC/Eiw1VYwLuNcqDaE9HNSivcjfy0jxNt/IXVqXJ4uwlgyiGFVLlUZjpcUh+vj9Bj9xkb2p6QSAKgX4IQuFvlCmjQZoW/Yq/jEXI6ilSG0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791734309; c=relaxed/simple;
-	bh=IvIXragyDbXsVrZjUB1QpSAn+NSlJROmmj4LKC38QJU=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=csZc2T/w3eTJT5RZsymiXlY6PQibyAePXB0exavguxuKDGQWnOFqrMpFj2rJ9qvD7IqLg2yEUr2VmXr5hautzH4RNp63JiQPWv43qIcjxyYflVyZMTVfEv3Xqb/scdjUnvnZT8JCFXVff78Oxl1zgUt0a2vnxOH1qNzu2Dj7Byc=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu; spf=pass smtp.mailfrom=cs.unc.edu; dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b=QmR8G/g2; arc=none smtp.client-ip=209.85.222.177
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
+	s=arc-20240116; t=1791744589; c=relaxed/simple;
+	bh=Lp6+d/IGB88XdPb53ZhjjVQcpkm7KzdJTkf4vwFUUhQ=;
+	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
+	 In-Reply-To:Content-Type; b=I+i4T5HZt5nk2DwdME8xx4kjc934VV608uLSNCnOTwA+ig7CS8fReExdcMIaELwSJutPW6Lnc7RFjIiDmeNWt3nz+6V50it23mslpGNkH/7aeXJeLOKKTLUc9hM4PWxBwwUcHB+HLMjuQPZ/HACwnUllbdC66KEvOly5ia3j6fo=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=dJwia5xT; arc=none smtp.client-ip=74.125.82.48
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.b="QmR8G/g2"
-Received: by mail-qk1-f177.google.com with SMTP id af79cd13be357-93d92abf38dso114707385a.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 08:58:27 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="dJwia5xT"
+Received: by mail-dl1-f48.google.com with SMTP id a92af1059eb24-15ea896ddc8so1736754c88.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2026 11:49:47 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cs.unc.edu; s=google; t=1791734306; x=1792339106; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=ossy4ZlqAnnaACaITPaVVTxzs5zkLFNVTZN6qPcgS+c=;
-        b=QmR8G/g20zJzKEgVvQnPGkK8JAEEBp3Px0hdefHXYLj1iDgR5q/Y0IOSRm7ZrqiL9g
-         JF+U2kpsJ7My/xHNF7QGC3PN3aPRHP/77b4KMW1vhU2Q/zuOUJ5ZWpg4v2liVg9R7V+b
-         +aA5CM+7jV0ViVup3ryqUKbYw942PjWy++MbDde4axbCg7NUV2L8ancUD5dWXc6wxMIL
-         VXbwsAA+o0xCxIk39O/R0IUWA7SW3hX6uLv4oW22PgbEfpBpxudaPsq41k5gt3C4LCte
-         nmNetlZuJhpDMwJGqbJHuFhpcIf63hyHfZrAZR1dsPSlHwR6RKffnMqIu/6D9dx7MHUf
-         ZQXQ==
+        d=gmail.com; s=20251104; t=1791744587; x=1792349387; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=tKRpzrghFngBRJcUHTjfSey90EYzjLArlerIP3BVno8=;
+        b=dJwia5xTpV7HopvZf79gHbQxpA+hJ7xEZ6baAT0+47MyJ6OtK2ImZGbS/9aNzJpwrA
+         vOMByQkzcRZtxATTJBxipPq65wYKGazhdQKGFnO3NVS10Vhx0BmsiSZtkzfB3tGrQV9o
+         /4DFnWoYsNBHEW3bVzdIjz+BQmzS6QoYrEndZ8SDrOVBDFeWy0ajWEq2MlAD+Ghsw0VH
+         SOKhsnbkD3nZXj7D9o7OyPCqkH9+O+NVzelLcmIuz4xofPcsYfoZZhkGLHZtDUtGqL/t
+         /2azQk/HLFqQy38UuFcxYB5Ray0SZPGRAs4F9YtajVGN11bb+1FH5ctQM6Umg4Sfb6f6
+         00Mw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791734306; x=1792339106;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20260707; t=1791744587; x=1792349387;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=ossy4ZlqAnnaACaITPaVVTxzs5zkLFNVTZN6qPcgS+c=;
-        b=Mhu8FRs5iyfTUx9b7RXzGuFwtgqz8xVk03nkvzdDmDdKsPNhalb+pHE8NluQnX8JdY
-         qlD636AYewOryP2gbx+6h07K55Al/S1vLT1x5etwTaRZKJ6EuD8lUKKgwB2yy/3RrSCz
-         BobxbsGgzmJ+Grn0/qXY8AmSF6GrWXzQu39AEXCTlRTrVtpeFKdaucfryJmEO4Ose9os
-         ps+eTxSaKgK0DFqlYzzaR1j7rnjk5kkHKo9MuQXIxQcmcJTDylmDHJRG7+vmHMbx8JGS
-         rDLkM4QLLNUj81Dto7ER1A7iogztPesRdYywjrsuB5SZ4AXP4ffOQGvL8Sct8sjDfn+9
-         XiYw==
-X-Forwarded-Encrypted: i=1; AKwUvBwLMUxeATeALyPE8CGiWQqxzGWFOzXZj2RRHXp1XEWdQd9IggGs/CKRspUShZA0Bt59ri5rQm7fQcggRg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIMdUzpJEVLJJQ4Blo1bDlQLs3xGDrWLjWj8b0oLCDtrYBJEMbv
-	MuG7FY5x8VXPbEPO9XXplIGcbEbM0NSaVRg8R0wapFth/0g0wbJhn9YaVY7jt763Uw==
-X-Gm-Gg: AYBFou1nmoyb7bO4aDAAeVUFN18bUG2SYYLEOXKM5/ZrC1bH8/Ig+HclabCsK7JZM6H
-	hBBuwBMxqDa86S3O5G24J1iBHjmnR5jSeyFIGw/EK+uEHQdor0fn60FvTPqOYmHLEyhJVEdYyPe
-	F0qTWAvhJozNq8uAHjH77/jWV+TRredOj+HMkHXcDvXVNigeqjFgjopgUhFcPPTnLcS7V9FTeSx
-	7v1/lkYb2GDLGcdJ8JtVbSBxmfDz6vNqyVftVXOYAoln1Z4NHpQxPKDD5Ex5sHpn7+GOQSETPpr
-	60S4ZlG5qQuaPjVh1XJRvs37wjCr4lVNLQnmSJgaXI+eqo2qbKPktkt4pv/pGZa+jO4hL5Rscjn
-	yufX6Ni4cxyneT7xueTxPqQ8X+sOS0vS+3JNwrmZ8/Jft2bLT2IlkkIkvqZLeFtEpQz5cqX99N2
-	tAifNH1V2VkEIuIQMUAlTT7xpqEY1HOiLt+queRnD2MVcqlXidU7QQV7B6Pn4J5CcgxSnx3nAR6
-	u8CONbnblJqgtxOCHMwsXwnHjhkKMH7
-X-Received: by 2002:a05:620a:2681:b0:93b:d79b:9a5c with SMTP id af79cd13be357-93ebd28bb9emr1226124585a.61.1791734306512;
-        Sun, 11 Oct 2026 08:58:26 -0700 (PDT)
-Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-93eb984889fsm666517185a.13.2026.10.11.08.58.25
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 11 Oct 2026 08:58:26 -0700 (PDT)
-From: Hengyu Liang <hengyul@cs.unc.edu>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
-	Filipe Manana <fdmanana@suse.com>,
-	Qu Wenruo <wqu@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org
-Subject: [PATCH v2] btrfs: fix chattr failing on nodatasum files that have the compress flag
-Date: Sun, 11 Oct 2026 11:58:15 -0400
-Message-ID: <20261011155815.1563812-1-hengyul@cs.unc.edu>
-X-Mailer: git-send-email 2.53.0
+        bh=tKRpzrghFngBRJcUHTjfSey90EYzjLArlerIP3BVno8=;
+        b=V+JcGnIaAtKzmam8RkeO7tqS2UrAhDo68fS3MIctptF3Ym1m4N5ilxoa49HbTqjeAF
+         W7eNfPXDhJu+VyjCgC0AZTwZZIHVYrvGgZbYhhcMZTdzMVjvOX6q4UnyQDsyaJQdieCF
+         8Ndmsp0m/Na7j+8uYXNOqeT9B/7DOMquIgu0B/3l71kwSmofdCCex7vb3ncT52LBY06O
+         9EGJzPF7GvkD4lpreGs7O+DUxVGzG4nUO+nCAXuyzWZGDz9Tn1qVUuAnl2sweEuG8t9w
+         dOApxjxDVd3Fyd6mL0R3Fc7cR2IXzfHTHwCPn8ga505zgLGeoDBI9O5CFQgrx7tll14O
+         eefQ==
+X-Forwarded-Encrypted: i=1; AKwUvByJFShJyJQ2oNH+65dLEAVQFyVEl7H2WYHAePggHOgI9EzjOzT95troado4iTpLzGeFEj4Tv7YcghDjew==@vger.kernel.org
+X-Gm-Message-State: AFq9FYKgRvOCTlfHAb07GYmYFqMuNfeYRQW8sl73ilnqXGjWyxph8xl/
+	rhPnx7mxDnq8J0wZoei5+zElYmsjHJ7bqcPc0TTN26ECsjb1j+Rz23KdJVgKaBWt
+X-Gm-Gg: AYBFou2nJaRKP5ALsCd3e9Cx9n4LXG6ekcNoCRGQrCOOXHPFiVjon5dkMFc4/VHBsMz
+	19zg++8RNWowZjDdNlm2+mhYwx5wik9Nh8752QS5G0vI4FuUHO0x+nLU72P7isCzKD2PLOexUOK
+	7iOf092CP8kp1LzLtdo05WzlzYC0+10SI1NYeXP/k6VrkeV6ZgX4UJ2LVSGQaQf0pBtDoercipK
+	BN/SDizsriJAKloL0D1yudWNvrItVXsTCfhv4JdeVFVcC+1Soz3WQ5zzG2IjDp7mtrI3hKl63Op
+	s/cQPf1/hB0d96G0EdHiXxhS3dIW40jN6H6lVIyCXn8yvvdQbXs43xAaw1G7Mxxw68jR7U0hvpl
+	3CsDUsAwtVDltR/7wqwxqsws4RbDvZs4BuLWbj7tdO+92NmYqo+ldgM1DlBhBJzaSs8TVjrueHj
+	6vCu7mVs/OV5tzG29aSkx2JUHVlgu/nylDk6kz934PKdNkxgX5M90Ir5kadsTAP8sT1BK6HtwNP
+	37mRPoXUOKBemuS6kvQYWrijrmvk3JWFFzaCe+/ZLyv8aCM
+X-Received: by 2002:a05:7022:3d14:b0:143:7001:7645 with SMTP id a92af1059eb24-16a62600d3emr14165453c88.47.1791744586804;
+        Sun, 11 Oct 2026 11:49:46 -0700 (PDT)
+Received: from ?IPV6:2406:7400:56:97af:bd42:ace4:1245:4b57? ([2406:7400:56:97af:bd42:ace4:1245:4b57])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-169a5866477sm22605308c88.22.2026.10.11.11.49.44
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 11 Oct 2026 11:49:46 -0700 (PDT)
+Message-ID: <745a6dae-ff3c-45de-8bba-1e2efd45ca47@gmail.com>
+Date: Mon, 12 Oct 2026 00:19:42 +0530
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] fstests: generic: add a test case to check fsverity
+ reads
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ fstests@vger.kernel.org
+References: <20261010090422.59743-1-wqu@suse.com>
+Content-Language: en-US
+From: Dhruva G <goledhruva@gmail.com>
+In-Reply-To: <20261010090422.59743-1-wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-Commit cf1afec09e9f ("btrfs: validate properties before setting them")
-made btrfs_set_prop() validate a property before setting it. For the
-compression property, the validation fails with -EINVAL when the inode
-has NODATASUM.
+On 10-10-2026 14:34, Qu Wenruo wrote:
+> There is a bug report that with the recently enabled large folios
 
-However, chattr writes back all the flags it read from the file, and
-btrfs_fileattr_set() sets the compression property whenever the new
-flags include FS_COMPR_FL, even when the compression flags do not
-change. A file created on a filesystem mounted with nodatasum has
-NODATASUM and still inherits the compress flag from its directory. As
-of now, chattr fails on such a file when it changes any other flag.
+Do you want to perhaps add a link to this bug report? Just for more context,
+no hard requirement as such.
 
-The issue can be reproduced with:
+> support, fsverity enabled files on btrfs can trigger reproducible
+> warnings about file corruption, but in the end no error is returned to
+> user space.
+> 
+> It turns out to be a bug in the btrfs fsverity integration, where blocks
+> not included in the read range are passed to be verified.
+> 
+> This is a long-standing bug where btrfs fsverity always assumed that one
+> folio contains exactly one fs block, ignoring the fact that btrfs had
+> block size < page size support before fsverity support was added.
+> 
+> Add a new regression test case for it. The workload is pretty simple:
+> 
+> - Create a 32M file
+> 
+> - Punch a 64K hole for every 128K
+>   This will limit the read bio size to 64K, which is smaller than
+>   a lot of large folios, and thus can trigger the btrfs bug.
+> 
+> - Enable fsverity digest and drop page cache
+> 
+> - Read that file
+> 
+> - Verify there is no "FILE CORRUPTED!" warning
+> 
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+> Changelog
+> v2:
+> - Do not use btrfs specific mount options to limit read bio size
+>   Use holes to limit the size of read bios instead, now the test case
+>   can be generic other than btrfs specific.
+> 
+> - Add the missing _require_check_dmesg call
+> 
+> v1:
+> https://lore.kernel.org/linux-btrfs/20261010032508.36935-1-wqu@suse.com/
+> ---
+>  tests/generic/807     | 56 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/807.out |  2 ++
+>  2 files changed, 58 insertions(+)
+>  create mode 100755 tests/generic/807
+>  create mode 100644 tests/generic/807.out
+> 
+> diff --git a/tests/generic/807 b/tests/generic/807
+> new file mode 100755
+> index 00000000..24e22e8c
+> --- /dev/null
+> +++ b/tests/generic/807
+> @@ -0,0 +1,56 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
+> +#
+> +# FS QA Test 807
+> +#
+> +# Verify that reading a large file with holes won't trigger fsverity warnings
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick verity
+> +
+> +_fixed_by_fs_commit btrfs xxxxxxxxxxxx \
+> +	"btrfs: fix the fsverity callback where unexpected range is verified"
+> +
+> +. ./common/verity
+> +
+> +_require_xfs_io_command "fpunch"
+> +_require_check_dmesg
+> +_require_scratch_verity
+> +
+> +filesize=$(( 32 * 1024 * 1024 ))
+> +interval=$(( 128 * 1024 ))
+> +holesize=$(( 64 * 1024 ))
+> +
+> +_scratch_mkfs_verity >> $seqres.full
+> +_scratch_mount
+> +
+> +# Create a large enough file so that readahead is triggered, and
+> +# large folios are allocated during readahead.
+> +_pwrite_byte "0xcd" 0 "$filesize" "$SCRATCH_MNT/foobar" > /dev/null
+> +
+> +# Create a hole for every $interval bytes. This should limit the read to
+> +# $(( $interval - $holesize)), which should be much smaller than the maximum
+> +# folio size (2M for x86_64).
+> +for (( i = 0; i < $(( $filesize / $interval )); i++ )); do
+> +	$XFS_IO_PROG -c "fpunch $(( $i * $interval )) $holesize" \
+> +		"$SCRATCH_MNT/foobar" > /dev/null
+> +done
+> +
+> +_fsv_enable "$SCRATCH_MNT/foobar"
 
-    mkfs.btrfs -f /dev/sdb
-    mount -o nodatasum /dev/sdb /mnt
-    mkdir /mnt/dir
-    chattr +c /mnt/dir
-    touch /mnt/dir/file
-    chattr +A /mnt/dir/file
+Could this disable signature enforcement with _disable_fsverity_signatures
+and restore it from _cleanup(), as generic/572 and generic/788 do?
 
-Before commit cf1afec09e9f ("btrfs: validate properties before setting
-them"), the last command succeeds.
+With fs.verity.require_signatures=1, _require_scratch_verity() succeeds:
+_fsv_can_enable() temporarily disables signature enforcement and then
+restores it. The later _fsv_enable() therefore fails with EPERM because
+foobar is unsigned. I reproduced the output mismatch in the local Btrfs
+VM; the same test passed with require_signatures=0
 
-After that commit, it fails with EINVAL.
-
-This patch will make btrfs_fileattr_set() leave the compression flags
-and the compression property alone when the call changes neither
-FS_COMPR_FL nor FS_NOCOMP_FL.
-
-Fixes: cf1afec09e9f ("btrfs: validate properties before setting them")
-Cc: stable@vger.kernel.org # 7.2+
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Assisted-by: LLM
-Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
----
-Changelog
-v2:
-- Do not test whether the inode can be compressed. Leave the compression
-  flags and the property alone when the call does not change them, as
-  suggested by Qu Wenruo. Setting the compress flag on a NODATASUM inode
-  still fails with -EINVAL.
-
-- In the failing call FS_COMPR_FL is set, because chattr writes back the
-  flags it read. A test for "neither FS_NOCOMP_FL nor FS_COMPR_FL is
-  set" does not catch it and would stop chattr -c from removing the
-  flag, so the check compares the old and the new flags.
-
-- Explain why the call fails.
-
-v1:
-https://lore.kernel.org/linux-btrfs/20261010105425.165104-1-hengyul@cs.unc.edu/
-
- fs/btrfs/ioctl.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 52aab510aea0..43a945345cbe 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -375,6 +375,19 @@ int btrfs_fileattr_set(struct mnt_idmap *idmap,
- 		}
- 	}
- 
-+	/*
-+	 * Callers write back the whole flag set, so only touch the compression
-+	 * flags and the compression property if FS_COMPR_FL or FS_NOCOMP_FL
-+	 * changes.
-+	 */
-+	if (!((fsflags ^ old_fsflags) & (FS_COMPR_FL | FS_NOCOMP_FL))) {
-+		/* 1 item for the inode */
-+		trans = btrfs_start_transaction(root, 1);
-+		if (IS_ERR(trans))
-+			return PTR_ERR(trans);
-+		goto update_flags;
-+	}
-+
- 	/*
- 	 * The COMPRESS flag can only be changed by users, while the NOCOMPRESS
- 	 * flag may be changed automatically if compression code won't make
--- 
-2.53.0
+> +
+> +# Cycle mount to drop page cache
+> +_scratch_cycle_mount
+> +
+> +# Read the file, unpatched btrfs will verify blocks outside the read range and
+> +# trigger fs-verity warnings.
+> +# But the read itself should still be fine, as the failed part will be retried.
+> +cat "$SCRATCH_MNT/foobar" > /dev/null
+> +
+> +# Check for any kernel warnings from fs-verity on file corruption.
+> +if _check_dmesg_for "FILE CORRUPTED!"; then
+> +	echo "fs-verity detected corruption"
+> +fi
+> +echo "Silence is golden"
+> +
+> +_exit 0
+> diff --git a/tests/generic/807.out b/tests/generic/807.out
+> new file mode 100644
+> index 00000000..3752a5f7
+> --- /dev/null
+> +++ b/tests/generic/807.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 807
+> +Silence is golden
 

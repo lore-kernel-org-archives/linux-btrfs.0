@@ -1,82 +1,266 @@
-Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AB63C34F24E;
-	Mon, 12 Oct 2026 14:25:32 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791815133; cv=none; b=f80uG/3wjVbtIAJ0yTFKvfes9e7yDWVgqAd3pj5ze5lIzVBxBUQiPhk6A5IPDnQN2gC/Xc6+GJQsARy7TmMc59c1K8UiEXC+Wk9YQOc0K3Xi2z8DYmYBRvbWguNXhH/0EM6+3OqoMCfFYFAFNmNxi6M740qtqzw5SZT2O3AjZ7I=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791815133; c=relaxed/simple;
-	bh=CB5K1aNtrorexA/JdeWaL5lEgFC4gzph3QWPwtcKpcg=;
-	h=From:To:In-Reply-To:References:Subject:Message-Id:Date:
-	 MIME-Version:Content-Type; b=QSuwscav/8WQekLZxoZiCuMfl6JwSy//V3MauOmgwxSN2IOUV6SZZ5RwW4M+WKTyfrfqlnfUfIqCP2DZJMAeDeiMN1Lv4Yl3vfUBQp693JMpfasoMJMtv5iXwa2kIFDIYALzKIOxHc2B3D9g5QQQZhguaAy2Qzaxh5l3FaQjR7A=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=KtuCoNhP; arc=none smtp.client-ip=100.103.45.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FB8A3382FC
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 15:47:05 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.54
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791820027; cv=pass; b=r5SC2pA3DQxyMpNDQQoVeHXb+bIfjKqPSglM999Z1gY5vmyJSFM6C4CvfnY+rQt/gqrTHAoo5XRd3i4czvmcPEc8BAnXIeyviBIU8HP8UNNvehIZT2JJDhgF+FwObkJhutOSq6qkXshbg6xiL+BdYaZ5rNc9tWBr9mNrI+D7i30=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791820027; c=relaxed/simple;
+	bh=gwc2gYSXylwh8ydnyD5NMSW6vnmv3c4AJHx0q0R2KXA=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=lzkF+lkiYy3ju8wZrCi6AZq53xX6ixKNyE/35Y2Wuj7HDEd1ayLkHRetPA7aSFFpaasPRZAatFHlB3lnbek3l/cnUzJ1b22sxtSO63dxkXV7AvjoknBUC+CgWiwBvRVz0UryNroHnjF47PxnXJMe/RKsrILCh8fdn8WXGAiDZ2s=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QXu02saN; arc=pass smtp.client-ip=209.85.221.54
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="KtuCoNhP"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 71D351F0089C;
-	Mon, 12 Oct 2026 14:25:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791815132;
-	bh=wPVH+ldGDfqUbS8gIISm626Z1jh5SZOobA1gnB3ErGQ=;
-	h=From:To:In-Reply-To:References:Subject:Date;
-	b=KtuCoNhPkqT8F5evTqux2DuKCpAAdrbX5fuohGhzxZBMxcCtZHQjn5CYXymL3Z3l3
-	 5kEbXThVP6tzGqFFg7Y3mmlrypT6f46DH6EGMo9ALKmDWo2MtJPiTkPct/lHrw4Cij
-	 Y01QoLOU2UkLEPyTmJcoU2CCMZdVkldegol1+8hyON9LAd8krKg+RzNwN0RBSfHeKn
-	 wX/ifhYZA/KNlo2jEdB0k3x2yBbNlCLQcZAGWYMJ+X864aX3OVif5fhSamifTysBcx
-	 Djq6xfFiAmtdGL9bs1TsW9dWHpwshAMYTjNhO0DzIwjVzw6MXAP5V/iLZzytQZTayI
-	 RTon45nHTn1kA==
-From: Christian Brauner <brauner@kernel.org>
-To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
- linux-xfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-In-Reply-To: <73bd4d9b39e821453028ca8e567eaad2ebe0fc18.1785880740.git.wqu@suse.com>
-References: <73bd4d9b39e821453028ca8e567eaad2ebe0fc18.1785880740.git.wqu@suse.com>
-Subject: Re: [PATCH v4] iomap: follow the alignment requirement for
- iomap_dio_hole_iter()
-Message-Id: <20261012-wallung-heizanlage-begangen-5ebbb33cb59d@brauner>
-Date: Mon, 12 Oct 2026 16:25:31 +0200
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QXu02saN"
+Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-48c411d6615so1411406f8f.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 08:47:05 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1791820023; cv=none;
+        d=google.com; s=arc-20260327;
+        b=RZfuI5zhnWBdVjrSHaHoCipzc6H2k2nMMheSgxVoirs9vszyZ9KPl2p1jB81GO0SJt
+         XwamITBVnJVlLO3+iniFzuY2wn6LnI0WS+9Z3K2WMERX0hC5JT1bOGHAuP5fDHp/wVXI
+         7/cWeC0+04LVT3Q5uFxi2adyB+YNK7VjX4eX2wAiSzuLgy44PHTZOmu2y/hH10XuXv3v
+         YIkIaQnbQGipVBbzVxBiUYhp/+1xAIGBm6ha43xsDCxGl68E7MR080z6FkD1MGsxGwet
+         37XbTPZIa1EqC9BA1ZVVFG+sYYeq0bMrL0gXgvY+9jTAxMR5sm/g6IOzeHddA5DvE2tw
+         Bjgw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
+        fh=/TLdZPaKVK8zLP4Hd/NFA5A9V2xsmXixQg2Y0r+4q6c=;
+        b=bpnH2mUJqt8VlHXNgwAqpD/ioDLroZsX7pmhctZRtGvSLOeVMS4NykxHLo9aB2Uwpd
+         QzoO3pZEKlKuJ8kTQ6BsXO35dNB9vfbTQNruMvhmhlP5jKABFlNTUXGFQQpi1SGY9/sx
+         dT1dvZ0JKpYWN+kUK3JQ8AICo5bKlcpjdLP1GjTReHJRQbg9v6IDOCN+OdqBWNEAOpFi
+         6Bc5wq0r0y4GjOElkfgc+9GjcGo1ftwUvZqVJjGxpAFMoZ8hLrW55sEQ9Y/6uEa93l9v
+         PidGYjgUv2YvK8h6BmQU7Vp7k5xLNgh8NbsbU92CKVbweeAy476DD2wu6YZq56CxUoco
+         iVSQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1791820023; x=1792424823; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
+        b=QXu02saN1jaYzkZk7rwUI7xUBVoELeaHEw8hDKzR/MsHILluE4n0jMZDP27njIaSjI
+         JvWeE0bAimLNRzFkMZMvQqwyTmyPGcrcrnvsCT7UHXmK/RyLEoCA3b4ITqowJu+7nig6
+         rXRR1GYsY3a2JuhME+DW4AylCWrenDGPySYZIPhrzRAvUz7ULzVO5ddO3mA1A8jPPJeU
+         Zw2cloBV8f0NY8TTzjyyP/BRTlF4LMcNx5Uz7MI6yxFi7vv/rFFTvu8LtSJWu/yN497n
+         J522bg7A1FfazlB67Q1REBHjWAUpPbMbBxrl0RGODBxmfVLxW5vMbL2PcuID+LCi8N+F
+         t3wQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791820023; x=1792424823;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
+        b=MtMZGZ0wnjYa3I9ekH4pdXbtMggAWUd5KvubitZO+FbKzegmpKu3iWsYmEMy7Rf02e
+         jUQRPvv2zV41T6fOEPAff19gq5lpMIyKXh319igTyCkbiasZk5GXSR+TvUcf5IU24Xb6
+         Mpmk1HIa1+ovFLbiAmPt4QEE4kW0qNAWI9P+PdN4Fu/l65bLe4LJnnAkaV/sMeBJ+Qru
+         16Jt3D7QC6js6bgBPoe4IFZqjghy7X0CYX5i7pV63jmmhxxaI8RscldILGzXUmRa9HDD
+         wom9acP+i+9bDNXPBwuWcDvDGTSB3yIdC7peidUfQ8I4DEv3/89DgF4o2TjqQHBGM46i
+         7xNQ==
+X-Gm-Message-State: AFq9FYLMULuq4t3fsGnhTw3JV/JRxT51lnVnOSkTuOzv20eajCh/r4e0
+	RF9xlmChnEK5UjJo8gCsDZznueSQXlwipm/U7tugsPqgozYOUihANuDxaVFxRvLBg4I3vrVMVBc
+	C+1toQ+ruGcQdngxtO4ACitqy0Zyssjc4xRg+b2AS/g==
+X-Gm-Gg: AYBFou0cQXjo8c1McjUYOwR5WqTg09qkFgmJHGKNhBxdo6eIBhDfVSz8/fJhs/9Kove
+	R7K55OA91B4TnZECRW1l5sxegP8Zr+ilr7OleK+f6m3g98UCl5amTEvD+D/qsgVXn7g0hu5akKu
+	ZJrNehy9MSPM+tePDBH84e4fQE3etv5oeoc4tQMEor1pQ7Ragb+P/zDI0IM84gmscsI0J8CCOWr
+	JOIk/MlLOBE/lqlCRRohtFQ/axx3zHaFRK7XarW7kthtdWucq3YPBdefeYfhwJPLTbOJHDmJDsz
+	dcIIceusAJ1pSgWbclGEBi/2vWI/kwVedwEOdM0yr/TgTVH5wlpixkVhplQgLKUXcfOz/q067Iv
+	f3VUk3zNDJKB6ziR0HFNp+WVK8BIkqQfIUi3TvVZTBYncy0v7kop5T0dS74ETefo=
+X-Received: by 2002:a05:6000:4683:b0:48c:455a:1c81 with SMTP id
+ ffacd0b85a97d-48dbaadc0e1mr13201734f8f.17.1791820023193; Mon, 12 Oct 2026
+ 08:47:03 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-Mailer: b4 0.17-dev-3d1b8
+References: <cover.1791706855.git.wqu@suse.com> <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
+In-Reply-To: <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Mon, 12 Oct 2026 17:46:51 +0200
+X-Gm-Features: AclHuK-ihupX05PdzZpcJgRiwWH11oc60L2ncAEMAET1uOEQf5ZcL_uFHmneJlg
+Message-ID: <CAPjX3FfauJ8S7ShhusSm7WX5MEMa3uDwEi-=F_BdA+RM0f_DJQ@mail.gmail.com>
+Subject: Re: [PATCH v5 2/2] btrfs: fix use-after-free on quota enable
+ allocation failure
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, 
+	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>, 
+	syzbot+947286c775f432b073a8@syzkaller.appspotmail.com, 
+	Boris Burkov <boris@bur.io>
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, 05 Aug 2026 07:29:51 +0930, Qu Wenruo wrote:
+On Sun, 11 Oct 2026 at 10:22, Qu Wenruo <wqu@suse.com> wrote:
+> From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+>
 > [BUG]
-> On the latest development branch, btrfs with 8K block size on 4K page
-> sized systems will fail all test cases that run fsstress.
-> 
-> One very short example would be:
-> 
->  # $fsstress -n 4 -d $mnt -s 1785675805 -v
->  0/0: dwrite - no filename
->  0/1: creat f0 x:0 0 0
->  0/1: creat add id=0,parent=-1
->  0/2: write dontcache f0[259 1 0 0 0 0] [816411,3620] 0
->  0/3: dread - xfsctl(XFS_IOC_DIOINFO) f0[259 1 0 0 32 820031] return 25, fallback to stat()
->  0/3: dread f0[259 1 0 0 32 820031] [483328,81920] 0
-> 
-> [...]
+> There is a syzbot report that a use-after-free bug is triggered after a
+> failed btrfs_quota_enable():
+>
+>  loop0: detected capacity change from 32768 to 0
+>  ==================================================================
+>  BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
+>  Read of size 8 at addr ffff888040e0a528 by task syz.0.0/5324
+>
+>  CPU: 0 UID: 0 PID: 5324 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
+>  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+>  Call Trace:
+>   <TASK>
+>   dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
+>   print_address_description+0x55/0x1e0 mm/kasan/report.c:378
+>   print_report+0x58/0x70 mm/kasan/report.c:482
+>   kasan_report+0x117/0x150 mm/kasan/report.c:595
+>   __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
+>   __list_add_valid include/linux/list.h:104 [inline]
+>   __list_add include/linux/list.h:169 [inline]
+>   list_add include/linux/list.h:192 [inline]
+>   list_move include/linux/list.h:345 [inline]
+>   add_root_to_dirty_list+0x38b/0x470 fs/btrfs/ctree.c:232
+>   btrfs_force_cow_block+0xf09/0x1bf0 fs/btrfs/ctree.c:553
+>   btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
+>   btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
+>   btrfs_search_prev_slot fs/btrfs/free-space-tree.c:134 [inline]
+>   remove_free_space_extent fs/btrfs/free-space-tree.c:732 [inline]
+>   __btrfs_remove_from_free_space_tree fs/btrfs/free-space-tree.c:837 [inline]
+>   btrfs_remove_from_free_space_tree+0x4d6/0xda0 fs/btrfs/free-space-tree.c:866
+>   alloc_reserved_extent+0x4a/0x2b0 fs/btrfs/extent-tree.c:4976
+>   alloc_reserved_tree_block fs/btrfs/extent-tree.c:5155 [inline]
+>   run_delayed_tree_ref fs/btrfs/extent-tree.c:1815 [inline]
+>   run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
+>   btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
+>   __btrfs_run_delayed_refs+0x18b5/0x43b0 fs/btrfs/extent-tree.c:2134
+>   btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
+>   btrfs_commit_transaction+0x28a/0x3170 fs/btrfs/transaction.c:2267
+>   sync_filesystem+0x1d2/0x240 fs/sync.c:66
+>   btrfs_reconfigure+0x2dc/0x2100 fs/btrfs/super.c:1511
+>   reconfigure_super+0x232/0x8f0 fs/super.c:1128
+>   do_remount fs/namespace.c:3410 [inline]
+>   path_mount+0xd4e/0x1050 fs/namespace.c:4160
+>   do_mount fs/namespace.c:4181 [inline]
+>   __do_sys_mount fs/namespace.c:4397 [inline]
+>   __se_sys_mount+0x31d/0x420 fs/namespace.c:4374
+>   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>   entry_SYSCALL_64_after_hwframe+0x77/0x7f
+>  RIP: 0033:0x7f9c8dd9f3ca
+>   </TASK>
+>
+>  Allocated by task 5323:
+>   kasan_save_stack mm/kasan/common.c:57 [inline]
+>   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
+>   poison_kmalloc_redzone mm/kasan/common.c:409 [inline]
+>   __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:426
+>   kasan_kmalloc include/linux/kasan.h:263 [inline]
+>   __kmalloc_cache_noprof+0x321/0x600 mm/slub.c:5563
+>   _kmalloc_noprof include/linux/slab.h:991 [inline]
+>   _kzalloc_noprof include/linux/slab.h:1312 [inline]
+>   btrfs_alloc_root+0x75/0x840 fs/btrfs/disk-io.c:638
+>   btrfs_create_tree+0xa8/0x5c0 fs/btrfs/disk-io.c:832
+>   btrfs_quota_enable+0x3d6/0x1e20 fs/btrfs/qgroup.c:1074
+>   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
+>   vfs_ioctl fs/ioctl.c:51 [inline]
+>   __do_sys_ioctl fs/ioctl.c:597 [inline]
+>   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+>   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>   entry_SYSCALL_64_after_hwframe+0x77/0x7f
+>
+>  Freed by task 5323:
+>   kasan_save_stack mm/kasan/common.c:57 [inline]
+>   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
+>   kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:584
+>   poison_slab_object mm/kasan/common.c:264 [inline]
+>   __kasan_slab_free+0x5c/0x80 mm/kasan/common.c:296
+>   kasan_slab_free include/linux/kasan.h:235 [inline]
+>   slab_free_hook mm/slub.c:2748 [inline]
+>   slab_free mm/slub.c:6508 [inline]
+>   kfree+0x1c5/0x650 mm/slub.c:6801
+>   btrfs_quota_enable+0x1208/0x1e20 fs/btrfs/qgroup.c:1292
+>   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
+>   vfs_ioctl fs/ioctl.c:51 [inline]
+>   __do_sys_ioctl fs/ioctl.c:597 [inline]
+>   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+>   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>   entry_SYSCALL_64_after_hwframe+0x77/0x7f
+>
+> [CAUSE]
+> During btrfs_quota_enable(), a temporary quota_root is created, then
+> qgroup items are created for each subvolume and inserted into that root.
+>
+> If there are enough subvolumes, the level of quota_root will be bumped,
+> and add_root_to_dirty_list() will be called, adding
+> quota_root->dirty_list into fs_info->dirty_cowonly_roots.
+>
+> But if a problem is hit during btrfs_quota_enable() later, that
+> quota_root will be released through btrfs_put_root(), causing the whole
+> quota_root structure to be released, while leaving
+> fs_info->dirty_cowonly_roots still pointing to the released
+> quota_root->dirty_list.
+>
+> Later access through fs_info->dirty_cowonly_roots will trigger a
+> use-after-free bug.
+>
+> [FIX]
+> We can just call list_del_init(&root->dirty_list) when
+> btrfs_quota_enable() failed.
+>
+> Also to follow the existing error handling behavior, abort the
+> transaction when the memory preallocation failed.
+>
+> Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
+> Link: https://lore.kernel.org/linux-btrfs/6ac5a5e1.9ad129c8.3ce5b3.0010.GAE@google.com/
+> Closes: https://syzkaller.appspot.com/bug?extid=947286c775f432b073a8
+> Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> [ Change the commit message to include a proper analysis. ]
+> Reviewed-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/qgroup.c | 7 +++++++
+>  1 file changed, 7 insertions(+)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index cf8dfd5c692b..a0651fbfe778 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+>         prealloc = kzalloc_obj(*prealloc, GFP_NOFS);
+>         if (!prealloc) {
+>                 ret = -ENOMEM;
+> +               btrfs_abort_transaction(trans, ret);
+>                 goto out;
+>         }
+>         qgroup = add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTID);
+> @@ -1296,6 +1297,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
+>                  * sysfs entries.
+>                  */
+>                 btrfs_free_qgroup_config(fs_info);
+> +
+> +               if (quota_root) {
 
-Applied to the vfs-7.4.iomap branch of the vfs/vfs.git tree.
-Patches in the vfs-7.4.iomap branch should appear in linux-next soon.
+How about
 
-Please report any outstanding bugs that were missed during review in a
-new review to the original patch series allowing us to drop it.
++               if (quota_root && !list_empty(&quota_root->dirty_list)) {
 
-It's encouraged to provide Acked-bys and Reviewed-bys even though the
-patch has now been applied. If possible patch trailers will be updated.
+to avoid taking the lock if not needed?
 
-Note that commit hashes shown below are subject to change due to rebase,
-trailer updates or similar. If in doubt, please check the listed branch.
+--nX
 
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/vfs/vfs.git
-branch: vfs-7.4.iomap
-
-[1/1] iomap: follow the alignment requirement for iomap_dio_hole_iter()
-      https://git.kernel.org/vfs/vfs/c/c156c9afe59b
-
+> +                       spin_lock(&fs_info->trans_lock);
+> +                       list_del_init(&quota_root->dirty_list);
+> +                       spin_unlock(&fs_info->trans_lock);
+> +               }
+>                 btrfs_put_root(quota_root);
+>         }
+>         mutex_unlock(&fs_info->qgroup_ioctl_lock);
+> --
+> 2.56.0
+>
+>

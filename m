@@ -1,87 +1,87 @@
 Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50DF54B1297
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 16:28:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BE8B24B4056
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 16:28:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791822527; cv=none; b=AFBVraZB74N6f+8IT1xEGCEEJz81mjY/Gr3sUcALu8lGA5Rljfx9+v23Kd8CehP38ntaVfz1EP/I4l3Rv3mxf6Y+Ou+d02dff/cXaH689LawUnpxljBKOXEXL8kJ7V9CkAWeyHpW+OPnunLAb3mvuVLDYkVOjEIfFsWRQ4cgoJY=
+	t=1791822528; cv=none; b=DcQ/mBFPnI9nYoruWLQvQIhBPiUngjSOz4u9dZT5ZBdQDZe6Ou3hmp3MU+JTQqxBdZIYUiotoobFXXE1h5Nru28dz+LBRjofN/tuWboWZzqu/eYeveOmAArF3uAo3ZVjDfCR65+VaEZY6qOH9gmzBrzMnB8j26xH5YTsjdVtRkY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791822527; c=relaxed/simple;
-	bh=s4JXe3nfNxOs4OgMdiLvJwQwzSACsVnMkxz2zGAQrKs=;
+	s=arc-20240116; t=1791822528; c=relaxed/simple;
+	bh=uxR57VbSHtp1aqLOsgEPT8x0WECGBWUquczUd2tk5/o=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=jIJse5UmjdRiBHKtzoTyha/HhNO8ygij884atQ0r+nApUIuo7mhFBdWmcHZviCdAAkomUHFkME8Q3Oh2sgtq8qsVulCuGxUfiUqNJ9SSE6zE0I/iBDl0fNptDG6qmXI9htCiYP96gtd+E0D3sXxlAEXJJ9XMzO4g+rop0ZL9/Rs=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=ZcIccKoM; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=e+zahicQ; arc=none smtp.client-ip=148.163.139.74
+	 In-Reply-To:To:Cc; b=ALhSHOaekODSAESRRHsh2rOTLCdC1C0XhJJ+n0TosqD1GdfG6dIpiwEcgiKQIatV7EkNgEZy30JCNFtdiNYj4G6MxUAPWVixvhF9gQFvsvrCNRkZi5Yz/NrZcvLumCadEtj9Ho7IPBX7axYk5D4/zGe8vDubFidw9IrUAtF2njI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=R+5xAEpB; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=xwgkm1jZ; arc=none smtp.client-ip=148.163.139.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="ZcIccKoM";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="e+zahicQ"
-Received: from pps.filterd (m0499198.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69CEgUF61222165
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:44 -0400
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="R+5xAEpB";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="xwgkm1jZ"
+Received: from pps.filterd (m0167073.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69CFPOFI850042
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:45 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=4SUb
-	aO72cEvERWkMDnXb+4Wd91P7EdqYi3wmJ8mBsWU=; b=ZcIccKoM1ut2KayUzlce
-	IQHCiOGEIY/Qo7ozx+B4FOOETBsJapoVBUsrfw7f0E9vDNBTd639b6wxv5vGlJNi
-	tEQfBPXkr6Ltw1k7uvUmeE8o4RFDFoqtEwY09+l4KkVP08fDhiLS5bssQ+MvxZmq
-	aVRN/lIUx3SIG43Q4I8/kW1GXlKld2Jm3oCPWMxdQx7olmUFVRtgKl1c4Bc93J/l
-	Q3XoacGDv5mN04GRcA8svPhC4EaFjVAhTiduvSOQO+XHM7kBlFkttNiUMCTklzSh
-	W+uABYDVD5f3LN0wWfPI0PGI+e4y2MjJ8F7aS1ycdkI90lYh+pGyILZI5Nk0SX8x
-	mQ==
-Received: from mail-qv1-f71.google.com (mail-qv1-f71.google.com [209.85.219.71])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4h8y4w2st8-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=YW5H
+	T2u5ekA6cpwOBjjzNZKv4rChZ6o3Jf6QZzjBQvA=; b=R+5xAEpBzyl5ZyMC18er
+	GvkuDw7kQWRv3yO+1t1bZbDo+mvZjltuY3L8Ul1W3EA4qBcEMNNW/Au8zgTQzOJ8
+	HL8pFzUVI/v0b8hA83mdx7kl/FEcEjjKDkj7ocKq7Bf4ezRdB1chLB/2j7V4CpY9
+	gXDSBGRA0rYk2WO0vI6pqIeYjNyPLA2oFJEvw4IWEgzJOcrf05exiTmvI4r1nQPH
+	12b3dS7hgtw/OTOSZ3hhgHwkxYvz9vhDqZTmglTb7nhn4J1Rknsk5TYm00waHUda
+	yrkc0EFANaa+SAOhaF+n6+LYYSTVwoBDI9op6HHHQi5VXomzAm3c6is1ULxJErJd
+	MQ==
+Received: from mail-qk1-f197.google.com (mail-qk1-f197.google.com [209.85.222.197])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4h92680q1r-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:44 -0400 (EDT)
-Received: by mail-qv1-f71.google.com with SMTP id 6a1803df08f44-91b861c0618so16249686d6.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 09:28:43 -0700 (PDT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:45 -0400 (EDT)
+Received: by mail-qk1-f197.google.com with SMTP id af79cd13be357-93cb71b1443so447806885a.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 09:28:45 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1791822523; x=1792427323; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1791822525; x=1792427325; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=4SUbaO72cEvERWkMDnXb+4Wd91P7EdqYi3wmJ8mBsWU=;
-        b=e+zahicQ02plTxBGhuu5pFAZC7t9924W41VP8USbHH7bnmd6WmI+nhFYprmO8TlYvH
-         XXskh/h3rw6RTZK2pXbxm3tAtPWig+q6woJI+nGU+uEEmNap6oyS5ojXpePl/KwUeBYS
-         20DJFb8q2iBPPU47azUoM/xPypQyu1xQtbVyZZd5RqxmBY0vfW9vKNOsM1bLto1xz5Hs
-         Rwqi4uQ6X/sGCh+mwO5emZQM6Wp3199+PJq7A78bHjZK6gdHKif8+qTpFLTPqn+to+BV
-         mx8U+kv8fPifmz+b5z8tth9beRJ9lvfPFITQICqmw0Ou6QH9NB/867DVlNauSEBPe8Jl
-         WVOQ==
+        bh=YW5HT2u5ekA6cpwOBjjzNZKv4rChZ6o3Jf6QZzjBQvA=;
+        b=xwgkm1jZIJYVRgLAizcnEULdnbNCTPkxqKbXtKbZuxtaANaeUmZEOQhAkGG0cmcz39
+         sHFIysKhAjuPxPFTuL4kHwF+Po4dBvucyayrVSDRY4xz6vo7hbzkzFi+iPuwstGN8q6s
+         NFM884MxK7THdrJBYWA2Mx9UnwPSxNx26WvLJmDqfLwAVCffK7x0Gw+95lH8JYixgnG8
+         dkfcJ6Zzzz6kDnVcQetjxJp9LEcUzrGN4Wwtv057u2/nmZIf1/E2SdnC4zJu3M3Waj/z
+         dCfUJC4djUB/E0R5u05wHE4tZZLhNcIvDG/xL6Z/kih11FFSy0G+q5YuZJ3aSb6loDap
+         OIrQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791822523; x=1792427323;
+        d=1e100.net; s=20260707; t=1791822525; x=1792427325;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=4SUbaO72cEvERWkMDnXb+4Wd91P7EdqYi3wmJ8mBsWU=;
-        b=lTrQeo+IDq4qf3ESenRxVeuHbWqL20oNBf8ywNgqlcDQx8uhASq6LLSqq4YvvsyHSN
-         s6RBATyFClTFiqQ0VNlUy25+LUXoyY6PHnzaqSc6vzL7EkvszeXl03XdPDzETOtjel1r
-         KEge3H/MWqM5n2OJPB5YBVmx9Y8dC3fvQ7AApVCxgZizkVmwABW1RWQQSd02zg21vsD0
-         peqM7Qh3NE2q23gaOiHZi7MeL8PmA8q2Ptn+02epH09U+4Qqp6fw7AKYELgEpa9x5o+/
-         16EPN5nwWweAjtRneNq9lrx2jq4Zhb+9EYu2MZ2bhom7nZ/M6ydTmDN8V1Kyu3NdTtu2
-         CK3A==
-X-Gm-Message-State: AFq9FYI6+045jYrhAnmSdvOZD5O2Hmex8h8l1UUMfHjduX/pT11T2g39
-	VnxIjZXn+PgegWc/lxRSjKBXcue43+6uU/NeYTxJdALoq9nv9DgSSI5zLiaWup11Lt9M7aAIEAf
-	rZGMtaOn2/KC4+ajZySPv0T+OUPpBVwv84dZrExknYiQCxhEADCIkCjx7gNWJ
-X-Gm-Gg: AYBFou1RsOTx22/SV2cdfeCHjeNc3B5GwGiylM/9ylGC5v50LlXSV5HK3i/lQfbHLQj
-	oOnRxUOw9PZm96yMs0tK7/t/gSEWMBOZFV2U7GEu1xoEgU5Z6rF+milqUmRd8b3xXLN8PsshxBo
-	N40w+uPWC2LHlGHjTvs4pfKKCfTRwXGtLy+a8Q+rrWAD06kZrEtN2dwz4R7/EbC9kcoqGSC2DEK
-	DffcunFj2MshJLJtBky1gS+xwixKlNn6o/3DTfqw8Eu+xwBKVUbsRGKrw6vqUFdh4gD9df58OlE
-	mCoOIBm9zBdp3uCRlkaWnAjQxi2wTaSDHR7HCLhQav3TYAxDFpLbN7CkNnPZCLPkly7v6hZYsHs
-	kw/x0r7nwdij44wFLEF/LYHtBAGP7/3admyQbTB0kRb3SUbA=
-X-Received: by 2002:a05:620a:6412:b0:93e:94f2:ada5 with SMTP id af79cd13be357-93ebd1e0002mr1700634885a.25.1791822523162;
-        Mon, 12 Oct 2026 09:28:43 -0700 (PDT)
-X-Received: by 2002:a05:620a:6412:b0:93e:94f2:ada5 with SMTP id af79cd13be357-93ebd1e0002mr1700628685a.25.1791822522479;
-        Mon, 12 Oct 2026 09:28:42 -0700 (PDT)
+        bh=YW5HT2u5ekA6cpwOBjjzNZKv4rChZ6o3Jf6QZzjBQvA=;
+        b=YRerXXUBXsaVcXwtbf4FFCotzqm9cx05tBD6zDtaR/5gRM4UGgHW8n7R2FNiqv32o2
+         d/VwZJ/Akr8ImgsPFOlVboAk+ina5B4jMhw8FkOLc1eMrgo7fzHwSidS5EfC3EzE0QZE
+         +VoPZo2s9SQsUOYWvXs/R2lVtwpWrYDoVZh+plQCTc7dXH3aGjQvqN4DqpZWrqZbcZcA
+         Ry7sDKDwgaahpRBJiipzQd63zrCjoRiDyD5MaC7BGz+h7pU/FSpgH2lagNwVn+BBhN8l
+         kiYvv8crRLFIChNnCt6vcynBScrpFRXZqUmEvQV3/VxPQMkICYXUcADKoExx56Xwuknv
+         pu6A==
+X-Gm-Message-State: AFq9FYJNkGzgNlKyMlLQN1acs7v3rl/THu2zCIuJqji1AwJ/3c8qS9vg
+	hmD1XCiAXlWAI2jT36dX8BeE02TECM0cUgEWmrtZxCNBdZlD/+6UClTtd/YdZfbgjbr+vTlBtGN
+	g2NuBlqtekT6/g3c1ciBvYvZ3D+ZNlvLHP9NqQFbv8Pihh1dV+ZAit1xlG9u0
+X-Gm-Gg: AYBFou0zQloc+1hNa+AiG0j812YCGxX+Nck5pRtl4eV7GI1sIankaVuI3JpZw5RxA6E
+	NX0A58ywycBimLiQaguddJUhLqYKzuklvIhu8m6AxLYxn3YekimH4cQEPxlJLTioa+jagbFpvrK
+	/bBA7esgNhEwJS82oRKVDVXWaYC22j5SiTNPAfhpl0TuhHnHHof79K16GRArtipOXy8Tsry+yoR
+	ocl9tU9uOQRcF4Ti714VXHl7epxjuNc8AeF8mB/JoE+kvJFFi9jkKjnebzQb5+YkiAMZl74BGwb
+	vMLM53fNdMx3yCvUz3xYjyuvh1iFZPtKzeXr3xZAwC/6+Bb+3ImTlmlu9ggXk30ypG+y/0aMXyq
+	8iV2Zfzc+XhnG15TewRlfuFP/b6jCsIKDStDASwNwoP7dA3Y=
+X-Received: by 2002:a05:620a:2612:b0:93e:6723:9de8 with SMTP id af79cd13be357-93ebd2aad11mr1447147485a.59.1791822524870;
+        Mon, 12 Oct 2026 09:28:44 -0700 (PDT)
+X-Received: by 2002:a05:620a:2612:b0:93e:6723:9de8 with SMTP id af79cd13be357-93ebd2aad11mr1447143785a.59.1791822524330;
+        Mon, 12 Oct 2026 09:28:44 -0700 (PDT)
 Received: from [127.0.1.1] (nat-128-59-178-231.net.columbia.edu. [128.59.178.231])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97c27146sm1411796d6.29.2026.10.12.09.28.41
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97c27146sm1411796d6.29.2026.10.12.09.28.42
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 12 Oct 2026 09:28:41 -0700 (PDT)
+        Mon, 12 Oct 2026 09:28:42 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Mon, 12 Oct 2026 12:28:18 -0400
-Subject: [PATCH v4 06/18] btrfs: rename cache_write_mutex to
- dirty_bgs_update_mutex
+Date: Mon, 12 Oct 2026 12:28:19 -0400
+Subject: [PATCH v4 07/18] btrfs: drop the transaction handle from the
+ prealloc helpers
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,7 +90,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20261012-btrfs-remove-v1-space-cache-v4-6-f125bd8c07f9@columbia.edu>
+Message-Id: <20261012-btrfs-remove-v1-space-cache-v4-7-f125bd8c07f9@columbia.edu>
 References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 In-Reply-To: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
@@ -98,241 +98,173 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1791822515; l=9136;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1791822515; l=4684;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=s4JXe3nfNxOs4OgMdiLvJwQwzSACsVnMkxz2zGAQrKs=;
- b=zd9EBuDnvAhhG2J1KcUBgxNh598QcWGmp9b4nBbdK/ro6owvXRaX2UqRlniLw2btrcMt59xR8
- YYg7SdFlUEMBbuyIstwc5sHGubJgfi1XrSdXDUuuRTWrZVExkiVA/9j
+ bh=uxR57VbSHtp1aqLOsgEPT8x0WECGBWUquczUd2tk5/o=;
+ b=1OpsHLI1+pjS+AnFeYXBQPbrknn7LAoncIh+qbwK8YH7UyuZbLDXJgoH7g4Akm+mlQ03GMF5l
+ vp4cg1NU43gCA/dXtDCx1IK6lBJyaEdSwSShPW8FTXlMkpZbP8s3UdH
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-Spam-Info: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfXwNiFSrNDqAyj
- M+J4dCrHNUI0KyVwa0lX/7Bg4K2wQMm0Gvi7Vuj6LOguTmHEcx0MV5mEdOhVqVZFimg1cDNx0IJ
- Ikx9GIvAodpCE8OA9X3wWCvZAhc2qxU4SbglSLNzMg/vbUOdYgP2
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX8nRURIpiuznf
- xkopzX2YPxU6OW1mYB8wB3eyYZ9kuPSfDo2svtqHSSnBd8NCWOYF9TmK78EFkLCxgJSigyn6+rZ
- nK4UUV8Q7WpEW7tz3sPOE+0lZY2PF3bW6Xt0lO1nd/k9aWZ8zab1N1l5axrW7SOqTbF/w35VO7B
- 4pS+EtqmkLUztlKZN+u4YXtOCkvHa4ic4iGUcqI/aFHTfbYBPAjk0yrixpHTt6k1sHu0+Po4qS7
- DDvTI26upnlQlf92O85nqJTHLtHJSoygksWhVS2FDHC3sM9r5uCf9ewesWWPOfnvrQ3iuUdSrch
- HLZtFSau6hA+2KjAEwRKxaGrG+o0t94BEdMXRjrw0zBvWsKwwB/P6O6/gjUY25nrVAprspbz6Fv
- MCoctcBDsfoGrRxUOkX3YVnR5eC6M495W5CjG1hJxtVaZhaOx64HTYvqxZRBNM4mpaSnAU0cxp0
- iIvMQuNcPLis+GeRW4w==
-X-Authority-Analysis: v=2.4 cv=GOydgeNK c=1 sm=1 tr=0 ts=6acd0abc cx=c_pps
- a=UgVkIMxJMSkC9lv97toC5g==:117 a=9fnr1hFzp71kSIFw8uYQYA==:17
+X-Proofpoint-ORIG-GUID: r-MIiWuH931hBba3jTdXbgUEIljYcGFI
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX/ch6N4iLmW9L
+ bUn++NHrAQ0vK4urXzAH46EOW2soWRg9Rb+SHt4JltfhTO6wbUOtp4yZyeFs/1M1OI7ZRwLxTig
+ 5+DiRY+kmCaFMmIhWFJqAe3oV6Yzswdjc4LaB8S2s0ngTTvvNJtI
+X-Authority-Analysis: v=2.4 cv=EbZd0/mC c=1 sm=1 tr=0 ts=6acd0abd cx=c_pps
+ a=50t2pK5VMbmlHzFWWp8p/g==:117 a=9fnr1hFzp71kSIFw8uYQYA==:17
  a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=BpGzv1V74M3SfeTrGa8v:22
- a=jjizJtb08lyoHivougYA:9 a=QEXdDO2ut3YA:10 a=1HOtulTD9v-eNWfpl4qZ:22
-X-Proofpoint-ORIG-GUID: b108Ao8YKX34gn8Pm9Umt1CdUpRE3kER
-X-Proofpoint-GUID: b108Ao8YKX34gn8Pm9Umt1CdUpRE3kER
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=jHxIr1HyPKZ_Q5_91PL3:22
+ a=u1qPvHribVpbYRjuRIMA:9 a=QEXdDO2ut3YA:10 a=IoWCM6iH3mJn3m4BftBB:22
+X-Proofpoint-GUID: r-MIiWuH931hBba3jTdXbgUEIljYcGFI
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX5zEdpR5HOaxi
+ 6nzFBfzcSEzoGFCyx0Q9Yhb1UVws+Br/JPQKA/AHJzimt9Q2COoq1iLOs8yLIqMFSX48k8hHKWp
+ SVJViJ5Q8hFLYCRsuSEC+RzqwU6Kc/YeEUn1TjjwdBbUMx/buCgfgHuquKFCfpiADl3EytiT6Ga
+ gje993tOS3i3PJZF1nrhzfmiaCUSJafJrRH19ongNmp2Qdj2rf8jBzVvyryeBMUmCV2/5vsfvWq
+ h9/gwzjAeFQ6L8PKLW4BgnTC4le+juh/5HzcSWlAPMLXC2/k7CHCD1LOCLWqzLJfl4i96UyNy8C
+ vHJjRXucRdNY/IgNP0EbaifMPaG4s5ZLkGFXgy/+tQEFweeh7Errj/3TnjVq+81PFwsdji1MMDm
+ pHLXFS9A9RgRW5dVPUhEFd7RIKpe0vVQ6vR+OOC6wgjQQbDlwcCL6kBkoVebE4jlHaNIkRFLuWz
+ LornSKWW5SgjIEgR3sg==
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11933
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- spamscore=0 bulkscore=10 phishscore=0 adultscore=0 impostorscore=10
- malwarescore=0 priorityscore=1501 lowpriorityscore=10 clxscore=1015
- suspectscore=0 classifier=typeunknown authscore=0 authtc= authcc=
+ suspectscore=0 adultscore=0 clxscore=1015 priorityscore=1501
+ lowpriorityscore=10 phishscore=0 spamscore=0 malwarescore=0 bulkscore=10
+ impostorscore=10 classifier=typeunknown authscore=0 authtc= authcc=
  route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2610080000
  definitions=main-2610120065
 
-The v1 space cache writeout is gone, but the mutex is still needed. It
-keeps btrfs_remove_block_group() from deleting a block group item while
-btrfs_start_dirty_block_groups() is updating it outside the commit
-critical section.
-
-Rename it to reflect what it protects, and update the comments around
-the dirty block group writeout that still refer to the space cache.
+The v1 space cache created its inode during the transaction commit, and
+btrfs_prealloc_file_range_trans() existed so that preallocation could
+reuse the open handle. It was the only caller passing a transaction, so
+__btrfs_prealloc_file_range() and insert_prealloc_file_extent() now
+always start their own. Fold the wrapper into
+btrfs_prealloc_file_range() and drop the parameter.
 
 Assisted-by: LLM
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/block-group.c | 46 +++++++++++++++++++++++++---------------------
- fs/btrfs/transaction.c | 25 ++++++++++---------------
- fs/btrfs/transaction.h |  8 ++++----
- 3 files changed, 39 insertions(+), 40 deletions(-)
+ fs/btrfs/inode.c | 47 ++++++++++-------------------------------------
+ 1 file changed, 10 insertions(+), 37 deletions(-)
 
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 896b003e84ce..d812fda5eee8 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -1196,7 +1196,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 	inode = lookup_free_space_inode(block_group, path);
- 
--	mutex_lock(&trans->transaction->cache_write_mutex);
-+	/*
-+	 * Do not delete the block group item while
-+	 * btrfs_start_dirty_block_groups() is updating it.
-+	 */
-+	mutex_lock(&trans->transaction->dirty_bgs_update_mutex);
- 	spin_lock(&trans->transaction->dirty_bgs_lock);
- 	if (!list_empty(&block_group->dirty_list)) {
- 		list_del_init(&block_group->dirty_list);
-@@ -1204,7 +1208,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 		btrfs_put_block_group(block_group);
- 	}
- 	spin_unlock(&trans->transaction->dirty_bgs_lock);
--	mutex_unlock(&trans->transaction->cache_write_mutex);
-+	mutex_unlock(&trans->transaction->dirty_bgs_update_mutex);
- 
- 	ret = btrfs_remove_free_space_inode(trans, inode, block_group);
- 	if (unlikely(ret)) {
-@@ -3395,15 +3399,15 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c28642c6aa0e..c20cdc4e6a89 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9156,14 +9156,13 @@ static int btrfs_symlink(struct mnt_idmap *idmap, struct inode *dir,
  }
  
- /*
-- * Transaction commit does final block group cache writeback during a critical
-+ * Transaction commit does the final block group item updates during a critical
-  * section where nothing is allowed to change the FS.  This is required in
-- * order for the cache to actually match the block group, but can introduce a
-+ * order for the items to actually match the block groups, but can introduce a
-  * lot of latency into the commit.
-  *
-- * So, btrfs_start_dirty_block_groups is here to kick off block group cache IO.
-- * There's a chance we'll have to redo some of it if the block group changes
-- * again during the commit, but it greatly reduces the commit latency by
-- * getting rid of the easy block groups while we're still allowing others to
-+ * So, btrfs_start_dirty_block_groups is here to update the block group items
-+ * early.  There's a chance we'll have to redo some of it if the block group
-+ * changes again during the commit, but it greatly reduces the commit latency
-+ * by getting rid of the easy block groups while we're still allowing others to
-  * join the commit.
-  */
- int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
-@@ -3437,11 +3441,11 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 	}
+ static struct btrfs_trans_handle *insert_prealloc_file_extent(
+-				       struct btrfs_trans_handle *trans_in,
+ 				       struct btrfs_inode *inode,
+ 				       struct btrfs_key *ins,
+ 				       u64 file_offset)
+ {
+ 	struct btrfs_file_extent_item stack_fi;
+ 	struct btrfs_replace_extent_info extent_info;
+-	struct btrfs_trans_handle *trans = trans_in;
++	struct btrfs_trans_handle *trans;
+ 	struct btrfs_path *path;
+ 	u64 start = ins->objectid;
+ 	u64 len = ins->offset;
+@@ -9184,15 +9183,6 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
  
- 	/*
--	 * cache_write_mutex is here only to save us from balance or automatic
--	 * removal of empty block groups deleting this block group while we are
--	 * updating its item
-+	 * dirty_bgs_update_mutex is here only to save us from balance or
-+	 * automatic removal of empty block groups deleting this block group
-+	 * while we are updating its item
- 	 */
--	mutex_lock(&trans->transaction->cache_write_mutex);
-+	mutex_lock(&trans->transaction->dirty_bgs_update_mutex);
- 	while (!list_empty(&dirty)) {
- 		bool drop_reserve = true;
+-	if (trans) {
+-		ret = insert_reserved_file_extent(trans, inode,
+-						  file_offset, &stack_fi,
+-						  true, qgroup_released);
+-		if (ret)
+-			goto free_qgroup;
+-		return trans;
+-	}
+-
+ 	extent_info.disk_offset = start;
+ 	extent_info.disk_len = len;
+ 	extent_info.data_offset = 0;
+@@ -9232,12 +9222,12 @@ static struct btrfs_trans_handle *insert_prealloc_file_extent(
+ 	return ERR_PTR(ret);
+ }
  
-@@ -3483,12 +3487,12 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 		if (drop_reserve)
- 			btrfs_dec_delayed_refs_rsv_bg_updates(fs_info);
- 		/* Avoid blocking other tasks for too long. */
--		mutex_unlock(&trans->transaction->cache_write_mutex);
-+		mutex_unlock(&trans->transaction->dirty_bgs_update_mutex);
- 		if (ret)
- 			goto out;
--		mutex_lock(&trans->transaction->cache_write_mutex);
-+		mutex_lock(&trans->transaction->dirty_bgs_update_mutex);
- 	}
--	mutex_unlock(&trans->transaction->cache_write_mutex);
-+	mutex_unlock(&trans->transaction->dirty_bgs_update_mutex);
+-static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+-				       u64 start, u64 num_bytes, u64 min_size,
+-				       loff_t actual_len, u64 *alloc_hint,
+-				       struct btrfs_trans_handle *trans)
++int btrfs_prealloc_file_range(struct inode *inode, int mode,
++			      u64 start, u64 num_bytes, u64 min_size,
++			      loff_t actual_len, u64 *alloc_hint)
+ {
+ 	struct btrfs_fs_info *fs_info = inode_to_fs_info(inode);
++	struct btrfs_trans_handle *trans;
+ 	struct extent_map *em;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_key ins;
+@@ -9247,11 +9237,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 	u64 cur_bytes;
+ 	u64 last_alloc = (u64)-1;
+ 	int ret = 0;
+-	bool own_trans = true;
+ 	u64 end = start + num_bytes - 1;
  
- 	/*
- 	 * Go through delayed refs for all the stuff we've just kicked off
-@@ -3502,7 +3506,7 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 		list_splice_init(&cur_trans->dirty_bgs, &dirty);
+-	if (trans)
+-		own_trans = false;
+ 	while (num_bytes > 0) {
+ 		cur_bytes = min_t(u64, num_bytes, SZ_256M);
+ 		cur_bytes = max(cur_bytes, min_size);
+@@ -9277,8 +9264,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		clear_offset += ins.offset;
+ 
+ 		last_alloc = ins.offset;
+-		trans = insert_prealloc_file_extent(trans, BTRFS_I(inode),
+-						    &ins, cur_offset);
++		trans = insert_prealloc_file_extent(BTRFS_I(inode), &ins,
++						    cur_offset);
  		/*
- 		 * dirty_bgs_lock protects us from concurrent block group
--		 * deletes too (not just cache_write_mutex).
-+		 * deletes too (not just dirty_bgs_update_mutex).
- 		 */
- 		if (!list_empty(&dirty)) {
- 			spin_unlock(&cur_trans->dirty_bgs_lock);
-@@ -3598,10 +3602,10 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 	factor = btrfs_bg_type_to_factor(cache->flags);
+ 		 * Now that we inserted the prealloc extent we can finally
+ 		 * decrement the number of reservations in the block group.
+@@ -9350,8 +9337,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 					range_start, range_end - range_start);
+ 			if (ret) {
+ 				btrfs_abort_transaction(trans, ret);
+-				if (own_trans)
+-					btrfs_end_transaction(trans);
++				btrfs_end_transaction(trans);
+ 				break;
+ 			}
  
- 	/*
--	 * If this block group has free space cache written out, we need to make
--	 * sure to load it if we are removing space.  This is because we need
--	 * the unpinning stage to actually add the space back to the block group,
--	 * otherwise we will leak space.
-+	 * Make sure the free space of this block group is loaded if we are
-+	 * removing space.  This is because we need the unpinning stage to
-+	 * actually add the space back to the block group, otherwise we will
-+	 * leak space.
- 	 */
- 	if (!alloc && !btrfs_block_group_done(cache))
- 		btrfs_cache_block_group(cache, true);
-@@ -3657,7 +3661,7 @@ int btrfs_update_block_group(struct btrfs_trans_handle *trans,
- 	/*
- 	 * No longer have used bytes in this block group, queue it for deletion.
- 	 * We do this after adding the block group to the dirty list to avoid
--	 * races between cleaner kthread and space cache writeout.
-+	 * races between the cleaner kthread and the dirty block group writeout.
- 	 */
- 	if (!alloc && old_val == 0) {
- 		if (!btrfs_test_opt(info, DISCARD_ASYNC))
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3d3639e4d352..3d7bc667eb03 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -412,7 +412,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
- 	INIT_LIST_HEAD(&cur_trans->switch_commits);
- 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
- 	INIT_LIST_HEAD(&cur_trans->dropped_roots);
--	mutex_init(&cur_trans->cache_write_mutex);
-+	mutex_init(&cur_trans->dirty_bgs_update_mutex);
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
- 	INIT_LIST_HEAD(&cur_trans->deleted_bgs);
- 	spin_lock_init(&cur_trans->dropped_roots_lock);
-@@ -2314,18 +2314,16 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
- 		bool run_it = false;
+@@ -9363,15 +9349,11 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
  
--		/* this mutex is also taken before trying to set
--		 * block groups readonly.  We need to make sure
--		 * that nobody has set a block group readonly
--		 * after a extents from that block group have been
--		 * allocated for cache files.  btrfs_set_block_group_ro
--		 * will wait for the transaction to commit if it
--		 * finds BTRFS_TRANS_DIRTY_BG_RUN set.
-+		/*
-+		 * This mutex is also taken before trying to set block groups
-+		 * readonly.  btrfs_inc_block_group_ro() will wait for the
-+		 * transaction to commit if it finds BTRFS_TRANS_DIRTY_BG_RUN
-+		 * set.
- 		 *
- 		 * The BTRFS_TRANS_DIRTY_BG_RUN flag is also used to make sure
--		 * only one process starts all the block group IO.  It wouldn't
--		 * hurt to have more than one go through, but there's no
--		 * real advantage to it either.
-+		 * only one process starts all the block group item updates.  It
-+		 * wouldn't hurt to have more than one go through, but there's
-+		 * no real advantage to it either.
- 		 */
- 		mutex_lock(&fs_info->ro_block_group_mutex);
- 		if (!test_and_set_bit(BTRFS_TRANS_DIRTY_BG_RUN,
-@@ -2559,10 +2557,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	if (unlikely(ret))
- 		goto unlock_reloc;
+ 		if (unlikely(ret)) {
+ 			btrfs_abort_transaction(trans, ret);
+-			if (own_trans)
+-				btrfs_end_transaction(trans);
++			btrfs_end_transaction(trans);
+ 			break;
+ 		}
  
--	/*
--	 * The tasks which save the space cache and inode cache may also
--	 * update ->aborted, check it.
--	 */
-+	/* Other tasks may also have updated ->aborted, check it. */
- 	if (TRANS_ABORTED(cur_trans)) {
- 		ret = cur_trans->aborted;
- 		goto unlock_reloc;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index d4bbe44f9556..aa57c64a955d 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -81,11 +81,11 @@ struct btrfs_transaction {
- 	struct extent_io_tree pinned_extents;
+-		if (own_trans) {
+-			btrfs_end_transaction(trans);
+-			trans = NULL;
+-		}
++		btrfs_end_transaction(trans);
+ 	}
+ 	if (clear_offset < end)
+ 		btrfs_free_reserved_data_space(BTRFS_I(inode), NULL, clear_offset,
+@@ -9379,15 +9361,6 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 	return ret;
+ }
  
- 	/*
--	 * we need to make sure block group deletion doesn't race with
--	 * free space cache writeout.  This mutex keeps them from stomping
--	 * on each other
-+	 * We need to make sure block group deletion doesn't race with the
-+	 * dirty block group item updates done outside the commit critical
-+	 * section. This mutex keeps them from stomping on each other.
- 	 */
--	struct mutex cache_write_mutex;
-+	struct mutex dirty_bgs_update_mutex;
- 	spinlock_t dirty_bgs_lock;
- 	/* Protected by spin lock fs_info->unused_bgs_lock. */
- 	struct list_head deleted_bgs;
+-int btrfs_prealloc_file_range(struct inode *inode, int mode,
+-			      u64 start, u64 num_bytes, u64 min_size,
+-			      loff_t actual_len, u64 *alloc_hint)
+-{
+-	return __btrfs_prealloc_file_range(inode, mode, start, num_bytes,
+-					   min_size, actual_len, alloc_hint,
+-					   NULL);
+-}
+-
+ /*
+  * NOTE: in case you are adding MAY_EXEC check for directories:
+  * we are marking them with IOP_FASTPERM_MAY_EXEC, allowing path lookup to
 
 -- 
 2.39.5

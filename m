@@ -1,108 +1,230 @@
-Received: from mail-dy1-f174.google.com (mail-dy1-f174.google.com [74.125.82.174])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 536D339446D
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 16:46:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=74.125.82.174
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 433C338655A;
+	Mon, 12 Oct 2026 16:53:27 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791823615; cv=none; b=s9xIwhGUyV56uY+JLEjunOSNsGMtjDo2cX3S+kimVtUHJPXAacYJxj9tSLO+cRfpVoL8xHfLQz1eF0p6e4PpCg+aiWflMhfcWIhvH7Ag3V57x9yrLV1K1gC5sgaD5PUJv3/rxrTfiwEAaSbKENjP8z6Qnz8GDvSQrC+Kde5ExsY=
+	t=1791824012; cv=none; b=KdFCtkcP/iajbAzw9K6fcOB7zHYrNdLKGvxkwhf/mQZx0Z6HdnC7DU2vRsG6FRq3W5aW7uxZIKIRIKBmbKU7eM72XB4agDoSOYY3GdL3vKGA9HMnu0dKNE1CXuxIQVj8Kr9rSTSt/MWG0aR14fIX5r50LZzz/76VquZfLgYKbqM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791823615; c=relaxed/simple;
-	bh=WAMRkCfr7H5QN6A4aQbcqsVChqM0nwv/H92TRsaVOlc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=JkDFRrQrq0212WEI5GUA1hKn22qUn30WiC65lnHwh3ADDeZ/JRiEPQ56oaHE83uZEKxh2ZW1gC1I3kXG4OiN64IV0cXC4MqjN0ajxjERFYn98Mka2i0ucwJI/Ms2HJOVXpXZjWEqnQKM0oKctoYMMSYc5920N4xMW1ivos4Qk1g=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=g8JAGs+q; arc=none smtp.client-ip=74.125.82.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	s=arc-20240116; t=1791824012; c=relaxed/simple;
+	bh=u4RbT2JBy+Ts7npCHn3lpvoB15ZuLisXUYt28wIzsZQ=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=NlyEXk7kihiKdtYbfA0bKQgpzH1WjNeteGRLoENNugycLcSgL1bWvAUDxXeBa0WP9HRuF07/TUwHBCmUF0JQbIiVneIWJhIxpbDqw7JThfPM2/9qJr3BSyJgNaT1rWo3A5JpzFNuZOPiGsjM7tGtbHLXw8nMsg1h7Sn8gyiPB4w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=g+Eqnf5h; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=OONF4/pt; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=fLqk0xPN; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=pwPw/Ecr; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="g8JAGs+q"
-Received: by mail-dy1-f174.google.com with SMTP id 5a478bee46e88-353804b591eso3500711eec.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 09:46:53 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1791823612; x=1792428412; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=EfiNe+XyA8zhOMOl60OM1lT0ru0Yw38SRDVvcZ2Pv9w=;
-        b=g8JAGs+qkBzqRG/EKXX54kowehahV9aUOVgycQZzcxnutRdEgI9w3ybGXxbzreyupi
-         TZtVJkIK5tD4ZfQAf5fdTG1XDPsZTTuVVho6csyfcqjGm1SOSosLPKScob5orxGPoJ6d
-         khq0kt3mydVBT/ytcB6fB8z+4Kd6UIs7QWHrXkH5InXzt5CncE+7t0sKKcJRFqIcvmyJ
-         /OmnoDP0BMr8nIjkizDSxEMWMr1/fdikDrQQFR5kWc8TGEQ+v6cCpcpDWe/TgdZaouIF
-         ilsj2Mv3OA9NT2AabCHpGZiIZQPGgH/1pLizW67ecNhtc+QO5GwuiwDAqzsMkedN+pOC
-         0+zg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791823612; x=1792428412;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=EfiNe+XyA8zhOMOl60OM1lT0ru0Yw38SRDVvcZ2Pv9w=;
-        b=YxnMK4pHaW6eyhGov6y49yR84+zam8b7U1bd62xQrwpt889MlKsCYvp0JrDdvpIbVk
-         ovhah2h+33DMqlgIGxXsGNBM0BcmomPcawf/NJEK+IngRaoqPYVbi54pcF2tfPxCRGZl
-         zffBo64M3xjbZF422uSWGmIzq/lmRJYH4dka0YuYp57pa3KMlneq6v8YpsnTjrQm5AzV
-         iJ44Lb9z7m7vyc4nP31ItyK88OGC80iBRQ2gaj2V7kqJxNrYJWZMvBmtKsgaGi/WfMPm
-         8VUqjj2AaqE/rTVjEa3EA/7bEWtnxpNKt7NO2xKEK+U4nRvOirTVPlHgdqTkb81F5mYN
-         LtYA==
-X-Forwarded-Encrypted: i=1; AKwUvByNqUCP8rTc74mpYCerny10M4n30o48P7JcNvVynsJzsk+SdpiGY9XfLOejKSBu51k6Zi/zseT5wHh3NQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKZcGAE6UUqcMrsI/CLCOzzZ19NgyrUoRt3sRy2rHb6mPKZM6Jq
-	FcLSqfmkUeaW7qA/O44Y7nzHIBK4H0judckYBfe/JJrKisJeDzuBPaWE
-X-Gm-Gg: AYBFou3/udWF+DIJPfJHn3OxPc++yve1N0tD17PRMG3WptGnCnRg5eVaLen446bUQzU
-	dwoeDC2QDx8I6cJZr4png7EAyOU90n3WVLrW8IN20TJdrbCQcs20DZ9jjhKEd/geUNOKrehj7cO
-	jbWPNXIqTjXT2zaDm4FggFtU5nHulJKZzIK17hxHIyP4luK6d8NmAGZ8xsY39VUhPxSptxxXHMp
-	bAoPcV3nou95pzdpU3+TZgLOP9tvwi12vvSmFtGxCOJXdaqRv6mKRPZ7fKgjRYfSLMs8jUFsBh1
-	TKVqsmqC1v7wet9NH60lkDmKlS5F3vSpUL81FDVl/mkSGT0BD/9CZ5uuUo3qyTpcsitD8p15B81
-	x2kCNyS8RA4g4dPiZCOSHfIg7ys/nMyw4uaSXc7gstOyMHKrjp8ukkqv5D+pbCT81FfAEAdlM14
-	kQR1ll0DhAI45lhB2CEqdgxBp5Pw9IRk0mIeGK0eUqLkYOAJ4OXC1ZkJjUffbYXlpXRhyvI1ACR
-	arHrD5PuIqIRxyfOP4errrcUVi86oujRGIXHdr63hA9LAUUDK8+QfvRfQFL6SONo5s37PTsiogp
-	kz1C
-X-Received: by 2002:a05:7301:1603:b0:351:1e89:66ab with SMTP id 5a478bee46e88-3537e03cdcamr14286574eec.7.1791823611968;
-        Mon, 12 Oct 2026 09:46:51 -0700 (PDT)
-Received: from ?IPV6:2406:7400:56:97af:5038:b049:4f32:e620? ([2406:7400:56:97af:5038:b049:4f32:e620])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3537ca329d9sm38195439eec.5.2026.10.12.09.46.50
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 12 Oct 2026 09:46:51 -0700 (PDT)
-Message-ID: <6fcc096d-c049-4a72-a33f-54aef6151a0e@gmail.com>
-Date: Mon, 12 Oct 2026 22:16:47 +0530
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="g+Eqnf5h";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="OONF4/pt";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="fLqk0xPN";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="pwPw/Ecr"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 0EFCD21E87;
+	Mon, 12 Oct 2026 16:53:24 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791824005; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gDjF2EqIZ72LsqxvftLHW/KslkTXyiMHSnpVP7GBsSI=;
+	b=g+Eqnf5h3LJpu9HnXYbiyiOWds/J0Z3iJiTOLLb+LjyTX7lprmDNunMllA0zLaHb+uzFIM
+	ep3pmMWuHlSlZwdRA8qpHHROqCWT1D6WpI/CNlUI2WY+Llm8Kc3gSQhGM8OG7+SWq/Inux
+	dgtl9LbTEKtSHzjWA0EyJmr0D+7mToI=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791824005;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gDjF2EqIZ72LsqxvftLHW/KslkTXyiMHSnpVP7GBsSI=;
+	b=OONF4/ptQRPFEv6hkUNTADkoNMhEFaJpeXnxSlLzwITTcryOGyVTXUSh8HHffsopaQe+BH
+	QvRzXI4T9bSpUZCQ==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791824004; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gDjF2EqIZ72LsqxvftLHW/KslkTXyiMHSnpVP7GBsSI=;
+	b=fLqk0xPNj68O0bVp8KJ3Plt0obAvOXFMewpFvSVBy/M7PQMlK9fQeKyLcmeAwHG1HgqSLV
+	KovD5ImiZ4QKxeNss0Cmuy3N5PC64/InwFpeC2IdGFcveYXgQzPowr5Zq3elHc0LMRVy9t
+	zE26b7eCqSGpIFOwXx3n0+RwsgYdU5A=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791824004;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=gDjF2EqIZ72LsqxvftLHW/KslkTXyiMHSnpVP7GBsSI=;
+	b=pwPw/Ecr0z2IyT2wKp5Z0I6siBLHYpovCUmz3KD8X2mvxDDQre17gUnh8tXFhsq1HKkCHG
+	nkW4uuXx9hIQINAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DA19313314;
+	Mon, 12 Oct 2026 16:53:23 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id FPUeLYMQzWrdBgAAD6G6ig
+	(envelope-from <jack@suse.cz>); Mon, 12 Oct 2026 16:53:23 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id 65F66A1405; Mon, 12 Oct 2026 18:53:19 +0200 (CEST)
+Date: Mon, 12 Oct 2026 18:53:19 +0200
+From: Jan Kara <jack@suse.cz>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>, 
+	ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net, 
+	linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, linux-fsdevel@vger.kernel.org, 
+	ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org, 
+	gfs2@lists.linux.dev, linux-efi@vger.kernel.org, linux-mtd@lists.infradead.org, 
+	linux-xfs@vger.kernel.org, stable@vger.kernel.org, 
+	Karl Mehltretter <kmehltretter@gmail.com>
+Subject: Re: [PATCH RFC 00/28] fs: don't set SB_RDONLY after filesystem errors
+Message-ID: <my2k7257m265fp5ad77n5hfndl23i56gsog3jwnsyocp3yxbnj@aphfqdiej2hs>
+References: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] fstests: btrfs: test if btrfs control file rejects
- unknown ioctls
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
- fstests@vger.kernel.org
-References: <20261011230716.16860-1-wqu@suse.com>
-Content-Language: en-US
-From: Dhruva G <goledhruva@gmail.com>
-In-Reply-To: <20261011230716.16860-1-wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
+X-Spamd-Result: default: False [-3.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_THREE(0.00)[3];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[18];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_LAST(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FREEMAIL_CC(0.00)[suse.com,zeniv.linux.org.uk,vger.kernel.org,lists.sourceforge.net,lists.linux.dev,lists.infradead.org,gmail.com];
+	MISSING_XM_UA(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Score: -3.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-On 12-10-2026 04:37, Qu Wenruo wrote:
-> This is a regression test for a recent bug fix, where unsupported ioctls
-> are not properly rejected for btrfs control file (normally at
-> "/dev/btrfs-control").
+On Mon 12-10-26 12:20:45, Christian Brauner wrote:
+> A lot of filesystems handle errors by setting SB_RDONLY on the
+> superblock. They do that from whatever context found the error and
+> without holding s_umount. That's never been okay. SB_RDONLY is supposed
+> to only change under s_umount through a proper remount.
 > 
-> The test case itself is super simple, which doesn't even require test or
-> scratch device, it just run the "btrfs_ioctl" program using
-> "get_subvol_info" ioctl on "/dev/btrfs-control", which should fail as
-> that ioctl only makes sense on a mounted btrfs, not the btrfs control
-> file.
+> And it breaks freezing. freeze_super() and thaw_super() both look at
+> sb_rdonly() to figure out whether the s_writers rwsems need to be taken
+> or released. So if an error sets SB_RDONLY while the filesystem is
+> frozen thaw_super() takes the read-only shortcut, leaves the rwsems
+> write-locked and marks the superblock unfrozen. Every writer after that
+> hangs in sb_start_write() and umount warns when it frees the locked
+> rwsems. jfs even oopses on umount. And the unlocked update of
+> sb->s_flags races with everyone else who writes it.
 > 
-> The error will be outputted to the golden output so that we can catch
-> any unexpected success.
+> Karl noticed and proposed teaching thaw_super() to remember whether the
+> freeze took the rwsems (cf. [1]). But a filesystem changing SB_RDONLY
+> behind the VFS' back causes more problems than just confused freezing.
+> Jan preferred fixing the filesystems instead (cf. [2]) and I agree. ext4
+> and f2fs already stopped doing it. So this converts all the others to
+> what ext4 does:
 > 
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  tests/btrfs/359     | 26 ++++++++++++++++++++++++++
+> - the error is recorded in filesystem private state and the filesystem
+>   refuses modifications with EROFS itself
+> - the superblock stays read-write and "emergency_ro" is shown in the
+>   mount options ("withdrawn" for gfs2, "ro_ops" for efivarfs)
+> - a remount to read-write fails with EROFS until umount
+> - a remount to read-only works so emergency remount (sysrq u) doesn't
+>   WARN, and it doesn't mark the filesystem clean
+> 
+> That's ext2, jfs, nilfs2, fat, exfat, hfs, affs, ufs, hpfs, ntfs, ocfs2,
+> zonefs, btrfs, gfs2, efivarfs and ubifs. For gfs2 it's the withdraw and
+> for efivarfs it's the notifier that flips SB_RDONLY when the efivar ops
+> switch between ops that can and can't set variables. ubifs can't be
+> frozen but it flips SB_RDONLY from any context all the same. hfsplus
+> only did it when it created the attributes tree, where it can't trigger,
+> so that check is simply limited to mount.
+> 
+> fat, exfat, hpfs, ntfs and ubifs keep setting SB_RDONLY for errors while
+> the filesystem is still being mounted. Until SB_BORN the mounter holds
+> s_umount and nothing can freeze the superblock so that's fine.
+> 
+> A few patches make the read-only remount work in the first place. exfat
+> and ocfs2 didn't inherit their mount options on remount so emergency
+> remount, which passes none, could fail on them. And gfs2 has a BUG_ON()
+> when it's remounted read-only while a withdraw is still pending that
+> this makes easier to hit. Those come before the conversion of the
+> respective filesystem. ext4 and xfs have the same problem with their own
+> error states. ext4 refused to go read-only in its emergency state at all
+> and a shut down xfs couldn't be remounted read-only either. So sysrq u
+> WARNed for every ext4 that hit an error and for every shut down xfs.
+> Both are fixed at the end of the series.
+> 
+> ecryptfs opens its lower files read-write unless the lower superblock is
+> read-only. On top of one of these filesystems every lookup of a regular
+> file would fail with EROFS after an error and leak the inode. umount
+> then reports busy inodes. ext4 already behaves like that and so does a
+> read-only bind mount underneath. The first two patches make ecryptfs
+> fall back to a read-only lower file and plug the leak.
+> 
+> There are user-visible changes but I think they're all fine. The big one
+> is that "mount -o remount,rw" doesn't make the filesystem writable again
+> after an error anymore. That's how ext4 behaves since
+> commit d3476f3dad4a ("ext4: don't set SB_RDONLY after filesystem
+> errors"). statfs() doesn't report ST_RDONLY after an error and a second
+> read-only mount of the device fails with EBUSY. Writes through file
+> descriptors opened before the error fail with EROFS now where they used
+> to succeed. ext2, fat, hfs, affs, ufs and ubifs fail fsync() with EROFS
+> after an error. Writeback drops what they can't write anymore so fsync()
+> would report success otherwise. And remount helpers that pass the shown
+> options back, busybox mount for example, trip over "emergency_ro".
+> That's already the case on ext4.
+> 
+> Every patch has a reproducer in the commit message. I ran all of them
+> in a VM against the unpatched and the patched kernel, the latter with
+> KASAN and kmemleak. There are selftests for ext2, jfs, nilfs2, gfs2 and
+> the ext4 and xfs remount changes.
+> 
+> This depends on three fixes that aren't upstream yet:
+> 
+>   super: don't put the remount context under s_umount
+>   super: keep the read-only state if a reconfiguration doesn't change it
+>   nilfs2: don't reconfigure a frozen superblock on mount
+> 
+> The first one matters most. This series makes errored filesystems
+> reachable for sysrq u and without it a concurrent umount deadlocks on
+> s_umount. The second one makes fc->sb_flags carry the current read-only
+> state for fspick() reconfigurations, which ->reconfigure() of fat, affs,
+> hfs, ufs, hpfs and btrfs rely on. The third one closes the last way
+> nilfs2 changes SB_RDONLY on a frozen superblock, through a mount that
+> reconfigures it.
+> 
+> With this no filesystem changes SB_RDONLY outside of mount and remount
+> anymore.
+> 
+> [1]: https://lore.kernel.org/r/20260903060855.4610-1-kmehltretter@gmail.com
+> [2]: https://lore.kernel.org/r/hyhuckyohsabx2suvq3z7uy3pbgmihva6wgzxr3op7pzcrlu33@p7zzlgp2ehjf
+> 
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 
-fails before the fix, passes after it on a local x86_64 Btrfs VM.
+I'm in favor of this. Just after checking couple of filesystem changes -
+won't we be better off by using a generic flag in super_block for this so
+that VFS can check for it? Then each filesystem won't have to implement
+its own wrapper for simple_fsync(), quota operations, and whatever other
+generic operations that need to bail on shutdown filesystem...
 
-Tested-by: Dhruva Gole <goledhruva@gmail.com>
-Reviewed-by: Dhruva Gole <goledhruva@gmail.com>
-
-Regards,
-Dhruva Gole
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

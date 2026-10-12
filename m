@@ -1,266 +1,553 @@
-Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6FB8A3382FC
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 15:47:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.54
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791820027; cv=pass; b=r5SC2pA3DQxyMpNDQQoVeHXb+bIfjKqPSglM999Z1gY5vmyJSFM6C4CvfnY+rQt/gqrTHAoo5XRd3i4czvmcPEc8BAnXIeyviBIU8HP8UNNvehIZT2JJDhgF+FwObkJhutOSq6qkXshbg6xiL+BdYaZ5rNc9tWBr9mNrI+D7i30=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791820027; c=relaxed/simple;
-	bh=gwc2gYSXylwh8ydnyD5NMSW6vnmv3c4AJHx0q0R2KXA=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=lzkF+lkiYy3ju8wZrCi6AZq53xX6ixKNyE/35Y2Wuj7HDEd1ayLkHRetPA7aSFFpaasPRZAatFHlB3lnbek3l/cnUzJ1b22sxtSO63dxkXV7AvjoknBUC+CgWiwBvRVz0UryNroHnjF47PxnXJMe/RKsrILCh8fdn8WXGAiDZ2s=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QXu02saN; arc=pass smtp.client-ip=209.85.221.54
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32DA3323417;
+	Mon, 12 Oct 2026 16:16:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791821787; cv=none; b=IaJuCEepUMnw1KC2oORJIqoSzjlrn0HUOdsjIweKWf/u4/7UMRdm4OvaMvecd2Y8P3rLBNw1i+i6oTIR1dZdM2VVuH3h4zmAZksBofBS4ZhqYd48p4vKiVQiLpZzFAd27sJv6LKOZDc6OTapvo+JHXpSI8UX6xXerepIyV7E3n0=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791821787; c=relaxed/simple;
+	bh=qBrdL8hEuh98hB+ggHumK7J1HmTMTV6ELoUi707lFy0=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=md1nRWkMmYsAkkWvZ+9Rz/+HKhnDyZPojMGDn+2JtRdCR8r6yzX9pUqhK9d44UCBIIKthhrh+i7dNaQmOR/i5skpAIUCj9yPCAmN0s6GaQOmAxeLWsccpHgzX2LO/+LPrardUOCEF0aVo64OSIhm3hGY/aGMXzYny6ri/+Tii1Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HZBxeKPa; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=nB2BgqZG; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=WWceGWDJ; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=vmVhSmWs; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QXu02saN"
-Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-48c411d6615so1411406f8f.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 08:47:05 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791820023; cv=none;
-        d=google.com; s=arc-20260327;
-        b=RZfuI5zhnWBdVjrSHaHoCipzc6H2k2nMMheSgxVoirs9vszyZ9KPl2p1jB81GO0SJt
-         XwamITBVnJVlLO3+iniFzuY2wn6LnI0WS+9Z3K2WMERX0hC5JT1bOGHAuP5fDHp/wVXI
-         7/cWeC0+04LVT3Q5uFxi2adyB+YNK7VjX4eX2wAiSzuLgy44PHTZOmu2y/hH10XuXv3v
-         YIkIaQnbQGipVBbzVxBiUYhp/+1xAIGBm6ha43xsDCxGl68E7MR080z6FkD1MGsxGwet
-         37XbTPZIa1EqC9BA1ZVVFG+sYYeq0bMrL0gXgvY+9jTAxMR5sm/g6IOzeHddA5DvE2tw
-         Bjgw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
-        fh=/TLdZPaKVK8zLP4Hd/NFA5A9V2xsmXixQg2Y0r+4q6c=;
-        b=bpnH2mUJqt8VlHXNgwAqpD/ioDLroZsX7pmhctZRtGvSLOeVMS4NykxHLo9aB2Uwpd
-         QzoO3pZEKlKuJ8kTQ6BsXO35dNB9vfbTQNruMvhmhlP5jKABFlNTUXGFQQpi1SGY9/sx
-         dT1dvZ0JKpYWN+kUK3JQ8AICo5bKlcpjdLP1GjTReHJRQbg9v6IDOCN+OdqBWNEAOpFi
-         6Bc5wq0r0y4GjOElkfgc+9GjcGo1ftwUvZqVJjGxpAFMoZ8hLrW55sEQ9Y/6uEa93l9v
-         PidGYjgUv2YvK8h6BmQU7Vp7k5xLNgh8NbsbU92CKVbweeAy476DD2wu6YZq56CxUoco
-         iVSQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791820023; x=1792424823; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
-        b=QXu02saN1jaYzkZk7rwUI7xUBVoELeaHEw8hDKzR/MsHILluE4n0jMZDP27njIaSjI
-         JvWeE0bAimLNRzFkMZMvQqwyTmyPGcrcrnvsCT7UHXmK/RyLEoCA3b4ITqowJu+7nig6
-         rXRR1GYsY3a2JuhME+DW4AylCWrenDGPySYZIPhrzRAvUz7ULzVO5ddO3mA1A8jPPJeU
-         Zw2cloBV8f0NY8TTzjyyP/BRTlF4LMcNx5Uz7MI6yxFi7vv/rFFTvu8LtSJWu/yN497n
-         J522bg7A1FfazlB67Q1REBHjWAUpPbMbBxrl0RGODBxmfVLxW5vMbL2PcuID+LCi8N+F
-         t3wQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791820023; x=1792424823;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=7JeAgullTm+WU0I4Ca/yR4q3BzuHUQ9uDYqHcr/wHqk=;
-        b=MtMZGZ0wnjYa3I9ekH4pdXbtMggAWUd5KvubitZO+FbKzegmpKu3iWsYmEMy7Rf02e
-         jUQRPvv2zV41T6fOEPAff19gq5lpMIyKXh319igTyCkbiasZk5GXSR+TvUcf5IU24Xb6
-         Mpmk1HIa1+ovFLbiAmPt4QEE4kW0qNAWI9P+PdN4Fu/l65bLe4LJnnAkaV/sMeBJ+Qru
-         16Jt3D7QC6js6bgBPoe4IFZqjghy7X0CYX5i7pV63jmmhxxaI8RscldILGzXUmRa9HDD
-         wom9acP+i+9bDNXPBwuWcDvDGTSB3yIdC7peidUfQ8I4DEv3/89DgF4o2TjqQHBGM46i
-         7xNQ==
-X-Gm-Message-State: AFq9FYLMULuq4t3fsGnhTw3JV/JRxT51lnVnOSkTuOzv20eajCh/r4e0
-	RF9xlmChnEK5UjJo8gCsDZznueSQXlwipm/U7tugsPqgozYOUihANuDxaVFxRvLBg4I3vrVMVBc
-	C+1toQ+ruGcQdngxtO4ACitqy0Zyssjc4xRg+b2AS/g==
-X-Gm-Gg: AYBFou0cQXjo8c1McjUYOwR5WqTg09qkFgmJHGKNhBxdo6eIBhDfVSz8/fJhs/9Kove
-	R7K55OA91B4TnZECRW1l5sxegP8Zr+ilr7OleK+f6m3g98UCl5amTEvD+D/qsgVXn7g0hu5akKu
-	ZJrNehy9MSPM+tePDBH84e4fQE3etv5oeoc4tQMEor1pQ7Ragb+P/zDI0IM84gmscsI0J8CCOWr
-	JOIk/MlLOBE/lqlCRRohtFQ/axx3zHaFRK7XarW7kthtdWucq3YPBdefeYfhwJPLTbOJHDmJDsz
-	dcIIceusAJ1pSgWbclGEBi/2vWI/kwVedwEOdM0yr/TgTVH5wlpixkVhplQgLKUXcfOz/q067Iv
-	f3VUk3zNDJKB6ziR0HFNp+WVK8BIkqQfIUi3TvVZTBYncy0v7kop5T0dS74ETefo=
-X-Received: by 2002:a05:6000:4683:b0:48c:455a:1c81 with SMTP id
- ffacd0b85a97d-48dbaadc0e1mr13201734f8f.17.1791820023193; Mon, 12 Oct 2026
- 08:47:03 -0700 (PDT)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HZBxeKPa";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="nB2BgqZG";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="WWceGWDJ";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="vmVhSmWs"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 0DA251F452;
+	Mon, 12 Oct 2026 16:16:22 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791821783; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
+	b=HZBxeKPaSuJuHrua6pwIjLUgJu7T8+o5x6pGbu6VrVxgW0pontpG7mgvSCW985lvQXCm6k
+	ENiCBzHr7vZPPzUN+RDzVpK2ajEGkHlPIrKXbI8outUnK98NY01XNWN8P7ybGirsg5L0xU
+	cAeLEvs1yYOuf1+uuzrOORr9psx1yyA=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791821783;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
+	b=nB2BgqZGXtqQFEj9bmWRZS5HMKJiCm9+NCbifhOmi85FkwuCll0g+y7M86ZJW+N+n6N4ef
+	O1eu+fHbxoQNPmDQ==
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791821782; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
+	b=WWceGWDJWbWyp+tSjWUuIl96+47XetoM8UQ5ojGWu22vW0tpHkFlS58u3gADcp3WGRybpY
+	qS3B6aHa+hxemG1ZzhjBHcnsecTmHO+ZY/eGbSw6pzWcsS8Ap7IBbkaMiEzTet+7DasyLX
+	71l8j1AG3D7WgTfNDdqv3TOGdTkgfEk=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791821782;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
+	b=vmVhSmWsRel2xmyiBhPqbV+Ka6fqG4q5r0ToTPQ8GhzafF+ptviSJpOif87jnc7//+DvbD
+	/re/ZAjGcxA9wmAA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CA73B13314;
+	Mon, 12 Oct 2026 16:16:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id SixCKdUHzWqqJwAAD6G6ig
+	(envelope-from <jack@suse.cz>); Mon, 12 Oct 2026 16:16:21 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id 5D46EA1405; Mon, 12 Oct 2026 18:16:17 +0200 (CEST)
+Date: Mon, 12 Oct 2026 18:16:17 +0200
+From: Jan Kara <jack@suse.cz>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.cz>, Jens Axboe <axboe@kernel.dk>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
+	linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH 2/2] super: convert to plain hashtable
+Message-ID: <skrqaeb7xlz5cjge27i7rsvv47jrfmgur3ugypy24mfvx6rndi@cvqtng3snniy>
+References: <20261012-work-super-dev_hash-v1-0-305cf71cd334@kernel.org>
+ <20261012-work-super-dev_hash-v1-2-305cf71cd334@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1791706855.git.wqu@suse.com> <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
-In-Reply-To: <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Mon, 12 Oct 2026 17:46:51 +0200
-X-Gm-Features: AclHuK-ihupX05PdzZpcJgRiwWH11oc60L2ncAEMAET1uOEQf5ZcL_uFHmneJlg
-Message-ID: <CAPjX3FfauJ8S7ShhusSm7WX5MEMa3uDwEi-=F_BdA+RM0f_DJQ@mail.gmail.com>
-Subject: Re: [PATCH v5 2/2] btrfs: fix use-after-free on quota enable
- allocation failure
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, 
-	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>, 
-	syzbot+947286c775f432b073a8@syzkaller.appspotmail.com, 
-	Boris Burkov <boris@bur.io>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261012-work-super-dev_hash-v1-2-305cf71cd334@kernel.org>
+X-Spamd-Result: default: False [-3.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_THREE(0.00)[3];
+	RCVD_TLS_LAST(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	MISSING_XM_UA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
+X-Spam-Score: -3.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-On Sun, 11 Oct 2026 at 10:22, Qu Wenruo <wqu@suse.com> wrote:
-> From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+On Mon 12-10-26 14:31:19, Christian Brauner wrote:
+> Convert the rhltable to a plain hashtable under a spinlock. The walks
+> keep their place with a cursor entry in the chain. A claim is unhashed
+> the moment it's dropped and a walk that finds a superblock that isn't
+> born yet waits for it to be born or to die and looks again. Since
+> hashing can't fail anymore the entry for the superblock's own s_dev is
+> embedded in struct super_block and the preallocation in alloc_super()
+> goes away. This all simplifies things quite a lot.
+> 
+> It also fixes a btrfs bug where fs_bdev_freeze() ended up freezing a
+> btrfs filesystem through a stale member that open_ctree() had already
+> released while the freeze was waiting for SB_BORN. The resume doesn't
+> find a holder for that device anymore so the filesystem stays frozen
+> for good.
+> 
+> The walks return superblocks instead of table entries now and
+> user_get_super() hands out the passive reference the walk took.
+> 
+> Reproducer, a three device btrfs with a stale copy of a removed member.
+> dm-delay under the remaining members stretches the window between
+> btrfs_open_devices() and btrfs_free_extra_devids():
+> 
+>   truncate -s 1G a1 a2 b
+>   A1=$(losetup -f --show a1); A2=$(losetup -f --show a2); B=$(losetup -f --show b)
+>   mkfs.btrfs -f -d single -m single $A1 $A2 $B
+>   cp b b.old
+>   mount $A1 /mnt && btrfs device remove 3 /mnt && umount /mnt
+>   OLD=$(losetup -f --show b.old)
+>   dmsetup create d1 --table "0 $(blockdev --getsz $A1) delay $A1 0 200"
+>   dmsetup create d2 --table "0 $(blockdev --getsz $A2) delay $A2 0 200"
+>   dmsetup create old --table "0 $(blockdev --getsz $OLD) linear $OLD 0"
+>   mount -o device=/dev/mapper/d2,device=/dev/mapper/old /dev/mapper/d1 /mnt &
+>   sleep 1; dmsetup suspend old; wait
+>   dmsetup resume old
+>   touch /mnt/foo     # hangs until fsfreeze -u /mnt
+> 
+> That left btrfs frozen in 5 of 5 rounds with the same tables issued
+> through raw dm ioctls. The -o degraded variant needs the mount held
+> between the insertion and the bd_fsfreeze_count check in
+> fs_bdev_register() with a kprobe.
+> 
+> Fixes: cdb5146f8d5f ("fs: look up superblocks via the device table in fs_holder_ops")
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+
+Overall looks good to me and indeed the code looks simpler. One suggestion
+below:
+
+> +/* Unhash the cursor of a walk that stops early. */
+> +static void super_dev_walk_end(struct super_dev *cursor)
+>  {
+> -	struct super_dev *sb_dev;
+> -
+> -	rcu_read_lock();
+> -	sb_dev = super_dev_get(rhltable_lookup(&super_dev_table, &dev, super_dev_params));
+> -	rcu_read_unlock();
+> -	return sb_dev;
+> +	guard(spinlock)(&super_dev_lock);
+> +	hash_del(&cursor->sd_hash);
+>  }
 >
-> [BUG]
-> There is a syzbot report that a use-after-free bug is triggered after a
-> failed btrfs_quota_enable():
->
->  loop0: detected capacity change from 32768 to 0
->  ==================================================================
->  BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
->  Read of size 8 at addr ffff888040e0a528 by task syz.0.0/5324
->
->  CPU: 0 UID: 0 PID: 5324 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
->  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
->  Call Trace:
->   <TASK>
->   dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
->   print_address_description+0x55/0x1e0 mm/kasan/report.c:378
->   print_report+0x58/0x70 mm/kasan/report.c:482
->   kasan_report+0x117/0x150 mm/kasan/report.c:595
->   __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
->   __list_add_valid include/linux/list.h:104 [inline]
->   __list_add include/linux/list.h:169 [inline]
->   list_add include/linux/list.h:192 [inline]
->   list_move include/linux/list.h:345 [inline]
->   add_root_to_dirty_list+0x38b/0x470 fs/btrfs/ctree.c:232
->   btrfs_force_cow_block+0xf09/0x1bf0 fs/btrfs/ctree.c:553
->   btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
->   btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
->   btrfs_search_prev_slot fs/btrfs/free-space-tree.c:134 [inline]
->   remove_free_space_extent fs/btrfs/free-space-tree.c:732 [inline]
->   __btrfs_remove_from_free_space_tree fs/btrfs/free-space-tree.c:837 [inline]
->   btrfs_remove_from_free_space_tree+0x4d6/0xda0 fs/btrfs/free-space-tree.c:866
->   alloc_reserved_extent+0x4a/0x2b0 fs/btrfs/extent-tree.c:4976
->   alloc_reserved_tree_block fs/btrfs/extent-tree.c:5155 [inline]
->   run_delayed_tree_ref fs/btrfs/extent-tree.c:1815 [inline]
->   run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
->   btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
->   __btrfs_run_delayed_refs+0x18b5/0x43b0 fs/btrfs/extent-tree.c:2134
->   btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
->   btrfs_commit_transaction+0x28a/0x3170 fs/btrfs/transaction.c:2267
->   sync_filesystem+0x1d2/0x240 fs/sync.c:66
->   btrfs_reconfigure+0x2dc/0x2100 fs/btrfs/super.c:1511
->   reconfigure_super+0x232/0x8f0 fs/super.c:1128
->   do_remount fs/namespace.c:3410 [inline]
->   path_mount+0xd4e/0x1050 fs/namespace.c:4160
->   do_mount fs/namespace.c:4181 [inline]
->   __do_sys_mount fs/namespace.c:4397 [inline]
->   __se_sys_mount+0x31d/0x420 fs/namespace.c:4374
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->  RIP: 0033:0x7f9c8dd9f3ca
->   </TASK>
->
->  Allocated by task 5323:
->   kasan_save_stack mm/kasan/common.c:57 [inline]
->   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
->   poison_kmalloc_redzone mm/kasan/common.c:409 [inline]
->   __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:426
->   kasan_kmalloc include/linux/kasan.h:263 [inline]
->   __kmalloc_cache_noprof+0x321/0x600 mm/slub.c:5563
->   _kmalloc_noprof include/linux/slab.h:991 [inline]
->   _kzalloc_noprof include/linux/slab.h:1312 [inline]
->   btrfs_alloc_root+0x75/0x840 fs/btrfs/disk-io.c:638
->   btrfs_create_tree+0xa8/0x5c0 fs/btrfs/disk-io.c:832
->   btrfs_quota_enable+0x3d6/0x1e20 fs/btrfs/qgroup.c:1074
->   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
->   vfs_ioctl fs/ioctl.c:51 [inline]
->   __do_sys_ioctl fs/ioctl.c:597 [inline]
->   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
->  Freed by task 5323:
->   kasan_save_stack mm/kasan/common.c:57 [inline]
->   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
->   kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:584
->   poison_slab_object mm/kasan/common.c:264 [inline]
->   __kasan_slab_free+0x5c/0x80 mm/kasan/common.c:296
->   kasan_slab_free include/linux/kasan.h:235 [inline]
->   slab_free_hook mm/slub.c:2748 [inline]
->   slab_free mm/slub.c:6508 [inline]
->   kfree+0x1c5/0x650 mm/slub.c:6801
->   btrfs_quota_enable+0x1208/0x1e20 fs/btrfs/qgroup.c:1292
->   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
->   vfs_ioctl fs/ioctl.c:51 [inline]
->   __do_sys_ioctl fs/ioctl.c:597 [inline]
->   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
-> [CAUSE]
-> During btrfs_quota_enable(), a temporary quota_root is created, then
-> qgroup items are created for each subvolume and inserted into that root.
->
-> If there are enough subvolumes, the level of quota_root will be bumped,
-> and add_root_to_dirty_list() will be called, adding
-> quota_root->dirty_list into fs_info->dirty_cowonly_roots.
->
-> But if a problem is hit during btrfs_quota_enable() later, that
-> quota_root will be released through btrfs_put_root(), causing the whole
-> quota_root structure to be released, while leaving
-> fs_info->dirty_cowonly_roots still pointing to the released
-> quota_root->dirty_list.
->
-> Later access through fs_info->dirty_cowonly_roots will trigger a
-> use-after-free bug.
->
-> [FIX]
-> We can just call list_del_init(&root->dirty_list) when
-> btrfs_quota_enable() failed.
->
-> Also to follow the existing error handling behavior, abort the
-> transaction when the memory preallocation failed.
->
-> Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
-> Link: https://lore.kernel.org/linux-btrfs/6ac5a5e1.9ad129c8.3ce5b3.0010.GAE@google.com/
-> Closes: https://syzkaller.appspot.com/bug?extid=947286c775f432b073a8
-> Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> [ Change the commit message to include a proper analysis. ]
-> Reviewed-by: Boris Burkov <boris@bur.io>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/qgroup.c | 7 +++++++
->  1 file changed, 7 insertions(+)
->
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index cf8dfd5c692b..a0651fbfe778 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
->         prealloc = kzalloc_obj(*prealloc, GFP_NOFS);
->         if (!prealloc) {
->                 ret = -ENOMEM;
-> +               btrfs_abort_transaction(trans, ret);
->                 goto out;
->         }
->         qgroup = add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTID);
-> @@ -1296,6 +1297,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_info,
->                  * sysfs entries.
->                  */
->                 btrfs_free_qgroup_config(fs_info);
+> +#define for_each_dev_super(sb, cursor) \
+> +	for (sb = super_dev_next(cursor, NULL); sb; sb = super_dev_next(cursor, sb))
+
+So the 'cursor' is unused by the users of for_each_dev_super() except for
+calling super_dev_walk_end() when they abort the loop. So why not pass just
+'dev' into the macro where 'cursor' will be internal to for() loop and
+setup __cleanup to call super_dev_walk_end() when the cursor goes out of
+scope? It will require a bit of a macro magic but should be more ergonomic
+to use and no chance to forget calling super_dev_walk_end() at appropriate
+places.
+
+								Honza
+
+>  
+>  static void kill_super_notify(struct super_block *sb)
+>  {
+> @@ -548,11 +523,8 @@ static void kill_super_notify(struct super_block *sb)
+>  	if (sb->s_flags & SB_DEAD)
+>  		return;
+>  
+> -	/* Drop sget_fc()'s claim; a never-registered entry stays with the sb. */
+> -	if (sb->s_super_dev->sd_dev) {
+> -		super_dev_put(sb->s_super_dev);
+> -		sb->s_super_dev = NULL;
+> -	}
+> +	/* Drop sget_fc()'s claim on s_dev. */
+> +	super_dev_put(&sb->s_super_dev);
+>  
+>  	/*
+>  	 * Let concurrent mounts know that this thing is really dead.
+> @@ -880,13 +852,12 @@ struct super_block *sget_fc(struct fs_context *fc,
+>  	s->s_fs_info = fc->s_fs_info;
+>  	err = set(s, fc);
+>  	if (err) {
+> -		VFS_WARN_ON_ONCE(s->s_super_dev->sd_dev);
+>  		s->s_fs_info = NULL;
+>  		spin_unlock(&sb_lock);
+>  		destroy_unused_super(s);
+>  		return ERR_PTR(err);
+>  	}
+> -	VFS_WARN_ON_ONCE(!s->s_super_dev->sd_dev);
+> +	VFS_WARN_ON_ONCE(!s->s_dev);
+>  	fc->s_fs_info = NULL;
+>  	s->s_type = fc->fs_type;
+>  	s->s_iflags |= fc->s_iflags;
+> @@ -899,6 +870,8 @@ struct super_block *sget_fc(struct fs_context *fc,
+>  	list_add_tail(&s->s_list, &super_blocks);
+>  	hlist_add_head(&s->s_instances, &s->s_type->fs_supers);
+>  	spin_unlock(&sb_lock);
+> +	scoped_guard(spinlock, &super_dev_lock)
+> +		super_dev_add(&s->s_super_dev, s, s->s_dev);
+>  	get_filesystem(s->s_type);
+>  	shrinker_register(s->s_shrink);
+>  	return s;
+> @@ -1040,18 +1013,14 @@ EXPORT_SYMBOL(iterate_supers_type);
+>  
+>  struct super_block *user_get_super(dev_t dev, bool excl)
+>  {
+> -	struct super_dev *sb_dev;
+> -
+> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+> -		struct super_block *sb = sb_dev->sd_sb;
+> -
+> -		if (!super_lock(sb, excl))
+> -			continue;
+> +	struct super_dev cursor = { .sd_dev = dev };
+> +	struct super_block *sb;
+>  
+> -		/* The pinned entry holds a passive reference, take our own. */
+> -		refcount_inc(&sb->s_passive);
+> -		super_dev_put(sb_dev);
+> -		return sb;
+> +	for_each_dev_super(sb, &cursor) {
+> +		if (super_lock(sb, excl)) {
+> +			super_dev_walk_end(&cursor);
+> +			return sb;
+> +		}
+>  	}
+>  	return NULL;
+>  }
+> @@ -1353,16 +1322,7 @@ EXPORT_SYMBOL(free_anon_bdev);
+>  
+>  int set_anon_super(struct super_block *s, void *data)
+>  {
+> -	int error;
+> -
+> -	error = get_anon_bdev(&s->s_dev);
+> -	if (error)
+> -		return error;
+> -
+> -	error = super_dev_register(s);
+> -	if (error)
+> -		free_anon_bdev(s->s_dev);
+> -	return error;
+> +	return get_anon_bdev(&s->s_dev);
+>  }
+>  EXPORT_SYMBOL(set_anon_super);
+>  
+> @@ -1448,7 +1408,7 @@ EXPORT_SYMBOL(get_tree_keyed);
+>  static int set_bdev_super(struct super_block *s, void *data)
+>  {
+>  	s->s_dev = *(dev_t *)data;
+> -	return super_dev_register(s);
+> +	return 0;
+>  }
+>  
+>  static int super_s_dev_set(struct super_block *s, struct fs_context *fc)
+> @@ -1527,14 +1487,12 @@ static int fs_super_thaw(struct super_block *sb)
+>  
+>  static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
+>  {
+> -	struct super_dev *sb_dev;
+> -	dev_t dev = bdev->bd_dev;
+> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
+> +	struct super_block *sb;
+>  
+>  	mutex_unlock(&bdev->bd_holder_lock);
+>  
+> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+> -		struct super_block *sb = sb_dev->sd_sb;
+> -
+> +	for_each_dev_super(sb, &cursor) {
+>  		if (!super_lock_shared(sb))
+>  			continue;
+>  		if (sb->s_root && (sb->s_flags & SB_ACTIVE)) {
+> @@ -1554,14 +1512,12 @@ static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
+>  
+>  static void fs_bdev_sync(struct block_device *bdev)
+>  {
+> -	struct super_dev *sb_dev;
+> -	dev_t dev = bdev->bd_dev;
+> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
+> +	struct super_block *sb;
+>  
+>  	mutex_unlock(&bdev->bd_holder_lock);
+>  
+> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+> -		struct super_block *sb = sb_dev->sd_sb;
+> -
+> +	for_each_dev_super(sb, &cursor) {
+>  		if (!super_lock_shared(sb))
+>  			continue;
+>  		if (sb->s_root && (sb->s_flags & SB_ACTIVE))
+> @@ -1585,8 +1541,8 @@ static void fs_bdev_sync(struct block_device *bdev)
+>   */
+>  static int fs_bdev_freeze(struct block_device *bdev)
+>  {
+> -	dev_t dev = bdev->bd_dev;
+> -	struct super_dev *sb_dev;
+> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
+> +	struct super_block *sb;
+>  	unsigned int count = 0;
+>  	int error = 0, err;
+>  
+> @@ -1594,13 +1550,13 @@ static int fs_bdev_freeze(struct block_device *bdev)
+>  
+>  	mutex_unlock(&bdev->bd_holder_lock);
+>  
+> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+> -		if (!get_active_super(sb_dev->sd_sb))
+> +	for_each_dev_super(sb, &cursor) {
+> +		if (!get_active_super(sb))
+>  			continue;
+> -		err = fs_super_freeze(sb_dev->sd_sb);
+> +		err = fs_super_freeze(sb);
+>  		if (err && !error)
+>  			error = err;
+> -		deactivate_super(sb_dev->sd_sb);
+> +		deactivate_super(sb);
+>  		count++;
+>  	}
+>  
+> @@ -1640,8 +1596,8 @@ static int fs_bdev_freeze(struct block_device *bdev)
+>   */
+>  static int fs_bdev_thaw(struct block_device *bdev)
+>  {
+> -	dev_t dev = bdev->bd_dev;
+> -	struct super_dev *sb_dev;
+> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
+> +	struct super_block *sb;
+>  	unsigned int count = 0;
+>  	int error = 0, err;
+>  
+> @@ -1649,13 +1605,13 @@ static int fs_bdev_thaw(struct block_device *bdev)
+>  
+>  	mutex_unlock(&bdev->bd_holder_lock);
+>  
+> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+> -		if (!get_active_super(sb_dev->sd_sb))
+> +	for_each_dev_super(sb, &cursor) {
+> +		if (!get_active_super(sb))
+>  			continue;
+> -		err = fs_super_thaw(sb_dev->sd_sb);
+> +		err = fs_super_thaw(sb);
+>  		if (err && !error)
+>  			error = err;
+> -		deactivate_super(sb_dev->sd_sb);
+> +		deactivate_super(sb);
+>  		count++;
+>  	}
+>  
+> @@ -1672,55 +1628,39 @@ static const struct blk_holder_ops fs_holder_ops = {
+>  	.thaw			= fs_bdev_thaw,
+>  };
+>  
+> -static struct super_dev *super_dev_lookup(dev_t dev, struct super_block *sb)
+> +static struct super_dev *super_dev_find(dev_t dev, const struct super_block *sb)
+>  {
+> -	struct super_dev *it;
+> -	struct rhlist_head *list, *pos;
+> +	struct super_dev *sd;
+>  
+> -	RCU_LOCKDEP_WARN(!rcu_read_lock_held(), "suspicious super_dev_lookup() usage");
+> -	VFS_WARN_ON_ONCE(!dev);
+> -	VFS_WARN_ON_ONCE(!sb);
+> +	lockdep_assert_held(&super_dev_lock);
+>  
+> -	list = rhltable_lookup(&super_dev_table, &dev, super_dev_params);
+> -	rhl_for_each_entry_rcu(it, pos, list, sd_node) {
+> -		if (it->sd_sb == sb)
+> -			return it;
+> +	hash_for_each_possible(super_dev_hash, sd, sd_hash, dev) {
+> +		if (sd->sd_dev == dev && sd->sd_sb == sb)
+> +			return sd;
+>  	}
+> -
+>  	return NULL;
+>  }
+>  
+> -static int fs_bdev_register(struct file *bdev_file, struct super_block *sb)
+> +static int fs_bdev_register(struct block_device *bdev, struct super_block *sb)
+>  {
+> -	struct super_dev *sb_dev __free(kfree) = NULL;
+> -	dev_t dev = file_bdev(bdev_file)->bd_dev;
+> -	int err;
+> -
+> -	scoped_guard(rcu) {
+> -		sb_dev = super_dev_lookup(dev, sb);
+> -		if (sb_dev && refcount_inc_not_zero(&sb_dev->sd_ref)) {
+> -			retain_and_null_ptr(sb_dev);
+> -			return 0;
+> -		}
+> -	}
+> -
+> -	sb_dev = super_dev_alloc(dev, sb);
+> -	if (!sb_dev)
+> -		return -ENOMEM;
+> +	struct super_dev *new __free(kfree) = NULL;
+> +	struct super_dev *sd;
+>  
+> -	err = super_dev_insert(sb_dev);
+> -	if (err)
+> -		return err;
+> +	new = kzalloc_obj(*new);
+>  
+> -	/* Publish the entry before reading the count; pairs with bdev_freeze(). */
+> -	smp_mb();
+> -	if (atomic_read(&file_bdev(bdev_file)->bd_fsfreeze_count) > 0) {
+> -		err = -EBUSY;
+> -		super_dev_put(sb_dev);
+> +	guard(spinlock)(&super_dev_lock);
+> +	sd = super_dev_find(bdev->bd_dev, sb);
+> +	if (sd) {
+> +		sd->sd_claims++;
+> +		return 0;
+>  	}
+> -
+> -	retain_and_null_ptr(sb_dev);
+> -	return err;
+> +	/* bdev_freeze() raises the count before its walk takes the lock. */
+> +	if (atomic_read(&bdev->bd_fsfreeze_count) > 0)
+> +		return -EBUSY;
+> +	if (!new)
+> +		return -ENOMEM;
+> +	super_dev_add(no_free_ptr(new), sb, bdev->bd_dev);
+> +	return 0;
+>  }
+>  
+>  /**
+> @@ -1747,7 +1687,7 @@ struct file *fs_bdev_file_open_by_dev(dev_t dev, blk_mode_t mode, void *holder,
+>  	if (IS_ERR(bdev_file))
+>  		return bdev_file;
+>  
+> -	err = fs_bdev_register(bdev_file, sb);
+> +	err = fs_bdev_register(file_bdev(bdev_file), sb);
+>  	if (err) {
+>  		bdev_fput(bdev_file);
+>  		return ERR_PTR(err);
+> @@ -1781,7 +1721,7 @@ struct file *fs_bdev_file_open_by_path(const char *path, blk_mode_t mode,
+>  	if (IS_ERR(bdev_file))
+>  		return bdev_file;
+>  
+> -	err = fs_bdev_register(bdev_file, sb);
+> +	err = fs_bdev_register(file_bdev(bdev_file), sb);
+>  	if (err) {
+>  		bdev_fput(bdev_file);
+>  		return ERR_PTR(err);
+> @@ -1796,21 +1736,20 @@ EXPORT_SYMBOL_GPL(fs_bdev_file_open_by_path);
+>   * @sb: superblock the device was claimed for
+>   *
+>   * The inverse of fs_bdev_register(): drop one claim on the {dev, @sb} entry
+> - * (the last claim unregisters it; a pinning cursor defers the actual unlink)
+> - * without closing the device.  A caller that must act on the still-open device
+> - * between unregistering and closing - e.g. re-allow freezing one denied for a
+> - * membership change - pairs this with bdev_fput().  fs_bdev_file_release() is
+> - * the common unregister-and-close.
+> + * (the last claim unregisters it) without closing the device.  A caller that
+> + * must act on the still-open device between unregistering and closing - e.g.
+> + * re-allow freezing one denied for a membership change - pairs this with
+> + * bdev_fput().  fs_bdev_file_release() is the common unregister-and-close.
+>   */
+>  void fs_bdev_unregister(struct file *bdev_file, struct super_block *sb)
+>  {
+> -	dev_t dev = file_bdev(bdev_file)->bd_dev;
+> -	struct super_dev *sb_dev;
+> +	struct super_dev *sd;
+>  
+> -	rcu_read_lock();
+> -	sb_dev = super_dev_lookup(dev, sb);
+> -	rcu_read_unlock();
+> -	super_dev_put(sb_dev);
+> +	/* The claim we're dropping keeps the entry hashed. */
+> +	scoped_guard(spinlock, &super_dev_lock)
+> +		sd = super_dev_find(file_bdev(bdev_file)->bd_dev, sb);
+> +	if (sd)
+> +		super_dev_put(sd);
+>  }
+>  EXPORT_SYMBOL_GPL(fs_bdev_unregister);
+>  
+> @@ -1853,8 +1792,7 @@ int setup_bdev_super(struct super_block *sb, int sb_flags,
+>  		return -EACCES;
+>  	}
+>  
+> -	/* The sget_fc() entry is already published; pairs with bdev_freeze(). */
+> -	smp_mb();
+> +	/* sget_fc() hashed @sb, super_dev_lock orders that against bdev_freeze(). */
+>  	if (atomic_read(&bdev->bd_fsfreeze_count) > 0) {
+>  		if (fc)
+>  			warnf(fc, "%pg: Can't mount, blockdev is frozen", bdev);
+> diff --git a/include/linux/fs/super_types.h b/include/linux/fs/super_types.h
+> index ecd96aeb1cee..72f4288e16c5 100644
+> --- a/include/linux/fs/super_types.h
+> +++ b/include/linux/fs/super_types.h
+> @@ -30,7 +30,6 @@ struct mount;
+>  struct mtd_info;
+>  struct quotactl_ops;
+>  struct shrinker;
+> -struct super_dev;
+>  struct unicode_map;
+>  struct user_namespace;
+>  struct workqueue_struct;
+> @@ -132,10 +131,18 @@ struct super_operations {
+>  	void (*report_error)(const struct fserror_event *event);
+>  };
+>  
+> +/* A superblock's claim on a device, see fs/super.c. */
+> +struct super_dev {
+> +	struct hlist_node			sd_hash;
+> +	struct super_block			*sd_sb;
+> +	dev_t					sd_dev;
+> +	unsigned int				sd_claims;
+> +};
 > +
-> +               if (quota_root) {
-
-How about
-
-+               if (quota_root && !list_empty(&quota_root->dirty_list)) {
-
-to avoid taking the lock if not needed?
-
---nX
-
-> +                       spin_lock(&fs_info->trans_lock);
-> +                       list_del_init(&quota_root->dirty_list);
-> +                       spin_unlock(&fs_info->trans_lock);
-> +               }
->                 btrfs_put_root(quota_root);
->         }
->         mutex_unlock(&fs_info->qgroup_ioctl_lock);
-> --
-> 2.56.0
->
->
+>  struct super_block {
+>  	struct list_head			s_list;		/* Keep this first */
+>  	dev_t					s_dev;		/* search index; _not_ kdev_t */
+> -	struct super_dev			*s_super_dev;	/* sget_fc()'s device table claim */
+> +	struct super_dev			s_super_dev;	/* claim on s_dev */
+>  	unsigned char				s_blocksize_bits;
+>  	unsigned long				s_blocksize;
+>  	loff_t					s_maxbytes;	/* Max file size */
+> 
+> -- 
+> 2.53.0
+> 
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

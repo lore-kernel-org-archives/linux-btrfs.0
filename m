@@ -1,35 +1,34 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 06F234718E9;
-	Mon, 12 Oct 2026 12:31:29 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 16B8348C8B9;
+	Mon, 12 Oct 2026 12:31:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791808291; cv=none; b=fMX5qxMJ5EmBe/QowG+hv9dQ7A6c5UVyZy0OXD/Emq5M6YEsKrLOsFGDXpQzaUaawajPKJdeoWmc2p6LI08J55/SGNewarT9P5MBrm3eoPcJiE4rINtl+L7Xvbo2wPVadtZ5FZgA2Pgq/W70AyzIIOnF6T4pZqSGPDce3Xq1UTs=
+	t=1791808294; cv=none; b=qtQ0wSH+9tu+Y+Yd6V7h/qeM5bupZksdmLq7y20GFWFKusuapXe1R436icQY6aIxuYKN/DDJyRIHqmp9ThfiIVhHSHBeNS1bUrheuazLFLGNO2Ss3OgxypfIFF3IVYvrzStBRjLtI2bgbHcGYLobJBcU0PHQjQssrtCIAJGNuOM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791808291; c=relaxed/simple;
-	bh=8imTZspBcZVNOShIGzS+8PI2WJIj0e0sbWFzNBy0P5A=;
+	s=arc-20240116; t=1791808294; c=relaxed/simple;
+	bh=7IJztF0kIuYFqCFFMhp+JxTvf6sxFQkAJ2z3lICrAeQ=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=R2Z3aM76GjrrQ0+jSNGhWIhEpivhRSGcru3ZRjt1VxGxr66TlswwWnA43GinOHjPy+ZD0uyIyxP4sCEDdgi0ua+PfcJtkm0vzOSS1VCUyMChEV7P4yrVBJk4uO9tnqk1oHDqpD9zS5hSnFWG2dhh+v8CmsuLbCFaS6bVU1/xmbk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GdASA4A7; arc=none smtp.client-ip=100.103.45.18
+	 In-Reply-To:To:Cc; b=Pg/um09bjkCH75CYPBErubw85CMUPe4pICdBA1t9BfQOwt5Rvr4DwdhYq54Fep6Xyj7Pe+ySROL5WwbQM2itHWd9fXFc+8SrNgBOw6Ai1teaueTonVep8NQGDCdAJQ1PfHxBwvJ0ohsQ15urS4+oWW1wnxHO9JOeqJJzg7FH9m8=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=egsDNeNH; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GdASA4A7"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A5C5A1F0089C;
-	Mon, 12 Oct 2026 12:31:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="egsDNeNH"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 148B51F0089B;
+	Mon, 12 Oct 2026 12:31:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791808289;
-	bh=6KTn4fVORnTWbEPt0NhgdNA7kdks57WEZP007BcNqP0=;
+	s=k20260515; t=1791808291;
+	bh=vFd5HQZgP2/G7hHX6FpDSV7jPawcEHK0kvVLe9WBLRk=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc;
-	b=GdASA4A7+f/lHTiE1nrern0heFM9Nj93uo3zhRBwEkjRrMFEZ8izRxD0QnYagNPNA
-	 GpqIznz6lhN4dN/KsVbIfjvh2pqiFQ5V2vJnJm6YE+VmahdengVh70o/ra5dUzyjPJ
-	 YSW6wgbLKtC1rEegsgUC1G8/OEA+WIP5tWV3/M8hvl2kJ7cRuZfD7jS6a3haYkqibS
-	 Mzzrbk+dEI9YZhGop3ueT68dzp2SFgMJEU4X8mMsG5EqjXbiPZpI5faLOgR8TzLuRA
-	 +Vu/uxlEF0WBfds8usLmiuLIUPe9Pw6o68j5hFSdK18hKYwtr9bdUzQ5W4I/gu9CyX
-	 sok+poChvcQPw==
+	b=egsDNeNHuWa7DqNtRTkbJdjV9rudqaiazDaYcT1UioYW8apIM4TjIswRZYK6acgW8
+	 fZ6BSP74YNWmwPCh5IzGizlSQgUE4+zBZ29406LQ43ftYgGLjXdOx608vr64jRra9T
+	 s3ab9ioc0/WbS3frkLgN8kBg2yXROKTqp5pUwhOAoHy6UQenrXOe5kbIap/I9GKyoB
+	 4sWZY3+BQxcfmp1HCRGLL2w90k5pT90VvLn+sIoW99CaVw0EUjj+waWMK75jW+Rl2x
+	 mclQ5Qly1xgFnxs25UopTYM1fa4ErtVOQ0G/Bq2Z73N8T0fTIPjOwBz8WgubWPlItY
+	 ntJLXk7Z/Z8mA==
 From: Christian Brauner <brauner@kernel.org>
-Date: Mon, 12 Oct 2026 14:31:18 +0200
-Subject: [PATCH 1/2] selftests/filesystems: add a test for freezing a
- shared block device
+Date: Mon, 12 Oct 2026 14:31:19 +0200
+Subject: [PATCH 2/2] super: convert to plain hashtable
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -38,7 +37,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20261012-work-super-dev_hash-v1-1-305cf71cd334@kernel.org>
+Message-Id: <20261012-work-super-dev_hash-v1-2-305cf71cd334@kernel.org>
 References: <20261012-work-super-dev_hash-v1-0-305cf71cd334@kernel.org>
 In-Reply-To: <20261012-work-super-dev_hash-v1-0-305cf71cd334@kernel.org>
 To: Jan Kara <jack@suse.cz>
@@ -47,559 +46,677 @@ Cc: Jens Axboe <axboe@kernel.dk>, Alexander Viro <viro@zeniv.linux.org.uk>,
  linux-fsdevel@vger.kernel.org, 
  "Christian Brauner (Amutable)" <brauner@kernel.org>
 X-Mailer: b4 0.17-dev-3d1b8
-X-Developer-Signature: v=1; a=openpgp-sha256; l=16184; i=brauner@kernel.org;
- h=from:subject:message-id; bh=8imTZspBcZVNOShIGzS+8PI2WJIj0e0sbWFzNBy0P5A=;
- b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWSduSydse9pPNskGZaOedGLz1rds3px9pCS+6/kNxu1d
- dri7va/7ChlYRDjYpAVU2RxaDcJl1vOU7HZKFMDZg4rE8gQBi5OAZjIyyKG/wndSxU+KRxW60v8
- 1jH7+i7dgNxp7IH358hejn7/8Oa14hpGhjn/1dc8nC3U1h1ZP7c071G++9OvQTOKJ1/n+el69dK
- JiWwA
+X-Developer-Signature: v=1; a=openpgp-sha256; l=21781; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=7IJztF0kIuYFqCFFMhp+JxTvf6sxFQkAJ2z3lICrAeQ=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWSduSxt73op58pkE5Mw4bppv52nmCv2mTPWi+caZW7+4
+ 81Rb2fXUcrCIMbFICumyOLQbhIut5ynYrNRpgbMHFYmkCEMXJwCMJGJexj+h6s03wp9trel8U5e
+ 3Cclto31ITevvCg5uq3gV23qjY3v5jD8s1jmZnVNvVLk7te8m37NBQb7P/IxV4TeL+uSlTs+yXA
+ 9BwA=
 X-Developer-Key: i=brauner@kernel.org; a=openpgp;
  fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-erofs claims its blob devices with the filesystem type as the holder so
-several erofs superblocks can share one. Merge two images from a common
-layer and a layer of their own, put the common layer on device-mapper,
-mount both and check that:
+Convert the rhltable to a plain hashtable under a spinlock. The walks
+keep their place with a cursor entry in the chain. A claim is unhashed
+the moment it's dropped and a walk that finds a superblock that isn't
+born yet waits for it to be born or to die and looks again. Since
+hashing can't fail anymore the entry for the superblock's own s_dev is
+embedded in struct super_block and the preallocation in alloc_super()
+goes away. This all simplifies things quite a lot.
 
-- a suspend freezes each of them exactly once
+It also fixes a btrfs bug where fs_bdev_freeze() ended up freezing a
+btrfs filesystem through a stale member that open_ctree() had already
+released while the freeze was waiting for SB_BORN. The resume doesn't
+find a holder for that device anymore so the filesystem stays frozen
+for good.
 
-- the resume thaws both
+The walks return superblocks instead of table entries now and
+user_get_super() hands out the passive reference the walk took.
 
-- once one of them is unmounted only the other one is frozen
+Reproducer, a three device btrfs with a stale copy of a removed member.
+dm-delay under the remaining members stretches the window between
+btrfs_open_devices() and btrfs_free_extra_devids():
 
-- BLKFLSBUF and ustat() on the shared device work
+  truncate -s 1G a1 a2 b
+  A1=$(losetup -f --show a1); A2=$(losetup -f --show a2); B=$(losetup -f --show b)
+  mkfs.btrfs -f -d single -m single $A1 $A2 $B
+  cp b b.old
+  mount $A1 /mnt && btrfs device remove 3 /mnt && umount /mnt
+  OLD=$(losetup -f --show b.old)
+  dmsetup create d1 --table "0 $(blockdev --getsz $A1) delay $A1 0 200"
+  dmsetup create d2 --table "0 $(blockdev --getsz $A2) delay $A2 0 200"
+  dmsetup create old --table "0 $(blockdev --getsz $OLD) linear $OLD 0"
+  mount -o device=/dev/mapper/d2,device=/dev/mapper/old /dev/mapper/d1 /mnt &
+  sleep 1; dmsetup suspend old; wait
+  dmsetup resume old
+  touch /mnt/foo     # hangs until fsfreeze -u /mnt
 
-- mounts that come and go while the device is suspended and resumed
-  leave nothing frozen behind
+That left btrfs frozen in 5 of 5 rounds with the same tables issued
+through raw dm ioctls. The -o degraded variant needs the mount held
+between the insertion and the bd_fsfreeze_count check in
+fs_bdev_register() with a kprobe.
 
-mkfs.erofs builds the images, the test is skipped without it.
-
+Fixes: cdb5146f8d5f ("fs: look up superblocks via the device table in fs_holder_ops")
 Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
 ---
- .../selftests/filesystems/freeze/.gitignore        |   1 +
- .../testing/selftests/filesystems/freeze/Makefile  |   2 +-
- tools/testing/selftests/filesystems/freeze/config  |   1 +
- .../filesystems/freeze/shared_bdev_test.c          | 479 +++++++++++++++++++++
- 4 files changed, 482 insertions(+), 1 deletion(-)
+ block/bdev.c                   |   2 +-
+ fs/internal.h                  |   1 -
+ fs/namespace.c                 |   2 -
+ fs/super.c                     | 332 +++++++++++++++++------------------------
+ include/linux/fs/super_types.h |  11 +-
+ 5 files changed, 145 insertions(+), 203 deletions(-)
 
-diff --git a/tools/testing/selftests/filesystems/freeze/.gitignore b/tools/testing/selftests/filesystems/freeze/.gitignore
-index 28f1fe73f19b..2f60f71c3d03 100644
---- a/tools/testing/selftests/filesystems/freeze/.gitignore
-+++ b/tools/testing/selftests/filesystems/freeze/.gitignore
-@@ -2,3 +2,4 @@
- quotactl_test
- bdev_freeze_test
- bdev_thaw_test
-+shared_bdev_test
-diff --git a/tools/testing/selftests/filesystems/freeze/Makefile b/tools/testing/selftests/filesystems/freeze/Makefile
-index acd246e1b14b..a2b956286b15 100644
---- a/tools/testing/selftests/filesystems/freeze/Makefile
-+++ b/tools/testing/selftests/filesystems/freeze/Makefile
-@@ -3,6 +3,6 @@ CFLAGS += -Wall -O2 -g $(KHDR_INCLUDES)
- LOCAL_HDRS += loop_util.h
+diff --git a/block/bdev.c b/block/bdev.c
+index cd8323083740..5e996f86d2ff 100644
+--- a/block/bdev.c
++++ b/block/bdev.c
+@@ -1283,7 +1283,7 @@ int lookup_bdev(const char *pathname, dev_t *dev)
+ 	 * registers major 0.  Fake block device inodes (e.g. fuse with
+ 	 * rootmode=S_IFBLK) can expose i_rdev == 0, and letting that
+ 	 * propagate would confuse superblock lookup and trigger warnings
+-	 * in the device-to-superblock table (super_dev_register).
++	 * in the device-to-superblock table (sget_fc).
+ 	 */
+ 	error = -ENODEV;
+ 	if (!inode->i_rdev)
+diff --git a/fs/internal.h b/fs/internal.h
+index c658c8a5ebd5..67aa0444351b 100644
+--- a/fs/internal.h
++++ b/fs/internal.h
+@@ -137,7 +137,6 @@ extern int reconfigure_super(struct fs_context *);
+ extern bool super_trylock_shared(struct super_block *sb);
+ struct super_block *user_get_super(dev_t, bool excl);
+ void put_super(struct super_block *sb);
+-void __init super_dev_init(void);
+ extern bool mount_capable(struct fs_context *);
  
- TEST_GEN_PROGS := quotactl_test
--TEST_GEN_PROGS += bdev_freeze_test bdev_thaw_test
-+TEST_GEN_PROGS += bdev_freeze_test bdev_thaw_test shared_bdev_test
+ /*
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 3ed3766f3a18..4c3816256ae2 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -6470,8 +6470,6 @@ void __init mnt_init(void)
+ 				HASH_ZERO,
+ 				&mp_hash_shift, &mp_hash_mask, 0, 0);
  
- include ../../lib.mk
-diff --git a/tools/testing/selftests/filesystems/freeze/config b/tools/testing/selftests/filesystems/freeze/config
-index d03720cda9a9..28e568e5d670 100644
---- a/tools/testing/selftests/filesystems/freeze/config
-+++ b/tools/testing/selftests/filesystems/freeze/config
-@@ -1,6 +1,7 @@
- CONFIG_BLK_DEV_DM=y
- CONFIG_BLK_DEV_LOOP=y
- CONFIG_DEBUG_FS=y
-+CONFIG_EROFS_FS=y
- CONFIG_EXT4_FS=y
- CONFIG_FAIL_MAKE_REQUEST=y
- CONFIG_FAULT_INJECTION=y
-diff --git a/tools/testing/selftests/filesystems/freeze/shared_bdev_test.c b/tools/testing/selftests/filesystems/freeze/shared_bdev_test.c
-new file mode 100644
-index 000000000000..0ee352268a97
---- /dev/null
-+++ b/tools/testing/selftests/filesystems/freeze/shared_bdev_test.c
-@@ -0,0 +1,479 @@
-+// SPDX-License-Identifier: GPL-2.0
+-	super_dev_init();
+-
+ 	kernfs_init();
+ 
+ 	err = sysfs_init();
+diff --git a/fs/super.c b/fs/super.c
+index 657958a1d135..eb5f355c88d7 100644
+--- a/fs/super.c
++++ b/fs/super.c
+@@ -25,7 +25,7 @@
+ #include <linux/slab.h>
+ #include <linux/blkdev.h>
+ #include <linux/memcontrol.h>
+-#include <linux/rhashtable.h>
++#include <linux/hashtable.h>
+ #include <linux/mount.h>
+ #include <linux/security.h>
+ #include <linux/writeback.h>		/* for the emergency remount stuff */
+@@ -274,8 +274,6 @@ static unsigned long super_cache_count(struct shrinker *shrink,
+ 	return total_objects;
+ }
+ 
+-static struct super_dev *super_dev_alloc(dev_t dev, struct super_block *sb);
+-
+ static void destroy_super_work(struct work_struct *work)
+ {
+ 	struct super_block *s = container_of(work, struct super_block,
+@@ -283,8 +281,6 @@ static void destroy_super_work(struct work_struct *work)
+ 	fsnotify_sb_free(s);
+ 	security_sb_free(s);
+ 	put_user_ns(s->s_user_ns);
+-	/* Only an unregistered entry is still owned by the superblock. */
+-	kfree(s->s_super_dev);
+ 	kfree(s->s_subtype);
+ 	for (int i = 0; i < SB_FREEZE_LEVELS; i++)
+ 		percpu_free_rwsem(&s->s_writers.rw_sem[i]);
+@@ -398,9 +394,6 @@ static struct super_block *alloc_super(struct file_system_type *type, int flags,
+ 		goto fail;
+ 	if (list_lru_init_memcg(&s->s_inode_lru, s->s_shrink))
+ 		goto fail;
+-	s->s_super_dev = super_dev_alloc(0, s);
+-	if (!s->s_super_dev)
+-		goto fail;
+ 
+ 	s->s_min_writeback_pages = MIN_WRITEBACK_PAGES;
+ 	return s;
+@@ -435,110 +428,92 @@ void put_super(struct super_block *s)
+ 	}
+ }
+ 
+-struct super_dev {
+-	dev_t			sd_dev;
+-	struct super_block	*sd_sb;
+-	refcount_t		sd_ref;
+-	struct rhlist_head	sd_node;
+-	struct rcu_head		sd_rcu;
+-};
+-
+-static struct rhltable super_dev_table;
+-static const struct rhashtable_params super_dev_params = {
+-	.key_len	= sizeof(dev_t),
+-	.key_offset	= offsetof(struct super_dev, sd_dev),
+-	.head_offset	= offsetof(struct super_dev, sd_node),
+-};
+-
+-static struct super_dev *super_dev_alloc(dev_t dev, struct super_block *sb)
+-{
+-	struct super_dev *fsd;
+-
+-	fsd = kzalloc_obj(*fsd);
+-	if (!fsd)
+-		return NULL;
+-	fsd->sd_dev = dev;
+-	fsd->sd_sb = sb;
+-	refcount_set(&fsd->sd_ref, 1);
+-	return fsd;
+-}
 +/*
-+ * Freezing a block device that several superblocks share.
-+ *
-+ * erofs claims its blob devices with the filesystem type as the holder, so
-+ * several erofs superblocks can share a blob. Merge two images from a common
-+ * layer and a layer of their own, put the common layer on a device-mapper
-+ * device and mount both. A suspend of that device has to freeze each of the
-+ * two superblocks exactly once and the resume has to thaw both, also while
-+ * mounts of one of them come and go. erofs is read-only, so the freezes and
-+ * thaws don't write to the suspended device.
++ * Superblocks hashed by the devices they claim: s_dev from sget_fc() to
++ * kill_super_notify() and every block device opened through
++ * fs_bdev_file_open_by_{dev,path}(). Walks keep their place with a cursor, an
++ * entry without a superblock.
 + */
-+#define _GNU_SOURCE
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <ftw.h>
-+#include <linux/dm-ioctl.h>
-+#include <linux/fs.h>
-+#include <sched.h>
-+#include <stdbool.h>
-+#include <stdint.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <sys/ioctl.h>
-+#include <sys/mount.h>
-+#include <sys/stat.h>
-+#include <sys/syscall.h>
-+#include <sys/sysmacros.h>
-+#include <sys/wait.h>
-+#include <unistd.h>
-+
-+#include "../../kselftest_harness.h"
-+#include "loop_util.h"
-+
-+#define NR_CHURN 100
-+
-+enum { M12, M13, L1, L2, L3, NR_IMGS };
-+
-+static const char *const img_names[NR_IMGS] = { "m12", "m13", "l1", "l2", "l3" };
-+
-+FIXTURE(shared_bdev) {
-+	char dir[64];
-+	char a[96];
-+	char b[96];
-+	char dm[96];
-+	char name[32];
-+	char src_a[32];
-+	char src_b[32];
-+	char opts_a[256];
-+	char opts_b[256];
-+	int loop[NR_IMGS];
-+	int fd_a;
-+	int fd_b;
-+	dev_t dmdev;
-+	bool dm_created;
-+	bool suspended;
-+	bool mounted_a;
-+	bool mounted_b;
-+};
-+
-+static int dm_ioctl(unsigned long cmd, const char *name, uint32_t flags, dev_t *dev)
-+{
-+	struct dm_ioctl dmi = {
-+		.version = { DM_VERSION_MAJOR, 0, 0 },
-+		.data_size = sizeof(dmi),
-+		.data_start = sizeof(dmi),
-+		.flags = flags,
-+	};
-+	int fd, ret = 0;
-+
-+	strncpy(dmi.name, name, sizeof(dmi.name) - 1);
-+	fd = open("/dev/mapper/control", O_RDWR | O_CLOEXEC);
-+	if (fd < 0)
-+		return -errno;
-+	if (ioctl(fd, cmd, &dmi))
-+		ret = -errno;
-+	else if (dev)
-+		*dev = makedev((dmi.dev >> 8) & 0xfff,
-+			       (dmi.dev & 0xff) | ((dmi.dev >> 12) & 0xfff00));
-+	close(fd);
-+	return ret;
-+}
-+
-+/* Create @name as a linear mapping of all of @backing and make it live. */
-+static int dm_create_linear(const char *name, dev_t backing, uint64_t sectors,
-+			    dev_t *dev)
-+{
-+	struct {
-+		struct dm_ioctl dmi;
-+		struct dm_target_spec spec;
-+		char params[64];
-+	} __attribute__((aligned(8))) t = {};
-+	int fd, ret;
-+
-+	ret = dm_ioctl(DM_DEV_CREATE, name, 0, NULL);
-+	if (ret)
-+		return ret;
-+
-+	t.dmi.version[0] = DM_VERSION_MAJOR;
-+	t.dmi.data_size = sizeof(t);
-+	t.dmi.data_start = sizeof(t.dmi);
-+	t.dmi.target_count = 1;
-+	strncpy(t.dmi.name, name, sizeof(t.dmi.name) - 1);
-+	t.spec.length = sectors;
-+	strcpy(t.spec.target_type, "linear");
-+	snprintf(t.params, sizeof(t.params), "%u:%u 0", major(backing), minor(backing));
-+
-+	fd = open("/dev/mapper/control", O_RDWR | O_CLOEXEC);
-+	if (fd >= 0) {
-+		ret = ioctl(fd, DM_TABLE_LOAD, &t) ? -errno : 0;
-+		close(fd);
-+	} else {
-+		ret = -errno;
++#define SUPER_DEV_HASH_BITS 8
++static DEFINE_HASHTABLE(super_dev_hash, SUPER_DEV_HASH_BITS);
++static DEFINE_SPINLOCK(super_dev_lock);
+ 
+-static void super_dev_put(struct super_dev *fsd)
++static void super_dev_add(struct super_dev *sd, struct super_block *sb, dev_t dev)
+ {
+-	/* Unlink only once unpinned, so a cursor never resumes from a removed node. */
+-	if (fsd && refcount_dec_and_test(&fsd->sd_ref)) {
+-		rhltable_remove(&super_dev_table, &fsd->sd_node, super_dev_params);
+-		put_super(fsd->sd_sb);
+-		kfree_rcu(fsd, sd_rcu);
+-	}
+-}
++	lockdep_assert_held(&super_dev_lock);
+ 
+-void __init super_dev_init(void)
+-{
+-	if (rhltable_init(&super_dev_table, &super_dev_params))
+-		panic("VFS: Cannot initialise super_dev_table\n");
++	sd->sd_sb = sb;
++	sd->sd_dev = dev;
++	sd->sd_claims = 1;
++	refcount_inc(&sb->s_passive);
++	hash_add(super_dev_hash, &sd->sd_hash, dev);
+ }
+ 
+-static int super_dev_insert(struct super_dev *fsd)
++/* Drop a claim, the last one unhashes the entry. */
++static void super_dev_put(struct super_dev *sd)
+ {
+-	int err;
++	struct super_block *sb = sd->sd_sb;
+ 
+-	err = rhltable_insert(&super_dev_table, &fsd->sd_node, super_dev_params);
+-	if (!err)
+-		refcount_inc(&fsd->sd_sb->s_passive);
+-	return err;
++	scoped_guard(spinlock, &super_dev_lock) {
++		if (--sd->sd_claims)
++			return;
++		hash_del(&sd->sd_hash);
 +	}
-+	/* Resuming makes the loaded table live. */
-+	if (!ret)
-+		ret = dm_ioctl(DM_DEV_SUSPEND, name, 0, dev);
-+	if (ret)
-+		dm_ioctl(DM_DEV_REMOVE, name, 0, NULL);
-+	return ret;
-+}
-+
-+static int suspend(FIXTURE_DATA(shared_bdev) *self)
-+{
-+	int ret = dm_ioctl(DM_DEV_SUSPEND, self->name, DM_SUSPEND_FLAG, NULL);
-+
-+	if (!ret)
-+		self->suspended = true;
-+	return ret;
-+}
-+
-+static int resume(FIXTURE_DATA(shared_bdev) *self)
-+{
-+	int ret = dm_ioctl(DM_DEV_SUSPEND, self->name, 0, NULL);
-+
-+	if (!ret)
-+		self->suspended = false;
-+	return ret;
-+}
-+
-+/* Drop one freeze with FITHAW; EINVAL if the superblock isn't frozen. */
-+static bool fithaw(int fd)
-+{
-+	return !ioctl(fd, FITHAW, 0);
-+}
-+
-+static int write_file(const char *path, const char *val)
-+{
-+	ssize_t len = strlen(val);
-+	int fd, ret = 0;
-+
-+	fd = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0644);
-+	if (fd < 0)
-+		return -1;
-+	if (write(fd, val, len) != len)
-+		ret = -1;
-+	close(fd);
-+	return ret;
-+}
-+
-+static int check_file(const char *path, const char *val)
-+{
-+	char buf[32] = {};
-+	int fd;
-+
-+	fd = open(path, O_RDONLY | O_CLOEXEC);
-+	if (fd < 0)
-+		return -1;
-+	if (read(fd, buf, sizeof(buf) - 1) < 0)
-+		buf[0] = '\0';
-+	close(fd);
-+	return strcmp(buf, val) ? -1 : 0;
-+}
-+
-+static int rm_one(const char *path, const struct stat *st, int type, struct FTW *ftw)
-+{
-+	return remove(path);
-+}
-+
-+static int mount_b(FIXTURE_DATA(shared_bdev) *self)
-+{
-+	int ret = mount(self->src_b, self->b, "erofs", MS_RDONLY, self->opts_b);
-+
-+	if (!ret)
-+		self->mounted_b = true;
-+	return ret;
-+}
-+
-+static void shared_bdev_cleanup(FIXTURE_DATA(shared_bdev) *self)
-+{
-+	if (self->suspended)
-+		resume(self);
-+	if (self->fd_a >= 0)
-+		close(self->fd_a);
-+	if (self->fd_b >= 0)
-+		close(self->fd_b);
-+	if (self->mounted_a)
-+		umount2(self->a, MNT_DETACH);
-+	umount2(self->b, MNT_DETACH);
-+	if (self->dm_created)
-+		dm_ioctl(DM_DEV_REMOVE, self->name, 0, NULL);
-+	for (int i = 0; i < NR_IMGS; i++) {
-+		if (self->loop[i] >= 0)
-+			loop_clear(self->loop[i]);
-+	}
-+	nftw(self->dir, rm_one, 16, FTW_DEPTH | FTW_PHYS);
-+}
-+
-+/* Two layers of their own, a common one, and two images merged from them. */
-+static int make_images(const char *dir)
-+{
-+	static const char *const files[][2] = {
-+		{ "src-l1/d1/f1", "one\n" },
-+		{ "src-l2/f2", "two\n" },
-+		{ "src-l3/f3", "three\n" },
-+	};
-+	char path[160], cmd[512];
-+
-+	for (int i = 0; i < 3; i++) {
-+		snprintf(path, sizeof(path), "%s/src-l%d", dir, i + 1);
-+		if (mkdir(path, 0755))
-+			return -1;
-+	}
-+	snprintf(path, sizeof(path), "%s/src-l1/d1", dir);
-+	if (mkdir(path, 0755))
-+		return -1;
-+	for (int i = 0; i < 3; i++) {
-+		snprintf(path, sizeof(path), "%s/%s", dir, files[i][0]);
-+		if (write_file(path, files[i][1]))
-+			return -1;
-+	}
-+
-+	/* Chunk-based layers can be referenced by the merged images. */
-+	snprintf(cmd, sizeof(cmd),
-+		 "cd %s && (for l in l1 l2 l3; do "
-+		 "mkfs.erofs --chunksize=4096 -Enoinline_data $l src-$l || exit 1; done && "
-+		 "mkfs.erofs m12 l1 l2 && mkfs.erofs m13 l1 l3) >/dev/null 2>&1", dir);
-+	return system(cmd) ? -1 : 0;
-+}
-+
-+FIXTURE_SETUP(shared_bdev)
-+{
-+	struct stat img, lst, st;
-+	char path[160], dev[32];
-+	int fd;
-+
-+	for (int i = 0; i < NR_IMGS; i++)
-+		self->loop[i] = -1;
-+	self->fd_a = -1;
-+	self->fd_b = -1;
-+	self->dm_created = false;
-+	self->suspended = false;
-+	self->mounted_a = false;
-+	self->mounted_b = false;
-+
-+	if (geteuid() != 0)
-+		SKIP(return, "test requires CAP_SYS_ADMIN");
-+	if (access("/dev/loop-control", R_OK | W_OK))
-+		SKIP(return, "test requires loop devices");
-+	if (access("/dev/mapper/control", R_OK | W_OK))
-+		SKIP(return, "test requires device-mapper");
-+
-+	ASSERT_EQ(unshare(CLONE_NEWNS), 0);
-+	ASSERT_EQ(mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL), 0);
-+
-+	snprintf(self->dir, sizeof(self->dir), "/tmp/shared_bdev.XXXXXX");
-+	ASSERT_NE(mkdtemp(self->dir), NULL);
-+	snprintf(self->a, sizeof(self->a), "%s/a", self->dir);
-+	snprintf(self->b, sizeof(self->b), "%s/b", self->dir);
-+	snprintf(self->name, sizeof(self->name), "shared_bdev_%d", getpid());
-+	/* The harness doesn't run the teardown when the setup fails. */
-+	ASSERT_EQ(mkdir(self->a, 0700), 0)
-+		shared_bdev_cleanup(self);
-+	ASSERT_EQ(mkdir(self->b, 0700), 0)
-+		shared_bdev_cleanup(self);
-+
-+	if (make_images(self->dir)) {
-+		shared_bdev_cleanup(self);
-+		SKIP(return, "mkfs.erofs failed, is missing or can't merge images");
-+	}
-+
-+	for (int i = 0; i < NR_IMGS; i++) {
-+		snprintf(path, sizeof(path), "%s/%s", self->dir, img_names[i]);
-+		fd = open(path, O_RDWR | O_CLOEXEC);
-+		ASSERT_GE(fd, 0)
-+			shared_bdev_cleanup(self);
-+		self->loop[i] = loop_bind(fd);
-+		if (i == L1) {
-+			ASSERT_EQ(fstat(fd, &img), 0)
-+				shared_bdev_cleanup(self);
-+		}
-+		close(fd);
-+		ASSERT_GE(self->loop[i], 0)
-+			shared_bdev_cleanup(self);
-+	}
-+
-+	/* The common layer goes on a device-mapper device. */
-+	snprintf(dev, sizeof(dev), "/dev/loop%d", self->loop[L1]);
-+	ASSERT_EQ(stat(dev, &lst), 0)
-+		shared_bdev_cleanup(self);
-+	ASSERT_EQ(dm_create_linear(self->name, lst.st_rdev, img.st_size >> 9, &self->dmdev), 0)
-+		shared_bdev_cleanup(self);
-+	self->dm_created = true;
-+	snprintf(self->dm, sizeof(self->dm), "/dev/dm-%u", minor(self->dmdev));
-+	if (stat(self->dm, &st) || st.st_rdev != self->dmdev) {
-+		snprintf(self->dm, sizeof(self->dm), "%s/dm", self->dir);
-+		ASSERT_EQ(mknod(self->dm, S_IFBLK | 0600, self->dmdev), 0)
-+			shared_bdev_cleanup(self);
-+	}
-+
-+	snprintf(self->src_a, sizeof(self->src_a), "/dev/loop%d", self->loop[M12]);
-+	snprintf(self->src_b, sizeof(self->src_b), "/dev/loop%d", self->loop[M13]);
-+	snprintf(self->opts_a, sizeof(self->opts_a), "device=%s,device=/dev/loop%d",
-+		 self->dm, self->loop[L2]);
-+	snprintf(self->opts_b, sizeof(self->opts_b), "device=%s,device=/dev/loop%d",
-+		 self->dm, self->loop[L3]);
-+
-+	if (mount(self->src_a, self->a, "erofs", MS_RDONLY, self->opts_a)) {
-+		if (errno == ENODEV) {
-+			shared_bdev_cleanup(self);
-+			SKIP(return, "kernel lacks erofs");
-+		}
-+		ASSERT_EQ(errno, 0)
-+			shared_bdev_cleanup(self);
-+	}
-+	self->mounted_a = true;
-+	ASSERT_EQ(mount_b(self), 0)
-+		shared_bdev_cleanup(self);
-+
-+	/* Both read through the shared blob. */
-+	snprintf(path, sizeof(path), "%s/d1/f1", self->a);
-+	ASSERT_EQ(check_file(path, "one\n"), 0)
-+		shared_bdev_cleanup(self);
-+	snprintf(path, sizeof(path), "%s/f2", self->a);
-+	ASSERT_EQ(check_file(path, "two\n"), 0)
-+		shared_bdev_cleanup(self);
-+	snprintf(path, sizeof(path), "%s/d1/f1", self->b);
-+	ASSERT_EQ(check_file(path, "one\n"), 0)
-+		shared_bdev_cleanup(self);
-+	snprintf(path, sizeof(path), "%s/f3", self->b);
-+	ASSERT_EQ(check_file(path, "three\n"), 0)
-+		shared_bdev_cleanup(self);
-+
-+	self->fd_a = open(self->a, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-+	ASSERT_GE(self->fd_a, 0)
-+		shared_bdev_cleanup(self);
-+	self->fd_b = open(self->b, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-+	ASSERT_GE(self->fd_b, 0)
-+		shared_bdev_cleanup(self);
-+}
-+
-+FIXTURE_TEARDOWN(shared_bdev)
-+{
-+	shared_bdev_cleanup(self);
-+}
-+
-+TEST_F(shared_bdev, suspend_freezes_each_once)
-+{
-+	ASSERT_EQ(suspend(self), 0);
-+
-+	/* One FITHAW drops each freeze, a second one finds nothing frozen. */
-+	ASSERT_TRUE(fithaw(self->fd_a));
-+	ASSERT_FALSE(fithaw(self->fd_a));
-+	ASSERT_EQ(errno, EINVAL);
-+	ASSERT_TRUE(fithaw(self->fd_b));
-+	ASSERT_FALSE(fithaw(self->fd_b));
-+	ASSERT_EQ(errno, EINVAL);
-+
-+	/* The resume finds nothing left to thaw and still thaws the device. */
-+	ASSERT_EQ(resume(self), 0);
-+	ASSERT_EQ(suspend(self), 0);
-+	ASSERT_EQ(resume(self), 0);
-+}
-+
-+TEST_F(shared_bdev, resume_thaws_all)
-+{
-+	ASSERT_EQ(suspend(self), 0);
-+	ASSERT_EQ(resume(self), 0);
-+
-+	ASSERT_FALSE(fithaw(self->fd_a));
-+	ASSERT_EQ(errno, EINVAL);
-+	ASSERT_FALSE(fithaw(self->fd_b));
-+	ASSERT_EQ(errno, EINVAL);
-+}
-+
-+TEST_F(shared_bdev, unmounted_sharer)
-+{
-+	close(self->fd_b);
-+	self->fd_b = -1;
-+	ASSERT_EQ(umount2(self->b, 0), 0);
-+	self->mounted_b = false;
-+
-+	/* Only the remaining superblock is frozen, once. */
-+	ASSERT_EQ(suspend(self), 0);
-+	ASSERT_TRUE(fithaw(self->fd_a));
-+	ASSERT_FALSE(fithaw(self->fd_a));
-+	ASSERT_EQ(errno, EINVAL);
-+	ASSERT_EQ(resume(self), 0);
-+
-+	/* The blob can be claimed again. */
-+	ASSERT_EQ(mount_b(self), 0);
-+}
-+
-+TEST_F(shared_bdev, flushbuf)
-+{
-+	int fd = open(self->dm, O_RDONLY | O_CLOEXEC);
-+
-+	ASSERT_GE(fd, 0);
-+	/* BLKFLSBUF syncs every superblock that uses the device. */
-+	ASSERT_EQ(ioctl(fd, BLKFLSBUF, 0), 0);
-+	close(fd);
-+}
-+
-+#ifdef __NR_ustat
-+/* struct ustat is not exported through UAPI, mirror include/linux/types.h. */
-+struct ustat_buf {
-+	int		f_tfree;
-+	unsigned long	f_tinode;
-+	char		f_fname[6];
-+	char		f_fpack[6];
-+	char		pad[64];
-+};
-+
-+TEST_F(shared_bdev, ustat)
-+{
-+	struct ustat_buf buf;
-+
-+	/* ustat() stops at the first superblock it can lock... */
-+	ASSERT_EQ(syscall(__NR_ustat, (unsigned int)self->dmdev, &buf), 0);
-+
-+	/* ...and the walks after it still reach both. */
-+	ASSERT_EQ(suspend(self), 0);
-+	ASSERT_TRUE(fithaw(self->fd_a));
-+	ASSERT_TRUE(fithaw(self->fd_b));
-+	ASSERT_EQ(resume(self), 0);
-+}
-+#endif
-+
-+TEST_F(shared_bdev, churn)
-+{
-+	int status;
-+	pid_t pid;
-+
-+	close(self->fd_b);
-+	self->fd_b = -1;
-+	ASSERT_EQ(umount2(self->b, 0), 0);
-+	self->mounted_b = false;
-+
-+	pid = fork();
-+	ASSERT_GE(pid, 0);
-+	if (pid == 0) {
-+		/* A mount while the device is frozen is refused with EBUSY. */
-+		for (int i = 0; i < NR_CHURN; i++) {
-+			if (!mount(self->src_b, self->b, "erofs", MS_RDONLY, self->opts_b)) {
-+				if (umount2(self->b, 0))
-+					_exit(1);
-+			} else if (errno != EBUSY) {
-+				_exit(2);
++	if (sd != &sb->s_super_dev)
++		kfree(sd);
++	put_super(sb);
+ }
+ 
+-/* Register @sb under @sb->s_dev as the final fallible act of a set callback. */
+-static int super_dev_register(struct super_block *sb)
++/*
++ * Return the superblock of the next claim behind @cursor with a passive
++ * reference and put @prev. The mount of a superblock that isn't born yet may
++ * still drop its claim, so wait for it to be born or to die and look again.
++ */
++static struct super_block *super_dev_next(struct super_dev *cursor,
++					  struct super_block *prev)
+ {
+-	struct super_dev *fsd = sb->s_super_dev;
+-	int err;
+-
+-	lockdep_assert_held(&sb_lock);
+-	VFS_WARN_ON_ONCE(!sb->s_dev);
+-	VFS_WARN_ON_ONCE(!fsd || fsd->sd_dev);
++	struct super_block *sb;
++	struct super_dev *sd;
+ 
+-	fsd->sd_dev = sb->s_dev;
+-	err = super_dev_insert(fsd);
+-	if (err)
+-		fsd->sd_dev = 0;
+-	return err;
+-}
++	if (prev)
++		put_super(prev);
+ 
+-static struct super_dev *super_dev_get(struct rhlist_head *pos)
+-{
+-	struct super_dev *sb_dev;
++	for (;;) {
++		scoped_guard(spinlock, &super_dev_lock) {
++			if (!hash_hashed(&cursor->sd_hash))
++				hash_add(super_dev_hash, &cursor->sd_hash, cursor->sd_dev);
++			sd = cursor;
++			hlist_for_each_entry_continue(sd, sd_hash) {
++				if (sd->sd_sb && sd->sd_dev == cursor->sd_dev)
++					break;
++			}
++			if (!sd) {
++				hash_del(&cursor->sd_hash);
++				return NULL;
++			}
+ 
+-	for (; pos; pos = rcu_dereference_all(pos->next)) {
+-		sb_dev = container_of(pos, struct super_dev, sd_node);
+-		if (refcount_inc_not_zero(&sb_dev->sd_ref))
+-			return sb_dev;
++			sb = sd->sd_sb;
++			refcount_inc(&sb->s_passive);
++			if (super_flags(sb, SB_BORN | SB_DYING)) {
++				hash_del(&cursor->sd_hash);
++				hlist_add_behind(&cursor->sd_hash, &sd->sd_hash);
++				return sb;
 +			}
 +		}
-+		_exit(0);
-+	}
++		wait_var_event(&sb->s_flags, super_flags(sb, SB_BORN | SB_DYING));
++		put_super(sb);
+ 	}
+-	return NULL;
+ }
+ 
+-static struct super_dev *super_dev_first(dev_t dev)
++/* Unhash the cursor of a walk that stops early. */
++static void super_dev_walk_end(struct super_dev *cursor)
+ {
+-	struct super_dev *sb_dev;
+-
+-	rcu_read_lock();
+-	sb_dev = super_dev_get(rhltable_lookup(&super_dev_table, &dev, super_dev_params));
+-	rcu_read_unlock();
+-	return sb_dev;
++	guard(spinlock)(&super_dev_lock);
++	hash_del(&cursor->sd_hash);
+ }
+ 
+-static struct super_dev *super_dev_next(struct super_dev *prev)
+-{
+-	struct super_dev *sb_dev;
+-
+-	rcu_read_lock();
+-	sb_dev = super_dev_get(rcu_dereference_all(prev->sd_node.next));
+-	rcu_read_unlock();
+-
+-	super_dev_put(prev);
+-	return sb_dev;
+-}
++#define for_each_dev_super(sb, cursor) \
++	for (sb = super_dev_next(cursor, NULL); sb; sb = super_dev_next(cursor, sb))
+ 
+ static void kill_super_notify(struct super_block *sb)
+ {
+@@ -548,11 +523,8 @@ static void kill_super_notify(struct super_block *sb)
+ 	if (sb->s_flags & SB_DEAD)
+ 		return;
+ 
+-	/* Drop sget_fc()'s claim; a never-registered entry stays with the sb. */
+-	if (sb->s_super_dev->sd_dev) {
+-		super_dev_put(sb->s_super_dev);
+-		sb->s_super_dev = NULL;
+-	}
++	/* Drop sget_fc()'s claim on s_dev. */
++	super_dev_put(&sb->s_super_dev);
+ 
+ 	/*
+ 	 * Let concurrent mounts know that this thing is really dead.
+@@ -880,13 +852,12 @@ struct super_block *sget_fc(struct fs_context *fc,
+ 	s->s_fs_info = fc->s_fs_info;
+ 	err = set(s, fc);
+ 	if (err) {
+-		VFS_WARN_ON_ONCE(s->s_super_dev->sd_dev);
+ 		s->s_fs_info = NULL;
+ 		spin_unlock(&sb_lock);
+ 		destroy_unused_super(s);
+ 		return ERR_PTR(err);
+ 	}
+-	VFS_WARN_ON_ONCE(!s->s_super_dev->sd_dev);
++	VFS_WARN_ON_ONCE(!s->s_dev);
+ 	fc->s_fs_info = NULL;
+ 	s->s_type = fc->fs_type;
+ 	s->s_iflags |= fc->s_iflags;
+@@ -899,6 +870,8 @@ struct super_block *sget_fc(struct fs_context *fc,
+ 	list_add_tail(&s->s_list, &super_blocks);
+ 	hlist_add_head(&s->s_instances, &s->s_type->fs_supers);
+ 	spin_unlock(&sb_lock);
++	scoped_guard(spinlock, &super_dev_lock)
++		super_dev_add(&s->s_super_dev, s, s->s_dev);
+ 	get_filesystem(s->s_type);
+ 	shrinker_register(s->s_shrink);
+ 	return s;
+@@ -1040,18 +1013,14 @@ EXPORT_SYMBOL(iterate_supers_type);
+ 
+ struct super_block *user_get_super(dev_t dev, bool excl)
+ {
+-	struct super_dev *sb_dev;
+-
+-	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+-		struct super_block *sb = sb_dev->sd_sb;
+-
+-		if (!super_lock(sb, excl))
+-			continue;
++	struct super_dev cursor = { .sd_dev = dev };
++	struct super_block *sb;
+ 
+-		/* The pinned entry holds a passive reference, take our own. */
+-		refcount_inc(&sb->s_passive);
+-		super_dev_put(sb_dev);
+-		return sb;
++	for_each_dev_super(sb, &cursor) {
++		if (super_lock(sb, excl)) {
++			super_dev_walk_end(&cursor);
++			return sb;
++		}
+ 	}
+ 	return NULL;
+ }
+@@ -1353,16 +1322,7 @@ EXPORT_SYMBOL(free_anon_bdev);
+ 
+ int set_anon_super(struct super_block *s, void *data)
+ {
+-	int error;
+-
+-	error = get_anon_bdev(&s->s_dev);
+-	if (error)
+-		return error;
+-
+-	error = super_dev_register(s);
+-	if (error)
+-		free_anon_bdev(s->s_dev);
+-	return error;
++	return get_anon_bdev(&s->s_dev);
+ }
+ EXPORT_SYMBOL(set_anon_super);
+ 
+@@ -1448,7 +1408,7 @@ EXPORT_SYMBOL(get_tree_keyed);
+ static int set_bdev_super(struct super_block *s, void *data)
+ {
+ 	s->s_dev = *(dev_t *)data;
+-	return super_dev_register(s);
++	return 0;
+ }
+ 
+ static int super_s_dev_set(struct super_block *s, struct fs_context *fc)
+@@ -1527,14 +1487,12 @@ static int fs_super_thaw(struct super_block *sb)
+ 
+ static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
+ {
+-	struct super_dev *sb_dev;
+-	dev_t dev = bdev->bd_dev;
++	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
++	struct super_block *sb;
+ 
+ 	mutex_unlock(&bdev->bd_holder_lock);
+ 
+-	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+-		struct super_block *sb = sb_dev->sd_sb;
+-
++	for_each_dev_super(sb, &cursor) {
+ 		if (!super_lock_shared(sb))
+ 			continue;
+ 		if (sb->s_root && (sb->s_flags & SB_ACTIVE)) {
+@@ -1554,14 +1512,12 @@ static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
+ 
+ static void fs_bdev_sync(struct block_device *bdev)
+ {
+-	struct super_dev *sb_dev;
+-	dev_t dev = bdev->bd_dev;
++	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
++	struct super_block *sb;
+ 
+ 	mutex_unlock(&bdev->bd_holder_lock);
+ 
+-	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+-		struct super_block *sb = sb_dev->sd_sb;
+-
++	for_each_dev_super(sb, &cursor) {
+ 		if (!super_lock_shared(sb))
+ 			continue;
+ 		if (sb->s_root && (sb->s_flags & SB_ACTIVE))
+@@ -1585,8 +1541,8 @@ static void fs_bdev_sync(struct block_device *bdev)
+  */
+ static int fs_bdev_freeze(struct block_device *bdev)
+ {
+-	dev_t dev = bdev->bd_dev;
+-	struct super_dev *sb_dev;
++	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
++	struct super_block *sb;
+ 	unsigned int count = 0;
+ 	int error = 0, err;
+ 
+@@ -1594,13 +1550,13 @@ static int fs_bdev_freeze(struct block_device *bdev)
+ 
+ 	mutex_unlock(&bdev->bd_holder_lock);
+ 
+-	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+-		if (!get_active_super(sb_dev->sd_sb))
++	for_each_dev_super(sb, &cursor) {
++		if (!get_active_super(sb))
+ 			continue;
+-		err = fs_super_freeze(sb_dev->sd_sb);
++		err = fs_super_freeze(sb);
+ 		if (err && !error)
+ 			error = err;
+-		deactivate_super(sb_dev->sd_sb);
++		deactivate_super(sb);
+ 		count++;
+ 	}
+ 
+@@ -1640,8 +1596,8 @@ static int fs_bdev_freeze(struct block_device *bdev)
+  */
+ static int fs_bdev_thaw(struct block_device *bdev)
+ {
+-	dev_t dev = bdev->bd_dev;
+-	struct super_dev *sb_dev;
++	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
++	struct super_block *sb;
+ 	unsigned int count = 0;
+ 	int error = 0, err;
+ 
+@@ -1649,13 +1605,13 @@ static int fs_bdev_thaw(struct block_device *bdev)
+ 
+ 	mutex_unlock(&bdev->bd_holder_lock);
+ 
+-	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
+-		if (!get_active_super(sb_dev->sd_sb))
++	for_each_dev_super(sb, &cursor) {
++		if (!get_active_super(sb))
+ 			continue;
+-		err = fs_super_thaw(sb_dev->sd_sb);
++		err = fs_super_thaw(sb);
+ 		if (err && !error)
+ 			error = err;
+-		deactivate_super(sb_dev->sd_sb);
++		deactivate_super(sb);
+ 		count++;
+ 	}
+ 
+@@ -1672,55 +1628,39 @@ static const struct blk_holder_ops fs_holder_ops = {
+ 	.thaw			= fs_bdev_thaw,
+ };
+ 
+-static struct super_dev *super_dev_lookup(dev_t dev, struct super_block *sb)
++static struct super_dev *super_dev_find(dev_t dev, const struct super_block *sb)
+ {
+-	struct super_dev *it;
+-	struct rhlist_head *list, *pos;
++	struct super_dev *sd;
+ 
+-	RCU_LOCKDEP_WARN(!rcu_read_lock_held(), "suspicious super_dev_lookup() usage");
+-	VFS_WARN_ON_ONCE(!dev);
+-	VFS_WARN_ON_ONCE(!sb);
++	lockdep_assert_held(&super_dev_lock);
+ 
+-	list = rhltable_lookup(&super_dev_table, &dev, super_dev_params);
+-	rhl_for_each_entry_rcu(it, pos, list, sd_node) {
+-		if (it->sd_sb == sb)
+-			return it;
++	hash_for_each_possible(super_dev_hash, sd, sd_hash, dev) {
++		if (sd->sd_dev == dev && sd->sd_sb == sb)
++			return sd;
+ 	}
+-
+ 	return NULL;
+ }
+ 
+-static int fs_bdev_register(struct file *bdev_file, struct super_block *sb)
++static int fs_bdev_register(struct block_device *bdev, struct super_block *sb)
+ {
+-	struct super_dev *sb_dev __free(kfree) = NULL;
+-	dev_t dev = file_bdev(bdev_file)->bd_dev;
+-	int err;
+-
+-	scoped_guard(rcu) {
+-		sb_dev = super_dev_lookup(dev, sb);
+-		if (sb_dev && refcount_inc_not_zero(&sb_dev->sd_ref)) {
+-			retain_and_null_ptr(sb_dev);
+-			return 0;
+-		}
+-	}
+-
+-	sb_dev = super_dev_alloc(dev, sb);
+-	if (!sb_dev)
+-		return -ENOMEM;
++	struct super_dev *new __free(kfree) = NULL;
++	struct super_dev *sd;
+ 
+-	err = super_dev_insert(sb_dev);
+-	if (err)
+-		return err;
++	new = kzalloc_obj(*new);
+ 
+-	/* Publish the entry before reading the count; pairs with bdev_freeze(). */
+-	smp_mb();
+-	if (atomic_read(&file_bdev(bdev_file)->bd_fsfreeze_count) > 0) {
+-		err = -EBUSY;
+-		super_dev_put(sb_dev);
++	guard(spinlock)(&super_dev_lock);
++	sd = super_dev_find(bdev->bd_dev, sb);
++	if (sd) {
++		sd->sd_claims++;
++		return 0;
+ 	}
+-
+-	retain_and_null_ptr(sb_dev);
+-	return err;
++	/* bdev_freeze() raises the count before its walk takes the lock. */
++	if (atomic_read(&bdev->bd_fsfreeze_count) > 0)
++		return -EBUSY;
++	if (!new)
++		return -ENOMEM;
++	super_dev_add(no_free_ptr(new), sb, bdev->bd_dev);
++	return 0;
+ }
+ 
+ /**
+@@ -1747,7 +1687,7 @@ struct file *fs_bdev_file_open_by_dev(dev_t dev, blk_mode_t mode, void *holder,
+ 	if (IS_ERR(bdev_file))
+ 		return bdev_file;
+ 
+-	err = fs_bdev_register(bdev_file, sb);
++	err = fs_bdev_register(file_bdev(bdev_file), sb);
+ 	if (err) {
+ 		bdev_fput(bdev_file);
+ 		return ERR_PTR(err);
+@@ -1781,7 +1721,7 @@ struct file *fs_bdev_file_open_by_path(const char *path, blk_mode_t mode,
+ 	if (IS_ERR(bdev_file))
+ 		return bdev_file;
+ 
+-	err = fs_bdev_register(bdev_file, sb);
++	err = fs_bdev_register(file_bdev(bdev_file), sb);
+ 	if (err) {
+ 		bdev_fput(bdev_file);
+ 		return ERR_PTR(err);
+@@ -1796,21 +1736,20 @@ EXPORT_SYMBOL_GPL(fs_bdev_file_open_by_path);
+  * @sb: superblock the device was claimed for
+  *
+  * The inverse of fs_bdev_register(): drop one claim on the {dev, @sb} entry
+- * (the last claim unregisters it; a pinning cursor defers the actual unlink)
+- * without closing the device.  A caller that must act on the still-open device
+- * between unregistering and closing - e.g. re-allow freezing one denied for a
+- * membership change - pairs this with bdev_fput().  fs_bdev_file_release() is
+- * the common unregister-and-close.
++ * (the last claim unregisters it) without closing the device.  A caller that
++ * must act on the still-open device between unregistering and closing - e.g.
++ * re-allow freezing one denied for a membership change - pairs this with
++ * bdev_fput().  fs_bdev_file_release() is the common unregister-and-close.
+  */
+ void fs_bdev_unregister(struct file *bdev_file, struct super_block *sb)
+ {
+-	dev_t dev = file_bdev(bdev_file)->bd_dev;
+-	struct super_dev *sb_dev;
++	struct super_dev *sd;
+ 
+-	rcu_read_lock();
+-	sb_dev = super_dev_lookup(dev, sb);
+-	rcu_read_unlock();
+-	super_dev_put(sb_dev);
++	/* The claim we're dropping keeps the entry hashed. */
++	scoped_guard(spinlock, &super_dev_lock)
++		sd = super_dev_find(file_bdev(bdev_file)->bd_dev, sb);
++	if (sd)
++		super_dev_put(sd);
+ }
+ EXPORT_SYMBOL_GPL(fs_bdev_unregister);
+ 
+@@ -1853,8 +1792,7 @@ int setup_bdev_super(struct super_block *sb, int sb_flags,
+ 		return -EACCES;
+ 	}
+ 
+-	/* The sget_fc() entry is already published; pairs with bdev_freeze(). */
+-	smp_mb();
++	/* sget_fc() hashed @sb, super_dev_lock orders that against bdev_freeze(). */
+ 	if (atomic_read(&bdev->bd_fsfreeze_count) > 0) {
+ 		if (fc)
+ 			warnf(fc, "%pg: Can't mount, blockdev is frozen", bdev);
+diff --git a/include/linux/fs/super_types.h b/include/linux/fs/super_types.h
+index ecd96aeb1cee..72f4288e16c5 100644
+--- a/include/linux/fs/super_types.h
++++ b/include/linux/fs/super_types.h
+@@ -30,7 +30,6 @@ struct mount;
+ struct mtd_info;
+ struct quotactl_ops;
+ struct shrinker;
+-struct super_dev;
+ struct unicode_map;
+ struct user_namespace;
+ struct workqueue_struct;
+@@ -132,10 +131,18 @@ struct super_operations {
+ 	void (*report_error)(const struct fserror_event *event);
+ };
+ 
++/* A superblock's claim on a device, see fs/super.c. */
++struct super_dev {
++	struct hlist_node			sd_hash;
++	struct super_block			*sd_sb;
++	dev_t					sd_dev;
++	unsigned int				sd_claims;
++};
 +
-+	for (int i = 0; i < NR_CHURN; i++) {
-+		ASSERT_EQ(suspend(self), 0);
-+		ASSERT_EQ(resume(self), 0);
-+	}
-+	ASSERT_EQ(waitpid(pid, &status, 0), pid);
-+	ASSERT_TRUE(WIFEXITED(status));
-+	ASSERT_EQ(WEXITSTATUS(status), 0);
-+
-+	/* Nothing is left frozen and the blob can be claimed again. */
-+	ASSERT_FALSE(fithaw(self->fd_a));
-+	ASSERT_EQ(errno, EINVAL);
-+	ASSERT_EQ(mount_b(self), 0);
-+}
-+
-+TEST_HARNESS_MAIN
+ struct super_block {
+ 	struct list_head			s_list;		/* Keep this first */
+ 	dev_t					s_dev;		/* search index; _not_ kdev_t */
+-	struct super_dev			*s_super_dev;	/* sget_fc()'s device table claim */
++	struct super_dev			s_super_dev;	/* claim on s_dev */
+ 	unsigned char				s_blocksize_bits;
+ 	unsigned long				s_blocksize;
+ 	loff_t					s_maxbytes;	/* Max file size */
 
 -- 
 2.53.0

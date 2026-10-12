@@ -1,239 +1,507 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A84C53ACEED
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 10:48:18 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E3B2418348
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 11:05:23 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791802099; cv=none; b=rdXeMZ0VrJ//k9IwkOvy8uMGVaZ4hhMPSGHbk5+d92mW4+y+MQ5/b0nhT/V87Fc82KE3L8Q1t9u8wemiD9BNqcn56IvGcfdc2OnDd3YzuwTHM0QzZSO4hH96XqFI8H9dRK9jeAI1N04m8iL0DnVOnxZxFyQ4xlB1/r5aGHSA9p4=
+	t=1791803127; cv=none; b=uRZx8V0Xcn6BrX1yokZZ6waS1/jJOSIvuHfs8S5aen496tuQHrZ5247dOZZwIvyJqcfDjgpkFr+pZVDB4hZ9NT9SzC/qnXsnFRBDwIpGJY0cepdfoq7rE2WEIA278E7B9A+NY8GQ7JQZvT/lUmRPhkaymWCkjnBQ6r4utqfre+Y=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791802099; c=relaxed/simple;
-	bh=tbx7nVIA41LU75v4yUrONlPkVS4w/NecnyPGwZVkUB8=;
+	s=arc-20240116; t=1791803127; c=relaxed/simple;
+	bh=uSYuJuxYf5CYLSkKjCsurqq7KxXCdfdNnxu4pQitVZA=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=t+xZyMw48v9BbtwYGqRIl9k2JiCkBt6lOpCHwN/1XDondueETLQlyyjTkpXkH1uuGAjo4or6kwjN1+3/62rVxTFkdlJOXuOK+1rTvaNmkMZoqJl16CHMQ0sZilsT7g9/Vz+fbbuCoxm7vPyLasutyU6eL/j14WfLdXEZ7vGnZ5I=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=EbZnrAmx; arc=none smtp.client-ip=100.103.45.18
+	 To:Cc:Content-Type; b=dD1jqgIBwXftviEAQIBV9DCm1GYdM1+T12ZX/FeBs+ZtGeoUIXMAoawupn+10yjyh130yJCYQrO4rROhWG2VMDAWdvZNbx4jZK/1Mbai1QfwH27hop1y1piRrP5U0+RKAEgvXZnWlyEvU2B/nHXhHLy3wcVZfil2RwCzXuDRg8c=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=WsrQ98Fg; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="EbZnrAmx"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4D08C1F0089C
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 10:48:18 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="WsrQ98Fg"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E444D1F008A0
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 11:05:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1791802098;
-	bh=WcdWXpLvkFFkSvL+lWwxPPOEy/dBZ8FznkBBSy7pRMM=;
+	s=k20260515; t=1791803122;
+	bh=jium8qoRQff7tf7aIB2kyynHhKF7RdmHYmbH57IDVSk=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=EbZnrAmxEWVL3c6k/OJ+/MXcElrEzE5i/9Y0LtJQgyBKXkRG6I5tdtka3YFkPGqVI
-	 d/oVHt7yduQGeHqriEX0UwGe+pVHHkejSH/tg5EcHcZTfdpEBROqzYuZxS7RjhzE1Y
-	 jLEN+3yvhWfj4VwO0NXPr2WkXZbvD9uQunzOQ8DBciNvIXSzrZgggKZzQ9rekheFxT
-	 5sTnyir202nS95alfJDPwFTad3T/0kv6rzQHei0rbXa6DOeQnGwCUHkojHI+2+kkKM
-	 MjlFhaE3s1WAW6eJ+XDrBCpCygPIvy53uErenU8vLTRi/AJ0I5CZoq4SATHdQh5U5p
-	 pgMXJVpUP+QEA==
-Received: by mail-vs1-f53.google.com with SMTP id ada2fe7eead31-7bf5f3736d2so1186649137.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 03:48:18 -0700 (PDT)
-X-Gm-Message-State: AFq9FYJyatGBGf6azd9rI2mhuBYpT1yXykik5cgGLP/wTAgOdnpp+BWK
-	6544b+56MCUHchWqr8FsJ/UEIbiCxGBMXtdb0AJB0UeLb1kpe3Xm7LpXnttjgkOdSS4wUXx1lEF
-	5WfInaGeAKBRSDBhBZEU9ieP7/tasTi4=
-X-Received: by 2002:a05:6102:424f:b0:7a6:85d6:84c3 with SMTP id
- ada2fe7eead31-7cb3678832dmr2758793137.3.1791802097498; Mon, 12 Oct 2026
- 03:48:17 -0700 (PDT)
+	b=WsrQ98FgMVWALFjVvwIgyyEALI216qLYRq4Ln/nKiFo20NMZRQ2WWZEcUh/eh7nRb
+	 GYeUlFCqJ7N9shEA6lLEYPoKWma5R9uO3nhw9BP+pJaZPZoJ5Gy1Yp7fO48O01hR06
+	 2FczQ4qwOmBGRBNXqMeHowXS44AkB8vn9vpZHjFxEwXktKaoLaLX/TmMjMDPwGqNPH
+	 s53xjQaa9vpveT0FdZ6XYcpll86BTbCSN7pqekkQBtXlfVclkqC82oiezhKtIcHsq0
+	 vdgqxZiGSDWw0mNlPEZP+5xVYQlGPlpK/N6gfFxyWOkg65JI3cIAyFtS9XbAIEGiam
+	 MCEWfswAbqrtw==
+Received: by mail-vs1-f45.google.com with SMTP id ada2fe7eead31-7cb3388613fso1132496137.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 04:05:22 -0700 (PDT)
+X-Forwarded-Encrypted: i=1; AKwUvBywcVNDHbsxxC+oVGuCZlwj0B2k9HDtdheyMsMhwpuEW4x8RD5ypE0GBOcIQe20qiuhsfulUP4zxATszw==@vger.kernel.org
+X-Gm-Message-State: AFq9FYINMjEqumQta7XtEZLSLe68DuymKEndQzXldn+8thJR5+5pdXxg
+	HE5Dav7LJMNcZOTKUfUq9dP52LY5PNH4cTX2fjTcBkKdFY7n4RN7GARKXxjhUK4BqnQ9dwH6w+m
+	Ekt+sQ1rZOJimlJj2nL+nzwDie+CIGJc=
+X-Received: by 2002:a05:6102:160a:b0:7c1:bc57:c7f3 with SMTP id
+ ada2fe7eead31-7cb3668a2c0mr2765728137.5.1791803121988; Mon, 12 Oct 2026
+ 04:05:21 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <cover.1791706855.git.wqu@suse.com> <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
-In-Reply-To: <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
+References: <cover.1791395660.git.goledhruva@gmail.com> <b99615bd-9b7c-48b6-ac70-d450a606388c@gmail.com>
+In-Reply-To: <b99615bd-9b7c-48b6-ac70-d450a606388c@gmail.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Mon, 12 Oct 2026 11:47:40 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H7TaX8EfOqxKvagAEO0D33f+hGWxQvnC91hhiSQJTja4A@mail.gmail.com>
-X-Gm-Features: AclHuK_UletaRnPNUqk3aUFsEgdEK1oekhlkHOnos1hYCSkyEddjgHjnUAkZ0Ng
-Message-ID: <CAL3q7H7TaX8EfOqxKvagAEO0D33f+hGWxQvnC91hhiSQJTja4A@mail.gmail.com>
-Subject: Re: [PATCH v5 2/2] btrfs: fix use-after-free on quota enable
- allocation failure
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, 
-	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>, 
-	syzbot+947286c775f432b073a8@syzkaller.appspotmail.com, 
-	Boris Burkov <boris@bur.io>
+Date: Mon, 12 Oct 2026 12:04:44 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H6FG=gWjJ-fy7FTBKSYyfUha2n93YbwtFFadMYU7ZuZjg@mail.gmail.com>
+X-Gm-Features: AclHuK8jt1Zpu2UUOvRzMmgjp9cGQrMgtqQRcNtiOcV91NH7E1xMjXLl0ubm97U
+Message-ID: <CAL3q7H6FG=gWjJ-fy7FTBKSYyfUha2n93YbwtFFadMYU7ZuZjg@mail.gmail.com>
+Subject: Re: [PATCH 1/3] btrfs: exercise NOCOMPRESS range and EOF handling
+To: Dhruva G <goledhruva@gmail.com>
+Cc: fstests@vger.kernel.org, Anand Jain <asj@kernel.org>, 
+	Filipe Manana <fdmanana@suse.com>, Zorro Lang <zlang@kernel.org>, linux-btrfs@vger.kernel.org, 
+	Qu Wenruo <quwenruo.btrfs@gmx.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, Oct 11, 2026 at 9:22=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On Sun, Oct 11, 2026 at 8:40=E2=80=AFPM Dhruva G <goledhruva@gmail.com> wro=
+te:
 >
-> From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+> Check that a bounded --nocomp request rewrites compressed extents in the
+> selected range while distant untouched regions still point to their
+> original compressed storage.
+> Cover a partial final sector, zero length, a length extending past EOF,
+> start at EOF, and the empty-file no-op. Preserve contents and sizes acros=
+s
+> the conversion and a remount.
 >
-> [BUG]
-> There is a syzbot report that a use-after-free bug is triggered after a
-> failed btrfs_quota_enable():
+> Add shared FIEMAP and integrity helpers for the NOCOMPRESS tests. Require
+> full mapping coverage and inspect every overlapping extent so holes and
+> partly converted ranges cannot pass. Include a small ioctl helper to
+> probe kernel support and check errno without btrfs-progs translation.
 >
->  loop0: detected capacity change from 32768 to 0
->  =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
-=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
->  BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x4e/0x130=
- lib/list_debug.c:29
->  Read of size 8 at addr ffff888040e0a528 by task syz.0.0/5324
->
->  CPU: 0 UID: 0 PID: 5324 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(f=
-ull)
->  Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1=
-.16.3-2 04/01/2014
->  Call Trace:
->   <TASK>
->   dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
->   print_address_description+0x55/0x1e0 mm/kasan/report.c:378
->   print_report+0x58/0x70 mm/kasan/report.c:482
->   kasan_report+0x117/0x150 mm/kasan/report.c:595
->   __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
->   __list_add_valid include/linux/list.h:104 [inline]
->   __list_add include/linux/list.h:169 [inline]
->   list_add include/linux/list.h:192 [inline]
->   list_move include/linux/list.h:345 [inline]
->   add_root_to_dirty_list+0x38b/0x470 fs/btrfs/ctree.c:232
->   btrfs_force_cow_block+0xf09/0x1bf0 fs/btrfs/ctree.c:553
->   btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
->   btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
->   btrfs_search_prev_slot fs/btrfs/free-space-tree.c:134 [inline]
->   remove_free_space_extent fs/btrfs/free-space-tree.c:732 [inline]
->   __btrfs_remove_from_free_space_tree fs/btrfs/free-space-tree.c:837 [inl=
-ine]
->   btrfs_remove_from_free_space_tree+0x4d6/0xda0 fs/btrfs/free-space-tree.=
-c:866
->   alloc_reserved_extent+0x4a/0x2b0 fs/btrfs/extent-tree.c:4976
->   alloc_reserved_tree_block fs/btrfs/extent-tree.c:5155 [inline]
->   run_delayed_tree_ref fs/btrfs/extent-tree.c:1815 [inline]
->   run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
->   btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
->   __btrfs_run_delayed_refs+0x18b5/0x43b0 fs/btrfs/extent-tree.c:2134
->   btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
->   btrfs_commit_transaction+0x28a/0x3170 fs/btrfs/transaction.c:2267
->   sync_filesystem+0x1d2/0x240 fs/sync.c:66
->   btrfs_reconfigure+0x2dc/0x2100 fs/btrfs/super.c:1511
->   reconfigure_super+0x232/0x8f0 fs/super.c:1128
->   do_remount fs/namespace.c:3410 [inline]
->   path_mount+0xd4e/0x1050 fs/namespace.c:4160
->   do_mount fs/namespace.c:4181 [inline]
->   __do_sys_mount fs/namespace.c:4397 [inline]
->   __se_sys_mount+0x31d/0x420 fs/namespace.c:4374
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->  RIP: 0033:0x7f9c8dd9f3ca
->   </TASK>
->
->  Allocated by task 5323:
->   kasan_save_stack mm/kasan/common.c:57 [inline]
->   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
->   poison_kmalloc_redzone mm/kasan/common.c:409 [inline]
->   __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:426
->   kasan_kmalloc include/linux/kasan.h:263 [inline]
->   __kmalloc_cache_noprof+0x321/0x600 mm/slub.c:5563
->   _kmalloc_noprof include/linux/slab.h:991 [inline]
->   _kzalloc_noprof include/linux/slab.h:1312 [inline]
->   btrfs_alloc_root+0x75/0x840 fs/btrfs/disk-io.c:638
->   btrfs_create_tree+0xa8/0x5c0 fs/btrfs/disk-io.c:832
->   btrfs_quota_enable+0x3d6/0x1e20 fs/btrfs/qgroup.c:1074
->   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
->   vfs_ioctl fs/ioctl.c:51 [inline]
->   __do_sys_ioctl fs/ioctl.c:597 [inline]
->   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
->  Freed by task 5323:
->   kasan_save_stack mm/kasan/common.c:57 [inline]
->   kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
->   kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:584
->   poison_slab_object mm/kasan/common.c:264 [inline]
->   __kasan_slab_free+0x5c/0x80 mm/kasan/common.c:296
->   kasan_slab_free include/linux/kasan.h:235 [inline]
->   slab_free_hook mm/slub.c:2748 [inline]
->   slab_free mm/slub.c:6508 [inline]
->   kfree+0x1c5/0x650 mm/slub.c:6801
->   btrfs_quota_enable+0x1208/0x1e20 fs/btrfs/qgroup.c:1292
->   btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
->   vfs_ioctl fs/ioctl.c:51 [inline]
->   __do_sys_ioctl fs/ioctl.c:597 [inline]
->   __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->   do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->   do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->   entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
-> [CAUSE]
-> During btrfs_quota_enable(), a temporary quota_root is created, then
-> qgroup items are created for each subvolume and inserted into that root.
->
-> If there are enough subvolumes, the level of quota_root will be bumped,
-> and add_root_to_dirty_list() will be called, adding
-> quota_root->dirty_list into fs_info->dirty_cowonly_roots.
->
-> But if a problem is hit during btrfs_quota_enable() later, that
-> quota_root will be released through btrfs_put_root(), causing the whole
-> quota_root structure to be released, while leaving
-> fs_info->dirty_cowonly_roots still pointing to the released
-> quota_root->dirty_list.
->
-> Later access through fs_info->dirty_cowonly_roots will trigger a
-> use-after-free bug.
->
-> [FIX]
-> We can just call list_del_init(&root->dirty_list) when
-> btrfs_quota_enable() failed.
->
-> Also to follow the existing error handling behavior, abort the
-> transaction when the memory preallocation failed.
->
-> Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
-> Link: https://lore.kernel.org/linux-btrfs/6ac5a5e1.9ad129c8.3ce5b3.0010.G=
-AE@google.com/
-> Closes: https://syzkaller.appspot.com/bug?extid=3D947286c775f432b073a8
-> Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> [ Change the commit message to include a proper analysis. ]
-> Reviewed-by: Boris Burkov <boris@bur.io>
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Dhruva Gole <goledhruva@gmail.com>
 > ---
->  fs/btrfs/qgroup.c | 7 +++++++
->  1 file changed, 7 insertions(+)
+>  .gitignore                |   1 +
+>  common/btrfs_nocomp       | 134 ++++++++++++++++++++++++++++++++++++++
+>  src/Makefile              |   2 +-
+>  src/btrfs_defrag_nocomp.c |  63 ++++++++++++++++++
+>  tests/btrfs/355           |  80 +++++++++++++++++++++++
+>  tests/btrfs/355.out       |   2 +
+>  6 files changed, 281 insertions(+), 1 deletion(-)
+>  create mode 100644 common/btrfs_nocomp
+>  create mode 100644 src/btrfs_defrag_nocomp.c
+>  create mode 100755 tests/btrfs/355
+>  create mode 100644 tests/btrfs/355.out
 >
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index cf8dfd5c692b..a0651fbfe778 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_inf=
-o,
->         prealloc =3D kzalloc_obj(*prealloc, GFP_NOFS);
->         if (!prealloc) {
->                 ret =3D -ENOMEM;
-> +               btrfs_abort_transaction(trans, ret);
->                 goto out;
->         }
->         qgroup =3D add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJECTI=
-D);
-> @@ -1296,6 +1297,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_in=
-fo,
->                  * sysfs entries.
->                  */
->                 btrfs_free_qgroup_config(fs_info);
+> diff --git a/.gitignore b/.gitignore
+> index 0b6b9452..1bfa12ef 100644
+> --- a/.gitignore
+> +++ b/.gitignore
+> @@ -216,6 +216,7 @@ tags
+>  /src/truncate
+>  /src/t_btrfs_received_uuid_ioctl
+>  /src/btrfs_ioctl
+> +/src/btrfs_defrag_nocomp
+>
+>  # Symlinked files
+>  /tests/generic/035.out
+> diff --git a/common/btrfs_nocomp b/common/btrfs_nocomp
+> new file mode 100644
+> index 00000000..7e2111e1
+> --- /dev/null
+> +++ b/common/btrfs_nocomp
+> @@ -0,0 +1,134 @@
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) Meta Platforms, Inc. and affiliates.
+> +# Helpers for BTRFS_DEFRAG_RANGE_NOCOMPRESS tests.
 > +
-> +               if (quota_root) {
-> +                       spin_lock(&fs_info->trans_lock);
-> +                       list_del_init(&quota_root->dirty_list);
-> +                       spin_unlock(&fs_info->trans_lock);
+> +_nc_require()
+> +{
+
+Such a odd name because:
+
+1. All our require functions are named as _require_something, but here
+the logic is inverted.
+
+2. "nc" is not really intuitive, is rather cryptic, specially taking
+into account this is specific for the no compress option for defrag -
+there's no indication in the name this is defrag related.
+
+> +       _require_scratch
+> +       _require_test_program btrfs_defrag_nocomp
+> +       _require_xfs_io_command fiemap ranged
+> +       _require_btrfs_command filesystem defragment --nocomp
+> +       _require_btrfs_no_nodatacow
+> +       _require_btrfs_no_nodatasum
+> +       _require_btrfs_no_autodefrag
+> +       _require_btrfs_support_sectorsize 4096
+> +       _wants_kernel_commit 009b2056cb25 \
+> +               "btrfs: defrag: add flag to force no-compression"
+> +}
+> +
+> +_nc_write()
+> +{
+> +       $XFS_IO_PROG -f -c "pwrite -S $4 -b 128K $2 $3" -c fsync "$1" \
+> +               >> "$seqres.full" 2>&1 || _fail "write failed: $1"
+> +}
+
+A useless wrapper. Just make the tests call XFS_IO_PROG, this does not
+add any value at all.
+
+> +
+> +_nc_probe()
+> +{
+> +       local result
+> +
+> +       _nc_write "$SCRATCH_MNT/probe" 0 131072 0x5a
+> +       result=3D$($here/src/btrfs_defrag_nocomp "$SCRATCH_MNT/probe" 0 1=
+31072) ||
+> +               _fail "NOCOMPRESS probe failed"
+> +       case "$result" in
+> +       OK) ;;
+> +       EOPNOTSUPP|ENOTTY) _notrun "kernel does not support NOCOMPRESS" ;=
+;
+> +       *) _fail "unexpected NOCOMPRESS probe result: $result" ;;
+> +       esac
+> +       rm -f "$SCRATCH_MNT/probe"
+> +}
+
+Too complex, we usually just call the user space utility on a simple
+scenario that should never fail and if it fails we skip the test
+saying the feature is not supported by the kernel.
+And we do it in a _require_something function as well.
+
+> +
+> +_nc_defrag()
+> +{
+> +       local file=3D"${@: -1}"
+> +
+> +       $BTRFS_UTIL_PROG filesystem defragment --nocomp "$@" \
+> +               >> "$seqres.full" 2>&1 || _fail "NOCOMPRESS defrag failed=
+"
+> +       $XFS_IO_PROG -c fsync "$file" >> "$seqres.full" 2>&1 ||
+> +               _fail "fsync after defrag failed"
+> +}
+
+Another pointless wrapper.
+I also dislike this practice of adding a _fail for everything.
+Just let the tests fail with a golden output mismatch.
+
+> +
+> +_nc_map()
+> +{
+> +       $XFS_IO_PROG -c "fiemap -v $2 $3" "$1" > "$tmp.nc-map" \
+> +               2>> "$seqres.full" || _fail "fiemap failed: $1"
+> +       cat "$tmp.nc-map" >> "$seqres.full"
+> +}
+
+Yet another wrapper.
+
+> +
+> +# FIEMAP prints logical offsets in 512-byte units. Check every overlappi=
+ng
+> +# extent and complete coverage, so a hole or a partly converted range fa=
+ils.
+> +# The caller supplies byte offsets and lengths, including a partial EOF =
+sector.
+> +_nc_check_range()
+> +{
+> +       _nc_map "$1" "$2" "$3"
+> +       $AWK_PROG -v start=3D"$2" -v len=3D"$3" -v mode=3D"$4" '
+> +       BEGIN {
+> +               first =3D int(start / 512)
+> +               end =3D int((start + len + 511) / 512)
+> +               next_block =3D first
+> +       }
+> +       $1 ~ /^[0-9]+:$/ && $5 ~ /^0x/ {
+> +               gsub(/[^0-9]/, " ", $2)
+> +               split($2, logical)
+> +               lo =3D logical[1] + 0
+> +               hi =3D logical[2] + 1
+> +               if (hi <=3D first || lo >=3D end)
+> +                       next
+> +               if (mode =3D=3D "hole") {
+> +                       bad =3D 1
+> +                       next
 > +               }
->                 btrfs_put_root(quota_root);
+> +               flags =3D strtonum($5)
+> +               encoded =3D and(flags, 0x8) !=3D 0
+> +               unwritten =3D and(flags, 0x800) !=3D 0
+> +               inline =3D and(flags, 0x200) !=3D 0
+> +               if (and(flags, 0x6) || lo > next_block)
+> +                       bad =3D 1
+> +               if (mode =3D=3D "compressed" && (!encoded || unwritten ||=
+ inline))
+> +                       bad =3D 1
+> +               if (mode =3D=3D "regular" && (encoded || unwritten || inl=
+ine))
+> +                       bad =3D 1
+> +               if (mode =3D=3D "inline" && (!encoded || unwritten || !in=
+line))
+> +                       bad =3D 1
+> +               if (mode =3D=3D "prealloc" && (encoded || !unwritten || i=
+nline))
+> +                       bad =3D 1
+> +               if (hi > next_block)
+> +                       next_block =3D hi
+> +       }
+> +       END { exit bad || (mode !=3D "hole" && next_block < end) }
+> +       ' "$tmp.nc-map" || _fail "unexpected $4 mapping: $1 ($2, $3)"
+> +}
 
-It looks a bit odd to have left btrfs_put_root() outside the if block
-that tests for a non NULL quota root.
-While's harmless, it feels odd.
+Why do we need this level of complexity?
+Adding an awk script to process fiemap output and detect unexpected
+results is overly complex.
 
-Otherwise:
+Why not do what we do in every other test that checks the extent
+layout of a file?
+Simply call fiemap in the test and add the expected output to the
+golden output file.
+That's simple, does the work and it's the preferred way to do things in fst=
+ests.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> +
+> +# Ignore flags such as LAST, which may change when another range is rewr=
+itten.
+> +_nc_mapping()
+> +{
+> +       _nc_map "$1" "$2" "$3"
+> +       _filter_xfs_io_fiemap < "$tmp.nc-map" | \
+> +               $AWK_PROG '{ print $1, $2, $3, $4 }'
+> +}
+> +
+> +_nc_save_file()
+> +{
+> +       md5sum "$1" >> "$tmp.nc-checksums" || _fail "checksum failed: $1"
+> +       stat -c '%s %n' "$1" >> "$tmp.nc-sizes" || _fail "stat failed: $1=
+"
+> +}
 
->         }
->         mutex_unlock(&fs_info->qgroup_ioctl_lock);
-> --
-> 2.56.0
+This name "save_file" is totally confusing.
+
+> +
+> +_nc_verify_files()
+> +{
+> +       local size file actual
+> +
+> +       md5sum -c "$tmp.nc-checksums" >> "$seqres.full" 2>&1 ||
+> +               _fail "file contents changed"
+> +       while read -r size file; do
+> +               actual=3D$(stat -c %s "$file") || _fail "stat failed: $fi=
+le"
+> +               [ "$actual" =3D "$size" ] || _fail "file size changed: $f=
+ile"
+> +       done < "$tmp.nc-sizes"
+> +}
+> +
+> +_nc_raw_expect()
+> +{
+> +       local expected=3D"$1" result
+> +       shift
+> +       result=3D$($here/src/btrfs_defrag_nocomp "$@") || _fail "raw ioct=
+l failed"
+> +       [ "$result" =3D "$expected" ] ||
+> +               _fail "expected $expected, got $result"
+> +}
+
+This is all stuff we can do in the tests by calling md5sum and placing
+the expected digest in the golden output file, like we do in many
+other tests.
+
+> diff --git a/src/Makefile b/src/Makefile
+> index 76cf50c3..07bf681d 100644
+> --- a/src/Makefile
+> +++ b/src/Makefile
+> @@ -36,7 +36,7 @@ LINUX_TARGETS =3D xfsctl bstat t_mtab getdevicesize pre=
+allo_rw_pattern_reader \
+>         fscrypt-crypt-util bulkstat_null_ocount splice-test chprojid_fail=
+ \
+>         detached_mounts_propagation ext4_resize t_readdir_3 splice2pipe \
+>         uuid_ioctl t_snapshot_deleted_subvolume fiemap-fault min_dio_alig=
+nment \
+> -       rw_hint fs-monitor btrfs_ioctl
+> +       rw_hint fs-monitor btrfs_ioctl btrfs_defrag_nocomp
 >
+>  EXTRA_EXECS =3D dmerror fill2attr fill2fs fill2fs_check scaleread.sh \
+>               btrfs_crc32c_forged_name.py popdir.pl popattr.py \
+> diff --git a/src/btrfs_defrag_nocomp.c b/src/btrfs_defrag_nocomp.c
+> new file mode 100644
+> index 00000000..4b066418
+> --- /dev/null
+> +++ b/src/btrfs_defrag_nocomp.c
+> @@ -0,0 +1,63 @@
+> +// SPDX-License-Identifier: GPL-2.0
+> +// Copyright (c) Meta Platforms, Inc. and affiliates.
+> +/* Issue NOCOMPRESS requests without userspace range/error translation. =
+*/
+
+Why do we need a C program?
+Why not just have the tests call btrfs-progs:  btrfs filesystem
+defragment --nocomp ....
+
+This patchset adds an insane level of complexity for no good reason,
+making the tests hard to read and maintain.
+
+I can't see why just calling btrfs-progs, fiemap and md5sum directly
+in the tests and then placing the expected output in the golden file
+is not enough...
+
+Thanks.
+
+
+> +#include <errno.h>
+> +#include <fcntl.h>
+> +#include <linux/btrfs.h>
+> +#include <stdio.h>
+> +#include <stdlib.h>
+> +#include <string.h>
+> +#include <sys/ioctl.h>
+> +#include <unistd.h>
+> +
+> +#ifndef BTRFS_DEFRAG_RANGE_NOCOMPRESS
+> +#define BTRFS_DEFRAG_RANGE_NOCOMPRESS (1ULL << 3)
+> +#endif
+> +
+> +static unsigned long long number(const char *s)
+> +{
+> +       char *end;
+> +       unsigned long long value;
+> +
+> +       errno =3D 0;
+> +       value =3D strtoull(s, &end, 0);
+> +       if (errno || *end || end =3D=3D s || *s =3D=3D '-') {
+> +               fprintf(stderr, "invalid number: %s\n", s);
+> +               exit(2);
+> +       }
+> +       return value;
+> +}
+> +
+> +int main(int argc, char **argv)
+> +{
+> +       struct btrfs_ioctl_defrag_range_args range =3D { 0 };
+> +       int fd, err =3D 0;
+> +       const char *result;
+> +
+> +       if (argc !=3D 4) {
+> +               fprintf(stderr, "usage: %s file start len\n", argv[0]);
+> +               return 2;
+> +       }
+> +       range.flags =3D BTRFS_DEFRAG_RANGE_NOCOMPRESS;
+> +       range.start =3D number(argv[2]);
+> +       range.len =3D number(argv[3]);
+> +       fd =3D open(argv[1], O_RDONLY | O_CLOEXEC);
+> +       if (fd < 0) {
+> +               perror("open");
+> +               return 2;
+> +       }
+> +       if (ioctl(fd, BTRFS_IOC_DEFRAG_RANGE, &range) < 0)
+> +               err =3D errno;
+> +       close(fd);
+> +       switch (err) {
+> +       case 0: result =3D "OK"; break;
+> +       case EINVAL: result =3D "EINVAL"; break;
+> +       case EOPNOTSUPP: result =3D "EOPNOTSUPP"; break;
+> +       case ENOTTY: result =3D "ENOTTY"; break;
+> +       default:
+> +               fprintf(stderr, "unexpected errno %d (%s)\n", err, strerr=
+or(err));
+> +               return 1;
+> +       }
+> +       puts(result);
+> +       return 0;
+> +}
+> diff --git a/tests/btrfs/355 b/tests/btrfs/355
+> new file mode 100755
+> index 00000000..12befb91
+> --- /dev/null
+> +++ b/tests/btrfs/355
+> @@ -0,0 +1,80 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) Meta Platforms, Inc. and affiliates.
+> +#
+> +# FS QA Test 355
+> +#
+> +# Verify bounded NOCOMPRESS conversion and EOF range handling.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick defrag compress fiemap
+> +
+> +. ./common/filter
+> +. ./common/btrfs_nocomp
+> +
+> +_nc_require
+> +_scratch_mkfs -s 4k >> "$seqres.full" 2>&1 || _fail "mkfs failed"
+> +_scratch_mount -o compress=3Dzlib
+> +_nc_probe
+> +
+> +file=3D"$SCRATCH_MNT/range"
+> +_nc_write "$file" 0 4194304 0x5a
+> +_nc_save_file "$file"
+> +_nc_check_range "$file" 0 4194304 compressed
+> +_nc_mapping "$file" 0 131072 > "$tmp.prefix"
+> +_nc_mapping "$file" 4063232 131072 > "$tmp.suffix"
+> +
+> +_nc_defrag -s 1M -l 512K "$file"
+> +_nc_check_range "$file" 1048576 524288 regular
+> +_nc_check_range "$file" 0 1048576 compressed
+> +_nc_check_range "$file" 1572864 2621440 compressed
+> +_nc_mapping "$file" 0 131072 > "$tmp.prefix-after"
+> +_nc_mapping "$file" 4063232 131072 > "$tmp.suffix-after"
+> +cmp -s "$tmp.prefix" "$tmp.prefix-after" || _fail "prefix mapping change=
+d"
+> +cmp -s "$tmp.suffix" "$tmp.suffix-after" || _fail "suffix mapping change=
+d"
+> +
+> +# The two-sector tail can be compressed, unlike a single-sector tail on =
+a
+> +# 4K filesystem. First convert a one-byte range, then use an unaligned s=
+tart
+> +# and end the request at EOF, one byte into the final 4K sector.
+> +tail=3D"$SCRATCH_MNT/partial"
+> +_nc_write "$tail" 0 135169 0x39
+> +_nc_save_file "$tail"
+> +_nc_check_range "$tail" 131072 4097 compressed
+> +_nc_defrag -s 128K -l 1 "$tail"
+> +_nc_check_range "$tail" 131072 4096 regular
+> +_nc_defrag -s 131073 -l 4096 "$tail"
+> +_nc_check_range "$tail" 131072 4097 regular
+> +
+> +# Zero length means to EOF; a length extending past EOF must be clamped.
+> +for mode in zero huge; do
+> +       f=3D"$SCRATCH_MNT/$mode"
+> +       _nc_write "$f" 0 262144 0x38
+> +       _nc_save_file "$f"
+> +       _nc_check_range "$f" 0 262144 compressed
+> +       case "$mode" in
+> +       zero) _nc_defrag -s 128K -l 0 "$f" ;;
+> +       huge) _nc_defrag -s 128K -l 16M "$f" ;;
+> +       esac
+> +       _nc_check_range "$f" 0 131072 compressed
+> +       _nc_check_range "$f" 131072 131072 regular
+> +done
+> +
+> +# A nonempty file rejects start =3D=3D EOF, but an empty file is a no-op=
+.
+> +_nc_raw_expect EINVAL "$file" 4194304 4096
+> +touch "$SCRATCH_MNT/empty" || _fail "create empty file failed"
+> +_nc_save_file "$SCRATCH_MNT/empty"
+> +_nc_raw_expect OK "$SCRATCH_MNT/empty" 0 0
+> +_nc_verify_files
+> +_scratch_cycle_mount compress=3Dzlib
+> +_nc_verify_files
+> +_nc_check_range "$file" 1048576 524288 regular
+> +_nc_check_range "$file" 0 1048576 compressed
+> +_nc_check_range "$file" 1572864 2621440 compressed
+> +_nc_check_range "$tail" 131072 4097 regular
+> +for mode in zero huge; do
+> +       _nc_check_range "$SCRATCH_MNT/$mode" 0 131072 compressed
+> +       _nc_check_range "$SCRATCH_MNT/$mode" 131072 131072 regular
+> +done
+> +
+> +echo "Silence is golden"
+> +_exit 0
+> diff --git a/tests/btrfs/355.out b/tests/btrfs/355.out
+> new file mode 100644
+> index 00000000..4e4c5e98
+> --- /dev/null
+> +++ b/tests/btrfs/355.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 355
+> +Silence is golden
+> --
+> 2.43.0
 >

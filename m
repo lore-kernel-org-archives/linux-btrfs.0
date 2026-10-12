@@ -1,553 +1,274 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32DA3323417;
-	Mon, 12 Oct 2026 16:16:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28EC93168E6
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 16:28:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791821787; cv=none; b=IaJuCEepUMnw1KC2oORJIqoSzjlrn0HUOdsjIweKWf/u4/7UMRdm4OvaMvecd2Y8P3rLBNw1i+i6oTIR1dZdM2VVuH3h4zmAZksBofBS4ZhqYd48p4vKiVQiLpZzFAd27sJv6LKOZDc6OTapvo+JHXpSI8UX6xXerepIyV7E3n0=
+	t=1791822521; cv=none; b=HRK3GdRPh2O/b1LJosbd5lhUevb4+CBjjNYEI0I2TxSSD+CKbippj5dMJojqufKxwLgGCP0wf09/YxGmClUHxRdV4P7jllqZEYlIy6OcChLzfyFwOfmwBuK5aTkOWx1SVP8aPbRLjHXaCzYf/krfoQEGH8l2Qa/xTVOBmbMOkws=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791821787; c=relaxed/simple;
-	bh=qBrdL8hEuh98hB+ggHumK7J1HmTMTV6ELoUi707lFy0=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=md1nRWkMmYsAkkWvZ+9Rz/+HKhnDyZPojMGDn+2JtRdCR8r6yzX9pUqhK9d44UCBIIKthhrh+i7dNaQmOR/i5skpAIUCj9yPCAmN0s6GaQOmAxeLWsccpHgzX2LO/+LPrardUOCEF0aVo64OSIhm3hGY/aGMXzYny6ri/+Tii1Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=HZBxeKPa; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=nB2BgqZG; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=WWceGWDJ; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=vmVhSmWs; arc=none smtp.client-ip=195.135.223.131
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	s=arc-20240116; t=1791822521; c=relaxed/simple;
+	bh=JAcD7i94Ac2+PLIMMjoqYux1WH2Dy++j0v9LJLa2Qqc=;
+	h=From:Subject:Date:Message-Id:MIME-Version:Content-Type:To:Cc; b=Cfv+sN7xB1D/zeC1b6voo71E3pLnACRFOKYWbhodqwztPFJXylEhBZThhICRFRRMz4+J7aT1dgdrVS/GRuWOhkkxCA9WV2aXTpEASQGjweTZ0AcC48e5PM3blRp3sUn9ZaO825TfgE9SFr96xg6Js9tE2yTNOlUFlYAWJbk7S+g=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=K32lLuaB; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=llA0fNjr; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="HZBxeKPa";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="nB2BgqZG";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="WWceGWDJ";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="vmVhSmWs"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 0DA251F452;
-	Mon, 12 Oct 2026 16:16:22 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791821783; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
-	b=HZBxeKPaSuJuHrua6pwIjLUgJu7T8+o5x6pGbu6VrVxgW0pontpG7mgvSCW985lvQXCm6k
-	ENiCBzHr7vZPPzUN+RDzVpK2ajEGkHlPIrKXbI8outUnK98NY01XNWN8P7ybGirsg5L0xU
-	cAeLEvs1yYOuf1+uuzrOORr9psx1yyA=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791821783;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
-	b=nB2BgqZGXtqQFEj9bmWRZS5HMKJiCm9+NCbifhOmi85FkwuCll0g+y7M86ZJW+N+n6N4ef
-	O1eu+fHbxoQNPmDQ==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791821782; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
-	b=WWceGWDJWbWyp+tSjWUuIl96+47XetoM8UQ5ojGWu22vW0tpHkFlS58u3gADcp3WGRybpY
-	qS3B6aHa+hxemG1ZzhjBHcnsecTmHO+ZY/eGbSw6pzWcsS8Ap7IBbkaMiEzTet+7DasyLX
-	71l8j1AG3D7WgTfNDdqv3TOGdTkgfEk=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791821782;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Oaw6+PiVA44MtmvW5kOItUHWl2YymffwUEd7qORDt1s=;
-	b=vmVhSmWsRel2xmyiBhPqbV+Ka6fqG4q5r0ToTPQ8GhzafF+ptviSJpOif87jnc7//+DvbD
-	/re/ZAjGcxA9wmAA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CA73B13314;
-	Mon, 12 Oct 2026 16:16:21 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id SixCKdUHzWqqJwAAD6G6ig
-	(envelope-from <jack@suse.cz>); Mon, 12 Oct 2026 16:16:21 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id 5D46EA1405; Mon, 12 Oct 2026 18:16:17 +0200 (CEST)
-Date: Mon, 12 Oct 2026 18:16:17 +0200
-From: Jan Kara <jack@suse.cz>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Jan Kara <jack@suse.cz>, Jens Axboe <axboe@kernel.dk>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, linux-btrfs@vger.kernel.org, linux-erofs@lists.ozlabs.org, 
-	linux-fsdevel@vger.kernel.org
-Subject: Re: [PATCH 2/2] super: convert to plain hashtable
-Message-ID: <skrqaeb7xlz5cjge27i7rsvv47jrfmgur3ugypy24mfvx6rndi@cvqtng3snniy>
-References: <20261012-work-super-dev_hash-v1-0-305cf71cd334@kernel.org>
- <20261012-work-super-dev_hash-v1-2-305cf71cd334@kernel.org>
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="K32lLuaB";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="llA0fNjr"
+Received: from pps.filterd (m0167074.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69CExDWw915278
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:38 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:message-id
+	:mime-version:subject:to; s=pps01; bh=539Tx3d+i4nncCaf+noQuTTiO2
+	p34fSq5OUzHLLDqqA=; b=K32lLuaB8l+kg3YO8vfiD09bCc7OVwWi1rO2TlJaSl
+	4DEwFCFZSjZ71UTA+Ki9/FfEju4HFI8/IxEXjamhSuqvM4/OtaWYpyfmNqynkwSh
+	EdRVmyg5Oyp4N89+OqbhJ3Bf0wcAbJBNt7jUK+aPGPcnkmllK298QuJdiEAm7AQ3
+	I9iZPBHJVywZTqwMvWLNYarLAq0jQ6XSlau+Fl9B67hObQ/ISEKKZcmko5iYlpPf
+	QnMDEzMEPuhNcsWmRIwpSC63vNppwlH1pPXbzfXjdkD+bZrHrqHl7dUPYjeaG8Fl
+	hH9m25n0luqHjgxOuFYKHvy2eTbK37VJp77Hlg01JhjA==
+Received: from mail-qt1-f198.google.com (mail-qt1-f198.google.com [209.85.160.198])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4h91sy90x1-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:37 -0400 (EDT)
+Received: by mail-qt1-f198.google.com with SMTP id d75a77b69052e-535213e3a7aso47573861cf.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 09:28:37 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=columbia.edu; s=lionmail; t=1791822517; x=1792427317; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=539Tx3d+i4nncCaf+noQuTTiO2p34fSq5OUzHLLDqqA=;
+        b=llA0fNjrsDp1Mt4Ik1TnCgLOM1RQizr1O6GbO0VdJnus/YLOlOOA2Nv1KQIALoe+j+
+         Lcd+/TUE5jaUfuMfZLahDge2PS/7vC70UB/fNwGTJLNFf8kSUYvCXlSPUi5zSRMjdlKT
+         idJbmO4TWtL9soOYqpwB55qu+DLbuGMz0dlxIHhPVytW3VQJw8300/khci8wOp9o3XOp
+         fkPhEswX4OdNJoY0CC1gbmPuIp66KXr3F/OYJRO7z0bI1J9I0d6Q0a94x2ZGv6fmQrDF
+         MYbBFIxJKwKaab6oqtFHWfCF8ryl3MUvF24TYRtV4R9I+yOOKPbd/Mysg9heZD/X5u1f
+         97rA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791822517; x=1792427317;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=539Tx3d+i4nncCaf+noQuTTiO2p34fSq5OUzHLLDqqA=;
+        b=NVPbFPjuzee03uEkYNGberdYryuBRltwOcj0L0Wv4S/uskUzRX0DsN9bVdrOjat5XT
+         C+o5P8/ifBB2asQm1it1GwWuBQe1XZTir5mOV9uzSuIFnzFhncVx9ip/cbCmaixJqS+C
+         3H4J6Z5rY5Dsq94RxvzMESL2vRF+cdzjlAM5QmEodDOVuqMGtOF93/WSNx0FTxhqitYM
+         1Q0uqkqBqaJ5L/N7FvfNorIT3LHonmOvon66mtX3t4Kpf9KgEzH+yoiHKhXcVBGsLUpt
+         40YlKJYhgHthQ5IT2/6WNTRXuJFoURQqByJuZByLSZlUMY1Sil7gaj2EZ2j4JqGIdoV9
+         Tkbw==
+X-Gm-Message-State: AFq9FYINvHCcqul8ko/9ELdM/j69s3CBhyD53O5MEV78FULDRGHrUz4K
+	aUioFjpSvngnCdZ5zC5bvyehAUgN/52te4K8p84Vm5DeTG8bssBqBDK55OfeMwUYln1BwGS62oT
+	Aeu38O513M2kuX/yn79r8rDYto6FUdA5vKG+vOesZgbvqOWziwsQ2xhY3w0SG
+X-Gm-Gg: AYBFou2LWtNEsHAwyUlkKcFzqxBJdrWrQkpe6C5oRD6HshoSEjh+w6RYkHie9fr9D/B
+	ByUUBrVA0yCZ7ZRlsR4CEppR6lrcZ/Gvy2n7pDp584YOtSRg9Kk0tlns5FFCwIFc/xu2vej6CQt
+	FDm6ojq9QRDhpLID6OMVgj6XJUzklht003/dvBgqwU4o455lNftub36wxKBLGifQ8I9fWVxlZrI
+	CTtepnEI2xG4iz8tVgfWF1GzZtbTcHn5e/elevY/aZiM0F5sg24f7vpGDgEdz4uESeDuQFOe12K
+	8T7eEYFn+WlwdwH+YM+92ybo3g8P3z6zQ5O0wHheZMvzI5dcKghNmX18qz/ufO9jTl01T754IGK
+	Yu6NJXepQqSY8Lbrj2BIN3PmeESal3RzSAAp7cXxGEftgH8s=
+X-Received: by 2002:a05:622a:1342:b0:533:a4a:8826 with SMTP id d75a77b69052e-5359fade0d4mr170239231cf.19.1791822517044;
+        Mon, 12 Oct 2026 09:28:37 -0700 (PDT)
+X-Received: by 2002:a05:622a:1342:b0:533:a4a:8826 with SMTP id d75a77b69052e-5359fade0d4mr170238651cf.19.1791822516460;
+        Mon, 12 Oct 2026 09:28:36 -0700 (PDT)
+Received: from [127.0.1.1] (nat-128-59-178-231.net.columbia.edu. [128.59.178.231])
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97c27146sm1411796d6.29.2026.10.12.09.28.35
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 12 Oct 2026 09:28:36 -0700 (PDT)
+From: Tal Zussman <tz2294@columbia.edu>
+Subject: [PATCH v4 00/18] btrfs: remove the v1 space cache
+Date: Mon, 12 Oct 2026 12:28:12 -0400
+Message-Id: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261012-work-super-dev_hash-v1-2-305cf71cd334@kernel.org>
-X-Spamd-Result: default: False [-3.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_THREE(0.00)[3];
-	RCVD_TLS_LAST(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	MISSING_XM_UA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -3.80
-X-Spam-Level: 
-X-Spam-Flag: NO
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAJwKzWoC/33QzYrCMBSG4VuRrI3kxyTWlfchLk7Sk2lEW0nao
+ Ejv3UQZkGHo8oXD88F5koQxYCL71ZNEzCGFoS+xXa+I66D/QRra0kQwoVnDNLVj9IlGvA4ZaeY
+ 03cAhdeA6pFvlvDKuUQYEKcItog/3t348fTpN9oxurGS96EIah/h4z2de736XzOJSSUaVb0BZk
+ EqAObjhMl1tgA22E6ljWXxxXC5zonB8p402YJAz/Q8nv7nlP2RZOYa2RSZto/0fbp7nF4mRRd5
+ 5AQAA
+X-Change-ID: 20260906-btrfs-remove-v1-space-cache-45cf57c957a2
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+        Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Tal Zussman <tz2294@columbia.edu>
+X-Mailer: b4 0.17-dev
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1791822515; l=6566;
+ i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
+ bh=JAcD7i94Ac2+PLIMMjoqYux1WH2Dy++j0v9LJLa2Qqc=;
+ b=cTYeegRWhu43b32CWa3f8NMcR8+rGJjcWwKRy78qx2MXRr1t6Kpx6uHsPmK7WfehBHXAGv+bq
+ KjDSzotmgBzBY70EbtF9x4CSdUdAtoH7P5P0dL0TM0dqumqLxJjkeAD
+X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
+ pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX/S5OFJAI3cNH
+ v9HWmFuviJa+Quf/COu/py2fWwViTO0CAwbYQTPwv6lxDxfaJW9vf7+ABBnqnATJkVZGbAPNcVN
+ fPOH0475v+aGTrOUHgBHwDNuOkpssvKBfHs1DIPRC2i6OLOIRCZw
+X-Authority-Analysis: v=2.4 cv=JMSuIMKb c=1 sm=1 tr=0 ts=6acd0ab5 cx=c_pps
+ a=mPf7EqFMSY9/WdsSgAYMbA==:117 a=9fnr1hFzp71kSIFw8uYQYA==:17
+ a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=azVShVRs0zEubeQ0wG0L:22
+ a=VwQbUJbxAAAA:8 a=iox4zFpeAAAA:8 a=bC-a23v3AAAA:8 a=IXpjHA8lEWY8KwlMyKwA:9
+ a=QEXdDO2ut3YA:10 a=dawVfQjAaf238kedN5IG:22 a=WzC6qhA0u3u7Ye7llzcV:22
+ a=FO4_E8m0qiDe52t0p3_H:22
+X-Proofpoint-GUID: Uc1hCFfmfnjaxKH0BispuBSEFA3ysBWx
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX0fuUjL/c3xQp
+ 2U/OVa94aHRShePQIk4YDC17m2X3oH2cDuYF5DWWZwWBcrcbMdtqSR9GZsKiIKVdOQYxkT4gitN
+ TAt1pJEtmrRZHJWJtOrrp60l40erVLzW5r5eA9+g1fnyHtY+OcWjkiwLS1400wMFPYbxIRtzzAy
+ Y2yg/jtRYyD+Gdk5D/6q7pbxn64jwp4MHNQ3OAHu+FO2Sv2oUqOxCk9xx+4Shut88OXY1Qdv6Aa
+ vbyjYs/X8ry56pILEmrNLKN/b0StwaxHp2ZWFEJNN8kJ7Xjd1Nri3EM7hsQ/wIFBmTzohYLQNfS
+ r9GMeXOhsiNA0wOsHolzQKmwdpAs9mSLAhIbjg+uv5GYBLcVxHn5bbnV3eIGuDqaJ10pZ9BLyrn
+ zL26U8L0461OJk122k1OkYbl8Wznl+eOiMVqfcZvdWo9fnIeKHX1RY0WtcOZqV+AiqmXcgy4/3S
+ A6iZ8XqJAERYGMg57Sg==
+X-Proofpoint-ORIG-GUID: Uc1hCFfmfnjaxKH0BispuBSEFA3ysBWx
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11933
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ priorityscore=1501 clxscore=1015 spamscore=0 phishscore=0 malwarescore=0
+ impostorscore=10 lowpriorityscore=10 adultscore=0 bulkscore=10 suspectscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2610080000 definitions=main-2610120065
 
-On Mon 12-10-26 14:31:19, Christian Brauner wrote:
-> Convert the rhltable to a plain hashtable under a spinlock. The walks
-> keep their place with a cursor entry in the chain. A claim is unhashed
-> the moment it's dropped and a walk that finds a superblock that isn't
-> born yet waits for it to be born or to die and looks again. Since
-> hashing can't fail anymore the entry for the superblock's own s_dev is
-> embedded in struct super_block and the preallocation in alloc_super()
-> goes away. This all simplifies things quite a lot.
-> 
-> It also fixes a btrfs bug where fs_bdev_freeze() ended up freezing a
-> btrfs filesystem through a stale member that open_ctree() had already
-> released while the freeze was waiting for SB_BORN. The resume doesn't
-> find a holder for that device anymore so the filesystem stays frozen
-> for good.
-> 
-> The walks return superblocks instead of table entries now and
-> user_get_super() hands out the passive reference the walk took.
-> 
-> Reproducer, a three device btrfs with a stale copy of a removed member.
-> dm-delay under the remaining members stretches the window between
-> btrfs_open_devices() and btrfs_free_extra_devids():
-> 
->   truncate -s 1G a1 a2 b
->   A1=$(losetup -f --show a1); A2=$(losetup -f --show a2); B=$(losetup -f --show b)
->   mkfs.btrfs -f -d single -m single $A1 $A2 $B
->   cp b b.old
->   mount $A1 /mnt && btrfs device remove 3 /mnt && umount /mnt
->   OLD=$(losetup -f --show b.old)
->   dmsetup create d1 --table "0 $(blockdev --getsz $A1) delay $A1 0 200"
->   dmsetup create d2 --table "0 $(blockdev --getsz $A2) delay $A2 0 200"
->   dmsetup create old --table "0 $(blockdev --getsz $OLD) linear $OLD 0"
->   mount -o device=/dev/mapper/d2,device=/dev/mapper/old /dev/mapper/d1 /mnt &
->   sleep 1; dmsetup suspend old; wait
->   dmsetup resume old
->   touch /mnt/foo     # hangs until fsfreeze -u /mnt
-> 
-> That left btrfs frozen in 5 of 5 rounds with the same tables issued
-> through raw dm ioctls. The -o degraded variant needs the mount held
-> between the insertion and the bd_fsfreeze_count check in
-> fs_bdev_register() with a kprobe.
-> 
-> Fixes: cdb5146f8d5f ("fs: look up superblocks via the device table in fs_holder_ops")
-> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+Since commit 545e560a5b0f ("btrfs: disable v1 space cache") the mount
+options can't select the v1 space cache anymore, but the code is all
+still there, and a filesystem with an old cache and no free space tree
+still enabled it from the superblock. Qu suggested removing it rather
+than converting its page handling to folios [1].
 
-Overall looks good to me and indeed the code looks simpler. One suggestion
-below:
+Patch 1 fixes a pre-existing leak in the cleanup path, where a crash
+before the delayed iput evicts a cache inode left it unreachable with
+its link count still set.
 
-> +/* Unhash the cursor of a walk that stops early. */
-> +static void super_dev_walk_end(struct super_dev *cursor)
->  {
-> -	struct super_dev *sb_dev;
-> -
-> -	rcu_read_lock();
-> -	sb_dev = super_dev_get(rhltable_lookup(&super_dev_table, &dev, super_dev_params));
-> -	rcu_read_unlock();
-> -	return sb_dev;
-> +	guard(spinlock)(&super_dev_lock);
-> +	hash_del(&cursor->sd_hash);
->  }
->
-> +#define for_each_dev_super(sb, cursor) \
-> +	for (sb = super_dev_next(cursor, NULL); sb; sb = super_dev_next(cursor, sb))
+Patch 2 stops enabling the cache from the on-disk state, so an existing
+cache is cleaned up on the next read-write mount, as -o nospace_cache
+already did. This is the one user-visible change: the cleanup is now
+unconditional, and a read-write mount fails if it fails. There are two
+ways to fix this failure:
 
-So the 'cursor' is unused by the users of for_each_dev_super() except for
-calling super_dev_walk_end() when they abort the loop. So why not pass just
-'dev' into the macro where 'cursor' will be internal to for() loop and
-setup __cleanup to call super_dev_walk_end() when the cursor goes out of
-scope? It will require a bit of a macro magic but should be more ergonomic
-to use and no chance to forget calling super_dev_walk_end() at appropriate
-places.
+1. Convert to the free space tree during mount (the recommended
+   conversion), but this could fail for the same reason.
 
-								Honza
+2. Run 'btrfs rescue clear-space-cache v1' on an unmounted filesystem.
 
->  
->  static void kill_super_notify(struct super_block *sb)
->  {
-> @@ -548,11 +523,8 @@ static void kill_super_notify(struct super_block *sb)
->  	if (sb->s_flags & SB_DEAD)
->  		return;
->  
-> -	/* Drop sget_fc()'s claim; a never-registered entry stays with the sb. */
-> -	if (sb->s_super_dev->sd_dev) {
-> -		super_dev_put(sb->s_super_dev);
-> -		sb->s_super_dev = NULL;
-> -	}
-> +	/* Drop sget_fc()'s claim on s_dev. */
-> +	super_dev_put(&sb->s_super_dev);
->  
->  	/*
->  	 * Let concurrent mounts know that this thing is really dead.
-> @@ -880,13 +852,12 @@ struct super_block *sget_fc(struct fs_context *fc,
->  	s->s_fs_info = fc->s_fs_info;
->  	err = set(s, fc);
->  	if (err) {
-> -		VFS_WARN_ON_ONCE(s->s_super_dev->sd_dev);
->  		s->s_fs_info = NULL;
->  		spin_unlock(&sb_lock);
->  		destroy_unused_super(s);
->  		return ERR_PTR(err);
->  	}
-> -	VFS_WARN_ON_ONCE(!s->s_super_dev->sd_dev);
-> +	VFS_WARN_ON_ONCE(!s->s_dev);
->  	fc->s_fs_info = NULL;
->  	s->s_type = fc->fs_type;
->  	s->s_iflags |= fc->s_iflags;
-> @@ -899,6 +870,8 @@ struct super_block *sget_fc(struct fs_context *fc,
->  	list_add_tail(&s->s_list, &super_blocks);
->  	hlist_add_head(&s->s_instances, &s->s_type->fs_supers);
->  	spin_unlock(&sb_lock);
-> +	scoped_guard(spinlock, &super_dev_lock)
-> +		super_dev_add(&s->s_super_dev, s, s->s_dev);
->  	get_filesystem(s->s_type);
->  	shrinker_register(s->s_shrink);
->  	return s;
-> @@ -1040,18 +1013,14 @@ EXPORT_SYMBOL(iterate_supers_type);
->  
->  struct super_block *user_get_super(dev_t dev, bool excl)
->  {
-> -	struct super_dev *sb_dev;
-> -
-> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
-> -		struct super_block *sb = sb_dev->sd_sb;
-> -
-> -		if (!super_lock(sb, excl))
-> -			continue;
-> +	struct super_dev cursor = { .sd_dev = dev };
-> +	struct super_block *sb;
->  
-> -		/* The pinned entry holds a passive reference, take our own. */
-> -		refcount_inc(&sb->s_passive);
-> -		super_dev_put(sb_dev);
-> -		return sb;
-> +	for_each_dev_super(sb, &cursor) {
-> +		if (super_lock(sb, excl)) {
-> +			super_dev_walk_end(&cursor);
-> +			return sb;
-> +		}
->  	}
->  	return NULL;
->  }
-> @@ -1353,16 +1322,7 @@ EXPORT_SYMBOL(free_anon_bdev);
->  
->  int set_anon_super(struct super_block *s, void *data)
->  {
-> -	int error;
-> -
-> -	error = get_anon_bdev(&s->s_dev);
-> -	if (error)
-> -		return error;
-> -
-> -	error = super_dev_register(s);
-> -	if (error)
-> -		free_anon_bdev(s->s_dev);
-> -	return error;
-> +	return get_anon_bdev(&s->s_dev);
->  }
->  EXPORT_SYMBOL(set_anon_super);
->  
-> @@ -1448,7 +1408,7 @@ EXPORT_SYMBOL(get_tree_keyed);
->  static int set_bdev_super(struct super_block *s, void *data)
->  {
->  	s->s_dev = *(dev_t *)data;
-> -	return super_dev_register(s);
-> +	return 0;
->  }
->  
->  static int super_s_dev_set(struct super_block *s, struct fs_context *fc)
-> @@ -1527,14 +1487,12 @@ static int fs_super_thaw(struct super_block *sb)
->  
->  static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
->  {
-> -	struct super_dev *sb_dev;
-> -	dev_t dev = bdev->bd_dev;
-> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
-> +	struct super_block *sb;
->  
->  	mutex_unlock(&bdev->bd_holder_lock);
->  
-> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
-> -		struct super_block *sb = sb_dev->sd_sb;
-> -
-> +	for_each_dev_super(sb, &cursor) {
->  		if (!super_lock_shared(sb))
->  			continue;
->  		if (sb->s_root && (sb->s_flags & SB_ACTIVE)) {
-> @@ -1554,14 +1512,12 @@ static void fs_bdev_mark_dead(struct block_device *bdev, bool surprise)
->  
->  static void fs_bdev_sync(struct block_device *bdev)
->  {
-> -	struct super_dev *sb_dev;
-> -	dev_t dev = bdev->bd_dev;
-> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
-> +	struct super_block *sb;
->  
->  	mutex_unlock(&bdev->bd_holder_lock);
->  
-> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
-> -		struct super_block *sb = sb_dev->sd_sb;
-> -
-> +	for_each_dev_super(sb, &cursor) {
->  		if (!super_lock_shared(sb))
->  			continue;
->  		if (sb->s_root && (sb->s_flags & SB_ACTIVE))
-> @@ -1585,8 +1541,8 @@ static void fs_bdev_sync(struct block_device *bdev)
->   */
->  static int fs_bdev_freeze(struct block_device *bdev)
->  {
-> -	dev_t dev = bdev->bd_dev;
-> -	struct super_dev *sb_dev;
-> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
-> +	struct super_block *sb;
->  	unsigned int count = 0;
->  	int error = 0, err;
->  
-> @@ -1594,13 +1550,13 @@ static int fs_bdev_freeze(struct block_device *bdev)
->  
->  	mutex_unlock(&bdev->bd_holder_lock);
->  
-> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
-> -		if (!get_active_super(sb_dev->sd_sb))
-> +	for_each_dev_super(sb, &cursor) {
-> +		if (!get_active_super(sb))
->  			continue;
-> -		err = fs_super_freeze(sb_dev->sd_sb);
-> +		err = fs_super_freeze(sb);
->  		if (err && !error)
->  			error = err;
-> -		deactivate_super(sb_dev->sd_sb);
-> +		deactivate_super(sb);
->  		count++;
->  	}
->  
-> @@ -1640,8 +1596,8 @@ static int fs_bdev_freeze(struct block_device *bdev)
->   */
->  static int fs_bdev_thaw(struct block_device *bdev)
->  {
-> -	dev_t dev = bdev->bd_dev;
-> -	struct super_dev *sb_dev;
-> +	struct super_dev cursor = { .sd_dev = bdev->bd_dev };
-> +	struct super_block *sb;
->  	unsigned int count = 0;
->  	int error = 0, err;
->  
-> @@ -1649,13 +1605,13 @@ static int fs_bdev_thaw(struct block_device *bdev)
->  
->  	mutex_unlock(&bdev->bd_holder_lock);
->  
-> -	for (sb_dev = super_dev_first(dev); sb_dev; sb_dev = super_dev_next(sb_dev)) {
-> -		if (!get_active_super(sb_dev->sd_sb))
-> +	for_each_dev_super(sb, &cursor) {
-> +		if (!get_active_super(sb))
->  			continue;
-> -		err = fs_super_thaw(sb_dev->sd_sb);
-> +		err = fs_super_thaw(sb);
->  		if (err && !error)
->  			error = err;
-> -		deactivate_super(sb_dev->sd_sb);
-> +		deactivate_super(sb);
->  		count++;
->  	}
->  
-> @@ -1672,55 +1628,39 @@ static const struct blk_holder_ops fs_holder_ops = {
->  	.thaw			= fs_bdev_thaw,
->  };
->  
-> -static struct super_dev *super_dev_lookup(dev_t dev, struct super_block *sb)
-> +static struct super_dev *super_dev_find(dev_t dev, const struct super_block *sb)
->  {
-> -	struct super_dev *it;
-> -	struct rhlist_head *list, *pos;
-> +	struct super_dev *sd;
->  
-> -	RCU_LOCKDEP_WARN(!rcu_read_lock_held(), "suspicious super_dev_lookup() usage");
-> -	VFS_WARN_ON_ONCE(!dev);
-> -	VFS_WARN_ON_ONCE(!sb);
-> +	lockdep_assert_held(&super_dev_lock);
->  
-> -	list = rhltable_lookup(&super_dev_table, &dev, super_dev_params);
-> -	rhl_for_each_entry_rcu(it, pos, list, sd_node) {
-> -		if (it->sd_sb == sb)
-> -			return it;
-> +	hash_for_each_possible(super_dev_hash, sd, sd_hash, dev) {
-> +		if (sd->sd_dev == dev && sd->sd_sb == sb)
-> +			return sd;
->  	}
-> -
->  	return NULL;
->  }
->  
-> -static int fs_bdev_register(struct file *bdev_file, struct super_block *sb)
-> +static int fs_bdev_register(struct block_device *bdev, struct super_block *sb)
->  {
-> -	struct super_dev *sb_dev __free(kfree) = NULL;
-> -	dev_t dev = file_bdev(bdev_file)->bd_dev;
-> -	int err;
-> -
-> -	scoped_guard(rcu) {
-> -		sb_dev = super_dev_lookup(dev, sb);
-> -		if (sb_dev && refcount_inc_not_zero(&sb_dev->sd_ref)) {
-> -			retain_and_null_ptr(sb_dev);
-> -			return 0;
-> -		}
-> -	}
-> -
-> -	sb_dev = super_dev_alloc(dev, sb);
-> -	if (!sb_dev)
-> -		return -ENOMEM;
-> +	struct super_dev *new __free(kfree) = NULL;
-> +	struct super_dev *sd;
->  
-> -	err = super_dev_insert(sb_dev);
-> -	if (err)
-> -		return err;
-> +	new = kzalloc_obj(*new);
->  
-> -	/* Publish the entry before reading the count; pairs with bdev_freeze(). */
-> -	smp_mb();
-> -	if (atomic_read(&file_bdev(bdev_file)->bd_fsfreeze_count) > 0) {
-> -		err = -EBUSY;
-> -		super_dev_put(sb_dev);
-> +	guard(spinlock)(&super_dev_lock);
-> +	sd = super_dev_find(bdev->bd_dev, sb);
-> +	if (sd) {
-> +		sd->sd_claims++;
-> +		return 0;
->  	}
-> -
-> -	retain_and_null_ptr(sb_dev);
-> -	return err;
-> +	/* bdev_freeze() raises the count before its walk takes the lock. */
-> +	if (atomic_read(&bdev->bd_fsfreeze_count) > 0)
-> +		return -EBUSY;
-> +	if (!new)
-> +		return -ENOMEM;
-> +	super_dev_add(no_free_ptr(new), sb, bdev->bd_dev);
-> +	return 0;
->  }
->  
->  /**
-> @@ -1747,7 +1687,7 @@ struct file *fs_bdev_file_open_by_dev(dev_t dev, blk_mode_t mode, void *holder,
->  	if (IS_ERR(bdev_file))
->  		return bdev_file;
->  
-> -	err = fs_bdev_register(bdev_file, sb);
-> +	err = fs_bdev_register(file_bdev(bdev_file), sb);
->  	if (err) {
->  		bdev_fput(bdev_file);
->  		return ERR_PTR(err);
-> @@ -1781,7 +1721,7 @@ struct file *fs_bdev_file_open_by_path(const char *path, blk_mode_t mode,
->  	if (IS_ERR(bdev_file))
->  		return bdev_file;
->  
-> -	err = fs_bdev_register(bdev_file, sb);
-> +	err = fs_bdev_register(file_bdev(bdev_file), sb);
->  	if (err) {
->  		bdev_fput(bdev_file);
->  		return ERR_PTR(err);
-> @@ -1796,21 +1736,20 @@ EXPORT_SYMBOL_GPL(fs_bdev_file_open_by_path);
->   * @sb: superblock the device was claimed for
->   *
->   * The inverse of fs_bdev_register(): drop one claim on the {dev, @sb} entry
-> - * (the last claim unregisters it; a pinning cursor defers the actual unlink)
-> - * without closing the device.  A caller that must act on the still-open device
-> - * between unregistering and closing - e.g. re-allow freezing one denied for a
-> - * membership change - pairs this with bdev_fput().  fs_bdev_file_release() is
-> - * the common unregister-and-close.
-> + * (the last claim unregisters it) without closing the device.  A caller that
-> + * must act on the still-open device between unregistering and closing - e.g.
-> + * re-allow freezing one denied for a membership change - pairs this with
-> + * bdev_fput().  fs_bdev_file_release() is the common unregister-and-close.
->   */
->  void fs_bdev_unregister(struct file *bdev_file, struct super_block *sb)
->  {
-> -	dev_t dev = file_bdev(bdev_file)->bd_dev;
-> -	struct super_dev *sb_dev;
-> +	struct super_dev *sd;
->  
-> -	rcu_read_lock();
-> -	sb_dev = super_dev_lookup(dev, sb);
-> -	rcu_read_unlock();
-> -	super_dev_put(sb_dev);
-> +	/* The claim we're dropping keeps the entry hashed. */
-> +	scoped_guard(spinlock, &super_dev_lock)
-> +		sd = super_dev_find(file_bdev(bdev_file)->bd_dev, sb);
-> +	if (sd)
-> +		super_dev_put(sd);
->  }
->  EXPORT_SYMBOL_GPL(fs_bdev_unregister);
->  
-> @@ -1853,8 +1792,7 @@ int setup_bdev_super(struct super_block *sb, int sb_flags,
->  		return -EACCES;
->  	}
->  
-> -	/* The sget_fc() entry is already published; pairs with bdev_freeze(). */
-> -	smp_mb();
-> +	/* sget_fc() hashed @sb, super_dev_lock orders that against bdev_freeze(). */
->  	if (atomic_read(&bdev->bd_fsfreeze_count) > 0) {
->  		if (fc)
->  			warnf(fc, "%pg: Can't mount, blockdev is frozen", bdev);
-> diff --git a/include/linux/fs/super_types.h b/include/linux/fs/super_types.h
-> index ecd96aeb1cee..72f4288e16c5 100644
-> --- a/include/linux/fs/super_types.h
-> +++ b/include/linux/fs/super_types.h
-> @@ -30,7 +30,6 @@ struct mount;
->  struct mtd_info;
->  struct quotactl_ops;
->  struct shrinker;
-> -struct super_dev;
->  struct unicode_map;
->  struct user_namespace;
->  struct workqueue_struct;
-> @@ -132,10 +131,18 @@ struct super_operations {
->  	void (*report_error)(const struct fserror_event *event);
->  };
->  
-> +/* A superblock's claim on a device, see fs/super.c. */
-> +struct super_dev {
-> +	struct hlist_node			sd_hash;
-> +	struct super_block			*sd_sb;
-> +	dev_t					sd_dev;
-> +	unsigned int				sd_claims;
-> +};
-> +
->  struct super_block {
->  	struct list_head			s_list;		/* Keep this first */
->  	dev_t					s_dev;		/* search index; _not_ kdev_t */
-> -	struct super_dev			*s_super_dev;	/* sget_fc()'s device table claim */
-> +	struct super_dev			s_super_dev;	/* claim on s_dev */
->  	unsigned char				s_blocksize_bits;
->  	unsigned long				s_blocksize;
->  	loff_t					s_maxbytes;	/* Max file size */
-> 
-> -- 
-> 2.53.0
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Patches 3-7 remove the write path, 8 and 9 the load path and
+disk_cache_state, and 10 and 11 the SPACE_CACHE flag and the unused
+half of the cleanup helper. Patches 12-17 remove the trimming ranges
+and the free space inode special cases in the write path, which only
+the v1 writer used. Patch 18 removes TRANS_JOIN_NOLOCK, which the space
+cache was the only user of.
+
+What's left is what's needed to find and delete the cache inodes of an
+existing filesystem:
+
+1. lookup_free_space_inode(), btrfs_remove_free_space_inode(), and
+   btrfs_cleanup_free_space_cache_v1(), which runs on the first
+   read-write mount and zeroes cache_generation in the super block.
+
+2. btrfs_truncate_free_space_cache() and delete_v1_space_cache(), which
+   relocation uses to get a cache inode's extents out of a block group.
+
+3. btrfs_is_free_space_inode(), for the evict and inode update paths.
+
+4. The on-disk definitions: cache_generation in the super block,
+   BTRFS_FREE_SPACE_OBJECTID, and the free space header and entry
+   items.
+
+space_cache and space_cache=v1 still fall back to nospace_cache with a
+warning.
+
+This also removes the page-based I/O in the free space code.
+btrfs_io_ctl used a struct page array and was one of the last users
+of clear_page_dirty_for_io().
+
+Tested with fstests (btrfs and generic quick groups), with and without
+the free space tree, with no regressions against the base kernel.
+Upgrading from a filesystem with an existing v1 cache written by a 6.8
+kernel was also tested. The cache is removed on the first read-write
+mount and on remount from read-only, and the resulting filesystem is
+clean under btrfs check and still mountable by the old kernel.
+
+Based on the misc-next commit in btrfs for-next (a5c77fde6730).
+
+[1] https://lore.kernel.org/linux-btrfs/e1dd5a75-9a67-4bc6-b8d8-bfff79b5b907@suse.com/
+
+---
+Changes in v4:
+- Patch 1 (new): Write the zero link count when removing a free space
+  inode, so an interrupted cleanup can't leak it.
+- Patch 2: Clear FREE_SPACE_TREE in btrfs_reconfigure() whenever the
+  free space tree is not on disk, so a remount that only warns about
+  the free space tree no longer leaves the option set, per Sashiko.
+- Patch 2: Dropped review tag.
+- Patch 16: Also drop the tree root check from the delalloc metadata
+  release.
+- Patch 18: Redo against the TRANS_* flag cleanups in for-next.
+- Link to v3: https://patch.msgid.link/20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu
+
+Changes in v3:
+- Patch 5 (new): Keep the cache_write_mutex locking that serializes
+  btrfs_start_dirty_block_groups() with btrfs_remove_block_group(),
+  since it also protects the block group item update and not just the
+  cache writeout. Rename it to dirty_bgs_update_mutex.
+- Patch 8: Drop the "Old style space inode found, converting." branch
+  from lookup_free_space_inode(), as it no longer converts anything.
+- Link to v2: https://patch.msgid.link/20260913-btrfs-remove-v1-space-cache-v2-0-186767a7e106@columbia.edu
+
+Changes in v2:
+- Split the TRANS_JOIN_NOLOCK removal out of the ordered extent patch
+  into its own patch at the end of the series, per David
+- Add recovery information for a mount failure due to patch 1 to the
+  cover letter.
+- Link to v1: https://patch.msgid.link/20260907-btrfs-remove-v1-space-cache-v1-0-5f9a5ba352a7@columbia.edu
+
+---
+Tal Zussman (18):
+      btrfs: update the inode item when removing a free space inode
+      btrfs: stop enabling the v1 space cache from the on-disk state
+      btrfs: remove the v1 space cache writeout from the transaction commit
+      btrfs: remove the free space cache endio workqueue
+      btrfs: remove the v1 space cache write path
+      btrfs: rename cache_write_mutex to dirty_bgs_update_mutex
+      btrfs: drop the transaction handle from the prealloc helpers
+      btrfs: remove the v1 space cache load path
+      btrfs: remove btrfs_disk_cache_state
+      btrfs: remove the SPACE_CACHE mount option flag
+      btrfs: replace btrfs_set_free_space_cache_v1_active() with a cleanup helper
+      btrfs: remove the free space cache trimming ranges
+      btrfs: remove BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE
+      btrfs: remove the free space inode ordered extent special cases
+      btrfs: remove the free space inode special cases from the COW paths
+      btrfs: stop special-casing free space inodes in the delalloc accounting
+      btrfs: stop reading free space inodes from the commit root
+      btrfs: remove TRANS_JOIN_NOLOCK
+
+ fs/btrfs/block-group.c      |  497 ++-----------
+ fs/btrfs/block-group.h      |   14 -
+ fs/btrfs/btrfs_inode.h      |    6 -
+ fs/btrfs/delalloc-space.c   |   13 +-
+ fs/btrfs/disk-io.c          |   81 +--
+ fs/btrfs/file-item.c        |   11 -
+ fs/btrfs/free-space-cache.c | 1670 +++++--------------------------------------
+ fs/btrfs/free-space-cache.h |   29 +-
+ fs/btrfs/fs.h               |    2 -
+ fs/btrfs/inode.c            |  157 +---
+ fs/btrfs/ordered-data.c     |   27 +-
+ fs/btrfs/relocation.c       |    2 +-
+ fs/btrfs/space-info.c       |    2 -
+ fs/btrfs/space-info.h       |    4 -
+ fs/btrfs/super.c            |   48 +-
+ fs/btrfs/transaction.c      |   62 +-
+ fs/btrfs/transaction.h      |   27 +-
+ fs/btrfs/zoned.c            |    9 -
+ 18 files changed, 304 insertions(+), 2357 deletions(-)
+---
+base-commit: a5c77fde6730d32128ca69fd0c4e2b80f6012c35
+change-id: 20260906-btrfs-remove-v1-space-cache-45cf57c957a2
+
+Best regards,
+--  
+Tal Zussman <tz2294@columbia.edu>
+

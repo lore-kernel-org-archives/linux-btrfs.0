@@ -1,87 +1,87 @@
-Received: from mx0a-00364e01.pphosted.com (mx0a-00364e01.pphosted.com [148.163.135.74])
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 747AA4BA1C9
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F4564BA9E5
 	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 16:28:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.135.74
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791822535; cv=none; b=FrMBxT2OEloBka5xk4z1ESaEwNwUIgACF7B58gLSJdEswNBrJAR/qqDe/xO9qkwYoN5YuR+pxXwM00RWW/rp25WeVpOsNQ0zasF4XZ3C+UFYDbUkDhJjGxknStd6z+DrmzeaUiIjM02MIONcTRsbMRptr9+Cr3uHzU9alzRJTns=
+	t=1791822537; cv=none; b=JoGwAo3SfN8lIyyEZ8TALbcpZnzm4a1gfDTDMYxguxkW665zOGkuUIT+ZD2qq6jSxUVvv2m9RnwK59Xoz0DdBHLznCPSFB7HnluigdcBWikoc1W6dknpfWrzl9bHtqeG4UEGbR3JlPSEE6urzg5FFBLy+bBBa2snwIEv9a9gIgQ=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791822535; c=relaxed/simple;
-	bh=4jfueo1KRT+VSIydQk/kkJuNFgop/gPHtRCFmdEUFMg=;
+	s=arc-20240116; t=1791822537; c=relaxed/simple;
+	bh=arsb3xKreiHkRh/xUZ5DvTISjpW9UKH6nJJTb0TxpNI=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=i1PtIa7a6RmAizb9Gj7wI0QU8VJui8+BGErJpjvX5m32bd9cfCpFLLdykOOhqMvzwR5+IVWbXRqAXXYG6e8RWVdBq+ePv9x0tXdgr9nyAO/Rc9y39OwAN6QQh2bKps0hycYV3II9yveHInZiXX0CcS3tb/kIsW2SC8Ef3lWtYlA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=Sd4RqKOM; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=BcNi33ut; arc=none smtp.client-ip=148.163.135.74
+	 In-Reply-To:To:Cc; b=LfgIileA0aeJMHP979TBsmV+ruqB2V92wQd2vOKGHJbFDc2Bc8eOJDNFTaBNFXBKCsu4S3qU9Tbvk+9U5clzDyrrnQkm+6mE7p/39Z6Ib8Pdv3y3WZz/7A+9pYbe9NL0jMJ45OgtB+wGChMgR/70X3xf0FJn9avXX2xy3TRLGGI=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=pieWHkbv; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=x9FbQjLx; arc=none smtp.client-ip=148.163.139.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="Sd4RqKOM";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="BcNi33ut"
-Received: from pps.filterd (m0499199.ppops.net [127.0.0.1])
-	by mx0a-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69CEgVPX076334
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:51 -0400
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="pieWHkbv";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="x9FbQjLx"
+Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69CF8Kkq573033
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:52 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=5gB+
-	ZqwfjG4r0XBpuTzegxUAaW9Dt8o+O2PoEEbjMe0=; b=Sd4RqKOM7WW5PKVca91P
-	lkXwZJYYp3TusUklcKSrW5Meyi/cVoGQlJ4SNWyGvV5FSy7ApBHzLn2ZCeOToNxf
-	Rz3tdQPVzl2lEQsuE+CHVJmUMvbqtJWehVvaMgUjr6tcSR5tKEqfimqzWeqIAfQJ
-	BjUuPzOIH3g2PRS+9PzWOTdIjWMA55tgyr3p7Hn/Uu3tGLXfPjMHoLSxbkB2wkKk
-	OubwP2m7+dcXgxzcAoblM5luaecEXWpSMzlwdmoeEAsHsjDnrIjmy7dikFzBmGxM
-	rTcTeEfV2N5j9xBgmoA3mvlqUdszpTQs3CXf1v3EGBIHsZSmY6gn16V0bmbhHkJU
-	Hw==
-Received: from mail-qv1-f70.google.com (mail-qv1-f70.google.com [209.85.219.70])
-	by mx0a-00364e01.pphosted.com (PPS) with ESMTPS id 4h902c283r-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=XXgh
+	lyHKaZSzvCGjJWEbghaa7lm//M8bZyCIqIXgaDs=; b=pieWHkbvBZa+Djn0Ztub
+	R+r2n4oAB0IF+Ic8lUy+FED+U2HzpOCEInyK0bny5F4HjSpNBFe9dS6b2v2MJCOY
+	r1R4kFlQZvZYo2ch2SjuOfOCJgzr3MMh2ohq3j70SKuvTwXWa7hMAZgEHmNBzFoz
+	5YXlF0YnHvnKw0/Ccs1+xdA8ePeidzTY5DKPw8g3UybKB7KW+6QH6NgFnerr+Mft
+	AshwgNLd8yNh7IEw1qzld3Ikm7lJgAf6K4DXlkcRET7eOtLg8ryJhBU9IkLV7urw
+	c4imkCp4nW5tEgLX59/FNYtDW1NEnzB/RJGvfXOqtztHc5rnmi7X2jPKhora45uD
+	WQ==
+Received: from mail-qt1-f200.google.com (mail-qt1-f200.google.com [209.85.160.200])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4h91x6rwde-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
 	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 12:28:51 -0400 (EDT)
-Received: by mail-qv1-f70.google.com with SMTP id 6a1803df08f44-9197553d398so52410386d6.1
+Received: by mail-qt1-f200.google.com with SMTP id d75a77b69052e-5338cfe567eso45118991cf.2
         for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 09:28:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1791822530; x=1792427330; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1791822531; x=1792427331; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=5gB+ZqwfjG4r0XBpuTzegxUAaW9Dt8o+O2PoEEbjMe0=;
-        b=BcNi33uto0P4Ny91IIHoxB8jnRPS1FGniZ0i4BqUa+gvTewbWEUOSmoPyM7JeFn7S0
-         7ppH56xMPnlsm0xWq8lNQbzZagdBDMy69QE/EnoM99D9lB4O0UeRXMjVn5gP2IvH0u0a
-         ssVmYa29RsOgX12ySmFwbyH4x51QiZUIL5UnGY9lhHhaunlKNxrzBVlt6NwOqbDf9j92
-         Az0FAvTf3owFera5gDPCfqIgxaVVE3fFtXuvw3MpHVd3MNzivPlZ29vSPBp+JpfkUaMJ
-         vOMM1rdgtf7KqeVf7PkZSHYmf6kWafMMe5EVZoQgliFMf+TF2EVo9yPtL+RqbczhWSxI
-         zqjw==
+        bh=XXghlyHKaZSzvCGjJWEbghaa7lm//M8bZyCIqIXgaDs=;
+        b=x9FbQjLxIc43OWX7l3AFt7KfWfp+JjSYutv7TfXX1PSeGp2ewpPV8WKBX9FLR1pNje
+         /cHAutcZPR3bWbu9mSxa9AwMoH0Bz9EDF2+A7Suzx2tVrn5TeglHVEdkx16cUAHxHmri
+         iaff6iWwbryE0hC8GTOshnrP8xKMOow7iLBkJaeAO4FxmDtnt78T5MFwEGUtkQ82acSc
+         eADQz7wpRP9kvTh94BuQwW0W0X0ZxPBQ2WNiyU6ShYvLpDGKDTFYDjOcZMNo5vDitX4R
+         WhW96l4vtou6Gv//pwP6R32BaHVc2imfHTw9yjYYqqFwEvt0YLjKaYeFiuKjLrnLj0Ey
+         X4fQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791822530; x=1792427330;
+        d=1e100.net; s=20260707; t=1791822531; x=1792427331;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=5gB+ZqwfjG4r0XBpuTzegxUAaW9Dt8o+O2PoEEbjMe0=;
-        b=zJ9XIuN3z0oq6RfITuAkHa4excO9O7yAMhpuTBBpF7Ep3zvSA0hqRXxKiq5sMRk7Qk
-         Jomv5zRjuB0Tsh7vZsG2nJkQFyGk3M+ijOmWBEjJjriFH/Gb2/yrV4axOz5CB60nrMhm
-         z33pFZFkG4IBpNXsJi187ABRGKDY7aL5XHQ71rM2xJeV7+PKX2u9lYOFPWglTiJMMVne
-         JU80WbqEAOYgmPmc9ZTMQeBMz0YRhm+jOD1hQxryJ6B/uSD0G01/EV9qnRqmG/faQcet
-         Fvq12+V/0o7ucbf2kuRybQa1mWj31AOI0htnI8TabghYnwXjsRzGsWZXq8RyHi72U5ML
-         U5Vg==
-X-Gm-Message-State: AFq9FYIiE/mvfxG/gBP49sUqGVImS9/8DJAL401ZZP3xKvPnyXFgX87b
-	+SWq9XUgq2fgeokoKLpgxGtARdSK1yX/ibRdL+4eEV7kE7QML5xuxqzyezjSBkejVZmF3PQtGET
-	X/M6UHinhqkrBu1q6tYzj8jnKEStTVa2jQ7oEKnAfhjSVgt3ngxrEMTL4kLyH
-X-Gm-Gg: AYBFou3G4PZPV08GYoZR+J4HnnfAjUS8d/RADSoXH/K9B7J2U5OXUgLgAtAQZFEED/V
-	9SvK8QMlCl5vSGjFPaZZmkXXTfZce8CBKdP5xuU8ODHyHko8SfG7s5D5TjT+Twx68EHGGIL8LVU
-	HNj3z4znM/YChi2xsbSb8Zpyzi0Dj7SJCGra45xUncKsP520FHl6UaaFmqXUVLa1eL21YjZYWdb
-	Ye/++ta10qJIJIgNrMm31N5QtFLG2SnvtrWOO78JRXmmzGM3T3K0Iv6dEpM5So352rdkD/oxdJA
-	HnynD7Syse7RsbxTQvdtgWYIo9ZFTwvgcrOePmhG6VTFQmnRQ92gI+mGuRjLdVjd3DMErqZnqvr
-	UgUrVq5sJga1Ic0sUzWtDGkR0KQ3A1/NK1nWpJCMDGL0OH7A=
-X-Received: by 2002:a05:6214:21c8:b0:917:a80b:b910 with SMTP id 6a1803df08f44-91b557bcb89mr189577356d6.39.1791822530368;
+        bh=XXghlyHKaZSzvCGjJWEbghaa7lm//M8bZyCIqIXgaDs=;
+        b=r2syOZ4D8GyPjkyCI3r3AOL5N2W8N48MfyQ+gIuSMucO0Ft5NjHJbC/ildfslLHRL9
+         j9QV9S16g2DbLBpuPqaBFD62IRN+lQaXodpNz6NajMJlf0Ow5F4zRI9jmv8QyiCJpvkp
+         C/c+sJJbm6rQ0IS1yJn7hArax7tjdGkN3u4BTREoQL8/Yto3t7ZFTbnfE7zUpG+QVupn
+         j/dBqHNSLEFiT8wnHhfC1RKR3EMP7tJ/djDAw0FVZrDHkzYJnYRQ/nfEvzzqQzhTagTR
+         0oo0XkGsqHl6n/WctT7EhbWpaxCEpMXnQJ98QxuE4Sf05ByccGdhmZE24MWkMA5YGvwG
+         Bl5g==
+X-Gm-Message-State: AFq9FYK9j8DS9uMm9zwvGzzh2YghTjBWBI9XjMDRvsNXtakfWC5aKLEJ
+	0BgdLxSNIGIyj38aGId0egKbW7TlT5VQeH/YOHbKyjd4ST27QSZyYHipaZ1MkA8kd93xHazg79w
+	sQoDbGAI3ysgBrz0ulMSD1G/zcO6vmI+DvORqFV6MxmPXgOtiZX4NkcXtrAnD
+X-Gm-Gg: AYBFou1O8Ch80cpn/dLx3UUWxTiRxY2ywupMJUQZHgZdg6AsD4MMdwc9vOG93C6tzOV
+	rz4E3e6ZGzF6Fubn+CQIusgWL4rbgT/4Rr3F2OaHuGybQ6tSypM/vBRE3C6uCiHYYR/nCPnJmMC
+	k6217fXP2U93GEZB9xhx+R3qrapUqJcEXP5hud9GNQb3UEmKUbyFac6MD8kkzVbATSlv5e98OLP
+	Rb5o1uLjE8FBPr5SqLHY39BUu2kDPI9+JOM8ccEBolYkpEPSz8BHA4LlPKCghJued8ygNfVYBbc
+	LzHQMsjydML8MDESMkYg1kW77VCiF76ZBnDGqZg1MWSVeMFgpQNeRQYYgQsQM1WTNCtW2W3C4XB
+	BTAAY1sZz38DFHpdWNjKeuiU9xyBHYau/KEc5TtHU+et41BY=
+X-Received: by 2002:a05:622a:1e12:b0:532:c057:9564 with SMTP id d75a77b69052e-5359fab3627mr169217941cf.23.1791822531168;
+        Mon, 12 Oct 2026 09:28:51 -0700 (PDT)
+X-Received: by 2002:a05:622a:1e12:b0:532:c057:9564 with SMTP id d75a77b69052e-5359fab3627mr169217361cf.23.1791822530598;
         Mon, 12 Oct 2026 09:28:50 -0700 (PDT)
-X-Received: by 2002:a05:6214:21c8:b0:917:a80b:b910 with SMTP id 6a1803df08f44-91b557bcb89mr189576966d6.39.1791822529909;
-        Mon, 12 Oct 2026 09:28:49 -0700 (PDT)
 Received: from [127.0.1.1] (nat-128-59-178-231.net.columbia.edu. [128.59.178.231])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97c27146sm1411796d6.29.2026.10.12.09.28.49
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97c27146sm1411796d6.29.2026.10.12.09.28.50
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 12 Oct 2026 09:28:49 -0700 (PDT)
+        Mon, 12 Oct 2026 09:28:50 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Mon, 12 Oct 2026 12:28:24 -0400
-Subject: [PATCH v4 12/18] btrfs: remove the free space cache trimming
- ranges
+Date: Mon, 12 Oct 2026 12:28:25 -0400
+Subject: [PATCH v4 13/18] btrfs: remove
+ BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,7 +90,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20261012-btrfs-remove-v1-space-cache-v4-12-f125bd8c07f9@columbia.edu>
+Message-Id: <20261012-btrfs-remove-v1-space-cache-v4-13-f125bd8c07f9@columbia.edu>
 References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 In-Reply-To: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
@@ -98,235 +98,134 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1791822515; l=7161;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1791822515; l=3821;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=4jfueo1KRT+VSIydQk/kkJuNFgop/gPHtRCFmdEUFMg=;
- b=id41IFkKv0P3FXaiEbr/RuQkj/pvKNnMy18gCMnbGCeOl2S00nA8I4ttJayDm/xBvU7vA7Ppq
- pjaKbGkKZn1B0ZpPbCMAOmodch79gLHy4irNGdcBdoHRITBKXyBw5mk
+ bh=arsb3xKreiHkRh/xUZ5DvTISjpW9UKH6nJJTb0TxpNI=;
+ b=KS6Sz+z1pBnIuEr/wM91RjDbECU3kCa0BtzUFbMa5RwSYt0R2MtdSQV27tQH/WZDb5YTKkY5p
+ tbu9tKCoBl+CGsMTUjFMs0b5/r2VwEpgXkvRn4EakqiBvAykjYegxEn
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Authority-Analysis: v=2.4 cv=E8xYNqdl c=1 sm=1 tr=0 ts=6acd0ac3 cx=c_pps
- a=oc9J++0uMp73DTRD5QyR2A==:117 a=9fnr1hFzp71kSIFw8uYQYA==:17
+X-Proofpoint-GUID: rJxoTR9dJmbYm5NMdouKU1aNdf4VAUVR
+X-Proofpoint-ORIG-GUID: rJxoTR9dJmbYm5NMdouKU1aNdf4VAUVR
+X-Authority-Analysis: v=2.4 cv=DrDDa2/+ c=1 sm=1 tr=0 ts=6acd0ac3 cx=c_pps
+ a=JbAStetqSzwMeJznSMzCyw==:117 a=9fnr1hFzp71kSIFw8uYQYA==:17
  a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=G--0XuH5328wxK7v7Suf:22
- a=qCNzSPQ7UVaF4CatvjwA:9 a=QEXdDO2ut3YA:10 a=iYH6xdkBrDN1Jqds4HTS:22
-X-Proofpoint-ORIG-GUID: 5sdn35Ddy_4kbFjwnob5HqUP9Fo-nhjF
-X-Proofpoint-GUID: 5sdn35Ddy_4kbFjwnob5HqUP9Fo-nhjF
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX1cpHr4On69ez
- dK7GceTOdkyxDHaib7bqADzQOB1GEY2R00Y4w1u2+iNgP+XmKUJXI3RuxUEslJ+kY27rJQXUq14
- ZVXcacoX2o3DBIu/czJvqRnzawedw+kxMSTDCZ0Hk7fC0OUzgxnIAYw9tT/nRKu/noUmqlucA7g
- 2hvC770qdg5nSt6LRXIwBsnsFc14iT5yo1BQchPNJxCGIZrIthzL1rsn7SR/zXrtgK3RjfCOK7S
- YcdPtR0ik4H1cVQ1K5dd2a1wTXJHMheGgfbLqA0NpVBKT15MvtNqKUNzAkwJ46Z9/zqOaXGutgF
- PEDdw2jnTukO21MIErHYZuiEQ3GG0DpZeaDLMRte3h1efMCJU47a5ovEFfqkvbNY5mE2+GB8mUx
- vMgsOEJ/as7vnPkiDfyJWbXNVMjEiqGXMNXS95acLSs1WMsnc6z3coPNnS4M5jqcL5TfL6jZIHZ
- +6lZqA53gTwqbHXdBrQ==
-X-Proofpoint-Spam-Info: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX0FjBaqyaLOGI
- U1GLOoXbf2mt5mBlZQ88baN55oDDqqF1W58ReTPQBMM2u8kxqAHYL6dXYFTQ4zjs0S9WwqlXr/9
- Ug6hnAXMBec7J2TPNftZd5/leBlhTZvKuwW6eDFi5jaTQNwRaj21
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
+ a=BlyEiQbNVX7t3OJdSnkA:9 a=QEXdDO2ut3YA:10 a=uxP6HrT_eTzRwkO_Te1X:22
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX4GGfWXdHZgvi
+ iaM6BuSPSAN/b2hoWdaknAPLGCyOb08g8GQjnLx5n+j2AUWgnUfyjHpVPSkk09Hrsk2BxvM9+KD
+ DPpnSNWC1aqBitw1MlFCd39djxGRqQZowWQLpDh5QGTzZSIr/hC3lUTqHFnqNRjIqGrGZaJMnmw
+ nZnBOwsB4Qav5/e+bBNLGYwPY5pmi+n5JKtLgAHJWnmz7Axf+XuRXExnDYaZ1VxMp1ySswVl3Nn
+ 62m3GBpWuMj5px+1I5r2tSsz+cHFyYKkM+3195P5woNJ47Al7ZpaFqQUwkINLfhiwtrqlWxpLkW
+ xiNAQvz/XVNJ/EAFylqWmnBDsVpvF0LYOgNwUyX9w3XGNuLIXorzHrQLNQvep3DhILSD0IJt3YG
+ uoRKRbogxUQmLTT1SkTbZqnqD6qCvzdFdufL0jLQJRFv4kQT7Vy+TSphmQvBgHzYCqloAlHTsGB
+ bgrOxloOQz2ze+aDEYQ==
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDEyMDA2NSBTYWx0ZWRfX2Etqt8zyPJ/o
+ SfquBJ4sljjmt8Agz91/OrLcnH/JYqSr5a7nLnxU/LHYyXyYyOW9N1Id+uaxOB/q6CFIfptiVuj
+ PqKWCn8dhN5LvLKoJqmyl9Gvl7kBW0qrDEfFv35iTZjm9OXHYp5l
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11933
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- bulkscore=10 clxscore=1015 phishscore=0 spamscore=0 adultscore=0
- priorityscore=1501 malwarescore=0 suspectscore=0 impostorscore=10
- lowpriorityscore=10 classifier=typeunknown authscore=0 authtc= authcc=
- route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2610080000
- definitions=main-2610120065
+ malwarescore=0 bulkscore=10 priorityscore=1501 adultscore=0 suspectscore=0
+ clxscore=1015 impostorscore=10 phishscore=0 spamscore=0 lowpriorityscore=10
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2610080000 definitions=main-2610120065
 
-cache_writeout_mutex and trimming_ranges let the v1 cache writer see
-ranges that were unlinked from the free space tree while being
-discarded. Nothing consumes the list anymore, and the tree itself is
-protected by tree_lock, so remove them.
+Free space inodes no longer reserve data or delalloc space, as nothing
+writes to them. Remove the flush mode and the special cases that
+selected it.
 
 Assisted-by: LLM
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/free-space-cache.c | 41 +++--------------------------------------
- fs/btrfs/free-space-cache.h |  2 --
- 2 files changed, 3 insertions(+), 40 deletions(-)
+ fs/btrfs/delalloc-space.c | 13 ++-----------
+ fs/btrfs/space-info.c     |  2 --
+ fs/btrfs/space-info.h     |  4 ----
+ 3 files changed, 2 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 4dcbefb0bfed..bff6e5b372d6 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -36,12 +36,6 @@
- static struct kmem_cache *btrfs_free_space_cachep;
- static struct kmem_cache *btrfs_free_space_bitmap_cachep;
+diff --git a/fs/btrfs/delalloc-space.c b/fs/btrfs/delalloc-space.c
+index d357ed7efd99..77781852e417 100644
+--- a/fs/btrfs/delalloc-space.c
++++ b/fs/btrfs/delalloc-space.c
+@@ -132,9 +132,7 @@ int btrfs_alloc_data_chunk_ondemand(const struct btrfs_inode *inode, u64 bytes)
+ 	/* Make sure bytes are sectorsize aligned */
+ 	bytes = ALIGN(bytes, fs_info->sectorsize);
  
--struct btrfs_trim_range {
--	u64 start;
--	u64 bytes;
--	struct list_head list;
--};
--
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info);
- static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
-@@ -1702,8 +1696,6 @@ void btrfs_init_free_space_ctl(struct btrfs_block_group *block_group,
- 	spin_lock_init(&ctl->tree_lock);
- 	ctl->block_group = block_group;
- 	ctl->free_space_bytes = RB_ROOT_CACHED;
--	INIT_LIST_HEAD(&ctl->trimming_ranges);
--	mutex_init(&ctl->cache_writeout_mutex);
+-	if (btrfs_is_free_space_inode(inode))
+-		flush = BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
+-	else if (btrfs_is_zoned(fs_info) && btrfs_is_data_reloc_root(root))
++	if (btrfs_is_zoned(fs_info) && btrfs_is_data_reloc_root(root))
+ 		flush = BTRFS_RESERVE_FLUSH_ZONED_RELOCATION;
+ 
+ 	return btrfs_reserve_data_bytes(data_sinfo_for_inode(inode), bytes, flush);
+@@ -155,8 +153,6 @@ int btrfs_check_data_free_space(struct btrfs_inode *inode,
+ 
+ 	if (noflush)
+ 		flush = BTRFS_RESERVE_NO_FLUSH;
+-	else if (btrfs_is_free_space_inode(inode))
+-		flush = BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE;
+ 
+ 	ret = btrfs_reserve_data_bytes(data_sinfo_for_inode(inode), len, flush);
+ 	if (ret < 0)
+@@ -326,15 +322,10 @@ int btrfs_delalloc_reserve_metadata(struct btrfs_inode *inode, u64 num_bytes,
+ 	int ret = 0;
  
  	/*
- 	 * we only want to have 32k of ram per block group for keeping
-@@ -2399,12 +2391,10 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
- static int do_trimming(struct btrfs_block_group *block_group,
- 		       u64 *total_trimmed, u64 start, u64 bytes,
- 		       u64 reserved_start, u64 reserved_bytes,
--		       enum btrfs_trim_state reserved_trim_state,
--		       struct btrfs_trim_range *trim_entry)
-+		       enum btrfs_trim_state reserved_trim_state)
- {
- 	struct btrfs_space_info *space_info = block_group->space_info;
- 	struct btrfs_fs_info *fs_info = block_group->fs_info;
--	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+-	 * If we are a free space inode we need to not flush since we will be in
+-	 * the middle of a transaction commit.  We also don't need the delalloc
+-	 * mutex since we won't race with anybody.  We need this mostly to make
+-	 * lockdep shut its filthy mouth.
+-	 *
+ 	 * If we have a transaction open (can happen if we call truncate_block
+ 	 * from truncate), then we need FLUSH_LIMIT so we don't deadlock.
+ 	 */
+-	if (noflush || btrfs_is_free_space_inode(inode)) {
++	if (noflush) {
+ 		flush = BTRFS_RESERVE_NO_FLUSH;
+ 	} else {
+ 		if (current->journal_info)
+diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
+index 72fa01502461..82d4ac418a2d 100644
+--- a/fs/btrfs/space-info.c
++++ b/fs/btrfs/space-info.c
+@@ -1704,7 +1704,6 @@ static int handle_reserve_ticket(struct btrfs_space_info *space_info,
+ 						evict_flush_states,
+ 						ARRAY_SIZE(evict_flush_states));
+ 		break;
+-	case BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE:
+ 	case BTRFS_RESERVE_FLUSH_ZONED_RELOCATION:
+ 		priority_reclaim_data_space(space_info, ticket);
+ 		break;
+@@ -1968,7 +1967,6 @@ int btrfs_reserve_data_bytes(struct btrfs_space_info *space_info, u64 bytes,
  	int ret;
- 	bool bg_ro;
- 	const u64 end = start + bytes;
-@@ -2430,7 +2420,6 @@ static int do_trimming(struct btrfs_block_group *block_group,
- 		trim_state = BTRFS_TRIM_STATE_TRIMMED;
- 	}
  
--	mutex_lock(&ctl->cache_writeout_mutex);
- 	if (reserved_start < start)
- 		__btrfs_add_free_space(block_group, reserved_start,
- 				       start - reserved_start,
-@@ -2439,8 +2428,6 @@ static int do_trimming(struct btrfs_block_group *block_group,
- 		__btrfs_add_free_space(block_group, end, reserved_end - end,
- 				       reserved_trim_state);
- 	__btrfs_add_free_space(block_group, start, bytes, trim_state);
--	list_del(&trim_entry->list);
--	mutex_unlock(&ctl->cache_writeout_mutex);
+ 	ASSERT(flush == BTRFS_RESERVE_FLUSH_DATA ||
+-	       flush == BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE ||
+ 	       flush == BTRFS_RESERVE_FLUSH_ZONED_RELOCATION ||
+ 	       flush == BTRFS_RESERVE_NO_FLUSH, "flush=%d", flush);
+ 	ASSERT(!current->journal_info || flush != BTRFS_RESERVE_FLUSH_DATA,
+diff --git a/fs/btrfs/space-info.h b/fs/btrfs/space-info.h
+index aa836e8a9d4a..d0130c8ba3dd 100644
+--- a/fs/btrfs/space-info.h
++++ b/fs/btrfs/space-info.h
+@@ -66,7 +66,6 @@ enum btrfs_reserve_flush_enum {
+ 	 * Can be interrupted by a fatal signal.
+ 	 */
+ 	BTRFS_RESERVE_FLUSH_DATA,
+-	BTRFS_RESERVE_FLUSH_FREE_SPACE_INODE,
+ 	BTRFS_RESERVE_FLUSH_ALL,
  
- 	if (!bg_ro) {
- 		spin_lock(&space_info->lock);
-@@ -2478,9 +2465,6 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 	const u64 max_discard_size = READ_ONCE(discard_ctl->max_discard_size);
+ 	/*
+@@ -82,9 +81,6 @@ enum btrfs_reserve_flush_enum {
+ 	 * priority flushing for this, because otherwise we can deadlock on
+ 	 * waiting for a ticket, that cannot be granted, because we cannot do
+ 	 * any allocations.
+-	 *
+-	 * Apart from being specific to zoned relocation, it is equal to
+-	 * BTRFS_FLUSH_FREE_SPACE_INODE.
+ 	 */
+ 	BTRFS_RESERVE_FLUSH_ZONED_RELOCATION,
  
- 	while (start < end) {
--		struct btrfs_trim_range trim_entry;
--
--		mutex_lock(&ctl->cache_writeout_mutex);
- 		spin_lock(&ctl->tree_lock);
- 
- 		if (ctl->free_space < minlen)
-@@ -2511,7 +2495,6 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 			bytes = entry->bytes;
- 			if (bytes < minlen) {
- 				spin_unlock(&ctl->tree_lock);
--				mutex_unlock(&ctl->cache_writeout_mutex);
- 				goto next;
- 			}
- 			unlink_free_space(ctl, entry, true);
-@@ -2536,7 +2519,6 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 			bytes = min(extent_start + extent_bytes, end) - start;
- 			if (bytes < minlen) {
- 				spin_unlock(&ctl->tree_lock);
--				mutex_unlock(&ctl->cache_writeout_mutex);
- 				goto next;
- 			}
- 
-@@ -2545,14 +2527,9 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- 		}
- 
- 		spin_unlock(&ctl->tree_lock);
--		trim_entry.start = extent_start;
--		trim_entry.bytes = extent_bytes;
--		list_add_tail(&trim_entry.list, &ctl->trimming_ranges);
--		mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 		ret = do_trimming(block_group, total_trimmed, start, bytes,
--				  extent_start, extent_bytes, extent_trim_state,
--				  &trim_entry);
-+				  extent_start, extent_bytes, extent_trim_state);
- 		if (ret) {
- 			block_group->discard_cursor = start + bytes;
- 			break;
-@@ -2576,7 +2553,6 @@ static int trim_no_bitmap(struct btrfs_block_group *block_group,
- out_unlock:
- 	block_group->discard_cursor = btrfs_block_group_end(block_group);
- 	spin_unlock(&ctl->tree_lock);
--	mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 	return ret;
- }
-@@ -2687,16 +2663,13 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 
- 	while (offset < end) {
- 		bool next_bitmap = false;
--		struct btrfs_trim_range trim_entry;
- 
--		mutex_lock(&ctl->cache_writeout_mutex);
- 		spin_lock(&ctl->tree_lock);
- 
- 		if (ctl->free_space < minlen) {
- 			block_group->discard_cursor =
- 				btrfs_block_group_end(block_group);
- 			spin_unlock(&ctl->tree_lock);
--			mutex_unlock(&ctl->cache_writeout_mutex);
- 			break;
- 		}
- 
-@@ -2712,7 +2685,6 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 		if (!entry || (async && minlen && start == offset &&
- 			       btrfs_free_space_trimmed(entry))) {
- 			spin_unlock(&ctl->tree_lock);
--			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
- 			goto next;
- 		}
-@@ -2738,7 +2710,6 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 			else
- 				entry->trim_state = BTRFS_TRIM_STATE_UNTRIMMED;
- 			spin_unlock(&ctl->tree_lock);
--			mutex_unlock(&ctl->cache_writeout_mutex);
- 			next_bitmap = true;
- 			goto next;
- 		}
-@@ -2749,14 +2720,12 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 		 */
- 		if (async && *total_trimmed) {
- 			spin_unlock(&ctl->tree_lock);
--			mutex_unlock(&ctl->cache_writeout_mutex);
- 			return ret;
- 		}
- 
- 		bytes = min(bytes, end - start);
- 		if (bytes < minlen || (async && maxlen && bytes > maxlen)) {
- 			spin_unlock(&ctl->tree_lock);
--			mutex_unlock(&ctl->cache_writeout_mutex);
- 			goto next;
- 		}
- 
-@@ -2776,13 +2745,9 @@ static int trim_bitmaps(struct btrfs_block_group *block_group,
- 			free_bitmap(ctl, entry);
- 
- 		spin_unlock(&ctl->tree_lock);
--		trim_entry.start = start;
--		trim_entry.bytes = bytes;
--		list_add_tail(&trim_entry.list, &ctl->trimming_ranges);
--		mutex_unlock(&ctl->cache_writeout_mutex);
- 
- 		ret = do_trimming(block_group, total_trimmed, start, bytes,
--				  start, bytes, 0, &trim_entry);
-+				  start, bytes, 0);
- 		if (ret) {
- 			reset_trimming_bitmap(ctl, offset);
- 			block_group->discard_cursor =
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index f5f18e397b13..e22443598b8e 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -83,8 +83,6 @@ struct btrfs_free_space_ctl {
- 	s32 discardable_extents[BTRFS_STAT_NR_ENTRIES];
- 	s64 discardable_bytes[BTRFS_STAT_NR_ENTRIES];
- 	struct btrfs_block_group *block_group;
--	struct mutex cache_writeout_mutex;
--	struct list_head trimming_ranges;
- };
- 
- int __init btrfs_free_space_init(void);
 
 -- 
 2.39.5

@@ -1,41 +1,41 @@
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A96D14F4D1F
-	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 21:13:46 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.18
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C6834F55A6
+	for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2026 21:17:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=212.227.15.15
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791839628; cv=none; b=r0p1YsRKR5zKzS3IAxo8uYZcrQ2IK2u4WJsxs743CHAKv0PCu+zvhpKYna3l9YgFOy6z8iFg4SxL0G1oVRDdcZBdsdd9MdhwwlkTiltYUTnEW+wpKqk4MhKR5rKo1X1yFJlK7fTzmQhU/gUpKJTyMBOIyixJy7TLmhkkkKUyhzk=
+	t=1791839874; cv=none; b=AiaIVNfiA81nu4pGUguBqi7SWukxaCoBhfDgw30HB/oihzVkvRsBIYHl25DES6LJoFAKITsZQILpgwVFmTSryXgQEWe+b6jzTDW8LHWEmYrUepVp3EgaZoSnmYtiAaNvHq4bd7ZgU3Ctk5tDwrUkikOPUuUVlv/igSPPGQHChBc=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791839628; c=relaxed/simple;
-	bh=0C6Ig7nEkqTBPlNdmk7R+QZ9sGunsbjOJInZRV6diRQ=;
+	s=arc-20240116; t=1791839874; c=relaxed/simple;
+	bh=47ZqpKPimIriyp8XV8Fb98YLwFN8cLyA4H4Jz9f3CTA=;
 	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=XQDPwFp+xV1vOjNkF3EhKrXzL1AGEO8GTIhGqPxj3HCVU7iWcBKU8ZgzjgEQ/pxdquZS2e4fbvYPG63xhPk3qI0K5VH0/ZswHTy6PYqsXluSdDXIIJvBz+BWF8pSVT4F5EQIejNzM9DybPLcyFlZQ4gkV73VQ8AlRtmgzOoAuQo=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=tQ+O9uS5; arc=none smtp.client-ip=212.227.15.18
+	 In-Reply-To:Content-Type; b=ZQyloVAxO/YgDLFA6rcxdksCPxZhujF/+IBu1t4kaW44l75guEnJLNcvt2Bq66u343vFCHa9LobfNK3vK/TJ99l8O978cM5o7vmNNPaLC0CQz5MEnP6fWdkQyLxnrBk++aQmMcV4St+EcLes5Vy0Nkt9Up+mN3OG8lhl+6hkyt4=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com; spf=pass smtp.mailfrom=gmx.com; dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b=hOGDpZ7+; arc=none smtp.client-ip=212.227.15.15
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="tQ+O9uS5"
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.b="hOGDpZ7+"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1791839618; x=1792444418; i=quwenruo.btrfs@gmx.com;
-	bh=riJHyP4+gqoZDUSNN8uxPl2vrJredSv8p4VoEoLtKOQ=;
+	s=s31663417; t=1791839864; x=1792444664; i=quwenruo.btrfs@gmx.com;
+	bh=JNZkvY1hcjRNoIPvFZtaxgjArnmY2o2kB/mr+V6L9TI=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=tQ+O9uS5N1ESboqTIwzGKw7DdF6rx6PawZEH44YITQqL+4j7CSI60UNrQgTDibnt
-	 Io1RdD8nFsJDCOf1JiJMXjLN6w/gGSO/N4MBYO/TPMOhtzbKFuICwyF2CEM1syldX
-	 bKvcPzeBKHA41jOC1dpc+5vKRl/6cEjwH7iCR3/Gle83r0hnsyWlNrv61A4RjFaou
-	 vCV2MrhPc2LkreNTd5aciWlNkigZaUBp/MiaLpeeaKtIv6J0tC9I4PMRuJnGh2FTe
-	 749kzhzIM9JAk/bELeL7mMw4q2vTMhY5fCq3Qtmy7ZezP+G4qE0QyY2Ey2n2TkbGN
-	 BZOgVwISoXODqY2Uhw==
+	b=hOGDpZ7+GxY6TLhlPstAVGNKQWofl6CrLjdkqQ87jtpmvmIK4R2ADupevKvjpnJG
+	 HZfXQF2zLP55xyNDcVj5SAVTAnUz4gYsEIPewPl8j6INj2T6f8K7evEJlHZsASzjS
+	 epLsOGoNEIxg3MiPQhh5ux7aUOGaDe2vT//3h9X1Viu/P2eK4CCFE0t7ZebKM7kwd
+	 yJSzvOlKt372JfDETZeur7aFZAjyXq3SfyVh7gNlUNS1VUrHqTUotiNHIpZjNZfuT
+	 T4kgCqAxnUQWvWQ9gd8gQsqv00Qt99aot5W+5iDE+4i/P5Oi2TzbAXuTnsV9v6S1j
+	 8+b3+sqE2Kx3EKSuvA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx004
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1Mf07E-1wk4jL1S0o-00oLSY; Mon, 12
- Oct 2026 23:13:38 +0200
-Message-ID: <7e54be4a-0779-43fb-98a8-f9d2e06c7391@gmx.com>
-Date: Tue, 13 Oct 2026 07:43:33 +1030
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MIx3I-1wx32D1kZW-00XZZi; Mon, 12
+ Oct 2026 23:17:44 +0200
+Message-ID: <7b088082-7a62-4859-b8bc-0562368e0634@gmx.com>
+Date: Tue, 13 Oct 2026 07:47:38 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -43,13 +43,16 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v5 1/2] btrfs: prevent use-after-free in
- btrfs_transaction::switch_commits
-To: Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, Boris Burkov <boris@bur.io>
+Subject: Re: [PATCH v5 2/2] btrfs: fix use-after-free on quota enable
+ allocation failure
+To: Daniel Vacek <neelx@suse.com>, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org,
+ Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>,
+ syzbot+947286c775f432b073a8@syzkaller.appspotmail.com,
+ Boris Burkov <boris@bur.io>
 References: <cover.1791706855.git.wqu@suse.com>
- <e0dd7f862cab85c1961d6ed38ff130c3c58ae61a.1791706855.git.wqu@suse.com>
- <CAL3q7H59WmpF3Wu2CZRyGTFDTVz=L7EyJ6Td+1vfwppg9QEOCw@mail.gmail.com>
+ <f6c20a7063b1f67881a61cdbd707f4634df9ed0c.1791706855.git.wqu@suse.com>
+ <CAPjX3FfauJ8S7ShhusSm7WX5MEMa3uDwEi-=F_BdA+RM0f_DJQ@mail.gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -76,180 +79,293 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  Vmi36kmq8o5c0f97QVjMryHlmSlEZ2Wwc1kURAe4lsRG2dNeAd4CAqmTw0cMIrR6R/Dpt3ma
  +8oGXJOmwWuDFKNV4G2XLKcghqrtcRf2zAGNogg3KulCykHHripG3kPKsb7fYVcSQtlt5R6v
  HZStaZBzw4PcDiaAF3pPDBd+0fIKS6BlpeNRSFG94RYrt84Qw77JWDOAZsyNfEIEE0J6LSR/
-In-Reply-To: <CAL3q7H59WmpF3Wu2CZRyGTFDTVz=L7EyJ6Td+1vfwppg9QEOCw@mail.gmail.com>
+In-Reply-To: <CAPjX3FfauJ8S7ShhusSm7WX5MEMa3uDwEi-=F_BdA+RM0f_DJQ@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:H+cDxYmVCFfrdbgPCrVMC0XEJCnlP9OcgFGhxHaxb3f3q36QQdB
- T555/YzBgcYGOAa9yq1BKIQBcmb7rBl9xtD28wAWCHY95dzH1w+zw+Q6KcoVPLiyekU5i3b
- e4AjLjKAeEQE6ju3HtRP574PZVA2RwMbkYh5GgWA26SCY0/krqkedo4AdJAu0D1zqbyRtWs
- 8VWWC0b43H6U0OXXy0cVA==
+X-Provags-ID: V03:K1:1QXaYWEnBVMjHjtyQmQHZ9l5iM9hCSeoEb2J78GmFioVi8EFSSt
+ PCAPn2HJ/q4zE7mrFhlq44/XiQMD9luwWKUF1KE/BQVBmNfQpn6V5A8DeON33mk1A6AAcBf
+ gkPuN2l0ptBbUZeIGDQ7QD2GKf7D+Gh4borhmle+DMqODaJ67OPRLjEnXj+sTLIBQV8FJWG
+ qd/Z3+3j63eBDBKXejHzA==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:M8va4Da1Uy0=;EnmeB7FfqXoR8y7FG0Q+7IeAL8P
- 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
- =
+UI-OutboundReport: notjunk:1;M01:P0:4jxfsbkpIhU=;wcjmGrotufGWPnQlDV7WYUIcLF6
+ pRpztPtDOaNqA/+wUamjy25OzuZGk+gAY7CPJZMRxKtIcA66U31oxiU8ulYfuTl4qHAW4t14C
+ nfNcEWtn6DTXPWlTznDn5XWGEXNOTC74IiRRBYPkoxScdNcgaWK6iaW9myPm6on4NlbNp0HHq
+ JJgehk6ecTZijJi47dY68aglKRY3GR7RgXMcdTs6H3y+0qETovDL0HtWAGpLZmMiTbybMT0cy
+ nYKWpCfLP+/IefB+cmffv4cWGbENCX9lsvrab5xdUFp0SB+2cbN+eI/gBzAejKOmxxoVCVbqn
+ Fxpe2bM2ddptUU2GsWvlcaQ22Ptg8bVriLA/A+RDNyS9tKLXj3lpDixNtjLJeYKSMdQ6sdgvT
+ z69m77fT22JXUTyKWk02UBMdxqIYsTb6KW2eYNdx2lJU5qxgsW/WiSYEMgGHntsja78sEW9S6
+ SKnhxCF2eePjzQZ5kdhf/b6xJs8D55j4nMJwwVmulbEqg51vqiz6bCYuyWq6+Z4wxkxuYWtxh
+ buCxWm9E8Qq6ru1K5Lu5MxqLpW4ef0Frvq7Rqk7mF31LPW5Z4qHr5RukBVa0Ygh78M0DjVyT/
+ 0wava+2LwsfMbrBhFpgTsoyk/WlYkMJCzYJfXTQ/gM1wnIXF7zVXEjY89cCJrkAF6GxIOSTLw
+ OTUQmuTAQY4EJtws90mAVBIiH5HisVKoUbtiO3ygT5TKuwLceghHSd32xLxfKNjpf5UDM3bHh
+ +3CNLaKaTjsopCSxL6CT4szT4EswjbGZAHnshNQk1BPFwottmGAJ+EXJlNGUH3susiu1q/8d0
+ 5jepu8gSN1+yfaaNCtG8U1nEpDbW6bWZlPeXtE8TOFXNSRBvSuWse3NONJhARDuPb1aOggy19
+ HeKlclxaVl6cWuDGGSq7PvdNZPb8p8BCNbeYWp65FGd8DVANnN5xNhZp67ghZf7Vl2Ql40igE
+ fG8c8JbCz6jvBRqgg1Z3G/87qDjHh9NTzZE2WoaHPXGE33NJ2azVQ7vi63jo/tQma/VktUfyr
+ QoqDuQxMGKdCp14oyOiVilV4+HLL6VKju3ezLJ3Ov9c4GlAyxA+KROZhC2sfmhy7ehy7ql5/N
+ 9qb4DVfK5HCvwRcU55czF0eTSEhpTpPZbxA2HrAg0EL46KcgOLTkFglFjwsgK8N9rfyvu2aSx
+ hasVzN3LL6PtEehmtUdj0/mx+CQvkDvGr5PTglZYIQbphI13OQ9qBH8ln3UGxFrHHgwlzRekk
+ csqMiyf2MfrPMDExLXDUYx9QM2tIA8VSKl6EJfAdy9LooBBfmhGhRuAG10d+0l11rujaOFdEi
+ qx4YV54zQwTu6OvnSs3Yi/au32L3YBuVB1t7rvy6AMsiWAaszD5+XtqiASirOjo7E0MlZN4p9
+ XqNmrOstiOTaAapRTFVFri16SeDT35E3uc4y8nyJkZNOPz5UtTpa0MuZwXFcRI8T56jttJ5y2
+ 9wzrrTx7sXZgeGtK2quBq94wbVOzfY4ZYJLLhYI+DutOoUWo/qvgkjLwH0aAQVuHMHLE5Pd26
+ q2IfAD51IpsgeRoCyG77JO9PQondmmiAhpdQAGaWcI9EGeK1CN4ucsQuMASFjNXcoj6A2FLlN
+ zoiNMgjU3zFz1nbzr9KrYpewoooDwwJVBoAfeT9/jiiJEmFlMlwIdVGf5h0qKizqK4Fwq60Q1
+ lgG3m8LsGfK1ubWJPv3LoUdnrOaMihwVyratEOC5Dp5PH8gPN8mKGvekTfEO3u+D6L5nq28z5
+ P5B8KRnd/4hAi5+AS1FANGXy/x8d3S4GUI1cep+rHxD0IkzehPHgOM+uwb5czD8+99wK7ZifX
+ pYuPfeEABireXXFDmInaxiwnBPoAWbjZYBDOt8RBPnP2OK9yA4Ay0hWb6K1EWbJ2wvHA8tUZe
+ Gls+M2INeFcCKL3KPTQtdcHrcdWQXmAspYdyUpw/igLgspc9cV09H45W1roYuhvhYRfTyYWvV
+ AfDMhaDeYMtVKiHwJak76Te4eg5Dw4fpRxtyKKzeMeeGHG6T3Oj1CUQ7DWxJgExk6vPJpwG1B
+ yMvNDV4YW4Vj66g/Y6bB/dtbJ3or5N+FOepkUlSinGk6a9zdCX+Q/mhO4SL04nbmAMrQPsMgG
+ g1N+lQ8+E/OrlAHZZJULySNL/OGbtb6SO8IeR8azteI5nZKu6BabLxAfg7bO7PP2q2efN/5Zg
+ su0neCey2829HAvm0RBTB0z9TvxRS4tWHaFZIz66E9ynPEskd1Y35g8ZT4VnFP5tTEluTfS5N
+ cMdOX80mOTAabfYp23QiauNEvD9Lmi0CgtGMuhJbhy772SlQtRwyRCDcEgIQxqLW41ihI7Dsl
+ iPcQdC9JCxz/hzq6dwFJVzQUFsjwB/mXrkMPIOmqMlNTP5YKy++XjE85BblkN1UjN4UHZGWqQ
+ Na/xBFtreHGbct7pP2XNBIKIcB+39CYS7WShE+OyLsfx+/HVfZu17jegsQ+Wbk1JLR8iwP9pH
+ TRvvFlm0VzF1YHZg5zA0KvRaXtxcVjCYgmioF6GRwTG7dgy3VcqWxCOoIzNzQaGz7b9ssWV9l
+ /YDReHSgZuiq40VjhMQdSHAqNtyPs6ZID1V6L+1wUnJxcr231g4jzC6HsKQ/7ejvzkIlQOadF
+ qiBPsZjIqb6Kv0Mzq1N3qi/EZtJgxy41XsbwjH9bC7hoCTW3TYKkrUPJ+A60kLk2B1GWAQSIb
+ l4DrsMufjPnx8ahygHkivn62MNMnTkk7KGTVAAv3mtv5OR6WmAayPK1LlH5Asz/vyGEq9nOYT
+ 9xx7xI5drmvSWoYkQZ5/Vwq1MJ9Tr7Bk+LPC+e+flaXGXAZCpACR3qV8dFZZB3iifmjS1UBwI
+ N88akaPVohpnnSOR0pW/7RkLd/f15CXLac0UQIHO/V2kf82ETBW1a3oyY5m88RyONiAXbVs4i
+ TgfM3ZqRHsuIC1ZPB/Xe2A8KeJ/rfHyOvm53dcMO+7SLnMGrt7otDk+CO2hEXzA06yQZ8VL/c
+ vSNxwPvdRZdgVlmgnZU8/clGPkwEko8P8vDgtSFf9yYZzaM3+uXXKYEQ3i0ILGqdWA0vCqRVV
+ uz9DYIAqPz6jvAtMSYPhK6k2THkVIDJWZQQB3c8BatHOuGGxCtfV8tnNvujHEhKNDs9HVtptw
+ qdP/siX1QRSuA5mOH33Nt+PJDs2+AEZFUHQ3wv6w2ZqyGkqSHvrqF/fq6Qm8dLFP6mI7RVBhc
+ t2t6PusbpltQOnOrapHJeqJyW2RXJw8qXazzYtXf9F0p5xluQKIixnQXIp/uDycW/7IQHz/EE
+ ziXYeh2l5BXI/r/3yxi/SZE5ulMGBHZF4VdYpnV6JXFxx3GRRGkST7wnT0SThJJBIaPJ9IvS4
+ N4PCrgARSeNvmlj/rCB4RiJFTraurtQAWO4RTFMC8vQjO9yMfuZIvZPFtiWSLygKR96QE9gy6
+ DrSHvzuFcTw9l0AucBGNObeAyGbHBUFdbqH3huT3cG1Ovc+thVAQNDd1dAfyT8nDojnMUfkSw
+ p7hKM4CEGFQjEGnb8qh+2f5NjY+8zowEzXk9ZAP5pFugvTdWGT2fXnYNv1NtmHTYzLWR4J6De
+ pMrXY1VCqUnS7628Wf3ikDw17moG5+RfoNhaYzqVbe7lkh3sd+OXYdZZhz1AUezb1FWrh4ojb
+ 0y6Z4kTvH3xQZMIsV6gOAqLgA8uABiWH0pPDgi+Ugo1o/23mkb633iP1TQKaXU5/Qu7eRKjfT
+ H2BOp4VBaiEROIm8u2dtwOCaQ0eguBLvgv/xXpeUtHSqg4qiDExob2WCaEwadqc3jLH9za9fj
+ zz6dAMjnpO+gCGentvF/uPUUkzEkeoc/QpyQzwuqkjJECce0Ws4/Itb55L0MmMXt9Qv+48+z6
+ cichjC/xujFWH52S4VWFoXPMXZz1rPe6uNpb3gvbQGondmQdEog+dAP1AZPRWZfJjc+L5t6vB
+ CMOzegD+6SsXcYSLkT8GHIhOSTFJ4dsP2vdPzwLOLkTDo3YL36sfI1E08lZJ6spyBd6y06ptc
+ 7lEDmveOTVsU+HpTOgXkCPPtUU+Eym1Z17d52gtATMwsbHxVQT/lKClO4ZVKhSx1w1gvs7bEL
+ LPwrwdThcGBvYCz0KHCq7W+Z8jG/3j4iLMDHdwJcQ+WcTSU1g33mgqvy0sxr21hP5mzL6DK22
+ zb7r/1MOeXF3pqaV8ZvLxiDCaM10NOVVo9xNBkUEMWioJWU0XRVAD+HEEcz4AxwBpPItPl1sG
+ CMQ5aRVWrNLps9Yfv/ChRYIR/V15j1l+ChF2tSXgxPTK2cBQiSmz9Ot75765i/TQY467yEeqd
+ kZ/hh12n1WYMt7FNPjR5xogBBzDzSdPpZ2REzCFjKp/xa47Ttr0fgbadicJ9c/VQxbxeM5cIs
+ BGozBW0htqFrM7UBCAj04GkWo9lAEqeaXFSIBApWf96jnNQ7NzNx0wv51sWBF34DVOIQG+KuT
+ trftmLwGXtLFmrZtBfr2Qrky0hX/ylApQrF94Uth4/psmrEkkzbPeoXcZpa4DFVYPPalgbgwY
+ xEjviCtUMvBgH8KkhZIsuXou/geTM/lzeBBzfMkytmGHxzhevGvCaCYitp6JK8hI+Le4VESkV
+ 13N1uYE4Tc9bRRP0SfGE/jKJBvEoLky75qmOXc39+mNzGMxCeXI2Jbn9MMqWCE0co4KK3zxVL
+ o5R4g01s6x4MGTDho7bg4v+iDBlxK04Wc0KqJiIkCDpvWPPTftu28BIQ80LH8DFlA/MzUTeRW
+ m7ofkJt559qQRIUu18h1ypE0Axrswegw1xUhE0Imu2b7XLjCH0NoEfImfhNZ8/zAKFBbiVSwS
+ 0XzhHiUma8p4bs7NirYoam0/xOhbt/XGR1LKBzSpXu/TFxDa0uYh4iXKjhxK0cgqDUhLClmDn
+ F2qIO4gzyTfIWiO++2SXn6yUXFbrRs0+TBI2onkr6JVksmL1/EDMLfF7j6tyXcXbrZDwqa6jc
+ 0tU+8YfQDcBfvOrttDKvOqG/RsGNE9R6rJ4cLxc6KThqBn7G53CS99GynItZa8w/rXMI3bblO
+ A3JGvzSnF4qHstwHzuRMavxx1a8JWMauMIDMtDyVcDZZNijxmtgH1xnwxmHiGVylvKBEtdncd
+ DEqwhmPbxdjWrSl+OaLgERN1GuA5ohK+tV6cu+LbYjV8Rd4zCLjOSVX29CHeH8QrDMfa55Quc
+ n2a2r38x8QoJ2mYPzralV1lFy6bI0mP6vl7OxF0gJGW89pV9EwqymhDGiUVwixJNnCr1OCCMP
+ bDdNFsfbHuAd7p14BC3cAbZ5BKloeYI4KJTKsurPdMnwg5AI2T1UlmfNo8EuwKb0Y0OK/kbge
+ RdlKghD4cbfJe1D7RAKJVmRjTU/jyhmKw7POHqG0QsdEkwqRk//8dzRXCn2P4xw1uKQ3BEPKA
+ l/r/EzIIWDk0JjyiExqrIgvyMKh+RSdVi+Pe+WHGpExNNvehha8FUKM0EB9R6j+hR/SeLwCDl
+ 7wGICvA5qV8YrnoRWchR6kkiSuwLajyzSNJ2tJqN7Elc7O2gmAd1r3Spz6ZRywnBimDDrvyVm
+ nU4KPe4LRVlKRhXx2Ol+BrAQIQM1Wk/P+c2/aCxbtVupZPsZArQo9H/DmLlmmaA94N3ug+zhH
+ 4HIZcWjfj2R/UOEpkKSH7Wd436CG29Kca+B0U4p+ae4pcrE/4tsL0H/xL40uURbZSBgMzQ2K9
+ tyCT+s0TBZ5toDmpNUCUJif8QHwjvcyTzApdBfvuPfP8dNdtkOsQjlTyq76EQuvlMqN0FUOQM
+ 5M1hWhc6Mf0sC4A9b1N5bx8Nrb8UiYgGmjLFPufn5OHFelfGN8LztqRFgWc+g9t42Pk7Ul/s0
+ 6F1HENRR+uMdFYZsdY2Nm+gVpewuiK79x3IaXdyNkrDIMhwFb45Kd2yV5Z4uhdKFPgv14DTWk
+ cVyN//iahIyVC3SaWWD3UpqC5a9HyuIfxXAvexT5hdSSE5GK8EUwPV95lzhxzf7LsUZH1SOU6
+ zRNe53RPbx+EwRkE4TglVe8yzDvd2dm9S65YItspjRCYxoFPw4nwwg0dsLbFcq0iYyFzxUXo5
+ D+mGgIZai+zfvF1biFTeJ+z6Q/Rf25eHy+TMwfAhjEZ3+thaYRZOT55ZP9viLNg+1k0406r7t
+ VJUnsdQw5Dd5celw0e12MY+VIp/T74CXxuSVxhL1wt60EYe8TXqoOLS2eukSTpeByAcsA4WX+
+ iKMrah3lqhllx1DeHtr0GKIIJV7CDc9DURG0bISBVqXNaMflPq+t7Hl5oKBysWG0gyFqMjjfb
+ otTMamML/HVb2Zu/p79IcGjP2vQDbFdAlbf0ac7H26t3k9T5KwJeKWBHT67Y/iHQEGLxsiZht
+ Xq1WjYORZxgVziHVVI2iuw/0b4VlFZDy8JhIA07hsEm5x/AqEKzoGW9x15hbX9IARZbCW6ZPC
+ wE3xP9h8mggLKozkCMb0x8ftleHb7y2KTTv0qVm9nSk0VwD3VtijZ/h0zHgqv8uHYm7ZenNvH
+ yoia75lA0+hF9PC6/DyVFMEGKoc8KT7alZwW4ngo3ZMgs1GtuAoj2VJRWhlpdKrOUbNowGB9n
+ xUi6mQ5KuqnzQqUYzYkNPfKahIS6d5GGydbH1yM3yz5dCDZ/L92mOLa2Jyjc4p9BFGFh5Uhgm
+ CJVOaogl4w9/aRwXfUtLn+eexPTTF/XO5P7xGoJA9gRw693bMicZHAypYpY4zzS2N+CLXDk4X
+ IyZUAtAQ5j+VVOvfl9s/0ChfFaeQce0ucNIZ7hNlbrw+HqsOt2Bb03HaYvb96c49T95LE/HeZ
+ sDU2WAOh7tk=
 
 
 
-=E5=9C=A8 2026/10/12 21:11, Filipe Manana =E5=86=99=E9=81=93:
-> On Sun, Oct 11, 2026 at 9:22=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+=E5=9C=A8 2026/10/13 02:16, Daniel Vacek =E5=86=99=E9=81=93:
+> On Sun, 11 Oct 2026 at 10:22, Qu Wenruo <wqu@suse.com> wrote:
+>> From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
 >>
->> If a transaction is aborted during committing,
->> btrfs_transaction::switch_commits can be non-empty, but the
->> btrfs_transaction structure can be freed at the last
->> btrfs_put_transaction() inside cleanup_transaction().
+>> [BUG]
+>> There is a syzbot report that a use-after-free bug is triggered after a
+>> failed btrfs_quota_enable():
 >>
->> The btrfs_root::dirty_list entry still linked into switch_commits will
->> point to already released memory, causing use-after-free.
+>>   loop0: detected capacity change from 32768 to 0
+>>   =3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+>>   BUG: KASAN: slab-use-after-free in __list_add_valid_or_report+0x4e/0x=
+130 lib/list_debug.c:29
+>>   Read of size 8 at addr ffff888040e0a528 by task syz.0.0/5324
 >>
->> Address this problem by manually deleting all entries inside
->> btrfs_transaction::switch_commits.
+>>   CPU: 0 UID: 0 PID: 5324 Comm: syz.0.0 Not tainted syzkaller #0 PREEMP=
+T(full)
+>>   Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debia=
+n-1.16.3-2 04/01/2014
+>>   Call Trace:
+>>    <TASK>
+>>    dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
+>>    print_address_description+0x55/0x1e0 mm/kasan/report.c:378
+>>    print_report+0x58/0x70 mm/kasan/report.c:482
+>>    kasan_report+0x117/0x150 mm/kasan/report.c:595
+>>    __list_add_valid_or_report+0x4e/0x130 lib/list_debug.c:29
+>>    __list_add_valid include/linux/list.h:104 [inline]
+>>    __list_add include/linux/list.h:169 [inline]
+>>    list_add include/linux/list.h:192 [inline]
+>>    list_move include/linux/list.h:345 [inline]
+>>    add_root_to_dirty_list+0x38b/0x470 fs/btrfs/ctree.c:232
+>>    btrfs_force_cow_block+0xf09/0x1bf0 fs/btrfs/ctree.c:553
+>>    btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
+>>    btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
+>>    btrfs_search_prev_slot fs/btrfs/free-space-tree.c:134 [inline]
+>>    remove_free_space_extent fs/btrfs/free-space-tree.c:732 [inline]
+>>    __btrfs_remove_from_free_space_tree fs/btrfs/free-space-tree.c:837 [=
+inline]
+>>    btrfs_remove_from_free_space_tree+0x4d6/0xda0 fs/btrfs/free-space-tr=
+ee.c:866
+>>    alloc_reserved_extent+0x4a/0x2b0 fs/btrfs/extent-tree.c:4976
+>>    alloc_reserved_tree_block fs/btrfs/extent-tree.c:5155 [inline]
+>>    run_delayed_tree_ref fs/btrfs/extent-tree.c:1815 [inline]
+>>    run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
+>>    btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
+>>    __btrfs_run_delayed_refs+0x18b5/0x43b0 fs/btrfs/extent-tree.c:2134
+>>    btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
+>>    btrfs_commit_transaction+0x28a/0x3170 fs/btrfs/transaction.c:2267
+>>    sync_filesystem+0x1d2/0x240 fs/sync.c:66
+>>    btrfs_reconfigure+0x2dc/0x2100 fs/btrfs/super.c:1511
+>>    reconfigure_super+0x232/0x8f0 fs/super.c:1128
+>>    do_remount fs/namespace.c:3410 [inline]
+>>    path_mount+0xd4e/0x1050 fs/namespace.c:4160
+>>    do_mount fs/namespace.c:4181 [inline]
+>>    __do_sys_mount fs/namespace.c:4397 [inline]
+>>    __se_sys_mount+0x31d/0x420 fs/namespace.c:4374
+>>    do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>>    do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>>    entry_SYSCALL_64_after_hwframe+0x77/0x7f
+>>   RIP: 0033:0x7f9c8dd9f3ca
+>>    </TASK>
 >>
->> And since we're here, also release the dirty_log_pages and qgroup
->> swapped blocks for that root, which are only released during a
->> successful switch_commit_roots() call.
+>>   Allocated by task 5323:
+>>    kasan_save_stack mm/kasan/common.c:57 [inline]
+>>    kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
+>>    poison_kmalloc_redzone mm/kasan/common.c:409 [inline]
+>>    __kasan_kmalloc+0x93/0xb0 mm/kasan/common.c:426
+>>    kasan_kmalloc include/linux/kasan.h:263 [inline]
+>>    __kmalloc_cache_noprof+0x321/0x600 mm/slub.c:5563
+>>    _kmalloc_noprof include/linux/slab.h:991 [inline]
+>>    _kzalloc_noprof include/linux/slab.h:1312 [inline]
+>>    btrfs_alloc_root+0x75/0x840 fs/btrfs/disk-io.c:638
+>>    btrfs_create_tree+0xa8/0x5c0 fs/btrfs/disk-io.c:832
+>>    btrfs_quota_enable+0x3d6/0x1e20 fs/btrfs/qgroup.c:1074
+>>    btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
+>>    vfs_ioctl fs/ioctl.c:51 [inline]
+>>    __do_sys_ioctl fs/ioctl.c:597 [inline]
+>>    __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+>>    do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>>    do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>>    entry_SYSCALL_64_after_hwframe+0x77/0x7f
 >>
+>>   Freed by task 5323:
+>>    kasan_save_stack mm/kasan/common.c:57 [inline]
+>>    kasan_save_track+0x3e/0x80 mm/kasan/common.c:78
+>>    kasan_save_free_info+0x40/0x50 mm/kasan/generic.c:584
+>>    poison_slab_object mm/kasan/common.c:264 [inline]
+>>    __kasan_slab_free+0x5c/0x80 mm/kasan/common.c:296
+>>    kasan_slab_free include/linux/kasan.h:235 [inline]
+>>    slab_free_hook mm/slub.c:2748 [inline]
+>>    slab_free mm/slub.c:6508 [inline]
+>>    kfree+0x1c5/0x650 mm/slub.c:6801
+>>    btrfs_quota_enable+0x1208/0x1e20 fs/btrfs/qgroup.c:1292
+>>    btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
+>>    vfs_ioctl fs/ioctl.c:51 [inline]
+>>    __do_sys_ioctl fs/ioctl.c:597 [inline]
+>>    __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+>>    do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+>>    do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+>>    entry_SYSCALL_64_after_hwframe+0x77/0x7f
+>>
+>> [CAUSE]
+>> During btrfs_quota_enable(), a temporary quota_root is created, then
+>> qgroup items are created for each subvolume and inserted into that root=
+.
+>>
+>> If there are enough subvolumes, the level of quota_root will be bumped,
+>> and add_root_to_dirty_list() will be called, adding
+>> quota_root->dirty_list into fs_info->dirty_cowonly_roots.
+>>
+>> But if a problem is hit during btrfs_quota_enable() later, that
+>> quota_root will be released through btrfs_put_root(), causing the whole
+>> quota_root structure to be released, while leaving
+>> fs_info->dirty_cowonly_roots still pointing to the released
+>> quota_root->dirty_list.
+>>
+>> Later access through fs_info->dirty_cowonly_roots will trigger a
+>> use-after-free bug.
+>>
+>> [FIX]
+>> We can just call list_del_init(&root->dirty_list) when
+>> btrfs_quota_enable() failed.
+>>
+>> Also to follow the existing error handling behavior, abort the
+>> transaction when the memory preallocation failed.
+>>
+>> Reported-by: syzbot+947286c775f432b073a8@syzkaller.appspotmail.com
+>> Link: https://lore.kernel.org/linux-btrfs/6ac5a5e1.9ad129c8.3ce5b3.0010=
+.GAE@google.com/
+>> Closes: https://syzkaller.appspot.com/bug?extid=3D947286c775f432b073a8
+>> Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+>> Reviewed-by: Qu Wenruo <wqu@suse.com>
+>> [ Change the commit message to include a proper analysis. ]
 >> Reviewed-by: Boris Burkov <boris@bur.io>
 >> Signed-off-by: Qu Wenruo <wqu@suse.com>
 >> ---
->>   fs/btrfs/disk-io.c | 10 ++++++++++
->>   1 file changed, 10 insertions(+)
+>>   fs/btrfs/qgroup.c | 7 +++++++
+>>   1 file changed, 7 insertions(+)
 >>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 66b054eb98c6..02adda065097 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -4966,6 +4966,16 @@ void btrfs_cleanup_one_transaction(struct btrfs_=
-transaction *cur_trans)
->>                  list_del_init(&dev->post_commit_list);
+>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>> index cf8dfd5c692b..a0651fbfe778 100644
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -1207,6 +1207,7 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_i=
+nfo,
+>>          prealloc =3D kzalloc_obj(*prealloc, GFP_NOFS);
+>>          if (!prealloc) {
+>>                  ret =3D -ENOMEM;
+>> +               btrfs_abort_transaction(trans, ret);
+>>                  goto out;
 >>          }
->>
->> +       while (!list_empty(&cur_trans->switch_commits)) {
->> +               struct btrfs_root *root;
+>>          qgroup =3D add_qgroup_rb(fs_info, prealloc, BTRFS_FS_TREE_OBJE=
+CTID);
+>> @@ -1296,6 +1297,12 @@ int btrfs_quota_enable(struct btrfs_fs_info *fs_=
+info,
+>>                   * sysfs entries.
+>>                   */
+>>                  btrfs_free_qgroup_config(fs_info);
 >> +
->> +               root =3D list_first_entry(&cur_trans->switch_commits,
->> +                                       struct btrfs_root, dirty_list);
->> +               list_del_init(&root->dirty_list);
->> +               btrfs_extent_io_tree_release(&root->dirty_log_pages);
->> +               btrfs_qgroup_clean_swapped_blocks(root);
->> +       }
+>> +               if (quota_root) {
 >=20
-> Sashiko has some comments which seem valid to me, roots still in the
-> dirty_cowonly_roots will get their dirty_log_pages and swapped blocks
-> leaked.
-
-That's in fact an existing problem.
-
-If the root is still in dirty_cowonly_roots list, it will be the same no=
-=20
-matter if we have this patchset or not.
-
-In previous attempts I tried to address this in btrfs_put_root(), but=20
-that has extra problems like some call sites can end a trans then call=20
-btrfs_put_root(), which requires extra locking.
-
-I tend to address this problem in a dedicated patch at close_tree() time=
-=20
-instead.
-
-Thanks,
-Qu
-
+> How about
 >=20
->> +
->>          btrfs_destroy_delayed_refs(cur_trans);
->>
->>          cur_trans->state =3D TRANS_STATE_COMMIT_START;
+> +               if (quota_root && !list_empty(&quota_root->dirty_list)) =
+{
+>=20
+> to avoid taking the lock if not needed?
+
+I'd say we're already in the error path, we shouldn't bother efficiency=20
+at all.
+>=20
+> --nX
+>=20
+>> +                       spin_lock(&fs_info->trans_lock);
+>> +                       list_del_init(&quota_root->dirty_list);
+>> +                       spin_unlock(&fs_info->trans_lock);
+>> +               }
+>>                  btrfs_put_root(quota_root);
+>>          }
+>>          mutex_unlock(&fs_info->qgroup_ioctl_lock);
 >> --
 >> 2.56.0
 >>

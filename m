@@ -1,164 +1,191 @@
-Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 944F335F197;
-	Tue, 13 Oct 2026 08:35:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=68.232.143.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 087984DDB5F
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2026 11:13:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.46
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791880524; cv=fail; b=i+Oysb8YMjZd2SuFrwVBUBCl0gyXsif5A+S6Oti79aw+eODqCPjjov+kDGKabXBAfv05obKW6ehQQX0D2X2zMCbi5SQV5ZuERl8M/Rjfy663Am1oXypFoo6cV2L6iSqLs6r2Np2ZgAiugueq651lY521AlL6nOqE0gFIBZMOF5M=
+	t=1791890001; cv=pass; b=RLOPuJTZXC/G/ieHzrmvLDRQ4pVU6FknvocUcaptEJr8L5Ubz16GnaGaSprgSnerdHWuOC2BQ/WEvPun54kEmsz28WJliMuAPjejNt3tkaX9adHG8M+WvwUWUcNN3AZ+9t9kPxd5wtttqrtdEeTby+PRBJyYKLKDKj8z3C6ArlU=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791880524; c=relaxed/simple;
-	bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
-	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=ApvvPlC9Cv5rReDBPgmN+jGJjoOfDjveu1C7v2A8DURfZBGuaVVrLLefxLdlAEOdwRqej7CpS167FFAEauhm58ogNF0kpoiZ0LkRp1re0zTdRJyfZwycbLBzdvAsJ00uslatIsGlSCazZ+g+uVwrviI/R2QQZan/gSwsJ7N1ehs=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=auuzfjg8; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=SuPn2jQw; arc=fail smtp.client-ip=68.232.143.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	s=arc-20240116; t=1791890001; c=relaxed/simple;
+	bh=W6WTGsXRBI8mYN8L0qSr5GQI9BhXSERGgvRH9PMEXzM=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=FZRMT3KiYgG9fgmcxzideRy+yF7/twDGA7gD9fAiBBM4Fth2hoHADmltxGjWgoLNaV4Md7Y8qcK/BawNsZbcQrMY4JEQWoq+se+malYI8f5JslvOGdjxxY7mG8Bxv3bYpoNWrhq/kQYRaU4ADi3zXCzxdRJTRZOAbCzsPsbD2n8=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=IDIGWwIa; arc=pass smtp.client-ip=209.85.128.46
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="auuzfjg8";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="SuPn2jQw"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1791880519; x=1823416519;
-  h=message-id:date:subject:to:cc:references:from:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
-  b=auuzfjg80Frc0dk1CaWtFVcaLaLPxgdaJj+O7rZMN/i8G1c7SEsV6Y1Y
-   WIcFXJ1WAVW69i/AxZdkmPv7DWVKoVnCfVysbS1z+Qc8DGCOgavbIjHi+
-   t9KOQBayJ/h0RPyOnyqSZadHy3Fe5Mmw/Sb9zrXFSxmqn7EVnokUgqrF9
-   gKlZIGdQDVN0D+m/hKsqVzo7FYBwI9h+G0QZpSUx+97V7qDYEXaOYeLpR
-   zai0KBZTpmdtp+TlfU0BqieX/7wbS4BbROqjwQRicc+0PJf64Kd8tGGdw
-   i9jC4VZazihI/mkywZqVyt5ojqjkWBb1uLA7hhTTViZ6oCI6P7io3SxRr
-   Q==;
-X-CSE-ConnectionGUID: dcsKt201Tzy13Q3iMU0JIw==
-X-CSE-MsgGUID: NJIMBCumR7ivqfRkVTyXFQ==
-X-IronPort-AV: E=Sophos;i="6.27,155,1786982400"; 
-   d="scan'208";a="158921252"
-Received: from mail-eastus2azon11011056.outbound.protection.outlook.com (HELO BN8PR05CU002.outbound.protection.outlook.com) ([52.101.57.56])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 Oct 2026 16:35:17 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=CHp0UXNsL019Ys9xX6C2U5xBIMr9EtCZtOptsoFZ9E9gMV1d/gl/Ugtt+v3tkXzODxFCfhULsFeet1Pao22OjVL6BUEELAMuKrKEC8TJNWJ4d2FmVtoAx9RZpCKd/Ckx4v5P/NleJlPz8O/sHCYdBi20Q+aoqlYHMVtVT8T32SJ3dHM3EXhjftaCg34BB1aUmaPXorUH7zGIXYEtZReuENHs9EZQ/PIUiuX1uHzwywHJihzfFyBubmdGGPQZumvqYLJI/humhkbairGWBeBoq93LFMMA8N0RUxFs78rCoeiHfvvd+0kD9zkU7UvVM4Qs2fFnObjWcdPkytrop/qM2w==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
- b=YHqAAZn8SwwKdHSZn5iqWmc2E6Ou1N70sETfCWdmAUzu25V7OlZFLqmbmObvqlocqOOm5pkND2zU+Mdw0wAjilmvd/jXuYMfiCgDSGEEKCHpAxB8n/+0rvaDraZkxB6l/9gmr1C95ziR+WjXXdLlNBSLFSLtkXmpti/QeWB1k6VyLNMJYZsR4hyrLXb5HannhYrkAS3x5RWMhqtPW5BOd74ncQ98Dj/ZMNHuo55tMe1OvO6SisUQ2uMKxcIfPgubA3SY0SQqhVnHoPdq4XNwELglKxOsBNMa5sch28GEYXZB5oip6NrzMog2rk7lDBY4z2bLikBAcaoCPRx9Y2vniA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="IDIGWwIa"
+Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a1880e1bf1so26075255e9.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2026 04:13:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1791889998; cv=none;
+        d=google.com; s=arc-20260327;
+        b=N9CfPzdZZ4VkgUL3rjVmyn2TcHpQyxIIrb2hyqQ9igz9wqeU2MLam80XRUlCA0SsdF
+         CNlJerxXwPRLeNEo6ROPdyROTBUrwD/v5UXEhA5PnjMcOSp1z0fT52L9T3+YViiUSWZx
+         +DI1xEd3sxnmNrVSu+7/TjcANKljWnL/HFsU4RENQkb5MpigsZo4La9uy6hkugkb00Ls
+         dATAkEiJ5Y5yta+G4ckArCiICkZZb4Ctcr4DDj9tuy7HGI6ABsvNFAz12wG3xTjQjmGY
+         KPmieL9n+Gr3z29IBqx6UWJ643+M+DrorGQkLE2BaxxTZUCIeQ4VktENXOtx8MDLp7oL
+         cMjQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=0al2L/zJTanu+94NFMRYKtJkCF8mmt8cwR1wMSTnrxE=;
+        fh=qA3eo+mcoFKB9z0T9fN/nts7xxQ/fcmyi4rWardHwoI=;
+        b=KdVZUtSSZ8sNNEK/2cUzfGvhPZvBH/Wo+Fwu4Th47fVtBes1dPImRtKnOcEUshqWVH
+         T6w9SYuZRzA6xqJT9yqadUikdsPGvT+Hz69BFe9PdxiKdjbZZ2ij/HbAPfb0N+97h4oV
+         xt4vLfbNMZyq9E2GCeYOVUEIlWJQ1HdvauniL4gw5x+TU2pFrblSRbAEmJrRD9RVU4CB
+         Ergr57zXF7QKKzWHOlSAT+RtCKlZVosCdUksws0z6e2Kiqf2+UWhZOy0zfduKIDcZEiJ
+         4Z6sA3YPJjPMUIurvx116pRJ78tN1F2wMZ9gjbWb2rU5Sp4x6xpF3SWCmeXEfQknDA1s
+         FcLA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=0hFm4yO+V2KgeQG0ik8lLOHczCQdLX2syeEcd394fgI=;
- b=SuPn2jQwBJmBuUpJR56zrhkKr6x+QbeOagCA07mhtWnh+ii/t0q30ODMCfiZuPiOYlCZXvDUW3EhAJe2LvysWoWHgLwIAaUhSCpcP7yfTND9+DrlPbmS98fhGNDfROuTOpbF06kSOYC99vTrgS7OneayaULje3OgTOa1EpRtQYQ=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by SA3PR04MB8978.namprd04.prod.outlook.com (2603:10b6:806:382::16) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.496.23; Tue, 13 Oct
- 2026 08:35:13 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0496.021; Tue, 13 Oct 2026
- 08:35:13 +0000
-Message-ID: <baa37ffd-074f-426d-8fa7-750b97391d28@wdc.com>
-Date: Tue, 13 Oct 2026 10:35:09 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: unwind device add when sysfs registration fails
-To: Adarsh Das <adarshdas950@gmail.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, mason@kernel.org,
- syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
-References: <eb63c9f9-a158-4a70-b3ed-30046b15de11@wdc.com>
- <20261007160349.22411-1-adarshdas950@gmail.com>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <20261007160349.22411-1-adarshdas950@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR0P281CA0183.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:ab::12) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+        d=suse.com; s=google; t=1791889998; x=1792494798; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=0al2L/zJTanu+94NFMRYKtJkCF8mmt8cwR1wMSTnrxE=;
+        b=IDIGWwIaut2bLfX+1Caef8inF88Pe78St8VQXsVqGztxP7FsItbyyEyMA1bU1h0LMT
+         8cWmtJaHOnOfTNtDToQaepRJhOE1Hw0Cs44t6osAKR5r5XtWhfmnxM0DOQHiFeUg9hk9
+         ZPdADdd/gidkGqSc6TLzBRzb19hZpVvSE4UqvSvqdhQN7yjSBSscYk0ufdn20XfDrKg8
+         7oPB2JTvaPM9yTjcjtPXbB0loYtY8qt3Tbyjjys4hSQbFuy29Ckkbyb4TJCCgWAKw0x7
+         MGNpEi19nI3TqrXspZSVMx3+JeTmv1QoYUxRHdbvME5KdJ3mKWakJrxM/m5BfJDJAbxz
+         wEew==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791889998; x=1792494798;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=0al2L/zJTanu+94NFMRYKtJkCF8mmt8cwR1wMSTnrxE=;
+        b=gI062TGP2V5OG9ty2moJAiOIx/QLAhds/6nwZG2lkd3H+I99d5EMTfAGiCdM1CB+ZL
+         JY0FixLMVuzgSZELP9Zb+y9qD2NYxOJR6JSAXG9KJYjORJuO20LNx62Wb4/MNPbQKWCR
+         pGSGmwR6WYwti5oH0gKL05nDP2x41cguKlc9kdMmB2lMPrc3UYp+kY9j7kRThfT3V+KI
+         EtGf6gwSngg/C2G5RfQCzHz39dJvDWBSI4petplHxzHbZee135KBoB44rQyWDWwSWjzo
+         RYsVcDgN8a1PLz3AX/iZvQB4jBok0KeGFRG8FcNestmFPvg6UMgd0Mf1Y++9TLz43R1q
+         1C9g==
+X-Forwarded-Encrypted: i=1; AKwUvBwO1Nw10u75tz2XEsDvrMG9OulnSg5oGeM8miNgOsO3bPO7eTwpHANCGwVMA/EeEzmhm5ScfPzRLQMU9g==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIWwuue0nrxB/FR+fLgPkq+IQ0GVZ/3R2on2hBPwU04XPnAFbuy
+	Yafp8LBkqJIbwfxywrHUevLN0d1/ds/8rwqY3o4AYwW9WyoyYrypAylvcgVynbusTKvora+PDlv
+	Uzxoz/QczrHYPCNojNM7ExYa+fhBsyf2yftKjXbSzsBJ8vHcLqrlgTOtGsw==
+X-Gm-Gg: AYBFou0K47ulRhASeo0PGbPAPX/1n5KeE12LvIcOv/PbcUBbwwnPuJU/5YbtlS/osc/
+	dJ/brmUS1e7BesvcSsHBGex36wGasBdXoEgM/yjgnqSSkqBRML6XFhE18ciKOgjeNLcFtaubbS7
+	ZMkWNC5Hu6TUld+s+OXZJo0ezwGDwzbbZ7BoY9CiaaDcVjDiikeTiL1BGJjat9AOCbO0SpLFmLR
+	g7UfSW7EuL/a92GcF689DuRB5FE3oHuFq/XXqD3IodypGBYmpLSyncP+W26o0hqH7SEup8LdPVN
+	sPN4MdA00TdXImmLpEUKcSgjWEabeKfbrh5/VfbJ24QVl8U1RPmKKxoh765uddy+gjDHJTGAIVC
+	Ouhukk7CBQA1789XS4r1LxfYDPfVXy6GjmqcVO0OZ7ULdtmFnEQdFNA==
+X-Received: by 2002:a05:600c:6099:b0:4a0:1feb:de6a with SMTP id
+ 5b1f17b1804b1-4a18e4e7a85mr231148915e9.30.1791889998109; Tue, 13 Oct 2026
+ 04:13:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|SA3PR04MB8978:EE_
-X-MS-Office365-Filtering-Correlation-Id: 4cabcc72-fa1a-4b23-8b6a-08df2904e67d
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|376014|19092799006|366016|10070799003|1800799024|23010399003|4143699003|11063799006|56012099006|18002099003|22082099003|10067099003;
-X-Microsoft-Antispam-Message-Info:
-	N0lZ50tBBQQAVmhFeqrjOov5r5l4s1NodH3qSl5P6Uo4QTCYFxufM+maf8ugTwaJwBZXEjvwbkAqVcQvMG47BR9BnzNtTERr+w4Xv+miFNJn1wUWhM3CkEpXjK9TsPURqoAPFNK3ZJ562xs+Bjsfuei3mI9NyuyqxnCbyOYhBIxwVbAa/hliOiTRlzViNK2h6K7zpXQbUXkpN3nefbeh7lHOy2g5QBKrVBM8Gw0R23l+gswBu/BI9qZleB8dmnWFsZvUDqYPeSXjKdDmyCU4itB34DC01lJXJYMLmw2KAQx/hqW/fGduuHwdX/055DYc/tSxxpNKTfH1fnteHdH1ZaP/xVzkJ3023eg5NgN3OkWwULfW0pqUM19DQufFLjG2mttfvqvYv/sPjwt3jLxvW5HYh+9GG5Boc2MFSrvpVDJ1MnZf20wDegtY9r2YYJPNSBiCL/S/IL084He472zlXZ2lu3Gds/x6Bb10p4PK0w27tyNpJ6yuPHw3xfImK1KwDVh8FnuZfFUoqmmWmZU6iVAGD1APcrkDBS/OUtv80/TwrJ3h0TbJyP1mcCydsgoC12clkGQmMJByJxEEM0nSR/L+u/4tTS6CutxG3ViWNkf5u3LHZIf24gVoxqaSBfbUUkQEhRxG2yoqaIwf24ZHLpwyb8qBpFnNBxsFCf+SGN4=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(19092799006)(366016)(10070799003)(1800799024)(23010399003)(4143699003)(11063799006)(56012099006)(18002099003)(22082099003)(10067099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?MXdOVzdvWjBmQjhCaFZTSkhIYmdJWFZaejNhSWJBRlZrMVl1TndKUHkwVmlj?=
- =?utf-8?B?TW1WQ0RwcnlPRzJGQ04ycElEZmhXekNPLzlIbkE4aEwzQStOaXNtcW44LzMz?=
- =?utf-8?B?bEh1dGpmTXBXM3ZGc0VaL3BwT2d3alM3MXVwdkFqcGVLWUgyNDg5MFNaZjdR?=
- =?utf-8?B?OUhKRDN4SWcwUlMrOExoZUVYTy9PZnM1TTBlai92YmxIVVM1NU14TktnbHQz?=
- =?utf-8?B?QTRaQWg1d2Z2VXYyc1VZMldiaUFzSTJ2WmRoMUZGc3VGMEJaOHB0VzFjYkQx?=
- =?utf-8?B?c0JkZG41L0pLNFFpcHhSVnE1RGxnK0JxN2dGRzhzL0dwNjZaYzZ0WVk4TlR1?=
- =?utf-8?B?eHZFTWZqT1RQYkFtNGJQVnBmeU52RkNxaEtTUUQxVzlsWHU1VXdobVZTMU0z?=
- =?utf-8?B?VGdrYytpazZPbzlLNit6MkVCOHhJOTNqSENHbUhkUHJka3lJZjRGODNFTXNn?=
- =?utf-8?B?WDBnRW9ZOFdVcTN4NVBCa05KS2lwN3YrZ3BPVXRoeS9sSndTczl0a0tpbm4x?=
- =?utf-8?B?VWJYeHdOQmZIeXJsMXkxZVV6cWV3K3QyWjdMMTh4anRMR08rWnFKWlEyc2dE?=
- =?utf-8?B?bHpON0FHSCtRNzdZczRqSjErNEVST1c4KytpS3ErTVlFTlpWalFWRVJ5QjRH?=
- =?utf-8?B?aHNwSWxrcm1hM2dEdDFZRWVsdTdWK21lK2RvVjF0UVp0dEFhYnpKWlc2WUps?=
- =?utf-8?B?SWNnOWlLZFRQdW1VMHh4M29PU3dyTk11Tjg4d2p4RFFMUHJSZlNxN3BuOGRo?=
- =?utf-8?B?bldDU1RPOE1FOUZpNjVLWGtXUVpqU3I1WnhqYzhRSk9VdnI5d0g0Z1RURXNZ?=
- =?utf-8?B?d3Zsc1JTcVR1clFhNjZHTElnbHVvcFBiSndqMXBMWnE5a0xTQnMwS2Y0dTln?=
- =?utf-8?B?a1B0YlJhK1B2MXZuUnVUZ2w0U2pQY2JwVjJrVWowR3hLcG9MTXZMN0huNEVl?=
- =?utf-8?B?UFBodkVMb0poTGhqWW5OMjZ3OFZENkxVOGZtWkhuaHF5SnRjVmVJeHBLRG9B?=
- =?utf-8?B?cnIwZHRJR2ZMS2FUOEZLYVR4R3pjTjVma2w4ZUtQR29WOGVLdnlXdmtRUzVv?=
- =?utf-8?B?dW5lUFhVZ0FkNzFHZ21zSEw4elQ4TStXNFFnWHdQbUV1R0JYOVU1ZEVzVmty?=
- =?utf-8?B?bC9UQUFjMXl1b0tmVkh6ZmpmRnpjU3pXQjJkVUw3N3hGVmhwaE1XZkwweXNM?=
- =?utf-8?B?MU9Qa1E2aTMzbEUzdG9KcGlReXhET2RGcEk2c1g2T0htU1owWlJTYWZVdmZo?=
- =?utf-8?B?TTBaWnlmUkRvNUFUM3VlTFFBSmNsejFLT2plNVdQWmdyeEFrc0xRN3FTL0p3?=
- =?utf-8?B?UDhnV0dYeDR4ZlpPQWcrMm1ZdDhzTWthclJweG9GTGg2c05WYmJPUmY4TlpH?=
- =?utf-8?B?UHd5S2VlYTdkYVhKRHF3clp6UHUwRmExUW4zcEkyQjJObzZtdnhPWjNsa0lK?=
- =?utf-8?B?UGhHTUdvbkpJSXRBY1YwcllhWkVpdEpHRUV2STl4QTNRVUdEN0dQOU9zUDFs?=
- =?utf-8?B?RUI4VVBaWVZnTUFjUzlYS1RIeHFGRFVqVmV0bFN0OHR6SHh5alVYZjY0bmw4?=
- =?utf-8?B?OVZXeVFJekJ5aW9OVHoxNDJDb0lWRnBjUmNKZXRuWUEvc2VFaExNSk5Ya3dn?=
- =?utf-8?B?WGg2K21mQ1RFb3JsSXFXNnpxZXpORFJ3NWNRU21HdkNwTXVHT3NWdmg1RDFk?=
- =?utf-8?B?bVovSnZ5emhJNllyWW1hZUJSczBmOWM4azF4c0I2RU43SUxOWXB6aTBxRXJI?=
- =?utf-8?B?MzhQSGhsbWx3bklUclBieVFJTThzenFUN2xENDA0OTEyZUd6Ui9zTmhaaXNM?=
- =?utf-8?B?dDBhZVdQWUZKU3NDbFIwcm4vOGtmR3U3L0tYTURlVG1FWU5ORlZlWnAwRENV?=
- =?utf-8?B?YUlsYi9qMVZJRE9iYjNaUXJhYUE1UU81blZYUGsxcFBGVzdJeFllM0RiWlQv?=
- =?utf-8?B?TDlJUlp5TWFDS2hDbTF0aWNLQW5FM1QzVUo1VmxkM2Roa3VOWWNaL0hHaVRK?=
- =?utf-8?B?VXNaQ21xM1BIYndhdys5UTdocHhHa1hKTlNkLzg1dFZCWTA2UXJQM1B0bThB?=
- =?utf-8?B?TkQ4QkZFeGRKSG9qNXNqWXdOK3pjTkIwdWdjSStva0g4Y2hYVmZHb1J3V1dv?=
- =?utf-8?B?QUprejdtTGdzbnE4d1kwTlk4aFY5Yk55akNvZ0xaQ2lYb0xwdFR5V3hpUTV3?=
- =?utf-8?B?dTZoR2IzbnBYVVM5Q1hKYVFDcFBCKzc5eWhJRXJqaHQwVG9EQnAvakNVTzFJ?=
- =?utf-8?B?Y3lqZE9KY2FSbXhBNTdtVTZYT1BrZWhFMlRJeTd4K1BBenJhMGVRWnFHbTJ6?=
- =?utf-8?B?aUNXU2U0YmI0b2JTaW9uY3RZemVOZUFaR3dtc0JnODVkS2lVSndWUHRiUUpU?=
- =?utf-8?Q?6IAsqsy6bhLzPouHPCXFq2fn8Hxq5w4/zqCx7RrB+ymX/?=
-X-MS-Exchange-AntiSpam-MessageData-1: X8z8hAmLykgaO7VzW+Zh8Fjcm3TT0GJoHrI=
-X-Exchange-RoutingPolicyChecked:
-	YXOxm45a3Pl363pXM2ly/7lFjp/bVcuNsEBiiT/Fb7pxaH8o9VQbksqd0vM8Jd/Ji1CeP5PE6u/ebOfNaE7cTaw3R8AfiwvtBURtzvzdbAKb76Fby5w5Oo5AnJ2uUO85LtZ7DXwfdSh/tGXEU/o1bF9ZeToTL44q9jgiDMd5w2L5OdVPdUi50oke1auoaGEJyTECqxpvieeCNAWFh2mmq3aZhB2LuMAKJD4vG38B743N7YcqoSK6NhGDUkghUfpBbgKzudMYctf1TEGOTfJs2+aGY/faFyNyAMjMmRYLulb6WF82oZSdKyzxaeHerNuscC2f3nVlo7dyYxB/o8k+pQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	4tGgMo0D9EH4sCwYXnlGYy7nqtmiiQCV75xOby2RgQUhUOKhU733fkkHPDvatEX7Sq1ilQ7OcOqkXHT4qy2Oac/xyUDN9SUzQV2kb/p/2wuT1mHWcciRbWaU7tDb71nDDtVwaY51cPrVYWykhmx7RrsTHifWR1zzw1+1Lu1Q51Inrigzp6IHJR08k8AmpbwZ10NgSJUpzwvqQ+OWRW23w353EdPAQEoDdwnLkeuOJGqTKVly3/3SANtmaCe70rMATbn4dP8A0505MFEs7X+OMVuoUk6rpb3ELPpqD8FOVUW9u949taN7sF97hIQVhVeyC3Ax3yJhPcemLp4nJF2p//eP9Z4nNRM5P8hvXEwTRLIoVOCGoE7cP3kKoqCSPH8V7vbDwHwEr+eXNGt4k7jXvHqpcE+eJ+Ssf+T33qQ3eXA5E4Kv2cF9leN3p1XNX2NlvD8NDMKHnPbD3t9CevjO3eAIVR5iQlxiXQ9e6JbyMHIGyX95CM+U8lwjZ4/FNXzPkNCZ+bGmXlVKjja/Of3ImjMTNw2RHhlSt0u9ADLLcT2V9JkAnU+D9MHeZ0gW20iLUl6/wwRc3uUxQS12IiyU/KcjuX2RkMu71FcSSHla04JrU1fItHUvmzrxHye2cM/W
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 4cabcc72-fa1a-4b23-8b6a-08df2904e67d
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Oct 2026 08:35:13.5928
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: I++9Lo131eeoq5vLjWbF8UQvKLik+PPjURuytHaI/ownKKlMtIjnrsnqsWDAngzfB18roBUy/Pn45ZtWg6fcBzRx2G6AJZmK2x9k/S7qYlQ=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA3PR04MB8978
+References: <eb63c9f9-a158-4a70-b3ed-30046b15de11@wdc.com> <20261007160349.22411-1-adarshdas950@gmail.com>
+In-Reply-To: <20261007160349.22411-1-adarshdas950@gmail.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Tue, 13 Oct 2026 13:13:06 +0200
+X-Gm-Features: AclHuK8-yEscoTG0Qgn4MHnDQBj5lanM9_dYA2t6goTepP0TOEot4V9lOrBTODE
+Message-ID: <CAPjX3Fd-MEY5mMk9eu_3ukhZ7yixhWSqECEALCAVFHA0P6HYDg@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: unwind device add when sysfs registration fails
+To: Adarsh Das <adarshdas950@gmail.com>
+Cc: johannes.thumshirn@wdc.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, mason@kernel.org, 
+	syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
+Content-Type: text/plain; charset="UTF-8"
 
-Looks good,
+On Wed, 7 Oct 2026 at 18:04, Adarsh Das <adarshdas950@gmail.com> wrote:
+> btrfs_init_new_device() ignored the return value of
+> btrfs_sysfs_add_device(). When sysfs link creation failed (e.g. -EEXIST),
+> the add path continued, aborted the transaction with the same errno, and
+> tripped WARN_ON(btrfs_abort_should_print_stack()) while leaving the device
+> half-registered in memory.
+>
+> Check the return value and unwind when registration fails, without
+> aborting the filesystem for errnos like -EEXIST. If add failed before
+> anything was published in sysfs, tear down the in-memory device state only
+> and do not call btrfs_sysfs_remove_device(). When the block-device link
+> was created but devid kobject registration fails, drop the link inside
+> btrfs_sysfs_add_device() before returning the error.
+>
+> Reported-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
+> Link: https://lore.kernel.org/all/6a791c94.01d0871a.3a0d52.0099.GAE@google.com
+> Tested-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
+> Assisted-by: LLM
+> Signed-off-by: Adarsh Das <adarshdas950@gmail.com>
+> ---
+> v2:
+>  - Unwind without sysfs remove when add failed (review on v1)
+>  - Roll back block-device link if devid kobject add fails
+> v1: https://lore.kernel.org/all/20261003111951.24527-1-adarshdas950@gmail.com/
+> ---
+>  fs/btrfs/sysfs.c   | 3 +++
+>  fs/btrfs/volumes.c | 7 ++++++-
+>  2 files changed, 9 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+> index 39cb01ee441a..2f034689e71b 100644
+> --- a/fs/btrfs/sysfs.c
+> +++ b/fs/btrfs/sysfs.c
+> @@ -2165,6 +2165,9 @@ int btrfs_sysfs_add_device(struct btrfs_device *device)
+>         ret = kobject_init_and_add(&device->devid_kobj, &devid_ktype,
+>                                    devinfo_kobj, "%llu", device->devid);
+>         if (ret) {
+> +               if (device->bdev)
+> +                       sysfs_remove_link(devices_kobj,
+> +                                         bdev_kobj(device->bdev)->name);
+>                 kobject_put(&device->devid_kobj);
+>                 btrfs_warn(device->fs_info,
+>                            "devinfo init for devid %llu failed: %d",
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 85ea9c5d4536..56b38f012093 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3066,7 +3066,11 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>         mutex_unlock(&fs_info->chunk_mutex);
+>
+>         /* Add sysfs device entry */
+> -       btrfs_sysfs_add_device(device);
+> +       ret = btrfs_sysfs_add_device(device);
+> +       if (ret) {
+> +               mutex_unlock(&fs_devices->device_list_mutex);
+> +               goto error_unwind_device;
+> +       }
+>
+>         mutex_unlock(&fs_devices->device_list_mutex);
+>
+> @@ -3147,6 +3151,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+>
+>  error_sysfs:
+>         btrfs_sysfs_remove_device(device);
+> +error_unwind_device:
+>         mutex_lock(&fs_info->fs_devices->device_list_mutex);
+>         if (seeding_dev)
+>                 btrfs_assign_next_active_device(device, seed_devices->latest_dev);
 
-Reviewed-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+I'm wondering why not this?:
 
+@@ -3066,7 +3066,9 @@ int btrfs_init_new_device(struct btrfs_fs_info
+*fs_info, const char *device_path
+        mutex_unlock(&fs_info->chunk_mutex);
+
+        /* Add sysfs device entry */
+-       btrfs_sysfs_add_device(device);
++       ret = btrfs_sysfs_add_device(device);
++       if (ret)
++               goto error_device;
+
+        mutex_unlock(&fs_devices->device_list_mutex);
+
+@@ -3148,6 +3150,7 @@ int btrfs_init_new_device(struct btrfs_fs_info
+*fs_info, const char *device_path
+ error_sysfs:
+        btrfs_sysfs_remove_device(device);
+        mutex_lock(&fs_info->fs_devices->device_list_mutex);
++error_device:
+        mutex_lock(&fs_info->chunk_mutex);
+        list_del_rcu(&device->dev_list);
+        list_del(&device->dev_alloc_list);
+
+--nX

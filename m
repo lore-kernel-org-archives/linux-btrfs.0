@@ -1,258 +1,199 @@
-Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6F1AA4E325C;
-	Tue, 13 Oct 2026 11:23:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.144
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791890589; cv=fail; b=PPBk4mAkaof7dU84tLbSt2RkQwNSKDzmdsqQU/Up2pwMM185u1l5qP3NUoiMwx6splv0hxcWVNvQWll9w6q0B47CepxDmEGvPHu0V/OYwQjDapvaAtPUyHdjsjTPg3e/WSbZJqKzksLWakt9PURwHgZn/TM6Z+o7mhhB0PY8ZZo=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791890589; c=relaxed/simple;
-	bh=VVAYlUitkDDigUtrJZjqHpg24JFeHZpCvcqQiYTV/F4=;
-	h=Message-ID:Date:Subject:To:Cc:References:From:In-Reply-To:
-	 Content-Type:MIME-Version; b=d1J3wBtjL6yqWCCSTAIo9lKbFO+rXAZBQdlSzAQtQB+adn8dDtUYhTn0CsOPIm7nugvBAkuj0bXgdlZ8OYUGvfyGBfQsF1Ky6RAqWb/WHfp6UFXc9Mz+/NeGM7cz6yFPR/C+hYJlwnfWlUGWiLcsyDyitM4GOQDdofChOHxK7P8=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=qAFQUal8; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=QRHaB8Gp; arc=fail smtp.client-ip=216.71.153.144
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B4594EBAD7;
+	Tue, 13 Oct 2026 12:22:18 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791894140; cv=none; b=eJJaI+zCtzV6qVyKTMdSb1pWu+CMtnJIhqqRuGuoMV9uV7793jE0omAcoBZ2xFfRQ8/4gvKtJVtv1VXw2l+nsngijwnmpzH5uuOmuO55EJ8bsIYfRWG3DAsQPkrlFxcXziAP93wUcrLH6o5udroBrHQX516OsuboTVgXvbLWDSw=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791894140; c=relaxed/simple;
+	bh=ywiK+gX4Ip4X5HnD6TkPjtQdir8vLr/kQpjH/ztlvWU=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=kGfRzYF+GvDqwTpfD6zQUil2yJpzidheqdstV7zftG1sGRxzqnBZzZZjmo8BJqoWLBzpWUPMrhMDOfXtqaixgxdsbwE82U62IDOpe+COe1SWiIajngV+Okra9TIwPSpTogF1HBOdES1Tv1h5+YPWtKADmjCz66xZ2x0zP3KSPvY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=smWi1ihr; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=R/MV1V77; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=TsWWu4sq; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HUwylZ2E; arc=none smtp.client-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="qAFQUal8";
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="QRHaB8Gp"
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1791890587; x=1823426587;
-  h=message-id:date:subject:to:cc:references:from:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=VVAYlUitkDDigUtrJZjqHpg24JFeHZpCvcqQiYTV/F4=;
-  b=qAFQUal8NQm3MPTuXdAfKFesq66fX+7IHofFnuFPF1gh3RHi4Jr/ROr2
-   Rl3pi7V4+WkpU6yQtklMlD34p2RsZw7B1jqP3rtGJRd0ErjG4QoVPwS4f
-   TMxbrSb6zqfKmExLI/OuK8jE5I0MayxtzzULiYwtfaltrkTTrsC6udAUa
-   mZ1Y3K0b8iX9zF5L47PQ9z7huwX6qejAeVTVUbzktBWcojqK3Rb8x3SnV
-   ajmg5ivJzQJgeNsSdhTczcH8qqOX4oVqsKdX8i8ooHQcXj9IiEXfzYofq
-   Al0zxrB44heezmzUK0QHl5cA892Q3XviedSDRu16JzrmhUm10Xmz/DRe4
-   Q==;
-X-CSE-ConnectionGUID: sJPaUvhnRpy0iyh83+1GLw==
-X-CSE-MsgGUID: 5JjF26U8RayyO8vsX6MjZg==
-X-IronPort-AV: E=Sophos;i="6.27,155,1786982400"; 
-   d="scan'208";a="157020572"
-Received: from mail-westus2azon11010039.outbound.protection.outlook.com (HELO CO1PR03CU002.outbound.protection.outlook.com) ([52.101.46.39])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 Oct 2026 19:23:00 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=NtTNRu/VKUUJURn15P0cUG8r6OzZ0+0DAeicnheH3sIPumg6rngQoy8C5eHN9w79+hsHQcwxNdzFLukZZTk55dAgtul25y5BIJBfhvZW1XF8xcNhAnL2VgG9SQomuSFypeqFSX6lxsQcDpy1rpaGl6GY+b8GDkjBqK0p6bI+4Gk3GmsaoUX1nhR0va+eqU/S8xnv31qPYACyzgHesOeJTmUa9JLun2QLRCnGU2l3rXCjJRirgz2FdknbSQQEmLfLfpYhERrdf5nKZ8tsllAzzf87H8ZNjbeE5aGdvb9NEaBvdqf+cWtnB9jhCzdcSADyJWKwjSHHuVjlXK38oS1wHw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=n0waonraQXI2fPFIJ11QCQsEcOfTR3WxuvcdJDM8S6A=;
- b=K0m31Pfv9iZDVxam4Y2z5Dr/WyfN9EK6SE4tdlNHTFlkLLNdQOdte10pqYxkdMXmv31fcscpKUdWxieXwSl16rjQfaze1sz9BwyJvo90MriKqR0JpAHG6ZmHnkiYTu6FBRZIvr5ENQEgsq8Z3taiE6PmeAQZeCeHFX4pCvrj5GHCPIlg6CjXXXtVAeJzDphpkueoB8t//P0KyE1SKQPNU0bj0cdD0EARXQPslsGW6HKTa2HsV+MXtGJj3gcDW6goTgF6FF+iQWB5cxqQlid3za+DOSxUvsTr+B0AjH/0IRihqxsdU9LNJpYP5kWKqbD+vpZ/VDcUa5kwCoekugJrwA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=n0waonraQXI2fPFIJ11QCQsEcOfTR3WxuvcdJDM8S6A=;
- b=QRHaB8Gp/7c5AMQoVaGRWlSS1a97c5RbFpBrC6Dh6owvtM4nUuJT2g5ZJ18/AZ9v+xAiTpQFow3NeBqAKHI6QLu23IsgteTsBILDvTjRRmjQ6XZAwrTnuG5aEVWKPwJXh+zahyqbJVxIjSC+kHSpsasuCLkZnWFWsOjBogy2OdY=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by DM6PR04MB6527.namprd04.prod.outlook.com (2603:10b6:5:20e::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.522.12; Tue, 13 Oct
- 2026 11:22:56 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0496.021; Tue, 13 Oct 2026
- 11:22:56 +0000
-Message-ID: <ffd0d208-d6e3-41b7-81c1-914fd1e48de4@wdc.com>
-Date: Tue, 13 Oct 2026 13:22:49 +0200
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: unwind device add when sysfs registration fails
-To: Daniel Vacek <neelx@suse.com>, Adarsh Das <adarshdas950@gmail.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, mason@kernel.org,
- syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
-References: <eb63c9f9-a158-4a70-b3ed-30046b15de11@wdc.com>
- <20261007160349.22411-1-adarshdas950@gmail.com>
- <CAPjX3Fd-MEY5mMk9eu_3ukhZ7yixhWSqECEALCAVFHA0P6HYDg@mail.gmail.com>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <CAPjX3Fd-MEY5mMk9eu_3ukhZ7yixhWSqECEALCAVFHA0P6HYDg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR0P281CA0246.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:af::11) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="smWi1ihr";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="R/MV1V77";
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="TsWWu4sq";
+	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HUwylZ2E"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id DF94A21C31;
+	Tue, 13 Oct 2026 12:22:15 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791894137;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
+	b=smWi1ihr3Wn5DwWOO1A/HEA/fFdDBhYQ8U3qst/njHUlnlS3rQv8Jmz4GDmlZO0g3VJ+k3
+	Em2irRAKZ5wmB6c7evXyBjjDrPzf/M04+o1Ik7arUJvliSD04Yyl7IjMf2mTJ69l1o1CnA
+	B+NOGSQAgn1pjoP8n1TytiWdtQipDV8=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791894137;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
+	b=R/MV1V77GKww1wb/2MUCXM0RDXLxGlch2S45diOH/tVTZ+lRAx+cO8zAZx/5xnc6PzqnUx
+	DzqBCrjRN3kS6jBg==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1791894135;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
+	b=TsWWu4sqKithahyKDI8QBWU6SbzOuIxn4ELfReGkSZt9uUppY8QcXfT8wJWn37AnbFWOrV
+	NClVXwSfVJ1alPC60sBz4xuUm+AZ63G4XpKy2J6dMJpodW2I6iM23o4/wBjfwrBS4gpa7c
+	wBs4MgKvvt1EtLkUgMog1GXayXiFr1U=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1791894135;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
+	b=HUwylZ2EsPrgfhRXxbs/QdO2kmR8gscRbK4mmKCI5rYyID6UcLG085iYssqJXOlLY1b4F1
+	78dMxoklf3sSSECg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A533213341;
+	Tue, 13 Oct 2026 12:22:15 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 8ln0H3cizmovKQAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 13 Oct 2026 12:22:15 +0000
+Date: Tue, 13 Oct 2026 14:22:14 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tal Zussman <tz2294@columbia.edu>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v4 00/18] btrfs: remove the v1 space cache
+Message-ID: <20261013122214.GA1310987@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DM6PR04MB6527:EE_
-X-MS-Office365-Filtering-Correlation-Id: 99b44a5c-3451-4b7d-2b48-08df291c546c
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|376014|23010399003|10070799003|19092799006|366016|1800799024|56012099006|11063799006|4143699003|261009223027099003|10067099003|22082099003|18002099003;
-X-Microsoft-Antispam-Message-Info:
-	lZNxpKknLFqI3d4bW9bdaqJ1OxtypLdAvc8V3XOHq9ekhMIg12v+KKzoBg0Uf0N6BNiqA2Qd/UrEvG2BmIGe/FJhCJuo/Gpyzk+B0BwMNz/ZoymRPXDhsNCgBAP3MmjWXH+Mx9u+74LkiESEzIXHPSYaOfR5KMAlicLilW4aWqLdgQ57ir6SttU+Pp8nAKF4MO4lxW2EHFYdZX0cRdf7QdA1jteNIA+Jf4+j7qS3bNJTKA1k5OqvHp7GaLvawRhmp/JBvD+cRHV2LjH4HZBcZ1JH3o9hB2IkBuJh0/uIu2gmazrdutH8gaF8DnG2Is8jVckUKGv+XMESXa28DqFel7Z8g8lFVwFpZkwLqexpORb6kx6+NGLzA7C3gw0tUI5J1YugLYqdTdyso42MojLRHGvWg+B9VZGP4qXFLcMSqc9xP0OcqVMOBhbjYLiqIvaF4f1Aj8pT6S1It0o8GBzynh5fZj8QhVlvpt80UtTATBfXYUspgE5lhsgubzf8I4byM1Ur34+2SniI4isMRg6hYIZGVg//bjI8ZFwcPT5bmoA+D49eGdN+sajBf/j4j1OsqwCmGuDTUaF40r67TBpFcitfC7tNoFrCpZ+QT0PoNARdHRIvhBWoQypIeA94yikd
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(23010399003)(10070799003)(19092799006)(366016)(1800799024)(56012099006)(11063799006)(4143699003)(261009223027099003)(10067099003)(22082099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?VWkvUnpSY3JYSkVoNDJGMkkxTkMzczNIejdyUStqdDMwMGwrMHpGMlZ2Q3lz?=
- =?utf-8?B?cldzTXh2ZFNKM2p6cVNSNkVhYVJkZ2IraGRRN3Nzck9JKzFGdS9kME9OK1NH?=
- =?utf-8?B?cVpFTWJpbkU3bXVTcVNaczZsNERjazRlYTJVN1dwdHZzblE3bk1JTFhUSlFi?=
- =?utf-8?B?WXVRUWhXYjVDcXRLb1J3RG5tRFQrUXh2eGR3T29TUU0vV1FQY3FMbDNRSTla?=
- =?utf-8?B?cVRMaDhKbEtBdzhKQXNBQXR1b0hoaGFOaWh6Yno4SERmU0EvUDZxSWFtbU9I?=
- =?utf-8?B?b04vVUhkZ05WcEpOTnUzelJqTHo2NjAzd1VoUnVSaUM2RlZDaXg1UVF4MThX?=
- =?utf-8?B?M0ZOU0w3SDI0aE5OUll5NmgxM0VQSmdoRnVIbEh2dHlyZkJzRjVwd0l2L05F?=
- =?utf-8?B?aVdobU5aK285Z2hncHhkVWRId1htemVPY1dXVXluSitGYXFSOGVGK3BEWndv?=
- =?utf-8?B?SExRdTcraHcrVUlyUE5JRFFnb0dQSElIZ2NCZzg1MVlOSUxGYTlVTkFTSWVl?=
- =?utf-8?B?MUpaOVZOZDU4bTNMS3ZXK2Q3NUVxZCtodGhGdTk0b2I1ZmV2UlpteG1VZHRM?=
- =?utf-8?B?U1VaSitkd2swQk1UbkJhaFZZZWtjVk4rRW9id1N0bUEzVEpxMW9yK3g2VmdO?=
- =?utf-8?B?L2lxY0U4M3M0d0tYK3oxcmx4bzMyMDJ0UCs0WGorWlNRT3hDL29TakxnL3RE?=
- =?utf-8?B?a3FwZ0F5OVB4YU9nSCthT3ZRUGxkekJjd0NFZzZrbXQ5ZEFIMGhVZTB6cmwv?=
- =?utf-8?B?dGNRaG11RnEzd1p0dmYzMHdseXZqYklEY2dwdW9hZG5BNEhtcTY5WGtMUW1o?=
- =?utf-8?B?TmdGQ1QrUkdiU1lNeWs1NURrRGRjc1QxUnBaUGdFMGJVMlIvLzRJRkYwSjJN?=
- =?utf-8?B?ZmgzL1BZMzRMdkVWa2VFd0s5NDVjdGUzSXB5QmhYRjUxN3l6c1p5Z3ljY0Rj?=
- =?utf-8?B?QnZHMFRLcXF6RlRxdWxRYTM0elBmazBBVnFyRURsT00xWGJaQVM0SlAvbFVS?=
- =?utf-8?B?ZDIxOXhFTVlnQmVKVE1zemZwZkJraWd6UGhQRVhtNDV0WTFISDdaaUdKWUFp?=
- =?utf-8?B?VFpRT2JoVnpjM2I1ZVBvaGNveEtjcGhLb1J6Q1RuVGhaNXllUG83TjhBM2pS?=
- =?utf-8?B?MCtEcDFzZFdBTUpJMGpGYVdnR21OT05GYndOSzIxdHNLR1Z1eUV5VFh0ZWdw?=
- =?utf-8?B?OFBpSjk2NTRjNDBKRkpzc0xvUENXRHJWall4WUFraVdRNzhQZHpQQmRZbTBO?=
- =?utf-8?B?YXN5L0lqSHNGdE9HemNQRzJPYlhXcTZoaVo0QmtWbkNsdStZTC9VUlBBR3ln?=
- =?utf-8?B?cDczbDgzQ3lKME8zdjZGK05zRnlVeUlPdzdObjhQdEpYQndjRlc3djlGbVBr?=
- =?utf-8?B?dTJ5SmUvN2JvaW1yUG1tdUJ5TG56d1JDbTB1WUNwR1czU3JzNFJQdGpsZFFr?=
- =?utf-8?B?cjc0Ti83cmRMdm9pbENQMXl3aEM3dzlIYTNoT25jdnVZWVpSZFkrTVA2WjNa?=
- =?utf-8?B?a1NWR2lZR1YrN1phcnV5b3BpQWVYSUg0SlQyR01leDl3UEh1bVRaem4wZkk2?=
- =?utf-8?B?M3lheGYyL2p5UEhCRHJxYkJudXJpNnA1Tm1PMG8zQnFsdFYvZ3NMdGN1bEFl?=
- =?utf-8?B?RkhZaTcxZjY1cDFyekRkaFpmdk9UaGY5NTlLeXVnRldFU0t3Tk1sZlJ1dGFY?=
- =?utf-8?B?aUs1Z0dyYW9GeDRQZGIzajZBMWlTa1VrM1g5Um1EZUFnL0ZHb09FZVY0L3Fa?=
- =?utf-8?B?WUFjeERNMXVlTHNYOTdVK1F4STZYemltV2cxUmU5aW1ZeC92NTY2dVh5cnRX?=
- =?utf-8?B?MHZUeW5FOHpZK0d4YjJmSnk0Tno1TDY2dDlRenpnVGdxUnBuU0p0OG5vRGpa?=
- =?utf-8?B?dGQzYXJLYjVSa01BOGFicHhVRFg2UHptd0FCVG1mUVg2ZXI0YTVLVDRoeGRi?=
- =?utf-8?B?MjJHRGRXVmxXQnVhMHlSTzlvY3JrTk1jLys0ZnFXdndkWWJRZ0hjbURXa0Nj?=
- =?utf-8?B?WUY4L244ckkvVFFSUFBUeVpnTzA3Ynp5bEtwdFlJb3FXYlB6Y0JnbHczRmNW?=
- =?utf-8?B?YTQ1Y1ZCaXY2NDRnNG5YR2RjL3llelpjdHJHYXFmQnMyYmxNc2pnT0xMVkpK?=
- =?utf-8?B?TWJweTd2MWw0RmpkamZvWFNHS3dkWS82eXY0NS9ORFlabjJoSWV0UVFCSDdL?=
- =?utf-8?B?ZUJQWDJOU1FxYThHbUd0NGdJdzNnNjRBN0owV0VjME8rdjhaYVo5TXhBbXkw?=
- =?utf-8?B?QkZ6bjN4bXZmUDlIaHM4cit4WHZTdmlud2kzdEM5MFBCRUt2NUovVHh3TGhv?=
- =?utf-8?B?ZSttYkRPTDhQVlFWbGZBK3FySEh2bENkWkE3SXVaQTB2T1VXanF1S3AvbndW?=
- =?utf-8?Q?K5vnz/o2lxnA2uHv2ltKH4c52obcQ87o6msLL5b4U1YNw?=
-X-MS-Exchange-AntiSpam-MessageData-1: WDWvnwG9bf2o2Gv+frWWbb+//fwuzIh6RDE=
-X-Exchange-RoutingPolicyChecked:
-	nsEn7jDnYTEy23FOwz2kwENxdfdYNugVeEpdBeyMmQ8NQ409eP12djrzlY7BcMNVvtUyly9eXHWhJphsu2DAAa/h3U9s57I1s4P2wMSGf6RTpM5IKL6bQ8iWA6fn8G+WzsOCB8u3YLk9ulXUqSBn7WdRT8euFGq+qLwf8L5Qh8KWH6jYqMMvYr+SmrjXaLdqqBJzu/58AnHSyNuNiGwaroC/6386/3XSXlI8T4IfQLZ8kMBVKJiGKVTA4m1G9j1O7poGEs3x9C0kirHqzBEPYYCFy2Kk6hlYCaO1ZUT4MaMHli1aglxS4DykO00E0wvfHaocgPgyOuFGSBc56QHspQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	JjccZCBHuGVNrs6ZY2Xk+J7sPY5FaWtk/Q2yaTPkjlZ5Eiuhs2ZbrsTL7pmHTpML/jWWF9wRqaI049fNFHfRppdmhbyz8ux451TSuX/QyiyDGDwfu7OIid4RDCrB7mxNv7Q7Qwrql4SKiwQH5Oc6cg7nA+auGXp6jo+lbfq7PZt7t8l/LvBqM3FhTBjJNcptiKqCCyjuhf9m7RQhPVgA5v5NTQAn4Hbao+/Kjk0qvgoE9IIX22ooZOjI2fG6yenscwi0+jIh5duM6MBXJ0sj6DnjMszTFgZucZ7xVLaeQHIXDD+eWI2rQOXvv75elpWpC9KYJty21ZvlgRXWDK7PKVc6wdGuLBbyfS1SRcyxXehGUyU6HdTnFSOSgVDiLrfcZFY6iVMFXvV/P9glFUcu2reBiMMaWTlu101MQIuoW1CqlIZE/PYjEk1dOvBy4Pd3L7l7p6ggsHnFk3Q6OpfEwaRcOn58VUzRc0y8GD9IFmFOGLuFYTuWvY7CqbPtjw2DA2k4m7/K2RsmqCPa9woJ5ztWyGLORL4VYj4CI4IWz4oIizVleqoWD0ZzAsXEHXPkCO598ekTGMWIr7TFNLoX+Fno+s74kQ0J4PdakvFZYSYUR1fZGnWO19cWuQUD0ald
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 99b44a5c-3451-4b7d-2b48-08df291c546c
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Oct 2026 11:22:56.3958
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 4iXwoll4LTwbtfKx9GIc+zC+s/AlN96m6f0QKP+VXtzOp0RDxT/CKe5TAkvwHlzGJXDalgD/quuRqvgHUVC2qLKML+BHZl8kEPC1eIQTydo=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM6PR04MB6527
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spam-Score: -4.00
+X-Spam-Level: 
+X-Spamd-Result: default: False [-4.00 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[msgid.link:url,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
+	MID_RHS_MATCH_FROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	RCPT_COUNT_FIVE(0.00)[6]
 
-On 10/13/26 1:13 PM, Daniel Vacek wrote:
-> On Wed, 7 Oct 2026 at 18:04, Adarsh Das <adarshdas950@gmail.com> wrote:
->> btrfs_init_new_device() ignored the return value of
->> btrfs_sysfs_add_device(). When sysfs link creation failed (e.g. -EEXIST),
->> the add path continued, aborted the transaction with the same errno, and
->> tripped WARN_ON(btrfs_abort_should_print_stack()) while leaving the device
->> half-registered in memory.
->>
->> Check the return value and unwind when registration fails, without
->> aborting the filesystem for errnos like -EEXIST. If add failed before
->> anything was published in sysfs, tear down the in-memory device state only
->> and do not call btrfs_sysfs_remove_device(). When the block-device link
->> was created but devid kobject registration fails, drop the link inside
->> btrfs_sysfs_add_device() before returning the error.
->>
->> Reported-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
->> Link: https://lore.kernel.org/all/6a791c94.01d0871a.3a0d52.0099.GAE@google.com
->> Tested-by: syzbot+3bf3e110b2d406b8166c@syzkaller.appspotmail.com
->> Assisted-by: LLM
->> Signed-off-by: Adarsh Das <adarshdas950@gmail.com>
->> ---
->> v2:
->>   - Unwind without sysfs remove when add failed (review on v1)
->>   - Roll back block-device link if devid kobject add fails
->> v1: https://lore.kernel.org/all/20261003111951.24527-1-adarshdas950@gmail.com/
->> ---
->>   fs/btrfs/sysfs.c   | 3 +++
->>   fs/btrfs/volumes.c | 7 ++++++-
->>   2 files changed, 9 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
->> index 39cb01ee441a..2f034689e71b 100644
->> --- a/fs/btrfs/sysfs.c
->> +++ b/fs/btrfs/sysfs.c
->> @@ -2165,6 +2165,9 @@ int btrfs_sysfs_add_device(struct btrfs_device *device)
->>          ret = kobject_init_and_add(&device->devid_kobj, &devid_ktype,
->>                                     devinfo_kobj, "%llu", device->devid);
->>          if (ret) {
->> +               if (device->bdev)
->> +                       sysfs_remove_link(devices_kobj,
->> +                                         bdev_kobj(device->bdev)->name);
->>                  kobject_put(&device->devid_kobj);
->>                  btrfs_warn(device->fs_info,
->>                             "devinfo init for devid %llu failed: %d",
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 85ea9c5d4536..56b38f012093 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -3066,7 +3066,11 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->>          mutex_unlock(&fs_info->chunk_mutex);
->>
->>          /* Add sysfs device entry */
->> -       btrfs_sysfs_add_device(device);
->> +       ret = btrfs_sysfs_add_device(device);
->> +       if (ret) {
->> +               mutex_unlock(&fs_devices->device_list_mutex);
->> +               goto error_unwind_device;
->> +       }
->>
->>          mutex_unlock(&fs_devices->device_list_mutex);
->>
->> @@ -3147,6 +3151,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->>
->>   error_sysfs:
->>          btrfs_sysfs_remove_device(device);
->> +error_unwind_device:
->>          mutex_lock(&fs_info->fs_devices->device_list_mutex);
->>          if (seeding_dev)
->>                  btrfs_assign_next_active_device(device, seed_devices->latest_dev);
-> I'm wondering why not this?:
->
-> @@ -3066,7 +3066,9 @@ int btrfs_init_new_device(struct btrfs_fs_info
-> *fs_info, const char *device_path
->          mutex_unlock(&fs_info->chunk_mutex);
->
->          /* Add sysfs device entry */
-> -       btrfs_sysfs_add_device(device);
-> +       ret = btrfs_sysfs_add_device(device);
-> +       if (ret)
-> +               goto error_device;
->
->          mutex_unlock(&fs_devices->device_list_mutex);
->
-> @@ -3148,6 +3150,7 @@ int btrfs_init_new_device(struct btrfs_fs_info
-> *fs_info, const char *device_path
->   error_sysfs:
->          btrfs_sysfs_remove_device(device);
->          mutex_lock(&fs_info->fs_devices->device_list_mutex);
-> +error_device:
->          mutex_lock(&fs_info->chunk_mutex);
->          list_del_rcu(&device->dev_list);
->          list_del(&device->dev_alloc_list);
->
-> --nX
+On Mon, Oct 12, 2026 at 12:28:12PM -0400, Tal Zussman wrote:
+> Since commit 545e560a5b0f ("btrfs: disable v1 space cache") the mount
+> options can't select the v1 space cache anymore, but the code is all
+> still there, and a filesystem with an old cache and no free space tree
+> still enabled it from the superblock. Qu suggested removing it rather
+> than converting its page handling to folios [1].
+> 
+> Patch 1 fixes a pre-existing leak in the cleanup path, where a crash
+> before the delayed iput evicts a cache inode left it unreachable with
+> its link count still set.
+> 
+> Patch 2 stops enabling the cache from the on-disk state, so an existing
+> cache is cleaned up on the next read-write mount, as -o nospace_cache
+> already did. This is the one user-visible change: the cleanup is now
+> unconditional, and a read-write mount fails if it fails. There are two
+> ways to fix this failure:
+> 
+> 1. Convert to the free space tree during mount (the recommended
+>    conversion), but this could fail for the same reason.
+> 
+> 2. Run 'btrfs rescue clear-space-cache v1' on an unmounted filesystem.
+> 
+> Patches 3-7 remove the write path, 8 and 9 the load path and
+> disk_cache_state, and 10 and 11 the SPACE_CACHE flag and the unused
+> half of the cleanup helper. Patches 12-17 remove the trimming ranges
+> and the free space inode special cases in the write path, which only
+> the v1 writer used. Patch 18 removes TRANS_JOIN_NOLOCK, which the space
+> cache was the only user of.
+> 
+> What's left is what's needed to find and delete the cache inodes of an
+> existing filesystem:
+> 
+> 1. lookup_free_space_inode(), btrfs_remove_free_space_inode(), and
+>    btrfs_cleanup_free_space_cache_v1(), which runs on the first
+>    read-write mount and zeroes cache_generation in the super block.
+> 
+> 2. btrfs_truncate_free_space_cache() and delete_v1_space_cache(), which
+>    relocation uses to get a cache inode's extents out of a block group.
+> 
+> 3. btrfs_is_free_space_inode(), for the evict and inode update paths.
+> 
+> 4. The on-disk definitions: cache_generation in the super block,
+>    BTRFS_FREE_SPACE_OBJECTID, and the free space header and entry
+>    items.
+> 
+> space_cache and space_cache=v1 still fall back to nospace_cache with a
+> warning.
+> 
+> This also removes the page-based I/O in the free space code.
+> btrfs_io_ctl used a struct page array and was one of the last users
+> of clear_page_dirty_for_io().
+> 
+> Tested with fstests (btrfs and generic quick groups), with and without
+> the free space tree, with no regressions against the base kernel.
+> Upgrading from a filesystem with an existing v1 cache written by a 6.8
+> kernel was also tested. The cache is removed on the first read-write
+> mount and on remount from read-only, and the resulting filesystem is
+> clean under btrfs check and still mountable by the old kernel.
+> 
+> Based on the misc-next commit in btrfs for-next (a5c77fde6730).
+> 
+> [1] https://lore.kernel.org/linux-btrfs/e1dd5a75-9a67-4bc6-b8d8-bfff79b5b907@suse.com/
+> 
+> ---
+> Changes in v4:
+> - Patch 1 (new): Write the zero link count when removing a free space
+>   inode, so an interrupted cleanup can't leak it.
+> - Patch 2: Clear FREE_SPACE_TREE in btrfs_reconfigure() whenever the
+>   free space tree is not on disk, so a remount that only warns about
+>   the free space tree no longer leaves the option set, per Sashiko.
+> - Patch 2: Dropped review tag.
+> - Patch 16: Also drop the tree root check from the delalloc metadata
+>   release.
+> - Patch 18: Redo against the TRANS_* flag cleanups in for-next.
+> - Link to v3: https://patch.msgid.link/20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu
 
-This would remove the need for the lock of the device_list_mutex indeed.
-
+Thanks, unfortunatelly this did not make it into the 7.4 pull as the
+freeze was yesterday and I was not able to process the v3 last week.
+The v4 still has some issues reported by sashiko. It could be still
+possible to send that separately as 2nd pull to 7.4 because the code has
+been in linux-next, small fixups would be possible, and it's code
+removal.

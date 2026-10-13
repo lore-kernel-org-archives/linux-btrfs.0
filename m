@@ -1,199 +1,128 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-qt1-f171.google.com (mail-qt1-f171.google.com [209.85.160.171])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0B4594EBAD7;
-	Tue, 13 Oct 2026 12:22:18 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791894140; cv=none; b=eJJaI+zCtzV6qVyKTMdSb1pWu+CMtnJIhqqRuGuoMV9uV7793jE0omAcoBZ2xFfRQ8/4gvKtJVtv1VXw2l+nsngijwnmpzH5uuOmuO55EJ8bsIYfRWG3DAsQPkrlFxcXziAP93wUcrLH6o5udroBrHQX516OsuboTVgXvbLWDSw=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791894140; c=relaxed/simple;
-	bh=ywiK+gX4Ip4X5HnD6TkPjtQdir8vLr/kQpjH/ztlvWU=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=kGfRzYF+GvDqwTpfD6zQUil2yJpzidheqdstV7zftG1sGRxzqnBZzZZjmo8BJqoWLBzpWUPMrhMDOfXtqaixgxdsbwE82U62IDOpe+COe1SWiIajngV+Okra9TIwPSpTogF1HBOdES1Tv1h5+YPWtKADmjCz66xZ2x0zP3KSPvY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=smWi1ihr; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=R/MV1V77; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=TsWWu4sq; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=HUwylZ2E; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56E1D3B6356
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2026 13:47:08 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.160.171
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791899229; cv=pass; b=lTLs4T8UU++lUjhWPYgEti5bhBKPeGF4tCyXUFBkztORboh2cfg/XEXN/cixiK8M4OwD9MstQNzzveuRQBpQvRy3xfDmMKlrPOUYuHxed99u1te4Egv0oOL+IJwqA2kDkw7dWe7GNCqjHVKDStYcWDiXWbbcAj6eKBCjH6SGafE=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791899229; c=relaxed/simple;
+	bh=APuJkesL0c2KPJY7WEkO91tcKEnAiIJQWba3MFWx4wU=;
+	h=MIME-Version:From:Date:Message-ID:Subject:To:Content-Type; b=q1jdt9udpcJJP/hhN6kTFh95AUamnwmeLeuPKAA/GvK6AKajErQGSr5/xI7H6fibGKGaC1ZIUcjQs+pgFN2ZoaIzslIrSmt7Qo/uzPd8lfaFtxCCC0XxT0VT/T58ocioUI+B8MzCNmiN6qvY8zf87trLDLacXT7+VG+farJHVAU=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=studiomoob.com; spf=pass smtp.mailfrom=studiomoob.com; dkim=pass (2048-bit key) header.d=studiomoob-com.20251104.gappssmtp.com header.i=@studiomoob-com.20251104.gappssmtp.com header.b=MM7nqVmG; arc=pass smtp.client-ip=209.85.160.171
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=studiomoob.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=studiomoob.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="smWi1ihr";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="R/MV1V77";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="TsWWu4sq";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="HUwylZ2E"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id DF94A21C31;
-	Tue, 13 Oct 2026 12:22:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791894137;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
-	b=smWi1ihr3Wn5DwWOO1A/HEA/fFdDBhYQ8U3qst/njHUlnlS3rQv8Jmz4GDmlZO0g3VJ+k3
-	Em2irRAKZ5wmB6c7evXyBjjDrPzf/M04+o1Ik7arUJvliSD04Yyl7IjMf2mTJ69l1o1CnA
-	B+NOGSQAgn1pjoP8n1TytiWdtQipDV8=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791894137;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
-	b=R/MV1V77GKww1wb/2MUCXM0RDXLxGlch2S45diOH/tVTZ+lRAx+cO8zAZx/5xnc6PzqnUx
-	DzqBCrjRN3kS6jBg==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791894135;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
-	b=TsWWu4sqKithahyKDI8QBWU6SbzOuIxn4ELfReGkSZt9uUppY8QcXfT8wJWn37AnbFWOrV
-	NClVXwSfVJ1alPC60sBz4xuUm+AZ63G4XpKy2J6dMJpodW2I6iM23o4/wBjfwrBS4gpa7c
-	wBs4MgKvvt1EtLkUgMog1GXayXiFr1U=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791894135;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=IGCmAGsfmmXxLdQJhGZGWtXqoVqw59mTSVOU4W5s73c=;
-	b=HUwylZ2EsPrgfhRXxbs/QdO2kmR8gscRbK4mmKCI5rYyID6UcLG085iYssqJXOlLY1b4F1
-	78dMxoklf3sSSECg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A533213341;
-	Tue, 13 Oct 2026 12:22:15 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 8ln0H3cizmovKQAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 13 Oct 2026 12:22:15 +0000
-Date: Tue, 13 Oct 2026 14:22:14 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Tal Zussman <tz2294@columbia.edu>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
-	Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v4 00/18] btrfs: remove the v1 space cache
-Message-ID: <20261013122214.GA1310987@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
+	dkim=pass (2048-bit key) header.d=studiomoob-com.20251104.gappssmtp.com header.i=@studiomoob-com.20251104.gappssmtp.com header.b="MM7nqVmG"
+Received: by mail-qt1-f171.google.com with SMTP id d75a77b69052e-53394bffe0fso91192021cf.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2026 06:47:08 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1791899227; cv=none;
+        d=google.com; s=arc-20260327;
+        b=FjWM70uUCtWB90UK4r7szeZcaFch898VIIijzE8j3ntGWeUTKisdBOH7VTnball8rO
+         91EfhVrol9eFO+vWDgEr/ooTzGK7leERBZ/ZCLqUHCDQyiEEWBoLKoIwEOUow11hug/G
+         W9JxV0oOyfxdnbkUElief3mkvaNqRtZSGSlwrZqOooE5fHO3XlkOi4Gz84lIoFbzHoro
+         ECPBKly4GuXDtp+9biD1dnkZ9QyDFtn7Mm+Jssdkt7hQCorkGzl2cNRpyF6oY9RCH1JC
+         KMmWhKw/SnkudBaw03bK3oXuEB0xNePBfu67RaKYweFfW0gNMd7Nz29cSg+s0/KLD1rD
+         fcPw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=0T4crrIjXSV74WufWbz2qcUJD8sL1xgSzqevBKsDTZk=;
+        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
+        b=QIq4CU+ET9r63aI/0h3q7IAQ7qAuZk5heqgDivuT8dvyMR6iBV+ty4GhU6rBl0BYQd
+         VbGY4/CYhyVZmLndYJKBqxnL3FGxgGijSak8cIR/m/Jm2lkuuJG/J6fRJscRDRrZ9uRD
+         mahTfb0qws9cjvEOjAVwqHMqWigFKIkmqwNdSd/lfwLkn8gI5uufvIw6dWGZ0jLNgJ1m
+         mbkmrwINH68y8wk0JI7GU35ym4ljob09xTamnkFAKAR6Ud+QGQc3iJp+pCEcj/TK46IE
+         qFBZmQuS7uK2JiOJrCSIre6MA+patWqbK9BkDUx1naMad2a/F5RPrEqLoPrwbQt6Tb30
+         4fDA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=studiomoob-com.20251104.gappssmtp.com; s=20251104; t=1791899227; x=1792504027; darn=vger.kernel.org;
+        h=content-type:to:subject:message-id:date:from:mime-version:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=0T4crrIjXSV74WufWbz2qcUJD8sL1xgSzqevBKsDTZk=;
+        b=MM7nqVmGCglElEBG2nmgFX441/AgqnJMWpsJ4aDOoJ3pjHaN7zVYaUpR6r2YssUl0S
+         IChEobEfL9awiZrPMpFjLbifAobYtCT3BEkaWUEdhTf4NFHJPv9zp8YPIyguNcu6EG8F
+         mupYnnoYXHsNayYub9QZylqcxR1ITOpg5cGTq3ZbeSp0oEVSKM+Sde1xrOQ3MYX35lUw
+         wAKuA9Smpgct52ozIQsCXce0xEhTGQKsFqxTh7uqHgHbfh+i7tapw0I8R9Ha5Cp2QnhN
+         Fw6gSqgGesAoqNFp14DUm8EvtzrJgPcMM6B+PxkFG+2K7fBYP9nyAyiwdGAfXY6pxsnf
+         tgaw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791899227; x=1792504027;
+        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=0T4crrIjXSV74WufWbz2qcUJD8sL1xgSzqevBKsDTZk=;
+        b=lZ8D6CykVos+/KMj6kiHpXw1RMVzWxeB2bmBVkd41ESThduulTObh2YT6MdbFcvqPk
+         r1fU8ppiNcXtaspf+8Ggms8wxS5DubER8WbST4qpJacvvlUHvYU9bwLGMbmEak+dw6sB
+         K0bOFq7gQngmOtgzOfI3NPzfHVfypu8Mw2OQzQS0sGBO4r7FyEjtEDynJQJlqRYbQtYA
+         MyVyP4cG1drXfHQY2tROLUC0hOGnbILyMzRjXMDy06bYoqvAaB1r0+CtTs3AmdyQTlcN
+         MRnqhlV5nJrBibkfEORphP//qflenpqQEZa7eEEiVH1q3+vAKLl8Ko09EUAgA+jZfTC2
+         /4HQ==
+X-Gm-Message-State: AFq9FYKP98KkKBguWOcZ1DimFNibRz7LfRtlYmS9BGihqpg7OHSpomH5
+	aqPDSxlw3Jtk8ACXCnNGiYN53hHpFj5h7LcKAVOPvAr5nxrR/fCagHjSKHa+qtuH2IIWDYs9A4k
+	dkMe8XGCbpc5s6EnO7zFjakITwF4PwxGhh0YydcwTRP8aadAFnIoUh0s=
+X-Gm-Gg: AYBFou3a6txUdLs/BTnMWO1msze/qpAJzOtDrm6Oxq91TazPUfStyu060M0uTEcY3Fm
+	dYfp5maCBQPt4NdPM8QSNWL30ptwz5JrBxO0WSVDVqtbH0FOdj2j03cHWkkmh3waMYuGbnToFLy
+	f/LRLXSSbqdoa4n0iy/cmsLNxk+wgXTHsVXYJoLhNejmKcpGgTHYQD6PivnTT4shFpopcH8CnEY
+	7np2aAY/Wd0rmsgP6oDT7SOIHNo/p+RW5bACITBRNmIg3uzOD+uBE4xRWZqFD04lLr7KJGmtTCC
+	zRXj2FMZMNuVZY0RyzbztNSxHk9u3BpnFIOtpIYnKl45YIs1v9UgY/oC2LIHqe8GDbCzb4Uvpae
+	J+/TWv25cq5Mf
+X-Received: by 2002:a05:622a:1a92:b0:535:16c4:7304 with SMTP id
+ d75a77b69052e-535a60e70a4mr153017351cf.12.1791899226988; Tue, 13 Oct 2026
+ 06:47:06 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
-	MIME_GOOD(-0.10)[text/plain];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	TO_DN_SOME(0.00)[];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[msgid.link:url,imap1.dmz-prg2.suse.org:helo,suse.cz:replyto];
-	MID_RHS_MATCH_FROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	RCPT_COUNT_FIVE(0.00)[6]
+From: =?UTF-8?Q?Cl=C3=A1udio_Fernando_Pinto?= <claudio@studiomoob.com>
+Date: Tue, 13 Oct 2026 10:46:54 -0300
+X-Gm-Features: AclHuK-CTqspSUwLCq1Rj_1--XW0aW8Y5uN3Md4wwpRF-k9Xez_cQHSo0Hu_G6g
+Message-ID: <CACU5Mh9KdABHuGXFTY3=s1DiPSPUSLabhWZnQRrYjnjK5PGPSg@mail.gmail.com>
+Subject: [RFC] Stacked fs keyed by lower i_ino: detecting a nested subvolume root
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Mon, Oct 12, 2026 at 12:28:12PM -0400, Tal Zussman wrote:
-> Since commit 545e560a5b0f ("btrfs: disable v1 space cache") the mount
-> options can't select the v1 space cache anymore, but the code is all
-> still there, and a filesystem with an old cache and no free space tree
-> still enabled it from the superblock. Qu suggested removing it rather
-> than converting its page handling to folios [1].
-> 
-> Patch 1 fixes a pre-existing leak in the cleanup path, where a crash
-> before the delayed iput evicts a cache inode left it unreachable with
-> its link count still set.
-> 
-> Patch 2 stops enabling the cache from the on-disk state, so an existing
-> cache is cleaned up on the next read-write mount, as -o nospace_cache
-> already did. This is the one user-visible change: the cleanup is now
-> unconditional, and a read-write mount fails if it fails. There are two
-> ways to fix this failure:
-> 
-> 1. Convert to the free space tree during mount (the recommended
->    conversion), but this could fail for the same reason.
-> 
-> 2. Run 'btrfs rescue clear-space-cache v1' on an unmounted filesystem.
-> 
-> Patches 3-7 remove the write path, 8 and 9 the load path and
-> disk_cache_state, and 10 and 11 the SPACE_CACHE flag and the unused
-> half of the cleanup helper. Patches 12-17 remove the trimming ranges
-> and the free space inode special cases in the write path, which only
-> the v1 writer used. Patch 18 removes TRANS_JOIN_NOLOCK, which the space
-> cache was the only user of.
-> 
-> What's left is what's needed to find and delete the cache inodes of an
-> existing filesystem:
-> 
-> 1. lookup_free_space_inode(), btrfs_remove_free_space_inode(), and
->    btrfs_cleanup_free_space_cache_v1(), which runs on the first
->    read-write mount and zeroes cache_generation in the super block.
-> 
-> 2. btrfs_truncate_free_space_cache() and delete_v1_space_cache(), which
->    relocation uses to get a cache inode's extents out of a block group.
-> 
-> 3. btrfs_is_free_space_inode(), for the evict and inode update paths.
-> 
-> 4. The on-disk definitions: cache_generation in the super block,
->    BTRFS_FREE_SPACE_OBJECTID, and the free space header and entry
->    items.
-> 
-> space_cache and space_cache=v1 still fall back to nospace_cache with a
-> warning.
-> 
-> This also removes the page-based I/O in the free space code.
-> btrfs_io_ctl used a struct page array and was one of the last users
-> of clear_page_dirty_for_io().
-> 
-> Tested with fstests (btrfs and generic quick groups), with and without
-> the free space tree, with no regressions against the base kernel.
-> Upgrading from a filesystem with an existing v1 cache written by a 6.8
-> kernel was also tested. The cache is removed on the first read-write
-> mount and on remount from read-only, and the resulting filesystem is
-> clean under btrfs check and still mountable by the old kernel.
-> 
-> Based on the misc-next commit in btrfs for-next (a5c77fde6730).
-> 
-> [1] https://lore.kernel.org/linux-btrfs/e1dd5a75-9a67-4bc6-b8d8-bfff79b5b907@suse.com/
-> 
-> ---
-> Changes in v4:
-> - Patch 1 (new): Write the zero link count when removing a free space
->   inode, so an interrupted cleanup can't leak it.
-> - Patch 2: Clear FREE_SPACE_TREE in btrfs_reconfigure() whenever the
->   free space tree is not on disk, so a remount that only warns about
->   the free space tree no longer leaves the option set, per Sashiko.
-> - Patch 2: Dropped review tag.
-> - Patch 16: Also drop the tree root check from the delalloc metadata
->   release.
-> - Patch 18: Redo against the TRANS_* flag cleanups in for-next.
-> - Link to v3: https://patch.msgid.link/20260916-btrfs-remove-v1-space-cache-v3-0-10ebde03b96f@columbia.edu
+Hello,
 
-Thanks, unfortunatelly this did not make it into the 7.4 pull as the
-freeze was yesterday and I was not able to process the v3 last week.
-The v4 still has some issues reported by sashiko. It could be still
-possible to send that separately as 2nd pull to 7.4 because the code has
-been in linux-next, small fixups would be possible, and it's code
-removal.
+I maintain MoobFS, an out-of-tree, experimental GPL-2.0 stacked
+filesystem for 6.12. It is not proposed for merging and this is not a
+patch. It was developed with AI coding assistants; I review and test
+the result, and it has had no outside review.
+
+The layer keeps an in-memory index of extended attributes, keyed by
+the lower inode number. Over btrfs that broke as soon as the lower
+tree contained a subvolume: a file inside it and a file outside it can
+have the same i_ino on the same superblock, and the two shared one
+index record.
+
+For now the layer refuses to enter a nested subvolume. Lookup returns
+EXDEV when the lower dentry is
+
+    a directory, on a superblock with BTRFS_SUPER_MAGIC,
+    with i_ino == BTRFS_FIRST_FREE_OBJECTID (256)
+
+and the mount-time scan skips it. The lower root itself may be such a
+directory; it is never looked up.
+
+Two questions:
+
+1. Is that test right and complete for "this dentry is the root of
+   another subvolume or snapshot", as seen from another kernel module?
+   Is there a case it misses, or a directory with inode 256 that is
+   not a subvolume root?
+
+2. Is there a better signal a stacked filesystem should use, short of
+   calling getattr on every lookup to compare st_dev?
+
+The check is moobl_nested_subvolume() in layer/moobl.h, and the test
+that creates a subvolume under the layer is in vm/suite.sh:
+https://github.com/studiomoob/llmoobfs
+
+A pointer to code or to an earlier thread is as useful as an answer.
+
+Thank you,
+Claudio

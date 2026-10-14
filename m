@@ -1,81 +1,81 @@
-Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB4F3545DB8
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:23:20 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.53
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5D2C5476EA
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:33:25 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.45
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791987802; cv=pass; b=SrAm2ZfK+mRFjM9HL9XigP1nS8ShGyUx+z1gDIuA8GUAuNauzRi8hn979tn66oepzpyXqXco/fj6IZcSSCBj0I2oPSPmCAJG45pkORS/fmOUkiLgxY5Unf2xEUSMr9wrhird0TZwck5RSA+tZY0EO4nQT4fGyaoN3m3FheBdmhk=
+	t=1791988407; cv=pass; b=eq74CN085zCrTHUlkQvci/i+ANB8eOl6RaHZ65cPOL9y7jnrGVCb8L0wfBcI4SJo0+4kkIFfMCBxFInpvhBbB5hdwRTFweB9aVN8GOtC9/HtvmpIek7zSrMSFUqoaF5NTddvaTPoeleFyB3NtY4KYZw75r3fyA53pLaNT8xl+Hw=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791987802; c=relaxed/simple;
-	bh=NiwtywVpF1DyUrG3a4dzxvtWIjOFJFwcSiHnDjklwSU=;
+	s=arc-20240116; t=1791988407; c=relaxed/simple;
+	bh=K+JgZANM79BMzvdQQbgZKcxf6FA9Q4RzNg49G9leob8=;
 	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=W+uhkhXT9tIIBlwUq//phl0SF++dKzAltVHapVyHz1w5crOgHrhM0be4/k24RKwTKINfnIAZJfbvl5aHLeah1ufoMQhlw1vW8zAkptUyjfZYXWJjVBbkmiA0clYIlzJwhpRoTfVL9aYfVEZngXegpbsHftePaDpt1aDs6eb8PYA=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HN4eZ5zL; arc=pass smtp.client-ip=209.85.221.53
+	 To:Cc:Content-Type; b=JcFvgyoqPZzfiXFZOewEUJro2+mTJikrlG0OoqxzF5yeBS52VP0mP46Gz1NhCCTlYyqqRkH/EWsiT9IKmHxXg7KW30tX4KEVIkj7j/8ZjiFt5TU+MSO1bEWMieRhlYXvCUwgWpAqMw/Lfy5h8t4XRhBoRax+TWLlHp7+X2WSi/A=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=a+C0p2Mu; arc=pass smtp.client-ip=209.85.128.45
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HN4eZ5zL"
-Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-48b02b1b4cfso3952195f8f.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 07:23:20 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791987799; cv=none;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="a+C0p2Mu"
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4a1b07c3c5fso9699715e9.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 07:33:25 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1791988404; cv=none;
         d=google.com; s=arc-20260327;
-        b=d7u9GFRAt7UNp7unZoQmw3/7b/uoCYM02dH0eAQXy/ueyKBcbqbBSQIKwKwr+/Ywnw
-         /12iVHZAbSE8iiAvHBkYfCY8OnDJSsclqT24I4yOO1auKZDwnLZRGc3C+bHpQqg1vUdL
-         A8o1XXcQAmpx8LzHhyhEray44Z97qleo9Y+ErFnotuC8iOF3h3x71DNdvdZ+pebACZQG
-         BGySpvDQSuB+vnPWsFOtwsP2WaXVFbsPI5BlLyDMi3yjsVrOiF/YzST7roUdrdmh2htD
-         T/e0F93Nbr4sdYDWYfzpH+g8snITE7Us1/kyMWsWx2aXTOUzft3bZnyAeQmCRAX7Q8z/
-         7omQ==
+        b=Ybkykjrmh8A0SvH8DJ1nHNb9RxgiFPEfcxRKpxScQZcoqcaaW82e4fq7kEhypGyiOi
+         Wdtjab0ax0SX5wyppWrKJeXNgv09ibOPj/JDuTxuWzGUOcVLNZy2OH+nrgUJw3rASU42
+         YtLdUXqRpXhfcKFRTz+vv3UgeSAR0O3iWBhTw/liDGWR72r7CU7WqeWTHDq/WnYycydn
+         I+GB2iNYgtL99opsrn9ffczqweJlSL3bBPDAC+IBXxNCXbIlOh5hjoa40XrnNkhvLCD6
+         gD4J6wuN4a7Gs4g58fUrknuy9q3QwNKiETHsOrKSpGw71r+iRC0p3KOnotuu1Q7BJFn6
+         PPWg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
+        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
         fh=qqah261fotVJXqUgpbbGDF4UfQY7n3t1nQC2IWl0fpg=;
-        b=hQiP3MFBWaqm8tFUos0yPYcBBiv+RCn2nkEb+10Ty1EY8XKwoKy42814fd82psCDRE
-         g4Tq9/nDrtVG74rsIq52MQzIyunxKXGCQNOWGy9e/sb2IG0s/nc7Tco14crLeSENJv0G
-         x61RwBOrj6cnVUcB8amZzvC2BUvWGuM8uj+QiJodECI8Ap57EIwAb5tnMVloszzBBG5/
-         U5tY45lUJIWt5FKSAMGduMsou0detb21grfYDxNY1J7fARUX+radxt0KMx+culO+hr3E
-         xS8qKT7qF//E+2SO1rihVIm6WWURUwxU+O1s8FW8/7rJvRXdeHNAIzTaGxfg2kXcPLBy
-         UXnA==;
+        b=JD1aP1hwa0fVZLzVjXC8Sm5YflTMGK6GHYyA3cnop+4Zm4B0O7cwowM4VKI3yEbYpI
+         MExgSmJcZJ/KrD/fiWNDpiZ73LHP5ecj6ytpqQBYFycl2ip6cQjch/pxeecIKM8ZkbYu
+         srtKYNjgbKStkD4OnG36YLdZUMkt0AKinsGqswqOMQgs1FjoK4m2/a/5OaDjK/ME0uMZ
+         MxwJj0VGA7kPiqz5Iq8fImyqaLFS6HdLTyYGNDCG8vZkj6vei0QgooWJc8vbCm2GUjGI
+         JlvHO6mUwFCX0xlnwiwha/8VQADGdv3VdgB4iackFkc2ZX1xb5NENHy5B0e0EzY+69Z/
+         iKtA==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791987799; x=1792592599; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1791988404; x=1792593204; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
-        b=HN4eZ5zLve+K51fdY4QkPrIKPjmd++6ivFI9S+ONmZro5b79zesw3KcM4MAQAC6nYv
-         Xwd3vnqorR7xsMz3lJFVHmLTZOmeTB9woLJLZnBHsmWXtAtKCPfdHFZbeGWNIZ01jmKN
-         6/HhXBENsQLXU6qz2FfINmb0j6Pz2mqYshFZTA9A1YumpH4VW6h7O9CYPJpvLssrEGzA
-         fNntRnYgi8TuwUvpkL4FsEguXybhiRsVHbCjR0hk0TFg6QfVdgSxiT9xz+kqHirRGl5V
-         qvWTRihhV5v6W1lNYUJmYFx1xWuIk4cFSDbv+rIjN8YFRhfPg19E1chBICnU4Ry7cSpM
-         6vHg==
+        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
+        b=a+C0p2MuoVzY0B+645+oOhNVuiNxhUr9HymYllEcu6hXUEmIEQP059CIUDcf3XHLci
+         QKXt0W40srn57AU+FgZWBh+ZgPBzDMLp9ba78az8BJQujvSEENxgR9A1sWGGU9ZcuTS9
+         pa93GmOQoAGDA5XaJDEch/QvI0zZisYYqPv4W9mnundXjActe9pO4bOPyfEqJUWvr6rv
+         oHxfyNTpkAHzBdVO6Q0Jkg/YPCejiRgdXSRvUGG6LZfnKw3lRmuWzMKjp+bRaBpYxk8g
+         d32F8h2A6OurooENXlUhI8k0Kf7GiJ5ON/dvWzgNgBOFB1zAobuqZL1JQaEq5IB/9ThC
+         o3rw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791987799; x=1792592599;
+        d=1e100.net; s=20260707; t=1791988404; x=1792593204;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
-        b=MzjbAJbMuwLfu7dqurB5eopqsqnaaQQv0AHse7KIr1vvU7RkM93La9rPDAK29EcOhF
-         9e6UTXmtjOgCISikTWHudLa6xZ30J13ABoNbdNByKGKngvKnLUBqw5RX/pnzJVL0VCgK
-         qItUV5qESQddbLhqqDpfermxsIMxYcaDL51101N4ELu+PJ9/q1JiiEO3i4qnfTT80AgQ
-         Vw8KIsXs8F/NMzzvznSdXKhZKkMVD6VSDNY7Yq24CJAFdJVtZFPJj5yX5Jh5B1owRHHu
-         /GJtrUCjf+Le/ULpBihFvYR0u2loKHJi9npQscJLrRc5LHsELEAIStPIwEPZoqpdUdW2
-         jkSg==
-X-Gm-Message-State: AFq9FYJy2kGO6A6tvLC3SNptJofMj5Iq7FEVTHZNCOeRDRutkztRX9Nc
-	4YHmZVtGY1Z+CyiiMs+TAgdZpwDrWEgbsa+JoDEWQpQOHRfPvSZVC7690MXD/f8CphDtUiyNEQD
-	2hpuYPhUOPRMq+ijX9MMCQmXyBoPZG9LXwua68JVZRWrd9oMdtIP9Ias=
-X-Gm-Gg: AYBFou3KjUGwo9SDbKZblPmQusmHpEAX6inb27LUtGhRfIdjDfK5n4n0kWl0Uhqnq4Q
-	NfbKp/dJVuRlYvwlkKOqxmb9EAFyZYtt5/IBcJxBDnknFpAC08vl8Ord53o7aEH/MFjx/U/SP1R
-	ZaBVIM4spm5DgsF7EYD0JWeqUDwjnxBf8Yn/ArJ3+sSEvNolXSAv9Hb+Fx+RIGjIE7vUgxQjbCa
-	FQEbOGR3Lx9CaOWgZW5cTSw34bojsbWsApVP3AUtivtW65743OZO/swNCwfsg7Eg53n2RHfZSim
-	qJXML6S8msphYEY2ksDmgkEtlq40eHkueE/qiyEi7C3vgUPSKl98WQbrEaiXn62C/y8Ipka+o5y
-	/FuBd4zscGzSG2SV8EcSh1JL14oCGxPvV9k5jfXKbRSBGJ9W3AaoNVVroJ6bmYjC7
-X-Received: by 2002:adf:e983:0:b0:48c:7f94:8755 with SMTP id
- ffacd0b85a97d-48dbaced42bmr26835564f8f.20.1791987798854; Wed, 14 Oct 2026
- 07:23:18 -0700 (PDT)
+        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
+        b=CiOhC9n/mjXTPQL5SXyKmhORSFP2sowgJML4v7kEboWIBU7G0TsILnKiehMJdqRPpL
+         qaGoDJSY48iw6/E7wx2Gykxyq5NZjC6UqLF64tNy46+zxPFsVcN0F8mMzjFt0hfRCr8E
+         HXycb+cvtPzgX+R17ctJ4H0qI8wJJD2S2gsWTOw0sGWxpSZLucX7DnPrQUIVUUMRfZxa
+         IxhfFZVf/ri5GpDd0D6gm0yjmS1RfqvGkwJrkHQszsFFYNJyvjYTITP/AdKJL8IxNIcp
+         VwwLAKuQoL5KKcMWsEq6Mid+6/2oGOV0QFu87UsxJyaIH29QllSXjHI7YtwsnkHXZy2T
+         zfIQ==
+X-Gm-Message-State: AFq9FYJ2qW95h3y5lAz+Tx+8Oii24CcyXjROnrj+WXdPzG976lzSjYKV
+	yFWcRiq+Jy26RZqJksEbIqII3h8x/2qXwrulPldRbLdJ9MEpXQym5GJLoGZmOS1mIa6eKA52Pig
+	XnFlCBAs8VHdQXSEbEu3P3/b+UPDoBCNLGhuuZAvgaw==
+X-Gm-Gg: AYBFou0tenc4kPZ2Mcza3EECJ9f2K7bx8DoMU76BcdkyCXOl1R52jd0G4RHz8mxZw4V
+	K1TGwaxcAVIMqOEnlZRj6aiRY68wPypp/3JTmN3nDHu7YRA+GUtCFbb7TffZ50nOC9c0uxjckDS
+	lGHO62UciX49UM0mxqnHmzUexDhOYxIfIyOk/fW0WqQiA3oqbkcI5fDDwa9dVIvJAPtqOBvEJYd
+	fiYZ5lcOu2mHV82RiX0h/Xoe6ySuHw+OozO7wAuUKe6eM6rHpR3YGU2kJ7zomJCKNJA+QDfsUB9
+	CxCs+uOnb9cTTTXb3Nl0eL8GeLj/jb8+rqRMO55v3k9BLXvyK1Eb5qtBsMwczCFe3xynx54FzyX
+	bxwR89Vy0mc57xkYL5v3g+JzVQQ/4ihMg+tC+3oj4Rhn0/sVsCfrS9A==
+X-Received: by 2002:a05:600c:620b:b0:49c:fc6c:be19 with SMTP id
+ 5b1f17b1804b1-4a18e4d12e7mr294161225e9.31.1791988403765; Wed, 14 Oct 2026
+ 07:33:23 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -87,9 +87,9 @@ References: <PH0PR17MB4277167A37B20340B231443FBB922@PH0PR17MB4277.namprd17.prod.
  <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
 In-Reply-To: <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
 From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 14 Oct 2026 16:23:07 +0200
-X-Gm-Features: AclHuK8a4o_tZUeolpmUt3I9KFtbE6do_KQ4X_Lvvuy1cirVengjJ3I0x4ffgcY
-Message-ID: <CAPjX3FernXMUSLo++4gsEabS4AJKQMfDyF2XB0w9A5-HY3qi+w@mail.gmail.com>
+Date: Wed, 14 Oct 2026 16:33:12 +0200
+X-Gm-Features: AclHuK9ntosaQqea3B0H-ho3RLxvBMrtB2ReBZ3sn1YIETu04qzIUmr69db_Q4E
+Message-ID: <CAPjX3Ff8LVf_ZWmWD=SY1MoX2V-W+_MyrW_ubfaKhsuh8rMyBA@mail.gmail.com>
 Subject: Re: Btrfs PREEMPT_RT transaction-waiter livelock: experimental
  mitigation in kernel 6.6.78
 To: "Naulls, Peter" <PeterNaulls@eaton.com>
@@ -154,8 +154,12 @@ ar with kernel code, and I'm well aware how complex filesystem interactions=
 >   transaction_kthread+0x76
 >     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
 >   kthread
->
->
+
+Neither of these seems to come from an interrupt. By any chance, have
+you seen a "sleeping while atomic" error in dmesg?
+
+--nX
+
 > The processes are then not killable, indicting a kernel thread problem.
 >
 > This was largely found because our userspace code calls sync() excessivel=
@@ -197,21 +201,6 @@ ering.
 > # A multi-hour run did not reproduce the issue, but the lock owner and ro=
 ot cause
 > # remain unknown.
-
-Right, the above does not explain why this only happens on RT.
-
-Though the lock owner can be easily found using crash or drgn. One
-could also expect it's task->sched_info.last_arrival timestamp would
-be about close to those blocked tasks you found.
-
-Would you mind sharing a vmcore (and (a link to) the debug symbols)?
-Or eventualy the root access to the reproducer machine? (in case you
-have an ephemeral VM)
-
-I'll try to review the related code in the meantime.
-
---nX
-
 > diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
 > index e15e1855fa0a..0f05fabe451c 100644
 > --- a/fs/btrfs/transaction.c

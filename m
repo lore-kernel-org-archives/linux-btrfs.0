@@ -1,678 +1,192 @@
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+Received: from esa3.hgst.iphmx.com (esa3.hgst.iphmx.com [216.71.153.141])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3B9A4EB872
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 10:04:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=170.10.129.124
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BAF872D5408
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 12:04:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.client-ip=216.71.153.141
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791972268; cv=pass; b=Mv34MuYLPgJleuGc7npsVWlK5tnA34lRnXRild5O7bEdyVThT6idgxdCmpu+DmSw8ANt/qwSNrzPt5AN4M9aB1r86dU02jDE/glitAfjFTJQldsOM2sf8hgCJfM/symadwKELW9bN6QcZ3KeKARfdL9RRkwlv4z+E2KXSOvkpWg=
+	t=1791979455; cv=fail; b=a5insT12tYNGMqK6xWW7NyTHvV1Yi1sKkNYOyqQTV5EpkhmrDkpy/xmByVJ++S5npEu3NjSHp4ik3a04CC5EzwTctONMN/3TRv2agYvDLSDYSfZEg+MrIJ5TbB6sfUC+RxH2eNCZiuBhL5tLy0TJb5YD5JrPXubuwMlJyhgz5cc=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791972268; c=relaxed/simple;
-	bh=TqmsPJFAydDCQUo6kx8TwRXNfJTbbU9ITh7Lil5oFXM=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=IL0WENJEzg6HGhPxx8oub4w0YgS2Xfn7BK+H8vkWIqWcwY/vxS6rs9AM0dn7V0Laa2W3aOUxcv0d08wUzvnBC5TUs8SbC/pCBrdzAGGqK4gLDYdNXlsOEsqwT2Ad/YtZYvLBwARAZg5xZ1mSZ1YPnpMtNdB2Fw9Q1v4MkNeBVzo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com; spf=pass smtp.mailfrom=redhat.com; dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b=CX2rvFh5; dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b=Gboi1E5l; arc=pass smtp.client-ip=170.10.129.124
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	s=arc-20240116; t=1791979455; c=relaxed/simple;
+	bh=5RwxW3HecmOsmRGyULQY0lNXvxLn6K8EoKQFohZ5A/E=;
+	h=From:To:Cc:Subject:Date:Message-ID:Content-Type:MIME-Version; b=TnHlCeezh+atC1AFLlR1fxlejVvAk3Ksw+ue6w1UuJM+Qtu11rZt0IGxcUWuK858reZwtvwcWP2DBj9wj83IspMWp2Nk4QX1wARkMTeFgdoNsj0FgjteGgc7jiee/TLQnx+iIZh3McQBOF9mzQOMNVWPyRXiAUokJ8ijVheiLhc=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com; spf=pass smtp.mailfrom=wdc.com; dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b=UoH9Fepg; dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b=N0tYKBu8; arc=fail smtp.client-ip=216.71.153.141
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=redhat.com header.i=@redhat.com header.b="CX2rvFh5";
-	dkim=pass (2048-bit key) header.d=redhat.com header.i=@redhat.com header.b="Gboi1E5l"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1791972265;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=Yy8vwH/RoXpMxh37HhgJFxTFAdxrYLgTIo9J4fiSIS4=;
-	b=CX2rvFh5gPabvkTmQglOHVOjxkmT879FURhRPANtyeyiO7YZ/V5Caqxg3z9KKbYodENVRk
-	P4iWM5sZ9C9IJRkWYUy+ma1/9ZqAt02RxzwPmSNvCrsMzeBqqLjp4MjnN7n3UfOtDhj/SM
-	SdIPVyZfrFuKtLEImJf7lKoYz2Gkfic=
-Received: from mail-pl1-f197.google.com (mail-pl1-f197.google.com
- [209.85.214.197]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-387-m6sN-MjDP4OvtkxnTHJMZw-1; Wed, 14 Oct 2026 10:04:22 +0000
-X-MC-Unique: m6sN-MjDP4OvtkxnTHJMZw-1
-X-Mimecast-MFC-AGG-ID: m6sN-MjDP4OvtkxnTHJMZw_1791972262
-Received: by mail-pl1-f197.google.com with SMTP id d9443c01a7336-2e869e00005so10623565ad.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 03:04:22 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791972262; cv=none;
-        d=google.com; s=arc-20260327;
-        b=psWKRiPat2D51W9j+r6P5JdEz7LYcnQOPegFRI2PSXhpR9fIkqCJ1IdKQnWM6rygUd
-         yRXghlrl4AUftgeadp8CsGs8WToIZVAGWgdcH4q9duTgk15+DQJ77eEgsfJdliyjuXXB
-         qMUrH9pvWROFcrNDwV/7NfUd/+XDeQ5pXtk38JBZdZFSDM0MJ3y7X/EfXVngefCJApai
-         La0y0nP27Zxc+nLYkP42M14s62WUA76ZcinTAEhf8DvggSoy18YleVsPykCSFa4JLgWe
-         +oZn0hfjp7Y3uO0Lr6sefuhb0qO0Gl5MdbZnhzgpiTRS++DYoZF8MBWx5YwVfuKDYw7l
-         A0QA==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=Yy8vwH/RoXpMxh37HhgJFxTFAdxrYLgTIo9J4fiSIS4=;
-        fh=UkZG+NfUgFE+pT2DVxp2EkGXbn6S03P7YuJ6b38MAL0=;
-        b=I5weXHOHc1f9W4DldIsJ4YFwN3MJ3Cwx/XC1i2y7i4it1wpmi/0Us8Kvre4siuAyKV
-         cWC3Uu0olq+/IBw5LGTUNKkEmJSJbHqxYQp28FaEPn/br+M96RqE4e7mDx1cbJd0kKwl
-         f4LLve9QHmeEuhQy4wQB++G1+1S6fBImrBSo+KYAGJxYx+cpdrM8eUT9a905MFljcvWV
-         0yUK1Y9gNDbNkI5n8subctnMiulx0jGxKXzoukXBVjdSt4h3v5NX7IuOvXR4kK9bt/GR
-         PdFHN1okwNJ/6GlzehFm8d067HOmPclLgzulgD0D27XPtABC7xDtuI/jJFbV9daRsovF
-         SG7w==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.b="UoH9Fepg";
+	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.b="N0tYKBu8"
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1791979455; x=1823515455;
+  h=from:to:cc:subject:date:message-id:
+   content-transfer-encoding:mime-version;
+  bh=5RwxW3HecmOsmRGyULQY0lNXvxLn6K8EoKQFohZ5A/E=;
+  b=UoH9FepguiIGWb1JJilaaApSvOa277ngbZKidpuUBKnKaOWBOVvX9o6I
+   Z0FV4yiawv4n28HewlJKKLFlx95W9zFD5VNUD+FVDvAu6a7HQNi2sFfXy
+   JbaY5TZgPpqyBmunPnHhhSIbfDJoUWobBqBxbxkIUBjV0ymDr/8wts2lI
+   FY+Qe1aQzkg7jpGTR4e4bF2Q4gL8qJgg/+VQlHcaFgDzkH01/lYi1/aDD
+   o8G7Y7zPwmuSshfXXZmrJxg2dpswJul4a9/JHw+5gGNcrhHWdS2GXpnJd
+   /nqTdEIxjQjgoxg8CkcMCvbaVZlClobgbSBspdm8Fl640P2tJ6Z421KgY
+   Q==;
+X-CSE-ConnectionGUID: wg2qAf+xTH2DD0jTar4Gkw==
+X-CSE-MsgGUID: VGnenkXVS/C38rZmNIuObQ==
+X-IronPort-AV: E=Sophos;i="6.27,157,1786982400"; 
+   d="scan'208";a="158077238"
+Received: from mail-northcentralusazon11012065.outbound.protection.outlook.com (HELO CH5PR02CU005.outbound.protection.outlook.com) ([40.107.200.65])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 14 Oct 2026 20:04:14 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=eOZfaS30ArBxIzDiAJ5augxQ2I2A88BBXQ7ZvXpxWyriyBrsyT5kAC72+T89mbhpD3tcBZVj0syKtRPNomxmH6imwkfhLUph4XrBa9IiCrgQUc9J+G6LbQKdNl9f0RQO/D5eY8VpOe/4yI963COq3JVY/o76vvXRN9CbgUhP0BNRrFj+7+u6yWlcGaEs47kd7XwJQU6eVmH+7aQFMSqD0KgEmB/Z6jV/RI9XrjTscuBmmfO4DZ/d8mjug20d3I99OTWTgZsXXjdoBNCbjHIfvq8skR+AiDnSyn3pWSBBsawACNRTsbKhykqueq2G70aqVaB+l+gkjoTt7maqsC5jOQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=GAHeXDR2b2tq7jo2qh7Hcq6OrN7Dcd+g4t3D0pEvKnQ=;
+ b=dBq7CBmNf/wHP+enAA3ZzEqG7J30exZQENVrjovEgjyFtkJxIAEHJyuKk8QCSBoJXhMAE0lNO4vWM5WOhbICLs2x0DxEkNiG8MI53ShLOE1xp192KbqTGgx1aL8gXZhkVcDaJiFcnjpY+ZpvSwFEN+MTHc/QGc92jB619Gj6WUMZxbHs/7AL0kCUfpMSg8ZtHo16MOl66eSn09h3f0Si5+2wp4uqfj/bj6pjkjiggkelUUbKTSR/9E5fxNFf1hQ0nNXKGay1x1atL+HeWgRuZ0ewxqPozDIip9U8f6N8Vndj9rfZDeGB828aCs8m3H23J4Dcdiwb7phaf0Uw3P7RSA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1791972262; x=1792577062; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=Yy8vwH/RoXpMxh37HhgJFxTFAdxrYLgTIo9J4fiSIS4=;
-        b=Gboi1E5lbmoHIvW0kbmLl83fDpKe/irGjRQoMJVdQvIPLfhT+Cgu72CBYsRM4sLNok
-         gIX9aDZlJ4bMoMaaAVCzZ4Hst+MXoYyZoTixrcuH5z4SUHgimorPohXB1qql3nTArlcB
-         ou1E0TPOi73/sEM4GT1kYcoHZb6DJEwG5A8bq0mAtTClhxk7PewLGQSi0fIVxEjKopP9
-         +DLzidVtSeHau+YW+W8S77V/Q8QE4tFrVbYKBySbcob1hee/VGzBYglpNkItH4GHqTLE
-         ULuMDvH3CmZQGomOhnp9bLWev4ogZPBk1HZV7ZTjxtTW7GYUK3QF5teDNwa7Avn0wpmv
-         aw3g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791972262; x=1792577062;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Yy8vwH/RoXpMxh37HhgJFxTFAdxrYLgTIo9J4fiSIS4=;
-        b=xEoKr7NoGsx8UcU+fTNo8F1t1YA8x+yzUEl6mLIbM7aaUF2lDTwvf6x9HPOE0B2OJe
-         mhRSVO6krWHJ+X+DAUtR0GO6nkjIH9HHVmnbHZGe3ZzMvPPZQlrwpsbqoprJa5JuCQ+o
-         aisocEJRXtHoPtUrWP/efI7Ic53U6yKAdovQGAV7ZRdqJT2Tyl3lhftIXXyKBt4cPKY7
-         EY73ke1ufSfK33PfZhsB3VYaJb2XSyiMgBCkhY5DcKHvSCv6uH5F7poSdK2RdkBtFvdl
-         jAT5IyqLxDrxK79GkaikuX6qRvXGAiWCNW17Egd6mvMqMsW2BxBZdb/2f8FiNeZpts1F
-         auZw==
-X-Forwarded-Encrypted: i=1; AKwUvBzhs9MrFUycW+cKQst+IMrC9RZg2tu8v6vdVi/aMTYRmmT/nM0OuzCYC4QlhQ7rEcfC94VjP++aJG95BA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLR4286s8jGJ6+zS7a76y7RadCMPuVOBKvNElhKiDaDjascuFr6
-	mki7bMb+h2mPVl3cC9hHh9DPjyn1k5T1v8M4OITdI5LQMCHGUmZQetWSGy2gm0OGe7tTPX2iUqD
-	7Ehmu4Ir2+fR2pS7PKe5ssaivTfjarYFVaIpydLR008wxjwjy8oO59D4lhUq0YYxcXVWMIvcB/5
-	rhlEaZHUjl+v4OAH5lM0yas6tiJwvZlR4NO++CAkc=
-X-Gm-Gg: AYBFou0l0ZG/BjyAtfrE0/+RIO1gJcIbvXzgdzGB1K/SOy0bHVLJq/PqTgwWC4+xMja
-	ZHxcfJggVnIcs9KD30XnZ3bxwVnuK4DyJZB9Y/s8j+5wDm63PZX+NKOQxqljCzHPDamiDPVtWx4
-	p8RusJ+xeT0ZfvZIBtSfK0/QMFvm2X08dTzaselWMW++kg2NXAUxWN8gkzjPggwVkVzI19k+Ew3
-	jOe61YZuwlvh9DghyOpy8LO8uSJoEWid2QRYb6+b3gchg==
-X-Received: by 2002:a17:902:d4d2:b0:2e5:43d8:a946 with SMTP id d9443c01a7336-2e8427eb54dmr123457215ad.8.1791972261286;
-        Wed, 14 Oct 2026 03:04:21 -0700 (PDT)
-X-Received: by 2002:a17:902:d4d2:b0:2e5:43d8:a946 with SMTP id
- d9443c01a7336-2e8427eb54dmr123456725ad.8.1791972260682; Wed, 14 Oct 2026
- 03:04:20 -0700 (PDT)
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=GAHeXDR2b2tq7jo2qh7Hcq6OrN7Dcd+g4t3D0pEvKnQ=;
+ b=N0tYKBu8IfA6JBDyHZ6xqRy5zTrWaAN7Yb8aNXcWfVq9Mwms/Gv7zkdBb0GcxKEp24LGg3BeZ6eU3JNqfjnDqKQIhFTZmyl9SwLKCm6rTLMgVxX+P+CtL3Q0iOO84TkP7n5rKsdjqxfVJuQJwVZM0V0YaaMUVXQStTGCeDENt4A=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by SA2PR04MB7529.namprd04.prod.outlook.com (2603:10b6:806:145::9) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.496.23; Wed, 14 Oct
+ 2026 12:04:09 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0522.012; Wed, 14 Oct 2026
+ 12:04:09 +0000
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hans Holmberg <Hans.Holmberg@wdc.com>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Christoph Hellwig <hch@lst.de>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH 00/13] btrfs: zoned: rework zoned garbage collection
+Date: Wed, 14 Oct 2026 14:03:39 +0200
+Message-ID: <20261014120353.757931-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.55.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: FRYP281CA0002.DEUP281.PROD.OUTLOOK.COM (2603:10a6:d10::12)
+ To SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
- <my2k7257m265fp5ad77n5hfndl23i56gsog3jwnsyocp3yxbnj@aphfqdiej2hs> <20261013-forsten-ammoniak-geknackt-fefec366cc97@brauner>
-In-Reply-To: <20261013-forsten-ammoniak-geknackt-fefec366cc97@brauner>
-From: Andreas Gruenbacher <agruenba@redhat.com>
-Date: Wed, 14 Oct 2026 12:04:08 +0200
-X-Gm-Features: AclHuK89XwTjkfX9K2SsPZJlWx-F0zVVEO2vE9D2PZHZPLH37H9mpWJhh9L2Jm4
-Message-ID: <CAHc6FU5JuYU8R4=agxgWBoEKrUGyWiitzRn5MwXiV7NZYt=_ag@mail.gmail.com>
-Subject: Re: [PATCH RFC 00/28] fs: don't set SB_RDONLY after filesystem errors
-To: Christian Brauner <brauner@kernel.org>
-Cc: Jan Kara <jack@suse.cz>, Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>, 
-	ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org, 
-	exfat@lists.linux.dev, linux-fsdevel@vger.kernel.org, ntfs@lists.linux.dev, 
-	ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org, 
-	gfs2@lists.linux.dev, linux-efi@vger.kernel.org, 
-	linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org, 
-	stable@vger.kernel.org, Karl Mehltretter <kmehltretter@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|SA2PR04MB7529:EE_
+X-MS-Office365-Filtering-Correlation-Id: a4c5f8cd-09ba-4b80-14d3-08df29eb40d6
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|19092799006|23010399003|10070799003|366016|376014|1800799024|6133799003|18002099003|10067099003|11063799006|261009223027099003|56012099006;
+X-Microsoft-Antispam-Message-Info:
+	uoxjtkRIgTU0ZUj5grfJsfFImI4/pOyILRPK1DW2dTIyAS2/kcioLdcUm53PDSOjIQ2b/M9yZxLvYqpLZAs/Sea2abslCi3+Ei71hoxnUgNnKHoyK+uUNy7cou2OiAHNyhvXz3ycOEC2j5RpB+zLqWkXplB9n5m9Wkh9BBcNq80X1L0BYB5B/GVbJXfdFse8HEF4znaBMJGSpWs6CqgD3ivmu4GFd8h/a3U35kMrhi7GR0hIalEyE7d+m8ZvfFtVB8Yen1N+F3aYjkq56fvt8KEU+4MSzKo6qKfZX2t1heVf/ohPU62nXToAiAvsnQWnD79jw8f9qkWXkBvevaI7O5fNkOcRIobwETZiyjmUBPzZvMp2t3QiBIYxkBL7FVr16JCIqpg12ydPJqsjvuw3kTkUWvOnqBY+paNrkmGOmnhe/qy3Vc5xrTnMMnHvXRaFt1BY4PrCAWFUoZweY4dl6HX5OwO9xFKC9zub5YN5T3FmQJ6bzNcGurCO6eG2xQaUMEu4BtlBfzwWtCwbdo3Snr+9FqbWpO3f5MvqKTn25GOgvQRhUTBCFABs0JOVvj2s/G7Le6qd0ZX0Zr5W0zXO97U98T0PoQ+TvvxllnFUxIbrq+WUHPZ9jCpszfQUEoRZ
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(23010399003)(10070799003)(366016)(376014)(1800799024)(6133799003)(18002099003)(10067099003)(11063799006)(261009223027099003)(56012099006);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?6r1tz2tjbRsRWaAc6QgBI4Vv0+eep77upa1apqZfPnUdQ2Ifl+Q4VsD13omz?=
+ =?us-ascii?Q?6nCRaxLutNC3fcV4iHMPDX0Z6kIkIHvT8QC27SzsNjU1k35d4DqDkVquT2Yd?=
+ =?us-ascii?Q?3YhZCbwODiwJ2oQ6CWZZ2ZkBiC8NjfJoIrCJfJRXhQCpmirDCBX79adggMpN?=
+ =?us-ascii?Q?/lAUymgQpIBRFt+1/d+gweFJlqZYgM67jqY/m2ZuMcpPgsdOzAh7aWZ9TcqP?=
+ =?us-ascii?Q?X2XwBdXAK8kbDRJAtDAXYudk3i01OKn2y3g6fdZcifmrn+Z6cL+2eoKvMKLr?=
+ =?us-ascii?Q?7nJ0Y8v5TTSPQ4OxbjpxNSrmH6H0PngYk1CQCg738qEpuAjFRnzMlkTKkNb0?=
+ =?us-ascii?Q?zFYFh3tWnMzllx5u5uZc5V8tunzg1GYcnToGGUyyd2RETV4YIGL2X5fi73YB?=
+ =?us-ascii?Q?7XsCKc/aHHh1qmsxcsyrNb9/ww+P4WxPsPwWYZIprgdpXJf1+bbl7n5B/CnK?=
+ =?us-ascii?Q?45eJVgBtVw/CPTJdwYu34+Er205yPVJhSFoDhhFd8GvAUvOfkSPHZ77v6meZ?=
+ =?us-ascii?Q?0CSl1F1eHzlp2skDiq89du58n8T9fwb4DXS89sF2aUiMmhkLEAa4sSvgz3iV?=
+ =?us-ascii?Q?Y/7iZnHNpfk1RBz9GsgpFAv1IRbcCIpvQWY5JiPwgJV80GCyg8hlNlOtwBEe?=
+ =?us-ascii?Q?jnVT5mnEoiWoCO+BZbzL+HeeSMqWMoD8z3UMK/BT9DY2FHzN65GToCwS2soS?=
+ =?us-ascii?Q?GAtDIxAlyo7GTNHbmIK4ZFhdvOc2rndbXC9udQhhjRVcWR/DbDSOEkbgLFl8?=
+ =?us-ascii?Q?NbzHrgR88xDMaxA8Ycfhs60cmw/eOs7Bztq9U5yI9XkIpmO0SZq47HCjKkKS?=
+ =?us-ascii?Q?iZ7NFAZTBsRDjbb0pY+D42hcP0O1ZmKaUZZm1gCF738AuWnxe8zjdz/zXTrc?=
+ =?us-ascii?Q?y0tBBwCioi5lkR3pOq7r+5VolKRpRdNharma0TPnBWNKqyvehXDGtKaGEEej?=
+ =?us-ascii?Q?kdBXl6ETLU8Yq0aTd1gq6zNWnkLw0pv3Pf1HVO9ZSjfxSMFo97Fq4LuQkHHl?=
+ =?us-ascii?Q?RQaz32BMl9qaM76J3nnMB3/ffOaWgIReYWDaUq/9iWrbuNieKZGZrRW8oewe?=
+ =?us-ascii?Q?lutdfc5nnUO7AdahBwp2pFpzFgaEMAVrSKfCxIv47Zbmd2cviAqpG1hD07jY?=
+ =?us-ascii?Q?R2hVhzmMHCApmwr+GF+T3RVhuMlc6NbVdJ62WUHUCsHQcLg4PxmyvZRoi2cb?=
+ =?us-ascii?Q?WbZ5yUvM71akyzQsmwNcl1ivYdWFPPUb3EaJ4tWYN0VQ+1zaxtcZt8sBWysY?=
+ =?us-ascii?Q?oSEdWw+dfn29g8GYzfop1VGZ97uLHWJqbnRn0lGZ0Jr8YOCuT+P7t+C9Gpte?=
+ =?us-ascii?Q?Bsz4uTXtQ/3hAsZOJcdlVrtAsJKBDhKVdf7fdPLu1dpLZ2R6lrusWq355mpq?=
+ =?us-ascii?Q?2FuoPYruvd1eqtcVB8gIdMtCLRF/pwAjPVmDtHl9wSNLxEzMjh/mWmAgvslB?=
+ =?us-ascii?Q?2zEuhTq6bOZF/wL3iL9/pZFDYH3R0mk2Uu20br2obPtVtiguP2sdnXPEFyum?=
+ =?us-ascii?Q?kmqEF4pxmend5lXlqgVc0kc/O+z04t1XhFvXfOLRChD1hWdnKwL1rnxKP194?=
+ =?us-ascii?Q?xpdlvGNffxCcW3pURtuNN+7NuO6ICKJxIKAOweMQp87Y7OogZN99+VUtI7WC?=
+ =?us-ascii?Q?e1pC3l2IuOxx1HnJto70o+4rVnwFkpHChZ7VddwxlHFklY0fZNvpgm2ruOx6?=
+ =?us-ascii?Q?ptMGMyYtvIXJ6x+Ef2ICDeRNkzpA/cdGOTerLMKQxxwtGOBqEkWKxtDPSZqF?=
+ =?us-ascii?Q?uVxBtGkNrgnZ/7Fk1X6Tmq8zJCn720O6GgiPcoKbtwqzHW5eUp3BO2pTq5oQ?=
+X-MS-Exchange-AntiSpam-MessageData-1: 7nYSb7AEjRhsh6hVX77QEVnwdpYuSwcUeGI=
+X-Exchange-RoutingPolicyChecked:
+	r64NsyH6kXYK+54HH9n3owY/Fa7KWBpTCCODRyQ/FEUYb874tNRP6DdyZP3Gkzk/XZWA8Fth8p89aaMqq7R0pT+Ed083QcdFNjNyEdKgj+dmXj89LdLvK/pvPb9Sp3VN1XRntTNVtt6jGCEhlPJq15Wd8QwCYusgMCG0Gt4NaPxJG9dmNDMoMZ67nT1ar11kt7VqSYfXvyGjeatCq3oriRm2fwPCRKO5TantmkkPI977P4zfmIucrmw5luNH4oY1dv4lbIEPxo5TVHe/LpTLBRdjCK/aD80HzOOP1uJOkAGT9pywj1RxpX5QW+1qqFOKcMMDhUT477edSZ+BBDzZSA==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	ugXaYWxyOL4wei7NaTO/goByakEUQ0bqW+x+WEQtNV8t2a+62enhBhQwm+COGDx5HbyVOWpe11OpN3EWtGrNV3MvmtE1OTTI8elxdRR4s0kUUqTaxoKc7MdqYpwwqMMtjvFVvNFlHHb6lf2F3ZFmC35KEQFb5/75YICVMApkwDG/V4VX++MGATB9GVEgsTXGc9FEWp+6pS7ibiIRzSQEa7voWATCiUzujYpseSxF6xkzRjiOsAJyeHfWUSxSZ0WITWn9grDTqU3DRHma7VKRbBEpBHtB50uxjsUxQUC5AZNr5zySH07pXDD7j2M3RvkizsqSI+ZMVVOSu0j38j6Gm8Xb1EcCCiAmLZ34RukaphXR/wKmZ7JCMmoD8AV9XmDpuIH9YHuLz42ka1qlECIEPU3tC/izgFqaNkSPeC+TblTliE563CgYG2ELMfmFWDx6yynRvXD/MOLmUkTaulHlN66A19HTMOWACNsxmQpTkDdBGCPCRqcR4WDBiqGbdx6GK9wO1nBGy40m/BlkJb+MnP2FAf4UhGs1vP5WsUykt855iAUukoc8q6zBUy92a7cby2w7w5RYMfWK5+Yd+qiZfQJovVnQ14PRg8MkopYu9+VBkUy50/6sUcrMyvmPEtrQ
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: a4c5f8cd-09ba-4b80-14d3-08df29eb40d6
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 14 Oct 2026 12:04:09.3036
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: GvDdP5NQmWH7YM4xhHs1XtvnRH7FtiaEecQvL5LzK212XTWyuhvB7s27nB7ukUVkKLSlcV6ym2vdeoiQarXgcIfUzxbGf6nFsZLLcmT4ZPI=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA2PR04MB7529
 
-On Wed, Oct 14, 2026 at 12:20=E2=80=AFAM Christian Brauner <brauner@kernel.=
-org> wrote:
-> > I'm in favor of this. Just after checking couple of filesystem changes =
--
-> > won't we be better off by using a generic flag in super_block for this =
-so
-> > that VFS can check for it? Then each filesystem won't have to implement
-> > its own wrapper for simple_fsync(), quota operations, and whatever othe=
-r
-> > generic operations that need to bail on shutdown filesystem...
->
-> Do you mean something like?:
->
-> From 28c97f2142e255eb835d26deb97b00afccfb7c4a Mon Sep 17 00:00:00 2001
-> From: Christian Brauner <brauner@kernel.org>
-> Date: Tue, 13 Oct 2026 21:15:36 +0200
-> Subject: [PATCH] fs: add a generic emergency read-only state
->
-> The filesystems that stopped setting SB_RDONLY after an error refuse
-> modifications themselves now. Each of them grew the same checks in
-> ->open, ->setattr, ->fsync, ->write_inode, the directory operations, the
-> quota operations and ->reconfigure. Jan suggested a generic flag so the
-> VFS can do that once (cf. [1]).
->
-> So add SB_STATE_EMERGENCY_RO in a new sb->s_state word. It is only ever
-> set with set_bit() and never cleared so it can be tested anywhere
-> without any ordering against the setter. A filesystem calls
-> sb_set_emergency_ro() where it used to set SB_RDONLY. SB_RDONLY itself
-> stays untouched so freeze_super() and thaw_super() keep seeing a
-> consistent superblock.
->
-> The VFS then checks it wherever sb_rdonly() gates a write:
->
-> - __mnt_is_readonly() so mnt_want_write(), opening files for writing,
->   access(W_OK), nfsd and overlayfs see a read-only superblock
-> - sb_permission() for vfs_create(), vfs_unlink() and friends
-> - notify_change(), rw_verify_area(), vfs_fallocate(), vfs_fsync_range()
->   and do_page_mkwrite() for files that were opened before the error
-> - reconfigure_super() refuses going read-write
-> - sync_filesystem(), sync(2) and write_inode() don't write anymore
-> - the dquot code doesn't write the quota files anymore and quotactl(2)
->   refuses to change anything
-> - "emergency_ro" is shown in the mount options, /proc/mounts shows the
->   superblock as "ro" and statfs() reports ST_RDONLY like they did when
->   SB_RDONLY was set
->
-> What reaches the filesystem without passing through the VFS it still has
-> to refuse itself. That's its allocators, its journal, its own writeback
-> and the deletion of unlinked inodes.
+Zoned fileystems currently (still) suffer from premature ENOSPC issues.
+One of the sources is accounted for with
+https://lore.kernel.org/linux-btrfs/20261013072941.424029-1-johannes.thumshirn@wdc.com/.
+The second source of problems is wrong accounting and relocation still
+being triggered not timely enough to evacuate the space the user write
+needs.
 
-For shared filesystems like gfs2, the concept of an emergency
-read-only state doesn't make sense because in that state (in gfs2
-terms, a withdrawn filesystem), we cannot do any more cluster-wide
-locking and so we cannot allow any more reads, either. Could we define
-the new flag in a way that would allow filesystems to enforce stronger
-guarantees? This would suggest a flag name other than
-SB_STATE_EMERGENCY_RO, though.
+This series attacks the (hopefully!!) last two remaining issues. It
+passed a 100 times (of 100 runs) of fstests generic/747 which has never
+passed unchanged before on zoned BTRFS in my test setup (256MB zone
+size, 64 zones, 4 conventional zones).
 
-Thanks,
-Andreas
+Johannes Thumshirn (13):
+  btrfs: zoned: wait for a running block group reclaim in RECLAIM_ZONES
+  btrfs: zoned: don't count in-flight data as available in statfs
+  btrfs: zoned: don't recheck the reclaim threshold of zoned
+    block-groups
+  btrfs: zoned: don't account superblock zones as available data space
+  btrfs: zoned: factor out resetting a block group in place
+  btrfs: zoned: prepare reserving the data relocation block group at
+    runtime
+  btrfs: zoned: promote reset data block groups to the relocation target
+  btrfs: zoned: return finished relocation block groups to the data
+    space_info
+  btrfs: zoned: reuse block groups emptied by reclaim as relocation
+    target
+  btrfs: add btrfs_bg_type_to_num_stripes
+  btrfs: zoned: keep a zone free for relocation when allocating data
+    chunks
+  btrfs: zoned: don't count the relocation zone reserve as available in
+    statfs
+  btrfs: zoned: provide zoned specific reclaim sweep
 
-> [1]: https://lore.kernel.org/r/my2k7257m265fp5ad77n5hfndl23i56gsog3jwnsyo=
-cp3yxbnj@aphfqdiej2hs
->
-> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
-> ---
->  Documentation/filesystems/porting.rst | 16 ++++++++++++++++
->  fs/attr.c                             |  4 ++++
->  fs/fs-writeback.c                     |  3 +++
->  fs/namei.c                            |  3 ++-
->  fs/namespace.c                        |  3 ++-
->  fs/open.c                             |  4 ++++
->  fs/proc_namespace.c                   |  4 +++-
->  fs/quota/dquot.c                      | 23 +++++++++++++++++------
->  fs/quota/quota.c                      | 13 +++++++++++++
->  fs/read_write.c                       |  5 +++++
->  fs/statfs.c                           |  9 +++++++--
->  fs/super.c                            |  4 ++++
->  fs/sync.c                             | 18 +++++++++++++-----
->  include/linux/fs/super.h              | 18 ++++++++++++++++++
->  include/linux/fs/super_types.h        | 21 +++++++++++++++++++++
->  mm/memory.c                           |  6 ++++++
->  16 files changed, 138 insertions(+), 16 deletions(-)
->
-> diff --git a/Documentation/filesystems/porting.rst b/Documentation/filesy=
-stems/porting.rst
-> index 60880eb0c49d..c60f74a99568 100644
-> --- a/Documentation/filesystems/porting.rst
-> +++ b/Documentation/filesystems/porting.rst
-> @@ -1409,3 +1409,19 @@ use only if you have no alternative.
->  The .create inode_operation no longer receives the 'excl' arg.  It must
->  always assume the file does not already exist.  If the filesystem needs
->  to be involved in non-exclusive create, it should provide atomic_open.
-> +
-> +---
-> +
-> +**recommended**
-> +
-> +Filesystems that set SB_RDONLY on the superblock after an error
-> +(errors=3Dremount-ro) must not do that anymore.
+ fs/btrfs/block-group.c |  22 +-
+ fs/btrfs/block-group.h |   1 +
+ fs/btrfs/space-info.c  |   3 +-
+ fs/btrfs/super.c       |  32 ++-
+ fs/btrfs/volumes.c     |  35 ++-
+ fs/btrfs/volumes.h     |   1 +
+ fs/btrfs/zoned.c       | 583 ++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/zoned.h       |  25 ++
+ 8 files changed, 593 insertions(+), 109 deletions(-)
 
-
-> SB_RDONLY only changes under
-> +sb->s_umount through reconfigure_super() and freeze_super() and thaw_sup=
-er()
-> +rely on that. Call sb_set_emergency_ro() instead. The VFS then refuses
-> +modifications with EROFS, refuses a remount to read-write, shows
-> +"emergency_ro" in the mount options and stops syncing the filesystem and
-> +writing back its inodes. The filesystem still has to refuse what reaches=
- it
-> +without passing through the VFS: its own allocation, journal and writeba=
-ck
-> +paths and the deletion of unlinked inodes in ->evict_inode(). Test
-> +sb_emergency_ro() for that. A remount to read-only must not write anythi=
-ng
-> +in that state either, in particular it must not mark the filesystem clea=
-n.
-> diff --git a/fs/attr.c b/fs/attr.c
-> index 71888ac903c2..e4973f68b6c6 100644
-> --- a/fs/attr.c
-> +++ b/fs/attr.c
-> @@ -435,6 +435,10 @@ int notify_change(struct mnt_idmap *idmap, struct de=
-ntry *dentry,
->
->         WARN_ON_ONCE(!inode_is_locked(inode));
->
-> +       /* Nothing can be changed after an error made the filesystem read=
--only. */
-> +       if (sb_emergency_ro(inode->i_sb))
-> +               return -EROFS;
-> +
->         error =3D may_setattr(idmap, inode, ia_valid);
->         if (error)
->                 return error;
-> diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-> index ea3eb40bf828..bd095a911620 100644
-> --- a/fs/fs-writeback.c
-> +++ b/fs/fs-writeback.c
-> @@ -1618,6 +1618,9 @@ static int write_inode(struct inode *inode, struct =
-writeback_control *wbc)
->  {
->         int ret;
->
-> +       /* Nothing may be written after an error made the filesystem read=
--only. */
-> +       if (sb_emergency_ro(inode->i_sb))
-> +               return -EROFS;
->         if (inode->i_sb->s_op->write_inode && !is_bad_inode(inode)) {
->                 trace_writeback_write_inode_start(inode, wbc);
->                 ret =3D inode->i_sb->s_op->write_inode(inode, wbc);
-> diff --git a/fs/namei.c b/fs/namei.c
-> index c87c14ee1a25..902a2e998ed4 100644
-> --- a/fs/namei.c
-> +++ b/fs/namei.c
-> @@ -607,7 +607,8 @@ static int sb_permission(struct super_block *sb, stru=
-ct inode *inode, int mask)
->                 umode_t mode =3D inode->i_mode;
->
->                 /* Nobody gets write access to a read-only fs. */
-> -               if (sb_rdonly(sb) && (S_ISREG(mode) || S_ISDIR(mode) || S=
-_ISLNK(mode)))
-> +               if ((sb_rdonly(sb) || sb_emergency_ro(sb)) &&
-> +                   (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode)))
->                         return -EROFS;
->         }
->         return 0;
-> diff --git a/fs/namespace.c b/fs/namespace.c
-> index 3ed3766f3a18..5e172cf70e71 100644
-> --- a/fs/namespace.c
-> +++ b/fs/namespace.c
-> @@ -392,7 +392,8 @@ static struct mount *alloc_vfsmnt(const char *name)
->   */
->  bool __mnt_is_readonly(const struct vfsmount *mnt)
->  {
-> -       return (mnt->mnt_flags & MNT_READONLY) || sb_rdonly(mnt->mnt_sb);
-> +       return (mnt->mnt_flags & MNT_READONLY) || sb_rdonly(mnt->mnt_sb) =
-||
-> +              sb_emergency_ro(mnt->mnt_sb);
->  }
->  EXPORT_SYMBOL_GPL(__mnt_is_readonly);
->
-> diff --git a/fs/open.c b/fs/open.c
-> index 6b1c14e684a9..d7698c4bc8d5 100644
-> --- a/fs/open.c
-> +++ b/fs/open.c
-> @@ -324,6 +324,10 @@ int vfs_fallocate(struct file *file, int mode, loff_=
-t offset, loff_t len)
->         if (!S_ISREG(inode->i_mode) && !S_ISBLK(inode->i_mode))
->                 return -ENODEV;
->
-> +       /* Files can't be written after an error made the filesystem read=
--only. */
-> +       if (S_ISREG(inode->i_mode) && sb_emergency_ro(inode->i_sb))
-> +               return -EROFS;
-> +
->         /* Check for wraparound */
->         if (check_add_overflow(offset, len, &sum))
->                 return -EFBIG;
-> diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-> index 036356c0a55b..85da3f6865c7 100644
-> --- a/fs/proc_namespace.c
-> +++ b/fs/proc_namespace.c
-> @@ -57,6 +57,8 @@ static int show_sb_opts(struct seq_file *m, struct supe=
-r_block *sb)
->                 if (sb->s_flags & fs_infop->flag)
->                         seq_puts(m, fs_infop->str);
->         }
-> +       if (sb_emergency_ro(sb))
-> +               seq_puts(m, ",emergency_ro");
->
->         return security_sb_show_options(m, sb);
->  }
-> @@ -179,7 +181,7 @@ static int show_mountinfo(struct seq_file *m, struct =
-vfsmount *mnt)
->         } else {
->                 mangle(m, r->mnt_devname);
->         }
-> -       seq_puts(m, sb_rdonly(sb) ? " ro" : " rw");
-> +       seq_puts(m, sb_rdonly(sb) || sb_emergency_ro(sb) ? " ro" : " rw")=
-;
->         err =3D show_sb_opts(m, sb);
->         if (err)
->                 goto out;
-> diff --git a/fs/quota/dquot.c b/fs/quota/dquot.c
-> index 1c78c695d0dd..56c54d437c38 100644
-> --- a/fs/quota/dquot.c
-> +++ b/fs/quota/dquot.c
-> @@ -495,6 +495,11 @@ int dquot_acquire(struct dquot *dquot)
->         set_bit(DQ_READ_B, &dquot->dq_flags);
->         /* Instantiate dquot if needed */
->         if (!dquot_active(dquot) && !dquot->dq_off) {
-> +               /* Nothing may be written after an error made the fs read=
--only. */
-> +               if (sb_emergency_ro(dquot->dq_sb)) {
-> +                       ret =3D -EROFS;
-> +                       goto out_iolock;
-> +               }
->                 ret =3D dqopt->ops[dquot->dq_id.type]->commit_dqblk(dquot=
-);
->                 /* Write the info if needed */
->                 if (info_dirty(&dqopt->info[dquot->dq_id.type])) {
-> @@ -536,10 +541,12 @@ int dquot_commit(struct dquot *dquot)
->                 goto out_lock;
->         /* Inactive dquot can be only if there was error during read/init
->          * =3D> we have better not writing it */
-> -       if (dquot_active(dquot))
-> -               ret =3D dqopt->ops[dquot->dq_id.type]->commit_dqblk(dquot=
-);
-> -       else
-> +       if (!dquot_active(dquot))
->                 ret =3D -EIO;
-> +       else if (sb_emergency_ro(dquot->dq_sb))
-> +               ret =3D -EROFS;
-> +       else
-> +               ret =3D dqopt->ops[dquot->dq_id.type]->commit_dqblk(dquot=
-);
->  out_lock:
->         memalloc_nofs_restore(memalloc);
->         mutex_unlock(&dquot->dq_lock);
-> @@ -561,7 +568,8 @@ int dquot_release(struct dquot *dquot)
->         /* Check whether we are not racing with some other dqget() */
->         if (dquot_is_busy(dquot))
->                 goto out_dqlock;
-> -       if (dqopt->ops[dquot->dq_id.type]->release_dqblk) {
-> +       if (dqopt->ops[dquot->dq_id.type]->release_dqblk &&
-> +           !sb_emergency_ro(dquot->dq_sb)) {
->                 ret =3D dqopt->ops[dquot->dq_id.type]->release_dqblk(dquo=
-t);
->                 /* Write the info */
->                 if (info_dirty(&dqopt->info[dquot->dq_id.type])) {
-> @@ -2132,6 +2140,9 @@ int dquot_commit_info(struct super_block *sb, int t=
-ype)
->  {
->         struct quota_info *dqopt =3D sb_dqopt(sb);
->
-> +       /* Nothing may be written after an error made the fs read-only. *=
-/
-> +       if (sb_emergency_ro(sb))
-> +               return -EROFS;
->         return dqopt->ops[type]->write_file_info(sb, type);
->  }
->  EXPORT_SYMBOL(dquot_commit_info);
-> @@ -2255,7 +2266,7 @@ int dquot_disable(struct super_block *sb, int type,=
- unsigned int flags)
->                  * Now all dquots should be invalidated, all writes done =
-so we
->                  * should be only users of the info. No locks needed.
->                  */
-> -               if (info_dirty(&dqopt->info[cnt]))
-> +               if (info_dirty(&dqopt->info[cnt]) && !sb_emergency_ro(sb)=
-)
->                         sb->dq_op->write_info(sb, cnt);
->                 if (dqopt->ops[cnt]->free_file_info)
->                         dqopt->ops[cnt]->free_file_info(sb, cnt);
-> @@ -2272,7 +2283,7 @@ int dquot_disable(struct super_block *sb, int type,=
- unsigned int flags)
->
->         /* Sync the superblock so that buffers with quota data are writte=
-n to
->          * disk (and so userspace sees correct data afterwards). */
-> -       if (sb->s_op->sync_fs)
-> +       if (sb->s_op->sync_fs && !sb_emergency_ro(sb))
->                 sb->s_op->sync_fs(sb, 1);
->         sync_blockdev(sb->s_bdev);
->         /* Now the quota files are just ordinary files and we can set the
-> diff --git a/fs/quota/quota.c b/fs/quota/quota.c
-> index 33bacd707580..7612c96493d1 100644
-> --- a/fs/quota/quota.c
-> +++ b/fs/quota/quota.c
-> @@ -783,6 +783,19 @@ static int do_quotactl(struct super_block *sb, int t=
-ype, int cmd, qid_t id,
->         if (ret < 0)
->                 return ret;
->
-> +       /* Nothing can be changed after an error made the filesystem read=
--only. */
-> +       if (sb_emergency_ro(sb)) {
-> +               switch (cmd) {
-> +               case Q_QUOTAON:
-> +               case Q_SETINFO:
-> +               case Q_SETQUOTA:
-> +               case Q_XQUOTAON:
-> +               case Q_XQUOTARM:
-> +               case Q_XSETQLIM:
-> +                       return -EROFS;
-> +               }
-> +       }
-> +
->         switch (cmd) {
->         case Q_QUOTAON:
->                 return quota_quotaon(sb, type, id, path);
-> diff --git a/fs/read_write.c b/fs/read_write.c
-> index e8c14e2760b2..4b587ba084bf 100644
-> --- a/fs/read_write.c
-> +++ b/fs/read_write.c
-> @@ -472,6 +472,11 @@ int rw_verify_area(int read_write, struct file *file=
-, const loff_t *ppos, size_t
->                 }
->         }
->
-> +       /* Files can't be written after an error made the filesystem read=
--only. */
-> +       if (read_write =3D=3D WRITE && S_ISREG(file_inode(file)->i_mode) =
-&&
-> +           sb_emergency_ro(file_inode(file)->i_sb))
-> +               return -EROFS;
-> +
->         ret =3D security_file_permission(file, mask);
->         if (ret)
->                 return ret;
-> diff --git a/fs/statfs.c b/fs/statfs.c
-> index 377bcef7a561..05a90d5a3310 100644
-> --- a/fs/statfs.c
-> +++ b/fs/statfs.c
-> @@ -48,8 +48,13 @@ static int flags_by_sb(int s_flags)
->
->  static int calculate_f_flags(struct vfsmount *mnt)
->  {
-> -       return ST_VALID | flags_by_mnt(mnt->mnt_flags) |
-> -               flags_by_sb(mnt->mnt_sb->s_flags);
-> +       int flags =3D ST_VALID | flags_by_mnt(mnt->mnt_flags) |
-> +                   flags_by_sb(mnt->mnt_sb->s_flags);
-> +
-> +       /* An error made the filesystem read-only, SB_RDONLY stays clear.=
- */
-> +       if (sb_emergency_ro(mnt->mnt_sb))
-> +               flags |=3D ST_RDONLY;
-> +       return flags;
->  }
->
->  static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
-> diff --git a/fs/super.c b/fs/super.c
-> index 1d5ccf540a9b..74cde61e8d71 100644
-> --- a/fs/super.c
-> +++ b/fs/super.c
-> @@ -1091,6 +1091,10 @@ int reconfigure_super(struct fs_context *fc)
->                 remount_ro =3D (fc->sb_flags & SB_RDONLY) && !sb_rdonly(s=
-b);
->         }
->
-> +       /* An error made the filesystem read-only until it is unmounted. =
-*/
-> +       if (remount_rw && sb_emergency_ro(sb))
-> +               return -EROFS;
-> +
->         if (remount_ro) {
->                 if (!hlist_empty(&sb->s_pins)) {
->                         super_unlock_excl(sb);
-> diff --git a/fs/sync.c b/fs/sync.c
-> index 4a84dd837b86..f183c364815c 100644
-> --- a/fs/sync.c
-> +++ b/fs/sync.c
-> @@ -38,9 +38,10 @@ int sync_filesystem(struct super_block *sb)
->         WARN_ON(!rwsem_is_locked(&sb->s_umount));
->
->         /*
-> -        * No point in syncing out anything if the filesystem is read-onl=
-y.
-> +        * No point in syncing out anything if the filesystem is read-onl=
-y, and
-> +        * nothing may be written after an error made it read-only.
->          */
-> -       if (sb_rdonly(sb))
-> +       if (sb_rdonly(sb) || sb_emergency_ro(sb))
->                 return 0;
->
->         /*
-> @@ -73,14 +74,14 @@ EXPORT_SYMBOL(sync_filesystem);
->
->  static void sync_inodes_one_sb(struct super_block *sb, void *arg)
->  {
-> -       if (!sb_rdonly(sb))
-> +       if (!sb_rdonly(sb) && !sb_emergency_ro(sb))
->                 sync_inodes_sb(sb);
->  }
->
->  static void sync_fs_one_sb(struct super_block *sb, void *arg)
->  {
-> -       if (!sb_rdonly(sb) && !(sb->s_iflags & SB_I_SKIP_SYNC) &&
-> -           sb->s_op->sync_fs)
-> +       if (!sb_rdonly(sb) && !sb_emergency_ro(sb) &&
-> +           !(sb->s_iflags & SB_I_SKIP_SYNC) && sb->s_op->sync_fs)
->                 sb->s_op->sync_fs(sb, *(int *)arg);
->  }
->
-> @@ -181,6 +182,13 @@ int vfs_fsync_range(struct file *file, loff_t start,=
- loff_t end, int datasync)
->
->         if (!file->f_op->fsync)
->                 return -EINVAL;
-> +       /*
-> +        * Inodes aren't written back after an error made the filesystem
-> +        * read-only, don't claim they're on disk.
-> +        */
-> +       if (!special_file(file_inode(file)->i_mode) &&
-> +           sb_emergency_ro(file_inode(file)->i_sb))
-> +               return -EROFS;
->         if (!datasync)
->                 sync_lazytime(inode);
->         return file->f_op->fsync(file, start, end, datasync);
-> diff --git a/include/linux/fs/super.h b/include/linux/fs/super.h
-> index 733d439f01ed..346f52047999 100644
-> --- a/include/linux/fs/super.h
-> +++ b/include/linux/fs/super.h
-> @@ -2,6 +2,7 @@
->  #ifndef _LINUX_FS_SUPER_H
->  #define _LINUX_FS_SUPER_H
->
-> +#include <linux/bitops.h>
->  #include <linux/fs/super_types.h>
->  #include <linux/unicode.h>
->
-> @@ -187,6 +188,23 @@ static inline bool sb_rdonly(const struct super_bloc=
-k *sb)
->         return sb->s_flags & SB_RDONLY;
->  }
->
-> +/*
-> + * True once an error made the filesystem read-only. SB_RDONLY stays cle=
-ar, so
-> + * this is checked wherever sb_rdonly() gates a write. It must not be ch=
-ecked
-> + * where sb_rdonly() describes the mount, i.e. by freeze_super() and
-> + * thaw_super(), because it can be set while the superblock is frozen.
-> + */
-> +static inline bool sb_emergency_ro(const struct super_block *sb)
-> +{
-> +       return test_bit(SB_STATE_EMERGENCY_RO, &sb->s_state);
-> +}
-> +
-> +/* Returns true for the caller that made the filesystem read-only. */
-> +static inline bool sb_set_emergency_ro(struct super_block *sb)
-> +{
-> +       return !test_and_set_bit(SB_STATE_EMERGENCY_RO, &sb->s_state);
-> +}
-> +
->  static inline bool sb_is_blkdev_sb(struct super_block *sb)
->  {
->         return IS_ENABLED(CONFIG_BLOCK) && sb =3D=3D blockdev_superblock;
-> diff --git a/include/linux/fs/super_types.h b/include/linux/fs/super_type=
-s.h
-> index ecd96aeb1cee..efd924474062 100644
-> --- a/include/linux/fs/super_types.h
-> +++ b/include/linux/fs/super_types.h
-> @@ -238,6 +238,9 @@ struct super_block {
->         /* Read-only state of the superblock is being changed */
->         int                                     s_readonly_remount;
->
-> +       /* Runtime state bits, see SB_STATE_*. Set with set_bit(), never =
-cleared. */
-> +       unsigned long                           s_state;
-> +
->         /* per-sb errseq_t for reporting writeback errors via syncfs */
->         errseq_t s_wb_err;
->
-> @@ -353,4 +356,22 @@ struct super_block {
->  #define SB_I_ALLOW_HSM 0x00004000      /* Allow HSM events on this super=
-block */
->  #define SB_I_NO_DATA_INTEGRITY 0x00008000 /* fs cannot guarantee data pe=
-rsistence on sync */
->
-> +/*
-> + * sb->s_state. These are set with set_bit() from whatever context found=
- the
-> + * condition, without s_umount, and are never cleared. So they can be te=
-sted
-> + * anywhere without any ordering against the setter. That's deliberately=
- not
-> + * true for SB_RDONLY: freeze_super() and thaw_super() key off it and it=
- must
-> + * only change under s_umount through reconfigure_super().
-> + */
-> +enum {
-> +       /*
-> +        * An error made the filesystem read-only, errors=3Dremount-ro st=
-yle. The
-> +        * VFS refuses modifications with EROFS, refuses a remount to rea=
-d-write
-> +        * and stops syncing the filesystem and writing back its inodes. =
-Lasts
-> +        * until umount. The filesystem still has to refuse whatever reac=
-hes it
-> +        * without going through the VFS, see sb_emergency_ro().
-> +        */
-> +       SB_STATE_EMERGENCY_RO,
-> +};
-> +
->  #endif /* _LINUX_FS_SUPER_TYPES_H */
-> diff --git a/mm/memory.c b/mm/memory.c
-> index 8b0c2c735d3d..f4030571d972 100644
-> --- a/mm/memory.c
-> +++ b/mm/memory.c
-> @@ -3813,6 +3813,12 @@ static vm_fault_t do_page_mkwrite(struct vm_fault =
-*vmf, struct folio *folio)
->             IS_SWAPFILE(vmf->vma->vm_file->f_mapping->host))
->                 return VM_FAULT_SIGBUS;
->
-> +       /* Files can't be written after an error made the filesystem read=
--only. */
-> +       if (vmf->vma->vm_file &&
-> +           S_ISREG(file_inode(vmf->vma->vm_file)->i_mode) &&
-> +           sb_emergency_ro(file_inode(vmf->vma->vm_file)->i_sb))
-> +               return VM_FAULT_SIGBUS;
-> +
->         ret =3D vmf->vma->vm_ops->page_mkwrite(vmf);
->         /* Restore original flags so that caller is not surprised */
->         vmf->flags =3D old_flags;
-> --
-> 2.53.0
->
->
-
-Thanks,
-Andreas
+-- 
+2.55.0
 

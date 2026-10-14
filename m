@@ -1,203 +1,262 @@
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+Received: from mail-wr1-f53.google.com (mail-wr1-f53.google.com [209.85.221.53])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5CEBB52FE42;
-	Wed, 14 Oct 2026 13:47:41 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
-ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791985663; cv=none; b=rOZcUCwf0LuOStKrxgzW0pYCfgewfM/Kodm3ZyXH+m8mNws6+nTZ0dUTy0quiUnn/3x6tqplTh6+h0KSsnVbMFD6h0ZHvUnCaGnM8JdViRqS70gS1bdnZ88yHSLvnDxC2lP1YS5do0g+/pGfSiKNKqLroedZRIOSTdvE1PXPEcM=
-ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791985663; c=relaxed/simple;
-	bh=uLec5Ms1kEItxT/9M3m+iatVoLfvlo+Ku3r+6YxXaVo=;
-	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To; b=phCBR6//HXrne9fXQuP5Y8SlKSN8HTEjA2q3Jc4Sajhj8+u1uUOHMyUHoTWCDTdEAzUTBJE3/IZJndBSh1RxXY2sWaD31bfg76jprO9ONdpaNf+CJguXn6+qH+rNM0OxUhvPqk7EUsm6GBMbQIaANXa0Vvd+R0yHPNISsRLC1lg=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz; spf=pass smtp.mailfrom=suse.cz; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=KER6SV+3; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=5kV45Nl3; dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b=S0AnEx52; dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b=gG1ABpRO; arc=none smtp.client-ip=195.135.223.130
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB4F3545DB8
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:23:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.221.53
+ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1791987802; cv=pass; b=SrAm2ZfK+mRFjM9HL9XigP1nS8ShGyUx+z1gDIuA8GUAuNauzRi8hn979tn66oepzpyXqXco/fj6IZcSSCBj0I2oPSPmCAJG45pkORS/fmOUkiLgxY5Unf2xEUSMr9wrhird0TZwck5RSA+tZY0EO4nQT4fGyaoN3m3FheBdmhk=
+ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1791987802; c=relaxed/simple;
+	bh=NiwtywVpF1DyUrG3a4dzxvtWIjOFJFwcSiHnDjklwSU=;
+	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
+	 To:Cc:Content-Type; b=W+uhkhXT9tIIBlwUq//phl0SF++dKzAltVHapVyHz1w5crOgHrhM0be4/k24RKwTKINfnIAZJfbvl5aHLeah1ufoMQhlw1vW8zAkptUyjfZYXWJjVBbkmiA0clYIlzJwhpRoTfVL9aYfVEZngXegpbsHftePaDpt1aDs6eb8PYA=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=HN4eZ5zL; arc=pass smtp.client-ip=209.85.221.53
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="KER6SV+3";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="5kV45Nl3";
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.b="S0AnEx52";
-	dkim=permerror (0-bit key) header.d=suse.cz header.i=@suse.cz header.b="gG1ABpRO"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D252822258;
-	Wed, 14 Oct 2026 13:47:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791985659; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DY9RqNIokuQ1DH3X9Yc1BCOmA2bOCbyTbnsYeJcms7U=;
-	b=KER6SV+3E5T8faaU3djQpSC8B9QPNgiQOksk9btYa1oyN+g/YdhOBY6t1StzY1g3bSF0IJ
-	zd1FvSem8kaP2TbkqojJhhhFOthOVUjirK7sCmgbkHZZx82aJ9Io4OE8IvNRplBb+KGXEf
-	1xnlhspPxY1CCNo9bMSSg22YlcPY1WI=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791985659;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DY9RqNIokuQ1DH3X9Yc1BCOmA2bOCbyTbnsYeJcms7U=;
-	b=5kV45Nl3phoxgImBDhEqInuMMmAek0XiQQPFlXI/cnE3ZS5Quvx+F2axMbnAyEMUB1fkx3
-	FIYEJ2frN9CQ5KBA==
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=S0AnEx52;
-	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=gG1ABpRO
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1791985657; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DY9RqNIokuQ1DH3X9Yc1BCOmA2bOCbyTbnsYeJcms7U=;
-	b=S0AnEx52KGncKxtGJdhOJnkNKWblqAhU1fDfPojL39mMiKeDrabTNcq7zrzX9j4BiwbLyH
-	OakWO7MFjbmum5NnwrDWXKsOJm95K6rjrzLtmGKio9hh9a9ZDKInBQ8G3OJJr2jLduCpIm
-	cY4ShwlOEbCtlHljqjRWtydkmyqg6nY=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1791985657;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DY9RqNIokuQ1DH3X9Yc1BCOmA2bOCbyTbnsYeJcms7U=;
-	b=gG1ABpROq+bYTWDuUnYSBShOJ9fbmudAese1phkK/c9rHSbMI+6wnPeO8BO8ATprL8kHK6
-	exH5zVUd6CuBDKDA==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9348F133F1;
-	Wed, 14 Oct 2026 13:47:37 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ACfUG/mHz2oSUQAAD6G6ig
-	(envelope-from <jack@suse.cz>); Wed, 14 Oct 2026 13:47:37 +0000
-Received: by quack3.suse.cz (Postfix, from userid 1000)
-	id 84A41A140F; Wed, 14 Oct 2026 15:47:36 +0200 (CEST)
-Date: Wed, 14 Oct 2026 15:47:36 +0200
-From: Jan Kara <jack@suse.cz>
-To: Andreas Gruenbacher <agruenba@redhat.com>
-Cc: Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
-	Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, 
-	linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net, 
-	linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, linux-fsdevel@vger.kernel.org, 
-	ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org, 
-	gfs2@lists.linux.dev, linux-efi@vger.kernel.org, linux-mtd@lists.infradead.org, 
-	linux-xfs@vger.kernel.org, stable@vger.kernel.org, 
-	Karl Mehltretter <kmehltretter@gmail.com>
-Subject: Re: [PATCH RFC 00/28] fs: don't set SB_RDONLY after filesystem errors
-Message-ID: <k7zduo2ewgvrmic2gc4wssakq4ystwqpuwo6a5llx2gzc64xzl@k2pjjijh5kye>
-References: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
- <my2k7257m265fp5ad77n5hfndl23i56gsog3jwnsyocp3yxbnj@aphfqdiej2hs>
- <20261013-forsten-ammoniak-geknackt-fefec366cc97@brauner>
- <CAHc6FU5JuYU8R4=agxgWBoEKrUGyWiitzRn5MwXiV7NZYt=_ag@mail.gmail.com>
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="HN4eZ5zL"
+Received: by mail-wr1-f53.google.com with SMTP id ffacd0b85a97d-48b02b1b4cfso3952195f8f.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 07:23:20 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1791987799; cv=none;
+        d=google.com; s=arc-20260327;
+        b=d7u9GFRAt7UNp7unZoQmw3/7b/uoCYM02dH0eAQXy/ueyKBcbqbBSQIKwKwr+/Ywnw
+         /12iVHZAbSE8iiAvHBkYfCY8OnDJSsclqT24I4yOO1auKZDwnLZRGc3C+bHpQqg1vUdL
+         A8o1XXcQAmpx8LzHhyhEray44Z97qleo9Y+ErFnotuC8iOF3h3x71DNdvdZ+pebACZQG
+         BGySpvDQSuB+vnPWsFOtwsP2WaXVFbsPI5BlLyDMi3yjsVrOiF/YzST7roUdrdmh2htD
+         T/e0F93Nbr4sdYDWYfzpH+g8snITE7Us1/kyMWsWx2aXTOUzft3bZnyAeQmCRAX7Q8z/
+         7omQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
+        fh=qqah261fotVJXqUgpbbGDF4UfQY7n3t1nQC2IWl0fpg=;
+        b=hQiP3MFBWaqm8tFUos0yPYcBBiv+RCn2nkEb+10Ty1EY8XKwoKy42814fd82psCDRE
+         g4Tq9/nDrtVG74rsIq52MQzIyunxKXGCQNOWGy9e/sb2IG0s/nc7Tco14crLeSENJv0G
+         x61RwBOrj6cnVUcB8amZzvC2BUvWGuM8uj+QiJodECI8Ap57EIwAb5tnMVloszzBBG5/
+         U5tY45lUJIWt5FKSAMGduMsou0detb21grfYDxNY1J7fARUX+radxt0KMx+culO+hr3E
+         xS8qKT7qF//E+2SO1rihVIm6WWURUwxU+O1s8FW8/7rJvRXdeHNAIzTaGxfg2kXcPLBy
+         UXnA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1791987799; x=1792592599; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
+        b=HN4eZ5zLve+K51fdY4QkPrIKPjmd++6ivFI9S+ONmZro5b79zesw3KcM4MAQAC6nYv
+         Xwd3vnqorR7xsMz3lJFVHmLTZOmeTB9woLJLZnBHsmWXtAtKCPfdHFZbeGWNIZ01jmKN
+         6/HhXBENsQLXU6qz2FfINmb0j6Pz2mqYshFZTA9A1YumpH4VW6h7O9CYPJpvLssrEGzA
+         fNntRnYgi8TuwUvpkL4FsEguXybhiRsVHbCjR0hk0TFg6QfVdgSxiT9xz+kqHirRGl5V
+         qvWTRihhV5v6W1lNYUJmYFx1xWuIk4cFSDbv+rIjN8YFRhfPg19E1chBICnU4Ry7cSpM
+         6vHg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1791987799; x=1792592599;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=7PVmPjFuUdThryUL5ks5u079XjN0XX+2XZ6PlbbwqYc=;
+        b=MzjbAJbMuwLfu7dqurB5eopqsqnaaQQv0AHse7KIr1vvU7RkM93La9rPDAK29EcOhF
+         9e6UTXmtjOgCISikTWHudLa6xZ30J13ABoNbdNByKGKngvKnLUBqw5RX/pnzJVL0VCgK
+         qItUV5qESQddbLhqqDpfermxsIMxYcaDL51101N4ELu+PJ9/q1JiiEO3i4qnfTT80AgQ
+         Vw8KIsXs8F/NMzzvznSdXKhZKkMVD6VSDNY7Yq24CJAFdJVtZFPJj5yX5Jh5B1owRHHu
+         /GJtrUCjf+Le/ULpBihFvYR0u2loKHJi9npQscJLrRc5LHsELEAIStPIwEPZoqpdUdW2
+         jkSg==
+X-Gm-Message-State: AFq9FYJy2kGO6A6tvLC3SNptJofMj5Iq7FEVTHZNCOeRDRutkztRX9Nc
+	4YHmZVtGY1Z+CyiiMs+TAgdZpwDrWEgbsa+JoDEWQpQOHRfPvSZVC7690MXD/f8CphDtUiyNEQD
+	2hpuYPhUOPRMq+ijX9MMCQmXyBoPZG9LXwua68JVZRWrd9oMdtIP9Ias=
+X-Gm-Gg: AYBFou3KjUGwo9SDbKZblPmQusmHpEAX6inb27LUtGhRfIdjDfK5n4n0kWl0Uhqnq4Q
+	NfbKp/dJVuRlYvwlkKOqxmb9EAFyZYtt5/IBcJxBDnknFpAC08vl8Ord53o7aEH/MFjx/U/SP1R
+	ZaBVIM4spm5DgsF7EYD0JWeqUDwjnxBf8Yn/ArJ3+sSEvNolXSAv9Hb+Fx+RIGjIE7vUgxQjbCa
+	FQEbOGR3Lx9CaOWgZW5cTSw34bojsbWsApVP3AUtivtW65743OZO/swNCwfsg7Eg53n2RHfZSim
+	qJXML6S8msphYEY2ksDmgkEtlq40eHkueE/qiyEi7C3vgUPSKl98WQbrEaiXn62C/y8Ipka+o5y
+	/FuBd4zscGzSG2SV8EcSh1JL14oCGxPvV9k5jfXKbRSBGJ9W3AaoNVVroJ6bmYjC7
+X-Received: by 2002:adf:e983:0:b0:48c:7f94:8755 with SMTP id
+ ffacd0b85a97d-48dbaced42bmr26835564f8f.20.1791987798854; Wed, 14 Oct 2026
+ 07:23:18 -0700 (PDT)
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAHc6FU5JuYU8R4=agxgWBoEKrUGyWiitzRn5MwXiV7NZYt=_ag@mail.gmail.com>
-X-Rspamd-Action: no action
-X-Spam-Score: -4.01
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-4.01 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCVD_COUNT_THREE(0.00)[3];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	MIME_TRACE(0.00)[0:+];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[20];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_LAST(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.cz:+];
-	MISSING_XM_UA(0.00)[];
-	FREEMAIL_CC(0.00)[kernel.org,suse.cz,suse.com,zeniv.linux.org.uk,vger.kernel.org,lists.sourceforge.net,lists.linux.dev,lists.infradead.org,gmail.com];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:dkim,suse.com:email,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Spam-Level: 
-X-Rspamd-Queue-Id: D252822258
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+References: <PH0PR17MB4277167A37B20340B231443FBB922@PH0PR17MB4277.namprd17.prod.outlook.com>
+ <SJ0PR17MB4288FC2E7FFB577F5D6C6D9EBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
+ <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
+In-Reply-To: <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Wed, 14 Oct 2026 16:23:07 +0200
+X-Gm-Features: AclHuK8a4o_tZUeolpmUt3I9KFtbE6do_KQ4X_Lvvuy1cirVengjJ3I0x4ffgcY
+Message-ID: <CAPjX3FernXMUSLo++4gsEabS4AJKQMfDyF2XB0w9A5-HY3qi+w@mail.gmail.com>
+Subject: Re: Btrfs PREEMPT_RT transaction-waiter livelock: experimental
+ mitigation in kernel 6.6.78
+To: "Naulls, Peter" <PeterNaulls@eaton.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed 14-10-26 12:04:08, Andreas Gruenbacher wrote:
-> On Wed, Oct 14, 2026 at 12:20 AM Christian Brauner <brauner@kernel.org> wrote:
-> > > I'm in favor of this. Just after checking couple of filesystem changes -
-> > > won't we be better off by using a generic flag in super_block for this so
-> > > that VFS can check for it? Then each filesystem won't have to implement
-> > > its own wrapper for simple_fsync(), quota operations, and whatever other
-> > > generic operations that need to bail on shutdown filesystem...
-> >
-> > Do you mean something like?:
-> >
-> > From 28c97f2142e255eb835d26deb97b00afccfb7c4a Mon Sep 17 00:00:00 2001
-> > From: Christian Brauner <brauner@kernel.org>
-> > Date: Tue, 13 Oct 2026 21:15:36 +0200
-> > Subject: [PATCH] fs: add a generic emergency read-only state
-> >
-> > The filesystems that stopped setting SB_RDONLY after an error refuse
-> > modifications themselves now. Each of them grew the same checks in
-> > ->open, ->setattr, ->fsync, ->write_inode, the directory operations, the
-> > quota operations and ->reconfigure. Jan suggested a generic flag so the
-> > VFS can do that once (cf. [1]).
-> >
-> > So add SB_STATE_EMERGENCY_RO in a new sb->s_state word. It is only ever
-> > set with set_bit() and never cleared so it can be tested anywhere
-> > without any ordering against the setter. A filesystem calls
-> > sb_set_emergency_ro() where it used to set SB_RDONLY. SB_RDONLY itself
-> > stays untouched so freeze_super() and thaw_super() keep seeing a
-> > consistent superblock.
-> >
-> > The VFS then checks it wherever sb_rdonly() gates a write:
-> >
-> > - __mnt_is_readonly() so mnt_want_write(), opening files for writing,
-> >   access(W_OK), nfsd and overlayfs see a read-only superblock
-> > - sb_permission() for vfs_create(), vfs_unlink() and friends
-> > - notify_change(), rw_verify_area(), vfs_fallocate(), vfs_fsync_range()
-> >   and do_page_mkwrite() for files that were opened before the error
-> > - reconfigure_super() refuses going read-write
-> > - sync_filesystem(), sync(2) and write_inode() don't write anymore
-> > - the dquot code doesn't write the quota files anymore and quotactl(2)
-> >   refuses to change anything
-> > - "emergency_ro" is shown in the mount options, /proc/mounts shows the
-> >   superblock as "ro" and statfs() reports ST_RDONLY like they did when
-> >   SB_RDONLY was set
-> >
-> > What reaches the filesystem without passing through the VFS it still has
-> > to refuse itself. That's its allocators, its journal, its own writeback
-> > and the deletion of unlinked inodes.
-> 
-> For shared filesystems like gfs2, the concept of an emergency
-> read-only state doesn't make sense because in that state (in gfs2
-> terms, a withdrawn filesystem), we cannot do any more cluster-wide
-> locking and so we cannot allow any more reads, either. Could we define
-> the new flag in a way that would allow filesystems to enforce stronger
-> guarantees? This would suggest a flag name other than
-> SB_STATE_EMERGENCY_RO, though.
+On Tue, 13 Oct 2026 at 19:46, Naulls, Peter <PeterNaulls@eaton.com> wrote:
+>
+> Originally posted to RT mailing list, see post and replies there:
+>
+> https://lore.kernel.org/linux-rt-users/PH0PR17MB4277167A37B20340B231443FB=
+B922@PH0PR17MB4277.namprd17.prod.outlook.com/T/#u
+>
+> ________________________________________
+> From: Naulls, Peter <PeterNaulls@eaton.com>
+> Sent: Friday, October 9, 2026 11:34 AM
+> To: linux-rt-users@vger.kernel.org <linux-rt-users@vger.kernel.org>
+> Subject: Btrfs PREEMPT_RT transaction-waiter livelock: experimental mitig=
+ation in kernel 6.6.78
+>
+> Long term kernel hacker, but very infrequent contributor.
+>
+> We are using the RT kernel patch on x86 under kernel 6.6.78-rt51. Specifi=
+cally, this is the kernel from meta-intel in Yocto Scarthgap in the intel-k=
+ernel-rt recipe.
+>
+> It appears under some high load conditions, and especially triggered by c=
+alls to sync(), there is a live lock condition in the btrfs code. I used co=
+pilot for this analysis, with apologies due here where relevant. I'm famili=
+ar with kernel code, and I'm well aware how complex filesystem interactions=
+ can be.
+>
+> Here is the lock we observe:
+>
+>
+> sync (PID 52371)
+>   btrfs_commit_transaction+0xc48
+>     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
+>   btrfs_sync_fs
+>   sync_fs_one_sb
+>   ksys_sync
+>
+> ordered-I/O completion workers
+>   join_transaction+0x2b
+>     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
+>   start_transaction
+>   btrfs_join_transaction
+>   btrfs_finish_one_ordered
+>   btrfs_work_helper
+>
+> journal/fsync callers
+>   wait_current_trans+0x33
+>     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
+>   start_transaction
+>   btrfs_start_transaction
+>   btrfs_sync_file
+>   vfs_fsync_range
+>   fsync
+>
+> btrfs-transaction thread
+>   transaction_kthread+0x76
+>     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
+>   kthread
+>
+>
+> The processes are then not killable, indicting a kernel thread problem.
+>
+> This was largely found because our userspace code calls sync() excessivel=
+y (being separately addressed), although that's not the proximate cause. We=
+ ended up writing shell script which writes blocks of data to a brtfs parti=
+tion over several threads and also calls sync and were able to repeat it wi=
+thin 10s of seconds. It is not repeatable in the non-RT kernel.
+>
+> To add:
+>
+> I have been extensively through the later kernels in 6.6, and later serie=
+s and have not found any direct fixe or references for this. I've also been=
+ through the latest RT changes and btrfs mailing lists/changes (and this po=
+st might be served better there) and cannot find any direct reference to th=
+is. The only close match is:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?=
+id=3D99da896614d17e8a84aeb2b2d464ac046cc8633d
+>
+> This is in related code. I put this patch into our 6.6.78 kernel and it d=
+id not resolve the problem.
+>
+> With that in mind, I had copilot (again, apologies) have an attempt. It c=
+ame up with this:
+>
+> # Experimental mitigation for a suspected PREEMPT_RT Btrfs transaction-wa=
+iter
+> # livelock. wait_for_commit() can reselect a completed transaction that r=
+emains
+> # on trans_list after its waiters are woken. Skip completed entries while=
+ still
+> # waiting for older incomplete transactions. This is a diagnostic hypothe=
+sis,
+> # not a confirmed fix for the observed lockup.
+> # Review notes: the scan is O(n) under trans_lock. Completion state is pu=
+blished
+> # locklessly elsewhere; READ_ONCE provides a single load, not acquire ord=
+ering.
+> # A multi-hour run did not reproduce the issue, but the lock owner and ro=
+ot cause
+> # remain unknown.
 
-The problem is that a lot of local filesystems really want the emergency
-read-only state (and not full fs shutdown). So if you want to fully
-shutdown the fs on error, either gfs2 has to do it on it's own or we could
-introduce another sb state for that. But I think emergency-ro state needs
-to stay...
+Right, the above does not explain why this only happens on RT.
 
-								Honza
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+Though the lock owner can be easily found using crash or drgn. One
+could also expect it's task->sched_info.last_arrival timestamp would
+be about close to those blocked tasks you found.
+
+Would you mind sharing a vmcore (and (a link to) the debug symbols)?
+Or eventualy the root access to the reproducer machine? (in case you
+have an ephemeral VM)
+
+I'll try to review the related code in the meantime.
+
+--nX
+
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index e15e1855fa0a..0f05fabe451c 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -865,6 +865,7 @@ static noinline void wait_for_commit(struct btrfs_tra=
+nsaction *commit,
+>                                      const enum btrfs_trans_state min_sta=
+te)
+>  {
+>         struct btrfs_fs_info *fs_info =3D commit->fs_info;
+> +       struct btrfs_transaction *next;
+>         u64 transid =3D commit->transid;
+>         bool put =3D false;
+>
+> @@ -893,10 +894,16 @@ static noinline void wait_for_commit(struct btrfs_t=
+ransaction *commit,
+>                  */
+>
+>                 spin_lock(&fs_info->trans_lock);
+> -               commit =3D list_first_entry_or_null(&fs_info->trans_list,
+> -                                                 struct btrfs_transactio=
+n,
+> -                                                 list);
+> -               if (!commit || commit->transid > transid) {
+> +               commit =3D NULL;
+> +               list_for_each_entry(next, &fs_info->trans_list, list) {
+> +                       if (next->transid > transid)
+> +                               break;
+> +                       if (READ_ONCE(next->state) =3D=3D TRANS_STATE_COM=
+PLETED)
+> +                               continue;
+> +                       commit =3D next;
+> +                       break;
+> +               }
+> +               if (!commit) {
+>                         spin_unlock(&fs_info->trans_lock);
+>                         break;
+>                 }
+>
+>
+> Note the O(N) time here. To that end, this is very unlikely to be the cor=
+rect fix, but I hope it highlights the core problem. I ran this patch for s=
+everal hours with no apparent problem (versus seconds of a lockup in previo=
+us testing).
+>
+> If there's a later kernel patch I've missed, or something else I ought to=
+ be looking at or test or need more info, please let me know.
+>

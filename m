@@ -1,251 +1,146 @@
-Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B5D2C5476EA
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:33:25 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.45
-ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791988407; cv=pass; b=eq74CN085zCrTHUlkQvci/i+ANB8eOl6RaHZ65cPOL9y7jnrGVCb8L0wfBcI4SJo0+4kkIFfMCBxFInpvhBbB5hdwRTFweB9aVN8GOtC9/HtvmpIek7zSrMSFUqoaF5NTddvaTPoeleFyB3NtY4KYZw75r3fyA53pLaNT8xl+Hw=
-ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791988407; c=relaxed/simple;
-	bh=K+JgZANM79BMzvdQQbgZKcxf6FA9Q4RzNg49G9leob8=;
-	h=MIME-Version:References:In-Reply-To:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=JcFvgyoqPZzfiXFZOewEUJro2+mTJikrlG0OoqxzF5yeBS52VP0mP46Gz1NhCCTlYyqqRkH/EWsiT9IKmHxXg7KW30tX4KEVIkj7j/8ZjiFt5TU+MSO1bEWMieRhlYXvCUwgWpAqMw/Lfy5h8t4XRhBoRax+TWLlHp7+X2WSi/A=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=a+C0p2Mu; arc=pass smtp.client-ip=209.85.128.45
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70D75565105
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 18:00:07 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1792000808; cv=none; b=rApj1kc8/4Z5c85VENRBTaOQTyUgRoyxrjbeRXRd6WaCOCISptD+c6lHgOVAvwehxyNqRdfAVOJvsBu2REyRfpUpn4SmhR2+FPnt0OJweBKPAwF89QFmstXiTk4ba8Bnv09+6cqI1tVObrC0ZQ6I/4+aF93BW+EhHmf8z7g/CqU=
+ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1792000808; c=relaxed/simple;
+	bh=SnnbpgzsDV974jbRJz0lX+Is3nTo81dEnnsUYCzxTLc=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=f28rWrAFyT5wVulNO7omkSbBoqombwA12yLGykOAFIE4dX8LOqM6iM5T9adglfaj44pn0wi1lHvtnHrk3doyHeT9CqdEB0TEjcU5f77WAHxN9/o8xVPiEfgUNuXoSjdeFDkxRNBTWjkJCRsqUVnSTY3+oYMDRkp1STFVuh7rVGQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=s7uGOUb3; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=HuSRMH4q; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="a+C0p2Mu"
-Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4a1b07c3c5fso9699715e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 07:33:25 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1791988404; cv=none;
-        d=google.com; s=arc-20260327;
-        b=Ybkykjrmh8A0SvH8DJ1nHNb9RxgiFPEfcxRKpxScQZcoqcaaW82e4fq7kEhypGyiOi
-         Wdtjab0ax0SX5wyppWrKJeXNgv09ibOPj/JDuTxuWzGUOcVLNZy2OH+nrgUJw3rASU42
-         YtLdUXqRpXhfcKFRTz+vv3UgeSAR0O3iWBhTw/liDGWR72r7CU7WqeWTHDq/WnYycydn
-         I+GB2iNYgtL99opsrn9ffczqweJlSL3bBPDAC+IBXxNCXbIlOh5hjoa40XrnNkhvLCD6
-         gD4J6wuN4a7Gs4g58fUrknuy9q3QwNKiETHsOrKSpGw71r+iRC0p3KOnotuu1Q7BJFn6
-         PPWg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
-        fh=qqah261fotVJXqUgpbbGDF4UfQY7n3t1nQC2IWl0fpg=;
-        b=JD1aP1hwa0fVZLzVjXC8Sm5YflTMGK6GHYyA3cnop+4Zm4B0O7cwowM4VKI3yEbYpI
-         MExgSmJcZJ/KrD/fiWNDpiZ73LHP5ecj6ytpqQBYFycl2ip6cQjch/pxeecIKM8ZkbYu
-         srtKYNjgbKStkD4OnG36YLdZUMkt0AKinsGqswqOMQgs1FjoK4m2/a/5OaDjK/ME0uMZ
-         MxwJj0VGA7kPiqz5Iq8fImyqaLFS6HdLTyYGNDCG8vZkj6vei0QgooWJc8vbCm2GUjGI
-         JlvHO6mUwFCX0xlnwiwha/8VQADGdv3VdgB4iackFkc2ZX1xb5NENHy5B0e0EzY+69Z/
-         iKtA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="s7uGOUb3";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="HuSRMH4q"
+Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69EHNqFo2921916
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:00:06 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=CEcN
+	BxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=; b=s7uGOUb3yG4+027fLEGd
+	cSD7h7i5r4uusPq29VaE1jgnezTq3aNve3p+UoUgYOc3/uIJgk8INUtvmjBFgkE7
+	egO4tRrrGw4J3I7my4flAXCk7b5g5zSFo+sWdXKW86LHa3t2RZ9nUD/eF2Wmvjyt
+	q6BU2N7HhYomrksKrFQK9zjLN9LYD/7lh5nDRbAR6DSwFBMQw6Z7GN3rSGSz5D1i
+	e1bCE3UqVCHRGZTsywgfw+ZKYlybxwU6w7XroPgtQzdVme6smkLw7GJKMew7UHZL
+	t+J28OUE9GMapKif40nSC/QfeSLxTAB+qtRkh5lrWXiuBiRGUdNLCFy4kOshKZdm
+	QQ==
+Received: from mail-qt1-f200.google.com (mail-qt1-f200.google.com [209.85.160.200])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ha6c7c5gu-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:00:06 -0400 (EDT)
+Received: by mail-qt1-f200.google.com with SMTP id d75a77b69052e-5358515b4easo82009151cf.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 11:00:06 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1791988404; x=1792593204; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
-        b=a+C0p2MuoVzY0B+645+oOhNVuiNxhUr9HymYllEcu6hXUEmIEQP059CIUDcf3XHLci
-         QKXt0W40srn57AU+FgZWBh+ZgPBzDMLp9ba78az8BJQujvSEENxgR9A1sWGGU9ZcuTS9
-         pa93GmOQoAGDA5XaJDEch/QvI0zZisYYqPv4W9mnundXjActe9pO4bOPyfEqJUWvr6rv
-         oHxfyNTpkAHzBdVO6Q0Jkg/YPCejiRgdXSRvUGG6LZfnKw3lRmuWzMKjp+bRaBpYxk8g
-         d32F8h2A6OurooENXlUhI8k0Kf7GiJ5ON/dvWzgNgBOFB1zAobuqZL1JQaEq5IB/9ThC
-         o3rw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1791988404; x=1792593204;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=columbia.edu; s=lionmail; t=1792000806; x=1792605606; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=+qP4wN/W7q9mY9yMUiSCR6CJLQY/nrp9KPxCim2wkG4=;
-        b=CiOhC9n/mjXTPQL5SXyKmhORSFP2sowgJML4v7kEboWIBU7G0TsILnKiehMJdqRPpL
-         qaGoDJSY48iw6/E7wx2Gykxyq5NZjC6UqLF64tNy46+zxPFsVcN0F8mMzjFt0hfRCr8E
-         HXycb+cvtPzgX+R17ctJ4H0qI8wJJD2S2gsWTOw0sGWxpSZLucX7DnPrQUIVUUMRfZxa
-         IxhfFZVf/ri5GpDd0D6gm0yjmS1RfqvGkwJrkHQszsFFYNJyvjYTITP/AdKJL8IxNIcp
-         VwwLAKuQoL5KKcMWsEq6Mid+6/2oGOV0QFu87UsxJyaIH29QllSXjHI7YtwsnkHXZy2T
-         zfIQ==
-X-Gm-Message-State: AFq9FYJ2qW95h3y5lAz+Tx+8Oii24CcyXjROnrj+WXdPzG976lzSjYKV
-	yFWcRiq+Jy26RZqJksEbIqII3h8x/2qXwrulPldRbLdJ9MEpXQym5GJLoGZmOS1mIa6eKA52Pig
-	XnFlCBAs8VHdQXSEbEu3P3/b+UPDoBCNLGhuuZAvgaw==
-X-Gm-Gg: AYBFou0tenc4kPZ2Mcza3EECJ9f2K7bx8DoMU76BcdkyCXOl1R52jd0G4RHz8mxZw4V
-	K1TGwaxcAVIMqOEnlZRj6aiRY68wPypp/3JTmN3nDHu7YRA+GUtCFbb7TffZ50nOC9c0uxjckDS
-	lGHO62UciX49UM0mxqnHmzUexDhOYxIfIyOk/fW0WqQiA3oqbkcI5fDDwa9dVIvJAPtqOBvEJYd
-	fiYZ5lcOu2mHV82RiX0h/Xoe6ySuHw+OozO7wAuUKe6eM6rHpR3YGU2kJ7zomJCKNJA+QDfsUB9
-	CxCs+uOnb9cTTTXb3Nl0eL8GeLj/jb8+rqRMO55v3k9BLXvyK1Eb5qtBsMwczCFe3xynx54FzyX
-	bxwR89Vy0mc57xkYL5v3g+JzVQQ/4ihMg+tC+3oj4Rhn0/sVsCfrS9A==
-X-Received: by 2002:a05:600c:620b:b0:49c:fc6c:be19 with SMTP id
- 5b1f17b1804b1-4a18e4d12e7mr294161225e9.31.1791988403765; Wed, 14 Oct 2026
- 07:33:23 -0700 (PDT)
+        bh=CEcNBxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=;
+        b=HuSRMH4qywJihDf3VfBWKSRR5VgBfY00NNj1d05chxoU4nVH5LqOGDxFc4gc2TkgNI
+         XazHkoaTwII99cvKG/dDxLxh61Z4KnmCQ8zgJHELMFmxlEnjS2o51+iHNIlNvQN7iMyu
+         iQSKmAnbJZNrGltySt551npeBSXA2m4BHRUd33+beZWR+WbKVvwny5ToEW86ZU81MVL5
+         sSALhZyAeuNfDkyFt+54EaAYaTnIDAuj1l5CQGFkJymi63odM92PhwW4wkYHJ2ZP4G2u
+         nJSIoKLMgtj4+RyRog5aA/IajdoywCGxtjk9e3xpdlUqQ5H04cyemVzh3bUmXYvwp58v
+         Bvpg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792000806; x=1792605606;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=CEcNBxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=;
+        b=qfubszulAj2Mx7gVDnKtsyN/jx0qB/0YRZ52aw8huc1REJKosViYCFcE2f1++Y6GV+
+         ZXHFP9zR5YnnECXsZpJ10utEGAuEsxmrEJ2rMuUEkR5MLCvOYXr8Fv0q3PQofLgJWFQZ
+         4/5zzrVOF/DHa5f6wDcD0OCzdCw9+mhWvlTtdAdW8pUFlTQ6WaccdLmAdwIHPanEncj2
+         AP5OUAPbi5ALYQL3DxFjw4iJUzVfIngPsDKEfZTNT8wXZRVQ4cvzpr8sJc1elAubGNOL
+         JIGSTws+mD5qc7D9FsY2kT/1b1oX3jgtdN2RoJpxK7EEh3qpyT5KjsYZFixpTth8rOH8
+         Ha2g==
+X-Forwarded-Encrypted: i=1; AKwUvBz7QRg09JlaIIcENm2zjoblMZcB+yOQ483yoW/Zjan1gVuy8T1+aLrc1+kAVwRPWAkru21uh4C3k1AWig==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLpNNmF9PXE/Dw86dvsyHDda9FEV9mdhz/Hnvg0Zmr2/AANB4EH
+	NAM8qd569zYwhBVhbX6+ngc0HYkVhDisfMLumyWBco1M93uNj9U8HcS8229WnGo/938yfA9mD6s
+	aH5fMcy4JMMHol1L1xJDnknhlUuj83j33l2WtdNkgr/3OtIapUvc6ggNm4pri
+X-Gm-Gg: AYBFou1GdOwU1VdYAJ9L+cSLh9EZW32Wr6kiiyjyTTxEUUFT0+FInN9LPp+9BZtwz65
+	H9SHm+P7sWG/jg8ebiI8SDAdxesaFvw2MhKhIsjSCAi+gMy9DbNpP74eV6TMH/XCI4hCxqd6Tud
+	8134S30s4wUu5ddLZhQoLh76VbaCNVXhFkaWSUD4pueuHDV2ZhMenkq0NDYFyF3IzEL/LWwesPt
+	r9PobFzL3B8cTKR5S+d3JGqrDFCu2FaIKM51aOf1J0TB60zjjDqcKvlEFba0go/pipZnLd/xjRT
+	spxA0OG4gsbs5ddkHDrxuuC0cgxeoloqYos8Hss+YuXANhzI0kyX01Tw/8My+G+HO3nY9tY0uSJ
+	WQ1ua2fBBkldvn4tG0Fw1Ayxpfa5ETG17loN9rdi1tC27FIfz
+X-Received: by 2002:a05:622a:428b:b0:533:3911:f504 with SMTP id d75a77b69052e-5359fdf2526mr271506441cf.57.1792000805564;
+        Wed, 14 Oct 2026 11:00:05 -0700 (PDT)
+X-Received: by 2002:a05:622a:428b:b0:533:3911:f504 with SMTP id d75a77b69052e-5359fdf2526mr271505941cf.57.1792000804977;
+        Wed, 14 Oct 2026 11:00:04 -0700 (PDT)
+Received: from [10.207.9.0] (nat-128-59-176-148.net.columbia.edu. [128.59.176.148])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-53612830ec3sm2952541cf.27.2026.10.14.11.00.04
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 14 Oct 2026 11:00:04 -0700 (PDT)
+Message-ID: <7eee4fcf-1348-4d60-a1ec-cd3b76eb5904@columbia.edu>
+Date: Wed, 14 Oct 2026 14:00:04 -0400
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-References: <PH0PR17MB4277167A37B20340B231443FBB922@PH0PR17MB4277.namprd17.prod.outlook.com>
- <SJ0PR17MB4288FC2E7FFB577F5D6C6D9EBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
- <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
-In-Reply-To: <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Wed, 14 Oct 2026 16:33:12 +0200
-X-Gm-Features: AclHuK9ntosaQqea3B0H-ho3RLxvBMrtB2ReBZ3sn1YIETu04qzIUmr69db_Q4E
-Message-ID: <CAPjX3Ff8LVf_ZWmWD=SY1MoX2V-W+_MyrW_ubfaKhsuh8rMyBA@mail.gmail.com>
-Subject: Re: Btrfs PREEMPT_RT transaction-waiter livelock: experimental
- mitigation in kernel 6.6.78
-To: "Naulls, Peter" <PeterNaulls@eaton.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v4 00/18] btrfs: remove the v1 space cache
+To: dsterba@suse.cz
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
+ <20261013122214.GA1310987@suse.cz>
+Content-Language: en-US
+From: Tal Zussman <tz2294@columbia.edu>
+In-Reply-To: <20261013122214.GA1310987@suse.cz>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+X-Proofpoint-ORIG-GUID: tcitI_4Sx_TMSiO3xX1KHVZIA9yeMqiN
+X-Authority-Analysis: v=2.4 cv=G/CJgNk5 c=1 sm=1 tr=0 ts=6acfc326 cx=c_pps
+ a=JbAStetqSzwMeJznSMzCyw==:117 a=dxtdfZqDOO0kCslK4e47hQ==:17
+ a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
+ a=TKffICSxeowAhaLLEZsA:9 a=QEXdDO2ut3YA:10 a=uxP6HrT_eTzRwkO_Te1X:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDE0MDA3MSBTYWx0ZWRfX3h8kSpFQ/COJ
+ jJ1Ly+X/4EBKJ9gbg2ssyamxgSJuXB7fh5on0lAcuy2IWKYRD1IRD7BErj8MtuxyaJAJ6iRv+eC
+ qf734RYFgE9UmcMkHjq+KTu5E30uBsBAXD1N2IN5AmQwhT5htHPY
+X-Proofpoint-GUID: tcitI_4Sx_TMSiO3xX1KHVZIA9yeMqiN
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDE0MDA3MSBTYWx0ZWRfXx+mtXNG+NdWc
+ rZcrTfvo3Dzu4SZXibyM2ihweaH7QgWU5rjFOd3pB6g6GsfOwzHXIsQ4JbT9uj6Urc6PPOb88PL
+ D07Chvk7wettDxxsIytPNaydv7ildXqHbJhiWDVKZDhXQc3Jf0KMygUNsA8q4J7DqZjq9fxeuxB
+ 17ulO/pA96nEZZ3YHG29esssKxIJpecZ8wCNjVU3vAxNopNUkSlspjZsrGjgKRhHXqJaXz7huzt
+ q/Fm0UUAZLFw42vZ9PRxjRt120yw8iO/qg49O3ekfpVrpsYT5sxWiN1v/fjdtjwRJpnvwNk1jsO
+ 88EnL4GvBUp7qTh3bpOnlEfk8Q21hLCbaHX5GY74rGsvxO3rK0I3brBSXvHb5QJNKJugi+plvfL
+ /wDadndXknlgebRjTgXPQWe89hmGjiX4IpSWzR38iWnWWuVTOtu44qs7VK3MHg/yhfbXY+xDYis
+ PRgkA/nHZMNma08dnqg==
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11935
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ impostorscore=10 adultscore=0 phishscore=0 spamscore=0 priorityscore=1501
+ clxscore=1015 bulkscore=10 lowpriorityscore=10 malwarescore=0 suspectscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2610080000 definitions=main-2610140071
 
-On Tue, 13 Oct 2026 at 19:46, Naulls, Peter <PeterNaulls@eaton.com> wrote:
->
-> Originally posted to RT mailing list, see post and replies there:
->
-> https://lore.kernel.org/linux-rt-users/PH0PR17MB4277167A37B20340B231443FB=
-B922@PH0PR17MB4277.namprd17.prod.outlook.com/T/#u
->
-> ________________________________________
-> From: Naulls, Peter <PeterNaulls@eaton.com>
-> Sent: Friday, October 9, 2026 11:34 AM
-> To: linux-rt-users@vger.kernel.org <linux-rt-users@vger.kernel.org>
-> Subject: Btrfs PREEMPT_RT transaction-waiter livelock: experimental mitig=
-ation in kernel 6.6.78
->
-> Long term kernel hacker, but very infrequent contributor.
->
-> We are using the RT kernel patch on x86 under kernel 6.6.78-rt51. Specifi=
-cally, this is the kernel from meta-intel in Yocto Scarthgap in the intel-k=
-ernel-rt recipe.
->
-> It appears under some high load conditions, and especially triggered by c=
-alls to sync(), there is a live lock condition in the btrfs code. I used co=
-pilot for this analysis, with apologies due here where relevant. I'm famili=
-ar with kernel code, and I'm well aware how complex filesystem interactions=
- can be.
->
-> Here is the lock we observe:
->
->
-> sync (PID 52371)
->   btrfs_commit_transaction+0xc48
->     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
->   btrfs_sync_fs
->   sync_fs_one_sb
->   ksys_sync
->
-> ordered-I/O completion workers
->   join_transaction+0x2b
->     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
->   start_transaction
->   btrfs_join_transaction
->   btrfs_finish_one_ordered
->   btrfs_work_helper
->
-> journal/fsync callers
->   wait_current_trans+0x33
->     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
->   start_transaction
->   btrfs_start_transaction
->   btrfs_sync_file
->   vfs_fsync_range
->   fsync
->
-> btrfs-transaction thread
->   transaction_kthread+0x76
->     [return address immediately after rt_spin_lock(&fs_info->trans_lock)]
->   kthread
+On 10/13/26 8:22 AM, David Sterba wrote:
+> 
+> Thanks, unfortunatelly this did not make it into the 7.4 pull as the
+> freeze was yesterday and I was not able to process the v3 last week.
+> The v4 still has some issues reported by sashiko. It could be still
+> possible to send that separately as 2nd pull to 7.4 because the code has
+> been in linux-next, small fixups would be possible, and it's code
+> removal.
+> 
 
-Neither of these seems to come from an interrupt. By any chance, have
-you seen a "sleeping while atomic" error in dmesg?
+No problem. I took a look at the Sashiko feedback. It looks like a
+rare pre-existing issue, with the fix being to change the `if (truncate)`
+to `if (truncate && !ret)`. I can prepend a standalone fix for this at the
+start of the series and respin.
 
---nX
-
-> The processes are then not killable, indicting a kernel thread problem.
->
-> This was largely found because our userspace code calls sync() excessivel=
-y (being separately addressed), although that's not the proximate cause. We=
- ended up writing shell script which writes blocks of data to a brtfs parti=
-tion over several threads and also calls sync and were able to repeat it wi=
-thin 10s of seconds. It is not repeatable in the non-RT kernel.
->
-> To add:
->
-> I have been extensively through the later kernels in 6.6, and later serie=
-s and have not found any direct fixe or references for this. I've also been=
- through the latest RT changes and btrfs mailing lists/changes (and this po=
-st might be served better there) and cannot find any direct reference to th=
-is. The only close match is:
->
-> https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?=
-id=3D99da896614d17e8a84aeb2b2d464ac046cc8633d
->
-> This is in related code. I put this patch into our 6.6.78 kernel and it d=
-id not resolve the problem.
->
-> With that in mind, I had copilot (again, apologies) have an attempt. It c=
-ame up with this:
->
-> # Experimental mitigation for a suspected PREEMPT_RT Btrfs transaction-wa=
-iter
-> # livelock. wait_for_commit() can reselect a completed transaction that r=
-emains
-> # on trans_list after its waiters are woken. Skip completed entries while=
- still
-> # waiting for older incomplete transactions. This is a diagnostic hypothe=
-sis,
-> # not a confirmed fix for the observed lockup.
-> # Review notes: the scan is O(n) under trans_lock. Completion state is pu=
-blished
-> # locklessly elsewhere; READ_ONCE provides a single load, not acquire ord=
-ering.
-> # A multi-hour run did not reproduce the issue, but the lock owner and ro=
-ot cause
-> # remain unknown.
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index e15e1855fa0a..0f05fabe451c 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -865,6 +865,7 @@ static noinline void wait_for_commit(struct btrfs_tra=
-nsaction *commit,
->                                      const enum btrfs_trans_state min_sta=
-te)
->  {
->         struct btrfs_fs_info *fs_info =3D commit->fs_info;
-> +       struct btrfs_transaction *next;
->         u64 transid =3D commit->transid;
->         bool put =3D false;
->
-> @@ -893,10 +894,16 @@ static noinline void wait_for_commit(struct btrfs_t=
-ransaction *commit,
->                  */
->
->                 spin_lock(&fs_info->trans_lock);
-> -               commit =3D list_first_entry_or_null(&fs_info->trans_list,
-> -                                                 struct btrfs_transactio=
-n,
-> -                                                 list);
-> -               if (!commit || commit->transid > transid) {
-> +               commit =3D NULL;
-> +               list_for_each_entry(next, &fs_info->trans_list, list) {
-> +                       if (next->transid > transid)
-> +                               break;
-> +                       if (READ_ONCE(next->state) =3D=3D TRANS_STATE_COM=
-PLETED)
-> +                               continue;
-> +                       commit =3D next;
-> +                       break;
-> +               }
-> +               if (!commit) {
->                         spin_unlock(&fs_info->trans_lock);
->                         break;
->                 }
->
->
-> Note the O(N) time here. To that end, this is very unlikely to be the cor=
-rect fix, but I hope it highlights the core problem. I ran this patch for s=
-everal hours with no apparent problem (versus seconds of a lockup in previo=
-us testing).
->
-> If there's a later kernel patch I've missed, or something else I ought to=
- be looking at or test or need more info, please let me know.
->
+Thanks,
+Tal

@@ -1,133 +1,214 @@
-Received: from m16.mail.163.com (m16.mail.163.com [117.135.210.2])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from sg-3-44.ptr.tlmpb.com (sg-3-44.ptr.tlmpb.com [101.45.255.44])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD41D34D38B;
-	Wed, 14 Oct 2026 02:37:57 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=117.135.210.2
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4BD440801E
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 03:46:19 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.44
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791945482; cv=none; b=CPsYH2k50AcMzqkNTmiyypwCkFmLphQDXrKegGN2/JFdNrx/5l7/Ic7myKMh0/xOAKuJMwzWfvwQdl998AkBKWTPsq5U6OunkkO9vy7jmfUlGE9+w2kIksMPu/JxDUqY/2Q3QmOAPWg6g50lJESoyBweVf688lGEol0LYhIyPXY=
+	t=1791949582; cv=none; b=MXXw9afgw8uNlbBNVJ7Wl9svqc9OpvyRUFdK0ykHJIxgv7Nn+58iZ8A4DHyoJ+bwXhwtktg6YQukGKueCVj1xvX8QLF2uOS88eAtrojz1BsEERi9L7WrMxOEhh/ex3rDXcnnBZC4h0aySb0vr9mcJKBW10ER+2HRuKkLtknwLaI=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791945482; c=relaxed/simple;
-	bh=scJ+EWsWMxUow6/2SUGfnwaqxnKcMze8D+4kJaJJdmc=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=Deakz0kmWqx8jBRUwUYqPkFAF2Wk8W2Tn8kozzIGTRKGOvNugsL1cA20JFLHfhzdq6gWECM1mInktSfzEIzst+KpRtOKR5M2uecbYKLuLwPDf11Xso36tfJNkMf93gXHXp4GHufl1YMvIMFUsUMGFqgYn6TwICxu+Moi+zYIW8Q=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com; spf=pass smtp.mailfrom=163.com; dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b=ZvF+1RLz; arc=none smtp.client-ip=117.135.210.2
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=163.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=163.com
+	s=arc-20240116; t=1791949582; c=relaxed/simple;
+	bh=tLkT2E8EPoo8JfJMFjd2LtTrZ0UxhflFI8B/MKivVHc=;
+	h=To:From:Message-Id:In-Reply-To:References:Cc:Date:Mime-Version:
+	 Subject:Content-Type; b=WLrZRjLLS5BOExOUrum4q4oFNiOFtQlYAnDGQs8YQ2CNMfxaKMte8rG4vcWpUYO0lHrTsLEMMw0QwV3BF+RJdO8Uj0WG3CYu9YqlXMRSi+mA2IuLXc0i/S9JUEVlVeAPNsXeXS1xfR8qGGoLLODT3YTKdVZSfKvcXlVDwSqG8MY=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=B6q7U63p; arc=none smtp.client-ip=101.45.255.44
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=163.com header.i=@163.com header.b="ZvF+1RLz"
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=163.com;
-	s=s110527; h=From:To:Subject:Date:Message-ID:MIME-Version; bh=I0
-	w+qZkGD3asKEmiLpBeCWvDurwKWMq+2vM6Ay/ZnHU=; b=ZvF+1RLzH+dlgPXviw
-	sjDvUcER0GwG71Ir+DQztMb+G3s6DfbNddHBivONf1voBLrVvTAB70LfuMWVXXwy
-	/zZ+FZMazTFEwQpNU5oKDgEZnu1K2drBf7le0qbsVudS1uVWFFKqYEZXW3WzDV5x
-	Aem58wsYHhx4h+iYbAaTG616s=
-Received: from colol4bi5.localdomain (unknown [])
-	by gzga-smtp-mtada-g0-4 (Coremail) with SMTP id _____wD3PxPv6s5qhGmrEQ--.895S2;
-	Wed, 14 Oct 2026 10:37:36 +0800 (CST)
-From: Binbin Deng <18983559317@163.com>
-To: dsterba@suse.com,
-	mason@kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Binbin Deng <18983559317@163.com>,
-	Qu Wenruo <quwenruo.btrfs@gmx.com>,
-	Daniel Vacek <neelx@suse.com>
-Subject: [PATCH v3] btrfs: wait for a grace period before freeing a new device
-Date: Wed, 14 Oct 2026 10:37:33 +0800
-Message-ID: <20261014023733.266854-1-18983559317@163.com>
-X-Mailer: git-send-email 2.43.0
+	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="B6q7U63p"
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1791949524;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=e+eiPHFuSumVegKSas3bqC3NOsEusUhX5e4gr63CLfA=;
+ b=B6q7U63p37+FzMc1sg6Q39Kng2wI2VPs1pYvs8+LFZyDm2bnFu8L0PAMr1tFD2AXeLO7pc
+ ZWduflx2/quvXPl57fn6VTaV/0Cl1OgznOo+5gp6Jxhh+bmZbO2lejboPA7y8qw+L7OSvd
+ 1x3hLhICkJrDrYe1PNq5xWN1bLdHbuMTWiAix+q79uvB04IYST5bRjmUtJDl/msgNklSXk
+ rX/Y6erqSpE1Z7XrBfZ3uo3nzpVVw/eKrz1miz7eeAZeADQWbSvzx4Z9NHWzfv68zxtbUt
+ zMz8RBLTEbhR9hcpJ1Rh9q8bHG6nJYGwfbKHX4QVH23VuJ1zyYm91cX7uUaHow==
+To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>, 
+	<linux-btrfs@vger.kernel.org>
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Message-Id: <614d2012-675c-4463-9131-25524c56eed0@fygo.io>
+In-Reply-To: <20261013072941.424029-3-johannes.thumshirn@wdc.com>
+User-Agent: Mozilla Thunderbird
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+Received: from [192.168.8.64] ([183.34.167.161]) by smtp.larksuite.com with ESMTPS; Wed, 14 Oct 2026 03:45:23 +0000
+References: <20261013072941.424029-1-johannes.thumshirn@wdc.com> <20261013072941.424029-3-johannes.thumshirn@wdc.com>
+X-Lms-Return-Path: <lba+26acefad3+412650+vger.kernel.org+zhudongjiang@fygo.io>
+Cc: "Damien Le Moal" <dlemoal@kernel.org>, 
+	"Naohiro Aota" <naohiro.aota@wdc.com>, "Qu Wenruo" <wqu@suse.com>, 
+	"David Sterba" <dsterba@suse.com>
+Date: Wed, 14 Oct 2026 11:45:16 +0800
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-CM-TRANSID:_____wD3PxPv6s5qhGmrEQ--.895S2
-X-Coremail-Antispam: 1Uf129KBjvJXoWxAF4kGw13KF45ZrW5ZF4fKrg_yoW5Aw15pr
-	9Iga45JFWDJr1kAr4xCw429r1rX39Y9ayayrn7Kr4I9a4fJ34Yvry0k34UuasxCrWrJFyU
-	Za4jywn8Ja1jyw7anT9S1TB71UUUUU7qnTZGkaVYY2UrUUUUjbIjqfuFe4nvWSU5nxnvy2
-	9KBjDUYxBIdaVFxhVjvjDU0xZFpf9x07U3u4UUUUUU=
-X-CM-SenderInfo: jprymmytvvmjmrxbiqqrwthudrp/xtbC4BBFKWrO6vDNDwAA3g
+Mime-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Subject: Re: [PATCH v2 02/12] btrfs: zoned: don't activate conventional zones of mixed block groups
+Content-Type: text/plain; charset=UTF-8
 
-KASAN reports a slab-use-after-free in btrfs_statfs() walking
-fs_devices->devices. btrfs_init_new_device() publishes the new device
-with list_add_rcu() and can fail afterwards, for example with -ENOSPC
-in init_first_rw_device() when a user with CAP_SYS_ADMIN adds a device
-that is too small to a seeding filesystem mounted read-only. The error
-path removes the entry with list_del_rcu() and frees the object in
-btrfs_free_device() without waiting for a grace period, while
-btrfs_calc_avail_data_space() and btrfs_ioctl_fs_info() keep reading
-the device list under rcu_read_lock().
+=E5=9C=A8 2026/10/13 15:29, Johannes Thumshirn =E5=86=99=E9=81=93:
+> A block group can be backed by both conventional and sequential zones,
+> e.g. a DUP chunk straddling the conventional/sequential boundary of a
+> device or a RAID1 chunk with one stripe on a conventional zone of one
+> device and the other one on a sequential zone of another device.
+>=20
+> On a device with an active zone limit, btrfs_load_zone_info() never
+> marks a conventional zone as active, as there is no zone condition to
+> derive it from. If the sequential zone of such a block group is active,
+> the DUP and RAID1 loaders see an activeness mismatch between the stripes
+> and call btrfs_zone_activate(). That takes an active zone from the
+> device's budget for the conventional zone as well, although conventional
+> zones never consume an active zone resource. The same also happens at
+> runtime activation of a zone, not only in the mount path.
+>=20
+> Let the conventional zones of a mixed block group inherit the activeness
+> of the first present sequential zone.
+>=20
+> Fixes: 265f7237dd25 ("btrfs: zoned: allow DUP on meta-data block groups")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+>  fs/btrfs/zoned.c | 50 ++++++++++++++++++++++++++++++++++++------------
+>  1 file changed, 38 insertions(+), 12 deletions(-)
+>=20
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 51699136405d..3af234dea6f5 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -1959,6 +1959,23 @@ int btrfs_load_block_group_zone_info(struct btrfs_=
+block_group *cache, bool new)
+>  	if (num_sequential > 0)
+>  		set_bit(BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE, &cache->runtime_flags);
+> =20
+> +	if (num_conventional > 0 && num_sequential > 0) {
+> +		int ref;
+> +
+> +		for (ref =3D 0; ref < map->num_stripes; ref++) {
+> +			if (zone_info[ref].alloc_offset !=3D WP_CONVENTIONAL &&
+> +			    zone_info[ref].alloc_offset !=3D WP_MISSING_DEV)
+> +				break;
+> +		}
+> +
+> +		if (ref < map->num_stripes) {
+> +			for (i =3D 0; i < map->num_stripes; i++) {
+> +				if (zone_info[i].alloc_offset =3D=3D WP_CONVENTIONAL)
+> +					assign_bit(i, active, test_bit(ref, active));
+> +			}
+> +		}
+> +	}
+> +
+>  	if (num_conventional > 0) {
+>  		ret =3D calculate_alloc_pointer(cache, &last_alloc, new);
+>  		if (ret) {
+> @@ -2450,6 +2467,9 @@ bool btrfs_zone_activate(struct btrfs_block_group *=
+block_group)
+>  		if (!device->bdev)
+>  			continue;
+> =20
+> +		if (!btrfs_dev_is_sequential(device, physical))
+> +			continue;
+> +
+>  		if (zinfo->max_active_zones =3D=3D 0)
+>  			continue;
+> =20
+> @@ -2516,6 +2536,7 @@ static int call_zone_finish(struct btrfs_block_grou=
+p *block_group,
+>  	struct btrfs_device *device =3D stripe->dev;
+>  	const u64 physical =3D stripe->physical;
+>  	struct btrfs_zoned_device_info *zinfo =3D device->zone_info;
+> +	unsigned int nofs_flags;
+>  	int ret;
+> =20
+>  	if (!device->bdev)
+> @@ -2524,18 +2545,17 @@ static int call_zone_finish(struct btrfs_block_gr=
+oup *block_group,
+>  	if (zinfo->max_active_zones =3D=3D 0)
+>  		return 0;
+> =20
+> -	if (btrfs_dev_is_sequential(device, physical)) {
+> -		unsigned int nofs_flags;
+> +	if (!btrfs_dev_is_sequential(device, physical))
+> +		return 0;
+> =20
+> -		nofs_flags =3D memalloc_nofs_save();
+> -		ret =3D blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
+> -				       physical >> SECTOR_SHIFT,
+> -				       zinfo->zone_size >> SECTOR_SHIFT);
+> -		memalloc_nofs_restore(nofs_flags);
+> +	nofs_flags =3D memalloc_nofs_save();
+> +	ret =3D blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
+> +			       physical >> SECTOR_SHIFT,
+> +			       zinfo->zone_size >> SECTOR_SHIFT);
+> +	memalloc_nofs_restore(nofs_flags);
+> =20
+> -		if (ret)
+> -			return ret;
+> -	}
+> +	if (ret)
+> +		return ret;
+> =20
+>  	if (!(block_group->flags & BTRFS_BLOCK_GROUP_DATA)) {
+>  		struct btrfs_fs_info *fs_info =3D block_group->fs_info;
+> @@ -3098,8 +3118,14 @@ void btrfs_check_active_zone_reservation(struct bt=
+rfs_fs_info *fs_info)
+>  		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
+>  			continue;
+> =20
+> -		for (int i =3D 0; i < map->num_stripes; i++)
+> -			map->stripes[i].dev->zone_info->reserved_active_zones--;
+> +		for (int i =3D 0; i < map->num_stripes; i++) {
+> +			struct btrfs_device *dev =3D map->stripes[i].dev;
+> +			struct btrfs_zoned_device_info *zone_info =3D dev->zone_info;
+> +			u64 physical =3D map->stripes[i].physical;
+> +
+> +			if (btrfs_dev_is_sequential(dev, physical))
+> +				zone_info->reserved_active_zones--;
+> +		}
+>  	}
+>  	spin_unlock(&fs_info->zone_active_bgs_lock);
+>  }
 
-BUG: KASAN: slab-use-after-free in btrfs_statfs+0x11af/0x14a0
-Read of size 8 at addr ffff8880096be858 by task poc/252
-Call Trace:
- <TASK>
- dump_stack_lvl+0x53/0x70
- print_report+0xd0/0x630
- ? __pfx__raw_spin_lock_irqsave+0x10/0x10
- ? filename_lookup+0x1a9/0x540
- ? btrfs_statfs+0x11af/0x14a0
- kasan_report+0xce/0x100
- ? btrfs_statfs+0x11af/0x14a0
- btrfs_statfs+0x11af/0x14a0
- statfs_by_dentry+0x117/0x1e0
- user_statfs+0xac/0x130
- ? __pfx_user_statfs+0x10/0x10
- __do_sys_statfs+0x80/0xe0
- ? __pfx___do_sys_statfs+0x10/0x10
- do_syscall_64+0xf9/0x540
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
+Hi Johannes,
 
-Allocated by task 256:
- kasan_save_stack+0x33/0x60
- kasan_save_track+0x14/0x30
- __kasan_kmalloc+0x8f/0xa0
- __kmalloc_cache_noprof+0x158/0x370
- btrfs_alloc_device+0xad/0x3e0
- btrfs_init_new_device+0x3e8/0x36e0
- btrfs_ioctl+0x150d/0x6c20
- __x64_sys_ioctl+0x134/0x1c0
- do_syscall_64+0xf9/0x540
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
+For reference, here is patch 1 of my v2:
+https://lore.kernel.org/linux-btrfs/c51aaf7f4621dedc36c275bfa9ba1ec884de09c=
+4.1787717573.git.zhudongjiang@fygo.io/
 
-Freed by task 256:
- kasan_save_stack+0x33/0x60
- kasan_save_track+0x14/0x30
- kasan_save_free_info+0x3b/0x60
- __kasan_slab_free+0x43/0x70
- kfree+0x121/0x380
- btrfs_init_new_device+0x4a0/0x36e0
- btrfs_ioctl+0x150d/0x6c20
- __x64_sys_ioctl+0x134/0x1c0
- do_syscall_64+0xf9/0x540
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
+Initially, I thought your approach addressed Naohiro's allocation
+concern nicely: keeping conventional DATA block groups on the active
+list preserves the preference for allocating from active block groups.
 
-Fix by waiting for an RCU grace period after the device is removed
-from the list and before it is freed.Place the synchronize_rcu() after
-dropping the mutexes and before the `error_trans` label.
+However, there seems to be one remaining issue. A fully conventional
+DATA block group does not consume active-zone tokens, but remains on
+zone_active_bgs. btrfs_zone_finish_one_bg() can therefore select it
+and return 1 without freeing any active-zone token.
 
-Fixes: 1f78160ce1b1 ("Btrfs: using rcu lock in the reader side of devices list")
-Signed-off-by: Binbin Deng <18983559317@163.com>
-Reviewed-by: Qu Wenruo<quwenruo.btrfs@gmx.com>
-Reviewed-by: Daniel Vacek<neelx@suse.com>
----
- fs/btrfs/volumes.c | 1 +
- 1 file changed, 1 insertion(+)
+can_allocate_chunk_zoned() treats that return value as permission to
+allocate another chunk. The new chunk can then fail activation, and
+the extent allocation can ultimately return ENOSPC.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 85ea9c5d4536..2693dacd1da7 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3168,6 +3168,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 	btrfs_update_per_profile_avail(fs_info);
- 	mutex_unlock(&fs_info->chunk_mutex);
- 	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-+	synchronize_rcu();
- error_trans:
- 	if (trans)
- 		btrfs_end_transaction(trans);
--- 
-2.43.0
+I reproduced this with your v2 series as follows:
 
+1. Fill the sequential zones until DATA allocation spills into a
+   conventional zone.
+
+2. Free some sequential block groups, keeping the conventional DATA
+   block group in place.
+
+3. Allocate new sequential DATA block groups until the active-zone
+   budget available to DATA is exhausted again, leaving each with
+   a larger unused tail than the conventional DATA block group.
+
+4. Issue an encoded write that cannot fit in the remaining tails and
+   needs another active block group. btrfs_zone_finish_one_bg()
+   selects the conventional DATA block group and returns 1 without
+   releasing a token.
+
+5. A new DATA chunk is allocated, but its activation fails, and the
+   write returns ENOSPC.
+
+Thanks,
+Dongjiang

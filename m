@@ -1,214 +1,176 @@
-Received: from sg-3-44.ptr.tlmpb.com (sg-3-44.ptr.tlmpb.com [101.45.255.44])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from fhigh-b6-smtp.messagingengine.com (fhigh-b6-smtp.messagingengine.com [202.12.124.157])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4BD440801E
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 03:46:19 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=101.45.255.44
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 950AE412294
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 04:40:40 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=202.12.124.157
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1791949582; cv=none; b=MXXw9afgw8uNlbBNVJ7Wl9svqc9OpvyRUFdK0ykHJIxgv7Nn+58iZ8A4DHyoJ+bwXhwtktg6YQukGKueCVj1xvX8QLF2uOS88eAtrojz1BsEERi9L7WrMxOEhh/ex3rDXcnnBZC4h0aySb0vr9mcJKBW10ER+2HRuKkLtknwLaI=
+	t=1791952841; cv=none; b=Xnx8Yriax0/pmYgFM2b289+l9KnQ2yXcc+Tj5PazlR1bOaIzVEObn2J/+jvjB+xM6L/UCaUoRujCAFen4+ObmkECYTnuEnqyS7vVk0eVea74kQaBmhfOLXey8pY80DwzP476NgfO2y+r6Oh+0bxQjYSU+X/hc4tjMgmAu5liOKM=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1791949582; c=relaxed/simple;
-	bh=tLkT2E8EPoo8JfJMFjd2LtTrZ0UxhflFI8B/MKivVHc=;
-	h=To:From:Message-Id:In-Reply-To:References:Cc:Date:Mime-Version:
-	 Subject:Content-Type; b=WLrZRjLLS5BOExOUrum4q4oFNiOFtQlYAnDGQs8YQ2CNMfxaKMte8rG4vcWpUYO0lHrTsLEMMw0QwV3BF+RJdO8Uj0WG3CYu9YqlXMRSi+mA2IuLXc0i/S9JUEVlVeAPNsXeXS1xfR8qGGoLLODT3YTKdVZSfKvcXlVDwSqG8MY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io; spf=pass smtp.mailfrom=fygo.io; dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b=B6q7U63p; arc=none smtp.client-ip=101.45.255.44
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+	s=arc-20240116; t=1791952841; c=relaxed/simple;
+	bh=n0Hs5KVddvSkBLEzXlL+zhClUBSiGyvm5QaOrNgUFDY=;
+	h=Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
+	 Content-Type:Content-Disposition:In-Reply-To; b=BrDvhTnjuwj0vfSaE9BQGJAIsNzzdcmwBaj1sbFLelRyA5e4yXrbhc+BjlDRUiufrdiz6xx+SftMjAH+G92hV/55kx45/PCtnCkhqdmU3qyrHuN0yQqZgmE25IanabmFf/ne5hJygJahK2mK4LeC225aP7u/UECkaLZ6/DxFafU=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tyhicks.com; spf=pass smtp.mailfrom=tyhicks.com; dkim=pass (2048-bit key) header.d=tyhicks.com header.i=@tyhicks.com header.b=ncQOfXsY; dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b=K0VjHOtO; arc=none smtp.client-ip=202.12.124.157
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tyhicks.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tyhicks.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.b="B6q7U63p"
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1791949524;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=e+eiPHFuSumVegKSas3bqC3NOsEusUhX5e4gr63CLfA=;
- b=B6q7U63p37+FzMc1sg6Q39Kng2wI2VPs1pYvs8+LFZyDm2bnFu8L0PAMr1tFD2AXeLO7pc
- ZWduflx2/quvXPl57fn6VTaV/0Cl1OgznOo+5gp6Jxhh+bmZbO2lejboPA7y8qw+L7OSvd
- 1x3hLhICkJrDrYe1PNq5xWN1bLdHbuMTWiAix+q79uvB04IYST5bRjmUtJDl/msgNklSXk
- rX/Y6erqSpE1Z7XrBfZ3uo3nzpVVw/eKrz1miz7eeAZeADQWbSvzx4Z9NHWzfv68zxtbUt
- zMz8RBLTEbhR9hcpJ1Rh9q8bHG6nJYGwfbKHX4QVH23VuJ1zyYm91cX7uUaHow==
-To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>, 
-	<linux-btrfs@vger.kernel.org>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Message-Id: <614d2012-675c-4463-9131-25524c56eed0@fygo.io>
-In-Reply-To: <20261013072941.424029-3-johannes.thumshirn@wdc.com>
-User-Agent: Mozilla Thunderbird
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-Received: from [192.168.8.64] ([183.34.167.161]) by smtp.larksuite.com with ESMTPS; Wed, 14 Oct 2026 03:45:23 +0000
-References: <20261013072941.424029-1-johannes.thumshirn@wdc.com> <20261013072941.424029-3-johannes.thumshirn@wdc.com>
-X-Lms-Return-Path: <lba+26acefad3+412650+vger.kernel.org+zhudongjiang@fygo.io>
-Cc: "Damien Le Moal" <dlemoal@kernel.org>, 
-	"Naohiro Aota" <naohiro.aota@wdc.com>, "Qu Wenruo" <wqu@suse.com>, 
-	"David Sterba" <dsterba@suse.com>
-Date: Wed, 14 Oct 2026 11:45:16 +0800
+	dkim=pass (2048-bit key) header.d=tyhicks.com header.i=@tyhicks.com header.b="ncQOfXsY";
+	dkim=pass (2048-bit key) header.d=messagingengine.com header.i=@messagingengine.com header.b="K0VjHOtO"
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfhigh.stl.internal (Postfix) with ESMTP id 16AAC7A0095
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 00:40:40 -0400 (EDT)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-05.internal (MEProxy); Wed, 14 Oct 2026 00:40:40 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=tyhicks.com; h=
+	cc:cc:content-type:content-type:date:date:from:from:in-reply-to
+	:in-reply-to:message-id:mime-version:references:reply-to:subject
+	:subject:to:to; s=fm1; t=1791952838; x=1792039238; bh=mAFiYhtbFe
+	mwvvnCWTEeExr0pkWB7IZg7tNJUrlWDeo=; b=ncQOfXsYux6xUE5Yfpf1YgaBFT
+	cTHfw7QjzH5wusg7wxu/N7/hm73X28PpKquXZc5xiYwPW4+lAfqJxibqXR+UvLz+
+	2ZTUnxRz7HtcfNGFgS1MJkd0Tuv5h/GpjcWCaiSGJ1TZ1UdFlpedEaseFuzvowv/
+	TqQSSl8IG9OCVkOhNBJP95SN5RDQQl8GiR1aqF1Dp02uVWnRjvaljmZODDWOuAYc
+	RQbBArRhfe9jWPm3Oy560onwObhrAOQw70BBPuWWCXlWiSD0St3KNWW1JAL9kmbP
+	bNzF5pEbPDujqawxsBVKwUfbzwYVRc65jY+AqtX1732BeF90Rc9hAafKJ/NA==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-type:content-type:date:date
+	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
+	:message-id:mime-version:references:reply-to:subject:subject:to
+	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm2; t=
+	1791952838; x=1792039238; bh=mAFiYhtbFemwvvnCWTEeExr0pkWB7IZg7tN
+	JUrlWDeo=; b=K0VjHOtOjP8x4OK/qLK5hjnzj3UEK+pOwByQK/diLCthYYtuRak
+	4w+UCUKGCK7JFq5rpq992TQ414sGpeXwoQll/jApp5jSvjv1N0AQ/vV6o8TAQSoj
+	0jIdCgbmVEwbpWc/GDIYhV7iGxhVnAVGyxOucONqfd+Qut3pa8xlZu9eupkPHb7a
+	O19RfpWHCKap1Ii2AG4C4Rgf9FKDqPAESBzjmyuI8I+/7v/rcZf87XvPdXRhxOVR
+	PHI64FJJSdJiopZc5fM/F+oblU4aUcPwF93Yc0oXuLowDYOwPy7A3lW/OBTdMI+P
+	X7xVR3mFNXlN4nZtsbMmUuaI/XZPAGqxlHA==
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-06;
+	repo=github.com/dkim2wg/interop; date=2026-10-04; sw=lmtpprox;
+	action=sign d=tyhicks.com a=rsa-sha256;
+DKIM2-Signature: i=1; m=1; t=1791952838; d=tyhicks.com;
+	mf=PGNvZGVAdHloaWNrcy5jb20+;
+	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
+	s=fm1:rsa-sha256:GrvxbEUOb59BNMFHHZYY1uJCQoVy8k80ujDekgwgQGsJSBi
+	lCo9BqwCewKa7SP+AVLT3ZcrxczJZKdEinMNL3W8H7s128iab2TO486/SjFmDL5k
+	7rYyfhDrXPDJzDTjwoSqw/0rvHpXlNZvIKt1R73SsXkc6dN24QC+INL/6isjrEO3
+	XbXlYv5WheTQNrYg9kyUGU8KvxwgaZkWC4NQz8JFX53LhpKcSPSDNPZ11sBJ29a7
+	/lsD6g/Naq7bR18YOdXq1VBBcdQH9nCUof1Km7uMn5P7IW0RQkTNwEQlGSvFeM4r
+	VEQsLHQixxZMJH1xP9olesH/bfyE6k7Ja+Ig4Tw==;
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-06;
+	repo=github.com/dkim2wg/interop; date=2026-10-04; sw=lmtpprox;
+	action=mi-m=1; hc=12;
+	hn=cc,content-disposition,content-type,date,feedback-id,from,
+	in-reply-to,message-id,mime-version,references,subject,to;
+Message-Instance: m=1; h=sha256:qUmERcW4JyBitZMe5zuk9ywp5LRlIgLiVnlpfK0/pBM=:n0Hs5KVddvSkBLEzXlL+zhClUBSiGyvm5QaOrNgUFDY=;
+X-ME-Sender: <xms:xgfPaiirqaGth-_QIS8OAsoYy7Sf2rYbZwFhAfjJ0MuAWKxQ7THxuQ>
+    <xme:xgfPajaE8ofnGot4Pky4vdm_HNaxz3sV7tnqENiHW1NZcFJGvD6DD5wX-ruqy_MSt
+    qzisuah0SMwdW1miO5q3pRD4Y4a5JhX9iIk39cqEEXme_YFFqwv3Rg>
+X-ME-Received: <xmr:xgfParPcjPkYn4vlK0LMTgxNr5Ysji4BSj-bUDmcojpTmB7UhXNDHw>
+X-ME-Proxy-Cause: dmFkZTFKd7b9t+rYxj8fdFEGtNMVuNQ5jOwC8SdIlUTY97d1oNKv/jurn5DUraLtoIX+2E
+    I3bIdfkpsGhUi+/tt/Szji6YvW2+vzMoDGWv9xPK+lO1Sb1zC3bVSP3NLZ3IFInykWKEaP
+    PH93NfwO6+b7/crRfH4wX5WXalVIiTPCeErxbBQz6CcsOBGB7Z36o5CAXL7bOQ0KwYB3u2
+    Tt7S2s6M3ONy1Jf6lLNDRHUve8aF4/8yXcvszXWYbXHvQvvmoncKrISq6v28AJ11qBn/sv
+    qp0QBdjQ9qmGRZKU7BnZTWgAAxoRXCyTV5hWG4Si3B29+0DMJIgEbol0t/XKYLu9NNjraX
+    0smkOXWfrc/IBFYy/pyNxGx9kfhI0WiCxuDyZdzXI9f2NIYsJkUDkDUeJG4zUPuBWtaBvE
+    Mwi2vLMuBjIiVqP446bbIM7nhubKyyD0dXHP2HMFxaXSbWZp3G1UIOBjW6FPA7HQKr1TcP
+    BPwGPZdrFFh4a5r7M1kmZLbWcfqQp/zQcXFYEYi5bg9fYkAJaxBna2FbAXCGRPGb4Oc6Gh
+    1r+gceQWpvlFBkLAjH/mFrxDSXQUT5CImV6pag4feAxFZbphAWhHyasICJGejFWDtY2NaB
+    BCVdHpJu62iJDBfhFB3EF7k3EeYcm32d9i47bHoDPeSCp+YbyXeBn+EXahFQ
+X-ME-Proxy: <xmx:xgfPanR7GBzeumdsdancLyUun9rpWy2_-9xodM1WQNRR_NGP-MwpZg>
+    <xmx:xgfPau7MdffZ0A3QPGcRatiLqM8PYL5uRriXSWH_CfIWpuOpVlPScw>
+    <xmx:xgfPaia9aS220tTKgJDOpqj2xLlBZI6Y-T6J6zgubPIDKeXL060mVQ>
+    <xmx:xgfPaqZKI-8EgzC6LYS3JQGrtcebVT9OxULUA-QFxdCybqbmiymnFA>
+    <xmx:xgfPan3Lpy4_ahjI4bwYfGxNbwKEt-4H9IVwxWRAdOc68A38BkASVj37>
+Feedback-ID: i78e14604:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 14 Oct 2026 00:40:36 -0400 (EDT)
+Date: Tue, 13 Oct 2026 23:40:28 -0500
+From: Tyler Hicks <code@tyhicks.com>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>,
+	ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+	exfat@lists.linux.dev, linux-fsdevel@vger.kernel.org,
+	ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev,
+	linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev,
+	linux-efi@vger.kernel.org, linux-mtd@lists.infradead.org,
+	linux-xfs@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH RFC 01/28] ecryptfs: don't leak the inode when a lookup
+ can't open the lower file
+Message-ID: <as8HvJJq-JP5-UCp@elm>
+References: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
+ <20261012-work-fs-sb_rdonly-v1-1-60743a3dc326@kernel.org>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
-Mime-Version: 1.0
-Content-Transfer-Encoding: quoted-printable
-Subject: Re: [PATCH v2 02/12] btrfs: zoned: don't activate conventional zones of mixed block groups
-Content-Type: text/plain; charset=UTF-8
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261012-work-fs-sb_rdonly-v1-1-60743a3dc326@kernel.org>
 
-=E5=9C=A8 2026/10/13 15:29, Johannes Thumshirn =E5=86=99=E9=81=93:
-> A block group can be backed by both conventional and sequential zones,
-> e.g. a DUP chunk straddling the conventional/sequential boundary of a
-> device or a RAID1 chunk with one stripe on a conventional zone of one
-> device and the other one on a sequential zone of another device.
->=20
-> On a device with an active zone limit, btrfs_load_zone_info() never
-> marks a conventional zone as active, as there is no zone condition to
-> derive it from. If the sequential zone of such a block group is active,
-> the DUP and RAID1 loaders see an activeness mismatch between the stripes
-> and call btrfs_zone_activate(). That takes an active zone from the
-> device's budget for the conventional zone as well, although conventional
-> zones never consume an active zone resource. The same also happens at
-> runtime activation of a zone, not only in the mount path.
->=20
-> Let the conventional zones of a mixed block group inherit the activeness
-> of the first present sequential zone.
->=20
-> Fixes: 265f7237dd25 ("btrfs: zoned: allow DUP on meta-data block groups")
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+On 2026-10-12 12:20:46, Christian Brauner wrote:
+> ecryptfs_lookup_interpose() opens the lower file of a regular file to
+> read the size from the header. If that fails it calls make_bad_inode()
+> and returns the error. A new inode is still I_NEW at that point and
+> nothing ever unlocks or puts it, so it leaks together with the reference
+> it holds on the lower inode. And an inode that was already in the cache
+> gets marked bad for all its other users instead of just losing the
+> reference this lookup took.
+> 
+> umount then complains:
+> 
+>   VFS: Busy inodes after unmount of ecryptfs (ecryptfs)
+> 
+> That's a WARN, or a BUG with CONFIG_BUG_ON_DATA_CORRUPTION. The lower
+> filesystem reports the same when it is unmounted. Use iget_failed() for
+> a new inode and iput() for one from the cache.
+> 
+> Reproducer, opening the lower file read-write fails on a read-only bind
+> mount:
+> 
+>   sig=$(printf x | ecryptfs-add-passphrase - | sed -n 's/.*\[\(.*\)\].*/\1/p')
+>   mount --bind -o ro /lower /lower
+>   mount -i -t ecryptfs -o ecryptfs_sig=$sig,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough /lower /upper
+>   cat /upper/f      # EROFS
+>   umount /upper     # VFS: Busy inodes after unmount of ecryptfs
+> 
+> Fixes: 3b06b3ebf441 ("eCryptfs: Fix new inode race condition")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+
+Thanks, Christian! I ran this through the regression tests in the
+ecryptfs-utils project and everything passed. I also followed the steps
+in your reproducer, with and without this change, and verified that it
+fixes the intended issue.
+
+  Acked-by: Tyler Hicks <code@tyhicks.com>
+
+Tyler
+
 > ---
->  fs/btrfs/zoned.c | 50 ++++++++++++++++++++++++++++++++++++------------
->  1 file changed, 38 insertions(+), 12 deletions(-)
->=20
-> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-> index 51699136405d..3af234dea6f5 100644
-> --- a/fs/btrfs/zoned.c
-> +++ b/fs/btrfs/zoned.c
-> @@ -1959,6 +1959,23 @@ int btrfs_load_block_group_zone_info(struct btrfs_=
-block_group *cache, bool new)
->  	if (num_sequential > 0)
->  		set_bit(BLOCK_GROUP_FLAG_SEQUENTIAL_ZONE, &cache->runtime_flags);
-> =20
-> +	if (num_conventional > 0 && num_sequential > 0) {
-> +		int ref;
-> +
-> +		for (ref =3D 0; ref < map->num_stripes; ref++) {
-> +			if (zone_info[ref].alloc_offset !=3D WP_CONVENTIONAL &&
-> +			    zone_info[ref].alloc_offset !=3D WP_MISSING_DEV)
-> +				break;
-> +		}
-> +
-> +		if (ref < map->num_stripes) {
-> +			for (i =3D 0; i < map->num_stripes; i++) {
-> +				if (zone_info[i].alloc_offset =3D=3D WP_CONVENTIONAL)
-> +					assign_bit(i, active, test_bit(ref, active));
-> +			}
-> +		}
-> +	}
-> +
->  	if (num_conventional > 0) {
->  		ret =3D calculate_alloc_pointer(cache, &last_alloc, new);
->  		if (ret) {
-> @@ -2450,6 +2467,9 @@ bool btrfs_zone_activate(struct btrfs_block_group *=
-block_group)
->  		if (!device->bdev)
->  			continue;
-> =20
-> +		if (!btrfs_dev_is_sequential(device, physical))
-> +			continue;
-> +
->  		if (zinfo->max_active_zones =3D=3D 0)
->  			continue;
-> =20
-> @@ -2516,6 +2536,7 @@ static int call_zone_finish(struct btrfs_block_grou=
-p *block_group,
->  	struct btrfs_device *device =3D stripe->dev;
->  	const u64 physical =3D stripe->physical;
->  	struct btrfs_zoned_device_info *zinfo =3D device->zone_info;
-> +	unsigned int nofs_flags;
->  	int ret;
-> =20
->  	if (!device->bdev)
-> @@ -2524,18 +2545,17 @@ static int call_zone_finish(struct btrfs_block_gr=
-oup *block_group,
->  	if (zinfo->max_active_zones =3D=3D 0)
->  		return 0;
-> =20
-> -	if (btrfs_dev_is_sequential(device, physical)) {
-> -		unsigned int nofs_flags;
-> +	if (!btrfs_dev_is_sequential(device, physical))
-> +		return 0;
-> =20
-> -		nofs_flags =3D memalloc_nofs_save();
-> -		ret =3D blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
-> -				       physical >> SECTOR_SHIFT,
-> -				       zinfo->zone_size >> SECTOR_SHIFT);
-> -		memalloc_nofs_restore(nofs_flags);
-> +	nofs_flags =3D memalloc_nofs_save();
-> +	ret =3D blkdev_zone_mgmt(device->bdev, REQ_OP_ZONE_FINISH,
-> +			       physical >> SECTOR_SHIFT,
-> +			       zinfo->zone_size >> SECTOR_SHIFT);
-> +	memalloc_nofs_restore(nofs_flags);
-> =20
-> -		if (ret)
-> -			return ret;
-> -	}
-> +	if (ret)
-> +		return ret;
-> =20
->  	if (!(block_group->flags & BTRFS_BLOCK_GROUP_DATA)) {
->  		struct btrfs_fs_info *fs_info =3D block_group->fs_info;
-> @@ -3098,8 +3118,14 @@ void btrfs_check_active_zone_reservation(struct bt=
-rfs_fs_info *fs_info)
->  		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
->  			continue;
-> =20
-> -		for (int i =3D 0; i < map->num_stripes; i++)
-> -			map->stripes[i].dev->zone_info->reserved_active_zones--;
-> +		for (int i =3D 0; i < map->num_stripes; i++) {
-> +			struct btrfs_device *dev =3D map->stripes[i].dev;
-> +			struct btrfs_zoned_device_info *zone_info =3D dev->zone_info;
-> +			u64 physical =3D map->stripes[i].physical;
-> +
-> +			if (btrfs_dev_is_sequential(dev, physical))
-> +				zone_info->reserved_active_zones--;
-> +		}
+>  fs/ecryptfs/inode.c | 5 ++++-
+>  1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/ecryptfs/inode.c b/fs/ecryptfs/inode.c
+> index 525297c7ebd8..0d8452558a98 100644
+> --- a/fs/ecryptfs/inode.c
+> +++ b/fs/ecryptfs/inode.c
+> @@ -362,7 +362,10 @@ static struct dentry *ecryptfs_lookup_interpose(struct dentry *dentry,
+>  	if (S_ISREG(inode->i_mode)) {
+>  		rc = ecryptfs_i_size_read(dentry, inode);
+>  		if (rc) {
+> -			make_bad_inode(inode);
+> +			if (inode_state_read_once(inode) & I_NEW)
+> +				iget_failed(inode);
+> +			else
+> +				iput(inode);
+>  			return ERR_PTR(rc);
+>  		}
 >  	}
->  	spin_unlock(&fs_info->zone_active_bgs_lock);
->  }
-
-Hi Johannes,
-
-For reference, here is patch 1 of my v2:
-https://lore.kernel.org/linux-btrfs/c51aaf7f4621dedc36c275bfa9ba1ec884de09c=
-4.1787717573.git.zhudongjiang@fygo.io/
-
-Initially, I thought your approach addressed Naohiro's allocation
-concern nicely: keeping conventional DATA block groups on the active
-list preserves the preference for allocating from active block groups.
-
-However, there seems to be one remaining issue. A fully conventional
-DATA block group does not consume active-zone tokens, but remains on
-zone_active_bgs. btrfs_zone_finish_one_bg() can therefore select it
-and return 1 without freeing any active-zone token.
-
-can_allocate_chunk_zoned() treats that return value as permission to
-allocate another chunk. The new chunk can then fail activation, and
-the extent allocation can ultimately return ENOSPC.
-
-I reproduced this with your v2 series as follows:
-
-1. Fill the sequential zones until DATA allocation spills into a
-   conventional zone.
-
-2. Free some sequential block groups, keeping the conventional DATA
-   block group in place.
-
-3. Allocate new sequential DATA block groups until the active-zone
-   budget available to DATA is exhausted again, leaving each with
-   a larger unused tail than the conventional DATA block group.
-
-4. Issue an encoded write that cannot fit in the remaining tails and
-   needs another active block group. btrfs_zone_finish_one_bg()
-   selects the conventional DATA block group and returns 1 without
-   releasing a token.
-
-5. A new DATA chunk is allocated, but its activation fails, and the
-   write returns ENOSPC.
-
-Thanks,
-Dongjiang
+> 
+> -- 
+> 2.53.0
+> 
+> 

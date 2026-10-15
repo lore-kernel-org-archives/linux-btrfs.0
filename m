@@ -1,168 +1,151 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from mail-lj1-f174.google.com (mail-lj1-f174.google.com [209.85.208.174])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 169EE4EDCB6
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:00:13 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 017204F93C3
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:02:14 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.174
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792054825; cv=none; b=O9ImMannkmsQfCRRFRB36PQTme76xEhAaVfrtKMrBTT6MiWKXL9+6Fg/YG+6qUHNDprS9mpmjQron/VnH95g8xRE8Iu3e/na5aCc1AXAm9gpbpmKl/hKWHDcOwLr7QpXKtceVe6r5jimo6LcaMG9ANpZf8mXUkoACUpctHmuIVI=
+	t=1792054936; cv=none; b=gNViTFgHnmkXE2IgS0SwZkUlmhgY6XFks8f1eQe6BRHRUGgcOSTKsTvjQp8lsj/ccSkQBTebecxE+QFoTifQqPerXNY1pTA03/keEXFvrLm8TFnIIO9HSbyBqADAA4SAxXFWJbXhb9+KtUc4kdvsRgINM2NsAGfoWHq9GXlcf5U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792054825; c=relaxed/simple;
-	bh=AfznUyVdySKlcMpDV6egOkj64/DVv7blNs1zFbANA5Y=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=i8JQOy6VNH/OUtGgGdJfpd7AxO6Z5p2q17gLkkX7XOtrLPjrIbB/JA/AK6b6AEIpzuZLqXHDLJ8sO42iUakOxsTLK/3HfBByqNkjcYP2x/nUQcik+pNykdz5wZrlgys6AO70pAv1tAVLI+wGcpG9f/nkN9s+pxMYwG6REdqISK8=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fKdvn1Rj; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=fKdvn1Rj; arc=none smtp.client-ip=195.135.223.131
+	s=arc-20240116; t=1792054936; c=relaxed/simple;
+	bh=0/WLtgt8hKK9/6UbZbHkNnQAX0izmZ5zFr4Skps/vz4=;
+	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type; b=Z8q1tF02amZMzu6OoLkYr6bg9IOyQuok+RGMVZRs00TVdG3yruKuXfeTlh0wja5p3gg7egs+w1mg8gtt6dLf41RoUS/FU9PYZCoNbS+UfXyTbomM3frLAz9CbFZGEWxD6A3x/tC047HOK5Hkx4EiSUDFpdG+ugEBapoNBxsE+4s=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QwplHTDA; arc=none smtp.client-ip=209.85.208.174
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fKdvn1Rj";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="fKdvn1Rj"
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id C750D1F7F8
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:00:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792054811; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=d9hPxFyeI+A/ZI+p60U0MIzZpXGLvnWIyK97HA8aVNk=;
-	b=fKdvn1RjugfvGTUu7bfz+sON3laVWgSe4aw3XiHFlMe8upf+hSsEfjKrvsg0kNkPSCUqsT
-	pM9gSj/Efdw4ntNFp0wywfb7ryQSRC/B3qwMH6Ys1GXrYhIyxOQHMSnZDlGXoQCSA41Px7
-	FTQatHazbwAutbk9I4kubFpfOFHYg+c=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792054811; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=d9hPxFyeI+A/ZI+p60U0MIzZpXGLvnWIyK97HA8aVNk=;
-	b=fKdvn1RjugfvGTUu7bfz+sON3laVWgSe4aw3XiHFlMe8upf+hSsEfjKrvsg0kNkPSCUqsT
-	pM9gSj/Efdw4ntNFp0wywfb7ryQSRC/B3qwMH6Ys1GXrYhIyxOQHMSnZDlGXoQCSA41Px7
-	FTQatHazbwAutbk9I4kubFpfOFHYg+c=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4E7E4132C9
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:00:09 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id LEeeMxiW0GrOMAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:00:09 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: lzo: remove the special handling inside one fs block
-Date: Thu, 15 Oct 2026 19:29:50 +1030
-Message-ID: <9fbafebb95a3b9bbe4d6adf98c1ad3c65eb29aca.1792054757.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QwplHTDA"
+Received: by mail-lj1-f174.google.com with SMTP id 38308e7fff4ca-3a808f09021so14082071fa.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 02:02:14 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1792054933; x=1792659733; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=gCzb5Jpho3eEfUXrbXcsB7wXdosyNE0+dqqyroWERu4=;
+        b=QwplHTDAmcBD3So4wLTGADhp1YscyFzy/j18sphTljBmRYhgBdagx+BO4q7hrbd4bL
+         E8w1nQy3lXAH12nHJ1u06eGcDgRIlbpuYhAFPI2Q9xro6PMMd7cq1R2UPMoM+NNdrtGa
+         /5z2QDhZl6mLAlh0C38ed4rfVm6XImJp8D55xBb7MU7Y+yZMJw76ue804WcEBwY5SuL9
+         ByCZK+FzGZEkSWnRdewG+ddLMFVXQP2EE7PaqSoidknd9EHwS8pUHPnrY34TJ5pet1Bv
+         yZfdgyFq1lqLgb+Wx50e/3nfX/ZfQFILq/jzuzHhXwPq77Bpj94kL+LkW8XP/n0TZMlt
+         Abfw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792054933; x=1792659733;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=gCzb5Jpho3eEfUXrbXcsB7wXdosyNE0+dqqyroWERu4=;
+        b=fZjEgE2V0ZA0qvj6EN7mCZnwOUoH+7kSHkhPtBAf1GZfiWWJVS+4vlCcdNCHbc9KOR
+         TKsCh9Ibi1LZnm4y5lE8JEXqob7WtkYxyQCzaKwa5mTSKrSwWMR0wU+Sl6w4YjmmO8Cz
+         23VIvcyeg/XbqBb98EFhjmFw+0tWgECzlL5+ylTyrAnbp3Y2iSWHqTNOOEURoCyDDhVu
+         IK4y9J+IVlosYIIgte7jzrKXa/7w6VhSMAaTu18aCjoZqlgFuP/93q1dxJbybRi/u+R8
+         FmW2wVd+oSkA61Rj4Cq5+MWgpw9nd1bBF0kLwR+eq7dIpla1kaROYG12F73OSDeCrGk5
+         4e3Q==
+X-Gm-Message-State: AFq9FYJq4vX7bRNxO7aqJ8FMYnEyyXtc4U4MPuSuIzzMG8nYilaw6WFy
+	YFmGaw4nauKdeq13ahWdF1Q91/oUJHrqsU50ghEasG5ANL7eEhqp84wFeEbQN8Av69w=
+X-Gm-Gg: AYBFou335Go0zzdHUziVTtI7bkvhgVm7DkfipKUlWSEIP3+MfF4ysrqiZEw53KnhPGC
+	3u6ps/Wv9o4X15moxyN6ndIJseyYdbE1xWWQvQQp2I2srt+u5CvV7lRsVUXWYN3T3H4rCi9S10h
+	BtDNWLoEDNNGSoME4adD1zKHxmlmKRFP94O0nPMmMu0baVEn1cQtMF4U9C8ByzTKl+Pd3SjcjS2
+	zKD0CV9amchdztelmr8Kfq+FQ66FgNggzfT7OrRdJ8Ot401dCoasyPZBMs0MXkAHZoh4Zt4bbvt
+	XlVBMjGTd1kJjyUdyMMn2fxr4NzHMgD8JUTMcg8rjoFezwHxKFBOanDnt10ldxBPcGswCuG4E1s
+	QGjJuYK6FigS41Q8a+f4Ow8IzuEejwc77w+606ge2vU+ISNsFyAUAzJfs0CfQq3Dv0Q3FL5dfGY
+	9cwJbl4xnDAou3gpGGA5sDKxjwX6CbIb07jgSB0KB7ii4YgD355dNR3w5ApIelEQu8vlRUtIy/
+X-Received: by 2002:a05:651c:1542:b0:3a6:692d:b7ed with SMTP id 38308e7fff4ca-3a9c539343dmr49621261fa.20.1792054932846;
+        Thu, 15 Oct 2026 02:02:12 -0700 (PDT)
+Received: from [10.86.129.46] ([149.22.87.44])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ac9376ea64sm1558364a91.2.2026.10.15.02.02.09
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 15 Oct 2026 02:02:11 -0700 (PDT)
+Message-ID: <e3321d2d-d8dc-43e5-8501-31b2d5ae1146@suse.com>
+Date: Thu, 15 Oct 2026 19:32:06 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: verity: return error from btrfs_orphan_add in
+ begin_enable_verity
+To: guolingxing <guolingxing@tju.edu.cn>, David Sterba <dsterba@suse.com>,
+ Chris Mason <mason@kernel.org>, Boris Burkov <boris@bur.io>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ stable@vger.kernel.org
+References: <20261015071128.3319350-1-guolingxing@tju.edu.cn>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
+ Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
+ SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
+ YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
+ 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
+ vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
+ cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
+ qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
+ /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
+ o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
+ JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
+In-Reply-To: <20261015071128.3319350-1-guolingxing@tju.edu.cn>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Score: -2.80
-X-Spam-Level: 
-X-Spamd-Result: default: False [-2.80 / 50.00];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
 
-Since commit 3eaf5f082c4c ("btrfs: extract inlined creation into a
-dedicated delalloc helper"), even for inlined compressed extents the cb
-range will be exact one block, aka [0, sector).
 
-And several attempts to bring back the old compression range [0, i_size]
-all failed with extra races against i_size.
 
-So I think the behavior will stay. With that said, we can further
-simplify the lzo compression path.
-Since the range is always aligned to block size, and lzo compression is
-already done block by block, there is no reason to handle sub-block
-sized range.
+在 2026/10/15 17:41, guolingxing 写道:
+> btrfs_begin_enable_verity() ignores the return value of
+> btrfs_orphan_add() and unconditionally returns 0. When inserting the
+> orphan item fails (e.g. -ENOMEM), the error is swallowed and the
+> caller continues to build the Merkle tree even though the orphan item
+> was never written and BTRFS_INODE_VERITY_IN_PROGRESS was not set,
+> leaving the on-disk state inconsistent.
 
-We can safely remove the @sectorsize_mask, @sector_off and @in_len
-variables, and always use @sectorsize as input length for each
-compression iteration.
+This conflicts with your statement just lines below:
 
-Finally add two ASSERT()s to make sure the range passed into
-btrfs_compress_bio() is always block aligned.
+"The transaction is already aborted inside btrfs_orphan_add() on failure"
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/compression.c |  3 +++
- fs/btrfs/lzo.c         | 11 +++--------
- 2 files changed, 6 insertions(+), 8 deletions(-)
+So why the on-disk state can still be inconsistent?
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ad90e14032db..b12b7f1b31fd 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -1010,6 +1010,9 @@ struct compressed_bio *btrfs_compress_bio(struct btrfs_inode *inode,
- 	struct compressed_bio *cb;
- 	int ret;
- 
-+	ASSERT(IS_ALIGNED(start, fs_info->sectorsize));
-+	ASSERT(IS_ALIGNED(len, fs_info->sectorsize));
-+
- 	cb = alloc_compressed_bio(inode, start, REQ_OP_WRITE | write_flags,
- 				  end_bbio_compressed_write);
- 	cb->start = start;
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index 2f0996692da0..0b2d9a825543 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -291,9 +291,6 @@ int lzo_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 
- 	while (cur_in < start + len) {
- 		char *data_in;
--		const u32 sectorsize_mask = sectorsize - 1;
--		u32 sector_off = (cur_in - start) & sectorsize_mask;
--		u32 in_len;
- 		size_t out_len;
- 
- 		/* Get the input page first. */
-@@ -303,11 +300,9 @@ int lzo_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 				goto out;
- 		}
- 
--		/* Compress at most one sector of data each time. */
--		in_len = min_t(u32, start + len - cur_in, sectorsize - sector_off);
--		ASSERT(in_len);
-+		/* Compress one sector of data each time. */
- 		data_in = kmap_local_folio(folio_in, offset_in_folio(folio_in, cur_in));
--		ret = lzo1x_1_compress(data_in, in_len, workspace->cbuf, &out_len,
-+		ret = lzo1x_1_compress(data_in, sectorsize, workspace->cbuf, &out_len,
- 				       workspace->mem);
- 		kunmap_local(data_in);
- 		if (unlikely(ret < 0)) {
-@@ -321,7 +316,7 @@ int lzo_compress_bio(struct list_head *ws, struct compressed_bio *cb)
- 		if (ret < 0)
- 			goto out;
- 
--		cur_in += in_len;
-+		cur_in += sectorsize;
- 
- 		/*
- 		 * Check if we're making it bigger after two sectors.  And if
--- 
-2.56.0
+> 
+> Propagate the error to the caller so that fsverity_ioctl_enable()
+> aborts before building the Merkle tree. The transaction is already
+> aborted inside btrfs_orphan_add() on failure and released by the
+> unconditional btrfs_end_transaction(), so only the return value needs
+> to change.
+> 
+> Fixes: 705242538ff3 ("btrfs: verity metadata orphan items")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: guolingxing <guolingxing@tju.edu.cn>
+> ---
+>   fs/btrfs/verity.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+> index 600337a84fbe..d92c9dab0293 100644
+> --- a/fs/btrfs/verity.c
+> +++ b/fs/btrfs/verity.c
+> @@ -615,7 +615,7 @@ static int btrfs_begin_enable_verity(struct file *filp)
+>   		set_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
+>   	btrfs_end_transaction(trans);
+>   
+> -	return 0;
+> +	return ret;
+>   }
+>   
+>   /*
 

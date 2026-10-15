@@ -1,166 +1,173 @@
-Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51C744908C3
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:34:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.51
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5D6E92D5932
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 14:43:29 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792060475; cv=none; b=KeexiegBvprGgio+XVV6v2sYBGWWy5+WQ424gCeUAIAgoTWGtbnpxIRFMSR8C9/WQ+C90DUe1AKW8ogcRe6TM8RDcc511v43aNPmqK5Xpzp2twt7UxiVSxqy3wilZZkIF+jwJ2iTnUmYSjA+60V73R382kbbc9EzeZWAtd1teh0=
+	t=1792075410; cv=none; b=hp5+IDER6eVVmxSslRySpRNBnCGIN+QekzWl28zs1Xrc2E6Gd3eT0V/Fo8r/3JxVFgLXlGpnMoG4YOyINsn1KH4NtZVJHvty+4ACMPGkaZ4/GTzq1cZhMtJWHk3JupLjQk7qLd/uO6DLgCd1bMOVjHgGjPg9uKkdml8yq3VWlUY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792060475; c=relaxed/simple;
-	bh=uuA282mbAAsxubVd//hesrkFUMk7A9wWWPpltUN9p9w=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=JduTP0iL4aQvVTo7uxbAXcql/+GIopHN9g2FZjItR5AFSG4k++W8y90p7jLiMHrHj9wQiigjIInKSD3KDJa1Hyxb6Cxe8dMb10e2ftu79ElGgdBbyQUA//kf4xuMFfEntJsfUl9gcivSJU2OEMfw58ivO8ADKG3HRcL48i2nR9Y=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Dtondgv6; arc=none smtp.client-ip=209.85.128.51
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1792075410; c=relaxed/simple;
+	bh=l1msu6fUGlXDLbzJuF3G7A0YIGm5a6dwtgDp6hECOck=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
+	 In-Reply-To:To:Cc; b=Il3dwrhMLsf10HeHJKcQMlpbxtHEqO+Ue6U3iYKUAKv4/K6e0qqxyDbSztJthg6mnrX9vXTNvMBTZv9JuVrbrxI2Wm5vfqn9CynQmiorszoP5lS8rU92MXY9fEE0ZLqnAbNaKaifEqKmjt3XU8ILPtwpjLXTMmElTP+nzFxsekk=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=fuO3v52g; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=ecx+IkK0; arc=none smtp.client-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Dtondgv6"
-Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4a16c399641so49487465e9.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 03:34:34 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="fuO3v52g";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="ecx+IkK0"
+Received: from pps.filterd (m0167073.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69FEY9dO1738826
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:28 -0400
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=r+qM
+	MTrVdByCKG2VkdcgIflOX2Lqg7MaKcwpptJUaBE=; b=fuO3v52gF2kAyaBD4OqH
+	kF2yxgx8lgfNmnAp8fkiW4jSMcvFGHxHWU/4APrXFse7QN+jkDQC6IDScJDoFSvg
+	FL4tFUWwHm2DVTO52SZKkYjMNoXoRXzetlFKlla/Chy/mZclS4sHF2ymi0LbRS3S
+	jWHosz99sj6OuCuaY7a25ygij4MfwL9U1UlV4fOPeU4wznJdP83flU59QpVKHTNE
+	gdhbRJm71XejNeGI2bOEWChqiw71BLaw6FcinesuzNBB1Ig5GT2dCCpqcKYPxP1w
+	b2eMg7uPIghUHcrAXYCKS9OJAXu7tzuOFVtnpllmyrJ4QOEXzOPjifDoH2GGKGyI
+	Ow==
+Received: from mail-qv1-f72.google.com (mail-qv1-f72.google.com [209.85.219.72])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4hah7jd4h7-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:28 -0400 (EDT)
+Received: by mail-qv1-f72.google.com with SMTP id 6a1803df08f44-9196b477c4cso1214286d6.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 07:43:28 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1792060472; x=1792665272; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=P3osTZ0BdPAIjeNNLvrEv8uJJ4FA/b0wHvWNDV0Nx5A=;
-        b=Dtondgv6iliSEPp36uw9udtSxFxYcHH9YqxR9wat8hX8GLoLCXkehpv6LV/bZAkqAR
-         P9Bq5ivpRTQmnu2wztU6CuoUTihAe3qhczzzbFrEHy/T7SHeK/6gRnS7Ho1jB9BqC3mf
-         w0pb8gW76Yee+FUYbktpXb3dZQeIImHGHaW34h47vl5/wYlqgKZiyzZcJ1T8j1bEv7fD
-         PNr4iUPRQpdWXBKGLaEsZO26InzD1WQSU90SIGMT3VndiCLnQQ4WRKUx3S63VRs6f0eH
-         vC8e4Tj1URg3nsBr3TmkKkkDjoc1PfdctZ2Juu7/3wYA92NLITPhBsVoOJKhVhIlJh5Q
-         nCHA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792060472; x=1792665272;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=columbia.edu; s=lionmail; t=1792075408; x=1792680208; darn=vger.kernel.org;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=P3osTZ0BdPAIjeNNLvrEv8uJJ4FA/b0wHvWNDV0Nx5A=;
-        b=ywFO6A/MgOb21i3wTBHGKaep2H7huYxC74yNAbNHligvJGmrNckbQqGGqk918lDt5m
-         Hkejy9TbD7KpW3CD7D7EPWtW/Kcl4gzqxZCRlBmxnn6IRBrGPImJ7GJRKVMNXLHdNqyK
-         VzYlMxX4XX4UcDi3WDCdJ4uF5Y0UNbQDFzVqyHpqhxpkpGZxjaj1HiEjrcmzF+aOOt4E
-         1XYhXaKX95xCsrHuDY0Bh3KjjxJNTiI2GEqoebEG9b4hcPgi7J5/RpZZueToB4yD0pgk
-         ACfXJMuv1/vTOaaUqkU3TPgoTO8bMSidpEhXmjFMkRjbasFUJjxM+/H42YqFyMKHEsiT
-         BJ5g==
-X-Gm-Message-State: AFq9FYJmvZJ3Zof5BvPYQ4KYboT9Sv4GSp+FXkEVDW7+0V0RoYGELMfV
-	isJe+XJmzc9uZDBNImC5TbqDiuSE2axEP4jW4+1E77aTV3OuJI8OWQhuhP/QQt2Ob9w=
-X-Gm-Gg: AYBFou1UI4PtyBJt1DDQWcDLTaZtBP5Ym8KXoo4rxzk99hC/k4vYFyE/fNOxXXvY6af
-	eZyx6MHny+lF/Q+2/o4HHSZfZnfTR3dloXz/wYZ8PdRT3kiomUV0WoQOOulBRWOcabyY2DOmJCx
-	HlEyoi0jS71ECAxdv/uA/ZoZH4CvY3F8kt/ok2WjegzKAyjD1bOuJ2EGWNwx1Xekf3Y+/IVz0YO
-	O20WaWRfG2qMXaOiDjNPXI4T+CHPWqTXWA9QZmZoxKgatL4sqfwtAjO7SJ/Sm8bhCte/atRUE2R
-	l/Bb65YMB7bzPFMO108Msuev6Hrn13J2t23iTclRr/uVEbDSOWjg7Lvq6P1lxigYSt/Hkp383EF
-	qJPulu5d5b7z+rm05nhONFSpCOiCUmDoScmhjOvw6Q0OYA9ZKeSyUAZW8ydETSZb0Pi6rbYICHr
-	CDUbW7naB2A6xquzCQUcahNprIGnTu9oJPc5qtDIrQFkLQYEIPSA91saipwqaF75IsDxF3z3ET
-X-Received: by 2002:a05:600c:608d:b0:49c:cee0:e7c1 with SMTP id 5b1f17b1804b1-4a18e48d45cmr404356995e9.16.1792060472529;
-        Thu, 15 Oct 2026 03:34:32 -0700 (PDT)
-Received: from [10.86.129.46] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ac944af2f1sm3803007a91.15.2026.10.15.03.34.28
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 15 Oct 2026 03:34:31 -0700 (PDT)
-Message-ID: <0928487d-bde6-45e3-868d-8bdf9d22b6c8@suse.com>
-Date: Thu, 15 Oct 2026 21:04:26 +1030
+        bh=r+qMMTrVdByCKG2VkdcgIflOX2Lqg7MaKcwpptJUaBE=;
+        b=ecx+IkK0Y9MvSy6MZQpSXkrj85cBdtvtGiD+NoqVLZWEQ9ollhKTYpUjp+YygsDq02
+         +3D2SnLK+P4C1V8SyVLFweiptuHvisK1U+P+DDVFuBjEswEyfwzMN/h6WBqdK7e4Za2w
+         ObAKtkOltVQrZE/pqaKJzz0BcGefXEqpyFHFY7GnH8txzmvRM9DLZsYUri2cpQi2X6lg
+         NmVqbxvRtm8M9xIdkmAbwynsbgZ5XELGpYuyHgp17Rb3tUfXZd3mnCMgDNcCiYXfGe2M
+         SKm1rop5M5j38U5/Q6w22lEJax4sJekpFZJt1eiIiUQNYKN5yJdhUKAl639XkEUFCNT+
+         5LaA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792075408; x=1792680208;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=r+qMMTrVdByCKG2VkdcgIflOX2Lqg7MaKcwpptJUaBE=;
+        b=Df8X4UAxgmKwyvNFYsTXvIPjT9shD2aLS63iLBnpg3cQLKebfx5RItdC91/dTUHXD1
+         Tqqg9iDxMux06fc67AK1Ylo5pFYegTVADw/kzjK1oLouirEPCb5K4aYsAOiNnIYRuhB1
+         FYSkZT50+jYEOxylRoFMPt+s+7bY9WvscM+AlQOcInHwTC8pP+CFR59AddURiZbmQE8+
+         Wm1LD1XIIy2dnkSiIZiVrNiTHdkvek3JAYxhaljj61On3VYGYjDnkmvZ88rgFlJ77Zmc
+         tQwVjdBgmMcrvi26nsrD37VMRlABkzJcqn7ieVtcLD8uUOCFaiChIkSxsKEbVMHQENRT
+         PaHg==
+X-Gm-Message-State: AFq9FYJrHI4akn2KFSuOQAGR/SOkCU4t5nlOoLdjnpmkTjZGjpYUpWFz
+	N4IHsWp5aSPvPls1ZELI8Vv9oQA3xM3M47pBPxChIW0tQ/dpFUBWWmvd/fVuBXZ6PqJ1WRXFXpA
+	SvONZi6ygAiArHhNrBaVGdsdNVa4j24Eu3ySSpNQsohggNZCNt06su16i0cxijrZx4fos
+X-Gm-Gg: AYBFou0h2YktT2U+lwolWLwn1mDQ/+Wao4Qzc4YEPg0hp2PUJvObl6zs3b+XtD2V07Q
+	SJn7dV6YG9V86DQ+b2bgAADyP5U5oe/Ku6eiU3axbWEUNRUoO/utCKv83UzliqoPErygLqqjW6Y
+	ocivlXuNw5w6eGR8aSJ92cXT0OtudCJm55xnGUx0P4r+2kpwI7UyxW+knR0G3iX0WKaFbz7c/79
+	7lgniDYIjVOu8rYeRDL+dMrMgSDyh36ZBZyInyr5VPqaM4xhcYajVwBh2lLWdT31a9eAyKbf1+7
+	4Js20TCd420cvo936v4Hhe4F194DvXxG3kk3hVSM4u2Cbe2i2DDu5C9/kJj9aMQqfKquX6esi8A
+	1Rs8623oggzw2yah9C09TdcSMfTh6xuqqYCMtSRRjyAak
+X-Received: by 2002:a05:6214:29ec:b0:919:5e97:76b7 with SMTP id 6a1803df08f44-91bc962cadcmr4703576d6.18.1792075407758;
+        Thu, 15 Oct 2026 07:43:27 -0700 (PDT)
+X-Received: by 2002:a05:6214:29ec:b0:919:5e97:76b7 with SMTP id 6a1803df08f44-91bc962cadcmr4703096d6.18.1792075407148;
+        Thu, 15 Oct 2026 07:43:27 -0700 (PDT)
+Received: from [127.0.1.1] (nat-128-59-176-51.net.columbia.edu. [128.59.176.51])
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97b5f323sm83026476d6.20.2026.10.15.07.43.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 15 Oct 2026 07:43:26 -0700 (PDT)
+From: Tal Zussman <tz2294@columbia.edu>
+Date: Thu, 15 Oct 2026 10:43:14 -0400
+Subject: [PATCH v5 01/19] btrfs: drop the extent maps of the written part
+ of a failed ordered extent
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: verity: propagate orphan insertion errors when
- enabling verity
-To: guolingxing <guolingxing@tju.edu.cn>, David Sterba <dsterba@suse.com>,
- Chris Mason <clm@fb.com>, Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <e3321d2d-d8dc-43e5-8501-31b2d5ae1146@suse.com>
- <20261015095901.4140409-1-guolingxing@tju.edu.cn>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20261015095901.4140409-1-guolingxing@tju.edu.cn>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20261015-btrfs-remove-v1-space-cache-v5-1-6b31347d9998@columbia.edu>
+References: <20261015-btrfs-remove-v1-space-cache-v5-0-6b31347d9998@columbia.edu>
+In-Reply-To: <20261015-btrfs-remove-v1-space-cache-v5-0-6b31347d9998@columbia.edu>
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+        Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        Tal Zussman <tz2294@columbia.edu>
+X-Mailer: b4 0.17-dev
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1792075404; l=1368;
+ i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
+ bh=l1msu6fUGlXDLbzJuF3G7A0YIGm5a6dwtgDp6hECOck=;
+ b=DMD8OvzP/ioXtpq5AhK9LPvKupQnfJP46F8KBx2gZrxrFCkp1/9rryjuvXVJdBAUjdyKc0Hbt
+ gsUyAtAEO73Bm6rf2Wcb3sF2CBansT4yC7yQt35VOqMWrDLOD5ptOMC
+X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
+ pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfX6BvIczL2+fwi
+ bkHdVmeycnJlFejsvxbFDU5B4axz03GBB4D2OL4FAqOqK8U7alFMxdAqtmTxn62HxO+t18L/8Ty
+ /wMxZwpiDycErzka8ttk1terhfTTJcqye09x5jfOnXcDnInCvCy+
+X-Proofpoint-GUID: 5lq_JVcPe1xhdiHKPhsz5rhQ9Z-gUJ5D
+X-Authority-Analysis: v=2.4 cv=Q7RHcI2a c=1 sm=1 tr=0 ts=6ad0e690 cx=c_pps
+ a=7E5Bxpl4vBhpaufnMqZlrw==:117 a=NKoNGjn6KhAaSQkl0TXC/A==:17
+ a=zFgV0_0DlQRWwMvk:21 a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10
+ a=A0y_DWxS2BwA:10 a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22
+ a=jHxIr1HyPKZ_Q5_91PL3:22 a=IbTQtsteKuFIr66F210A:9 a=QEXdDO2ut3YA:10
+ a=pJ04lnu7RYOZP9TFuWaZ:22
+X-Proofpoint-ORIG-GUID: 5lq_JVcPe1xhdiHKPhsz5rhQ9Z-gUJ5D
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfXzqmVZI0AclQA
+ TyKsfhFY65GJ8FXt2DpKrHRxXOgZvL7hM2FMN6XKeDpIzSTVoX4PvfVKK6bREiM9oS49CdfFYLw
+ kx3ia0poy/dTcLYdM2dC1UHJXDHgMXV7P/qLJ6HzTOQ3iWR6dvObsQmPNW1fgF7QcHYPB3QRJDU
+ +lk1fBdWs1qP3MwZHHsTbjXEcewao1VtxAY3W3aQ30D/in48LTUlohF3b7iDXJ779HapFYfsSFM
+ MzLkF8U+YIJlFJRlvzCDQHAsITSMh2tBlrA3/adNJb9IP7SLK0UUhc1ygnnUDuQlcbGh6mzWBbm
+ 4ydX7ugX9m43TRtmc9AXASlNcSllcNgZ+NXf83rZR1Ut/hHaVG8Mon0llnA8Q7CVANKC7x5iCov
+ OMTCxHiXct0VKN+Sxtrx5ZxRRf2h7/TnP+yyv1TTDbW5vfcIM5vMX2ECtYRO7uMqBiobbd/vrFl
+ nWEs5/+syd5FHYnydvQ==
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11936
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ bulkscore=10 spamscore=0 phishscore=0 impostorscore=10 adultscore=0
+ lowpriorityscore=10 priorityscore=1501 malwarescore=0 clxscore=1015
+ suspectscore=0 classifier=typeunknown authscore=0 authtc= authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2610080000
+ definitions=main-2610150057
 
+If a truncated ordered extent fails to complete, the extent maps for the
+part that was written are kept while the extent itself is freed below.
+A later read can follow them to blocks that have been reallocated.
+Drop the maps for the whole range on error.
 
+Fixes: 77cef2ec5484 ("Btrfs: allow partial ordered extent completion")
+Assisted-by: LLM
+Signed-off-by: Tal Zussman <tz2294@columbia.edu>
+---
+ fs/btrfs/inode.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-在 2026/10/15 20:29, guolingxing 写道:
-> btrfs_begin_enable_verity() ignores the return value of
-> btrfs_orphan_add() and unconditionally returns 0. If orphan insertion
-> fails, btrfs_orphan_add() aborts the transaction, but the generic
-> fs-verity code still proceeds with Merkle tree construction because
-> the begin_enable_verity callback reported success.
-> 
-> Return the error so that fs-verity stops immediately instead of
-> continuing after the initialization failure.
-> 
-> The transaction is already aborted by btrfs_orphan_add() and the
-> handle is released by btrfs_end_transaction(), so no additional
-> cleanup is needed.
-> 
-> Fixes: 705242538ff3 ("btrfs: verity metadata orphan items")
-> Signed-off-by: guolingxing <guolingxing@tju.edu.cn>
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 343b6402bb35..271f6024b72b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3390,6 +3390,8 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
+ 
+ 		/*
+ 		 * Drop extent maps for the part of the extent we didn't write.
++		 * On error the written part is freed below as well, so drop
++		 * its maps too.
+ 		 *
+ 		 * We have an exception here for the free_space_inode, this is
+ 		 * because when we do btrfs_get_extent() on the free space inode
+@@ -3405,7 +3407,7 @@ int btrfs_finish_one_ordered(struct btrfs_ordered_extent *ordered_extent)
+ 		if (!btrfs_is_free_space_inode(inode)) {
+ 			u64 unwritten_start = start;
+ 
+-			if (truncated)
++			if (truncated && !ret)
+ 				unwritten_start += logical_len;
+ 
+ 			btrfs_drop_extent_map_range(inode, unwritten_start,
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-
-Will push to for-next branch soon.
-
-> ---
-> Hi Qu, you are right. The claim about leaving the on-disk state
-> inconsistent was incorrect.
-> 
-> btrfs_orphan_add() aborts the transaction on failure, so I do not
-> have evidence that ignoring its return value can cause on-disk
-> inconsistency. The real issue is that btrfs_begin_enable_verity()
-> reports success despite the initialization failure, letting the
-> generic fs-verity code proceed with Merkle tree construction only to
-> encounter an error later, instead of returning the original error
-> immediately. This revision removes the on-disk inconsistency claim and
-> describes the error propagation issue instead.
-> 
-> Thanks for pointing this out.
-> 
-> Changes in v2:
-> - Remove the incorrect claim about on-disk inconsistency.
-> - Clarify that the fix propagates the initialization error immediately.
-> 
->   fs/btrfs/verity.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 600337a84fbe..d92c9dab0293 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -615,7 +615,7 @@ static int btrfs_begin_enable_verity(struct file *filp)
->   		set_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
->   	btrfs_end_transaction(trans);
->   
-> -	return 0;
-> +	return ret;
->   }
->   
->   /*
+-- 
+2.39.5
 

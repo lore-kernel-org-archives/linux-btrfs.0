@@ -1,37 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 087162E5B29;
-	Thu, 15 Oct 2026 15:21:39 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1BC449F129
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 17:48:55 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792077703; cv=none; b=adDLLoah/AjM1zSfBUQw3nbw267SeVd8gCtTal4MH2FqdRdEk4TEqCFDeXtdc5Ib7e721cU/wnqsXAQ9ZtqwvmG2Ia7uM2G0rvZJ/l0bFcztFawJNcrDpprRMKZ9EzNOo5v2qyUIcw3An3npyJ8VaEEa289XVUYkiWRmqb1289g=
+	t=1792086542; cv=none; b=otoZhAXxjPKejLeGCXIY/8JwYgdkRarMLVHVLp7GpR4+WCpj7hGJUtSB6MNxXIegdufx7c1ENVoCrtIdQ0lpVux3QgNQfX0ZoPN6ylXnDOBS/E9jnsJSbmR4oi0JYK3VP0+iJChf67WWaAyykCIrDBCllxz8n8fUto069dEWric=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792077703; c=relaxed/simple;
-	bh=TPitwEY1rf6HN6oVwzQFDDHVWVi1gLGkI1DpxxCstpA=;
-	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=NiJnAE/ovsbvNWaXXv2OVAVxsj+1/zpAuz0PrTFhevqzwKE6NLIYUtnc2/iUHYdvHZiqUHMOjKNQKdF+3UNTfOF0csq7c8Mn6Z3N2+DgImG5mdgv4Z93c7QvIUn8a/hOOj/JTwBOI72hQlXj8ZIRqQoCM7WZTQHQxmO5PFkh8bA=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=UjOeyfjD; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1792086542; c=relaxed/simple;
+	bh=yu6f92WJpA35/EhqyWwcAuXp/+Zwk4sy897K0IWGrds=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=a9a0MZiyvPlXg2+YldaMb9pd6UZ9tcI2RzgS+1B9LSw7vMDUoEDXXzyLXvbE8pitkRB6RXSuXn1QtIOgt3Wb8UheWe8FeV/rhDnvnN9f31xjSR9Ooc4zg4WKcX5oH7wiNg42247408MhQbMWfSg9i2/daswnt/dEqd+JFAKp07I=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=dQwH8o60; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="UjOeyfjD"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BB3931F000C4;
-	Thu, 15 Oct 2026 15:21:38 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="dQwH8o60"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 617091F000C4
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 17:48:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792077699;
-	bh=8HAIOpnNfb7cq4KnpcsEJyJjPX8m9uiGmxjkY5X2BNA=;
-	h=From:To:Cc:Subject:Date;
-	b=UjOeyfjDgw0RWayFzzQuScrtnH05XlolQ6KJm3Un1QX6BqTcdShlqUo25sc2yBImX
-	 LrIBO9uZeNkH2pMyge+LLtTdjYVl06nS1Rd7iM/sLYFiv+5RAdthyAIDIa26N2kibx
-	 wIyHqkY+X48FQUmv0CMeCaIDC5kvx4f2YLhtofB7gZIWbO4dQO01+6WwUNIpgwhQ+C
-	 EWDhNY4gpZ3IbEzURifC0J4ozgORhJhlzXTEDkZHnTJqnrLgBv2wxZswkoVQ0b4soK
-	 YI2SkicQyWiNboQCHBMjsgtl6Zo3eifXO48CS2UJxuVgXKHm2e1GczXv0hHc+TtSgI
-	 VIQpiz44Mxjig==
+	s=k20260515; t=1792086534;
+	bh=jaPlX2wPe0vNs76sfMZMoXjeU5SncJ/bthEgtQbK9p4=;
+	h=From:To:Subject:Date;
+	b=dQwH8o60VVJduUhoI4hYYVz4nOg44x78Q3Ew9MFzr56zQT4HGex6bb4fizGGK7Ubb
+	 nZ70qbkuocxV93dh/PadzQ5X5qMLJ1vhyR+qPllSknR5EbhlNVCrMchcLR2d7lZjxH
+	 r7hjjZ9OpPj7t+QiXdlG1XRkYXKIxhT13eDwzxrCVux1Feaz7fZhACGkzPC04FzScg
+	 VV4fhAvGbbG2dVw55aDnVOxFdDEmC96bVlVRciRV4QfysEVL6S+denP1mSKM4BLVx2
+	 e/nUkpmruYf9CAQRjXIt7tEWP+aVR9FjmyW8hWaF2S+x3ydt8VB5rVQWlLmW2xAyUn
+	 ztR2NVomAxN8A==
 From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org,
-	Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] btrfs: test fiemap does not merge compressed extents
-Date: Thu, 15 Oct 2026 16:21:34 +0100
-Message-ID: <5b73c7dc792763acc71d3f4286bccc473114fca3.1792077449.git.fdmanana@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: scrub: fix lost error return value when scrubbing raid56 parity stripe
+Date: Thu, 15 Oct 2026 18:48:52 +0100
+Message-ID: <ce83d31f7e25d1f3953fb84cdb3e379aee1864d9.1792086517.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -43,92 +41,29 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that fiemap does not report logically adjacent compressed extents
-as a single extent.
+If we findnd errors we are returning the value of 'ret', which has a value
+of 0 from some previous function call that succeeded, instead of returning
+an -EIO error. Fix this by returning -EIO instead of 'ret'.
 
-This is a reproducer for a bug that is fixed by the following kernel
-patch:
-
-  "btrfs: fix fiemap merging compressed extents"
-
+Fixes: fab0c0f03cfd ("btrfs: introduce BTRFS_PATH_AUTO_RELEASE() helper")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/361     | 50 +++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/361.out |  8 ++++++++
- 2 files changed, 58 insertions(+)
- create mode 100755 tests/btrfs/361
- create mode 100644 tests/btrfs/361.out
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tests/btrfs/361 b/tests/btrfs/361
-new file mode 100755
-index 00000000..96eff971
---- /dev/null
-+++ b/tests/btrfs/361
-@@ -0,0 +1,50 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-+#
-+# FS QA Test 361
-+#
-+# Test that fiemap does not report logically adjacent compressed extents as a
-+# single extent.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick compress fiemap
-+
-+. ./common/filter
-+. ./common/punch # for _filter_fiemap_flags
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: fix fiemap merging compressed extents"
-+
-+_require_btrfs_support_sectorsize 4096
-+_require_xfs_io_command "falloc"
-+_require_xfs_io_command "fiemap"
-+_require_scratch
-+
-+_scratch_mkfs -s 4K >> $seqres.full 2>&1 || _fail "mkfs failed"
-+_scratch_mount "-o compress"
-+
-+# Do a write that compresses to a single 4K extent and represents the maximum
-+# compressed chunk size (128K).
-+$XFS_IO_PROG -f -c "pwrite 0 128K" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Sync to flush delalloc and allocate the 4K extent.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+
-+# Now allocate a 124K extent in some other file, which will be adjacent (to the
-+# right) of the 4K extent previously allocated.
-+$XFS_IO_PROG -f -c "falloc 0 124K" $SCRATCH_MNT/filler
-+
-+# Do another write to the main file at its current EOF that is compressible and
-+# fits in a 4K extent.
-+$XFS_IO_PROG -c "pwrite 128K 128K" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# Sync to flush delalloc and allocate the 4K extent.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+
-+# Run fiemap which should report 2 encoded extents, each with a logical size
-+# of 128K.
-+echo "Fiemap output:"
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foo | _filter_fiemap_flags 1
-+
-+_exit 0
-diff --git a/tests/btrfs/361.out b/tests/btrfs/361.out
-new file mode 100644
-index 00000000..b09afa3d
---- /dev/null
-+++ b/tests/btrfs/361.out
-@@ -0,0 +1,8 @@
-+QA output created by 361
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 131072
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Fiemap output:
-+0: [0..255]: encoded
-+1: [256..511]: encoded|last
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 479c0e037015..ba2e27cc5351 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2250,7 +2250,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+ "scrub: unrepaired sectors detected, full stripe %llu data stripe %u errors %*pbl",
+ 				  full_stripe_start, i, stripe->nr_sectors,
+ 				  &error);
+-			return ret;
++			return -EIO;
+ 		}
+ 		bitmap_or(&extent_bitmap, &extent_bitmap, &has_extent,
+ 			  stripe->nr_sectors);
 -- 
 2.53.0
 

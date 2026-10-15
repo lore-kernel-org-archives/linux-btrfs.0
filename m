@@ -1,67 +1,66 @@
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2B3B154DACE
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 21:05:54 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.46
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9EF42EEE69
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 21:08:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.48
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792098357; cv=none; b=AMirVoG7s0NBj7IBzL46UieYUPSTmW8kOmOi2cF8Bi80SCm99n0SDaWSgEUyh3tw+06cDzHXnMKa5BbvT0zShPDAW/HXjW5q/vUVOjL3k0py1MDwZcoleFfESKAgI6EVawYVkfaxyWSCtHjGnt7rEeIt57qU5dWrDCBAK1kVrfY=
+	t=1792098534; cv=none; b=CgvOCfCGMIo5Q9/MEaf99IkaG8Pn/lKcGrBwPfvGnn7FtpjcoBTw9g+lVqx/2zD9YJBQLQLC0dyglhFY2vtk9RapQrDo43kj2pjXpZYm2/m1MIljqqwRzSCtr3QTl001lvh6A3OJ+CkP8kLNdI2vW1yG3Km+DUi8v0UAeXQ9eWY=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792098357; c=relaxed/simple;
-	bh=cONfY7w2Dk9OBGkMd9K2vIwaZOIDmAddVxzZEqjWrkI=;
+	s=arc-20240116; t=1792098534; c=relaxed/simple;
+	bh=qadG7DpmY0wshPT0WfeZPEfDy1AX8bwXCU9I799zkNM=;
 	h=Message-ID:Date:MIME-Version:Subject:To:References:From:
-	 In-Reply-To:Content-Type; b=rJZaI4djXhYZ2zQw6lRJQMfRLEHZoGyKGSW4uaoR/LVSaVr459EQ1TpzhkkonI+gfGTCApfR6r1kSbJ1i7kQXI7cFP6FG82jFBFGFwv3BbCQGR14me77NS42olYW7Eojg39nn3Bv2T7iU9sQuwATtuyBackgbthTYY5lrypAAXU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=Y0x6PSU5; arc=none smtp.client-ip=209.85.128.46
+	 In-Reply-To:Content-Type; b=Avp+edIT//zIMOqyStVfJsuZ2TmGDGGkIB0WnyC60vyZMU8Y6YCz3lMZcvyvPOdJC1wEKKQKgK3v+q+HKJm3ClLfVHpj5d9TgyWyeXQDBwe/1+CRJzA3hpu15DkrVDEie5y4mEP41ABzU+ra4wwl/74/s0WMnGZe1zOTomJQ+44=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=ObDLreQ0; arc=none smtp.client-ip=209.85.128.48
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="Y0x6PSU5"
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a171b677d2so36193585e9.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 14:05:54 -0700 (PDT)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="ObDLreQ0"
+Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-4a0213948d3so35899715e9.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 14:08:51 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1792098353; x=1792703153; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1792098530; x=1792703330; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=9KV4G5n8tJMBWtFYRFxeM0Py/sTYPBjkRIbDZjbDEM4=;
-        b=Y0x6PSU5r/2nOu/3+luwMmEX0eiJaS0YWpPbrFcKCHCguXqWKtcOjr801qjKu0QUuJ
-         FPjcfarjPtcWip2uEziWT2YnY9rZfD528+GVkLwaPnIQ/A5+0h0pz43fEalsVQLEDobg
-         o9nWI0iNNIth2KlTuq1IqHmbyIEwXin4d4TivgKfAwscVbO0LXdE/IzFwlzl3zBMBTf/
-         5vLYWddtJvZxJtEEnKqJS2zVhjKL3hFz6pqYjNEJAqOSQ7aAF7hZMadEWXLTqp7sTApe
-         sryseCbzXcyAKVuOazbvTItL/XJVP71hGcEDBPXdhl+c2w9kiYf9XHd/QD+7vMqlsl6q
-         WoJQ==
+        bh=0H55KTNpph3jETofIE3FkNkfqSOkMeDAke22JDHaxZg=;
+        b=ObDLreQ0vO72k2Dbxe6DMzmME9SIQrZJ/kw1IalBt0vl2jqMiDV1JSCrdG6bDtys5Z
+         1iLoAELHTtRbl1I2RkcxlR0MABjQdg7k6z69vWQoT/IZoeG/Tw2fpyHtV3lUVmh3uBy6
+         /n7HmPd/ogGPTWSg4/Ev/uwB2sDQ6lkMMNFrZD/QiEd4lRmWech5g99ilWpwV5u0EqdG
+         tPsDXKyJJvxrzakK3jxzoVX3tBa8IjwDcl8XeGCt0EdtFEYFPT/fesoIF6dtDlxsAR+T
+         u2IEU7F/aY/993C9Lvz2Wy5exAYYW0mNB7I5z7h2yvpM7hw8TjSmizg8nTiky1R5T1tU
+         WkWg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792098353; x=1792703153;
+        d=1e100.net; s=20260707; t=1792098530; x=1792703330;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:to:subject:user-agent:mime-version:date
          :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=9KV4G5n8tJMBWtFYRFxeM0Py/sTYPBjkRIbDZjbDEM4=;
-        b=esE4/EJNFYW+nqXvOeHs4nzc2jj99TYuCJdENWcPy5oGTRw8vdCv3rQNbTgsmQWCvb
-         FxlwntyucYuszMu9UDSD+2v/stZfoUxzDNFPOful1lhQ8ao7XrNcBGvHdRCS/3FsSSem
-         W9xuTaNnjjf/IrXvm+EftWWlprBSj2z7aSVcDUANiE+FaTLnZZZIEc23xmBzo4ZSXwnM
-         t8o1NyD7jKZfdTTW6l3MXFwNLHtQDnkLLU81J5VUZoA72G1+tkbyGhULc7h4lqoCLj8i
-         7HN+KammjpXnJ3DM/7kovU6WyelnBPmbnX2fD0E3x/nQqjEICdDIBtqILqqWhVlhUGoZ
-         k5yA==
-X-Forwarded-Encrypted: i=1; AKwUvBwxAlrCECa1/jVef3ydglUw51gwcoUrH+54JYry2/uQVplbpo7e/sksuKbvn7JU0thmMWs2B8KAIO6tmA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIfYLok21sC+m4HKRM/xoJnnNbswC3BCzKliyzPN3mXBrgf6+Vx
-	hnwt74Dl+QR3t/z7kBFMa7jsaykQnmlQwbeAlzNV+ne+564WDNVVqYlQ9kyWeyLSfekQ+1OIDGD
-	CrLbRtjoKoQ==
-X-Gm-Gg: AYBFou01fn5r1XuMVDhl3RkEYP9qz/VLS/fzd8AgyJZXU3R2RHTukxJU+VlqxJo7NyM
-	pQwMQvXkH4za0CvgO31YlzgPm2KFWRz/j/dAFoTRjfHD8fE3FsbJSnu3HZOJx48Vsa+KoTDF0er
-	bDzTnYXYzH31MHltgWIAUfIHJhOEuyqixL2Vc814XozBdQDQ6bbR7z0lMkIAYHSn3rbHRLBtadH
-	5oSJ9I5l/j0v3RNi3ZIGUq3wUxTPZwtcxDSb3RzfCfOIFfwNn5Y9CCKn8F5UiPc1eADi1peUW8i
-	gUJhLtqUURIo2wJ+0hI9O+1QdNozk96Q9z/z1PVQC1isnARI/LF5wPH410Yml+NSgkhZJwMsIay
-	bq0FW/iguNXbtuvMTDtneJDd5Ey337dlsVN8XtTcz6tTgbMgzx+OxM8+cW7yDC8TPmP8iSgdW8E
-	+7zeqneSnxgJh/O3dTgmUNG4y6pNgYtIMH8qZsVZmLqoO3liscY1/9zkn8bAw3eMg=
-X-Received: by 2002:a05:600c:8b09:b0:49c:c0d4:53d9 with SMTP id 5b1f17b1804b1-4a18e4a95b7mr440310795e9.14.1792098353034;
-        Thu, 15 Oct 2026 14:05:53 -0700 (PDT)
+        bh=0H55KTNpph3jETofIE3FkNkfqSOkMeDAke22JDHaxZg=;
+        b=nHDFajGu/0Ym7z0qOHD6kitqBe+M7ptn2yFT0nGaifoyHzcjYT+3vOsH2MDP3VuX3z
+         3xHzhu6EL9X0WvTCNp0rtKFX5W8Ly9QpDql52P1ym1hOkocaXqpZmU9QgaowrUDQL297
+         ZujMVK4eXhW0nrJDZXJhYyh2hFuV+IkdUR8PjnvG9V4GLSZoK6rvl2kACSiogxWitkNO
+         SpGTbm6zHSEa/6savFaiFnnfGXmh/qQ74qjhWrQj6ajEIguqQ+D46SjM3ej/sCeQgsKo
+         XQrR46LMH6tAQEkTYpSZbnJtvqAveM5p4nkrot+B8erGPvdTah8VZm4vSg68W8gGBgtG
+         UAlw==
+X-Forwarded-Encrypted: i=1; AKwUvBx8Itzp10x3qYb4y4/lR5KpXPb7k9EyeSAWN2z05I6jfhNjiNL/jWYyiIlWujwUwMigkyAW85Qk/YB/ZQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIMlF7h42TJd8eK8mjm4fsh4eRHU/+lmhJePqyVrJr3+g5EVa+i
+	MeecuFV/JOIv/UZoDaoR0YinnVfnrNIEbXdJ0VVCFZuZ+JQr+5sS5TgPFxn6hHYrBUM=
+X-Gm-Gg: AYBFou3x6kqAlekoCUYqLB043+FxFa6wFUX4vVLLBhATxxjF+2ISEm/g/WmO4VvdV3v
+	39IUq/2pMa8Ne+YkdYp8i19uxm96n2ctiBMRKc+NWrO+5ZyqR20BNTl9u5X4o4OuzqzPlF9ymBO
+	ZZfeosIDJyzkVtJ6qbTBRzpb4pA5pnz9cQz3XduP3M3szjc7DOPAmPtrIMCIIb+B0YI7OFh8j1i
+	EjASGZnc1EWdUcBJl5mIu68cMbBSm+DgEyI1IR5cxyIb0QkESGvy+9VoqZxYKSMJJKilPCo/tdx
+	T05HPUNj2T+yGs334s/2nszeQD0Ps1O/fDp518bMXh2BBLN7gS6yv0dkVObpY9Y54bbmkh34TKw
+	H7QbDHrOec5v3UdFAGqIlpK0bFads5pMi3sXE1Twe4vyX9HcQWOxoLg0vFqjfC6kqpgxSOUj/mJ
+	gJ/PIgxTHkoDp8gEqAppy96ynKY75UApwfeDbIGCpQveO+j4JD3dKptp/jpWG9SbQ=
+X-Received: by 2002:a05:600c:3f06:b0:49f:ce78:356f with SMTP id 5b1f17b1804b1-4a18e4ca2acmr403247525e9.32.1792098529746;
+        Thu, 15 Oct 2026 14:08:49 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3acca125a46sm153142a91.3.2026.10.15.14.05.49
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2e97e5c4b57sm1228535ad.4.2026.10.15.14.08.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 15 Oct 2026 14:05:51 -0700 (PDT)
-Message-ID: <f961af77-5fc2-47ad-a8f8-be2ef2218d07@suse.com>
-Date: Fri, 16 Oct 2026 07:35:47 +1030
+        Thu, 15 Oct 2026 14:08:48 -0700 (PDT)
+Message-ID: <cffef26c-5708-413a-9fb5-939aa1a0ef7e@suse.com>
+Date: Fri, 16 Oct 2026 07:38:44 +1030
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -69,9 +68,10 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix fiemap merging compressed extents
+Subject: Re: [PATCH] btrfs: scrub: fix lost error return value when scrubbing
+ raid56 parity stripe
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <79aa555b1433ac7bdfd9dd17e30a306a066ac762.1792077285.git.fdmanana@suse.com>
+References: <ce83d31f7e25d1f3953fb84cdb3e379aee1864d9.1792086517.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -98,67 +98,23 @@ Autocrypt: addr=wqu@suse.com; keydata=
  /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
  o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
  JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <79aa555b1433ac7bdfd9dd17e30a306a066ac762.1792077285.git.fdmanana@suse.com>
+In-Reply-To: <ce83d31f7e25d1f3953fb84cdb3e379aee1864d9.1792086517.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/10/16 01:45, fdmanana@kernel.org 写道:
+在 2026/10/16 04:18, fdmanana@kernel.org 写道:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> Compressed extents are never supposed to be merged by the fiemap code and
-> reported as a single extent, as each extent's content comes from a
-> different compression stream and has its own header and context.
+> If we findnd errors we are returning the value of 'ret', which has a value
+
+s/findnd/find/
+
+> of 0 from some previous function call that succeeded, instead of returning
+> an -EIO error. Fix this by returning -EIO instead of 'ret'.
 > 
-> We currently rely on checking the logical and physical address adjacency
-> to prevent merging compressed extents but that is broken. Consider the
-> following reproducer which explains why the merging happens:
-> 
->    $ cat test.sh
->    #!/bin/bash
-> 
->    DEV=/dev/sdi
->    MNT=/mnt/sdi
-> 
->    mkfs.btrfs -s 4K -f $DEV
->    mount -o compress $DEV $MNT
-> 
->    # Do a write that compresses to a single 4K extent and represents the
->    # maximum compressed chunk size (128K).
->    xfs_io -f -c "pwrite 0 128K" $MNT/foo
-> 
->    # Sync to flush delalloc and allocate the 4K extent.
->    sync -f $MNT
-> 
->    # Now allocate a 124K extent in some other file, which will be adjacent
->    # (to the right) of the 4K extent previously allocated.
->    xfs_io -f -c "falloc 0 124K" $MNT/filler
-> 
->    # Do another write to the main file at its current EOF that is
->    # compressible and fits in a 4K extent.
->    xfs_io -c "pwrite 128K 128K" $MNT/foo
->    # Sync to flush delalloc and allocate the 4K extent.
->    sync -f $MNT
-> 
->    # Run fiemap which should report 2 encoded extents, each with a
->    # logical size of 128K.
->    xfs_io -c "fiemap -v" $MNT/foo
-> 
->    umount $MNT
-> 
-> Running this, fiemap will report a single extent:
-> 
->    $ ./test.sh
->    (...)
->    /mnt/sdi/foo:
->     EXT: FILE-OFFSET      BLOCK-RANGE      TOTAL FLAGS
->       0: [0..511]:        26624..27135       512   0x9
-> 
-> Fix this by never attempting to merge extents if the flags contain
-> FIEMAP_EXTENT_ENCODED.
-> 
-> Fixes: 4751832da990 ("btrfs: fiemap: Cache and merge fiemap extent before submit it to user")
+> Fixes: fab0c0f03cfd ("btrfs: introduce BTRFS_PATH_AUTO_RELEASE() helper")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
@@ -167,21 +123,20 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/fiemap.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
+>   fs/btrfs/scrub.c | 2 +-
+>   1 file changed, 1 insertion(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
-> index 7a2a97180099..817171028413 100644
-> --- a/fs/btrfs/fiemap.c
-> +++ b/fs/btrfs/fiemap.c
-> @@ -228,7 +228,8 @@ static int emit_fiemap_extent(struct fiemap_extent_info *fieinfo,
->   	 *
->   	 * 3) Share same flags
->   	 */
-> -	if (cache->offset + cache->len  == offset &&
-> +	if (!(flags & FIEMAP_EXTENT_ENCODED) &&
-> +	    cache->offset + cache->len == offset &&
->   	    cache->phys + cache->len == phys  &&
->   	    cache->flags == flags) {
->   		cache->len += len;
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 479c0e037015..ba2e27cc5351 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -2250,7 +2250,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+>   "scrub: unrepaired sectors detected, full stripe %llu data stripe %u errors %*pbl",
+>   				  full_stripe_start, i, stripe->nr_sectors,
+>   				  &error);
+> -			return ret;
+> +			return -EIO;
+>   		}
+>   		bitmap_or(&extent_bitmap, &extent_bitmap, &has_extent,
+>   			  stripe->nr_sectors);
 

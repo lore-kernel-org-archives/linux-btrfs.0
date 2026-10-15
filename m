@@ -1,87 +1,87 @@
 Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C6CF1516175
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 14:43:54 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6F7F525A67
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 14:43:55 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792075436; cv=none; b=m3OCDfzDdMEqmOKveCYDDoDw3mg9+2dUAhtOd7L2RcvfIrR8C0zJX1Xlf9hJRSuWxyQydgek/zBUTfXzBg1sHII+AlwBZhRqP8rOkyni/2xZI+1BL5ftXHGbBkhC7OUu8MpS1YH+kHvfsCF3cf1kFrhf4BEy4n0AAdozgCxOQ7E=
+	t=1792075438; cv=none; b=Xzc6ELDkJsE92kjebLvUFgE5kez+3gFD6EwWRkoJEQEPJNbhw4V1S59eBOZMoFvAkbcqztBuWIxtghp0OiaX9tNRKZWcfFAbxkyJ7/1pNr+fmr84bio4jVaLSftC9RxCgUmU1JxaZjLCTVY5Lr2QcDvyZFhEAjVxTnRYB5jEw+E=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792075436; c=relaxed/simple;
-	bh=ZYplXoKTv6BJOxJh1fhHUVD+9p8O0QyONZE+oHmu1QA=;
+	s=arc-20240116; t=1792075438; c=relaxed/simple;
+	bh=Q8kMUvkchi8ZXnZWlunY2gvD2w3lqlTZB1VbWriL6IE=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
-	 In-Reply-To:To:Cc; b=ITqqTLgVzXbMKhBOZ6uA3AoNQ5uP5skZyQUw/612bYSF2KipMQ53yXxPXM9wcT56TY0U/v4ee1b/RPuKHZLksYBQHo3rRk6WWdHFtb+7yFoc5FsHSa/Te+HkVEJ37ugr4498HKAnE38qAch00UhAqEmNiu/Scz7EVGIWNEtJ9sU=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=Gu5LY3v0; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=MHDcwYS3; arc=none smtp.client-ip=148.163.139.74
+	 In-Reply-To:To:Cc; b=GoXPYsu/Kf4zI2KCzQ7uegCCkP6YcBZ1P+HAW6o5r6S/eMcCxHxlMNVCqqC8GUBBXZWcN0Dr5ymnjV0Qk2DYXw8x2JnglxWaUgyL0UNYsUqWdpzpt67E0WP16Ai8Lu77J8uBaeUf7H4ACSdZkxw4J//HVI1DTFxY6gnrbSpnK8Y=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=ae5L4K7k; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=wX8jMrL7; arc=none smtp.client-ip=148.163.139.74
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="Gu5LY3v0";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="MHDcwYS3"
-Received: from pps.filterd (m0167076.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69FEY6vt854641
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:53 -0400
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="ae5L4K7k";
+	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="wX8jMrL7"
+Received: from pps.filterd (m0167073.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69FEYGuE1739572
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:55 -0400
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=mqAV
-	kb8kP4svMzZz/7/8LyAY1suBjGK0iRLSg4soUIU=; b=Gu5LY3v0waTp8wpnQV6i
-	ENWsqvghhfWtZeHr4KyUqyezk30kG35qATefzCKtEB/Et4IHEQPmAabl2uOwSxbQ
-	q+h7LuaL2H2GI6LBiutk0fm3LLhLWob1Gg0SPVulwSg2yaPkpP55FMIfSl3riwZc
-	SbyNDfANRQNrMKzpbDnuFNDy+NvNf71TXlcRAT+ZV+2JshvJvRo0le1WfUWIdBZI
-	w0rK+VdgOyTGeiXI72UIv3ODb/wT2bbNkjWg82A62caTj0JLW07ZDBL+IW4WOtjc
-	i6U1etrr/i+ZdlFWZVcQLCvoo2LPZxP/zpuB8X+tfZIkX1tVSCxWl3iF9W4PluF0
-	FQ==
-Received: from mail-qt1-f197.google.com (mail-qt1-f197.google.com [209.85.160.197])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4hatthjceg-1
+	:message-id:mime-version:references:subject:to; s=pps01; bh=XRlN
+	+xnNjSQu33S8Vq/FCqmhKpj0NiuWIv/8X+QT1Sw=; b=ae5L4K7kl0GOgJAgiqmy
+	2HxVZVIkC9Q7+GjntnTJ5NO9VyXEOVyGdVZRBpoNWEMf5z05cjEtmdT95hH49KtC
+	CLW+9W49c0hJTm/AtjTBj2ophj2PyhlU/827fFXXgdBlX1/CL+7Tz1hYUZvqcfDn
+	RCHrwVZYNpDteMC1XG/aoy7lXnhFh2ojU8sqyqXd0P1bFj9cwbO3RqwbFK4qRqr3
+	kR7hGuU+vfWRKAvNEHd68ifdFX4Z2WWhRN2e6S8JoTo2egVn0cqzNTFjvJd+Tg57
+	ElzBA1rahWsp9rHdrpL3kiihpnjKCn9oxQqb/QPaMjtJugJ2ixrNr9xX/2nDuuUP
+	uA==
+Received: from mail-qv1-f69.google.com (mail-qv1-f69.google.com [209.85.219.69])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4hah7jd4nq-1
 	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:53 -0400 (EDT)
-Received: by mail-qt1-f197.google.com with SMTP id d75a77b69052e-535213e3a7aso111854811cf.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 07:43:53 -0700 (PDT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 10:43:54 -0400 (EDT)
+Received: by mail-qv1-f69.google.com with SMTP id 6a1803df08f44-91b7e7d5f56so96919366d6.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 07:43:54 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1792075433; x=1792680233; darn=vger.kernel.org;
+        d=columbia.edu; s=lionmail; t=1792075434; x=1792680234; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=mqAVkb8kP4svMzZz/7/8LyAY1suBjGK0iRLSg4soUIU=;
-        b=MHDcwYS3MGsgH4E/OXOyFAtlZOAHI1g3FCU1Ed2qEibm3ZjYwYc7dImB6dmxSe1pZ/
-         r62lwTbQrj8ubdJvWqLuFW4MMUu/nCbN5tQsGilqyU5a/SYEXIeW7dZtqawXDHeQLdUT
-         xVmNMIx360nFJw6Hq+gsoYmUJTIuG1ArbsaW/oMMxXHY8kN0XOm1/bSmOBs4bx6UiDkp
-         PCyw9TBSCbmSvF5xb8t+SUIGtN3d0KkiiwQ1VQHvqo0+y1RxWWmztmFbH/OE64WDWQSM
-         /1SNZbdRQFOn1j3JjbPKdaXYS+LGDGoP6agnACtuou3ScGe7RiGUmITQwtHeh15PkcLK
-         gnZQ==
+        bh=XRlN+xnNjSQu33S8Vq/FCqmhKpj0NiuWIv/8X+QT1Sw=;
+        b=wX8jMrL7FXMvlRzoKMcZwUPJwtM+dWZR6nukbKOsPFWZ/lmq7d4cb9q3UZDeUplJAc
+         Wdvh06XmtFljhtSyc84ezmcHA3Ye89h8fLzWpIIWPnBRRPyGUXl7f6yuUdEKQtVMhNWl
+         M9c/41H9RTpRJAbwQa2dB6zMjqamGRzbX/0rEn2NcY71kubVgL6CLx8ZE1fsjBtFMSRo
+         tJWi64FQRNML5nFpNCOY4bLlxOV1YRLkh3c89I0YQ0dJzO9mrFe2oZ2XfXR5StjgE29P
+         m1tIkFdfTlRVYgzlaWgk/fHw9ON3tzeOQd4zyp20YTS3bBXzZY7lrVZSJUMu1mflupjb
+         kYbg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792075433; x=1792680233;
+        d=1e100.net; s=20260707; t=1792075434; x=1792680234;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=mqAVkb8kP4svMzZz/7/8LyAY1suBjGK0iRLSg4soUIU=;
-        b=ZtJi/AOUD3s2FKtjunnTfTkIIJFnsyIRyEDS3fCWBexIso3I7NSmrXr897p81uqjUM
-         6vfyPAvD2e6+V2LD/3MGcp8qjlgnjzj88mu9BURhyoMbzqKeH9Z4CNgCGq5ULCRq2hIZ
-         1DTaXsz1vr3uffhXxEpqdE8WGNkFzku6A47R0nDKLBooTWyHWbtCiQjni7983eqzDvGJ
-         fXaaD199TmAVParxjajHJs5H0lEdbzwKS74WYEw7Z6Wvbu3O0j4jR7FVGUVccgvfEvKf
-         erB6B4wlTb7t5GeychGnp32gwvqUKXUzoDpmfHh7rUMOIpwNCs+NYgXEq/XOspFbvr75
-         C+eg==
-X-Gm-Message-State: AFq9FYKEiCUY7GcIbPFdWgkluahvjDd1Fi2qRVO6jn7uNOP44xQjNCNK
-	DlnN0MVMPeIPS2rR//KWXkTQwAHMgO1otrF1aqrLZeERT7HtR5qFU0X5LZR8jatC3eGbpQHdZhb
-	nZKMOoR1BfafHSbFwBKJesocrdUOIxtelv4uANQpb0FPJuk0F+DCeg/moyxgi
-X-Gm-Gg: AYBFou3yyVhoLccIn/0F8XnOBGSeE9FJGRPgWvsjhTJVMKcoRYnvd13wXQ1A2xw94lo
-	QIhYDHg4KH64Q6wMSTSXKdnan7l19tSpS7/kg1wuqVmAX/06ygY5jVS8Go+UvCB8x2w7T3Vcx6e
-	PUi2N5SJrWAlqVM/4ET18z+KXb1ISHGX/CspkpFmFgqrDxpQC4LAp8bJFzsILVddg+wxq2EOCYG
-	fy9VyLdDHG6m1zE8SNI91Erk93cg2w9G95sDIQi5W5GA6eqRUpc6RPP7911fn/NOgsJMbiJy2/w
-	1gsV7C/QwaqO5VTwoXBO6fw8S57v/YvMO6yODifB3V0Xf41GtX1rejytPHcGu4PiPaJBis3oFsO
-	gskASRedLGQUksFQlVRp4NDx3i4JFmmB+9OTsuMIy/ncV
-X-Received: by 2002:a05:622a:17c7:b0:530:dc5e:27c6 with SMTP id d75a77b69052e-5359fb6b618mr284052891cf.41.1792075433008;
+        bh=XRlN+xnNjSQu33S8Vq/FCqmhKpj0NiuWIv/8X+QT1Sw=;
+        b=v4onsSn7WmJZZeoXQHeNL+ZGtxirsm1bBgQR5b0GkAzZ5VCFDwU8m9nDQxXk331NWZ
+         YUxZkwQ9mgeX6NoZGKxQXeF5+0yqP6owVZ7QsBPpse/0siziv3vagyJSpxtn0mwHk6nL
+         9+oJBHKMABGtW/7uzx1xQygs7Ic2FArA1Ow4FiZtX7zR/1IbiJw7QcyGIPhdDke1BbsK
+         XDluNskSmF40v1QVHug/KxsmEOQJxwxcRqIPitOhOZ/jAKnUhlzVu+qujtmDCKzOBkla
+         DSCXDrnrVseoJaEKohcgMXuQEt4PSqb+LPzGiFF2r5NdtB19AlXx3R5DsUXCftNGFnYA
+         X+cg==
+X-Gm-Message-State: AFq9FYJqwnm4BEDYdp3relSyvwfIrXX4mZm9n4QzNokZdw/v7yE7vaDQ
+	zjEg1vs2MumbUVDUDsmf41uBMHNJW+1+x54RsQTPNQFLHkYWoTSmzqa7ci8qAvwDSBaX2hTxmgR
+	SyscA+qKJNQUnXCAelaTxV7mw1RAx8TkhIa/e8sf9geBIKIy6Hi2BKdaD7R/4
+X-Gm-Gg: AYBFou1bl+spbsp5kkUNwcT/NJOnB5O6s6HG7u2KXNdFZ+6LgWodmY+0g72Uk9fQjmD
+	9gKiZTmvv3vbq2oSM2GPDucGk/BQ24E/anKliMkoJa8hklpYAWD+U3EV/AmrAe1NeocHyb96WU7
+	lg5w3BN+2fzzhVleWwlBlsORSv8bPNHYyYY3hcrXEiMi73eXj0rmnnMUL7CI/DIRHIN4fjUDfuk
+	KOylRlfzyPxxJnstoIdkijWgPTgwFTVQSbLiumsCpOb9GwBYw5SalAcxIIlh9agbTOftqOFKcxj
+	BT7JCkR9MVaXqc1V2yQbhFBGVXIII20ppHMgtGOWGhDIl4DQYDesxUzFma6v1lL2LBSB45Cx3i/
+	/be2lGMv5X/4OQmNUanSiKK+CDT3IBIgpwVcpE3lJ8mu6
+X-Received: by 2002:a05:6214:2468:b0:919:7cbb:63b4 with SMTP id 6a1803df08f44-91b554f087fmr322481636d6.13.1792075434067;
+        Thu, 15 Oct 2026 07:43:54 -0700 (PDT)
+X-Received: by 2002:a05:6214:2468:b0:919:7cbb:63b4 with SMTP id 6a1803df08f44-91b554f087fmr322481266d6.13.1792075433624;
         Thu, 15 Oct 2026 07:43:53 -0700 (PDT)
-X-Received: by 2002:a05:622a:17c7:b0:530:dc5e:27c6 with SMTP id d75a77b69052e-5359fb6b618mr284052531cf.41.1792075432500;
-        Thu, 15 Oct 2026 07:43:52 -0700 (PDT)
 Received: from [127.0.1.1] (nat-128-59-176-51.net.columbia.edu. [128.59.176.51])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97b5f323sm83026476d6.20.2026.10.15.07.43.50
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91b97b5f323sm83026476d6.20.2026.10.15.07.43.52
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 15 Oct 2026 07:43:51 -0700 (PDT)
+        Thu, 15 Oct 2026 07:43:52 -0700 (PDT)
 From: Tal Zussman <tz2294@columbia.edu>
-Date: Thu, 15 Oct 2026 10:43:30 -0400
-Subject: [PATCH v5 17/19] btrfs: stop special-casing free space inodes in
- the delalloc accounting
+Date: Thu, 15 Oct 2026 10:43:31 -0400
+Subject: [PATCH v5 18/19] btrfs: stop reading free space inodes from the
+ commit root
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -90,7 +90,7 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20261015-btrfs-remove-v1-space-cache-v5-17-6b31347d9998@columbia.edu>
+Message-Id: <20261015-btrfs-remove-v1-space-cache-v5-18-6b31347d9998@columbia.edu>
 References: <20261015-btrfs-remove-v1-space-cache-v5-0-6b31347d9998@columbia.edu>
 In-Reply-To: <20261015-btrfs-remove-v1-space-cache-v5-0-6b31347d9998@columbia.edu>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
@@ -98,111 +98,94 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         Tal Zussman <tz2294@columbia.edu>
 X-Mailer: b4 0.17-dev
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1792075404; l=2876;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1792075404; l=1979;
  i=tz2294@columbia.edu; s=20250528; h=from:subject:message-id;
- bh=ZYplXoKTv6BJOxJh1fhHUVD+9p8O0QyONZE+oHmu1QA=;
- b=TZDIonbspB+Hh38+ewtSWkICjdrnXUtWEAAkmSv12GLavtx/AxDihA90af0PFwDAxSPW+PHfn
- E3VgvYCJiN/DuM7mzJiSE/s3xNvelSgp9gzeDCd1/ASIkQOq1gYnAsK
+ bh=Q8kMUvkchi8ZXnZWlunY2gvD2w3lqlTZB1VbWriL6IE=;
+ b=tLdzBU+HXbTY2A0NmgWoEaMDYi7noNEo3UbDuTro48jwMNw8+1h8/6tv7jKfFvCV+G3ovariB
+ Z/IMiUXRQFmDvrXvVwzRCnvP3fj+H3cEq5EIAZz3GxKEd1t7J223g+l
 X-Developer-Key: i=tz2294@columbia.edu; a=ed25519;
  pk=BIj5KdACscEOyAC0oIkeZqLB3L94fzBnDccEooxeM5Y=
-X-Proofpoint-GUID: ukAeg2EVTVUayomPEv1cWEzlEZex2kMO
-X-Proofpoint-Spam-Info: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfX41y4Y041yodj
- sX3ZCm5IwJDDfg5NFhjA9MEmW/WnczBTJkIRtsSmP/udoNP12aNyYesQwCCqDHkWk9mrxFpo8Jp
- GgNq961LuMMn13PtJ6mkki/vo/f1Z+wqdTFFibGYouTi3Sda6Y2V
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfX+W2PAwHp/ETi
- D9Yjb3GUxUdXyKyPVFc9m3ltitRk2ykNlKzO/DhehlJTBzPPDO7WkEUTJ09+esOajrSO4oN7yuq
- BY32iNVGYZlbKToJSh1QshhqIEL7w7xL0H9BPcqMxfEhEfx+tczNSKPvgqe3s08P1avwbpxH4pJ
- tEUBb/30/ylLjGdv7gzRXRVODciitRBclBAd8uSU2t4MO2zibaDvWepv6CmKY6iu4/J1CTCTU+X
- UWk4ZsYaCdjVz/XUQQAtXp32FhO4vfSSZ6oXNjsOmjgczUZKzy96fo3yLKRs9mUVn6hjw4fVem5
- xpjK+jHJKZFTj5lveALunToNn8zpn2flgDuhqbjtXPDpyMraQ/kC7cqBnBXAGuIsoyGzauuvKKo
- IFl2Fp4adDKTpu/eup59iNyCSH120KGfSXUeR/ERxKSfwV86EWs8RfyphBUpFnlNXP9sTHQU9gy
- OcvkarlY95gd+/srQPQ==
-X-Authority-Analysis: v=2.4 cv=WJvqzXsR c=1 sm=1 tr=0 ts=6ad0e6a9 cx=c_pps
- a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=NKoNGjn6KhAaSQkl0TXC/A==:17
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfX/kWD9/srZlu0
+ aaoQ8EFLB9FfN5byJDddM9L4XDYFYc7yuXgpPvcnWwLsDmjr3ZftWX92janLSf6dWrlzHUg04TV
+ VHM4aVQsZ8Xrl2Fyez5p+JSVlX2dPfT8SpFGcs3fwMuxmhaf6Sll
+X-Proofpoint-GUID: Ni2dRRDzSHo8UBbTWI6V01Vs3VUJE5kJ
+X-Authority-Analysis: v=2.4 cv=Q7RHcI2a c=1 sm=1 tr=0 ts=6ad0e6aa cx=c_pps
+ a=wEM5vcRIz55oU/E2lInRtA==:117 a=NKoNGjn6KhAaSQkl0TXC/A==:17
  a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=Qm0qsxP7aFY2tkT6R2MF:22
- a=bn-TaVTt-omw3cABb-QA:9 a=QEXdDO2ut3YA:10 a=a_PwQJl-kcHnX1M80qC6:22
-X-Proofpoint-ORIG-GUID: ukAeg2EVTVUayomPEv1cWEzlEZex2kMO
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=jHxIr1HyPKZ_Q5_91PL3:22
+ a=F-rX_8kjA07mH5tGMmcA:9 a=QEXdDO2ut3YA:10 a=OIgjcC2v60KrkQgK7BGD:22
+X-Proofpoint-ORIG-GUID: Ni2dRRDzSHo8UBbTWI6V01Vs3VUJE5kJ
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDE1MDA1NyBTYWx0ZWRfX+effB12OmiWP
+ tjI6FFAo2opin0aNLICO/FBSw4N8D61DsxTcrcDSYtXTP4TvQagu14JEGcoM/e/WmqHifVuAEsL
+ c1Nj8NjnhEyIb1Wi/4aGsbNwl5gpsN85avUjXPrQ/e5MGmBJk3PNgcAj/45NFKlhKxysYC/PZqW
+ c7PS8B8HwgtRtZRYEGHMxPHSl7bP4WGTowhulQpGuEucgVEpaiAHmi1xhXjledjfjys69UXJQcH
+ l9oSVJKkVSDHZUKm9vj6bKcJAt4h3Pxf9oBt2RsoeX9XwAs+Bubu9+qojJlbGRtZ49REAW/6Ltn
+ +wFP+4A41rFGcj+pcVYLbuHVdg4K1MFEJ/E1yHOnbasFmfhur+k0Q+CfoxdmDF1f4v46Ww86iw2
+ DQ2SYLjRsRReHLoDsdSXUIqIg+hlFMuSFG30ZTGKZFeizXBBKVzjPAIsN34LA/7TO8zO82xhwNh
+ 01bWoaL+fAiGaSIAkgA==
 X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11936
  signatures=596817
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- suspectscore=0 malwarescore=0 impostorscore=10 lowpriorityscore=10
- bulkscore=10 priorityscore=1501 adultscore=0 clxscore=1015 spamscore=0
- phishscore=0 classifier=typeunknown authscore=0 authtc= authcc=
+ bulkscore=10 spamscore=0 phishscore=0 impostorscore=10 adultscore=0
+ lowpriorityscore=10 priorityscore=1501 malwarescore=0 clxscore=1015
+ suspectscore=0 classifier=typeunknown authscore=0 authtc= authcc=
  route=outbound adjust=0 reason=mlx scancount=1 engine=8.22.0-2610080000
  definitions=main-2610150057
 
-Free space inodes never have delalloc or outstanding extents any more,
-so they don't need to be kept off the root's delalloc inode list, out of
-the outstanding extents tracepoint, or exempt from the delalloc metadata
-release, which skipped the tree root since free space inodes are its
-only inodes with data.
+Free space inode data was only read when loading the v1 cache, which is
+gone, so btrfs_get_extent() and btrfs_lookup_bio_sums() no longer need
+to search the commit root for them.
 
 Assisted-by: LLM
 Signed-off-by: Tal Zussman <tz2294@columbia.edu>
 ---
- fs/btrfs/btrfs_inode.h |  2 --
- fs/btrfs/inode.c       | 13 +++----------
- 2 files changed, 3 insertions(+), 12 deletions(-)
+ fs/btrfs/file-item.c | 11 -----------
+ fs/btrfs/inode.c     | 10 ----------
+ 2 files changed, 21 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index d1c014da52a3..f7aa0d145185 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -409,8 +409,6 @@ static inline void btrfs_mod_outstanding_extents(struct btrfs_inode *inode,
- {
- 	lockdep_assert_held(&inode->lock);
- 	inode->outstanding_extents += mod;
--	if (btrfs_is_free_space_inode(inode))
--		return;
- 	trace_btrfs_inode_mod_outstanding_extents(inode->root, btrfs_ino(inode),
- 						  mod, inode->outstanding_extents);
- }
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index ae1fd4da38d3..ff8f8cad00fc 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -396,17 +396,6 @@ int btrfs_lookup_bio_sums(struct btrfs_bio *bbio)
+ 	if (nblocks > fs_info->csums_per_leaf)
+ 		path->reada = READA_FORWARD;
+ 
+-	/*
+-	 * the free space stuff is only read when it hasn't been
+-	 * updated in the current transaction.  So, we can safely
+-	 * read from the commit root and sidestep a nasty deadlock
+-	 * between reading the free space cache and updating the csum tree.
+-	 */
+-	if (btrfs_is_free_space_inode(inode)) {
+-		path->search_commit_root = true;
+-		path->skip_locking = true;
+-	}
+-
+ 	/*
+ 	 * If we are searching for a csum of an extent from a past
+ 	 * transaction, we can search in the commit root and reduce
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3fa632a6c920..fd8962000096 100644
+index fd8962000096..b071ed59a583 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -2632,7 +2632,7 @@ void btrfs_set_delalloc_extent(struct btrfs_inode *inode, struct extent_state *s
- 		 * and are therefore protected against concurrent calls of this
- 		 * function and btrfs_clear_delalloc_extent().
- 		 */
--		if (!btrfs_is_free_space_inode(inode) && prev_delalloc_bytes == 0)
-+		if (prev_delalloc_bytes == 0)
- 			btrfs_add_delalloc_inode(inode);
- 	}
+@@ -7232,16 +7232,6 @@ struct extent_map *btrfs_get_extent(struct btrfs_inode *inode,
+ 	/* Chances are we'll be called again, so go ahead and do readahead */
+ 	path->reada = READA_FORWARD;
  
-@@ -2676,13 +2676,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- 		btrfs_mod_outstanding_extents(inode, -num_extents);
- 		spin_unlock(&inode->lock);
- 
--		/*
--		 * We don't reserve metadata space for space cache inodes so we
--		 * don't need to call delalloc_release_metadata if there is an
--		 * error.
--		 */
--		if (bits & EXTENT_CLEAR_META_RESV &&
--		    root != fs_info->tree_root)
-+		if (bits & EXTENT_CLEAR_META_RESV)
- 			btrfs_delalloc_release_metadata(inode, len, true);
- 
- 		/* For sanity tests. */
-@@ -2690,7 +2684,6 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- 			return;
- 
- 		if (!btrfs_is_data_reloc_root(root) &&
--		    !btrfs_is_free_space_inode(inode) &&
- 		    !(state->state & EXTENT_NORESERVE) &&
- 		    (bits & EXTENT_CLEAR_DATA_RESV))
- 			btrfs_free_reserved_data_space_noquota(inode, len);
-@@ -2708,7 +2701,7 @@ void btrfs_clear_delalloc_extent(struct btrfs_inode *inode,
- 		 * and are therefore protected against concurrent calls of this
- 		 * function and btrfs_set_delalloc_extent().
- 		 */
--		if (!btrfs_is_free_space_inode(inode) && new_delalloc_bytes == 0) {
-+		if (new_delalloc_bytes == 0) {
- 			spin_lock(&root->delalloc_lock);
- 			btrfs_del_delalloc_inode(inode);
- 			spin_unlock(&root->delalloc_lock);
+-	/*
+-	 * The same explanation in load_free_space_cache applies here as well,
+-	 * we only read when we're loading the free space cache, and at that
+-	 * point the commit_root has everything we need.
+-	 */
+-	if (btrfs_is_free_space_inode(inode)) {
+-		path->search_commit_root = true;
+-		path->skip_locking = true;
+-	}
+-
+ 	ret = btrfs_lookup_file_extent(NULL, root, path, objectid, start, 0);
+ 	if (ret < 0) {
+ 		goto out;
 
 -- 
 2.39.5

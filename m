@@ -1,151 +1,126 @@
-Received: from mail-lj1-f174.google.com (mail-lj1-f174.google.com [209.85.208.174])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail-gw01.astralinux.ru (mail-gw01.astralinux.ru [37.230.196.243])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 017204F93C3
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 09:02:14 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.208.174
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CFAB4A5C57;
+	Thu, 15 Oct 2026 09:25:20 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=37.230.196.243
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792054936; cv=none; b=gNViTFgHnmkXE2IgS0SwZkUlmhgY6XFks8f1eQe6BRHRUGgcOSTKsTvjQp8lsj/ccSkQBTebecxE+QFoTifQqPerXNY1pTA03/keEXFvrLm8TFnIIO9HSbyBqADAA4SAxXFWJbXhb9+KtUc4kdvsRgINM2NsAGfoWHq9GXlcf5U=
+	t=1792056324; cv=none; b=mEgiekFdiAGiUKgitZXiWenx/3X/Jp8uOyRzNsVxxlZiJdOXH0J5AjLdoFi7koY2+NuMUYlY4tp/iTjRJFLhtzIUx06w7YY+JsbaeeBu1u2w4E2KSSMiq3ZJ0miDd7K4M+7HSCeh5C+WrbwYWnAXN5V21x0lgqYsXhwW9RkoJ9k=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792054936; c=relaxed/simple;
-	bh=0/WLtgt8hKK9/6UbZbHkNnQAX0izmZ5zFr4Skps/vz4=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=Z8q1tF02amZMzu6OoLkYr6bg9IOyQuok+RGMVZRs00TVdG3yruKuXfeTlh0wja5p3gg7egs+w1mg8gtt6dLf41RoUS/FU9PYZCoNbS+UfXyTbomM3frLAz9CbFZGEWxD6A3x/tC047HOK5Hkx4EiSUDFpdG+ugEBapoNBxsE+4s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=QwplHTDA; arc=none smtp.client-ip=209.85.208.174
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1792056324; c=relaxed/simple;
+	bh=ZEmv9E/ZtcdpCplmU6e0iX8yxCpo6t8QDQ0J31PZxiU=;
+	h=From:To:Cc:Subject:Date:Message-ID:MIME-Version; b=tKLEh1/FuDYvvC1eKX2aenZfPINR6/7j5WFO9CbniHhl7f28rRFiaX5H5pY3Kg3MXvDO+VVxgkX0q/XuwuvvI8KLTV7n+GqVyQAjAbRoSDyece2+sa5QA9nvXDxHUuUUlV2j2u3stKXnBld0efZNoKtdThYhemxuG6pqS8myDJQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=astralinux.ru; spf=pass smtp.mailfrom=astralinux.ru; dkim=pass (2048-bit key) header.d=astralinux.ru header.i=@astralinux.ru header.b=EF/lL6Ua; arc=none smtp.client-ip=37.230.196.243
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=astralinux.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=astralinux.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="QwplHTDA"
-Received: by mail-lj1-f174.google.com with SMTP id 38308e7fff4ca-3a808f09021so14082071fa.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 02:02:14 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1792054933; x=1792659733; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=gCzb5Jpho3eEfUXrbXcsB7wXdosyNE0+dqqyroWERu4=;
-        b=QwplHTDAmcBD3So4wLTGADhp1YscyFzy/j18sphTljBmRYhgBdagx+BO4q7hrbd4bL
-         E8w1nQy3lXAH12nHJ1u06eGcDgRIlbpuYhAFPI2Q9xro6PMMd7cq1R2UPMoM+NNdrtGa
-         /5z2QDhZl6mLAlh0C38ed4rfVm6XImJp8D55xBb7MU7Y+yZMJw76ue804WcEBwY5SuL9
-         ByCZK+FzGZEkSWnRdewG+ddLMFVXQP2EE7PaqSoidknd9EHwS8pUHPnrY34TJ5pet1Bv
-         yZfdgyFq1lqLgb+Wx50e/3nfX/ZfQFILq/jzuzHhXwPq77Bpj94kL+LkW8XP/n0TZMlt
-         Abfw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792054933; x=1792659733;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=gCzb5Jpho3eEfUXrbXcsB7wXdosyNE0+dqqyroWERu4=;
-        b=fZjEgE2V0ZA0qvj6EN7mCZnwOUoH+7kSHkhPtBAf1GZfiWWJVS+4vlCcdNCHbc9KOR
-         TKsCh9Ibi1LZnm4y5lE8JEXqob7WtkYxyQCzaKwa5mTSKrSwWMR0wU+Sl6w4YjmmO8Cz
-         23VIvcyeg/XbqBb98EFhjmFw+0tWgECzlL5+ylTyrAnbp3Y2iSWHqTNOOEURoCyDDhVu
-         IK4y9J+IVlosYIIgte7jzrKXa/7w6VhSMAaTu18aCjoZqlgFuP/93q1dxJbybRi/u+R8
-         FmW2wVd+oSkA61Rj4Cq5+MWgpw9nd1bBF0kLwR+eq7dIpla1kaROYG12F73OSDeCrGk5
-         4e3Q==
-X-Gm-Message-State: AFq9FYJq4vX7bRNxO7aqJ8FMYnEyyXtc4U4MPuSuIzzMG8nYilaw6WFy
-	YFmGaw4nauKdeq13ahWdF1Q91/oUJHrqsU50ghEasG5ANL7eEhqp84wFeEbQN8Av69w=
-X-Gm-Gg: AYBFou335Go0zzdHUziVTtI7bkvhgVm7DkfipKUlWSEIP3+MfF4ysrqiZEw53KnhPGC
-	3u6ps/Wv9o4X15moxyN6ndIJseyYdbE1xWWQvQQp2I2srt+u5CvV7lRsVUXWYN3T3H4rCi9S10h
-	BtDNWLoEDNNGSoME4adD1zKHxmlmKRFP94O0nPMmMu0baVEn1cQtMF4U9C8ByzTKl+Pd3SjcjS2
-	zKD0CV9amchdztelmr8Kfq+FQ66FgNggzfT7OrRdJ8Ot401dCoasyPZBMs0MXkAHZoh4Zt4bbvt
-	XlVBMjGTd1kJjyUdyMMn2fxr4NzHMgD8JUTMcg8rjoFezwHxKFBOanDnt10ldxBPcGswCuG4E1s
-	QGjJuYK6FigS41Q8a+f4Ow8IzuEejwc77w+606ge2vU+ISNsFyAUAzJfs0CfQq3Dv0Q3FL5dfGY
-	9cwJbl4xnDAou3gpGGA5sDKxjwX6CbIb07jgSB0KB7ii4YgD355dNR3w5ApIelEQu8vlRUtIy/
-X-Received: by 2002:a05:651c:1542:b0:3a6:692d:b7ed with SMTP id 38308e7fff4ca-3a9c539343dmr49621261fa.20.1792054932846;
-        Thu, 15 Oct 2026 02:02:12 -0700 (PDT)
-Received: from [10.86.129.46] ([149.22.87.44])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ac9376ea64sm1558364a91.2.2026.10.15.02.02.09
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 15 Oct 2026 02:02:11 -0700 (PDT)
-Message-ID: <e3321d2d-d8dc-43e5-8501-31b2d5ae1146@suse.com>
-Date: Thu, 15 Oct 2026 19:32:06 +1030
+	dkim=pass (2048-bit key) header.d=astralinux.ru header.i=@astralinux.ru header.b="EF/lL6Ua"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=astralinux.ru;
+	s=mail; t=1792056316;
+	bh=ZEmv9E/ZtcdpCplmU6e0iX8yxCpo6t8QDQ0J31PZxiU=;
+	h=From:To:Cc:Subject:Date:From;
+	b=EF/lL6UaKpVkXjjWpONjA5upObeZFlG6FJP11dxjmMDtbw3+6Oo9GOQ4f2ZILg0QY
+	 XXOsXQFnlF51GROWaWw6UhOje6+U/mMwWJgvkt/fiuLCKNcZCWUbIs8NaiSKfo1VHv
+	 npW26ba/V6xs9D0ew5QeaPUZXd6fNaUmmKYeMy45EJbc/pnKbzgw4kObjcRSbflnDm
+	 nX14Ix9unl+1AlEvyL+ttTK16bGAYbkpPrx1FepA+y6WXYaGU+XKxcNwPxbeqHdHQ9
+	 phvjUqHRCdu0ualvf2DIeFbglPi73OzuSvqtoXC3NCkXfK/KTEBvTxPtci7wtgDath
+	 PJ7OB/+cZzVPg==
+Received: from gca-sc-a-srv-ksmg01.astralinux.ru (localhost [127.0.0.1])
+	by mail-gw01.astralinux.ru (Postfix) with ESMTP id 9A8B724FAC;
+	Thu, 15 Oct 2026 12:25:16 +0300 (MSK)
+Received: from new-mail.astralinux.ru (unknown [10.205.207.6])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (P-256) server-digest SHA256)
+	(No client certificate requested)
+	by mail-gw01.astralinux.ru (Postfix) with ESMTPS;
+	Thu, 15 Oct 2026 12:25:14 +0300 (MSK)
+Received: from DESKTOP-D46TNHI (unknown [10.198.48.108])
+	by new-mail.astralinux.ru (Postfix) with ESMTPA id 4j52jQ1RJRz2JmW;
+	Thu, 15 Oct 2026 12:25:14 +0300 (MSK)
+From: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>
+To: stable@vger.kernel.org,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>,
+	Sasha Levin <sashal@kernel.org>,
+	Hongbo Li <lihongbo22@huawei.com>,
+	Qu Wenruo <wqu@suse.com>,
+	Filipe Manana <fdmanana@suse.com>,
+	David Sterba <dsterba@suse.com>,
+	Chris Mason <clm@fb.com>,
+	Josef Bacik <josef@toxicpanda.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	lvc-project@linuxtesting.org
+Subject: [PATCH 6.6] btrfs: free path if inline extents in range_is_hole_in_parent()
+Date: Thu, 15 Oct 2026 12:23:37 +0300
+Message-ID: <20261015092339.1935-1-mdmitrichenko@astralinux.ru>
+X-Mailer: git-send-email 2.54.0.windows.1
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: verity: return error from btrfs_orphan_add in
- begin_enable_verity
-To: guolingxing <guolingxing@tju.edu.cn>, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>, Boris Burkov <boris@bur.io>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- stable@vger.kernel.org
-References: <20261015071128.3319350-1-guolingxing@tju.edu.cn>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJqqw0NBQkUl/JeAAoJEMI9kfOh
- Jf6o/xYH/3AaWnGSq58XnY/T3/YYjr6g+TUZxa7MPyiYTELNpNlvmNlbtbAL0nW0LNvkeiqf
- SmYA+xkwY4RbxnZYQK0H5iv2w1eqa9qqFZb4bIBRmTapu26GEEkpad0W0ZhoSPMO8bV2Bwkf
- YdtPZQLaeUKvHZqNqBKnmtRLQj2Cgy3kuXX3bEGvWjzUOxPUSCj/S++JWBewMdMBPT62vZM0
- 3156gfn5mHA94s2p+NFJoWkERY+JPTMu9NISkpD7yuGhXN88qd/aqD0RrlhxvKsrQogdPwn9
- vP18FGG3CRlHtOvOLVoY5NKSOWTDc+o+8t2XEETFTGbKYTcqeTzi4SxhvBLtTinOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJnEXWBBQkQ/lrSAAoJEMI9kfOhJf6o
- cakH+QHwDszsoYvmrNq36MFGgvAHRjdlrHRBa4A1V1kzd4kOUokongcrOOgHY9yfglcvZqlJ
- qfa4l+1oxs1BvCi29psteQTtw+memmcGruKi+YHD7793zNCMtAtYidDmQ2pWaLfqSaryjlzR
- /3tBWMyvIeWZKURnZbBzWRREB7iWxEbZ014B3gICqZPDRwwitHpH8Om3eZr7ygZck6bBa4MU
- o1XgbZcspyCGqu1xF/bMAY2iCDcq6ULKQceuKkbeQ8qxvt9hVxJC2W3lHq8dlK1pkHPDg9wO
- JoAXek8MF37R8gpLoGWl41FIUb3hFiu3zhDDvslYM4BmzI18QgQTQnotJH8=
-In-Reply-To: <20261015071128.3319350-1-guolingxing@tju.edu.cn>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-KSMG-AntiPhishing: NotDetected, bases: 2026/10/15 07:23:00
+X-KSMG-AntiSpam-Auth: dkim=none
+X-KSMG-AntiSpam-Envelope-From: mdmitrichenko@astralinux.ru
+X-KSMG-AntiSpam-Info: LuaCore: 127 0.3.127 0884f7b061fa529b810563f359267cd65d2ec05c, {diag_burst_silent}, {Tracking_uf_ne_domains}, {Tracking_from_domain_doesnt_match_to}, 127.0.0.199:7.1.2;astralinux.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1;lore.kernel.org:7.1.1;new-mail.astralinux.ru:7.1.1, FromAlignment: s
+X-KSMG-AntiSpam-Interceptor-Info: scan successful
+X-KSMG-AntiSpam-Lua-Profiles: 206699 [Oct 15 2026]
+X-KSMG-AntiSpam-Method: none
+X-KSMG-AntiSpam-Rate: 0
+X-KSMG-AntiSpam-Status: not_detected
+X-KSMG-AntiSpam-Version: 6.1.1.27
+X-KSMG-AntiVirus: Kaspersky Secure Mail Gateway, version 2.1.0.7854, bases: 2026/10/15 06:31:00 #28687005
+X-KSMG-AntiVirus-Status: NotDetected, skipped
+X-KSMG-LinksScanning: NotDetected, bases: 2026/10/15 08:01:00
+X-KSMG-Message-Action: skipped
+X-KSMG-Rule-ID: 1
 
+From: Hongbo Li <lihongbo22@huawei.com>
 
+Commit f2dc6ab3a14c ("btrfs: send: check for inline extents in
+range_is_hole_in_parent()") is a patch backported directly from
+mainline to 6.6, it does not free the path in the inline extents case.
 
-在 2026/10/15 17:41, guolingxing 写道:
-> btrfs_begin_enable_verity() ignores the return value of
-> btrfs_orphan_add() and unconditionally returns 0. When inserting the
-> orphan item fails (e.g. -ENOMEM), the error is swallowed and the
-> caller continues to build the Merkle tree even though the orphan item
-> was never written and BTRFS_INODE_VERITY_IN_PROGRESS was not set,
-> leaving the on-disk state inconsistent.
+The original patch in mainline does not have this problem because
+the former commit 4ca6f24a52c4 ("btrfs: more trivial BTRFS_PATH_AUTO_FREE
+conversions") in 6.18-rc1 introduced scope-based auto-cleanup which
+avoids this issue. Since some dependencies are missing and cannot
+be directly backported, we choose to use a goto statement to avoid
+the memory leak in inline extents case.
 
-This conflicts with your statement just lines below:
+Fixes: f2dc6ab3a14c ("btrfs: send: check for inline extents in range_is_hole_in_parent()")
+Signed-off-by: Hongbo Li <lihongbo22@huawei.com>
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>
+---
+This is a follow-up fix for the 6.6.y backport of the CVE-2026-23141 fix.
+It was posted and reviewed in February, but was not sent to stable@, so
+6.6.y still has the leak:
+https://lore.kernel.org/all/20260227075219.2594937-1-lihongbo22@huawei.com/
 
-"The transaction is already aborted inside btrfs_orphan_add() on failure"
+ fs/btrfs/send.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
 
-So why the on-disk state can still be inconsistent?
-
-> 
-> Propagate the error to the caller so that fsverity_ioctl_enable()
-> aborts before building the Merkle tree. The transaction is already
-> aborted inside btrfs_orphan_add() on failure and released by the
-> unconditional btrfs_end_transaction(), so only the return value needs
-> to change.
-> 
-> Fixes: 705242538ff3 ("btrfs: verity metadata orphan items")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: guolingxing <guolingxing@tju.edu.cn>
-> ---
->   fs/btrfs/verity.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-> index 600337a84fbe..d92c9dab0293 100644
-> --- a/fs/btrfs/verity.c
-> +++ b/fs/btrfs/verity.c
-> @@ -615,7 +615,7 @@ static int btrfs_begin_enable_verity(struct file *filp)
->   		set_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
->   	btrfs_end_transaction(trans);
->   
-> -	return 0;
-> +	return ret;
->   }
->   
->   /*
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 099b5a2e1156..7b19b1ea29fd 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -6545,8 +6545,10 @@ static int range_is_hole_in_parent(struct send_ctx *sctx,
+ 		extent_end = btrfs_file_extent_end(path);
+ 		if (extent_end <= start)
+ 			goto next;
+-		if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE)
+-			return 0;
++		if (btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_INLINE) {
++			ret = 0;
++			goto out;
++		}
+ 		if (btrfs_file_extent_disk_bytenr(leaf, fi) == 0) {
+ 			search_start = extent_end;
+ 			goto next;
+-- 
+2.43.0
 

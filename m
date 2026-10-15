@@ -1,146 +1,271 @@
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 70D75565105
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 18:00:07 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=148.163.139.74
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 223E054705B
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 00:25:38 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792000808; cv=none; b=rApj1kc8/4Z5c85VENRBTaOQTyUgRoyxrjbeRXRd6WaCOCISptD+c6lHgOVAvwehxyNqRdfAVOJvsBu2REyRfpUpn4SmhR2+FPnt0OJweBKPAwF89QFmstXiTk4ba8Bnv09+6cqI1tVObrC0ZQ6I/4+aF93BW+EhHmf8z7g/CqU=
+	t=1792023940; cv=none; b=KKAVLFSqxFimvdMiY/V7B30K8tsC/7wXPOxKIIMlLyI0546MQn0yf6Yg0n5v8HuGvr/oNn2RSghOJaxSIdAFrkmlAnvtmM2WtlUT4n9cj3LfuM7P0/j1Rwkp1d2Dgnb5o2C+wk3HweVvctJ2hz4d7T2LPHzSR4s7xqpHvwyydE0=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792000808; c=relaxed/simple;
-	bh=SnnbpgzsDV974jbRJz0lX+Is3nTo81dEnnsUYCzxTLc=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=f28rWrAFyT5wVulNO7omkSbBoqombwA12yLGykOAFIE4dX8LOqM6iM5T9adglfaj44pn0wi1lHvtnHrk3doyHeT9CqdEB0TEjcU5f77WAHxN9/o8xVPiEfgUNuXoSjdeFDkxRNBTWjkJCRsqUVnSTY3+oYMDRkp1STFVuh7rVGQ=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu; spf=pass smtp.mailfrom=columbia.edu; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=s7uGOUb3; dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b=HuSRMH4q; arc=none smtp.client-ip=148.163.139.74
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
+	s=arc-20240116; t=1792023940; c=relaxed/simple;
+	bh=mUOa1H869qMukWEf0XEMpUiqNPOriMhm8L34g8t/k04=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=hHFXHN8wHx0zFAl4p3rJs9k7aI5Px15X23sFPsx88/tsnaBaYZ61lBjqlIl4NF6IsHbnngtmxB62Pn8cSG+Kf0lBK+zJ9KVO0YuaM6qVnGS0v2eRD2a/XrWcSojrhsPnnscpoJVYTJFy1nJ93QG7nUJ1Ak5j4hQKuxiendXgtmw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=JtM2DQPx; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=JtM2DQPx; arc=none smtp.client-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="s7uGOUb3";
-	dkim=pass (2048-bit key) header.d=columbia.edu header.i=@columbia.edu header.b="HuSRMH4q"
-Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 69EHNqFo2921916
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:00:06 -0400
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=CEcN
-	BxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=; b=s7uGOUb3yG4+027fLEGd
-	cSD7h7i5r4uusPq29VaE1jgnezTq3aNve3p+UoUgYOc3/uIJgk8INUtvmjBFgkE7
-	egO4tRrrGw4J3I7my4flAXCk7b5g5zSFo+sWdXKW86LHa3t2RZ9nUD/eF2Wmvjyt
-	q6BU2N7HhYomrksKrFQK9zjLN9LYD/7lh5nDRbAR6DSwFBMQw6Z7GN3rSGSz5D1i
-	e1bCE3UqVCHRGZTsywgfw+ZKYlybxwU6w7XroPgtQzdVme6smkLw7GJKMew7UHZL
-	t+J28OUE9GMapKif40nSC/QfeSLxTAB+qtRkh5lrWXiuBiRGUdNLCFy4kOshKZdm
-	QQ==
-Received: from mail-qt1-f200.google.com (mail-qt1-f200.google.com [209.85.160.200])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4ha6c7c5gu-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 14:00:06 -0400 (EDT)
-Received: by mail-qt1-f200.google.com with SMTP id d75a77b69052e-5358515b4easo82009151cf.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2026 11:00:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1792000806; x=1792605606; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=CEcNBxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=;
-        b=HuSRMH4qywJihDf3VfBWKSRR5VgBfY00NNj1d05chxoU4nVH5LqOGDxFc4gc2TkgNI
-         XazHkoaTwII99cvKG/dDxLxh61Z4KnmCQ8zgJHELMFmxlEnjS2o51+iHNIlNvQN7iMyu
-         iQSKmAnbJZNrGltySt551npeBSXA2m4BHRUd33+beZWR+WbKVvwny5ToEW86ZU81MVL5
-         sSALhZyAeuNfDkyFt+54EaAYaTnIDAuj1l5CQGFkJymi63odM92PhwW4wkYHJ2ZP4G2u
-         nJSIoKLMgtj4+RyRog5aA/IajdoywCGxtjk9e3xpdlUqQ5H04cyemVzh3bUmXYvwp58v
-         Bvpg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792000806; x=1792605606;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=CEcNBxFn1YRqFoXuxQm8S+kMuXOXL2RaXN5t9JDLXWg=;
-        b=qfubszulAj2Mx7gVDnKtsyN/jx0qB/0YRZ52aw8huc1REJKosViYCFcE2f1++Y6GV+
-         ZXHFP9zR5YnnECXsZpJ10utEGAuEsxmrEJ2rMuUEkR5MLCvOYXr8Fv0q3PQofLgJWFQZ
-         4/5zzrVOF/DHa5f6wDcD0OCzdCw9+mhWvlTtdAdW8pUFlTQ6WaccdLmAdwIHPanEncj2
-         AP5OUAPbi5ALYQL3DxFjw4iJUzVfIngPsDKEfZTNT8wXZRVQ4cvzpr8sJc1elAubGNOL
-         JIGSTws+mD5qc7D9FsY2kT/1b1oX3jgtdN2RoJpxK7EEh3qpyT5KjsYZFixpTth8rOH8
-         Ha2g==
-X-Forwarded-Encrypted: i=1; AKwUvBz7QRg09JlaIIcENm2zjoblMZcB+yOQ483yoW/Zjan1gVuy8T1+aLrc1+kAVwRPWAkru21uh4C3k1AWig==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLpNNmF9PXE/Dw86dvsyHDda9FEV9mdhz/Hnvg0Zmr2/AANB4EH
-	NAM8qd569zYwhBVhbX6+ngc0HYkVhDisfMLumyWBco1M93uNj9U8HcS8229WnGo/938yfA9mD6s
-	aH5fMcy4JMMHol1L1xJDnknhlUuj83j33l2WtdNkgr/3OtIapUvc6ggNm4pri
-X-Gm-Gg: AYBFou1GdOwU1VdYAJ9L+cSLh9EZW32Wr6kiiyjyTTxEUUFT0+FInN9LPp+9BZtwz65
-	H9SHm+P7sWG/jg8ebiI8SDAdxesaFvw2MhKhIsjSCAi+gMy9DbNpP74eV6TMH/XCI4hCxqd6Tud
-	8134S30s4wUu5ddLZhQoLh76VbaCNVXhFkaWSUD4pueuHDV2ZhMenkq0NDYFyF3IzEL/LWwesPt
-	r9PobFzL3B8cTKR5S+d3JGqrDFCu2FaIKM51aOf1J0TB60zjjDqcKvlEFba0go/pipZnLd/xjRT
-	spxA0OG4gsbs5ddkHDrxuuC0cgxeoloqYos8Hss+YuXANhzI0kyX01Tw/8My+G+HO3nY9tY0uSJ
-	WQ1ua2fBBkldvn4tG0Fw1Ayxpfa5ETG17loN9rdi1tC27FIfz
-X-Received: by 2002:a05:622a:428b:b0:533:3911:f504 with SMTP id d75a77b69052e-5359fdf2526mr271506441cf.57.1792000805564;
-        Wed, 14 Oct 2026 11:00:05 -0700 (PDT)
-X-Received: by 2002:a05:622a:428b:b0:533:3911:f504 with SMTP id d75a77b69052e-5359fdf2526mr271505941cf.57.1792000804977;
-        Wed, 14 Oct 2026 11:00:04 -0700 (PDT)
-Received: from [10.207.9.0] (nat-128-59-176-148.net.columbia.edu. [128.59.176.148])
-        by smtp.gmail.com with ESMTPSA id d75a77b69052e-53612830ec3sm2952541cf.27.2026.10.14.11.00.04
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 14 Oct 2026 11:00:04 -0700 (PDT)
-Message-ID: <7eee4fcf-1348-4d60-a1ec-cd3b76eb5904@columbia.edu>
-Date: Wed, 14 Oct 2026 14:00:04 -0400
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JtM2DQPx";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="JtM2DQPx"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 2FDBF1F390
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 00:25:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1792023937; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VnBMRidPgsx99ft+orDUGJPu4IgN5H3ypg11x96GFjI=;
+	b=JtM2DQPxhpHdfkJ4cw9RncBtgrRYMs/RRgaRspkjH49BLsn+io9QXN3WW0FCHTPAGy/f90
+	Rj5nXbNbstgR+Xo9GtDMhIcX5nj89vObF7xEg/KYs9yhmkNDlsUaWjZ9mIKAhN/ob3JuEv
+	y7sKy3euOSbk6FIxb/wF3OdUKJRneWk=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1792023937; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=VnBMRidPgsx99ft+orDUGJPu4IgN5H3ypg11x96GFjI=;
+	b=JtM2DQPxhpHdfkJ4cw9RncBtgrRYMs/RRgaRspkjH49BLsn+io9QXN3WW0FCHTPAGy/f90
+	Rj5nXbNbstgR+Xo9GtDMhIcX5nj89vObF7xEg/KYs9yhmkNDlsUaWjZ9mIKAhN/ob3JuEv
+	y7sKy3euOSbk6FIxb/wF3OdUKJRneWk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DE34C1373D
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 00:25:35 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id OcsrDX8d0GofBQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2026 00:25:35 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: receive: fix and enhance inlined lzo decompression
+Date: Thu, 15 Oct 2026 10:55:02 +1030
+Message-ID: <35f1c7d8ac6a562617fdd7a5cf11d6f0e4ae4090.1792023874.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v4 00/18] btrfs: remove the v1 space cache
-To: dsterba@suse.cz
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
-        Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-References: <20261012-btrfs-remove-v1-space-cache-v4-0-f125bd8c07f9@columbia.edu>
- <20261013122214.GA1310987@suse.cz>
-Content-Language: en-US
-From: Tal Zussman <tz2294@columbia.edu>
-In-Reply-To: <20261013122214.GA1310987@suse.cz>
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
-X-Proofpoint-ORIG-GUID: tcitI_4Sx_TMSiO3xX1KHVZIA9yeMqiN
-X-Authority-Analysis: v=2.4 cv=G/CJgNk5 c=1 sm=1 tr=0 ts=6acfc326 cx=c_pps
- a=JbAStetqSzwMeJznSMzCyw==:117 a=dxtdfZqDOO0kCslK4e47hQ==:17
- a=IkcTkHD0fZMA:10 a=660iZSQnnn4A:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
- a=TKffICSxeowAhaLLEZsA:9 a=QEXdDO2ut3YA:10 a=uxP6HrT_eTzRwkO_Te1X:22
-X-Proofpoint-Spam-Info: AW1haW4tMjYxMDE0MDA3MSBTYWx0ZWRfX3h8kSpFQ/COJ
- jJ1Ly+X/4EBKJ9gbg2ssyamxgSJuXB7fh5on0lAcuy2IWKYRD1IRD7BErj8MtuxyaJAJ6iRv+eC
- qf734RYFgE9UmcMkHjq+KTu5E30uBsBAXD1N2IN5AmQwhT5htHPY
-X-Proofpoint-GUID: tcitI_4Sx_TMSiO3xX1KHVZIA9yeMqiN
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMDE0MDA3MSBTYWx0ZWRfXx+mtXNG+NdWc
- rZcrTfvo3Dzu4SZXibyM2ihweaH7QgWU5rjFOd3pB6g6GsfOwzHXIsQ4JbT9uj6Urc6PPOb88PL
- D07Chvk7wettDxxsIytPNaydv7ildXqHbJhiWDVKZDhXQc3Jf0KMygUNsA8q4J7DqZjq9fxeuxB
- 17ulO/pA96nEZZ3YHG29esssKxIJpecZ8wCNjVU3vAxNopNUkSlspjZsrGjgKRhHXqJaXz7huzt
- q/Fm0UUAZLFw42vZ9PRxjRt120yw8iO/qg49O3ekfpVrpsYT5sxWiN1v/fjdtjwRJpnvwNk1jsO
- 88EnL4GvBUp7qTh3bpOnlEfk8Q21hLCbaHX5GY74rGsvxO3rK0I3brBSXvHb5QJNKJugi+plvfL
- /wDadndXknlgebRjTgXPQWe89hmGjiX4IpSWzR38iWnWWuVTOtu44qs7VK3MHg/yhfbXY+xDYis
- PRgkA/nHZMNma08dnqg==
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11935
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- impostorscore=10 adultscore=0 phishscore=0 spamscore=0 priorityscore=1501
- clxscore=1015 bulkscore=10 lowpriorityscore=10 malwarescore=0 suspectscore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2610080000 definitions=main-2610140071
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Score: -2.80
+X-Spam-Level: 
+X-Spamd-Result: default: False [-2.80 / 50.00];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	TO_DN_NONE(0.00)[];
+	URIBL_BLOCKED(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo]
 
-On 10/13/26 8:22 AM, David Sterba wrote:
-> 
-> Thanks, unfortunatelly this did not make it into the 7.4 pull as the
-> freeze was yesterday and I was not able to process the v3 last week.
-> The v4 still has some issues reported by sashiko. It could be still
-> possible to send that separately as 2nd pull to 7.4 because the code has
-> been in linux-next, small fixups would be possible, and it's code
-> removal.
-> 
+[BUG]
+There is a bug report of heap memory overflow during receive if
+--force-decompress is utilized:
 
-No problem. I took a look at the Sashiko feedback. It looks like a
-rare pre-existing issue, with the fix being to change the `if (truncate)`
-to `if (truncate && !ret)`. I can prepend a standalone fix for this at the
-start of the series and respin.
+=================================================================
+==557235==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x5020000000c0 at pc 0x5c38d895e8b9 bp 0x7ffdaefad510 sp 0x7ffdaefad500
+WRITE of size 1 at 0x5020000000c0 thread T0
+    #0 0x5c38d895e8b8 in lzo1x_decompress_safe /tmp/tmp.aIYhV2VAge/lzo-2.10/minilzo/minilzo.c:6313
+    #1 0x5c38d88623cb in decompress_lzo cmds/receive.c:1165
+    #2 0x5c38d886274f in decompress_and_write cmds/receive.c:1222
+    #3 0x5c38d8863459 in process_encoded_write cmds/receive.c:1320
+    #4 0x5c38d8785daf in read_and_process_cmd common/send-stream.c:505
+    #5 0x5c38d878a16f in btrfs_read_and_process_send_stream common/send-stream.c:654
+    #6 0x5c38d88650fc in do_receive cmds/receive.c:1589
+    #7 0x5c38d88664ab in cmd_receive cmds/receive.c:1827
+    #8 0x5c38d869729b in cmd_execute cmds/commands.h:126
+    #9 0x5c38d8698a6b in main /home/kevinv/btrfs-progs/btrfs.c:474
+    #10 0x72779f02a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #11 0x72779f02a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #12 0x5c38d8697184 in _start (/home/kevinv/btrfs-progs/btrfs+0x89184) (BuildId: a2ab208cbd7ebc744934a9ed7a8963a20b35fcf4)
 
-Thanks,
-Tal
+0x5020000000c0 is located 0 bytes after 16-byte region [0x5020000000b0,0x5020000000c0)
+allocated by thread T0 here:
+    #0 0x72779f4fd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x5c38d8862634 in decompress_and_write cmds/receive.c:1191
+    #2 0x5c38d8863459 in process_encoded_write cmds/receive.c:1320
+    #3 0x5c38d8785daf in read_and_process_cmd common/send-stream.c:505
+    #4 0x5c38d878a16f in btrfs_read_and_process_send_stream common/send-stream.c:654
+    #5 0x5c38d88650fc in do_receive cmds/receive.c:1589
+    #6 0x5c38d88664ab in cmd_receive cmds/receive.c:1827
+    #7 0x5c38d869729b in cmd_execute cmds/commands.h:126
+    #8 0x5c38d8698a6b in main /home/kevinv/btrfs-progs/btrfs.c:474
+    #9 0x72779f02a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #10 0x72779f02a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #11 0x5c38d8697184 in _start (/home/kevinv/btrfs-progs/btrfs+0x89184) (BuildId: a2ab208cbd7ebc744934a9ed7a8963a20b35fcf4)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow /tmp/tmp.aIYhV2VAge/lz
+
+[CAUSE]
+During lzo decompression, btrfs-progs always assume that the output
+buffer is block aligned, even for inlined extents.
+
+However since kernel commit 3eaf5f082c4c ("btrfs: extract inlined
+creation into a dedicated delalloc helper"), btrfs will create inlined
+compressed extents with tailing zero included.
+
+For zlib and zstd it's fine as they provide multi-shot APIs, if the
+output is exhausted, zlib/zstd doesn't error out, allowing us to
+gracefully end the decompression.
+
+But LZO has no multi-shot API, thus we have to ensure the output is
+large enough to contain one fs block.
+For inlined case, the output buffer contains only i_size bytes, which
+can be smaller than a block.
+
+This makes inline lzo extents decompression to write the full block into
+the output buffer, overflow the heap.
+
+[FIX]
+Follow the kernel by introducing a dedicated inline decompression path,
+and do extra validation for inlined decompression.
+
+There is also a similar bug in the regular path, that crafted stream can
+intentionally create a segment that doesn't take a full block.
+In that case we still advance output buffer by blocksize, which can
+cause the last block to overflow the buffer.
+
+Also fix that by always limiting the output buffer size comparing to
+@unencoded_len.
+
+Issue: #1184
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ cmds/receive.c | 75 ++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 73 insertions(+), 2 deletions(-)
+
+diff --git a/cmds/receive.c b/cmds/receive.c
+index 20c4e14bcead..e939cabeaea5 100644
+--- a/cmds/receive.c
++++ b/cmds/receive.c
+@@ -1115,6 +1115,64 @@ static int decompress_zstd(struct btrfs_receive *rctx, const char *encoded_buf,
+ #endif
+ 
+ #if COMPRESSION_LZO
++static int decompress_lzo_inline(const char *encoded_data, u64 encoded_len,
++				 char *unencoded_data, u64 unencoded_len,
++				 unsigned int sector_size)
++{
++	u32 in_len;
++	lzo_uint out_len;
++	void *buffer = NULL;
++	int ret;
++
++	/*
++	 * Compressed data should not reach sector_size.
++	 * And uncompressed data should not exceed sector_size.
++	 */
++	if (unlikely(encoded_len >= sector_size || unencoded_len > sector_size)) {
++		error("invalid lzo inlined extent, encoded_len=%llu unencoded_len=%llu blocksize=%u",
++		      encoded_len, unencoded_len, sector_size);
++		return -EUCLEAN;
++	}
++
++	memcpy(&in_len, encoded_data, 4);
++	in_len = le32toh(in_len);
++	if (in_len != encoded_len) {
++		error("invalid lzo header, header len=%u encoded len=%llu",
++		      in_len, encoded_len);
++		return -EIO;
++	}
++
++	memcpy(&in_len, encoded_data + 4, 4);
++	in_len = le32toh(in_len);
++
++	/*
++	 * There should be only one segment for an inlined lzo extent, and
++	 * there should be no padding either.
++	 */
++	if (in_len != encoded_len - 4 * 2) {
++		error("invalid lzo inlined header, segment len=%u encoded_len=%llu",
++		      in_len, encoded_len);
++		return -EUCLEAN;
++	}
++	buffer = calloc(1, sector_size);
++	if (!buffer) {
++		error_mem("lzo output buffer: %m");
++		return -ENOMEM;
++	}
++	out_len = sector_size;
++	ret = lzo1x_decompress_safe((void *)(encoded_data + 4 * 2), in_len,
++				    buffer, &out_len, NULL);
++	if (ret != LZO_E_OK) {
++		error("lzo1x_decompress_safe failed: %d", ret);
++		ret = -EIO;
++		goto out;
++	}
++	memcpy(unencoded_data, buffer, unencoded_len);
++out:
++	free(buffer);
++	return ret;
++}
++
+ static int decompress_lzo(const char *encoded_data, u64 encoded_len,
+ 			  char *unencoded_data, u64 unencoded_len,
+ 			  unsigned int sector_size)
+@@ -1122,10 +1180,23 @@ static int decompress_lzo(const char *encoded_data, u64 encoded_len,
+ 	uint32_t total_len;
+ 	size_t in_pos, out_pos;
+ 
+-	if (encoded_len < 4) {
++	/* There should be at least 2 LZO headers, then payload. */
++	if (encoded_len < 4 * 2) {
+ 		error("lzo header is truncated");
+ 		return -EIO;
+ 	}
++	/* Looks like an inlined, pass to dedicated helper. */
++	if (encoded_len < sector_size || unencoded_len < sector_size)
++		return decompress_lzo_inline(encoded_data, encoded_len,
++				unencoded_data, unencoded_len, sector_size);
++
++	/* Everything should be aligned. */
++	if (unlikely(!IS_ALIGNED(encoded_len, sector_size) ||
++		     !IS_ALIGNED(unencoded_len, sector_size))) {
++		error("unaligned lzo extent, encoded_len=%llu unencoded_len=%llu blocksize=%u",
++		      encoded_len, unencoded_len, sector_size);
++		return -EIO;
++	}
+ 	memcpy(&total_len, encoded_data, 4);
+ 	total_len = le32toh(total_len);
+ 	if (total_len > encoded_len) {
+@@ -1161,7 +1232,7 @@ static int decompress_lzo(const char *encoded_data, u64 encoded_len,
+ 			return -EIO;
+ 		}
+ 
+-		dst_len = sector_size;
++		dst_len = min_t(u64, sector_size, unencoded_len - out_pos);
+ 		ret = lzo1x_decompress_safe((void *)(encoded_data + in_pos),
+ 					    src_len,
+ 					    (void *)(unencoded_data + out_pos),
+-- 
+2.56.0
+

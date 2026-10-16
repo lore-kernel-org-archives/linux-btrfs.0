@@ -1,35 +1,35 @@
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-alma10-1.taild15c8.ts.net [100.103.45.18])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 20D5F360EFA
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2026 16:37:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0590F5448AC
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2026 17:09:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=100.103.45.18
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792168649; cv=none; b=PldZV+UPEoiESexcFdXkKywa0prDfRHNAhOHWcrDpXF8q7CCLEISop6ek/4QaNlj1VxTNkqou9QeG63Ync/dUe5YTGQ0fenErT5HQ3qax6h6koUBMvJWgzZuj7WhPWmOeKzgUh4Q5PWBhcVwjfIP2rQmIUJgr4Xb/nM17DlSWXM=
+	t=1792170569; cv=none; b=cDSqew/Tu6Z/oVIgjC84YyYWl3aHWIVUXu4C21K84em+YttanWCE14wUCqKtGPWnePhjJYJywx+CuWP3pv/JZIlsYOHuxe3WTIatTdgQy4CA2o2MEQ2RxPqpt6+7IDGtmrzr78PsCoFS0FVGZ2evk31U1Z5XS4lT8qVHBdFR9x4=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792168649; c=relaxed/simple;
-	bh=Iu6DeOKw1sZa5TPDIXiQRMLq8cn5WcbdN06Lk5WBTvE=;
-	h=From:To:Subject:Date:Message-ID:MIME-Version; b=jeMWIUb+rPS/Rz33VAqSALAd5gjDDNeqBJwswxzg4r+yL+XOqvsNJn5YsaVMhK2IBzAXKSKsvddKZKO7ZU/LGB9kThARDAKJ5nQN8NAwff9ZqTo2i3QrGZcMDVhpHQEWkYyZBtQSU/+VGRgkhvQ1Eapv8KV5FBQDsd2VNPfWc7s=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=GXW2kI4C; arc=none smtp.client-ip=100.103.45.18
+	s=arc-20240116; t=1792170569; c=relaxed/simple;
+	bh=dB+qjT5dX4U6ABEmx1hiU3Hgogsk6r3Eyeh+QglwTgg=;
+	h=From:To:Subject:Date:Message-ID:MIME-Version; b=tpHRuR22aH4A3kRQNd7RPQ9jtG8480E1Sp0IGo2jmQY6KXuKt13z2Cg4Yq8O8Nr1+7Q9jBX5GH1qY78U1R+u3uAwMc+XCgtJoNVmeluKwrlZHpi+n9qIhz4D1mHG0jC7dao+gJfXpLJ4n49g4cA2EHgU6O7o0xIvHO9szgDaB2w=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b=XoKOfgBm; arc=none smtp.client-ip=100.103.45.18
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="GXW2kI4C"
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 14AEB1F000C4
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2026 16:37:26 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.b="XoKOfgBm"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 634841F000C5
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2026 17:09:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792168647;
-	bh=W/RlXxqSzcaoN4MvIvnpIMOdoNx86e4Loy6OYu6zxHU=;
+	s=k20260515; t=1792170568;
+	bh=LQ7YKyPw3oYAIwWhsBEj+2CYqJi09DU8LLX/apAZN34=;
 	h=From:To:Subject:Date;
-	b=GXW2kI4CyWc1szfjlxxz7obcB83bY+6nJP3CS7tcr1p6aTuluHv3nUbXyKWvAgbpO
-	 Uaz5O9U1pTXNDDLM38ejhpcAksDCjkucEK/PzMnH5G/53w4/F1urimLyu4H670/amT
-	 +JHZw2yiEo1mEiHmkMy8Bw0p/jREZA0oCdhFUL/ZVpIQf4A5R11AgeFXtdjTfTeZW/
-	 07l+cZFWq+yL3XgMJT88SLjzAL05TwYVKfeFXcxNvmgnHfkFKppKEZOhXYqAL43H5E
-	 VdRZBvPEbV8F1M6+lnNWglKUgugTKs/J1WK/XJ2emjcvTpsWhxQ1pAQWoHS1PwwAE1
-	 atT3vgwYrRqJg==
+	b=XoKOfgBm9D/42LH7iQwJ3bvr4fE+xk+pmZfhBknO+MLvQTgbkjcHZsqbGUURuY9R7
+	 ODfen09yBNTI4c8DN+iw4z7vYC5B8yAxrciUlYCot1LLjMEI3X/9mggluMD+CcYfkR
+	 6x5ex0PEgozH9Z9MUQpcA3z6yL0dqgTUKLCoeTq8aYF1BgLnFkRk3bqWSlRoPnNw4E
+	 RQRY2Kxz+T2Y4OA0/aXrRk1CK9aDSNIm0zloDDP+wYI5opJCaFF97BCpUfOzIEunC8
+	 RvkT94eILzKUg9PRD6gh59Zk1b3xiUHjx/AaUxyZolZrfBmsjX4ilvn3xfObeuxY/F
+	 39iugyBj1aFHg==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: scrub: remove unused first_free member from struct scrub_ctx
-Date: Fri, 16 Oct 2026 17:37:24 +0100
-Message-ID: <cbc634179ac86780dfe0aff9c5e2cbd3c96f5235.1792168617.git.fdmanana@suse.com>
+Subject: [PATCH v2 0/2] btrfs: fix a couple races between scrub and the scrub progress ioctl
+Date: Fri, 16 Oct 2026 18:09:24 +0100
+Message-ID: <cover.1792170434.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
@@ -41,34 +41,17 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-It's not used since commeit 001e3fc263ce ("btrfs: scrub: remove
-scrub_block and scrub_sector structures"), so remove it.
+Details in the change logs.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/scrub.c | 2 --
- 1 file changed, 2 deletions(-)
+V2: Added a another patch to fix another race (patch 1/2).
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 05768e28fd95..0eb30625439b 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -188,7 +188,6 @@ struct scrub_ctx {
- 	struct btrfs_fs_info	*fs_info;
- 	struct btrfs_path	extent_path;
- 	struct btrfs_path	csum_path;
--	int			first_free;
- 	int			cur_stripe;
- 	atomic_t		cancel_req;
- 	int			readonly;
-@@ -460,7 +459,6 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
- 			goto nomem;
- 		sctx->stripes[i].sctx = sctx;
- 	}
--	sctx->first_free = 0;
- 	atomic_set(&sctx->cancel_req, 0);
- 
- 	spin_lock_init(&sctx->stat_lock);
+Filipe Manana (2):
+  btrfs: scrub: fix race leading to use-after-free in the scrub progress ioctl
+  btrfs: scrub: fix race between scrub and scrub progress ioctl
+
+ fs/btrfs/scrub.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
 -- 
 2.53.0
 

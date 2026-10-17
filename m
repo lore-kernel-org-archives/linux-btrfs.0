@@ -1,84 +1,84 @@
 Received: from mail-yw1-f175.google.com (mail-yw1-f175.google.com [209.85.128.175])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8DE7835C1BC
-	for <linux-btrfs@vger.kernel.org>; Sat, 17 Oct 2026 15:03:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D7693515E3
+	for <linux-btrfs@vger.kernel.org>; Sat, 17 Oct 2026 15:11:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org; arc=pass smtp.client-ip=209.85.128.175
 ARC-Seal:i=2; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792249435; cv=pass; b=jh0zGH9baQFX/sV5rnZ0sIMB6RZSMQCneF8Qua51g1vamhG8acR/R4z/9vyIgorhuYGD09JbISvjQBwiQxCFHItkaXh+zgtQYIBUEoB5/Ifc5e5wDF7f4hRY3Ix2zDujGwUToQxagHy70wcpfSuNaSxzS1g6gzaFg8MsVRTfhXs=
+	t=1792249910; cv=pass; b=NmD+2swjOmdH7JersKx+gpT/FggphGu6jOpxF8SQ9SMExgfe2KQ94DCX9P4WSv3xWjDuq+zBVYfBBsky0JblZrrwYMEVeuh4MME/0jW/JIq9fSbcKNLpt0pTNavuvF9DNPWNvVl9zNqQigjuvbX2MYJ+WEkbpUp8S0hqywTJ9Ws=
 ARC-Message-Signature:i=2; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792249435; c=relaxed/simple;
-	bh=2TPiLMemd5nZWHJFOnZuI1Mv7QhHV+9TaWQXpNedp/4=;
+	s=arc-20240116; t=1792249910; c=relaxed/simple;
+	bh=kUgaJfcHUaw2Mf3AOiCBqxnuSIsGPJ6SCkYqaF4W5+g=;
 	h=MIME-Version:In-Reply-To:References:From:Date:Message-ID:Subject:
-	 To:Cc:Content-Type; b=EbaC45eBT/u3gbHaBH7su07jGxQ09vtW7dwNLXV5oIwGLAf7oN5XNZ/5Apdc5dYXtHVb8NOIO8LQJiNOVVxPU8oHz71ouoyZdRH4fs6JCjhmjqpwAezjfAg5T9oC6TGRjl4ftyOUKw4de6hq+4bTlz0fbv6NzfAWbFw/8XhVPCo=
-ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=HNVHR6dK; arc=pass smtp.client-ip=209.85.128.175
+	 To:Cc:Content-Type; b=lAsU9XqPSmZ4RALBIHmshow6jlF8hk0uVevF5r0MPtbwjWw3ln5cU5ZzyQBiu4oqaKD21RKUJIZEjVjgYNz+oEB3Ykdl2hX/JdlFMxjyhCS+tR+CXRTunvn36cV1PJ5uuyA5mfyHpSJBSoDI6lahHlaEq0uyIwRWgDkMv/27xHg=
+ARC-Authentication-Results:i=2; smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com; spf=pass smtp.mailfrom=gmail.com; dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b=qsfQfOX1; arc=pass smtp.client-ip=209.85.128.175
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="HNVHR6dK"
-Received: by mail-yw1-f175.google.com with SMTP id 00721157ae682-8ad98c3fb15so6423617b3.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 17 Oct 2026 08:03:52 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1792249431; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.b="qsfQfOX1"
+Received: by mail-yw1-f175.google.com with SMTP id 00721157ae682-8ab37e44643so5218887b3.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 17 Oct 2026 08:11:46 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1792249906; cv=none;
         d=google.com; s=arc-20260327;
-        b=IXGSgM8v/zEwjOR0rrWcG/vzzCyJcQaxHQzLmOT+OBXRE1RkAxPkEYxe/YFBydlurt
-         wfHxO3gkAviiYBNNVlRAQowpQABCQrfCWf/XoorltZI2zdv5wtlRui24cSo9a2Gnmier
-         N2H/HuQNbfDCn/Pg6gWRzRT895g7nkRSlgbHg7S0lYU448x0dvyScVjZ/f1cs6FY4hbL
-         Xp5cmEDCqGToUMhx82aw7J5O7OnshR0JWK+Sy1PqAm5EG3rBzVPR6EYo/ZHgKnxMMu+e
-         s6DOF7xz9KCeMMQu4FmH7cHoKO4KYCQoL37tNfoxnyVUbaPIVUmtS2bPcZkEUlN+Zq9w
-         dNCw==
+        b=KHVcJHXN77dkLzKxo7FLwryhOF6dE4tsaJEtdE5fmdN/ARzW0hPSyymG5caHNEmQ9v
+         YyTm6fJ9KKxIWIiU55XN8zhObTSe9ouBARY2eCRa6mfpP+lb4Jo52CGFaH75+DynFulI
+         FkRHvIc8t2qdIODq+eysOQMmVehkLiAL17yNKHb38j/hHRD6AFsO2Ibix1f1t6DQFjmI
+         Ms19bRRmWD2jFGF+6EJozdQukxw9q069i1XrYFF6LVdxkWYH5jledX8OqbOtapI5eKBW
+         9j7cI7ZW6SIQBAnDu+AJs0gyRD9mRuaEgvM2x4F5cUUf7+4lmanI4Q+fwHMkJ5/NKy9A
+         +2Fw==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :references:in-reply-to:mime-version:dkim-signature;
-        bh=nuMClOp+B5y4NzwOwEQnk3xTwgYgDROqbJuDnxXbdls=;
+        bh=HWjAnv7MWZyeb3beN0apStuHjz7AMGisi1kBhY8x2ck=;
         fh=fGJJ3Neh1I78eVfcrA1sNu01TO166JCYyCP48WGIdIU=;
-        b=jvYSiZbWAFcVjGPB7ANxT66j8+jZpN0cvk9qMt4bRbchlG3zU4dFlJ98vdcSmUftzl
-         1PX8NLNiBnsoEVHIR6jR0Z6P8tTLQ5HXdq+3fqZTuWUcOzgzh+YWz2y36MGvlmAEXWjI
-         TsW7ZrvqW7JfCXkC1cyK1azeww7Jlx9dYdqiA/a7+iekJr07ITpep9wEXYUnI+TxDKA8
-         ULYkvztv6EAuc57FSab2fgu6nW9aagGd132hZg7hRebVg/+6klXchKK6yVEstzrnvVLD
-         2y62SM9SwqHTxKP91bk7JooTH825j7Wawpg21Nh0t4r5EWJDg4n0fHIEAcSZhII2A4GS
-         2vHw==;
+        b=cymmtpfF5kw861ZNr8PRRJJDVgAhsiCQvhTpZf8uneiYMwFh5PVuNpj7GOI42cRh9e
+         xTSCV48s0H432zGnLSy0sNTu3BLdwV8je7C5LiGB9nBBcj26aa83acmmUu9ctBx1raHi
+         uF5cn1vWj75hYaPIxR8EyWojQVD3T4V6OBz1R7AgBoonY5VOGo8whleem8hk1C+DtiiA
+         ootCf7fp/E8m7BIiXIUn+5X4eyNByixMIY1xoySfw8WmdbbfwlDyO8h52nKuPHGoGSh7
+         n7K+Bkscqg6BqxUKx2kJ8zfRH032++InGEyl24UadDsYNEV3FQhL4jCKBXp1raKhAoOj
+         +eBQ==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792249431; x=1792854231; darn=vger.kernel.org;
+        d=gmail.com; s=20251104; t=1792249906; x=1792854706; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:references:in-reply-to:mime-version:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=nuMClOp+B5y4NzwOwEQnk3xTwgYgDROqbJuDnxXbdls=;
-        b=HNVHR6dKuMgsNVmzcXZz3vcya908zrQdmHi1f5whSGrcJyzCctOD0peESwLN5OL7yM
-         nW6uJy9kvCjXY4HICjS+zWIXFL5S7dS7GnzU3DK0IDKK8RTkBYimVOf7DW0mV2QOmGdU
-         onkDCIElLPJ94Zj2OsGZNk5D/tjORlkqJHnCtudgIGK7VmiGLSUWQMjjkvCZ0UAk2MMN
-         aPT8JWDTW2/yPCflh6DOZkrTElHy28coRQ03npNWFJ9JboRhnuUwcdJ7yC2tdvZH7E5W
-         IqKbP7XwovqKCKKH2Y66mVzKVkyyW1qap/PE2copKEo4gg/Bayw2q7rRRe3z6XhyG2tY
-         fPyw==
+        bh=HWjAnv7MWZyeb3beN0apStuHjz7AMGisi1kBhY8x2ck=;
+        b=qsfQfOX1cczkIvDoJJabPXqJyPSQDeZaIrfiJUl2gdlFYi33QsfRrCinXFHsG6HU5Q
+         14QrMVu0UGz0JSDdsXGoyj/GAS9Bv89MOzVnbKDN/EiI7aStdtJ294dX4QqDaMZslJzc
+         747iIzpxJBnDe2PvvGtFt7ULNy06ddbU8SI/PnHWy9SbVh9Z1RUIofKcWwGkdJFdF3Tz
+         acoKBrX8Y4gQI1gK5B+31q0Bt9hJ8jxlJFPkXNnjMzN8SME6T3Vg7xWbuJn8/UTi2J6E
+         xmbDSu8gP0FD4swtK6peR9QccFP7ZgjivLLPzJstZamcm6NC5dkHADUoEZjB5tGYD+PG
+         b/RQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792249431; x=1792854231;
+        d=1e100.net; s=20260707; t=1792249906; x=1792854706;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:references:in-reply-to:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=nuMClOp+B5y4NzwOwEQnk3xTwgYgDROqbJuDnxXbdls=;
-        b=L66jVnEjvr4mv90OoZtDh+QY/wlA6BWRT0xSae2KyPK5MGy3sSmkf0E6SnzJ8q+mqp
-         ofBKwPl58GuKRHKRso7D87inKJDUGgOFfsz//bw81+XGaBpUOqPZp9LwLcGtQXqqfmC+
-         jOpuLoCDhSBIHJ1qBCzzAyWDKx2WkhZSlMRqDZSBYoR7HiaulZbDO9IV+KYhTYgBgMyN
-         T16qyPowkk+O2QHqJW/RWtYxY2A1JKwh/d/0dho97pGPKSCMjod1rONQCubqcV8E3rqN
-         iXxATP9FhxoS91QUJyckqOU5d6GsSd3FB0i4jrj2HPb2V/6d2C7a6hasJV9uo+E4Wbrr
-         I+iQ==
-X-Gm-Message-State: AFq9FYJpAeHOhFCTpM1aw2/dSVRAHKrUdjSdu47VqfH+29/OY6n2SoO2
-	TBc33eKMfZmc2nPjKkit5lE2PMvOzgTI/gip2+tXpECNRIzyFgAut+I/FEtUtacRnjowu4DsqCY
-	8Mxj5sCLndFgTbmu9Ji2ATp5+d8SfjOfrAQ==
-X-Gm-Gg: AYBFou0UL8LrXkzfrFz8aY1HfnxX9w4ajzDq33+wXbZII2hWUXjaMJiyh/oZrWoe0EQ
-	flkL2qSY5N8NG9Z6wSDJyCHOrTJcw+z3ZvVLajHleMfRiYwRpe/YBC4s6PkirIelfFNePSeS4vR
-	R3MzkMFQrvZFUlMEj3gQjCb6KgeokM4WmSeIkZO8gmGx9JpWdPpNcWuL+EF0F6FnOk9Rs8jddNG
-	RFY0zHxXB4OXcbAlLxTa5lFz0/DCiSEUdzstrAAi6ntJD3LEc3fQeYf8PPOcVnTVHhPkgFLn4SR
-	rmeiShhRoVaymwhhHSmDP7QqMzMw+ZW4XZVzP8J3FZqygMapARehDRUW9ZorNPf5
-X-Received: by 2002:a05:690c:113:b0:8ac:6e11:3dee with SMTP id
- 00721157ae682-8b0f2141a9dmr13174027b3.10.1792249431172; Sat, 17 Oct 2026
- 08:03:51 -0700 (PDT)
+        bh=HWjAnv7MWZyeb3beN0apStuHjz7AMGisi1kBhY8x2ck=;
+        b=uZ6tUXSvflQChX7LCjf9feW4RXtC8NOu/1+E9UnLbhJOmI4Rn7c2CYPvHXKhZd3ghS
+         rcUpc/XUEqxk2TsPT8iD87ZFnGOGjp9mRJP8Kwc4VnshoOUhKePhdZZv6JMYmmZHoI5T
+         Ng4il+3ZmK8vJJlBF1tCcns/va+03aZXMjupbLILr7Q+fyp5Oac9eY+NIxz70u53b/No
+         QLmLnFWvl8UpXx6iw6Zn1hYmocREwsB9ls4+BiYLSiWRzcamERw05W1mmvY1CIeLqzue
+         e1by9HKVoq6RBtSKojOr3l+QUbFr1TuGVt5CGh2hebKi/s0VTJWYdQiGleHCyslEjdhc
+         fXKQ==
+X-Gm-Message-State: AFq9FYKWvU8mQ7MhMmVaqcfxpU8XtYRAGNLyLpr9nbRRtuzItCDtIc40
+	BqZBjUWO4L6YLanCH59mwe4o895sKDV0Q9eofx+qQmfEP+NI5LSYu67IyAE8owRibOhzIB25nep
+	iLItOMw57JUzosBmJ0xagJDUVeWK9qHv+ng==
+X-Gm-Gg: AYBFou1Gf0NlVtjwHPYe3Rc0BjyU032BdSRGWOsNWK1zJpivDn5QaZ9cnoDQrlOWKjM
+	sBe9NnutlXxmgsNhX47ym3mhsuhzFEQgPXwAlJwaQL7OkEoP2ri9olU0eHsZtuTl/ZdJaADIm/g
+	aSBcYOOof2mNsMIdPKuCdQk7u+vcrJbHTW8Mzp21eDIermdT6g/Z5lXpYxE7KswRC9VJRPcBoCz
+	EA2ZIdw5V1BkJofXTQvwiZNqUKjKv9DLRgZjMxJrIH+wBR8Mle0yeVwayf/Px6P2SWx85qV3Knz
+	e68fmPRdabn+Dkp0jhMiyYEb7c7zYFqg548pI2LzvJn1WkcNS37RbjQKzbPBYiQ=
+X-Received: by 2002:a05:690c:a610:b0:8b0:a28d:6444 with SMTP id
+ 00721157ae682-8b0f21b0445mr7327857b3.20.1792249905969; Sat, 17 Oct 2026
+ 08:11:45 -0700 (PDT)
 Received: from 77377267392 named unknown by gmailapi.google.com with HTTPREST;
- Sat, 17 Oct 2026 11:03:47 -0400
+ Sat, 17 Oct 2026 11:11:45 -0400
 Received: from 77377267392 named unknown by gmailapi.google.com with HTTPREST;
- Sat, 17 Oct 2026 11:03:47 -0400
+ Sat, 17 Oct 2026 11:11:45 -0400
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -88,47 +88,44 @@ MIME-Version: 1.0
 In-Reply-To: <CAFBxzABSqgexZT5knr974bWU4g80OHvcQEmKMsZHnDmh1ifm4A@mail.gmail.com>
 References: <CAFBxzABSqgexZT5knr974bWU4g80OHvcQEmKMsZHnDmh1ifm4A@mail.gmail.com>
 From: R E Broadley <rebroad@gmail.com>
-Date: Sat, 17 Oct 2026 11:03:47 -0400
-X-Gm-Features: AclHuK9kzztvmuSfe-xeTT07uDz-Pjfx_MiuVYIQD8aQ00Nmt5rPa3zL4l7snHY
-Message-ID: <CAFBxzADp_V7kAr44Rnjs3B5NopX4ouPS=LcoXFOjkg61d4yHZg@mail.gmail.com>
+Date: Sat, 17 Oct 2026 11:11:45 -0400
+X-Gm-Features: AclHuK8ockfb8gGiXMh4tp0Wgx2AdQUI0x5ZIBQ6JDLn77DXGbAeSq82V63FrvI
+Message-ID: <CAFBxzACv34VT2xckTSpJ=1=JjOP-kAtYbKa82S+n=SJ1bxZLYA@mail.gmail.com>
 Subject: Re: [RFC] btrfs: quick-inherit snapshot-only qgroups through a shared tracker
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.com
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Follow-up with additional Snapper-side evidence and a clarification of
-the scope.
+Further differential QEMU results are now available, using the same
+rebuilt upstream-based Snapper 0.13.2 (including the clean-query
+changes) with either the Debian 7.1.13 stock Btrfs module or the
+candidate module.
 
-I found two Snapper quota-query paths that could launch full rescans
-even when qgroup status was already clean: calculateUsedSpace() and,
-in the Debian 0.10.6 line, queryQuotaData(). Switching those paths to
-the existing status-aware quota_rescan_if_needed() helper (while
-retaining the required sync on the clean path) stopped rescans from
-used-space queries and quota-aware timeline cleanup in QEMU. The
-0.10.6 quota-limit cleanup test passed with the candidate kernel
-module: eligible snapshots were deleted, exclusive usage fell as
-expected, no new rescan or inconsistency occurred during cleanup, and
-a later full rescan left counters unchanged.
+After settling the initial tracker setup to a clean qgroup status, the
+stock-module run created three further hourly root/home snapshot
+rounds. Each round produced two kernel warnings, "qgroup marked
+inconsistent, qgroup inherit needs a rescan", and two completed qgroup
+scans: one per snapshot. With the candidate module, the same
+repeated-snapshot workload completed with no additional scan or
+inconsistency after tracker setup. In both cases the subsequent
+used-space query and SPACE_LIMIT timeline cleanup completed without
+launching additional scans, and an explicit full rescan left the
+counters unchanged. The candidate run reduced each config from four
+snapshots to one and lowered its exclusive usage from 6,750,208 bytes
+to 16,384 bytes.
 
-This narrows the claim further: the kernel change is not a
-demonstrated fix for incorrect qgroup accounting. On the stock Debian
-7.1.13 module, the exact snapshot-only/tracker topology still takes
-the conservative rescan fallback at snapshot inheritance; the scan
-completes and the resulting counters agree with a full rescan. The
-Snapper change removes avoidable scans caused by quota queries, but
-does not change that kernel snapshot-inheritance decision. The kernel
-candidate is therefore an optional, narrowly scoped optimization to
-avoid that remaining snapshot-triggered scan for the exact two-child
-tracker topology. Every other layout continues through the existing
-fallback.
-
-The earlier RFC already stated that no counter corruption had been
-demonstrated. This follow-up supplies the missing Snapper-side result
-and clarifies that the proposed kernel patch should be reviewed as a
-performance/rescan optimization, not as an accounting correctness
-repair. I will keep the patch at RFC status until the upstream-version
-build and full quota-limit coverage are complete.
+This confirms the trigger: the stock kernel's conservative
+quick-inherit fallback for this exact snapshot-only/tracker hierarchy,
+not an independent rescan launched by the fixed Snapper quota-query
+paths. The fallback is correct in that it requests a full rescan
+rather than trusting an unproven incremental update. The candidate is
+thus an optimization for this exact layout, not a fix for observed
+accounting corruption. The existing full-qgroup and exact-topology
+guards leave other layouts on the established fallback. The candidate
+has been built and these differential tests run on the Debian 7.1.13
+kernel; an upstream v7.3-rc7 build/test and broader review remain
+open.
 
 On Sat, 17 Oct 2026 10:44:15 -0400, R E Broadley <rebroad@gmail.com> wrote:
 > Hello,

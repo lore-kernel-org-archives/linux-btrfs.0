@@ -1,102 +1,116 @@
-Received: from mail-m1973184.qiye.163.com (mail-m1973184.qiye.163.com [220.197.31.84])
+Received: from mail-m49197.qiye.163.com (mail-m49197.qiye.163.com [45.254.49.197])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 22C7E37DEAD
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2026 15:28:05 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=220.197.31.84
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 50B8938DC4C;
+	Sun, 18 Oct 2026 15:38:24 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.254.49.197
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792337293; cv=none; b=oW9p/ahnKvDYFPipgMJzL0tbBCINhfy/aX0xTq6FDuU4HPnVH4/Gm0AbsGa6fUZPb1Mb4zXoWgBrz6+koV9Y2Y7LmJlktqfcIkQVorsZPm3IX3YGhTecrySDcODYHJO8VWLRI9TqXsCrRR4dls0ixjMjlrwSV0WYxZSfhSkmE4o=
+	t=1792337909; cv=none; b=ShkskNrnIEF5riHPrYgw7JgVhfoSA77zjI/KKhagAUiimH+rDubMNYXpMO2U9yVI1Xvz/BE2fUUytGtFxeFDfdkEpY8+JenHadkLs1fOhRv2hXF6Tfwd7cz6CvnaG1W38ViPhqqIF4XX6u21SGRXzs7bd8tLYTC04rUAMe/tKTE=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792337293; c=relaxed/simple;
-	bh=SG9lG/dh/IenRhwHbHkynL8t4Q9qI1jPUg3xsPOFZ7I=;
-	h=Content-Type:Message-ID:To:Subject:In-Reply-To:References:
-	 MIME-Version:From:Date; b=EV48GP/yK4k/MDWWtG9YPzxC5qJHsc+ioFHJd+9RqTQ3vGuE62e039rQwrR2L/iuiSbjg/KOxA588votTRkbzlhhO6XMnYedhQmmtbYVRDYYH4UyY7hAnaXfKnEF+tmTAnS1g85G6XY5chv6SfTzu0f5bzGzshx9cM464GGh7rk=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tju.edu.cn; spf=pass smtp.mailfrom=tju.edu.cn; dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b=r2E4n8/z; arc=none smtp.client-ip=220.197.31.84
+	s=arc-20240116; t=1792337909; c=relaxed/simple;
+	bh=ki2dJIdNQ7javRTzaztK0vLz0oKE/NRrVmqBqi4sLps=;
+	h=From:To:Cc:Subject:Date:Message-Id:In-Reply-To:References:
+	 MIME-Version; b=nNj8dWD8Ec4dws03JZ6VSX9gmryW8NQFx0NDrxV7Ml+TQl4XndLPLGHqzLAzicTcm4jF+cbjEDIdE/dgZA6wge1oOPNGjimJ6FHPYrBDJQ1xGNywqNlXeuyPkiaSoUbInI01/PlMp8hvD3xpksmk9fXgYZ0DlEmH36a9ecUK6Yg=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tju.edu.cn; spf=pass smtp.mailfrom=tju.edu.cn; dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b=Km5UYluf; arc=none smtp.client-ip=45.254.49.197
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tju.edu.cn
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tju.edu.cn
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b="r2E4n8/z"
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: base64
-Message-ID: <AC6ALQDhLAYhunEbXk2Jw4pS.3.1792335147629.Hmail.2017202219@tju.edu.cn>
-To: linux-btrfs@vger.kernel.org
-Subject: =?UTF-8?B?UmU6UmU6IFtQQVRDSF0gYnRyZnM6IHByZXZlbnQgZGVsZXRpbmcgdGhlIHdyb25nIHN1YnZvbHVtZSBieSBJRA==?=
-X-Priority: 3
-X-Mailer: HMail Webmail Server V2.0 Copyright (c) 2016-163.com web
-In-Reply-To: <2ab739b4-7d28-4914-9e37-a5c99a2f2175@suse.com>
-References: <20261018073709.1586733-1-guolingxing@tju.edu.cn> <2ab739b4-7d28-4914-9e37-a5c99a2f2175@suse.com>
+	dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b="Km5UYluf"
+Received: from localhost (gyproxy-mailtls3-entmail-gy2-virt38.gy.ntes [IPV6:2409:8d28:134:eea:b3c7:b48c:ed5c:b15])
+	by smtp.qiye.163.com (Hmail) with ESMTP id 5171d82b3;
+	Sun, 18 Oct 2026 23:38:17 +0800 (GMT+08:00)
+From: guolingxing <guolingxing@tju.edu.cn>
+To: David Sterba <dsterba@suse.com>,
+	Qu Wenruo <wqu@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Marcos Paulo de Souza <mpdesouza@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	guolingxing <guolingxing@tju.edu.cn>,
+	stable@vger.kernel.org
+Subject: [PATCH v2] btrfs: prevent deleting the wrong subvolume by ID
+Date: Sun, 18 Oct 2026 15:38:10 +0000
+Message-Id: <20261018153810.2692021-1-guolingxing@tju.edu.cn>
+X-Mailer: git-send-email 2.34.1
+In-Reply-To: <20261018073709.1586733-1-guolingxing@tju.edu.cn>
+References: <20261018073709.1586733-1-guolingxing@tju.edu.cn>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Received: from 2017202219@tju.edu.cn( [2409:8d28:39:f54:403e:4083:f623:91af] ) by ajax-webmail ( [127.0.0.1] ) ; Sun, 18 Oct 2026 22:52:27 +0800 (GMT+08:00)
-From: =?UTF-8?B?6YOt546y5YW0?= <guolingxing@tju.edu.cn>
-Date: Sun, 18 Oct 2026 22:52:27 +0800 (GMT+08:00)
-X-HM-Tid: 0aa14f7ec480d457kusy00336507961f
-X-HM-MType: 1
+Content-Transfer-Encoding: 8bit
+X-HM-Tid: 0aa14fa9e96503a2kunm453fc5f0117af0
+X-HM-MType: 10
 X-HM-Spam-Status: e1kfGhgUHx5ZQUpXWQgPGg8OCBgUHx5ZQUlOS1dZFg8aDwILHllBWSg2Ly
-	tZV1koWUFITzdXWRgWCB1ZQUpXWS1ZQUlXWQ8JGhUIEh9ZQVkZQh4eVk4ZGRkdGRpOGRkaTVYVFA
-	kWGhdVEwETFhoSFyQUDg9ZV1kYEgtZQVlJT0tCQUMfSUNBSEJBHU5PQU9LSB5BT0tDSEEdTUlIQU
-	JKGh1ZV1kWGg8SFR0UWUFZT0tIVUJCSU5LVUpLS1VKQktCWQY+
+	tZV1koWUFITzdXWRgWCB1ZQUpXWS1ZQUlXWQ8JGhUIEh9ZQVlDGk9DVh9PQ05OThhJQk1PHVYeHw
+	5VEwETFhoSFyQUDg9ZV1kYEgtZQVlJT0tCQUMfSUNBSkhPQR4eGkEZSBhMQRlPQxhBHh9OGEEZSk
+	5ZV1kWGg8SFR0UWUFZT0tIVUpLSEpMTU1VSktLVUpCS0tZBg++
 DKIM-Signature: a=rsa-sha256;
-	b=r2E4n8/zspLDqqaWSvmQSpq8btNrxd5ANVzvHK5MzuVo/X8DsR/8IjbdjGtyahwaRi7BUTRVkNRrIPLexHj0pcfDbl53A1P1RpqxkVsPiWOGyUsSycyYEmKvcigu4TQgCy+RlAd821RyCGQBAN+Ylz4D/ThtZa3iVI+1+WgghUs=; s=default; c=relaxed/relaxed; d=tju.edu.cn; v=1;
-	bh=SG9lG/dh/IenRhwHbHkynL8t4Q9qI1jPUg3xsPOFZ7I=;
+	b=Km5UYlufDwQrBTXYK8zzzdCIPfSlMMmdCq1BD60RCHep8gppp9WRi5iCb3Q4Go72wLUY/LEoOxcOa8Wp9NGg9xp9sYTK8iawkbkRrH+gEXnZ+TbKNwd1L19h0lpoxfY+6CtqhVJ9msWJgf8rS8rXB3KD6RH5hsvAlGPzjV7kCnw=; s=default; c=relaxed/relaxed; d=tju.edu.cn; v=1;
+	bh=dYkS3t96wAxupPcTikKeWXJjbBOJRkN1uFMvedhCh/A=;
 	h=date:mime-version:subject:message-id:from;
 
-ClRoYW5rcyBmb3IgdGhlIHJldmlldyEKSSBhZ3JlZSB0aGF0IC1FTk9FTlQgaXMgbWlzbGVhZGlu
-ZyBoZXJlLCBzaW5jZSB0aGUgcmVxdWVzdGVkCnN1YnZvbHVtZSBtYXkgc3RpbGwgZXhpc3QuIEkn
-bGwgY2hhbmdlIGl0IHRvIC1FQUdBSU4gaW4gdjIuCkFuIGludGVybmFsIHJldHJ5IHdvdWxkIGJl
-IHByZWZlcmFibGUsIGJ1dCBpdCB3b3VsZCByZXF1aXJlCnJlZmFjdG9yaW5nIHRoZSBjdXJyZW50
-IHBhdGggcmVzb2x1dGlvbiBhbmQgY2xlYW51cCBmbG93LiBJJ2QKcHJlZmVyIHRvIGtlZXAgdGhp
-cyBmaXggbWluaW1hbCBmb3Igbm93IGFuZCBsZWF2ZSB0aGUgcmV0cnkKbG9naWMgZm9yIGEgc2Vw
-YXJhdGUgY2hhbmdlLgpJJ2xsIHVwZGF0ZSB0aGUgcGF0Y2ggYW5kIHJlcnVuIHRoZSByZXByb2R1
-Y2VyLgoKCgoKCgpGcm9tOiBRdSBXZW5ydW8gPHdxdUBzdXNlLmNvbT4KIERhdGU6IDIwMjYtMTAt
-MTggMTc6MDk6NTcKVG86Z3VvbGluZ3hpbmcgPGd1b2xpbmd4aW5nQHRqdS5lZHUuY24+LERhdmlk
-IFN0ZXJiYSA8ZHN0ZXJiYUBzdXNlLmNvbT4sQ2hyaXMgTWFzb24gPG1hc29uQGtlcm5lbC5vcmc+
-CiBjYzogTWFyY29zIFBhdWxvIGRlIFNvdXphIDxtcGRlc291emFAc3VzZS5jb20+LGxpbnV4LWJ0
-cmZzQHZnZXIua2VybmVsLm9yZyxsaW51eC1rZXJuZWxAdmdlci5rZXJuZWwub3JnClN1YmplY3Q6
-IFJlOiBbUEFUQ0hdIGJ0cmZzOiBwcmV2ZW50IGRlbGV0aW5nIHRoZSB3cm9uZyBzdWJ2b2x1bWUg
-YnkgSUQ+Cj4KPuWcqCAyMDI2LzEwLzE4IDE4OjA3LCBndW9saW5neGluZyDlhpnpgZM6Cj4+IFdo
-ZW4gZGVsZXRpbmcgYSBzdWJ2b2x1bWUgYnkgSUQsIGJ0cmZzX2lvY3RsX3NuYXBfZGVzdHJveSgp
-IGZpcnN0Cj4+IHJlc29sdmVzIHRoZSByZXF1ZXN0ZWQgSUQgdG8gYSBuYW1lLCB0aGVuIGxvb2tz
-IHVwIHRoYXQgbmFtZSBhZ2Fpbgo+PiB1bmRlciB0aGUgcGFyZW50IGRpcmVjdG9yeSBsb2NrLgo+
-PiAKPj4gQSBjb25jdXJyZW50IHJlbmFtZSBjYW4gY2hhbmdlIHdoaWNoIHN1YnZvbHVtZSBpcyBh
-c3NvY2lhdGVkIHdpdGgKPj4gdGhlIG5hbWUgYmV0d2VlbiB0aGVzZSBvcGVyYXRpb25zLiBTaW5j
-ZSB0aGUgZGVsZXRpb24gcGF0aCBkb2VzIG5vdAo+PiB2ZXJpZnkgdGhlIElEIG9mIHRoZSByZXNv
-bHZlZCBzdWJ2b2x1bWUsIGl0IGNhbiBkZWxldGUgYSBkaWZmZXJlbnQKPj4gc3Vidm9sdW1lIHdo
-aWxlIGxlYXZpbmcgdGhlIHJlcXVlc3RlZCBvbmUgaW50YWN0Lgo+PiAKPj4gVGhpcyB3YXMgcmVw
-cm9kdWNlZCBieSByZXBlYXRlZGx5IGV4Y2hhbmdpbmcgdGhlIG5hbWVzIG9mIHR3bwo+PiBzdWJ2
-b2x1bWVzIHVzaW5nIHJlbmFtZWF0MihSRU5BTUVfRVhDSEFOR0UpIHdoaWxlIGRlbGV0aW5nIG9u
-ZSBvZgo+PiB0aGVtIGJ5IElELiBUaGUgd3Jvbmcgc3Vidm9sdW1lIHdhcyBkZWxldGVkIGluIDkg
-b3V0IG9mIDE0IGluZGVwZW5kZW50Cj4+IHRlc3RzLgo+PiAKPj4gRml4IHRoaXMgYnkgY2hlY2tp
-bmcgdGhhdCB0aGUgcmVzb2x2ZWQgc3Vidm9sdW1lIElEIG1hdGNoZXMgdGhlCj4+IHJlcXVlc3Rl
-ZCBJRCB3aGlsZSBob2xkaW5nIHRoZSBwYXJlbnQgZGlyZWN0b3J5IGxvY2suIFJldHVybiAtRU5P
-RU5UCj4+IGlmIHRoZSBJRHMgZGlmZmVyLCBwcmV2ZW50aW5nIGRlbGV0aW9uIG9mIHRoZSB3cm9u
-ZyBzdWJ2b2x1bWUuCj4KPi1FTk9FTlQgY2FuIGJlIGNvbmZ1c2luZyB0byB1c2VyIHNwYWNlLCB0
-aGUgc3Vidm9sdW1laWQgaXMgc3RpbGwgdGhlcmUuCj4KPi1FQUdBSU4gbWF5IGJlIGJldHRlcj8K
-Pgo+QW5vdGhlciB0aGluZyBpcywgaWYgd2UgZ290IGEgaW5jb3JyZWN0IHN1YnZvbHVtZSB0cmVl
-LCB0aGUgYmV0dGVyIHdheSAKPm1heSBiZSByZXRyeSB0aGUgcGF0aCByZXNvbHV0aW9uIGFuZCBs
-b2NrIGFnYWluIHVudGlsIHdlIGdvdCBlaXRoZXIgCj4tRU5PRU5UIGZyb20gcGF0aCByZXNvbHV0
-aW9uLgo+Cj5CdXQgdGhlIGN1cnJlbnQgY29kZSBiYXNlIG1ha2VzIGlzIHByZXR0eSBoYXJkIHRv
-IHJldHJ5LiBBIHJlZmFjdG9yIG1heSAKPmJlIG5lZWRlZCBpZiB5b3Ugd2FudCB0byB0aGF0IHJl
-dHJ5IHBhdGguCj4KPj4gCj4+IEZpeGVzOiA5NDk5NjRjOTI4NDMgKCJidHJmczogYWRkIG5ldyBC
-VFJGU19JT0NfU05BUF9ERVNUUk9ZX1YyIGlvY3RsIikKPj4gQ2M6IHN0YWJsZUB2Z2VyLmtlcm5l
-bC5vcmcKPj4gU2lnbmVkLW9mZi1ieTogZ3VvbGluZ3hpbmcgPGd1b2xpbmd4aW5nQHRqdS5lZHUu
-Y24+Cj4+IC0tLQo+PiAgIGZzL2J0cmZzL2lvY3RsLmMgfCAxMSArKysrKysrKysrKwo+PiAgIDEg
-ZmlsZSBjaGFuZ2VkLCAxMSBpbnNlcnRpb25zKCspCj4+IAo+PiBkaWZmIC0tZ2l0IGEvZnMvYnRy
-ZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lvY3RsLmMKPj4gaW5kZXggNTc2Y2Q3NmNhMGJmLi4zOWVi
-NzcyMjk5OGQgMTAwNjQ0Cj4+IC0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMKPj4gKysrIGIvZnMvYnRy
-ZnMvaW9jdGwuYwo+PiBAQCAtMjM4MCw2ICsyMzgwLDE3IEBAIHN0YXRpYyBub2lubGluZSBpbnQg
-YnRyZnNfaW9jdGxfc25hcF9kZXN0cm95KHN0cnVjdCBmaWxlICpmaWxlLAo+PiAgIAo+PiAgIAlp
-bm9kZSA9IGRfaW5vZGUoZGVudHJ5KTsKPj4gICAJZGVzdCA9IEJUUkZTX0koaW5vZGUpLT5yb290
-Owo+PiArCj4+ICsJLyoKPj4gKwkgKiBBIGNvbmN1cnJlbnQgcmVuYW1lIG1heSBoYXZlIGNoYW5n
-ZWQgd2hpY2ggc3Vidm9sdW1lIHRoZSBuYW1lCj4+ICsJICogcmVmZXJzIHRvLiBWZXJpZnkgdGhh
-dCB0aGUgcmVzb2x2ZWQgSUQgc3RpbGwgbWF0Y2hlcyB0aGUgcmVxdWVzdGVkIElELgo+PiArCSAq
-Lwo+PiArCWlmIChkZXN0cm95X3YyICYmICh2b2xfYXJnczItPmZsYWdzICYgQlRSRlNfU1VCVk9M
-X1NQRUNfQllfSUQpICYmCj4+ICsJICAgIGJ0cmZzX3Jvb3RfaWQoZGVzdCkgIT0gdm9sX2FyZ3My
-LT5zdWJ2b2xpZCkgewo+PiArCQlyZXQgPSAtRU5PRU5UOwo+PiArCQlnb3RvIG91dF9lbmRfcmVt
-b3Zpbmc7Cj4+ICsJfQo+PiArCj4+ICAgCWlmICghY2FwYWJsZShDQVBfU1lTX0FETUlOKSkgewo+
-PiAgIAkJLyoKPj4gICAJCSAqIFJlZ3VsYXIgdXNlci4gIE9ubHkgYWxsb3cgdGhpcyB3aXRoIGEg
-c3BlY2lhbCBtb3VudAo+Cj4K
+When deleting a subvolume by ID, btrfs_ioctl_snap_destroy() first
+resolves the requested ID to a name, then looks up that name again
+under the parent directory lock.
+
+A concurrent rename can change which subvolume is associated with
+the name between these operations. Since the deletion path does not
+verify the ID of the resolved subvolume, it can delete a different
+subvolume while leaving the requested one intact.
+
+This was reproduced by repeatedly exchanging the names of two
+subvolumes using renameat2(RENAME_EXCHANGE) while deleting one of
+them by ID. The wrong subvolume was deleted in 9 out of 14 independent
+tests.
+
+Fix this by checking that the resolved subvolume ID matches the
+requested ID while holding the parent directory lock. Return -EAGAIN
+on a mismatch so that userspace can retry the operation instead of
+being told that the requested subvolume does not exist.
+
+Fixes: 949964c92843 ("btrfs: add new BTRFS_IOC_SNAP_DESTROY_V2 ioctl")
+Cc: stable@vger.kernel.org
+Signed-off-by: guolingxing <guolingxing@tju.edu.cn>
+---
+Changes since v1:
+- Return -EAGAIN instead of -ENOENT on a subvolume ID mismatch,
+  as suggested by Qu Wenruo.
+
+
+Testing:
+- Unpatched kernel: 9 wrong deletions in 14 independent runs.
+- v2 patched kernel: 0 wrong deletions in 30 independent runs.
+- EAGAIN was observed in 14 runs; all 30 runs successfully deleted
+  the requested subvolume while preserving the other one.
+
+ fs/btrfs/ioctl.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 576cd76ca0bf..d82a7f3f3d14 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2380,6 +2380,17 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 
+ 	inode = d_inode(dentry);
+ 	dest = BTRFS_I(inode)->root;
++
++	/*
++	 * A concurrent rename may have changed which subvolume the name
++	 * refers to. Verify that the resolved ID still matches the requested ID.
++	 */
++	if (destroy_v2 && (vol_args2->flags & BTRFS_SUBVOL_SPEC_BY_ID) &&
++	    btrfs_root_id(dest) != vol_args2->subvolid) {
++		ret = -EAGAIN;
++		goto out_end_removing;
++	}
++
+ 	if (!capable(CAP_SYS_ADMIN)) {
+ 		/*
+ 		 * Regular user.  Only allow this with a special mount
+-- 
+2.34.1
+

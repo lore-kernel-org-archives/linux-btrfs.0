@@ -1,146 +1,102 @@
-Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+Received: from mail-m49205.qiye.163.com (mail-m49205.qiye.163.com [45.254.49.205])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DB8AB3D903C
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2026 09:10:06 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=209.85.128.52
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09E5B35E94E;
+	Sun, 18 Oct 2026 15:01:10 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=45.254.49.205
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792314610; cv=none; b=Dv46TdvtSaVrjEWopbaPFZC4RyI2BBjy0KEyqAwhqFuoGpXC3z2ZM+502bLaat/Iak4NLpTBBT+lYgQ3raR09D/Om86z70REjqTTztNrWR4rbzyNR/fgEd7NHIO6Gdk2NZzd/cGQ+hTEWe/sL9oAA3DJwx/fLaTg5mzEaNY6g6A=
+	t=1792335674; cv=none; b=O0Rt3R/UL/cN+IFPbNhOIJbqm9Ieaw3bIrhhTnU956I3ayAya+tQhjAzE8ie5t1adPvU2YtWc9LM1/krz21LtkB9RMMpZ8XZvLGOcXH0LhLWN5m31nKSI5AMyLoKb7xqeeduTwbBRbrYg+95Xk63a2cNFImxj0Q7yP3yT5In22U=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792314610; c=relaxed/simple;
-	bh=6UbMuFUNSIUDPuLNQyykJaUIEaiO7Ic8jq/hH7EuZfs=;
-	h=Message-ID:Date:MIME-Version:Subject:To:Cc:References:From:
-	 In-Reply-To:Content-Type; b=H5Eftu+ggSbze9z2mWaS986iWpnLkgVQCUh1F7HwHF2bwnl97o1asLjxMEsZU4TRTk8KUscA9fmJ8U1M2Mh4qXlBF1g+JY4mQWQsQjzckedNhNgHN0sWByicKNnutgQtItsC7FLA4TEuPFEgNTwsniO9Z1xtG5IWyA78kZnnXtY=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b=T+VF7c/F; arc=none smtp.client-ip=209.85.128.52
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	s=arc-20240116; t=1792335674; c=relaxed/simple;
+	bh=srAiUMpK7y43VgCXgSSRRUSoTZXfh7Bw33q2dM+BQw0=;
+	h=Content-Type:Message-ID:Cc:Subject:In-Reply-To:References:
+	 MIME-Version:From:Date; b=Ys/AmBA+RQtrQUuaDrJgix0xUaFPduq1UVvazBoGajF9fCvdGKhcJ3A1B9OG7x6wK9+kDN/MDdcfhh7HRTGNT/qOWazPytXyYM59V4CYy+j2FLjcY5V+8GjUZXpBkYSyLicz4Ynpd95aoYY0HWqn4vIRlV2nCLBOY9ixG+WCqTw=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tju.edu.cn; spf=pass smtp.mailfrom=tju.edu.cn; dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b=SOlrcv2G; arc=none smtp.client-ip=45.254.49.205
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=tju.edu.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=tju.edu.cn
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.b="T+VF7c/F"
-Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4a1e34ecb02so1386035e9.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2026 02:10:06 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1792314605; x=1792919405; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=V+d1or3P8lxg5PV9fJm4UiRmlQR/9pMAaE/U1te/kOs=;
-        b=T+VF7c/F0Cto4kfujed6OqF+777nfTJl1E8MHo0ZlTkZZpXYZ0OdYRDl2zYDQXyW0T
-         bWT/4VwlqIJn8uaznDnZYZoUzE2EzerIg/KT8oqUiv2xiBO2pYBrJvTSbmfHQUjmcxPp
-         xoIQ/2p62ST0XTPTO9A6shifJSkGy7GNkerJnZRt0mr6Qr8Lm0D5tijEej7zkr1KRbZk
-         hg7Wgge3GsE5X8cmeRsni+OvHnkgdEG6pWWAiH4vqw/LEr7Y3hom+V0OnAmJJ15Of9eI
-         Cj3if5QA7IMhX/PXXKKkZ5JfWKvglAreRDIYIikUeH9coZznnqDPy4wZtFh4xbvPKnsf
-         p5KQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792314605; x=1792919405;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=V+d1or3P8lxg5PV9fJm4UiRmlQR/9pMAaE/U1te/kOs=;
-        b=RseqkJKCD1Q2BaaQE+Afou+L95UlFaNQXEvIq203hYh7KZ0I6s2Mkc9VMdSd33tdxE
-         IKLj4fCHWTGL89BprsDHHhakSANe30W0mclYv0NvqEOSDObUyFswlv2SW5EH1rFvjxV9
-         BJByVDn2N/rFo3hEx2XrCLL2ixKNInx6z048rpN22MYR8UtqZMdY7EQ8sVR31rPk4cad
-         UdXwTTpf7fqwm2qtkbAYCES3X0i1NNOkccCDx+BwBL5HGPG7aFwfyxIMI1O9iyd0dkHq
-         59V19Dnrmh8/FslzQ3HbmuCO9mgYaB+8Yz7kLAnX4Ufv22ghinAdu2yAPKkxWETiIutJ
-         kxjg==
-X-Forwarded-Encrypted: i=1; AKwUvBzKzesmXrZseCz7xMe9yWYKABu4lSYeUEUk5M5HVkGpihTaqeI+gfl4GLm0FT+bkUhHVuB6TcwXeqUeEw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLH3XD83ifeOjTbaHsuHMmRFQLjOkjDj2Hf0IrWRIaKuyFl+YKw
-	CaHZc6tZBcDVum3zF7IKHY9RzOTYWKCBqES3tQNYXNGu3PjHNQEWvxd2ITNcRjzhHn8=
-X-Gm-Gg: AYBFou3CYOTAZso8x8l3QdkkoZB+Eo3bapxVLKOQNeMzlx/2XKnktKivqudyR0dEstD
-	wfN5jLZqP6t0U/ft6t9ymCt2TvuImnD53/L7MulD0Fh3UrNQQedPkTcCfrPiYPiLuOnk5rAfkeV
-	qH92vlbm/ifdoy533fK5RLLn0jD40G3+rRxMwbuCIi6nkCfthhaXF13SqgAPExek5Hg4ZSfde9f
-	OgrBWDM1+xFBKxxC3zR5RM5/+TV9bhElBTDckAv6IALZjxc5USCZcwRgoi28FJHQiscKSUaIBq6
-	mtJcj3UEaFYLwUp9olHEUZMIBkJHWboXz5OUNMNplquNMzeGYVWe4i8UidBtPhSYhUidas/lcI3
-	Ra6xzbe89labu409cdPZ6p7U1bbRj+tA0TqYjALrfE9cjoi8ZDmW9Pcq7em0P3ljwGv+ce+aqUZ
-	W3rBguFyI2pGduA0HUkuZ1RYHSve9m1ML1sDQ8FsaRS/yQTNd5s9G+p1/HmVNyTv8=
-X-Received: by 2002:a05:600c:1f8d:b0:49e:823a:9dec with SMTP id 5b1f17b1804b1-4a1d75ac354mr108688365e9.3.1792314605074;
-        Sun, 18 Oct 2026 02:10:05 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ac9474b52fsm18309736a91.9.2026.10.18.02.10.00
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 18 Oct 2026 02:10:03 -0700 (PDT)
-Message-ID: <2ab739b4-7d28-4914-9e37-a5c99a2f2175@suse.com>
-Date: Sun, 18 Oct 2026 19:39:57 +1030
+	dkim=pass (1024-bit key) header.d=tju.edu.cn header.i=@tju.edu.cn header.b="SOlrcv2G"
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: base64
+Message-ID: <AHsANwCHLMchNnGgXdupaKri.3.1792334744120.Hmail.2017202219@tju.edu.cn>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: =?UTF-8?B?UmU6UmU6IFtQQVRDSF0gYnRyZnM6IHByZXZlbnQgZGVsZXRpbmcgdGhlIHdyb25nIHN1YnZvbHVtZSBieSBJRA==?=
+X-Priority: 3
+X-Mailer: HMail Webmail Server V2.0 Copyright (c) 2016-163.com web
+In-Reply-To: <2ab739b4-7d28-4914-9e37-a5c99a2f2175@suse.com>
+References: <20261018073709.1586733-1-guolingxing@tju.edu.cn> <2ab739b4-7d28-4914-9e37-a5c99a2f2175@suse.com>
 Precedence: bulk
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: prevent deleting the wrong subvolume by ID
-To: guolingxing <guolingxing@tju.edu.cn>, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>
-Cc: Marcos Paulo de Souza <mpdesouza@suse.com>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org
-References: <20261018073709.1586733-1-guolingxing@tju.edu.cn>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-In-Reply-To: <20261018073709.1586733-1-guolingxing@tju.edu.cn>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Received: from 2017202219@tju.edu.cn( [2409:8d28:39:f54:403e:4083:f623:91af] ) by ajax-webmail ( [127.0.0.1] ) ; Sun, 18 Oct 2026 22:45:44 +0800 (GMT+08:00)
+From: =?UTF-8?B?6YOt546y5YW0?= <guolingxing@tju.edu.cn>
+Date: Sun, 18 Oct 2026 22:45:44 +0800 (GMT+08:00)
+X-HM-Tid: 0aa14f77ab2ed457kusyda2a04d295f8
+X-HM-MType: 1
+X-HM-Spam-Status: e1kfGhgUHx5ZQUpXWQgPGg8OCBgUHx5ZQUlOS1dZFg8aDwILHllBWSg2Ly
+	tZV1koWUFITzdXWRgWCB1ZQUpXWS1ZQUlXWQ8JGhUIEh9ZQVlCGEofVktPT05NGRkfHkkaSFYVFA
+	kWGhdVEwETFhoSFyQUDg9ZV1kYEgtZQVlJT0tCQUMfSUNBSEJBHU5PQU9LSB5BT0tDSEEdTUlIQU
+	JKGh1ZV1kWGg8SFR0UWUFZT0tIVUJCSU5LVUpLS1VKQktCWQY+
+DKIM-Signature: a=rsa-sha256;
+	b=SOlrcv2Grtic2l68t5Bbk5CezS4ONrXtYh23lbPPJ5E0gxkW1/zCFQk0Y5RfJrxAtKd85aa6o3kZlN4gJdUv3sTfEZYyNHc+c4FtzziRgDYY7xgAV5EbXyAKYEVjukHDp83JFjk2/1LAhtmz6bHhfu2NlfZPTBsfpbuYK5XFfWo=; s=default; c=relaxed/relaxed; d=tju.edu.cn; v=1;
+	bh=srAiUMpK7y43VgCXgSSRRUSoTZXfh7Bw33q2dM+BQw0=;
+	h=date:mime-version:subject:message-id:from;
 
-
-
-在 2026/10/18 18:07, guolingxing 写道:
-> When deleting a subvolume by ID, btrfs_ioctl_snap_destroy() first
-> resolves the requested ID to a name, then looks up that name again
-> under the parent directory lock.
-> 
-> A concurrent rename can change which subvolume is associated with
-> the name between these operations. Since the deletion path does not
-> verify the ID of the resolved subvolume, it can delete a different
-> subvolume while leaving the requested one intact.
-> 
-> This was reproduced by repeatedly exchanging the names of two
-> subvolumes using renameat2(RENAME_EXCHANGE) while deleting one of
-> them by ID. The wrong subvolume was deleted in 9 out of 14 independent
-> tests.
-> 
-> Fix this by checking that the resolved subvolume ID matches the
-> requested ID while holding the parent directory lock. Return -ENOENT
-> if the IDs differ, preventing deletion of the wrong subvolume.
-
--ENOENT can be confusing to user space, the subvolumeid is still there.
-
--EAGAIN may be better?
-
-Another thing is, if we got a incorrect subvolume tree, the better way 
-may be retry the path resolution and lock again until we got either 
--ENOENT from path resolution.
-
-But the current code base makes is pretty hard to retry. A refactor may 
-be needed if you want to that retry path.
-
-> 
-> Fixes: 949964c92843 ("btrfs: add new BTRFS_IOC_SNAP_DESTROY_V2 ioctl")
-> Cc: stable@vger.kernel.org
-> Signed-off-by: guolingxing <guolingxing@tju.edu.cn>
-> ---
->   fs/btrfs/ioctl.c | 11 +++++++++++
->   1 file changed, 11 insertions(+)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 576cd76ca0bf..39eb7722998d 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2380,6 +2380,17 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
->   
->   	inode = d_inode(dentry);
->   	dest = BTRFS_I(inode)->root;
-> +
-> +	/*
-> +	 * A concurrent rename may have changed which subvolume the name
-> +	 * refers to. Verify that the resolved ID still matches the requested ID.
-> +	 */
-> +	if (destroy_v2 && (vol_args2->flags & BTRFS_SUBVOL_SPEC_BY_ID) &&
-> +	    btrfs_root_id(dest) != vol_args2->subvolid) {
-> +		ret = -ENOENT;
-> +		goto out_end_removing;
-> +	}
-> +
->   	if (!capable(CAP_SYS_ADMIN)) {
->   		/*
->   		 * Regular user.  Only allow this with a special mount
-
+ClRoYW5rcyBmb3IgdGhlIHJldmlldyEKSSBhZ3JlZSB0aGF0IC1FTk9FTlQgaXMgbWlzbGVhZGlu
+ZyBoZXJlLCBhcyB0aGUgcmVxdWVzdGVkIHN1YnZvbHVtZSBtYXkgc3RpbGwgZXhpc3QuIEknbGwg
+Y2hhbmdlIGl0IHRvIC1FQUdBSU4gaW4gdjIuCkFuIGludGVybmFsIHJldHJ5IHdvdWxkIGJlIHBy
+ZWZlcmFibGUsIGJ1dCBpdCB3b3VsZCByZXF1aXJlIHJlZmFjdG9yaW5nIHRoZSBjdXJyZW50IHBh
+dGggcmVzb2x1dGlvbiBhbmQgY2xlYW51cCBmbG93LiBJJ2QgcHJlZmVyIHRvIGtlZXAgdGhpcyBm
+aXggbWluaW1hbCBmb3Igbm93IGFuZCBsZWF2ZSB0aGUgcmV0cnkgbG9naWMgZm9yIGEgc2VwYXJh
+dGUgY2hhbmdlLgpJJ2xsIHVwZGF0ZSB0aGUgcGF0Y2ggYW5kIHJlcnVuIHRoZSByZXByb2R1Y2Vy
+LgoKCgoKCgoKRnJvbTogUXUgV2VucnVvIDx3cXVAc3VzZS5jb20+CiBEYXRlOiAyMDI2LTEwLTE4
+IDE3OjA5OjU3ClRvOmd1b2xpbmd4aW5nIDxndW9saW5neGluZ0B0anUuZWR1LmNuPixEYXZpZCBT
+dGVyYmEgPGRzdGVyYmFAc3VzZS5jb20+LENocmlzIE1hc29uIDxtYXNvbkBrZXJuZWwub3JnPgog
+Y2M6IE1hcmNvcyBQYXVsbyBkZSBTb3V6YSA8bXBkZXNvdXphQHN1c2UuY29tPixsaW51eC1idHJm
+c0B2Z2VyLmtlcm5lbC5vcmcsbGludXgta2VybmVsQHZnZXIua2VybmVsLm9yZwpTdWJqZWN0OiBS
+ZTogW1BBVENIXSBidHJmczogcHJldmVudCBkZWxldGluZyB0aGUgd3Jvbmcgc3Vidm9sdW1lIGJ5
+IElEPgo+Cj7lnKggMjAyNi8xMC8xOCAxODowNywgZ3VvbGluZ3hpbmcg5YaZ6YGTOgo+PiBXaGVu
+IGRlbGV0aW5nIGEgc3Vidm9sdW1lIGJ5IElELCBidHJmc19pb2N0bF9zbmFwX2Rlc3Ryb3koKSBm
+aXJzdAo+PiByZXNvbHZlcyB0aGUgcmVxdWVzdGVkIElEIHRvIGEgbmFtZSwgdGhlbiBsb29rcyB1
+cCB0aGF0IG5hbWUgYWdhaW4KPj4gdW5kZXIgdGhlIHBhcmVudCBkaXJlY3RvcnkgbG9jay4KPj4g
+Cj4+IEEgY29uY3VycmVudCByZW5hbWUgY2FuIGNoYW5nZSB3aGljaCBzdWJ2b2x1bWUgaXMgYXNz
+b2NpYXRlZCB3aXRoCj4+IHRoZSBuYW1lIGJldHdlZW4gdGhlc2Ugb3BlcmF0aW9ucy4gU2luY2Ug
+dGhlIGRlbGV0aW9uIHBhdGggZG9lcyBub3QKPj4gdmVyaWZ5IHRoZSBJRCBvZiB0aGUgcmVzb2x2
+ZWQgc3Vidm9sdW1lLCBpdCBjYW4gZGVsZXRlIGEgZGlmZmVyZW50Cj4+IHN1YnZvbHVtZSB3aGls
+ZSBsZWF2aW5nIHRoZSByZXF1ZXN0ZWQgb25lIGludGFjdC4KPj4gCj4+IFRoaXMgd2FzIHJlcHJv
+ZHVjZWQgYnkgcmVwZWF0ZWRseSBleGNoYW5naW5nIHRoZSBuYW1lcyBvZiB0d28KPj4gc3Vidm9s
+dW1lcyB1c2luZyByZW5hbWVhdDIoUkVOQU1FX0VYQ0hBTkdFKSB3aGlsZSBkZWxldGluZyBvbmUg
+b2YKPj4gdGhlbSBieSBJRC4gVGhlIHdyb25nIHN1YnZvbHVtZSB3YXMgZGVsZXRlZCBpbiA5IG91
+dCBvZiAxNCBpbmRlcGVuZGVudAo+PiB0ZXN0cy4KPj4gCj4+IEZpeCB0aGlzIGJ5IGNoZWNraW5n
+IHRoYXQgdGhlIHJlc29sdmVkIHN1YnZvbHVtZSBJRCBtYXRjaGVzIHRoZQo+PiByZXF1ZXN0ZWQg
+SUQgd2hpbGUgaG9sZGluZyB0aGUgcGFyZW50IGRpcmVjdG9yeSBsb2NrLiBSZXR1cm4gLUVOT0VO
+VAo+PiBpZiB0aGUgSURzIGRpZmZlciwgcHJldmVudGluZyBkZWxldGlvbiBvZiB0aGUgd3Jvbmcg
+c3Vidm9sdW1lLgo+Cj4tRU5PRU5UIGNhbiBiZSBjb25mdXNpbmcgdG8gdXNlciBzcGFjZSwgdGhl
+IHN1YnZvbHVtZWlkIGlzIHN0aWxsIHRoZXJlLgo+Cj4tRUFHQUlOIG1heSBiZSBiZXR0ZXI/Cj4K
+PkFub3RoZXIgdGhpbmcgaXMsIGlmIHdlIGdvdCBhIGluY29ycmVjdCBzdWJ2b2x1bWUgdHJlZSwg
+dGhlIGJldHRlciB3YXkgCj5tYXkgYmUgcmV0cnkgdGhlIHBhdGggcmVzb2x1dGlvbiBhbmQgbG9j
+ayBhZ2FpbiB1bnRpbCB3ZSBnb3QgZWl0aGVyIAo+LUVOT0VOVCBmcm9tIHBhdGggcmVzb2x1dGlv
+bi4KPgo+QnV0IHRoZSBjdXJyZW50IGNvZGUgYmFzZSBtYWtlcyBpcyBwcmV0dHkgaGFyZCB0byBy
+ZXRyeS4gQSByZWZhY3RvciBtYXkgCj5iZSBuZWVkZWQgaWYgeW91IHdhbnQgdG8gdGhhdCByZXRy
+eSBwYXRoLgo+Cj4+IAo+PiBGaXhlczogOTQ5OTY0YzkyODQzICgiYnRyZnM6IGFkZCBuZXcgQlRS
+RlNfSU9DX1NOQVBfREVTVFJPWV9WMiBpb2N0bCIpCj4+IENjOiBzdGFibGVAdmdlci5rZXJuZWwu
+b3JnCj4+IFNpZ25lZC1vZmYtYnk6IGd1b2xpbmd4aW5nIDxndW9saW5neGluZ0B0anUuZWR1LmNu
+Pgo+PiAtLS0KPj4gICBmcy9idHJmcy9pb2N0bC5jIHwgMTEgKysrKysrKysrKysKPj4gICAxIGZp
+bGUgY2hhbmdlZCwgMTEgaW5zZXJ0aW9ucygrKQo+PiAKPj4gZGlmZiAtLWdpdCBhL2ZzL2J0cmZz
+L2lvY3RsLmMgYi9mcy9idHJmcy9pb2N0bC5jCj4+IGluZGV4IDU3NmNkNzZjYTBiZi4uMzllYjc3
+MjI5OThkIDEwMDY0NAo+PiAtLS0gYS9mcy9idHJmcy9pb2N0bC5jCj4+ICsrKyBiL2ZzL2J0cmZz
+L2lvY3RsLmMKPj4gQEAgLTIzODAsNiArMjM4MCwxNyBAQCBzdGF0aWMgbm9pbmxpbmUgaW50IGJ0
+cmZzX2lvY3RsX3NuYXBfZGVzdHJveShzdHJ1Y3QgZmlsZSAqZmlsZSwKPj4gICAKPj4gICAJaW5v
+ZGUgPSBkX2lub2RlKGRlbnRyeSk7Cj4+ICAgCWRlc3QgPSBCVFJGU19JKGlub2RlKS0+cm9vdDsK
+Pj4gKwo+PiArCS8qCj4+ICsJICogQSBjb25jdXJyZW50IHJlbmFtZSBtYXkgaGF2ZSBjaGFuZ2Vk
+IHdoaWNoIHN1YnZvbHVtZSB0aGUgbmFtZQo+PiArCSAqIHJlZmVycyB0by4gVmVyaWZ5IHRoYXQg
+dGhlIHJlc29sdmVkIElEIHN0aWxsIG1hdGNoZXMgdGhlIHJlcXVlc3RlZCBJRC4KPj4gKwkgKi8K
+Pj4gKwlpZiAoZGVzdHJveV92MiAmJiAodm9sX2FyZ3MyLT5mbGFncyAmIEJUUkZTX1NVQlZPTF9T
+UEVDX0JZX0lEKSAmJgo+PiArCSAgICBidHJmc19yb290X2lkKGRlc3QpICE9IHZvbF9hcmdzMi0+
+c3Vidm9saWQpIHsKPj4gKwkJcmV0ID0gLUVOT0VOVDsKPj4gKwkJZ290byBvdXRfZW5kX3JlbW92
+aW5nOwo+PiArCX0KPj4gKwo+PiAgIAlpZiAoIWNhcGFibGUoQ0FQX1NZU19BRE1JTikpIHsKPj4g
+ICAJCS8qCj4+ICAgCQkgKiBSZWd1bGFyIHVzZXIuICBPbmx5IGFsbG93IHRoaXMgd2l0aCBhIHNw
+ZWNpYWwgbW91bnQKPgo+Cg==

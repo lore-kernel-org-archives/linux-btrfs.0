@@ -1,64 +1,64 @@
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E5D4B2CCC5
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:33 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.131
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 87EB43FCB3D
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:35 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.client-ip=195.135.223.130
 ARC-Seal:i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1792392035; cv=none; b=p4etkY/KowpUMXgRKp5Cj2GPnMavQMH9zf3FpLOEWMpv67wlQqMZQKpBj/SB15MDpnWmv0QkZvpVKgyScB0v+z7axAZz359Dy6GnPcmbHUTxLWzaHGiWK9d1In9D9RebMHhw7g0BmqihIOA2B9ep3TJkjJxqS8ykjTpWm93EQ7I=
+	t=1792392036; cv=none; b=qWoFYKpG0p0NHcb5iEIIJF9girrUJVWQLLD91UwRLehn9p0Y285nmS3jH9Li73ZOgr97datgYruzQpOZ8BLicpBur4JF8aQ+rsaltIzv6zNG1H8ZwrL8+QdhiP2UpHRb+Ls9pa2VCGZumwXLsKIPTXNnV0PwSft4fU15f6oKpS8=
 ARC-Message-Signature:i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1792392035; c=relaxed/simple;
-	bh=kuqWb+c/6sfbSbpvdAHqY0H7OtBD2eI4rVF1uTeIbSk=;
+	s=arc-20240116; t=1792392036; c=relaxed/simple;
+	bh=N4Wi4z30c/RUo0XPSzl3fnQUa4E7z3sdHbiRji7wEA8=;
 	h=From:To:Subject:Date:Message-ID:In-Reply-To:References:
-	 MIME-Version; b=M2qDd/gG6z9dgKEASSJ+d9BZTf43SMqnazJ8BlWiIYDtHAI2P2W2+cyiNrextyJRhLNR42TlDxVIYYdf5/viku/+4bksEfLTpPC0cHhhPZr4fYtSv7WDdvCRTbcWyiwZokdz7US0tX1IEGDCI1oraPZ7xBus0DJK2ZkTGK+sPko=
-ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WC5iQHXN; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WC5iQHXN; arc=none smtp.client-ip=195.135.223.131
+	 MIME-Version; b=Uj7V+eENVdT/EiVQgnVIPcvtRlZOwFDv2YfCP9oisIdXGV6IdW+J2toXXe2UV0vgL4jgvMDG35OgJtqOJK3KL6ymVOL35/Y6IiYJZJAy9CW0RYowOYZ/mbu4y8Btd95Ijm3FBbASJUGASkA0dfUB5WfVvXufED4BRPK631AgPcQ=
+ARC-Authentication-Results:i=1; smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com; spf=pass smtp.mailfrom=suse.com; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=WBjkZQ5t; dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b=e81N/lis; arc=none smtp.client-ip=195.135.223.130
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WC5iQHXN";
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WC5iQHXN"
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="WBjkZQ5t";
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.b="e81N/lis"
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 147BD1F821
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:32 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D04702200E
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:27 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792392032; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792392028; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=kmC/edEMkCoYUfLSm2vCXpfF8gT3YvSU/sgNCvfkWxo=;
-	b=WC5iQHXNPaPO6Tu5wRHMHBFjIZMUQPqs68nx4FNtBKHYE/gLn07lgZGjBS2WvqY8+hp0I0
-	mFPqdjBkXttb6lncZWcNK3JrXGhaJ7vlle0WGuHsjrkji0hv199XS38T+FME+8+6M0Ksm5
-	U9KV+vHMiigXbMH5Q0ejZ9NnkNwtHWk=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=WC5iQHXN
+	bh=2tTJhEs0h4uKcwmIAq1LYjnuJ38Q80QkIJmsxZWhExU=;
+	b=WBjkZQ5tHQFB0gPLKrXceheLDtSCS7zk1ukIwI5SYbYtOBXYeWtAyyReGkUNn9916zYh5c
+	zDn+YSLrF2/iBDmoCX7zwWXC2tgE4Uze2ApnP2qZrMOFDH2QG/zTR2csH9x+9ZCdlcszoU
+	igBuQnZ9HxrlZ7ygjv8faDG2IPE9PRc=
+Authentication-Results: smtp-out1.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792392032; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792392027; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=kmC/edEMkCoYUfLSm2vCXpfF8gT3YvSU/sgNCvfkWxo=;
-	b=WC5iQHXNPaPO6Tu5wRHMHBFjIZMUQPqs68nx4FNtBKHYE/gLn07lgZGjBS2WvqY8+hp0I0
-	mFPqdjBkXttb6lncZWcNK3JrXGhaJ7vlle0WGuHsjrkji0hv199XS38T+FME+8+6M0Ksm5
-	U9KV+vHMiigXbMH5Q0ejZ9NnkNwtHWk=
+	bh=2tTJhEs0h4uKcwmIAq1LYjnuJ38Q80QkIJmsxZWhExU=;
+	b=e81N/lisC2TgzbEuuhyuqQvU//avFz6baYt7MM2ABqGCw5ghaUuMR3Myb+gPhC3b2wB6w7
+	rV1IFHnwK66zbmc7pFL1Gxx7zZNdOiXFx+hgGG5hYQ+fdCjk5J3Dlr0b8ZlIBsaIR/mcVx
+	xqyF8mjVxTsZ1Pt3DKrPhsV8i/fkHbg=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 48D6D1375D
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:29 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9A5D41375D
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:26 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 09jKA1i71WpsbgAAD6G6ig:T4
+	id 09jKA1i71WpsbgAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:29 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 06:40:26 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/9] btrfs: add btrfs_io_context::stripe_len and load it
-Date: Mon, 19 Oct 2026 17:09:59 +1030
-Message-ID: <2158f68d1a09a4d6c4b828a23c7e690a5a1c87b2.1792391732.git.wqu@suse.com>
+Subject: [PATCH 1/9] btrfs: reduce the width of num_stripes and sub_stripes
+Date: Mon, 19 Oct 2026 17:09:57 +1030
+Message-ID: <a5234783282dd9dab22442ee9bfb3a4b2424b931.1792391732.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1792391732.git.wqu@suse.com>
 References: <cover.1792391732.git.wqu@suse.com>
@@ -69,75 +69,77 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Action: no action
-X-Spam-Score: -3.01
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-3.01 / 50.00];
+X-Spamd-Result: default: False [-2.80 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	RCVD_COUNT_TWO(0.00)[2];
 	ARC_NA(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	FROM_HAS_DN(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim];
+	FROM_HAS_DN(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+]
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -2.80
 X-Spam-Level: 
-X-Rspamd-Queue-Id: 147BD1F821
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Spam-Flag: NO
 
-The new member will be utilized by various path that no direct
-btrfs_chunk_map is available, but a stripe length is still required.
+The on-disk btrfs_chunk structure uses u16 for both num_stripes and
+sub_stripes, so there is no need to use "int" to represent them in
+btrfs_chunk_map.
 
-The new member is located inside a hole between @refs and @fs_info, so
-no size increase for btrfs_io_context.
+Follow the on-disk format to use u16 for those members, including
+verified_stripes too.
+
+And since verified_stripes is u16, it no longer completely fill the
+hole between @refs and @start.
+Instead use @num_stripes and @sub_stripes to fill the hole, and leave a 6
+bytes hole between @verified_stripes and @stripes.
+
+This doesn't save any space for btrfs_chunk_map, but leaves enough space
+for future expansion.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/volumes.c | 1 +
- fs/btrfs/volumes.h | 1 +
- 2 files changed, 2 insertions(+)
+ fs/btrfs/volumes.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a30b212ef0f1..ff7189ac1c49 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7411,6 +7411,7 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 		ret = -ENOMEM;
- 		goto out;
- 	}
-+	bioc->stripe_len = map->stripe_len;
- 	bioc->map_type = map->type;
- 	bioc->use_rst = io_geom.use_rst;
- 
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 9dcc14cd61e2..9356cec00a90 100644
+index 67464025e449..d97ca875c596 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -515,6 +515,7 @@ struct btrfs_discard_stripe {
-  */
- struct btrfs_io_context {
+@@ -623,9 +623,9 @@ extern const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES];
+ 
+ struct btrfs_chunk_map {
+ 	struct rb_node rb_node;
+-	/* For mount time dev extent verification. */
+-	int verified_stripes;
  	refcount_t refs;
-+	u32 stripe_len;
- 	struct btrfs_fs_info *fs_info;
- 	/* Taken from struct btrfs_chunk_map::type. */
- 	u64 map_type;
++	u16 num_stripes;
++	u16 sub_stripes;
+ 	u64 start;
+ 	u64 chunk_len;
+ 	u64 dev_extent_size;
+@@ -638,8 +638,8 @@ struct btrfs_chunk_map {
+ 	 */
+ 	u64 type;
+ 	u64 on_disk_type;
+-	int num_stripes;
+-	int sub_stripes;
++	/* For mount time dev extent verification. */
++	u16 verified_stripes;
+ 	struct btrfs_io_stripe stripes[];
+ };
+ 
 -- 
 2.56.0
 

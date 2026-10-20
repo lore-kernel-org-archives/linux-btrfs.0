@@ -1,87 +1,117 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.49
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792447543;
-	b=cVKSjCpQvmeJV6JNlhZaH6/xZyEfJ1OE/kVpHZNzIU3ciUPdUuYOpq10/ONCRRfFRGoR
-	 BhcUdQXtK3XlCaW1xQEUYVsPv7/2ISIDElgXZTYIdQguHS5Te+omJ2tjjzkIP+wN2PW99
-	 xC/Ssd2t0hJT87QsLHnvqKLqQwDoaxAPzyoOUtXexwF+1a+uMiH5/jb0czy4ZxePGwo/S
-	 Y0xtE1jOaZT+k2XJswE2cxAYc8dEdKNgJcml/WZtfHnN5eV1TC3+xlKXwpjc7H57r1aj9
-	 BHWVHnbGRHksRg9OF6ML9DXiHXC3FitpkQHLNmk2Icb0CjCNbnRXYTHRzueY7rzxC5Q==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792447543;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=fmlVs24LQp0dd+1QD+/a5DEQxq5dxAAfPsUSTasLGXs=;
-	b=qwyjK7xety1tiy2XZesXW6ugk3qcmVpfNLXrLoNKjOmgeowzmvuZA6eIN1kxweoO6Z3f
-	 8YM2cIhQevhj/awibKJVlE6foLV5UuDr4pHpQAVEPxnA4bij9ZJpW/XTiZTPDb1lYO1UG
-	 mcBkzjVDQyyQKw7zZ6pc77DS80Y0la/STxRKwdANwEIvctbbvIMDM9QJ9U9r7He2DppNn
-	 6d41n0wXUe84rp2LwxI5baXaTQLnLcONfF+6ARzfiONr21SB68jFaIDYN3rE918m1Cvw8
-	 waYP+6B3KG3+WQp6/w8PUL1Wo2ts+Qyt0pr/ps594+EjkTXcLsrkUsfyims8tTvVKew==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=C4M6f8dA;
-	arc=none smtp.remote-ip=209.85.128.49
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1792488378;
+	b=rv9aPS5DhWTiV7vu9vUK4SC8es639VN/+i7uNcZ5oK+pIhAdoZCr1mnjj+3Q6FXbBrCB
+	 WItfz9X5dxb81zLYypIrfymxPsuMHNi48c+xv1Vagxnvd056QFZIErGiCZPlZ2SDSqw8L
+	 Ownh0QgWez8y5bnevZ0ViWX5ewX80w+Swm72vJeK9j7Dz0wA2N79lVNbAdhuciaNJevvm
+	 0GBgLq2+Xe4q3AxHlEb9DsXXejOXHf1tm88iQPUy46If8I2gGeZ+mMHO7SMRxW0VA+cWG
+	 UhQAAsba8FwAsrtDWs51JV4/dB4iYFzC+ns28BGkOKcOL2WzFqiNDamFzJAItKO+0Zg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792488378;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:Message-ID:
+	 Date:User-Agent:Subject:To:References:Content-Language:From:
+	 In-Reply-To:Content-Type:Content-Transfer-Encoding:X-ClientProxiedBy:
+	 MIME-Version:X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
+	 X-MS-Office365-Filtering-Correlation-Id:WDCIPOUTBOUND:
+	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
+	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
+	 X-Forefront-Antispam-Report:
+	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-MessageData-0:
+	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
+	 X-MS-Exchange-CrossTenant-Network-Message-Id:
+	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
+	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
+	 X-MS-Exchange-CrossTenant-FromEntityHeader:
+	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
+	 X-MS-Exchange-CrossTenant-UserPrincipalName:
+	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
+	bh=7yge9Bae/taZcyM8A9GLX6oA4fwWISuM4iXymNHPu9o=;
+	b=Cy2udHwO7Jv2d1EJZ+CUDWhdek8V9v/BP3rnMugDcMWmoIlkTpYtO76FHWQ6FG2k0XFN
+	 Hikug2uR6SqcccP76K1A8r47Srjuxomie0NsBvIDcQHPsfGUIYmFuPuzeaLIfyP+e+n33
+	 adKjervX7JrY2W4EA3QmLSYgeM8ciq0WCUa8Ok+UudqRaoXPlsq5RbjOFK+qhZAPqUeOh
+	 lzWyD20UpQmgcMndkmcK50gw2+w8fQpnOA8QKqui/bMf1+TiK+sb4GGrmmQMY6CRRZIn2
+	 ebvgiL44w6X0iiKD5Xo6JdAstefpfijFxLPK6vTaluAY6JKh0irFpWK8FfyCMK79lkA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=wdc.com;
+	spf=pass smtp.mailfrom=wdc.com;
+	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=TV1ssq8N;
+	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=XUDq0zMB;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A01D4606A325
-	for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 22:05:42 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A01D4606A325
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91F57606A31A
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2026 09:26:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 91F57606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=C4M6f8dA
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4a1e3098ee2so19934665e9.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2026 15:05:42 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=TV1ssq8N;
+	dkim=pass (1024-bit key, unprotected) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=XUDq0zMB
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1792488384; x=1824024384;
+  h=message-id:date:subject:to:references:from:in-reply-to:
+   content-transfer-encoding:mime-version;
+  bh=21eemjj29BW0wYFt5JsZd4wx2dV7vzJLU8RZ5RDsrT0=;
+  b=TV1ssq8NBICP7KiH14uuA21PiN0g1+6cvCGpLDJbY/JUT4YtJH/kXx1c
+   HPOnhdAwfDTbMy2M4NVjhpdNWEaNuVVImTJapBwiXKOZfXlf1w/tU4yqi
+   N0ZPA0olXQ6WCztt3TFu/x3toyS4zHYUOXKXrKN4yo9iXaykZclSE+8dG
+   mB1HURoZzSWjUni81swXdZH0+HY4aHzJrQB3Tn0ikPivj5gfYnjD0QnRg
+   Pno+9lij39ti6Af99+9H/TJwpy/4AuWXwmcrA7UPeJw+sCTtsK+5ChzB4
+   c8xg+Wd6UBy5OHqnCNlvmkNlziI6I+/EGjtTn0MYk2LV0YaAELmNQJ6fg
+   Q==;
+X-CSE-ConnectionGUID: lb/cMuB/S8S2zhLFMLFthQ==
+X-CSE-MsgGUID: 5El+xFF7Tqaax+zNXptkCg==
+X-IronPort-AV: E=Sophos;i="6.27,168,1786982400"; 
+   d="scan'208";a="154307676"
+Received: from mail-westus2azon11012051.outbound.protection.outlook.com (HELO MW6PR02CU001.outbound.protection.outlook.com) ([52.101.48.51])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 20 Oct 2026 17:26:17 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=WM0WWeX228qxWOh6R7uFQiPANftx6TG2ez63dPw9aTj5Pw0rt+spfYA9+0YWcZH1fWLmH6Ck+hNlzQbFjCAi/pF2BVpUFx2j4STj1JvFgX4vOtPdKpcAwkT9cj4We6Xn5MA6EtPr63FrJGJCInYLmPTlRWE6XeSS0fAN3hFdNNXn/i8Q8ePJQgD0O7HPEipkdAHLZj2hvpnaXc6OXdhGlWkZzO3z84YKWyeVX2n3vipfxJ4s5yrCFXnRiIPI+ldOngYPRuHHlooQmnmhjZuAfr22xftc8RPcGimu9hE5BQCUYhjULncTqIetV41UFm+Ek600EfinuLYoWO3VH8krUw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=7yge9Bae/taZcyM8A9GLX6oA4fwWISuM4iXymNHPu9o=;
+ b=SNHzJ4TlGnV3Mvm0kr/7ObAKTf4512vHQfPKdTUlbc457cRKZkpdTkXceGHuWY3T0GAHtFFNxPMO/wB4p6TCpzMHLN1i821Y4jiygZzXWWYZekDpwSeh7tfG+XMtBNhVDRG8/2P4qwbL5h8vCl1jTTTLi8l4YEa4SCSi7NTjTf09KHRtqB+8jb8oj3Qs67GPVvrYjvy3MySl1bn5Ft3GaPaSBCDjxAYcJtQZ/FT0t4u6RyFEsRJOgeoL8KVuHgLE0iokDR21955IQqv7EGWAG4CQqvpnu8HnDjlzT6fBI2mXUipfwywumiCRwXuNk6SXcdiZiaXsBt/7JGElpQAOfA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1792447541; x=1793052341; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=fmlVs24LQp0dd+1QD+/a5DEQxq5dxAAfPsUSTasLGXs=;
-        b=C4M6f8dA8Hl1iMX3uyOOfPCbPa8Vn1p2wH7I8e8RQ3qudBJW1aivjXoQ3RiFes3zT4
-         FyyxMfCetFaQgW6gHiK9ZkRm3WQR1z/E593d9/utdCeOrTrs/r67nCKXMoc5pnlhoGwd
-         BYTNOOHvzeHZjlAj1eNOXNwc/k74XvENjrXDE1xjh0DQEdrxEYzrLnnXETEaNuUJh2iK
-         CXDQMXtgEvGaKodkOBCkf3WJ3vly7K1YZnWM0/v2WbC7V9/RPGS7VT5KaQhAwVrbgIBI
-         6TG9vY1uONYwl8wN8WcP2pOy2jKP6vWIq1ALU5SUSEzsmJ6vQ3Xz5zZVqUYelL6qqdJe
-         pCYg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792447541; x=1793052341;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=fmlVs24LQp0dd+1QD+/a5DEQxq5dxAAfPsUSTasLGXs=;
-        b=UnV4cpn/V9/AjY/I76sUbT8wyp/tFsAzdg5BOJTWwVTS/4jdHFfIKF7ZJNlfJty9MX
-         QVvKLLE65n/KVW3mBYK0/ynnrr3X+hWu4XhS0EUlf1T29bE4AmijXScFF9Y9oyUsr6QE
-         y9z2oR+6jDFCDAf7etMj1x9Cc30cZQsaoIGpgrRP6eMSE7tLTuBnIAszspItZMZQ2xw0
-         cgC+t0Z7d2Wvh7WPesSNlHbDntBfuhwOvdwtpDDbWbo+B5OfZwHnnj4Pipb7C9Td7QVc
-         hIlSPnP0p8L8ia172WOUfV9S82lp2DR5ICN6r/Yd8Mwv+Yn4ySecbJFTeChhfsbAgHM/
-         V8Aw==
-X-Forwarded-Encrypted: i=1; AKwUvBwZqyyXufDmYtDaH+pqq1TR6NEGVLs7nA8BsbcsdWGVv6dO0/1WKZ+r84hQDRAwJJv7xwjvUTyVZbGnmg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIjeGMMrREa53ZrAJ6TqGBAP2j0rOnJtPwBXLgLuzoDs/EsryU2
-	S36KMbi4mqXnhw3CFQl8UhCVZCu3WqH5M8eXnBdbG4bUJv/7FhnjKVbC9yn67HQ2YitAAdOSlFN
-	HN0jA7Wg9Ng==
-X-Gm-Gg: AYBFou3Ntz5u+p6npyfXskkougwWXyIBqrspFaS3ISbM7RGF3ut3QPlOZhxtb4MfCOP
-	iVINdGljnMJaCk8ZvAkjtN5lN7DwR14mPxibLEjOQ1awipInqaLTJl+DfqwbyT9DlexaVoWZXOK
-	gVAfGhqVyXtPKpvfCheql7/SlzeIeN5OkB/yLVCnOqz8EksIQk0iYtmSJgTI4oCZxd2Djrp4fka
-	9x1IhwkVoel6MTcUdjBwVuIKana3SyYYr3MnQc+OLr2cl2+9HcmKb8EodUYbKVU/mRWkQYwQUOZ
-	bMpTRgUrpuamf9b7/3+Ui3VQFihlV2vBxkH7k6jFIspBySsi5PqyFVPjTlvanky5ZldBt2wKHq0
-	N7qQooKi/LVFCGCRpKSYJHEtjYAIB91cHxEDyvIOvXho+AkHUrTILj/XAmuW8IOG1ZEU5QTGLSg
-	zh8IH2y3qdMSfGU7XnIpf730uRvzEGJRMJP9ByoQGF3XkgnUdAA/D/baVj0pk1t7A=
-X-Received: by 2002:a05:600c:c117:b0:4a0:1c0e:b057 with SMTP id 5b1f17b1804b1-4a1d75af362mr142452765e9.4.1792447540510;
-        Mon, 19 Oct 2026 15:05:40 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ad5da2d6aasm1166899a91.13.2026.10.19.15.05.37
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 19 Oct 2026 15:05:39 -0700 (PDT)
-Message-ID: <a8441079-e9cf-48a5-a9cc-2353394fd2f3@suse.com>
-Date: Tue, 20 Oct 2026 08:35:35 +1030
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=7yge9Bae/taZcyM8A9GLX6oA4fwWISuM4iXymNHPu9o=;
+ b=XUDq0zMBqbAQmBWNphyp0wkt3S9ft4McUbofxsiJN02RSFtsk/kfsko42+EK+mNXSDUeJktUFz6N99vCPPtyfY7RREYncWvJTvmaO0TO/b14HzPu7yB/qrZbyDqiHptXD5dKIyCoLni8PAHzm9p7BhUII83CCuC1vRzgPXb67hs=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by BL3PR04MB8139.namprd04.prod.outlook.com (2603:10b6:208:34a::21) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.546.15; Tue, 20 Oct
+ 2026 09:26:08 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0522.017; Tue, 20 Oct 2026
+ 09:26:08 +0000
+Message-ID: <ca6f02ee-8b39-4e90-9006-a6f0606e26f8@wdc.com>
+Date: Tue, 20 Oct 2026 11:26:03 +0200
+User-Agent: Mozilla Thunderbird
+Subject: Re: Subject: zoned: transaction abort with -EAGAIN (-11) on
+ host-managed SMR (WD HC670), fs forced read-only
+To: Jochen Philipp <a2jphilipp@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAD=K2o-BBqh+ikgfD732Cb3M1Xx48QGw3kTFsP5iSgH1mkr0wA@mail.gmail.com>
+Content-Language: en-GB
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <CAD=K2o-BBqh+ikgfD732Cb3M1Xx48QGw3kTFsP5iSgH1mkr0wA@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: FR2P281CA0089.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:9b::15) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,257 +121,218 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 5/9] btrfs: add a new 'stripe_len' parameter to
- btrfs_stripe_nr_to_offset()
-To: kernel test robot <lkp@intel.com>, linux-btrfs@vger.kernel.org
-Cc: oe-kbuild-all@lists.linux.dev
-References: <48b407f8488edc890710cdf8ebfefe413e7721c2.1792391732.git.wqu@suse.com>
- <202610200549.0ma4is7Y-lkp@intel.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-In-Reply-To: <202610200549.0ma4is7Y-lkp@intel.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|BL3PR04MB8139:EE_
+X-MS-Office365-Filtering-Correlation-Id: 7df860c6-405b-4317-6dbe-08df2e8c2c24
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|23010399003|1800799024|376014|10070799003|19092799006|366016|56012099006|11063799006|261009223027099003|10067099003|18002099003|22082099003;
+X-Microsoft-Antispam-Message-Info:
+	eTLy8HHOiauIfUeqKWF8gmUVCZUMBy+8U79DtyBIKtfV3PcOO4ZlhT0o0yx7z6qbb0X0pviocnJP+03OmvDT58ipaxdkknasYCJwjPVVWURBgde0eOyKqEAA3+lSYb42NTKCM6medzfcufcVAqjCHNvAGHRtUWA/WfLYJNJXcK9+NqMVJU1TSl9ub/jVCLsEJBKRrkVKhq19A0PbnXqZt1908PFWPs2NOBPESuY3XuEdH/aMMQvTUv8wsp9xZy08a16H/kWoy2lQg+RzQZMIpj60jG43t++51/4OJHI84Pt+aJAYnK3BDRStdXagjRXqKxpBULRQOAsn/jgOoq+mQRUiSc5ZMBv4YJE1ydYnh1uCy56dFKqGjgGoUqm9DE+koFXeQDs/2qhOGy2VjVFaExcCKOtUVZgP0Kix9HZS4UIJaDwMcOWYyRgHIuJoyib3ybAvg+tm1jGPb9F5eUvKhTPFgP9CPIpobFfZW6MpDbt/AXNcgyoMP15y8BhQCvJavx9F+Maq8gepPGyIUvoRaYu5zkWqdieDsCzhKR8TKpOxwgq035ioEFdYshKm9FWRTciGPH8HnqO7UCl2GfkTnpDdAlXILl/mO+rxylpRikIg0rcgYsVyhh3xFhhomctlauiJTqeVfbq6cgKb702QUJqYgw1sQZvbtACSFXgbIGI=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(1800799024)(376014)(10070799003)(19092799006)(366016)(56012099006)(11063799006)(261009223027099003)(10067099003)(18002099003)(22082099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?ZDc5Q215TXA5ZHpFdGtHQlVkWnVoQzJtc1lGTDVxZVNOdGtwYW5sZEZOVkpD?=
+ =?utf-8?B?dzhjRjRSZGR1blN3bWdiRXVwTW4rMVNCVHFkU0drM1VPbVF5MGc4aS81WGh2?=
+ =?utf-8?B?aXJjK0Y4WnRBeDU2SEF2SElnWUJyaEFVSEJhblVvNGhtbURmVjQzcys5R200?=
+ =?utf-8?B?UXZqMnpGaGZsaVlkelV3a0VHQ2gzR080NlVjTlRwOGhYcnFMWmV6QW9ZaEhl?=
+ =?utf-8?B?UlIwNlgxZVBheGM4SDFUbjBsNVJGQTYvYlJzQWdCR1pTY2VjS0grUmJYQUNz?=
+ =?utf-8?B?bytmVjdYamJIWDAwSk9WbnMzM3ZKckRZQ3ZFWms5aGJCWHlkNEVuMENEYzdD?=
+ =?utf-8?B?OXdCUzZzVFBrUGVaTVJBQXh5R1pwRys3U1YxekJoaytJWE5xVEZvRjd1c2FO?=
+ =?utf-8?B?a3Njd21zbnJESS8yd1EwU3lLUEZkd0FUakdGeGNQQnRoUi9ua1NoazZjWUJG?=
+ =?utf-8?B?aWhyMUhCU3hGSnNzcWgyUjlyYnRkTWxaQ0dnUXJ6SVhPcCszQ2lJNG1BL1pO?=
+ =?utf-8?B?bXlOSTNzbDgzRGVVdzRTSkJBQmtZeVNKNkRWTDJsc1ZlUGthU0cvUWYwLzlS?=
+ =?utf-8?B?MkJzTlkxdlJLUzQ4aktIYmg0YTQrQWZVS1JsRzgwR3p5TFN1V3EzN1NuMS90?=
+ =?utf-8?B?QStnQkJPaEJKcFM0dG9ENVIzRDlrdXNTQ2xWaEduQ3AzYlhPTmJzbDE2aFRU?=
+ =?utf-8?B?a1BoM2R0Mm1IQ2wxb0FoOFFzZmJKZGI1V1JNMHcyQTBvbG5jN1FxM3p3ZlJD?=
+ =?utf-8?B?UXJ3MnNVR3BhVUl6TmlPbFNsK2ppSmE4RUQwbHB1K0dpcDVNRG9SWC9wV0Qv?=
+ =?utf-8?B?RVNoczBhUWIva0p0NStHc29YT3RzNFhVcFhIcVIwYjJ5TXNWM2NPMmUwOVBl?=
+ =?utf-8?B?TFJnSHhDVTcwL0dSQW1oWW9ialBxTng0M1piVlZRRjkwalJnWW5nQWVhZU9H?=
+ =?utf-8?B?SDluTExSNk1sVkNDZXl0UHVEMWlCUUVpeVJIWXZVRnovN1JhUW5lTnJXVXR6?=
+ =?utf-8?B?V0NjMUljanpKV1laR1o4UFYxTmxnL3BGbXFGVXJRc1dEaTFhM2RGbGJFMTNN?=
+ =?utf-8?B?b0RCQ3dlemRzRXZTcm5SOFAydGZKcDV2OEQ1NC9nTmVsTTZPUHdrNE90Q0Y3?=
+ =?utf-8?B?R3B4eitNU1VRRW1nKzlCVFl3dlo2ZDl5UGtsQitaUHJFRFdqaHh1T0tabWVG?=
+ =?utf-8?B?dkVoeGx6STZFRThyZTloOHJqR0dnNVdjVmk0bEY5WE5zYVdjSTgxeStMeSt0?=
+ =?utf-8?B?M05TOWZCajRxdGVoZWRhNmMwUFhjU2F6OXNxWER2d0RaSDVkTUZwSXJOSU40?=
+ =?utf-8?B?QTczOHJ0Z0ptSVVWYnlVVTBlRWk0WW9tZEVNVzNwQ3dXSi9wclg0ZjR3bXkv?=
+ =?utf-8?B?SnNDOFlIK1BMUmVGd2V2dm5Pb2J6Q3RSQ2xQNGFXZ04wbnpzbS9qaDRLcENS?=
+ =?utf-8?B?M0pZUGNRQ0VhVFhNVjR5Q1IxNzNpY1JyalFWbWhTUjlTMnVrdEo5QzBCYWtj?=
+ =?utf-8?B?NzF2aGJSTDlQNFVlSDF6RGtHT0p2QWRmWm1pOEFqWlBTbjEwVHozcHZhdjlw?=
+ =?utf-8?B?UEJYTWNqRGtBcHpQdEwrSWFGR2w3RTE5YU81YVpJdEErTExkOUNQZnNBRHpo?=
+ =?utf-8?B?WHN0cEgveW1QZ3hqOFp3aFlvUGdUbGFBOGw3YnFjVTVVNlRXeHdvWTNwaUpT?=
+ =?utf-8?B?RG9JZmR5Z0NNOVlPcElrUUVLejdUQ3REdGZrKy9KcmhpcjNYY25xdzVKVzE5?=
+ =?utf-8?B?N2NOOCsyd3E4bnRHTG5wYzZ1Zjgwc3FES2lKUnhvWENDNWRhbk5JM3FrU2VV?=
+ =?utf-8?B?dnBHRWpPUnJibnNNSW0ySC9GdVBTbEd1dkNML3ZUN2ZiM05GdXlpaksxby9K?=
+ =?utf-8?B?SFZJdldtdmRWaEpkY1d5ZW9LRlNuZjNML2lJS1MzV2pRb01qR2RvOTlyTGZU?=
+ =?utf-8?B?WlV5WHE1N3N2VmN2UTRiSnBuL1hUbmx2R1ZJcG1VK25KSkplU3pWYnlYc1gx?=
+ =?utf-8?B?NjVUODNzbmhWRTIxVE5SQkgxT3lZb1BKTVd0YTQrOGliaVFGbTlJaklBdlpX?=
+ =?utf-8?B?czhrcUtmRWlkdGRJYTlnQVZ3WktWMW5UTVZrRUJqbGhrQUI1MEZzMXlxS1g0?=
+ =?utf-8?B?bW5rK3dYVzk5QStwMldwRHJWZklPL3JJRm1NOUc1YTg3ZzNjVG5hU0VhUE5p?=
+ =?utf-8?B?YlgzQkV0U1hzT3l3aDVHbkljMzRBWXlUS0ttVU1EWUJaQ1R1VGw2Q0pxQXdN?=
+ =?utf-8?B?UG9pem9OZnZ0cjJTUmJIdXAvL1BMMmZlZnNyelVkcEwvVjZxbTlpaHFIbmNj?=
+ =?utf-8?B?MDBhVDhMSUdjaWFxQmxIVWhJYmVqTkVVSk5tSXpUNTIwS0E0TElOaFVmbGxV?=
+ =?utf-8?Q?xVqIK3FJxf6b5qpySr8pvLbQONmtkOPvD1L2mXpePqQqn?=
+X-MS-Exchange-AntiSpam-MessageData-1: qs4lsLW+cOj1fU6y/JKkZ06Tm7Q2tlMJvTY=
+X-Exchange-RoutingPolicyChecked:
+	wtDmWufqFqJ0IJOZeaLIMz6adJ9u3q2eFXcB7g+4NtYwZmmxGAD5XRzizLy5hOuLbycFaNvX8XqucexIMGHM2bOdMIcc3eo/5LnTloV4RDSk+GXnX1uxftfxOykEeiz80VvDcOcJYa7z009NMygURzr2YKmoTI+QOlixFg6THPgIWKNHDT/ymplKGOHC+Zm25Hlqq4qr/d+lqC4H8ZcxSLkOrMg1nHWtemj3uL6QApGFW3Nlf2sfLm2wtd6LpVwgr935I82NIxeYrWZ8aOrgDk7O/SN/9MmrJBxOSWdODTnCkYosnHYN3DEDZFhpvP86YPTF2Q8hh4bAx9+8DUYukA==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	EYV/qL4DGYALj0XIyTIoHUL7UGbS1Ly6rmxoRICf8x4fM5g3Qbi/zrdIN3MBNlzaKoQCuM453amTsnAU5aJTrBIe7EKS+J4svPn8quoyeBd32+nxfyp7lqYwyKkwlxweWpU4ISljz/6PwiBezRgyQjEskNa6X2FUGH0oiR/lvLF/VXyls2Qvpk2TtUsHoE/RGkdnNuBxaEbNlZ96t0X++NgtlW48k7pstgL+XqLnqsnaX6rI+ToUuwtWyUw6AO48jNBWV+BiVFD/Rjjx8L7faUsWDsCBAJH4nFr+5pqbwBZc+rjFljIWH+VjqWwWSpVC4TDdfudvz/sT8iXDTSWRHDe/KtGarVpiXfQkOD89biImatvbWGPYhtS1Imcanbfza+rdvbUK8HoOs6zNISoa2T6mlSvrmhgOMpZUyBqNRmDIJylGkJzf66JB7OUXe+bil4iJi1k1wYVtwbxny2bCsCxDDfUxtpeb9eHRAxjf8eeRJeXBoj8n6PhZXL54jC6VlnOf/2dse3Mc0RoJ2VoN+Hdt8/V4EudrNN6Xv6Maju0ANPJbKe22T5aDLankp7FebgLYMrc/MQ07Qn0xMp6hyjmzdNUHT+X1epKljubeiyZPKyMsv9lP5YQ7RbRADEB0
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 7df860c6-405b-4317-6dbe-08df2e8c2c24
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 20 Oct 2026 09:26:08.2953
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: K8CjUzSs8i7aV3HF2ORXH0fNNRB7UxIZVH5KbBExIXxxtff+kZmTu/iQ/4l1udIX3JprgEoS3X5VcIIwSW4YK5HaRflnIfUuepI/B/mN68w=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: BL3PR04MB8139
 
+On 19.10.26 16:31, Jochen Philipp wrote:
+> Hi, I'm hitting a reproducible transaction abort with -EAGAIN on a
+> host-managed SMR drive. The filesystem is forced read-only during
+> plain sequential writes. Hardware: - WDC WSH722626ALN607 (Ultrastar DC
+> HC670 26TB, SATA, host-managed) - connected directly to onboard SATA
+> (Intel X99 AHCI), 6 Gbps - drive reports write cache disabled, no
+> DPO/FUA support Software: - Kernel: 7.2.11-200.nobara.fc44.x86_64
+> (Nobara/Fedora based, tainted by Nvidia out-of-tree modules) -
+> btrfs-progs v7.1 Zone info ( NAME ZONED        ZONE-SZ ZONE-NR
+> ZONE-AMAX ZONE-OMAX ZONE-APP ZONE-WGRAN
+> sda  host-managed    128M  191776         0       128      32M         4K
+>> max_open_zones / max_active_zones from sysfs: <128 0> Filesystem created with default options: mkfs.btrfs -L archiv /dev/sda (zoned detected automatically, metadata DUP, data single, block-group-tree enabled) Workload: Single rsync job copying large video files (2.5-4.5 GB each) sequentially from a USB drive, ~160 MB/s. No other writers. The abort happened twice: first after ~4.3 TB written (with Dolphin, possibly two files in flight), second time ~10 minutes after remount with a single sequential rsync. What I checked: - no ATA/SCSI errors in dmesg around the abort - SMART clean (no reallocated/pending sectors, no CRC errors, no command timeouts, error log empty) - btrfs check --readonly after the first abort: no errors found - plenty of unallocated space (19.5 TiB of 23.4 TiB) btrfs filesystem usage: < Overall:
+>     Device size:                  23.41TiB
+>     Device allocated:              3.96TiB
+>     Device unallocated:           19.45TiB
+>     Device missing:                  0.00B
+>     Device slack:                    0.00B
+>     Device zone unusable:          7.79GiB
+>     Device zone size:            128.00MiB
+>     Used:                          3.95TiB
+>     Free (estimated):             19.46TiB      (min: 9.73TiB)
+>     Free (statfs, df):            19.46TiB
+>     Data ratio:                       1.00
+>     Metadata ratio:                   2.00
+>     Global reserve:              512.00MiB      (used: 0.00B)
+>     Multiple profiles:                  no
+> 
+> Data,single: Size:3.95TiB, Used:3.94TiB (99.76%)
+>    /dev/sda        3.95TiB
+> 
+> Metadata,DUP: Size:8.12GiB, Used:5.46GiB (67.18%)
+>    /dev/sda       16.25GiB
+> 
+> System,DUP: Size:128.00MiB, Used:3.31MiB (2.59%)
+>    /dev/sda      256.00MiB
+> 
+> Unallocated:
+>    /dev/sda       19.45TiB
+> 
+>> dmesg of the second occurrence: < Okt 19 16:09:07 nobara-X99 kernel: BTRFS error (device sda): error while writing out transaction: -11
+> Okt 19 16:09:07 nobara-X99 kernel: ------------[ cut here ]------------
+> Okt 19 16:09:07 nobara-X99 kernel: btrfs_abort_should_print_stack(__error)
+> Okt 19 16:09:07 nobara-X99 kernel: WARNING:
+> fs/btrfs/transaction.c:2606 at btrfs_commit_transaction+0xf6d/0x1000,
+> CPU#12: btrfs-transacti/35530
+> Okt 19 16:09:07 nobara-X99 kernel: Modules linked in: overlay uas
+> usb_storage dm_crypt encrypted_keys trusted asn1_encoder tee loop
+> nvidia_uvm(OE
+> ) snd_seq_dummy snd_hrtimer mlx4_ib mlx4_en ib_core ptp pps_core
+> uinput nf_conntrack_netbios_ns nf_conntrack_broadcast nft_fib_inet
+> nft_fib_ipv4
+> nft_fib_ipv6 nft_fib nft_reject_inet nf_reject_ipv4 nf_reject_ipv6
+> nft_reject nft_ct rfkill nft_chain_nat nf_nat nf_conntrack
+> nf_defrag_ipv6 nf_d
+> efrag_ipv4 nf_tables qrtr sunrpc nvidia_drm(OE) nvidia_modeset(OE)
+> intel_rapl_msr intel_rapl_common intel_uncore_frequency
+> intel_uncore_frequency
+> _common sb_edac x86_pkg_temp_thermal intel_powerclamp coretemp vfat
+> snd_hda_codec_alc662 snd_hda_codec_realtek_lib fat
+> snd_hda_codec_nvhdmi snd_h
+> da_codec_generic snd_hda_codec_hdmi kvm_intel spi_nor snd_hda_intel
+> nvidia(OE) mtd snd_hda_codec kvm snd_hda_core iTCO_wdt
+> spi_intel_platform spi
+> _intel gpio_ich intel_pmc_bxt snd_intel_dspcfg irqbypass
+> snd_intel_sdw_acpi r8169 rapl snd_hwdep intel_cstate realtek snd_seq
+> phy_package snd_seq
+> _device mdio_devres intel_uncore mxm_wmi
+> Okt 19 16:09:07 nobara-X99 kernel:  drm_ttm_helper pcspkr libphy
+> snd_pcm i2c_i801 ttm snd_timer i2c_smbus mdio_bus drm_display_helper
+> i2c_mux snd
+> lpc_ich cec soundcore video mousedev joydev mlx4_core mac_hid dm_mod
+> zram 842_decompress 842_compress lz4hc_compress aesni_intel gf128mul
+> psmous
+> e aead wmi serio_raw crypto_user
+> Okt 19 16:09:07 nobara-X99 kernel: CPU: 12 UID: 0 PID: 35530 Comm:
+> btrfs-transacti Tainted: G        W  OE
+> 7.2.11-200.nobara.fc44.x86_64 #1
+> PREEMPT(lazy)  8032c1cc6f4c3d56dc9ce283429b1ba1085d0235
+> Okt 19 16:09:07 nobara-X99 kernel: Tainted: [W]=WARN, [O]=OOT_MODULE,
+> [E]=UNSIGNED_MODULE
+> Okt 19 16:09:07 nobara-X99 kernel: Hardware name: MACHINIST /E5-MR9A
+> PRO, BIOS 5.11 08/05/2024
+> Okt 19 16:09:07 nobara-X99 kernel: RIP:
+> 0010:btrfs_commit_transaction+0xf6d/0x1000
+> Okt 19 16:09:07 nobara-X99 kernel: Code: 8b 43 60 f0 48 0f ba a8 88 0a
+> 00 00 02 0f 82 cf 4c 6f ff 8d 45 1e 83 f8 19 77 0f ba 01 00 04 02 48
+> 0f a3
+> c2 0f 82 92 4c 6f ff <0f> 0b e9 8b 4c 6f ff be 03 00 00 00 4c 89 ef e8
+> ef b6 2e 00 e9 44
+> Okt 19 16:09:07 nobara-X99 kernel: RSP: 0018:ffffcea7c8947e28 EFLAGS: 00010296
+> Okt 19 16:09:07 nobara-X99 kernel: RAX: 0000000000000013 RBX:
+> ffff8ca04ec27078 RCX: 0000000000000001
+> Okt 19 16:09:07 nobara-X99 kernel: RDX: 0000000002040001 RSI:
+> 0000000000000000 RDI: ffff8cac607e1bc0
+> Okt 19 16:09:07 nobara-X99 kernel: RBP: 00000000fffffff5 R08:
+> ffff8cafbff4b801 R09: ffffffffb2bd32c0
+> Okt 19 16:09:07 nobara-X99 kernel: R10: ffffcea7c8947bd0 R11:
+> ffffcea7c8947bc8 R12: ffff8ca21087e000
+> Okt 19 16:09:07 nobara-X99 kernel: R13: ffff8ca21087e468 R14:
+> ffff8ca0f9973200 R15: ffff8ca21087e470
+> Okt 19 16:09:07 nobara-X99 kernel: FS:  0000000000000000(0000)
+> GS:ffff8cafccfe0000(0000) knlGS:0000000000000000
+> Okt 19 16:09:07 nobara-X99 kernel: CS:  0010 DS: 0000 ES: 0000 CR0:
+> 0000000080050033
+> Okt 19 16:09:07 nobara-X99 kernel: CR2: 00000edc094d8000 CR3:
+> 0000000fd2a22005 CR4: 00000000003726f0
+> Okt 19 16:09:07 nobara-X99 kernel: Call Trace:
+> Okt 19 16:09:07 nobara-X99 kernel:  <TASK>
+> Okt 19 16:09:07 nobara-X99 kernel:  ? start_transaction+0x337/0x8b0
+> Okt 19 16:09:07 nobara-X99 kernel:  ? schedule_timeout_interruptible+0x10/0x150
+> Okt 19 16:09:07 nobara-X99 kernel:  transaction_kthread+0x152/0x1c0
+> Okt 19 16:09:07 nobara-X99 kernel:  ? __pfx_transaction_kthread+0x10/0x10
+> Okt 19 16:09:07 nobara-X99 kernel:  kthread+0xe4/0x120
+> Okt 19 16:09:07 nobara-X99 kernel:  ? __pfx_kthread+0x10/0x10
+> Okt 19 16:09:07 nobara-X99 kernel:  ret_from_fork+0x292/0x330
+> Okt 19 16:09:07 nobara-X99 kernel:  ? __pfx_kthread+0x10/0x10
+> Okt 19 16:09:07 nobara-X99 kernel:  ret_from_fork_asm+0x1a/0x30
+> Okt 19 16:09:07 nobara-X99 kernel:  </TASK>
+> Okt 19 16:09:07 nobara-X99 kernel: ---[ end trace 0000000000000000 ]---
+> Okt 19 16:09:07 nobara-X99 kernel: BTRFS error (device sda state A):
+> Transaction 860 aborted (error -11)
+> Okt 19 16:09:07 nobara-X99 kernel: BTRFS: error (device sda state A)
+> in btrfs_commit_transaction:2606: errno=-11 unknown
+> Okt 19 16:09:07 nobara-X99 kernel: BTRFS info (device sda state EA):
+> forced readonly
+> Okt 19 16:09:07 nobara-X99 kernel: _btrfs_printk: 50 callbacks suppressed
+> Okt 19 16:09:07 nobara-X99 kernel: BTRFS warning (device sda state
+> EA): Skipping commit of aborted transaction.
+> Okt 19 16:09:07 nobara-X99 kernel: BTRFS: error (device sda state EA)
+> in cleanup_transaction:2077: errno=-11 unknown
+> 
+>> The trace only shows the abort in btrfs_commit_transaction, not where -EAGAIN originated. I'm happy to test patches, enable debug options or try a different kernel if that helps. Claude helped me with this message I'm German  Thanks, Jochen
+> 
 
+Hi Jochen,
 
-在 2026/10/20 08:22, kernel test robot 写道:
-> Hi Qu,
-> 
-> kernel test robot noticed the following build errors:
-> 
-> [auto build test ERROR on btrfs/for-next]
+I made a couple of fixes for -EAGAIN returns on zoned FSes that landed 
+in 7.3. Can you check 7.3? There's two possibilities that might bite you 
+here. One is a hole in the metadata write stream and one is a transient 
+relocation error. Both will bubble up as -EAGAIN without these fixes.
 
-This patchset has one extra dependency, which was just merged hours ago.
-
-Please retry the latest btrfs/for-next branch.
-
-> [also build test ERROR on linus/master v7.3 next-20261016]
-> [cannot apply to kdave/for-next]
-> [If your patch is applied to the wrong git tree, kindly drop us a note.
-> And when submitting patch, we suggest to use '--base' as documented in
-> https://git-scm.com/docs/git-format-patch#_base_tree_information]
-> 
-> url:    https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/btrfs-reduce-the-width-of-num_stripes-and-sub_stripes/20261019-170957
-> base:   https://github.com/btrfs/linux.git for-next
-> patch link:    https://lore.kernel.org/r/48b407f8488edc890710cdf8ebfefe413e7721c2.1792391732.git.wqu%40suse.com
-> patch subject: [PATCH 5/9] btrfs: add a new 'stripe_len' parameter to btrfs_stripe_nr_to_offset()
-> config: m68k-defconfig (https://download.01.org/0day-ci/archive/20261020/202610200549.0ma4is7Y-lkp@intel.com/config)
-> compiler: m68k-linux-gcc (GCC) 16.2.0
-> reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20261020/202610200549.0ma4is7Y-lkp@intel.com/reproduce)
-> 
-> If you fix the issue in a separate patch/commit (i.e. not just a new version of
-> the same patch/commit), kindly add following tags
-> | Reported-by: kernel test robot <lkp@intel.com>
-> | Closes: https://lore.kernel.org/oe-kbuild-all/202610200549.0ma4is7Y-lkp@intel.com/
-> 
-> All errors (new ones prefixed by >>):
-> 
->     In file included from include/linux/error-injection.h:5,
->                      from fs/btrfs/tree-checker.c:20:
->     fs/btrfs/tree-checker.c: In function 'btrfs_check_chunk_valid':
->>> fs/btrfs/tree-checker.c:1061:32: error: too few arguments to function 'btrfs_stripe_nr_to_offset'; expected 2, have 1
->      1061 |         if (unlikely(length >= btrfs_stripe_nr_to_offset(U32_MAX))) {
->           |                                ^~~~~~~~~~~~~~~~~~~~~~~~~
->     include/linux/compiler.h:77:45: note: in definition of macro 'unlikely'
->        77 | # define unlikely(x)    __builtin_expect(!!(x), 0)
->           |                                             ^
->     In file included from fs/btrfs/tree-checker.c:25:
->     fs/btrfs/volumes.h:725:19: note: declared here
->       725 | static inline u64 btrfs_stripe_nr_to_offset(u32 stripe_nr, u32 stripe_len)
->           |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
->     fs/btrfs/tree-checker.c:1064:35: error: too few arguments to function 'btrfs_stripe_nr_to_offset'; expected 2, have 1
->      1064 |                           length, btrfs_stripe_nr_to_offset(U32_MAX));
->           |                                   ^~~~~~~~~~~~~~~~~~~~~~~~~
->     fs/btrfs/volumes.h:725:19: note: declared here
->       725 | static inline u64 btrfs_stripe_nr_to_offset(u32 stripe_nr, u32 stripe_len)
->           |                   ^~~~~~~~~~~~~~~~~~~~~~~~~
-> 
-> 
-> vim +/btrfs_stripe_nr_to_offset +1061 fs/btrfs/tree-checker.c
-> 
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07   958
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   959  /*
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   960   * The common chunk check which could also work on super block sys chunk array.
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   961   *
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   962   * If @leaf is NULL, then @chunk must be an on-stack chunk item.
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   963   * (For superblock sys_chunk array, and fs_info->sectorsize is unreliable)
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   964   *
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20   965   * Return -EUCLEAN if anything is corrupted.
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   966   * Return 0 if everything is OK.
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   967   */
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   968  int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   969  			    const struct extent_buffer *leaf,
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   970  			    const struct btrfs_chunk *chunk, u64 logical,
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   971  			    u32 sectorsize)
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   972  {
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   973  	u64 length;
-> 347fb0cfc9bab51 Su Yue         2021-01-03   974  	u64 chunk_end;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   975  	u64 stripe_len;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   976  	u16 num_stripes;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   977  	u16 sub_stripes;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   978  	u64 type;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   979  	u64 features;
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   980  	u32 chunk_sector_size;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   981  	bool mixed = false;
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07   982  	bool remapped;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08   983  	int raid_index;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08   984  	int nparity;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08   985  	int ncopies;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   986
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   987  	if (leaf) {
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   988  		length = btrfs_chunk_length(leaf, chunk);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   989  		stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   990  		num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   991  		sub_stripes = btrfs_chunk_sub_stripes(leaf, chunk);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20   992  		type = btrfs_chunk_type(leaf, chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   993  		chunk_sector_size = btrfs_chunk_sector_size(leaf, chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   994  	} else {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   995  		length = btrfs_stack_chunk_length(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   996  		stripe_len = btrfs_stack_chunk_stripe_len(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   997  		num_stripes = btrfs_stack_chunk_num_stripes(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   998  		sub_stripes = btrfs_stack_chunk_sub_stripes(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21   999  		type = btrfs_stack_chunk_type(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1000  		chunk_sector_size = btrfs_stack_chunk_sector_size(chunk);
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1001  	}
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1002  	raid_index = btrfs_bg_flags_to_raid_index(type);
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1003  	ncopies = btrfs_raid_array[raid_index].ncopies;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1004  	nparity = btrfs_raid_array[raid_index].nparity;
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07  1005  	remapped = (type & BTRFS_BLOCK_GROUP_REMAPPED);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1006
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07  1007  	if (unlikely(!remapped && !num_stripes)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1008  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1009  			  "invalid chunk num_stripes, have %u", num_stripes);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1010  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1011  	}
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07  1012  	if (unlikely(num_stripes != 0 && num_stripes < ncopies)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1013  		chunk_err(fs_info, leaf, chunk, logical,
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1014  			  "invalid chunk num_stripes < ncopies, have %u < %d",
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1015  			  num_stripes, ncopies);
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1016  		return -EUCLEAN;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1017  	}
-> c7c01a4a2524b3f David Sterba   2020-11-04  1018  	if (unlikely(nparity && num_stripes == nparity)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1019  		chunk_err(fs_info, leaf, chunk, logical,
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1020  			  "invalid chunk num_stripes == nparity, have %u == %d",
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1021  			  num_stripes, nparity);
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1022  		return -EUCLEAN;
-> 85d07fbe09efd1c Daniel Xu      2020-10-08  1023  	}
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1024  	if (unlikely(!IS_ALIGNED(logical, sectorsize))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1025  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1026  		"invalid chunk logical, have %llu should aligned to %u",
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1027  			  logical, sectorsize);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1028  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1029  	}
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1030  	if (unlikely(chunk_sector_size != sectorsize)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1031  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1032  			  "invalid chunk sectorsize, have %u expect %u",
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1033  			  chunk_sector_size, sectorsize);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1034  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1035  	}
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1036  	if (unlikely(!length || !IS_ALIGNED(length, sectorsize))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1037  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1038  			  "invalid chunk length, have %llu", length);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1039  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1040  	}
-> 347fb0cfc9bab51 Su Yue         2021-01-03  1041  	if (unlikely(check_add_overflow(logical, length, &chunk_end))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1042  		chunk_err(fs_info, leaf, chunk, logical,
-> 347fb0cfc9bab51 Su Yue         2021-01-03  1043  "invalid chunk logical start and length, have logical start %llu length %llu",
-> 347fb0cfc9bab51 Su Yue         2021-01-03  1044  			  logical, length);
-> 347fb0cfc9bab51 Su Yue         2021-01-03  1045  		return -EUCLEAN;
-> 347fb0cfc9bab51 Su Yue         2021-01-03  1046  	}
-> c7c01a4a2524b3f David Sterba   2020-11-04  1047  	if (unlikely(!is_power_of_2(stripe_len) || stripe_len != BTRFS_STRIPE_LEN)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1048  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1049  			  "invalid chunk stripe length: %llu",
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1050  			  stripe_len);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1051  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1052  	}
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1053  	/*
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1054  	 * We artificially limit the chunk size, so that the number of stripes
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1055  	 * inside a chunk can be fit into a U32.  The current limit (256G) is
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1056  	 * way too large for real world usage anyway, and it's also much larger
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1057  	 * than our existing limit (10G).
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1058  	 *
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1059  	 * Thus it should be a good way to catch obvious bitflips.
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1060  	 */
-> cb091225a538005 Qu Wenruo      2023-06-22 @1061  	if (unlikely(length >= btrfs_stripe_nr_to_offset(U32_MAX))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1062  		chunk_err(fs_info, leaf, chunk, logical,
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1063  			  "chunk length too large: have %llu limit %llu",
-> cb091225a538005 Qu Wenruo      2023-06-22  1064  			  length, btrfs_stripe_nr_to_offset(U32_MAX));
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1065  		return -EUCLEAN;
-> 6ded22c1bfe6a8a Qu Wenruo      2023-02-17  1066  	}
-> ef6a31d035a1000 Mark Harmstone 2026-01-07  1067  	if (unlikely(type & ~BTRFS_BLOCK_GROUP_VALID)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1068  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1069  			  "unrecognized chunk type: 0x%llx",
-> ef6a31d035a1000 Mark Harmstone 2026-01-07  1070  			  type & ~BTRFS_BLOCK_GROUP_VALID);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1071  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1072  	}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1073
-> c7c01a4a2524b3f David Sterba   2020-11-04  1074  	if (unlikely(!has_single_bit_set(type & BTRFS_BLOCK_GROUP_PROFILE_MASK) &&
-> c7c01a4a2524b3f David Sterba   2020-11-04  1075  		     (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) != 0)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1076  		chunk_err(fs_info, leaf, chunk, logical,
-> 80e46cf22ba0bcb Qu Wenruo      2019-03-13  1077  		"invalid chunk profile flag: 0x%llx, expect 0 or 1 bit set",
-> 80e46cf22ba0bcb Qu Wenruo      2019-03-13  1078  			  type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
-> 80e46cf22ba0bcb Qu Wenruo      2019-03-13  1079  		return -EUCLEAN;
-> 80e46cf22ba0bcb Qu Wenruo      2019-03-13  1080  	}
-> c7c01a4a2524b3f David Sterba   2020-11-04  1081  	if (unlikely((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0)) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1082  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1083  	"missing chunk type flag, have 0x%llx one bit must be set in 0x%llx",
-> f114024376bceb1 Qu Wenruo      2019-03-20  1084  			  type, BTRFS_BLOCK_GROUP_TYPE_MASK);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1085  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1086  	}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1087
-> c7c01a4a2524b3f David Sterba   2020-11-04  1088  	if (unlikely((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
-> c7c01a4a2524b3f David Sterba   2020-11-04  1089  		     (type & (BTRFS_BLOCK_GROUP_METADATA |
-> c7c01a4a2524b3f David Sterba   2020-11-04  1090  			      BTRFS_BLOCK_GROUP_DATA)))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1091  		chunk_err(fs_info, leaf, chunk, logical,
-> f114024376bceb1 Qu Wenruo      2019-03-20  1092  			  "system chunk with data or metadata type: 0x%llx",
-> f114024376bceb1 Qu Wenruo      2019-03-20  1093  			  type);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1094  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1095  	}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1096
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1097  	features = btrfs_super_incompat_flags(fs_info->super_copy);
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1098  	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1099  		mixed = true;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1100
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1101  	if (!mixed) {
-> c7c01a4a2524b3f David Sterba   2020-11-04  1102  		if (unlikely((type & BTRFS_BLOCK_GROUP_METADATA) &&
-> c7c01a4a2524b3f David Sterba   2020-11-04  1103  			     (type & BTRFS_BLOCK_GROUP_DATA))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1104  			chunk_err(fs_info, leaf, chunk, logical,
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1105  			"mixed chunk type in non-mixed mode: 0x%llx", type);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1106  			return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1107  		}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1108  	}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1109
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1110  	if (unlikely((type & BTRFS_BLOCK_GROUP_METADATA_REMAP) &&
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1111  		     !(features & BTRFS_FEATURE_INCOMPAT_REMAP_TREE))) {
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1112  		chunk_err(fs_info, leaf, chunk, logical,
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1113  		"METADATA_REMAP chunk type without REMAP_TREE incompat bit");
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1114  		return -EUCLEAN;
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1115  	}
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1116
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1117  	if (unlikely(remapped &&
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1118  		     !(features & BTRFS_FEATURE_INCOMPAT_REMAP_TREE))) {
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1119  		chunk_err(fs_info, leaf, chunk, logical,
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1120  		"REMAPPED chunk flag without REMAP_TREE incompat bit");
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1121  		return -EUCLEAN;
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1122  	}
-> 18addf9ec82f857 Mark Harmstone 2026-03-04  1123
-> a6e5521ecc5e712 Filipe Manana  2026-09-16  1124  	if (unlikely(!remapped &&
-> c3d6dda60c9da79 Mark Harmstone 2026-01-07  1125  		     !valid_stripe_count(type & BTRFS_BLOCK_GROUP_PROFILE_MASK,
-> a6e5521ecc5e712 Filipe Manana  2026-09-16  1126  					 num_stripes, sub_stripes))) {
-> 2a9bb78cfd367fd Qu Wenruo      2024-12-21  1127  		chunk_err(fs_info, leaf, chunk, logical,
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1128  			"invalid num_stripes:sub_stripes %u:%u for profile %llu",
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1129  			num_stripes, sub_stripes,
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1130  			type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
-> bf871c3b43b1dcc Qu Wenruo      2019-03-20  1131  		return -EUCLEAN;
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1132  	}
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1133
-> 82fc28fbedbb596 Qu Wenruo      2019-03-20  1134  	return 0;
-> fce466eab7ac6ba Qu Wenruo      2018-07-03  1135  }
-> fce466eab7ac6ba Qu Wenruo      2018-07-03  1136
-> 
-> --
-> 0-DAY CI Kernel Test Service
-> https://github.com/intel/lkp-tests/wiki
-
+Thanks a lot,
+	Johannes

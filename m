@@ -1,49 +1,51 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792613829;
-	b=0KjJ9XPqU5tqCBbsogse9Yk6qJiq3/7Y2sprI3kHyaleWOOXklqISrzrRPqqnTe10i54
-	 3yIa6H4a0sR42HMmdb0oNMp+dxa4/WpOXCugrQWF4+lJcT0pJg7jKCyhfOU8sH81aAUgx
-	 GiKhWuj2Z0fhXBXJDz238xDATeFkqDTnKi2Y5eOBcTcj7lqsQDUOKkoJuWtLSPBQfYs1Q
-	 Lm2fm2dFa7T0ZwbsmwMvDR/wZbPkSnntNOcHCIAhDT15BvTYkA/WpghUGV9IG2wYNcM83
-	 9usoTfMN/V+aTRfZJVIaSR+e29QWEp0OStUbf5VbOEBUceMHOfS9TBLOeVhwiKr9s0w==
+	t=1792613851;
+	b=pHZjltbT5X1WDiwPRf4qhwDNd997H057gsXLW9Oxu1dMPlhnvrE6xEDMVoopbb2bFlci
+	 ApM72OwozkJrQ2J6X3hvrOkxeDaiJ8LspOr3czIpqoLkuLF1hKY2TqknPR1V/YUctF4LJ
+	 0XRycjmalouMDydLAmVETNf4RxsTuxq6mLYYa8JW9t7MgFqJoMR3Dgv8dPkMrGNKT/b6P
+	 6x7/3+TXuvrkpfzzDiQQdv8Ds1QSfwyV+d3/FfRcFDEQY0FHBz1OB/OgSaTqrwb1qiRP7
+	 Ik5QIrAw9QuAEHQMDhcLYKAmdyitwUEO1JJnxoZOHS7Wrrk/JuqW/NFqJa+ir/xsOQg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792613829;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	a=rsa-sha256; c=relaxed/relaxed; t=1792613851;
+	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=mbK8+Hsh9iKjGkL+BZFPLP4mHs9bMHPnXdbp59zDKK8=;
-	b=qhhf6ZjGQFixYUX4KxUoRhG72HjegCEc9x87eOriX3gX650164RAZqF3DjMs6Q8qohvQ
-	 EG1CqFKbl5QTjNDq1riaMoa6GizJo1vV4iA8mh/cLgv790rH9vRt0yR34Px2z+Sd7k0N2
-	 Tdyj5Vxwqk2II6Cbhk5xI5r63up3K5K8y/cUaHTtWceMFNcjrntxb0acRSAatBDIZCMoW
-	 mPMyB0s1pBEOoiUsBzvIe6O4O9OlGk30JrABC4Wh1urbKKnkHCHbfhKfUokMnoVZSdnv8
-	 CdNji4fQyGKkab3lc8ROd7uzFP3WTmrjSDOA0YlxsigVBrvjdcAI1RIwuMFdtehQ6xg==
+	bh=zpb1dKklnwN9LyFwkZ3G4CZM/i75l1SEsykH37jekwY=;
+	b=sLuaAb+kZjRydS9m44DQQX2VEguPWdePYgdRWg2rKWFn0TgYZQDiKL7GYgHvPxok8PTZ
+	 EgGyKPZwVjLQU/FGPIjuF9jJAi/V0ooPmtpCNkqCu4tmW4vt0q7sjfO1Kbh+bv4KsSWS0
+	 nps6Ac0r9vpS/RlbbmFo4rK+/rQcgyZES1SNw+2wuWruU8+V9VG03gvVbYg5i8DQco2/F
+	 lrKjT/SyV7BNxINm1TBDM1/1wdVGpCFPB9qN+ZEmgfJSUFjUj3sqyAl0LzUXdsTHxJFE4
+	 ko8Gm7+AKHKYPnuU4TDNy7CxPY732K4jCjhHMQXKesSVqG7L9hX8m5cgVdcEUc+G8ew==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Tux1NynO;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=YfHFDVO8;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBE21606A31E
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 20:17:08 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 919E6606A319;
+	Wed, 21 Oct 2026 20:17:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Tux1NynO
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E09DD1F000C7
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 20:17:07 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=YfHFDVO8
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 447B71F000C1;
+	Wed, 21 Oct 2026 20:17:29 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792613828;
-	bh=mbK8+Hsh9iKjGkL+BZFPLP4mHs9bMHPnXdbp59zDKK8=;
-	h=From:To:Subject:Date;
-	b=Tux1NynOvkuYaZGVPKYqx3ZiC3w++dCuTFHZK6jB4T1MvL1DlObaa7cTlySBw9YwT
-	 jRwR26bIl2xnoWEJ8lyyfgcnnK6w4a4sDuiEvpAdxlH/pTMx3rJydp2sQMPhf8jbIx
-	 f7c2QO3JbqhSSRe1gfMo0DAxH5c0v5EqvNZymTB18JTyPVIh2j6UE5FADAfHFYAGVv
-	 f9GtTOdCjLoOROvFAX6VH8vTeOLE7P8o6mClPNYUxOHf891FBpHbhrtx1QgTMgN9jH
-	 ZgXIsM2LU8P9M9hKnz7FzDm0R8vx6XDbR2Y1cYWjAJRDRyJr+7rcr/3rYv0SHfS8EU
-	 OLA/BAH9QLiXQ==
+	s=k20260515; t=1792613851;
+	bh=zpb1dKklnwN9LyFwkZ3G4CZM/i75l1SEsykH37jekwY=;
+	h=From:To:Cc:Subject:Date;
+	b=YfHFDVO8PT+QZYGtbK1U/Yjod4KR+7sCd9NwQ8Y/pWKUgMSTBnd18E7QvLne0gYiB
+	 RAF/E3c0p0NeFqVqdzSgKuX8D4Q0uNiWJYGlBHMrqvwH8wOSdTttkz4t7BV0CgAJij
+	 EaHDfpaOJFnQgn+duB+ZWl8Qi3ykJXZZch18xD2FqeQOkItbp7ziXEtSpiT8YSvs2u
+	 VlImbvbaCeTY4gvdZLZ7WXLOpnE2IPWiV2FMVyTmWQxTglOQ8+/OOWQNlBvZeavP8P
+	 toQhGEnClHyBfwvL6hpLjnrGe/xQHi6YSX1RyhQQmKp7d7TQA8wayyT42a+Yu2Bi+z
+	 hzHXmDYma4sCw==
 From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: send: fix missing hole punching during incremental send
-Date: Wed, 21 Oct 2026 21:17:04 +0100
-Message-ID: <25a6b104e8af433508c425cd7470426470f811f2.1792613378.git.fdmanana@suse.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org,
+	Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] btrfs: test an incremental send scenario with hole punching
+Date: Wed, 21 Oct 2026 21:17:25 +0100
+Message-ID: <233845be4bd0fd12b4c62b5ca5243ec1ef4d44f8.1792613768.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -58,117 +60,126 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When using the no-holes feature (enabled by default since btrfs-progs
-v5.15) and doing an incremental send, we can miss issuing a hole punching
-command when the following conditions happen:
+Test an incremental send scenario where we punched a hole into a tail
+section of a file extent item that is the last item in a leaf and the
+next leaf in the subvolume tree was not changed (remains shared between
+the parent and send snapshots).
 
-1) A hole is punched in a tail section of a file extent item that happens
-   to be the last item in a leaf (for example the extent covers the file
-   range [1M, 3M) and a hole is punched in the range [2M, 3M)). Between
-   the end of this file extent item's range and the i_size, there are
-   other file extent items;
+This currently fails and is fixed by the following kernel patch:
 
-2) The next leaf was not modified in the send snapshot, remaining shared
-   with the parent snapshot.
+  btrfs: send: fix missing hole punching during incremental send
 
-In this scenario we are unable to detect a hole was punched and never
-issue a hole punch command because with no-holes there we don't have an
-exlicit file extent item to mark a hole.
-
-Fix this by teaching maybe_send_hole() to detect such case.
-A test case for fstests will follow soon.
-
-Reported-by: Tristan Elvers <tristanelvers@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/CAFoLKK+aErV4p6ZJPnVeH5SHQ5++0f=8ZgxPWe-E-CkeKBs8PA@mail.gmail.com/
-Fixes: 16e7549f045d ("Btrfs: incompatible format change to remove hole extents")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 65 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 65 insertions(+)
+ tests/btrfs/362     | 84 +++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/362.out |  7 ++++
+ 2 files changed, 91 insertions(+)
+ create mode 100755 tests/btrfs/362
+ create mode 100644 tests/btrfs/362.out
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index c523bf950c89..3a4d86af9ee2 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -6371,6 +6371,11 @@ static int range_is_hole_in_parent(struct send_ctx *sctx,
- static int maybe_send_hole(struct send_ctx *sctx, struct btrfs_path *path,
- 			   struct btrfs_key *key)
- {
-+	BTRFS_PATH_AUTO_FREE(next_path);
-+	struct btrfs_file_extent_item *ei;
-+	u64 num_bytes;
-+	u64 ram_bytes;
-+	u64 next_offset;
- 	int ret = 0;
- 
- 	if (sctx->cur_ino != key->objectid || !need_send_hole(sctx))
-@@ -6405,6 +6410,66 @@ static int maybe_send_hole(struct send_ctx *sctx, struct btrfs_path *path,
- 			ret = 0;
- 	}
- 	sctx->cur_inode_last_extent = btrfs_file_extent_end(path);
+diff --git a/tests/btrfs/362 b/tests/btrfs/362
+new file mode 100755
+index 00000000..aca56540
+--- /dev/null
++++ b/tests/btrfs/362
+@@ -0,0 +1,84 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 362
++#
++# Test an incremental send scenario where we punched a hole into a tail section
++# of a file extent item that is the last item in a leaf and the next leaf in the
++# subvolume tree was not changed (remains shared between the parent and send
++# snapshots).
++#
++. ./common/preamble
++_begin_fstest auto quick send
 +
-+	/*
-+	 * If we are the last file extent item in a leaf, we may have had a tail
-+	 * section that got a hole punched, and if there is no change in the
-+	 * next leaf, we must find out if we have such a hole and punch it.
-+	 */
-+	if (path->slots[0] != btrfs_header_nritems(path->nodes[0]) - 1)
-+		return ret;
++_cleanup()
++{
++	cd /
++	rm -fr $tmp.*
++	rm -fr $send_files_dir
++}
 +
-+	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			    struct btrfs_file_extent_item);
-+	num_bytes = btrfs_file_extent_num_bytes(path->nodes[0], ei);
-+	ram_bytes = btrfs_file_extent_ram_bytes(path->nodes[0], ei);
-+	if (num_bytes == ram_bytes)
-+		return ret;
++. ./common/filter
 +
-+	next_path = alloc_path_for_send();
-+	if (!next_path)
-+		return -ENOMEM;
++_require_test
++_require_scratch
++_require_btrfs_support_sectorsize 4096
++_require_xfs_io_command "fpunch"
 +
-+	ret = btrfs_search_slot(NULL, sctx->send_root, key, next_path, 0, 0);
-+	if (ret < 0)
-+		return ret;
-+	if (WARN_ON(ret != 0))
-+		return -EUCLEAN;
++_fixed_by_kernel_commit xxxxxxxxxx \
++	"btrfs: send: fix missing hole punching during incremental send"
 +
-+	ret = btrfs_next_leaf(sctx->send_root, next_path);
-+	if (ret < 0) {
-+		return ret;
-+	} else if (ret > 0) {
-+		/*
-+		 * No next leaf, must punch hole to i_size and set the path back
-+		 * to where it was before.
-+		 */
-+		next_offset = sctx->cur_inode_size;
-+	} else {
-+		struct btrfs_key next_key;
++send_files_dir=$TEST_DIR/btrfs-test-$seq
 +
-+		btrfs_item_key_to_cpu(next_path->nodes[0], &next_key,
-+				      next_path->slots[0]);
-+		if (next_key.objectid != key->objectid ||
-+		    next_key.type != BTRFS_EXTENT_DATA_KEY)
-+			next_offset = sctx->cur_inode_size;
-+		else
-+			next_offset = next_key.offset;
-+	}
++rm -fr $send_files_dir
++mkdir $send_files_dir
 +
-+	btrfs_free_path(next_path);
-+	next_path = NULL;
++first_stream="$send_files_dir/1.send"
++second_stream="$send_files_dir/2.send"
 +
-+	ret = range_is_hole_in_parent(sctx, sctx->cur_inode_last_extent, next_offset);
-+	if (ret < 0)
-+		return ret;
-+	else if (ret == 0)
-+		ret = send_hole(sctx, next_offset);
-+	else
-+		ret = 0;
++# We need a very specific leaf layout where we punch a hole in the last file
++# extent item of a leaf and the next leaf was not modified in the send snapshot,
++# so we set a fixed size of 16K.
++_scratch_mkfs -n 16K >> $seqres.full 2>&1 || _fail "first mkfs failed"
++_scratch_mount
 +
-+	sctx->cur_inode_last_extent = next_offset;
++touch $SCRATCH_MNT/foo
++# 205 extents of 64K each with a 64K hole between them.
++for ((i = 0; i < 410; i += 2)); do
++	offset=$((i * 64 * 1024))
++	$XFS_IO_PROG -c "pwrite -b 64K -S 0xab $offset 64K" \
++		$SCRATCH_MNT/foo > /dev/null
++done
 +
- 	return ret;
- }
- 
++_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1
++
++# Punch a hole in the last 16K of the last file extent item of the first leaf,
++# which starts at file offset 12845056, so 12845056 + 64K - 16K = 12894208.
++# This does not cause any change in the second leaf of the fs tree, so it will
++# be shared between the snapshots.
++$XFS_IO_PROG -c "fpunch 12894208 16K" $SCRATCH_MNT/foo
++
++_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2
++
++echo "File digest in the original fs: $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
++
++_btrfs send -f $first_stream $SCRATCH_MNT/snap1
++_btrfs send -f $second_stream -p $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2
++
++# Create a new fs and apply both send streams.
++_scratch_unmount
++_scratch_mkfs >> $seqres.full 2>&1 || _fail "second mkfs failed"
++_scratch_mount
++
++_btrfs receive -f $first_stream $SCRATCH_MNT
++_btrfs receive -f $second_stream $SCRATCH_MNT
++
++echo "File digest in the new fs:      $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
++
++# Check the region we punched a hole is full of zeroes.
++echo "Hole data:"
++od -A d -t x1 -j 12894208 -N $((16 * 1024)) $SCRATCH_MNT/snap2/foo
++
++# success, all done
++_exit 0
+diff --git a/tests/btrfs/362.out b/tests/btrfs/362.out
+new file mode 100644
+index 00000000..789abb53
+--- /dev/null
++++ b/tests/btrfs/362.out
+@@ -0,0 +1,7 @@
++QA output created by 362
++File digest in the original fs: a5a06694d9f7fc3245afb2f391636e44
++File digest in the new fs:      a5a06694d9f7fc3245afb2f391636e44
++Hole data:
++12894208 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++*
++12910592
 -- 
 2.53.0
 

@@ -1,54 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792622450;
-	b=LiozEu2zvBzxz2h5SiRKJ6fGm4USUU0JR32LtczdtOELnphjfYtxFmlXJ/0fYAR3NzPL
-	 WyJyYk887uVJPuGq8QrGszc28nz2Zsc30oz/11kzQDUUIubGv59ePk6d5ST/il8B8pFBm
-	 kV4vOr+y2SeZEKKjdh/xo0ASUj51vABSJG3sAXD81MeR4j25lKhCUhN/3blH/sCXtDDjA
-	 FP7KhUJzO9q8hBzm1RbXU8/+xir+JGZKDdpTMFb4HwY/Fa1zZ025WLqO6BX2oxyXOTeQU
-	 NAWjQt4/V2kUBUwopviKccjTIABDVoXG52AtvGPFsZeSZ/ViGqyHkQ682Q462ZfQikQ==
+	t=1792622953;
+	b=Aoq1zJ7AruvUJ/ssT2PtDuLX3c1J0Y76EOracuNKjMn2DJixWyPLmEknGm3Kba1a+5Uf
+	 mJ4sYeg+bkooxFch8sa680cFAC1kdc5y/D5nz0MQVwHPdQd10X1ZlfjVCXm8dUmQ98JIj
+	 Rtw5cGLbqvczJbqGVcxKgCTBEjZVvzOD+WS4JtjxWFQhDCVbTlx9lsV1waJqlfjClRx/h
+	 ItbFMh/+3MEvdmotuoQ5Z6rrWefeB7Z5Rho7+NylOSk+dR3eGYLCGxllb4+JGrTWgHKNR
+	 T/iYNW0dWJ3P4z4U2MS0dymX6zX3whFaySJ0B0Zk7y+KCcpnsDEyzbwB2ASvafwlJOw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792622450;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=mCIP7CySVhVuwde0EUpBxqJDMwXfCEYhRRKFBJxwSJM=;
-	b=ucTA7opXFYz4e6mAmaA0ZbpfRwVas3e/H+QC//szSfaMPkS9oE7bUiB037/rqDEC+hGj
-	 U5tk/5zIIlfvprI/Jn8/Ul/GuIFutwayATbVIGjXPt4HoNbK5mdU1MDDW9TpdN65ObdHd
-	 MnhEgJhdJ4nbKqNS8rDlhnbPTbd1AGu2tdAZTwIbmjuQC2eqezj4gsVJWeXVSvjWM4dlN
-	 qyBZLERtQrJLz+ahLBexMZP29rzfhVVFPkI2if7RxZksKLMgJFZ7XAa3P6M52k68hvCLk
-	 nUra/sTADI1aoo4jql0e+GWsshMU6qrmNaDvrgjpb8ceaEx5PI1KrWXCXBFmO0JH6iA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792622953;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
+	 X-Rspamd-Queue-Id;
+	bh=Rt+IO2SSqg4UjxudtRnbglAGk3uMDolm7AeTyjKmU38=;
+	b=W4LK6GwGWUa5HA0hvwPiMo/7gPaWRtuWp8r5Z+EcVs8ip1AcQWZ1mGYF7B/RJxTr0l3+
+	 ITgdzMJIC0tk4xO8xPheXubxH3bJ3lw8qqKUUd+orZhRrSXZ0W9IxVUCiatbgUH7uBfJa
+	 YxJIXcMABovwxFUHxZAfGlUhnZb6W6T9h7IgSQE5bsO08mrnpcEiANJ7PSg5HLEr2EuSr
+	 4THEgLANpcO+XTN+NBhlHOVqQ8O9YqA4D+iiTufxvLr1zDguJ3zWl2zAqKBWsze4rDhSb
+	 S7HmdHU5Hxzq7iuBhNAU/Cyzb2cPiBhH7LF1yEQjgcLzntry47tHN+rZx0drT2gm5pw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=AgT9frIC;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hvoZASVn;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=szYDru4Y;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F1BD3606A319
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:40:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D8C4606A31A
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:49:12 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D8C4606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=AgT9frIC
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 847331F000C1
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:40:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792622449;
-	bh=mCIP7CySVhVuwde0EUpBxqJDMwXfCEYhRRKFBJxwSJM=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=AgT9frICUFYxknHpo0YyLC5GH3/hz5dL4BbQQ8edPBsImOF885ayd7ir88xjcIQwg
-	 uj44/dTpaKb1L9zOHL2tWYr5Cb8lKCSflXQUASWP9sNoHGsSodk4PX73nc6MzhM5WU
-	 vPBztHpM2zPz64vOT2cktI5xJOQQtIOaQj55+omIxoPoXOy7agGMsTgtc1Yhp6nTT9
-	 8b/WiqlnL19KbvLU4O7fBsyw9H/W59/9+ZtffC5hAeOamTgykSKx+q3lWqffKdvW4+
-	 3u1/95O1eBvCt8EooTKKyjJNfcdc04QJDY8Q8J17CzNuS2s08ouZ6TZm8k9zrDcJV9
-	 rESUp8SJUOvOg==
-Received: by mail-vk1-f182.google.com with SMTP id 71dfb90a1353d-5eac4855401so614503e0c.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 15:40:49 -0700 (PDT)
-X-Gm-Message-State: AFq9FYIhRe+9uo1WIP0LvdSGcMJ/O3g+WyHyFJLu0hz/MC6ps33217VS
-	YMaKsDgJj8hrnQ22xBlwIXR/DaC4cjL+flOVfkIdAwJDMdNay470fol4Xhp1m2aOJAb6U/R3368
-	k0x01iLpVXJpBgb4ho1e40BoxphCjXqU=
-X-Received: by 2002:a05:6102:2c81:b0:7c3:2401:c4be with SMTP id
- ada2fe7eead31-7cc9263e69dmr1260296137.14.1792622448652; Wed, 21 Oct 2026
- 15:40:48 -0700 (PDT)
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hvoZASVn;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=szYDru4Y
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id DA53F21F5A
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:49:10 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1792622951; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Rt+IO2SSqg4UjxudtRnbglAGk3uMDolm7AeTyjKmU38=;
+	b=hvoZASVnV3MulP1IIhCW1KToFvJxduco+pM50Rv/1QO0EwhcpopTLBfyfWcSFphWTtbGPv
+	wbJeFmyixw6u81EYHF7fQKRkBDQVqBCpdS0xY3O/MG+y8lR3b52hk/pLXjpo/QoiAPv1w8
+	/3b3+AVjq59fpyJJzTVIyJhyViB0Y4A=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=szYDru4Y
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1792622950; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Rt+IO2SSqg4UjxudtRnbglAGk3uMDolm7AeTyjKmU38=;
+	b=szYDru4YP4NNpBjUUKhuEmd2U+oU8JM6pB+S/a2ipw8JY76jCWDqDXRGoCz8ZLqfZ4lgJ5
+	vqOgI+QEyoh71WsygZltn83mdfUFoYGeS6euew45aLDIPu/gtCkvKxC80wgCW652w+jtQy
+	S0Vq0nk6lHdCuFQe8EL4P6Z4w7ApMNQ=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BD9AA134FD
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:49:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id rDjXB2VB2WpmVwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 22:49:09 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: remove BUG*() from raid56.c
+Date: Thu, 22 Oct 2026 09:18:47 +1030
+Message-ID: <9ecefaae0a4bcb001d1fd8ed3c73b3fb2f5a7062.1792622924.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,64 +85,119 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <CAFoLKK+aErV4p6ZJPnVeH5SHQ5++0f=8ZgxPWe-E-CkeKBs8PA@mail.gmail.com>
- <CAL3q7H4JL0pWbGN-sQG7XCXeX60=fmxhSM-c-1xDka0eUbigKg@mail.gmail.com>
- <CAFoLKK+msAgM5tFx3w1n_i6TqHEWoSqULhidsNQA4qncK9weGw@mail.gmail.com>
- <CAL3q7H538OKkxD93rMZYgiwiZ+4VWwaEw4Nf+o1XDT5OYUeEeA@mail.gmail.com>
- <cb95f89af722c5f57e99d4424c8b31a5155fbdc0.camel@scientia.org>
- <CAL3q7H7_uhKEQbdSQb34mgW1r=Gf0L2ko2=+ocpNRDnm72L_ZA@mail.gmail.com> <9a7a569a1dd5fedcc414bd4ddc60c153f23198ec.camel@scientia.org>
-In-Reply-To: <9a7a569a1dd5fedcc414bd4ddc60c153f23198ec.camel@scientia.org>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 21 Oct 2026 23:40:10 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H53ivAa5721LdZL6O4maKOrxaZDMc9iD3zWU0p86XzmWg@mail.gmail.com>
-X-Gm-Features: AclHuK-cNKYeRZ7iNa5ZKolp6fQo7lGTvCrTndlwZr1WADbl3PRUjtWgyTbYkdc
-Message-ID: <CAL3q7H53ivAa5721LdZL6O4maKOrxaZDMc9iD3zWU0p86XzmWg@mail.gmail.com>
-Subject: Re: [BUG] incremental send omits hole after trimming the tail of a
- leaf-last file extent item (receiver keeps stale data)
-To: Christoph Anton Mitterer <calestyo@scientia.org>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -12.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: DA53F21F5A
 
-On Wed, Oct 21, 2026 at 11:32=E2=80=AFPM Christoph Anton Mitterer
-<calestyo@scientia.org> wrote:
->
-> On Wed, 2026-10-21 at 22:49 +0100, Filipe Manana wrote:
-> > It depends on what you mean by data corruption.
-> > For some applications having a missing hole may cause
-> > application-level data corruption or inconsistency.
->
-> Oh? I thought this would be just like a when a sparse file is written
-> inefficiently and consecutive 0x0 are actually written to storage and
-> not punched out.
->
-> So I'd have expected that only very unusual stuff could cause breakage,
-> like when the software explicitly expects the hole at some point (but
-> then doesn't find it) or when the used space on disk is bigger than
-> expected... but not when it simply reads.
->
->
->
-> > Just compare the version in the received snapshot with the one in the
-> > original one - diff, md5sum, etc.
->
-> Would this ever report anything? I mean shouldn't file A with the hole
-> (which is still read as 0x0) give the same than file B without (where
-> the 0x0 are stored on disk)?
+There are several BUG()/BUG_ON() inside raid56.c, which cause
+checkpatch warning if code is touching them. This is especially annoying
+if using b4, with btrfs-workflow git hooks applied, which makes b4 to
+wait for user input but without any output.
 
-Christoph,
+Address them by removing one very impossible BUG(), and using ASSERT() for
+the remaining ones:
 
-If a file range has data instead of a hole, naturally a digest
-calculation (md5sum, etc.) will produce different results between the
-original snapshot and the received snapshot.
-It's not about writing explicit zeroes vs sending a fallocate punch
-hole command; it's about not replacing data with zeroes (be it an
-actual hole or extents written with zeroes).
+- __remove_rbio_from_cache()
+- rbio_is_full()
+- unlock_stripe()
+  Replace the BUG_ON() with ASSERT().
 
-If you read the report and the reproducer, or the fstests case I sent,
-you will see that.
+- finish_parity_scrub()
+  Remove the BUG(), as alloc_rbio() has already properly calculated
+  real_stripes and nr_data using the number of parity.
 
->
->
-> Thanks,
-> Chris.
+  Furthermore, initialize @has_qstripe at the beginning of the function
+  using the bioc->map_type directly.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/raid56.c | 15 ++++-----------
+ 1 file changed, 4 insertions(+), 11 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 080be467c6fc..59aad807f98a 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -510,7 +510,7 @@ static void __remove_rbio_from_cache(struct btrfs_raid_bio *rbio)
+ 			if (!list_empty(&rbio->hash_list)) {
+ 				list_del_init(&rbio->hash_list);
+ 				refcount_dec(&rbio->refs);
+-				BUG_ON(!list_empty(&rbio->plug_list));
++				ASSERT(list_empty(&rbio->plug_list));
+ 			}
+ 		}
+ 	}
+@@ -634,7 +634,7 @@ static int rbio_is_full(struct btrfs_raid_bio *rbio)
+ 	spin_lock(&rbio->bio_list_lock);
+ 	if (size != rbio->nr_data * stripe_len)
+ 		ret = 0;
+-	BUG_ON(size > rbio->nr_data * stripe_len);
++	ASSERT(size <= rbio->nr_data * stripe_len);
+ 	spin_unlock(&rbio->bio_list_lock);
+ 
+ 	return ret;
+@@ -881,7 +881,7 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 		    test_bit(RBIO_CACHE_BIT, &rbio->flags)) {
+ 			keep_cache = true;
+ 			clear_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
+-			BUG_ON(!bio_list_empty(&rbio->bio_list));
++			ASSERT(bio_list_empty(&rbio->bio_list));
+ 			goto done;
+ 		}
+ 
+@@ -2719,7 +2719,7 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 	unsigned long *pbitmap = &rbio->finish_pbitmap;
+ 	int nr_data = rbio->nr_data;
+ 	int sectornr;
+-	bool has_qstripe;
++	const bool has_qstripe = rbio->bioc->map_type & BTRFS_BLOCK_GROUP_RAID6;
+ 	struct page *page;
+ 	phys_addr_t p_paddr = INVALID_PADDR;
+ 	phys_addr_t q_paddr = INVALID_PADDR;
+@@ -2729,13 +2729,6 @@ static int finish_parity_scrub(struct btrfs_raid_bio *rbio)
+ 
+ 	bio_list_init(&bio_list);
+ 
+-	if (rbio->real_stripes - rbio->nr_data == 1)
+-		has_qstripe = false;
+-	else if (rbio->real_stripes - rbio->nr_data == 2)
+-		has_qstripe = true;
+-	else
+-		BUG();
+-
+ 	/*
+ 	 * Replace is running and our P/Q stripe is being replaced, then we
+ 	 * need to duplicate the final write to replace target.
+-- 
+2.56.0
+

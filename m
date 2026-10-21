@@ -1,84 +1,84 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792554018;
-	b=tXNikL7DCw3nfMT+2pB6cmjP4GrXuGMZq5bSRpEtCOCnz5U0NHT213OWsU/ygt965oiP
-	 trzZcc5zF+YHYIyLLHE3+GMS1HJxz0R9kbBCpAw0nYw/dSSW1c+hG2G2lnzBi33l/mVN2
-	 ZDI0f7E5WPHfJ79UKQqx1HZZ5n+AuCXJ1NNjn1mmUQl4G1Ksd2IYNMy5DCtWOQzlzeArD
-	 bemMRAZzxPMPQOm7cgmOOdycem6cxtKlIGy0Z7do5yqGs3laNAnq1s9gXw/9aYTi+tu1l
-	 UUkrL4SZd9rSMEwhhb9VAz6YMhRnwVGR2+eVKkIKfOyGxhX9u0Hu00njgJ9Y3SnbsLg==
+	t=1792554020;
+	b=owEm0a5TuRkCGPcO5MDSrZRCkQBRV4HBNdXN+438XYH1tsFi6ryiNUzhljJdOqiP/MO6
+	 QR/H5sfJBenLp+bKBAXeWKaw/5WO6oqr7BvMfmK3ueCS7b70jXY7M7eIu9SMmpNV1qKke
+	 n/e6QopCppIKcA4qu5F3x3Oxbkqc+CnQd1mNBq4KQGxn7WtV+TZzI5zyLhvA3royMNpXU
+	 yI+xGNkHW/gtrCWdjj0Fd2g97ByU6FNKXI8wZeBm28+w5HzGqsRBUbhyHFat8EQI3Ybx4
+	 kKSfEzu2a4F2lV5i63sYg1JZHaJeO2p0sKmkDAwIgqFiMzr0JTMtrWA6jhAqfD4CSDA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792554018;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792554020;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Server:
-	 X-Rspamd-Queue-Id:X-Rspamd-Action:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Flag:X-Spam-Score;
-	bh=N1nf3ciNN3eIm4lktjs7Oc3MUL3PEcwahc6e56p32K4=;
-	b=P1yYITybRXocarHS0+BeVxozcsVBEW/bTJVCG7j8SVtqCfksEk2dHp56zzWBlcB1Bgzf
-	 3frhXHgtAxMf6Ns8XPeApCWP7SUjXMev8YDpVlYVW4t7WIvUAVmTwqcFTqm2570I6KaEq
-	 oepfNV4NMEgfF5zd2YcKTSjBSetZmlsmQbiKSUzn2rao2lMOnhDignVLG3xKUrFAc7MOP
-	 Z7fllFVAlBJlxqq3cm5eGjvQEKfcIL2rZFdwybspYxILPrj4Gk7qjj5jM3BK6hFS6jT2O
-	 rS2e1l+/v86WQeL6IStxF3x4JnsJGdEoBn1HWzUQrg+PvvwxJcYa8yhtXpePy21GI4g==
+	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Action:
+	 X-Spam-Score:X-Spam-Flag:X-Spamd-Result:X-Spam-Level:
+	 X-Rspamd-Queue-Id:X-Rspamd-Server;
+	bh=5B56IEm0RyDAqZqI0lm78P9BsnkFTwJ3U1Km+jfx6z4=;
+	b=wFSZifkOj9xbM/i6btrbAj9YaCGNKy3PORWb4nt85xuNbGHAt8IK2qsogXlld0LwhTxe
+	 A7Y8TNOS2v5t29SBVNqK7cHqjRxE9q/dOaxY2cnABDuEJfOVFfeqEArMJsWnYRj4AXIpj
+	 0E/gaFEuLnRISMcqCCbBkKqV+p0vir+4avntbIyOvMzhmXIwjZo9Sv2prik0XW3JZgOyH
+	 TKbOeMaL4yEhbUmz/yiNiBjPonfurKAaxohX+n5f1NBeNODV90JMes5PyQlP905EgBCKb
+	 gaw0z8rJ17flmXzMHNkXPG3XJF95txmG9iuC3U0SE36hCzkPD+1JKJIUPO+tpX4G4sA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="S6tzyGa/";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="S6tzyGa/";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=vQLPLJPv;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=vQLPLJPv;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CE506606A32E
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:17 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CE506606A32E
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7801A606A31C
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7801A606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=S6tzyGa/;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=S6tzyGa/
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=vQLPLJPv;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=vQLPLJPv
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 45B561F7E9
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:16 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id D5C401F7F1
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792554016; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792554017; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=N1nf3ciNN3eIm4lktjs7Oc3MUL3PEcwahc6e56p32K4=;
-	b=S6tzyGa/6g2iC/uP9shVMzDHqUK334RlQoXY/NYpapwjiEr1uhO4qU8UbudNDnueCCNkau
-	TdxiSIwy7u2HytVHfOX0VkwSTEtvnE9ue+Z/YNPFtzWlpZEiyE/mduu3JkMZz3fwNTwgpl
-	4Psbi/+L8ElMBZFQa2vux/G+MHhuu1M=
+	bh=5B56IEm0RyDAqZqI0lm78P9BsnkFTwJ3U1Km+jfx6z4=;
+	b=vQLPLJPvKXKulcSq4sFB2bet3E3nP4K5l8T3+wzJhPMWUqDCrPZCSqqwmdfi16ZQJ7dy7v
+	mk2MDIWiSN0k2xtpEejp/3qgYBcRO1kqkgMnPMch6svF+W+diPQTM5cmW6T14IVw1fLBon
+	BQPphUwnsRbZyHPMqqLzn0xUn/2fHz0=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="S6tzyGa/"
+	dkim=pass header.d=suse.com header.s=susede1 header.b=vQLPLJPv
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792554016; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792554017; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=N1nf3ciNN3eIm4lktjs7Oc3MUL3PEcwahc6e56p32K4=;
-	b=S6tzyGa/6g2iC/uP9shVMzDHqUK334RlQoXY/NYpapwjiEr1uhO4qU8UbudNDnueCCNkau
-	TdxiSIwy7u2HytVHfOX0VkwSTEtvnE9ue+Z/YNPFtzWlpZEiyE/mduu3JkMZz3fwNTwgpl
-	4Psbi/+L8ElMBZFQa2vux/G+MHhuu1M=
+	bh=5B56IEm0RyDAqZqI0lm78P9BsnkFTwJ3U1Km+jfx6z4=;
+	b=vQLPLJPvKXKulcSq4sFB2bet3E3nP4K5l8T3+wzJhPMWUqDCrPZCSqqwmdfi16ZQJ7dy7v
+	mk2MDIWiSN0k2xtpEejp/3qgYBcRO1kqkgMnPMch6svF+W+diPQTM5cmW6T14IVw1fLBon
+	BQPphUwnsRbZyHPMqqLzn0xUn/2fHz0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 356D0134A5
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:14 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C6AD8134A5
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:16 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 4EIhJRU02GpeeQAAD6G6ig:T6
+	id 4EIhJRU02GpeeQAAD6G6ig:T7
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:14 +0000
+	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 03:40:16 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/9] btrfs: add a new 'stripe_len' parameter to btrfs_stripe_nr_to_offset()
-Date: Wed, 21 Oct 2026 14:09:39 +1030
-Message-ID: <5c4aca2692c0971f6a28ff25d72ef0e591ecf51f.1792553748.git.wqu@suse.com>
+Subject: [PATCH v2 6/9] btrfs: convert volumes.c and block-group.c to use map->stripe_len
+Date: Wed, 21 Oct 2026 14:09:40 +1030
+Message-ID: <53faf6acf12afafe6479423fd702dcdb75cad0cc.1792553748.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1792553748.git.wqu@suse.com>
 References: <cover.1792553748.git.wqu@suse.com>
@@ -92,10 +92,9 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Queue-Id: 45B561F7E9
 X-Rspamd-Action: no action
-X-Spam-Level: 
+X-Spam-Score: -3.01
+X-Spam-Flag: NO
 X-Spamd-Result: default: False [-3.01 / 50.00];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
@@ -105,375 +104,232 @@ X-Spamd-Result: default: False [-3.01 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	RCPT_COUNT_ONE(0.00)[1];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns,suse.com:email,suse.com:dkim];
-	ARC_NA(0.00)[];
+	URIBL_BLOCKED(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns];
 	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCPT_COUNT_ONE(0.00)[1];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_TLS_ALL(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
 	RCVD_COUNT_TWO(0.00)[2];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
 	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:helo,imap1.dmz-prg2.suse.org:rdns]
-X-Spam-Flag: NO
-X-Spam-Score: -3.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: D5C401F7F1
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 
-That helper is currently using a fixed BTRFS_STRIPE_LEN, change it to
-accept a 'u32 stripe_len'.
+There are still some BTRFS_STRIPE_LEN usage remaining, but they are all
+for chunk allocation.
 
-Also add an ASSERT() to make sure the @stripe_len passed in is power of
-2, and no larger than BTRFS_STRIPE_LEN.
+There is one more refactor for is_same_chunk_map(), as there are more
+members to compare, the parameter list can go longer and longer.
 
-There is a special case where we still pass BTRFS_STRIPE_LEN into
-btrfs_stripe_nr_to_offset(), that's for chunk allocation to determine
-the minimal device extent size.
+Instead of passing a new @stripe_len member, pass extent_buffer and
+btrfs_chunk pointers, and grab the needed member inside that function.
 
-In that case, since our future planned map->stripe_len is always power
-of 2 and no larger than BTRFS_STRIPE_LEN, we are totally fine to use the
-old BTRFS_STRIPE_LEN.
+And doing "if (unlikely()) return false" for each member check.
+
+Although this make is_same_chunk_map() more complex, considering it's
+only called for system chunks, it should not bring too much overhead.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/block-group.c |  3 ++-
- fs/btrfs/scrub.c       | 32 +++++++++++++++++++-------------
- fs/btrfs/volumes.c     | 40 +++++++++++++++++++++++++++-------------
- fs/btrfs/volumes.h     |  5 +++--
- fs/btrfs/zoned.c       |  7 +++++--
- 5 files changed, 56 insertions(+), 31 deletions(-)
+ fs/btrfs/block-group.c |  6 ++---
+ fs/btrfs/volumes.c     | 52 ++++++++++++++++++++++++------------------
+ 2 files changed, 33 insertions(+), 25 deletions(-)
 
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index f2b55ffbdaef..c0d735cee4a8 100644
+index c0d735cee4a8..092cdbedf39f 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
-@@ -2302,7 +2302,8 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+@@ -2297,7 +2297,7 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 		return -EIO;
+ 
+ 	data_stripe_length = map->dev_extent_size;
+-	io_stripe_size = BTRFS_STRIPE_LEN;
++	io_stripe_size = map->stripe_len;
+ 	chunk_start = map->start;
  
  	/* For RAID5/6 adjust to a full IO stripe length */
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
--		io_stripe_size = btrfs_stripe_nr_to_offset(nr_data_stripes(map));
-+		io_stripe_size = btrfs_stripe_nr_to_offset(nr_data_stripes(map),
-+							   map->stripe_len);
+@@ -2322,9 +2322,9 @@ int btrfs_rmap_block(struct btrfs_fs_info *fs_info, u64 chunk_start,
+ 			continue;
  
- 	buf = kzalloc_objs(u64, map->num_stripes, GFP_NOFS);
- 	if (!buf) {
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c3387e109779..98362c91bce4 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1425,7 +1425,8 @@ static int get_raid56_logic_offset(u64 physical, int num,
- 		u32 stripe_index;
- 		u32 rot;
- 
--		*offset = last_offset + btrfs_stripe_nr_to_offset(i);
-+		*offset = last_offset + btrfs_stripe_nr_to_offset(i,
-+							map->stripe_len);
- 
- 		stripe_nr = (u32)(*offset >> map->stripe_shift) / data_stripes;
- 
-@@ -1439,7 +1440,7 @@ static int get_raid56_logic_offset(u64 physical, int num,
- 		if (stripe_index < num)
- 			j++;
- 	}
--	*offset = last_offset + btrfs_stripe_nr_to_offset(j);
-+	*offset = last_offset + btrfs_stripe_nr_to_offset(j, map->stripe_len);
- 	return 1;
- }
- 
-@@ -1924,7 +1925,8 @@ static void submit_initial_group_read(struct scrub_ctx *sctx,
- 	ASSERT(first_slot + nr_stripes <= SCRUB_TOTAL_STRIPES);
- 
- 	scrub_throttle_dev_io(sctx, sctx->stripes[0].dev,
--			      btrfs_stripe_nr_to_offset(nr_stripes));
-+			      btrfs_stripe_nr_to_offset(nr_stripes,
-+						sctx->stripes[0].stripe_len));
- 	blk_start_plug(&plug);
- 	for (int i = 0; i < nr_stripes; i++) {
- 		struct scrub_stripe *stripe = &sctx->stripes[first_slot + i];
-@@ -2102,7 +2104,7 @@ static int scrub_raid56_cached_parity(struct scrub_ctx *sctx,
- 	struct btrfs_raid_bio *rbio;
- 	struct bio bio;
- 	const int data_stripes = nr_data_stripes(map);
--	u64 length = btrfs_stripe_nr_to_offset(data_stripes);
-+	u64 length = btrfs_stripe_nr_to_offset(data_stripes, map->stripe_len);
- 	int ret;
- 
- 	bio_init(&bio, NULL, NULL, 0, REQ_OP_READ);
-@@ -2151,6 +2153,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 	BTRFS_PATH_AUTO_RELEASE(csum_path);
- 	struct scrub_stripe *stripe;
- 	bool all_empty = true;
-+	const u32 stripe_len = map->stripe_len;
- 	const int data_stripes = nr_data_stripes(map);
- 	unsigned long extent_bitmap = 0;
- 	int ret;
-@@ -2191,14 +2194,15 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 			      data_stripes) >> map->stripe_shift;
- 		stripe_index = (i + rot) % map->num_stripes;
- 		physical = map->stripes[stripe_index].physical +
--			   btrfs_stripe_nr_to_offset(rot);
-+			   btrfs_stripe_nr_to_offset(rot, stripe_len);
- 
- 		scrub_reset_stripe(stripe);
- 		set_bit(SCRUB_STRIPE_FLAG_NO_REPORT, &stripe->state);
- 		ret = scrub_find_fill_first_stripe(bg, &extent_path, &csum_path,
- 				map->stripes[stripe_index].dev, physical, 1,
--				full_stripe_start + btrfs_stripe_nr_to_offset(i),
--				map->stripe_len, stripe);
-+				full_stripe_start +
-+				btrfs_stripe_nr_to_offset(i, stripe_len),
-+				stripe_len, stripe);
- 		if (ret < 0)
- 			return ret;
- 		/*
-@@ -2207,7 +2211,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 		 */
- 		if (ret > 0) {
- 			stripe->logical = full_stripe_start +
--					  btrfs_stripe_nr_to_offset(i);
-+					  btrfs_stripe_nr_to_offset(i, stripe_len);
- 			stripe->dev = map->stripes[stripe_index].dev;
- 			stripe->mirror_num = 1;
- 			set_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state);
-@@ -2348,7 +2352,8 @@ static u64 simple_stripe_full_stripe_len(const struct btrfs_chunk_map *map)
- 	ASSERT(map->type & (BTRFS_BLOCK_GROUP_RAID0 |
- 			    BTRFS_BLOCK_GROUP_RAID10));
- 
--	return btrfs_stripe_nr_to_offset(map->num_stripes / map->sub_stripes);
-+	return btrfs_stripe_nr_to_offset(map->num_stripes / map->sub_stripes,
-+					 map->stripe_len);
- }
- 
- /* Get the logical bytenr for the stripe */
-@@ -2364,8 +2369,8 @@ static u64 simple_stripe_get_logical(struct btrfs_chunk_map *map,
- 	 * (stripe_index / sub_stripes) gives how many data stripes we need to
- 	 * skip.
- 	 */
--	return btrfs_stripe_nr_to_offset(stripe_index / map->sub_stripes) +
--	       bg->start;
-+	return btrfs_stripe_nr_to_offset(stripe_index / map->sub_stripes,
-+					 map->stripe_len) + bg->start;
- }
- 
- /* Get the mirror number for the stripe */
-@@ -2504,7 +2509,8 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	}
- 	if (profile & (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10)) {
- 		ret = scrub_simple_stripe(sctx, bg, map, scrub_dev, stripe_index);
--		offset = btrfs_stripe_nr_to_offset(stripe_index / map->sub_stripes);
-+		offset = btrfs_stripe_nr_to_offset(stripe_index / map->sub_stripes,
-+						   stripe_len);
- 		goto out;
- 	}
- 
-@@ -2519,7 +2525,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 
- 	/* Initialize @offset in case we need to go to out: label */
- 	get_raid56_logic_offset(physical, stripe_index, map, &offset, NULL);
--	increment = btrfs_stripe_nr_to_offset(nr_data_stripes(map));
-+	increment = btrfs_stripe_nr_to_offset(nr_data_stripes(map), stripe_len);
- 
- 	/*
- 	 * Due to the rotation, for RAID56 it's better to iterate each stripe
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ff7189ac1c49..6a3ae8a081fe 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5823,7 +5823,8 @@ static void init_alloc_chunk_ctl_policy_regular(
- 	/* We don't want a chunk larger than 10% of writable space */
- 	ctl->max_chunk_size = min(mult_perc(fs_devices->total_rw_bytes, 10),
- 				  ctl->max_chunk_size);
--	ctl->dev_extent_min = btrfs_stripe_nr_to_offset(ctl->dev_stripes);
-+	ctl->dev_extent_min = btrfs_stripe_nr_to_offset(ctl->dev_stripes,
-+							BTRFS_STRIPE_LEN);
- }
- 
- static void init_alloc_chunk_ctl_policy_zoned(
-@@ -6587,7 +6588,8 @@ unsigned long btrfs_full_stripe_len(struct btrfs_fs_info *fs_info,
- 
- 	if (!WARN_ON(IS_ERR(map))) {
- 		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
--			len = btrfs_stripe_nr_to_offset(nr_data_stripes(map));
-+			len = btrfs_stripe_nr_to_offset(nr_data_stripes(map),
-+							map->stripe_len);
- 		btrfs_free_chunk_map(map);
- 	}
- 	return len;
-@@ -6784,6 +6786,7 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
- 	u64 stripe_end_offset;
- 	u64 stripe_offset;
- 	u32 stripe_index;
-+	u32 stripe_len;
- 	u32 factor = 0;
- 	u32 sub_stripes = 0;
- 	u32 stripes_per_dev = 0;
-@@ -6820,6 +6823,7 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
- 		goto out_free_map;
- 	}
- 
-+	stripe_len = map->stripe_len;
- 	offset = logical - map->start;
- 	length = min_t(u64, map->start + map->chunk_len - logical, length);
- 	*length_ret = length;
-@@ -6831,12 +6835,13 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
- 	stripe_nr = offset >> BTRFS_STRIPE_LEN_SHIFT;
- 
- 	/* stripe_offset is the offset of this block in its stripe */
--	stripe_offset = offset - btrfs_stripe_nr_to_offset(stripe_nr);
-+	stripe_offset = offset - btrfs_stripe_nr_to_offset(stripe_nr,
-+							   stripe_len);
- 
- 	stripe_nr_end = round_up(offset + length, BTRFS_STRIPE_LEN) >>
- 			BTRFS_STRIPE_LEN_SHIFT;
- 	stripe_cnt = stripe_nr_end - stripe_nr;
--	stripe_end_offset = btrfs_stripe_nr_to_offset(stripe_nr_end) -
-+	stripe_end_offset = btrfs_stripe_nr_to_offset(stripe_nr_end, stripe_len) -
- 			    (offset + length);
- 	/*
- 	 * after this, stripe_nr is the number of stripes on this
-@@ -6879,12 +6884,14 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
- 	for (i = 0; i < *num_stripes; i++) {
- 		stripes[i].physical =
- 			map->stripes[stripe_index].physical +
--			stripe_offset + btrfs_stripe_nr_to_offset(stripe_nr);
-+			stripe_offset + btrfs_stripe_nr_to_offset(stripe_nr,
-+								  stripe_len);
- 		stripes[i].dev = map->stripes[stripe_index].dev;
+ 		stripe_nr = (physical - map->stripes[i].physical) >>
+-			    BTRFS_STRIPE_LEN_SHIFT;
++			    map->stripe_shift;
+ 		offset = (physical - map->stripes[i].physical) &
+-			 BTRFS_STRIPE_LEN_MASK;
++			 (map->stripe_len - 1);
  
  		if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
- 				 BTRFS_BLOCK_GROUP_RAID10)) {
--			stripes[i].length = btrfs_stripe_nr_to_offset(stripes_per_dev);
-+			stripes[i].length = btrfs_stripe_nr_to_offset(stripes_per_dev,
-+								      stripe_len);
+ 				 BTRFS_BLOCK_GROUP_RAID10))
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6a3ae8a081fe..ce78a9441c64 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6168,8 +6168,8 @@ struct btrfs_chunk_map *btrfs_alloc_chunk_map(int num_stripes, gfp_t gfp)
+ 	RB_CLEAR_NODE(&map->rb_node);
+ 
+ 	/*
+-	 * Initialize the default stripe len, selftests will utilize them
+-	 * without an on-disk chunk item.
++	 * Initialize the default stripe len, selftests and some other call
++	 * sites relies on the sane default value.
+ 	 */
+ 	map->stripe_len = BTRFS_STRIPE_LEN;
+ 	map->stripe_shift = ilog2(map->stripe_len);
+@@ -6210,8 +6210,6 @@ static struct btrfs_block_group *create_chunk(struct btrfs_trans_handle *trans,
+ 	map->on_disk_type = type;
+ 	map->sub_stripes = ctl->sub_stripes;
+ 	map->num_stripes = ctl->num_stripes;
+-	map->stripe_len = BTRFS_STRIPE_LEN;
+-	map->stripe_shift = ilog2(BTRFS_STRIPE_LEN);
+ 	set_real_chunk_type(map);
+ 
+ 	for (int i = 0; i < ctl->ndevs; i++) {
+@@ -6393,8 +6391,8 @@ int btrfs_chunk_alloc_add_chunk_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_chunk_stripe_len(chunk, map->stripe_len);
+ 	btrfs_set_stack_chunk_type(chunk, map->on_disk_type);
+ 	btrfs_set_stack_chunk_num_stripes(chunk, map->num_stripes);
+-	btrfs_set_stack_chunk_io_align(chunk, BTRFS_STRIPE_LEN);
+-	btrfs_set_stack_chunk_io_width(chunk, BTRFS_STRIPE_LEN);
++	btrfs_set_stack_chunk_io_align(chunk, map->stripe_len);
++	btrfs_set_stack_chunk_io_width(chunk, map->stripe_len);
+ 	btrfs_set_stack_chunk_sector_size(chunk, fs_info->sectorsize);
+ 	btrfs_set_stack_chunk_sub_stripes(chunk, map->sub_stripes);
+ 
+@@ -6832,14 +6830,14 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
+ 	 * stripe_nr counts the total number of stripes we have to stride
+ 	 * to get to this block
+ 	 */
+-	stripe_nr = offset >> BTRFS_STRIPE_LEN_SHIFT;
++	stripe_nr = offset >> map->stripe_shift;
+ 
+ 	/* stripe_offset is the offset of this block in its stripe */
+ 	stripe_offset = offset - btrfs_stripe_nr_to_offset(stripe_nr,
+ 							   stripe_len);
+ 
+-	stripe_nr_end = round_up(offset + length, BTRFS_STRIPE_LEN) >>
+-			BTRFS_STRIPE_LEN_SHIFT;
++	stripe_nr_end = round_up(offset + length, stripe_len) >>
++			map->stripe_shift;
+ 	stripe_cnt = stripe_nr_end - stripe_nr;
+ 	stripe_end_offset = btrfs_stripe_nr_to_offset(stripe_nr_end, stripe_len) -
+ 			    (offset + length);
+@@ -6894,7 +6892,7 @@ struct btrfs_discard_stripe *btrfs_map_discard(struct btrfs_fs_info *fs_info,
+ 								      stripe_len);
  
  			if (i / sub_stripes < remaining_stripes)
- 				stripes[i].length += BTRFS_STRIPE_LEN;
-@@ -7022,6 +7029,8 @@ static void handle_ops_on_dev_replace(struct btrfs_io_context *bioc,
- static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, u64 offset,
- 			    struct btrfs_io_geometry *io_geom)
- {
-+	const u32 stripe_len = map->stripe_len;
-+
- 	/*
+-				stripes[i].length += BTRFS_STRIPE_LEN;
++				stripes[i].length += stripe_len;
+ 
+ 			/*
+ 			 * Special for the first stripe and
+@@ -7035,8 +7033,8 @@ static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, u64 offset,
  	 * Stripe_nr is the stripe where this block falls.  stripe_offset is
  	 * the offset of this block in its stripe.
-@@ -7033,7 +7042,8 @@ static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, u64 offset,
+ 	 */
+-	io_geom->stripe_offset = offset & BTRFS_STRIPE_LEN_MASK;
+-	io_geom->stripe_nr = offset >> BTRFS_STRIPE_LEN_SHIFT;
++	io_geom->stripe_offset = offset & (stripe_len - 1);
++	io_geom->stripe_nr = offset >> map->stripe_shift;
+ 	ASSERT(io_geom->stripe_offset < U32_MAX,
+ 	       "stripe_offset=%llu", io_geom->stripe_offset);
  
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 		unsigned long full_stripe_len =
--			btrfs_stripe_nr_to_offset(nr_data_stripes(map));
-+			btrfs_stripe_nr_to_offset(nr_data_stripes(map),
-+						  stripe_len);
- 
- 		/*
- 		 * For full stripe start, we use previously calculated
-@@ -7045,7 +7055,8 @@ static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, u64 offset,
- 		 * not ensured to be power of 2.
- 		 */
- 		io_geom->raid56_full_stripe_start = btrfs_stripe_nr_to_offset(
--			rounddown(io_geom->stripe_nr, nr_data_stripes(map)));
-+			rounddown(io_geom->stripe_nr, nr_data_stripes(map)),
-+			stripe_len);
- 
- 		ASSERT(io_geom->raid56_full_stripe_start + full_stripe_len > offset,
- 		       "raid56_full_stripe_start=%llu full_stripe_len=%lu offset=%llu",
-@@ -7084,7 +7095,8 @@ static int set_io_stripe(struct btrfs_fs_info *fs_info, u64 logical,
- 
- 	dst->physical = map->stripes[io_geom->stripe_index].physical +
- 			io_geom->stripe_offset +
--			btrfs_stripe_nr_to_offset(io_geom->stripe_nr);
-+			btrfs_stripe_nr_to_offset(io_geom->stripe_nr,
-+						  map->stripe_len);
- 	return 0;
+@@ -7077,7 +7075,7 @@ static u64 btrfs_max_io_len(struct btrfs_chunk_map *map, u64 offset,
+ 	 * a single disk).
+ 	 */
+ 	if (map->type & BTRFS_BLOCK_GROUP_STRIPE_MASK)
+-		return BTRFS_STRIPE_LEN - io_geom->stripe_offset;
++		return stripe_len - io_geom->stripe_offset;
+ 	return U64_MAX;
  }
  
-@@ -7207,7 +7219,7 @@ static void map_blocks_raid56_write(struct btrfs_chunk_map *map,
- 	/* Return the length to the full stripe end. */
- 	*length = min(logical + *length,
- 		      io_geom->raid56_full_stripe_start + map->start +
--		      btrfs_stripe_nr_to_offset(data_stripes)) -
-+		      btrfs_stripe_nr_to_offset(data_stripes, map->stripe_len)) -
- 		logical;
- 	io_geom->stripe_index = 0;
- 	io_geom->stripe_offset = 0;
-@@ -7434,7 +7446,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 		 */
- 		bioc->full_stripe_logical = map->start +
- 			btrfs_stripe_nr_to_offset(io_geom.stripe_nr *
--						  nr_data_stripes(map));
-+						  nr_data_stripes(map),
-+						  map->stripe_len);
- 		for (int i = 0; i < io_geom.num_stripes; i++) {
- 			struct btrfs_io_stripe *dst = &bioc->stripes[i];
- 			u32 stripe_index;
-@@ -7444,7 +7457,8 @@ int btrfs_map_block(struct btrfs_fs_info *fs_info, enum btrfs_map_op op,
- 			dst->physical =
- 				map->stripes[stripe_index].physical +
- 				io_geom.stripe_offset +
--				btrfs_stripe_nr_to_offset(io_geom.stripe_nr);
-+				btrfs_stripe_nr_to_offset(io_geom.stripe_nr,
-+							  map->stripe_len);
- 		}
- 	} else {
- 		/*
-@@ -9070,7 +9084,7 @@ static void map_raid56_repair_block(struct btrfs_io_context *bioc,
+@@ -7741,11 +7739,20 @@ static struct btrfs_device *handle_missing_device(struct btrfs_fs_info *fs_info,
+ 	return dev;
+ }
  
- 	for (i = 0; i < data_stripes; i++) {
- 		u64 stripe_start = bioc->full_stripe_logical +
--				   btrfs_stripe_nr_to_offset(i);
-+				   btrfs_stripe_nr_to_offset(i, bioc->stripe_len);
+-static bool is_same_chunk_map(const struct btrfs_chunk_map *map, u64 logical,
+-			      u64 length, u64 type, u16 num_stripes)
++static bool is_same_chunk_map(const struct btrfs_chunk_map *map,
++			      const struct extent_buffer *leaf,
++			      const struct btrfs_chunk *chunk,
++			      u64 logical)
+ {
+-	if (map->start != logical || map->chunk_len != length ||
+-	    map->on_disk_type != type || map->num_stripes != num_stripes)
++	if (unlikely(map->start != logical))
++		return false;
++	if (unlikely(map->chunk_len != btrfs_chunk_length(leaf, chunk)))
++		return false;
++	if (unlikely(map->on_disk_type != btrfs_chunk_type(leaf, chunk)))
++		return false;
++	if (unlikely(map->stripe_len != btrfs_chunk_stripe_len(leaf, chunk)))
++		return false;
++	if (unlikely(map->num_stripes != btrfs_chunk_num_stripes(leaf, chunk)))
+ 		return false;
+ 	return true;
+ }
+@@ -7760,6 +7767,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 	u64 length;
+ 	u64 devid;
+ 	u64 type;
++	u32 stripe_len;
+ 	u8 uuid[BTRFS_UUID_SIZE];
+ 	int index;
+ 	int num_stripes;
+@@ -7770,6 +7778,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 	length = btrfs_chunk_length(leaf, chunk);
+ 	type = btrfs_chunk_type(leaf, chunk);
+ 	index = btrfs_bg_flags_to_raid_index(type);
++	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
+ 	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+ 
+ #if BITS_PER_LONG == 32
+@@ -7783,8 +7792,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 
+ 	/* Already mapped? Check if the existing one matches. */
+ 	if (map) {
+-		if (unlikely(!is_same_chunk_map(map, logical, length,
+-						type, num_stripes))) {
++		if (unlikely(!is_same_chunk_map(map, leaf, chunk, logical))) {
+ 			btrfs_err(fs_info,
+ 		"existing chunk %llu doesn't match the new one at %llu",
+ 				  map->start, logical);
+@@ -7804,7 +7812,7 @@ static int read_one_chunk(struct btrfs_key *key, struct extent_buffer *leaf,
+ 	map->chunk_len = length;
+ 	map->num_stripes = num_stripes;
+ 	map->on_disk_type = type;
+-	map->stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
++	map->stripe_len = stripe_len;
+ 	map->stripe_shift = ilog2(map->stripe_len);
+ 	/*
+ 	 * We can't use the sub_stripes value, as for profiles other than
+@@ -9087,14 +9095,14 @@ static void map_raid56_repair_block(struct btrfs_io_context *bioc,
+ 				   btrfs_stripe_nr_to_offset(i, bioc->stripe_len);
  
  		if (logical >= stripe_start &&
- 		    logical < stripe_start + BTRFS_STRIPE_LEN)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 9356cec00a90..75b1179776c8 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -722,9 +722,10 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
-  * @stripe_nr is u32, with left shift it can overflow u32 for chunks larger
-  * than 4G.  This does the proper type cast to avoid overflow.
-  */
--static inline u64 btrfs_stripe_nr_to_offset(u32 stripe_nr)
-+static inline u64 btrfs_stripe_nr_to_offset(u32 stripe_nr, u32 stripe_len)
- {
--	return (u64)stripe_nr << BTRFS_STRIPE_LEN_SHIFT;
-+	ASSERT(is_power_of_2(stripe_len) && stripe_len <= BTRFS_STRIPE_LEN);
-+	return (u64)stripe_nr << ilog2(stripe_len);
+-		    logical < stripe_start + BTRFS_STRIPE_LEN)
++		    logical < stripe_start + bioc->stripe_len)
+ 			break;
+ 	}
+ 	ASSERT(i < data_stripes, "i=%d data_stripes=%d", i, data_stripes);
+ 	smap->dev = bioc->stripes[i].dev;
+ 	smap->physical = bioc->stripes[i].physical +
+ 			((logical - bioc->full_stripe_logical) &
+-			 BTRFS_STRIPE_LEN_MASK);
++			 (bioc->stripe_len - 1));
  }
  
- void btrfs_get_bioc(struct btrfs_io_context *bioc);
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 1cda88332284..37084c8d8d75 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1630,7 +1630,9 @@ static int btrfs_load_block_group_raid0(struct btrfs_block_group *bg,
- 
- 		if (zone_info[i].alloc_offset == WP_CONVENTIONAL) {
- 			has_conventional = true;
--			zone_info[i].alloc_offset = btrfs_stripe_nr_to_offset(stripe_nr);
-+			zone_info[i].alloc_offset =
-+				btrfs_stripe_nr_to_offset(stripe_nr,
-+							  map->stripe_len);
- 
- 			if (stripe_index > i)
- 				zone_info[i].alloc_offset += BTRFS_STRIPE_LEN;
-@@ -1772,7 +1774,8 @@ static int btrfs_load_block_group_raid10(struct btrfs_block_group *bg,
- 
- 		if (raid0_allocs[idx] == WP_CONVENTIONAL) {
- 			has_conventional = true;
--			raid0_allocs[idx] = btrfs_stripe_nr_to_offset(stripe_nr);
-+			raid0_allocs[idx] = btrfs_stripe_nr_to_offset(stripe_nr,
-+								map->stripe_len);
- 
- 			if (stripe_index > idx)
- 				raid0_allocs[idx] += BTRFS_STRIPE_LEN;
+ /*
 -- 
 2.56.0
 

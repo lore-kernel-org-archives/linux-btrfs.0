@@ -1,88 +1,64 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.48
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792541092;
-	b=dbcmKi+hQ/eyoDOV0RTyB3D0gJD361/D+ln7eYHq+BH9NmC2wnjV3RJsHJtCT9nqpPbz
-	 4xKAzMQoBGypVAQ6BH6HqlcxkOcyasPvt91QXwkyg8SzS3+/pd4SuwP9BLFG8+c1HWgvf
-	 f2kaYHd/Ren6q/ZrdSkxDpeoAWxwRpQR83rNDQjRXYAB+gRM5B+FckJil4hQIZIsCcC3Z
-	 fDg76sxkL4OmXqdBSIj/4I70BAadF1qBBp8YHL3MqPcTwYOtbKwRdWUSDfMvT0cvwMgTI
-	 cDzJTxpBbz3tLtjdabJ/og3uIU9tNqQQAiRYbRKBGSMsvYHg0+FHuDOsQosZ1zLTeyQ==
+	t=1792550194;
+	b=okYG1bDwRgNa3PfdMQ+xO/eZlEe4k9YhfF2EITVe60bInrPcHGLkIKPtc5DNstxFcmJS
+	 NQazeC4p1qsMzaHfadjZQ2B7pVWofuPYdPdKgqYksiow/I0BhOg+kOxWwVXCxSpqvtNrn
+	 7yMJibjyNI0vj0GtwJlVXLRTN466+B8vknFJWFflZ0FSzPQERriVZVgo96P/ubpokcuus
+	 +iujzVX94OsUEOPXhbFwuMoNmDhGb1VtntSwUjiQnPu8HNrudjqmtFXK8wPi9DiLwiGhF
+	 p/VjM9EzlCK/59zVk44Rs8rTSIjNgVICud6zsS4ZBegTY/ibCcJygRtomvPRQzWoIFQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792541092;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:From:Date:Subject:MIME-Version:Content-Type:
-	 Content-Transfer-Encoding:To:Cc;
-	bh=xUa6JaJZNycf/k/4rdNTJ5HfB0iwYIh1C+vAcX8S0EM=;
-	b=puU0IR/6MC06k4nGYfJc1mr6s17SEvm3t5UNNdsSEYlCZC2UtorWC/4XTY0ctHldoxWa
-	 RLiKBmfBDm9CwxLQOztV4Bc8zwyVM+lbdgshY6RJukYCdNIk6Nvn1vqnJB0beeMbaDBEv
-	 28ex5bwyG3rR+KTI08z9v08EXwf/dVPvWFZ92jAIvTAozkk5Zjk1gUQ9BLUcDQROxgVMb
-	 GaiPHFszz5t5gNpWQyFgExFjF5tgCgI85LnJvws1wRMdcaZSwDEdURRY3GHYK1AZdf3hi
-	 RK7B94lzLYe1+MEJ54NdW9p1hA1Uu/4mUeFbOPw/DYirgmE9zkp84qWzYyIBVYlUb5w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792550194;
+	h=Received:DKIM-Signature:Received:Subject:From:In-Reply-To:References:
+	 X-PR-Tracked-List-Id:X-PR-Tracked-Message-Id:X-PR-Tracked-Remote:
+	 X-PR-Tracked-Commit-Id:X-PR-Merge-Tree:X-PR-Merge-Refname:
+	 X-PR-Merge-Commit-Id:Message-Id:Date:To:Cc;
+	bh=9kQEVbMM+w9PSHwOoD/SETY4uOLeqi7Ws2dVE2+1Foc=;
+	b=spjGr/sDLys3ezWRxaxrDsaeRy+hgK9jeLJ5v2UYQVZ10cT+ItWmsJGkbGiW8KsjooPM
+	 qzYRYRLr9I8UwvCTYfAKjnw4wYCSk8Ayn3/cBM7BIZimsEmNBWggf0FbpCczVvM1x4yNK
+	 u0+S1SCPkbgYBRjHRBOSLtn+6aq14TWhEvJfx9waeBJ7+vcCKon4nAi92EwoHLImV8xjO
+	 P5xvahpTNTgfp2hhrG3hZ5Pk7783pH46AbpBJUUVCKA1H3qK2dHsT8kh0GUgQ5Pnu5Cbx
+	 8gVKCTX2EqCkEWTZ4GpfX9n8Rz9EujhFiJe/urVeRQZXaq1lnraBFpJVmo6i+/H27oA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=RWHYEyHj;
-	arc=none smtp.remote-ip=209.85.128.48
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=eVc67wpd;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 687BE606A31E
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2026 00:04:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 687BE606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5BD9E606A31F;
+	Wed, 21 Oct 2026 02:36:34 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=RWHYEyHj
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-4a19cba5c14so993235e9.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2026 17:04:52 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792541091; x=1793145891; darn=vger.kernel.org;
-        h=cc:to:content-transfer-encoding:content-type:mime-version:subject
-         :date:from:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=xUa6JaJZNycf/k/4rdNTJ5HfB0iwYIh1C+vAcX8S0EM=;
-        b=RWHYEyHjGpdFczWWrkavawDH0N4jvigmgtftBFmrbFoGdPLg9RnJqiic+Zc3IXVJEo
-         aV+cznzEXyrevWxUQfucmfl1rIP9JMUdW28xkNkl6I+UgQAFPrIZ6jLNA6U+KW7AqxyD
-         Q5h5Un6iYIpVQ3mlh7V5YTOWHs7sPrf4H5EV+Yi7SRWHiosFuKx0c5oO9oIHNXSIAhfQ
-         1R3bNFrZr1FIPC0FXZ6YYipKirHkBOAkWfJQaWvr9dM/p0eHXou3dmv/bsoSAF9AQRqV
-         xHK4A4bvJJ690hht+LDcYE2D4/cyirjWdwcW/ITRCrQb/PhkOHjU5x+2z3bqncPyineN
-         ZvEQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792541091; x=1793145891;
-        h=cc:to:content-transfer-encoding:content-type:mime-version:subject
-         :date:from:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=xUa6JaJZNycf/k/4rdNTJ5HfB0iwYIh1C+vAcX8S0EM=;
-        b=XhNad9RIc++J6r/RI1h+YQC5LQHzHbAok82pUO5NHznfc6yBVURF+zQTzRxSMSg8zE
-         mbsZBNNnTOqxmugpWhfOV23A4OcbcaO6hQL+WRAe95o8OC174pT5BIlnFCoLOH4Fh63P
-         5lbc4ZzhIDBDioPWh828DY3kBVIPuhw7REdWpJvmNCq4PDkeb0ricdaRR8XIjW70ERgw
-         Lv6d9DQThYy8TVE1a/hcX5EurfVKx2ZRcuSdZpyRbud6TR6uO+3Js9M/z4rVPJxEPK2o
-         v+k1MHQ6VcOjQcOTgF+HpNSm+vTsaKVDQuKPJDRg7/ZUv7xtWk8fhir6F5INOH/+ObIw
-         SGMA==
-X-Forwarded-Encrypted: i=1; AKwUvByC2AdmzGYH14CIvgcib2PkTiWL0ybuH1mfPQBV8d/RK6kESl6ZFOREPQ1JkAjFR+owg/Xre8AND3mhaA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKAsl+Csg3BMkhoAs08ZHl2/Xco1xhLaipr3ilL29Q0ucoOrgh8
-	3z7cNx6645AMP9VVTnA/JlbeZ173C3TrYnNSI4Pln+AzIOroWOpcesNH
-X-Gm-Gg: AYBFou0hEf9SzulTwqbZXkl8/oPSg7MMILy6bBhyqNQP7ElqDgNJfDxuSn6me8W5Wme
-	BAFZVcoVngwKgelsKs3jZMFD+RUy8mB90TUqekppsj7n9QLzSusQpt06gRMFRun2mhzsTjfyOeA
-	jRqkQD5BJ80fBOxOAvkf2m10m6B0lnkfw0WOYAQG+tGpueb7AtDX2v+RAswoQMLPyZQEyADZOYg
-	RRJZxfUODIJFGv4mzaniMzTXKmws7az4qSYOBUUxBxb88MUkiJlgoCQHEWxY27V6MIIu2y5VOlY
-	Z7Un2q9R0Y9PsWSlBZ3bDb/0FHagudUZAepKDrnE6SFaTv20hGmmGcGWPPnfJmqma2YOae2yxA2
-	NaL5/LamwtIoqP8gRwF0NilZ3dCxBLeAeFT1aGdOiZ9Epi/gLoJ/xVGOyegCGsgCD8p6zYayRvb
-	p2PRi1UVUzAWZWuv1aNTyjipEdUvJH2oGbCy0HGgnuhZT5MIZ84Hmos6qKVQwKOkj5UVgrxHvvH
-	3DAQHlW+JC4BjB5zGq9HuuFBP674P/FkZs+N1Z6dmyqZprOWJuD8fcxdjoLUthdgXcrzg==
-X-Received: by 2002:a05:600c:5252:b0:4a1:d52e:c2d9 with SMTP id 5b1f17b1804b1-4a1fdb1c387mr5049285e9.23.1792541090451;
-        Tue, 20 Oct 2026 17:04:50 -0700 (PDT)
-Received: from btrfs-unify.eml ([171.22.87.31])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a1fcd234fasm10213285e9.3.2026.10.20.17.04.47
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 20 Oct 2026 17:04:49 -0700 (PDT)
-Message-ID: <6ad801a1.7e3d83f3.3d770c.7180@mx.google.com>
-From: =?UTF-8?q?Adri=C3=A1n=20Garc=C3=ADa=20Casado?=
- <adriangarciacasado42@gmail.com>
-Date: Wed, 21 Oct 2026 01:35:30 +0200
-Subject: [PATCH] btrfs: unify __printf and __cold annotations on error
- reporting definitions
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=eVc67wpd
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 07D1C1F000C9;
+	Wed, 21 Oct 2026 02:36:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1792550194;
+	bh=9kQEVbMM+w9PSHwOoD/SETY4uOLeqi7Ws2dVE2+1Foc=;
+	h=Subject:From:In-Reply-To:References:Date:To:Cc;
+	b=eVc67wpd/cYe8EkpqpjybX1eq2LeMeMutknAcmkInIQA60DeckWo7h1oi5MkCgQbA
+	 Pl7hUkONv9je4jrLGfGWyosM0u9ZRAD0EP8Lsn0O0tmRR+HMc5nrH6LmXJqdNVx+7C
+	 tI5GXp7hUxI3UFrC3sdGC7ytbwmiQFgnCxICquLb6Wy/h7xrSygHzdqvKDPqj6k4MU
+	 0Efzx8BwlY4pYN4CwVBoWvKBt+6MK8bj210HQFhA28bb8v3GqtWWvNkyygnaUNjpIl
+	 uYsEVFVTvy6LDBQEDfneapYPoIYaZATYDFyD1CenDZhaskA4I+nSjophWymVwPWnZT
+	 ApncdpI1gEFKw==
+Received: from [10.30.226.235] (localhost [IPv6:::1])
+	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id F14DF3809A18;
+	Wed, 21 Oct 2026 02:36:33 +0000 (UTC)
+Subject: Re: [GIT PULL] Btrfs updates for 7.4
+From: pr-tracker-bot@kernel.org
+In-Reply-To: <cover.1792086912.git.dsterba@suse.com>
+References: <cover.1792086912.git.dsterba@suse.com>
+X-PR-Tracked-List-Id: <linux-btrfs.vger.kernel.org>
+X-PR-Tracked-Message-Id: <cover.1792086912.git.dsterba@suse.com>
+X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-tag
+X-PR-Tracked-Commit-Id: 58e844c3ba387ceb0f527a6ba82aa50c81c4d7b7
+X-PR-Merge-Tree: torvalds/linux.git
+X-PR-Merge-Refname: refs/heads/master
+X-PR-Merge-Commit-Id: 1b8fc3d89ee0522f535d3714abb300455ed53a4e
+Message-Id: <179255019241.339009.14717510459865195849.pr-tracker-bot@kernel.org>
+Date: Wed, 21 Oct 2026 02:36:32 +0000
+To: David Sterba <dsterba@suse.com>
+Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,57 +67,16 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-To: David Sterba <dsterba@suse.com>
-Cc: Filipe Manana <fdmanana@suse.com>,
-    Chris Mason <mason@kernel.org>,
-    linux-btrfs@vger.kernel.org,
-    linux-kernel@vger.kernel.org
 
-In fs/btrfs/messages.h, _btrfs_printk(), __btrfs_handle_fs_error(), and
-__btrfs_panic() are all declared with both __printf() and __cold
-attributes.
+The pull request you sent on Thu, 15 Oct 2026 19:57:24 +0200:
 
-However, in fs/btrfs/messages.c, only _btrfs_printk() has both
-__printf(3, 4) and __cold on its definition, while
-__btrfs_handle_fs_error() and __btrfs_panic() only have __cold.
+> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-tag
 
-Add __printf(5, 6) to the definitions of __btrfs_handle_fs_error() and
-__btrfs_panic() in fs/btrfs/messages.c so that all three functions have
-consistent __printf() and __cold annotations on both their declarations
-and definitions.
+has been merged into torvalds/linux.git:
+https://git.kernel.org/torvalds/c/1b8fc3d89ee0522f535d3714abb300455ed53a4e
 
-Suggested-by: David Sterba <dsterba@suse.com>
-Signed-off-by: Adrián García Casado <adriangarciacasado42@gmail.com>
----
- fs/btrfs/messages.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+Thank you!
 
-diff --git a/fs/btrfs/messages.c b/fs/btrfs/messages.c
-index 0704be7be..73acb69c3 100644
---- a/fs/btrfs/messages.c
-+++ b/fs/btrfs/messages.c
-@@ -116,7 +116,7 @@ const char * __attribute_const__ btrfs_decode_error(int error)
-  * Decodes expected errors from the caller and invokes the appropriate error
-  * response.
-  */
--__cold
-+__printf(5, 6) __cold
- void __btrfs_handle_fs_error(struct btrfs_fs_info *fs_info, const char *function,
- 		       unsigned int line, int error, const char *fmt, ...)
- {
-@@ -276,7 +276,7 @@ void __cold btrfs_err_32bit_limit(struct btrfs_fs_info *fs_info)
-  * Decode unexpected, fatal errors from the caller, issue an alert, and either
-  * panic or BUGs, depending on mount options.
-  */
--__cold
-+__printf(5, 6) __cold
- void __btrfs_panic(const struct btrfs_fs_info *fs_info, const char *function,
- 		   unsigned int line, int error, const char *fmt, ...)
- {
 -- 
-2.56.0
-
-
+Deet-doot-dot, I am a bot.
+https://korg.docs.kernel.org/prtracker.html

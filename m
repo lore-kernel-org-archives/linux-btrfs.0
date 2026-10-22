@@ -1,54 +1,54 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792678686;
-	b=gVwe7jj1/9REp1fVFRV+o6XilkpYwkN/CHqtHIML84CkGGVfd05Wg2Kx32E+Jzt/aPv9
-	 d+Wmoa7iZgDguDa0ci1csG9udX9prs9K3T2D5v5nGe2tKeSY/gmrKXif6sJUfyOnxGoya
-	 wlkpxtMcP5N+2Ck/TCZp9zclsixkDKKj5dPExfzWQIBsF+w09a7Vu4SczfH3vlK/9vxBN
-	 rFvSzUo7Dj8DaZbXQ15W7W+0ygaT7o/ZjZpLum2NAzd7gPshYv7aLwuf8t86o+AqrJJM5
-	 gi4rkK7Elwn+TQm4eqOxrSAsxhQ7tVzMhqNbvQIGcyZjDN9/lLqkuaMMeLWkCTlJKjA==
+	t=1792678833;
+	b=NRPLnlm8C0uUu3tJZGOODaJf4/Ohn7p4gzzrn5SqfxV8BU/GYzymJbGUescPHK37qgxy
+	 LS2+3olcyrvfuERlxvOtucpvlSNggoyHmMJmPzev/K532YeNflYxO+PELlFB32dV07uWZ
+	 NnwTUbRohfl0fYIcMx5yoTQoAA3vr39TQ1RtAkUlnxI2MIgS53Lj/+EPs+5MReUcLcb5/
+	 ITQmWctjBeo4Cfm8gGfZOcvNg9QQfN7dEomiXiv8sdBfw1AoH0ZbiP4TdCSnlXti//goE
+	 dYs8mGXnSuwBDx7LyueGgLUXMMtwM1DvT6ovLokfzsjXR/V7E5uVisDPuZ+VJyt+cYA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792678686;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792678833;
 	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
 	 MIME-Version:References:In-Reply-To:From:Date:
 	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
 	 Content-Type:Content-Transfer-Encoding;
-	bh=fI59J8mrTfyc8Sa++1Xq4I9fQ8Eh3+L+3jgAKcFsvuk=;
-	b=sOsVyuMD+FXZU3v/onNJ6jXZkU8NOsyxMfqOGqRgzJ4z/F3RicShls9o7w74ggm16tLr
-	 gEsihaNBfxtotPfawIgrLMTEVG0w2wS0tBx9AokwDC928KYeFmDp4cQTLTvWeGsk1FIgM
-	 8AmkoVipXTJoPRF6tUTqK9VPOPMPIyEaYaffGvpcoz/X3FwkwNOOUoTpumn62T1gwK/D6
-	 bmPLA8y9r2UwGG6F0GHh6SXArPQQXD1W/bFbAvkPmK6d0nL4fgS7VjMNSUFQWT+tzjVCN
-	 je1oueOlLfEelkYA28zF9YHbSOhmAldhHQU4yUKnzLY85PAQEdsgsjHGDtB4LVKVCQQ==
+	bh=TBmuD7g3EKGGtM+6rRq0jSjtoblez/HG0zDyPruzeM8=;
+	b=AMxTUUaAc2epIwRLT5qR2fWNyRw6QSKQ1Y7tlSsQPNjZFjZ6w4iL+5BK5gtUBcSxj2e1
+	 jPQBVZVN97NfSK1YkhGhziZD4EQC/bzWCHv4uHYN8hw7b+7/B+zLGI7rPNvJ4D1+1grQg
+	 0kLiBsQOTxhHaND9YwwWo7sDwWNOdLyhqGeqGtpF+q94Oz86iLtIQSfFHWIl73ztVt44p
+	 TSCBRHsDtmf7BLGZM0OMs2j6aesq5CUilDi3YVyO2jDJdVul0cY8UwATkh58R2Hyt45D/
+	 VsASrAoRM/KrC/mpp1whm74GzBbaqvWwPrMvHkDvMxI8x1o/pByuLqq4bZxCm8CVvxQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=KCUiSmxS;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=oP8CgG87;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD0A9606A31A
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 14:18:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 71553606A31A
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 14:20:33 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=KCUiSmxS
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6ED3D1F000C1
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 14:18:05 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=oP8CgG87
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4F9EF1F000C2
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 14:20:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792678685;
-	bh=fI59J8mrTfyc8Sa++1Xq4I9fQ8Eh3+L+3jgAKcFsvuk=;
+	s=k20260515; t=1792678833;
+	bh=TBmuD7g3EKGGtM+6rRq0jSjtoblez/HG0zDyPruzeM8=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=KCUiSmxSB+x5u46lBbT+ANtehmPFYRzya1p4EpB72Nx2z8eMiz0G4Z8dfDlrhaVTU
-	 glmablp3R076AZi23K10ONgOy7RM3ukUJKhw4hW1BJv5ktKvDcMLo0gU46MILbcK7M
-	 d7THNwclQfertEk9i51jGpzzHUh4RsdSt5eaRqHNI4Hm90SUGaXQvTAte0LHURi6By
-	 g0kUcUgJIIT/4mPz97spzRIPA9NhiL26A4HgK3EcpjfuL3QnE/Xfbp6FTv+aOoro5V
-	 0J0SZXIFDMDC9inpoEjxExSX2rz9Eb9BQOFaTDvG3On9gsFXqBPfQ5EPYWFXIwht6x
-	 WpJUPTdrNz9UQ==
-Received: by mail-ua1-f53.google.com with SMTP id a1e0cc1a2514c-98c7798ce74so505402241.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 07:18:05 -0700 (PDT)
-X-Gm-Message-State: AFq9FYIHu1AJhpYZBbPNc9BTynGr8z3bpza2FoI5hXrTDkmuPpMKM7pm
-	I6s5UnWsBUJcXgCl4kMRSbJa48oSR87WoPupmpi/zEm7vIo5I1v+e0Y7UZo1JIvd6xtk6wmuWNK
-	PEveOm7UVGzDgF+vbei6zJapx0EjivR4=
-X-Received: by 2002:a05:6102:61d6:20b0:7cc:971a:61f4 with SMTP id
- ada2fe7eead31-7cc971a66edmr1095999137.5.1792678684650; Thu, 22 Oct 2026
- 07:18:04 -0700 (PDT)
+	b=oP8CgG87eY3ltnpJxM16C9wyAFeQ6bRUqT6SE4tmyN3F0es3rlPlrOyZRuVwwYKAq
+	 5rqjcFo89i4usI78OeX8Cj3aFZOSpAi73/5OwXAhlS+DgWdTPOy2aRMs0NL6CmU6eL
+	 qC+fzRdqriw3U9PJAwySIiT5i3jojEHXfB3/rMfGlp/gKzcAWOm7Rqz5JeDHyKFV/x
+	 4DsXs24gzMiIV2R5cyeWI0L/KdrffO8Ukz11otN5RyPG8WbI5OekM0qjX5kAHmTAL0
+	 ZerAdkJnXUDP4megM+FH+8cstsSEdK9z2GWR+a8UnaecX+W/l+rQNRa3FxbNquqBcy
+	 YHDZ9idLysiVw==
+Received: by mail-ua1-f45.google.com with SMTP id a1e0cc1a2514c-9908e3cd939so851698241.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2026 07:20:33 -0700 (PDT)
+X-Gm-Message-State: AFq9FYLUYXfEBjFjgkDz4pfITQwCfEIKlNXAb5aUdbg1LaxFjmHr+SPw
+	OCLG/HFprx1UjIeCT+ccVXxHGTSKDW4Tt5lRScLshUBuhDTAVucn9ibOn6TzFSWCgw0zzMxxWHQ
+	veHdXtswGFcU26p8H+F80lOrwUWdMHeg=
+X-Received: by 2002:a05:6102:a1c1:20b0:7cc:c104:6dc6 with SMTP id
+ ada2fe7eead31-7ccc10478ddmr1621137.14.1792678832520; Thu, 22 Oct 2026
+ 07:20:32 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,128 +58,174 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261022090653.2584545-1-johannes.thumshirn@wdc.com>
-In-Reply-To: <20261022090653.2584545-1-johannes.thumshirn@wdc.com>
+References: <20261022090754.2584747-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20261022090754.2584747-1-johannes.thumshirn@wdc.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 22 Oct 2026 15:17:26 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H44AGF5pBJwN3AGtXizBruq_hHngaLn9Lr30eqNZfeqyA@mail.gmail.com>
-X-Gm-Features: AclHuK9Oefj2YfNzrIzMfT0yALZHoSWNH7LgP8aMAaW2C0H0OJ3Pz4WQeGbqFIQ
-Message-ID: <CAL3q7H44AGF5pBJwN3AGtXizBruq_hHngaLn9Lr30eqNZfeqyA@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: force a transaction commit when fsyncing
- stripe-tree extents
+Date: Thu, 22 Oct 2026 15:19:55 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H7a+JykbQKscuWvpsHyXYN8zLAjDbESFrbFDAEOf9RREw@mail.gmail.com>
+X-Gm-Features: AclHuK_9gOKFZnUx9T6iTBhAfKxLJ4I7LOHhJKimlk-VkkUDVH468GR198_c314
+Message-ID: <CAL3q7H7a+JykbQKscuWvpsHyXYN8zLAjDbESFrbFDAEOf9RREw@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: test that fsynced data on a RAID stripe tree
+ survives a power failure
 To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, Damien Le Moal <dlemoal@kernel.org>, 
-	Filipe Manana <fdmanana@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Oct 22, 2026 at 10:07=E2=80=AFAM Johannes Thumshirn
+On Thu, Oct 22, 2026 at 10:15=E2=80=AFAM Johannes Thumshirn
 <johannes.thumshirn@wdc.com> wrote:
 >
-> An extent in a block-group that uses the RAID stripe-tree has its logical
-> to physical mapping stored in that tree, which only becomes persistent
-> when the stripe-tree is written out at transaction commit. But the RAID
-> stripe-tree is not logged in the log tree.
+> A data extent in a block-group that uses the RAID stripe tree has its log=
+ical
+> to physical mapping stored in that tree, which only becomes durable when =
+the
+> stripe tree is written out at transaction commit. The log tree cannot car=
+ry
+> that mapping, so an fsync served by the log logs a file-extent item whose
+> logical range could not be resolved afterwards. Log replay restored the f=
+ile
+> with the correct size, but reading it failed with EIO.
 >
-> A fsync therefore logs a file-extent item whose logical range cannot be
-> resolved after a crash. Replay restores the file-extent item and the
-> file has the correct size, but reading it fails with EIO and nothing is
-> reported.
+> Extents reach the log both from log_one_extent() and from copy_items(), s=
+o
+> cover a fast fsync and a full fsync.
 >
-> Force a full commit when logging such an extent. Extents reach the log
-> both from log_one_extent() and from copy_items(), so check in both.
-> copy_items() skips extents from a past transaction, their mapping is
-> already committed, the same reason their checksums are not logged.
->
-> Fixes: 02c372e1f016 ("btrfs: add support for inserting raid stripe extent=
-s")
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+> Changes to v2:
+> - Also test full fsync
+>
+>
+>  tests/btrfs/363     | 67 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/363.out | 15 ++++++++++
+>  2 files changed, 82 insertions(+)
+>  create mode 100755 tests/btrfs/363
+>  create mode 100644 tests/btrfs/363.out
+>
+> diff --git a/tests/btrfs/363 b/tests/btrfs/363
+> new file mode 100755
+> index 00000000..834f2673
+> --- /dev/null
+> +++ b/tests/btrfs/363
+> @@ -0,0 +1,67 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 Western Digital Corporation.  All Rights Reserved.
+> +#
+> +# FS QA Test 363
+> +#
+> +# Test that data fsynced on a RAID stripe tree file system is still read=
+able
+> +# after a power failure, both for a fast fsync and for a full fsync.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick log volume raid-stripe-tree
+> +
+> +_fixed_by_kernel_commit XXXXXXXXXXXX \
+> +       "btrfs: force a transaction commit when fsyncing stripe-tree exte=
+nts"
+> +
+> +_cleanup()
+> +{
+> +       _cleanup_flakey
+> +       rm -fr $tmp
+> +}
+> +
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +_require_btrfs_mkfs_feature "raid-stripe-tree"
+> +_require_btrfs_fs_feature "raid_stripe_tree"
+> +_require_scratch
+> +_require_dm_target flakey
+> +
+> +# DUP keeps its mapping in the stripe tree, so a single device is enough=
+ and
+> +# dm-flakey can be layered on top of it.
+> +_scratch_mkfs -d dup -m dup -O raid-stripe-tree >> $seqres.full 2>&1 || =
+\
+> +       _fail "mkfs failed"
+> +
+> +_init_flakey
+> +_scratch_mount
+> +
+> +# The first fsync of an inode is always a full fsync. Do one here and th=
+en
+> +# commit the transaction, so that the second fsync of this file below is=
+ a
+> +# fast fsync.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 128K" -c fsync $SCRATCH_MNT/fast | =
+\
+> +       _filter_xfs_io
+> +_scratch_sync
+> +
+> +# Fast fsync: only the extents changed since the last fsync are logged.
+> +$XFS_IO_PROG -c "pwrite -S 0xbb 0 128K" -c fsync $SCRATCH_MNT/fast | \
+> +       _filter_xfs_io
+> +
+> +# Full fsync: this is the first fsync of this inode, so all of its items=
+ are
+> +# logged.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xcc 0 128K" -c fsync $SCRATCH_MNT/full | =
+\
+> +       _filter_xfs_io
+> +
+> +# Simulate a power failure. The log is replayed on the next mount and bo=
+th
+> +# files must still have the data they were fsynced with.
+> +_flakey_drop_and_remount
+> +
+> +echo "fast fsync:"
+> +_hexdump $SCRATCH_MNT/fast
+> +echo "full fsync:"
+> +_hexdump $SCRATCH_MNT/full
+> +
+> +_scratch_unmount
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+
+I think you may be using an old fstests, because nowadays the template
+created by the "./new" script does:
+
+_exit 0
+
+instead of
+
+status=3D0
+exit
+
+Anyway:
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Looks good now, thanks.
+Thanks.
 
-> ---
->
-> Changes to v1:
-> - Don't just fix the fast fsync
->
->  fs/btrfs/tree-log.c | 31 +++++++++++++++++++++++++++++++
->  1 file changed, 31 insertions(+)
->
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 1d9dfb63fc5a..e50f924bca59 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -30,6 +30,8 @@
->  #include "print-tree.h"
->  #include "tree-checker.h"
->  #include "delayed-inode.h"
-> +#include "volumes.h"
-> +#include "raid-stripe-tree.h"
->
->  #define MAX_CONFLICT_INODES 10
->
-> @@ -4741,6 +4743,24 @@ static int log_csums(struct btrfs_trans_handle *tr=
-ans,
->         return ret;
->  }
->
-> +static bool log_extent_needs_stripe_tree(struct btrfs_fs_info *fs_info,
-> +                                        u64 disk_bytenr)
-> +{
-> +       struct btrfs_chunk_map *map __free(btrfs_free_chunk_map) =3D NULL=
-;
-> +
-> +       if (!btrfs_fs_incompat(fs_info, RAID_STRIPE_TREE))
-> +               return false;
-> +
-> +       if (disk_bytenr =3D=3D 0 || disk_bytenr >=3D EXTENT_MAP_LAST_BYTE=
-)
-> +               return false;
-> +
-> +       map =3D btrfs_find_chunk_map(fs_info, disk_bytenr, 1);
-> +       if (!map)
-> +               return false;
-> +
-> +       return btrfs_need_stripe_tree_update(fs_info, map->type);
-> +}
-> +
->  static noinline int copy_items(struct btrfs_trans_handle *trans,
->                                struct btrfs_inode *inode,
->                                struct btrfs_path *dst_path,
-> @@ -4847,6 +4867,14 @@ static noinline int copy_items(struct btrfs_trans_=
-handle *trans,
->                     inode->last_reflink_trans < trans->transid)
->                         continue;
->
-> +               if (!is_old_extent &&
-> +                   btrfs_file_extent_type(src, extent) !=3D BTRFS_FILE_E=
-XTENT_INLINE) {
-> +                       u64 bytenr =3D btrfs_file_extent_disk_bytenr(src,=
- extent);
-> +
-> +                       if (log_extent_needs_stripe_tree(trans->fs_info, =
-bytenr))
-> +                               return BTRFS_LOG_FORCE_COMMIT;
-> +               }
-> +
->                 if (skip_csum)
->                         goto add_to_batch;
->
-> @@ -5124,6 +5152,9 @@ static int log_one_extent(struct btrfs_trans_handle=
- *trans,
->         u64 block_len;
->         int ret;
->
-> +       if (log_extent_needs_stripe_tree(inode->root->fs_info, em->disk_b=
-ytenr))
-> +               return BTRFS_LOG_FORCE_COMMIT;
-> +
->         btrfs_set_stack_file_extent_generation(&fi, trans->transid);
->         if (em->flags & EXTENT_FLAG_PREALLOC)
->                 btrfs_set_stack_file_extent_type(&fi, BTRFS_FILE_EXTENT_P=
-REALLOC);
+> diff --git a/tests/btrfs/363.out b/tests/btrfs/363.out
+> new file mode 100644
+> index 00000000..fcf6e0a7
+> --- /dev/null
+> +++ b/tests/btrfs/363.out
+> @@ -0,0 +1,15 @@
+> +QA output created by 363
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +fast fsync:
+> +000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  >...............=
+.<
+> +*
+> +020000
+> +full fsync:
+> +000000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc  >...............=
+.<
+> +*
+> +020000
 > --
 > 2.56.0
 >

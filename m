@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792787495;
-	b=YvczqVQwMEc9qL1QmvCGhTs9Tc0vEDKLSk/0mOjxHbq5/cvv3mzpoVMgKZKxbFUYIP5L
-	 9VOYrOJ+1y+Rz2x3aTpm0lUFfVjoO7m3SK7RqDZiD0hBRx86YjHS2njsN2Ltt1qj4zIfc
-	 VNEdb9lrLt/HW8/UBd0fkk+NSyt7FHom1xunJ+aJH49eIKqRx+ZJT9QPkQWy7VZG2ylUV
-	 7ptj0zHSyU5iT/Z+sVYey7aUOvLdUxdonbYqm5vFWorFMe8LuIJ+B+Efn1DkleMeIMK8t
-	 JCpt6Gi6kzw9pn4vSjU5kDogljX1hhnfuWbqFnNienqjoXWEsaZ3TXb9k/k0+1rBwQg==
+	t=1792787492;
+	b=HOgzHuun6otN+5r9+UsONSgdQ0vnNzqb5X/r8L+jF5yl5QDbKxQ2D2+JgcfXy7oMzTcY
+	 w060Fy245oRDx9m5cozR8D33IWEes51Di2iMVv53BS3i6qhTFvcoSYpu9830rntLXBWc5
+	 qUT2DxNNY4oMeY39s/aNIVHwHWwWrcBC3fot3ztaYnSl4EsAQuwZy3KX0vPsVAMNHTeJf
+	 +c2AJAAyEUZYjKArG69LoDm2UXqn42sKpX/4pW3vZOJUuzjZXXjc/8jvQwVIhPvtoS5jA
+	 nfpsRzMoCOQp/J4GWVyYVPHoAvnu5IDtUBvB6/NQYx/73Ek88OEkWm/lmoraNDHg2sA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792787495;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792787492;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=0Sod5hk90djXR1PXQs5IJGrO5nDk8350GEU0ykLBVDo=;
-	b=l68wbdoe1ANkGRTRB5kXC4KLMWcOQIUpn9a5IMmsrQZ1VBjzLYwSH1Wl47g7+EQtIE8F
-	 JxX31cIcjL0Qtml1wg/Sa6KGuWF5aSBRIv4EXNFoNSOgxJYD5YTm9S3O/RF0qRV59Jwdi
-	 iu3FUCI3B/hjo97+5pPHrzsQzt0ulx9Y41PgllpcfSnpRY6orrsSUNEF8hxVlqVrH5OGV
-	 SywP8rSyyIorv4HUPnSFZAnVLFrWsuCAv9cdgXHvweqMtoNhKY3/d2WoHzyRQlHwixKh6
-	 VnCocd2kfR15ZBXzVDU9fS4ks2POldfdra0vRMqZm94izivsTXFeZKmyqlq9XVxhOVw==
+	bh=qgZzv4+qirlBrpUvWvXWovN179Bvr7/PUowNAdUnu4A=;
+	b=KUpDyffBCF7EZCw48SnbaUCxKsw3bUHOf1igTYJaleg7TXJBcWJ0owKJwyVSIiiYdfpO
+	 sQjWztXtkmi9ZBOkPokWzy3zJnigM1PhquevWwEOewJ3tiNP3+WsjN0Epss0yRexAkzg/
+	 /9Lw4nSfKYVbiheCjuOFqxb73BeH8rAOkTK9/wvS8nWhnvtKxBmHwQfjRggPb1o7aNCHL
+	 +yDhy0O6lddEu9gYqMpWOSu5/OcYpJmw/DH2md7q+3JFLvg7mXQmsDFIeoDoNkfVhp9y6
+	 s0f60YjQa9y0p0MS7nm24PwhdShJFVQ0w5vMPNr+EUNag91Zg95jNUcYBynSeQBJtHA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Kgie+n8k;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZAlDHhCE;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C0F64606A31A;
-	Fri, 23 Oct 2026 20:31:34 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Kgie+n8k
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A05A71F01829;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3ADAC606A31D;
 	Fri, 23 Oct 2026 20:31:32 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZAlDHhCE
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 551581F01829;
+	Fri, 23 Oct 2026 20:31:30 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792787494;
-	bh=0Sod5hk90djXR1PXQs5IJGrO5nDk8350GEU0ykLBVDo=;
+	s=k20260515; t=1792787492;
+	bh=qgZzv4+qirlBrpUvWvXWovN179Bvr7/PUowNAdUnu4A=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=Kgie+n8kXwJkQXR4abSt3VnU0GV5/J/eO8vQGGqbRL8Bzt9hlYdWtwB9DSJtgWuxX
-	 ug2428QMKrbpNnN+SriFAkY8cR8fta4J6uJxSF+sb174h/eSIFAavd+DnsWN4SZ3Qx
-	 yMp3Tke6SEijfU/6NzTR8SDkn99BppRPU2gmo1LjbfdCegTsOxar9+WkAhMXeyNRKm
-	 u70DXse+0bM6gqFoWILMf65FQvLJIeGJL7jPmrvzF40ecJP1NxblgmKy+7vrotXZnU
-	 kDMO3bt4+KF3oxKPB0lxTX9PKxv8Bh/OuU7YbRftk6OtfR85lQUh/KjV0pP1kT3E1s
-	 Cnd6etfjy+upQ==
+	b=ZAlDHhCE34TnHp0udAEJenbOYEBvZ2Wls5OqqoaGwd3UWo38LvgpOYuvsNp+rNPce
+	 mMMOoy3MfmHEZyqazn9XTFO96D+8HWthY3ZjrPWNC6RDh0cnV/3mSmGU8mdKbZbnRX
+	 jNkl6BtNkfaJka5JL5suTKnaY5WnWCr3oASbOZgdEe1Ipc1uolBfyN5WEvzGzupJ5u
+	 S0cZzuVwvBNeX2u40A7ez/7XGjxajkfTvnEzyQ83ScnzEmrWWw9eJKiKEK/augYodD
+	 NF+wiN8bUWhi/yRyKdOvAksYXyf5gWL3uGJOUCKQ3OuFLiIKh2a7hN2Ikwd+7RA0Er
+	 nEjoEGpNbVOvg==
 From: Zorro Lang <zlang@kernel.org>
 To: fstests@vger.kernel.org
 Cc: linux-xfs@vger.kernel.org,
@@ -46,9 +46,9 @@ Cc: linux-xfs@vger.kernel.org,
 	Anand Suveer Jain <asj@kernel.org>,
 	Chao Yu <chao@kernel.org>,
 	Christoph Hellwig <hch@infradead.org>
-Subject: [PATCH v2 3/6] common: move btrfs-only sysfs policy helpers out of common/sysfs
-Date: Sat, 24 Oct 2026 04:31:11 +0800
-Message-ID: <20261023203114.1655019-4-zlang@kernel.org>
+Subject: [PATCH v2 2/6] fstests: consolidate _require_fs_sysfs and _require_fs_sysfs_dev_attr
+Date: Sat, 24 Oct 2026 04:31:10 +0800
+Message-ID: <20261023203114.1655019-3-zlang@kernel.org>
 X-Mailer: git-send-email 2.55.0
 In-Reply-To: <20261023203114.1655019-1-zlang@kernel.org>
 References: <20261023203114.1655019-1-zlang@kernel.org>
@@ -63,375 +63,179 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The sysfs policy helpers in common/sysfs are only usable for btrfs.
-The only filesystem supported by them is btrfs and the only callers
-are btrfs tests. So rename them with a _btrfs_ infix and move them to
-common/btrfs, then remove empty common/sysfs and its references.
+There is heavy overlap between _require_fs_sysfs and
+_require_fs_sysfs_dev_attr, and their ambiguous names make it
+difficult to tell them apart.
+
+Teach _require_fs_sysfs_dev_attr to default to $TEST_DEV when only
+an attribute is given, remove _has_fs_sysfs and _require_fs_sysfs,
+and update their callers.
 
 Signed-off-by: Zorro Lang <zlang@kernel.org>
 ---
- common/btrfs    | 135 ++++++++++++++++++++++++++++++++++++++++++++
- common/sysfs    | 145 ------------------------------------------------
- tests/btrfs/253 |   3 +-
- tests/btrfs/329 |   5 +-
- tests/btrfs/334 |   3 +-
- 5 files changed, 139 insertions(+), 152 deletions(-)
- delete mode 100644 common/sysfs
+ common/rc       | 44 +++++++++++++++-----------------------------
+ common/xfs      |  4 ++--
+ tests/btrfs/253 |  4 ++--
+ tests/btrfs/285 |  2 +-
+ tests/xfs/006   |  2 +-
+ tests/xfs/177   |  2 +-
+ tests/xfs/264   |  6 +++---
+ 7 files changed, 25 insertions(+), 39 deletions(-)
 
-diff --git a/common/btrfs b/common/btrfs
-index b52b4b11..38658a11 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -1084,3 +1084,138 @@ _require_btrfs_iouring_encoded_read()
- 		_notrun "btrfs io_uring encoded read failed with -EOPNOTSUPP"
- 	fi
+diff --git a/common/rc b/common/rc
+index 43c95930..bcecaaeb 100644
+--- a/common/rc
++++ b/common/rc
+@@ -5545,43 +5545,29 @@ _has_fs_sysfs_dev_attr()
  }
-+
-+# Btrfs-only sysfs policy helpers.  They operate on per-device sysfs
-+# attributes that accept a "policy" value, e.g. read_policy.
-+
-+# Test for the existence of a policy at /sys/fs/$FSTYP/$DEV/$ATTR
-+#
-+# All arguments are necessary, and in this order:
-+#  - dev: device name, e.g. $SCRATCH_DEV
-+#  - attr: path name under /sys/fs/$FSTYP/$dev
-+#  - policy: policy within /sys/fs/$FSTYP/$dev
-+#
-+# Usage example:
-+#   _has_btrfs_sysfs_dev_policy /dev/mapper/scratch-dev read_policy round-robin
-+_has_btrfs_sysfs_dev_policy()
-+{
-+	local dev=$1
-+	local attr=$2
-+	local policy=$3
-+
-+	if [ ! -b "$dev" -o -z "$attr" -o -z "$policy" ]; then
-+		_fail \
-+	     "Usage: _has_btrfs_sysfs_dev_policy <mounted_device> <attr> <policy>"
-+	fi
-+
-+	local dname=$(_fs_sysfs_dname $dev)
-+	if ! test -e /sys/fs/${FSTYP}/${dname}/${attr}; then
-+		return 1
-+	fi
-+
-+	cat /sys/fs/${FSTYP}/${dname}/${attr} | grep -q ${policy}
-+}
-+
-+# Require the existence of a sysfs entry at /sys/fs/$FSTYP/$DEV/$ATTR
-+# and value in it contains $policy
-+# All arguments are necessary, and in this order:
-+#  - dev: device name, e.g. $SCRATCH_DEV
-+#  - attr: path name under /sys/fs/$FSTYP/$dev
-+#  - policy: mentioned in /sys/fs/$FSTYP/$dev/$attr
-+#
-+# Usage example:
-+#   _require_btrfs_sysfs_dev_policy /dev/mapper/scratch-dev read_policy round-robin
-+_require_btrfs_sysfs_dev_policy()
-+{
-+	_has_btrfs_sysfs_dev_policy "$@" && return
-+
-+	local dev=$1
-+	local attr=$2
-+	local policy=$3
-+	local dname=$(_fs_sysfs_dname $dev)
-+
-+	_notrun "This test requires /sys/fs/${FSTYP}/${dname}/${attr} ${policy}"
-+}
-+
-+_set_btrfs_sysfs_dev_policy()
-+{
-+	local dev=$1
-+	local attr=$2
-+	shift
-+	shift
-+	local policy=$@
-+
-+	_set_fs_sysfs_dev_attr $dev $attr ${policy}
-+
-+	_get_fs_sysfs_dev_attr $dev $attr | grep -q "[${policy}]"
-+	if [[ $? != 0 ]]; then
-+		echo "Setting sysfs $attr $policy failed"
-+	fi
-+}
-+
-+_set_btrfs_sysfs_dev_policy_must_fail()
-+{
-+	local dev=$1
-+	local attr=$2
-+	shift
-+	shift
-+	local policy=$@
-+
-+	_set_fs_sysfs_dev_attr $dev $attr ${policy} | _filter_sysfs_error \
-+							   | tee -a $seqres.full
-+}
-+
-+# Verify sysfs attribute rejects invalid input.
-+# Usage syntax:
-+#   _verify_btrfs_sysfs_dev_syntax <$dev> <$attr> <$policy> [$value]
-+# Examples:
-+#   _verify_btrfs_sysfs_dev_syntax $TEST_DEV read_policy pid
-+#   _verify_btrfs_sysfs_dev_syntax $TEST_DEV read_policy round-robin 4k
-+# Note:
-+#  Testcase must include
-+#      . ./common/filter
-+# Prerequisite checks are kept outside this function
-+# to make them clear to the test case, rather than hiding
-+# them deep inside another function.
-+#      _require_btrfs_sysfs_dev_policy $TEST_DEV $attr $policy
-+_verify_btrfs_sysfs_dev_syntax()
-+{
-+	local dev=$1
-+	local attr=$2
-+	local policy=$3
-+	local value=$4
-+
-+	# Test policy specified wrongly. Must fail.
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy $policy'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy t'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "' '"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'${policy} n'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'n ${policy}'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "' ${policy}'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "' ${policy} '"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'${policy} '"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr _${policy}
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr ${policy}_
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr _${policy}_
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr ${policy}:
-+	# Test policy longer than 32 chars fails stable.
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr 'jfdkkkkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffjfjfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
-+
-+	# Test policy specified correctly. Must pass.
-+	_set_btrfs_sysfs_dev_policy $dev $attr $policy
-+
-+	# If the policy has no value return
-+	if [[ -z $value ]]; then
-+		return
-+	fi
-+
-+	# Test value specified wrongly. Must fail.
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy: $value'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy:$value '"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy:$value typo'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy:${value}typo'"
-+	_set_btrfs_sysfs_dev_policy_must_fail $dev $attr "'$policy :$value'"
-+
-+	# Test policy and value all specified correctly. Must pass.
-+	_set_btrfs_sysfs_dev_policy $dev $attr $policy:$value
-+}
-diff --git a/common/sysfs b/common/sysfs
-deleted file mode 100644
-index c36ab426..00000000
---- a/common/sysfs
-+++ /dev/null
-@@ -1,145 +0,0 @@
--##/bin/bash
--# SPDX-License-Identifier: GPL-2.0+
--# Copyright (c) 2025 Oracle.  All Rights Reserved.
--#
--# Common/sysfs file for the sysfs related helper functions.
--
--# Test for the existence of a policy at /sys/fs/$FSTYP/$DEV/$ATTR
--#
+ 
+ # Require the existence of a sysfs entry at /sys/fs/$FSTYP/$DEV/$ATTR
 -# All arguments are necessary, and in this order:
--#  - dev: device name, e.g. $SCRATCH_DEV
--#  - attr: path name under /sys/fs/$FSTYP/$dev
--#  - policy: policy within /sys/fs/$FSTYP/$dev
--#
++#
++# If only one argument is given, it is taken as the attribute under
++# $TEST_DEV.  Otherwise the arguments are, in this order:
+ #  - dev: device name, e.g. $SCRATCH_DEV
+ #  - attr: path name under /sys/fs/$FSTYP/$dev
+ #
 -# Usage example:
--#   _has_fs_sysfs_attr_policy /dev/mapper/scratch-dev read_policy round-robin
--_has_fs_sysfs_attr_policy()
--{
--	local dev=$1
--	local attr=$2
--	local policy=$3
--
--	if [ ! -b "$dev" -o -z "$attr" -o -z "$policy" ]; then
--		_fail \
--	     "Usage: _has_fs_sysfs_attr_policy <mounted_device> <attr> <policy>"
--	fi
--
--	local dname=$(_fs_sysfs_dname $dev)
--	if ! test -e /sys/fs/${FSTYP}/${dname}/${attr}; then
--		return 1
--	fi
--
--	cat /sys/fs/${FSTYP}/${dname}/${attr} | grep -q ${policy}
--}
--
--# Require the existence of a sysfs entry at /sys/fs/$FSTYP/$DEV/$ATTR
--# and value in it contains $policy
--# All arguments are necessary, and in this order:
--#  - dev: device name, e.g. $SCRATCH_DEV
--#  - attr: path name under /sys/fs/$FSTYP/$dev
--#  - policy: mentioned in /sys/fs/$FSTYP/$dev/$attr
--#
--# Usage example:
--#   _require_fs_sysfs_attr_policy /dev/mapper/scratch-dev read_policy round-robin
--_require_fs_sysfs_attr_policy()
--{
--	_has_fs_sysfs_attr_policy "$@" && return
++# Usage examples:
++#   _require_fs_sysfs_dev_attr error/fail_at_unmount
+ #   _require_fs_sysfs_dev_attr /dev/mapper/scratch-dev error/fail_at_unmount
+ _require_fs_sysfs_dev_attr()
+ {
+-	_has_fs_sysfs_dev_attr "$@" && return
 -
 -	local dev=$1
 -	local attr=$2
--	local policy=$3
 -	local dname=$(_fs_sysfs_dname $dev)
 -
--	_notrun "This test requires /sys/fs/${FSTYP}/${dname}/${attr} ${policy}"
+-	_notrun "This test requires /sys/fs/${FSTYP}/${dname}/${attr}"
 -}
--
--_set_sysfs_policy()
++	local dev attr
+ 
+-# Test for the existence of a sysfs entry at /sys/fs/$FSTYP/DEV/$ATTR
+-#
+-# Only one argument is needed:
+-#  - attr: path name under /sys/fs/$FSTYP/DEV
+-#
+-# Usage example:
+-#   _has_fs_sysfs error/fail_at_unmount
+-_has_fs_sysfs()
 -{
--	local dev=$1
--	local attr=$2
--	shift
--	shift
--	local policy=$@
--
--	_set_fs_sysfs_dev_attr $dev $attr ${policy}
--
--	case "$FSTYP" in
--	btrfs)
--		_get_fs_sysfs_dev_attr $dev $attr | grep -q "[${policy}]"
--		if [[ $? != 0 ]]; then
--			echo "Setting sysfs $attr $policy failed"
--		fi
--		;;
--	*)
--		_fail \
--"sysfs syntax verification for '${attr}' '${policy}' for '${FSTYP}' is not implemented"
--		;;
--	esac
+-	_has_fs_sysfs_dev_attr $TEST_DEV "$@"
 -}
 -
--_set_sysfs_policy_must_fail()
+-# Require the existence of a sysfs entry at /sys/fs/$FSTYP/DEV/$ATTR
+-_require_fs_sysfs()
 -{
--	local dev=$1
--	local attr=$2
--	shift
--	shift
--	local policy=$@
+-	_has_fs_sysfs "$@" && return
 -
--	_set_fs_sysfs_dev_attr $dev $attr ${policy} | _filter_sysfs_error \
--							   | tee -a $seqres.full
--}
--
--# Verify sysfs attribute rejects invalid input.
--# Usage syntax:
--#   _verify_sysfs_syntax <$dev> <$attr> <$policy> [$value]
--# Examples:
--#   _verify_sysfs_syntax $TEST_DEV read_policy pid
--#   _verify_sysfs_syntax $TEST_DEV read_policy round-robin 4k
--# Note:
--#  Testcase must include
--#      . ./common/filter
--# Prerequisite checks are kept outside this function
--# to make them clear to the test case, rather than hiding
--# them deep inside another function.
--#      _require_fs_sysfs_attr_policy $TEST_DEV $attr $policy
--_verify_sysfs_syntax()
--{
--	local dev=$1
--	local attr=$2
--	local policy=$3
--	local value=$4
--
--	# Test policy specified wrongly. Must fail.
--	_set_sysfs_policy_must_fail $dev $attr "'$policy $policy'"
--	_set_sysfs_policy_must_fail $dev $attr "'$policy t'"
--	_set_sysfs_policy_must_fail $dev $attr "' '"
--	_set_sysfs_policy_must_fail $dev $attr "'${policy} n'"
--	_set_sysfs_policy_must_fail $dev $attr "'n ${policy}'"
--	_set_sysfs_policy_must_fail $dev $attr "' ${policy}'"
--	_set_sysfs_policy_must_fail $dev $attr "' ${policy} '"
--	_set_sysfs_policy_must_fail $dev $attr "'${policy} '"
--	_set_sysfs_policy_must_fail $dev $attr _${policy}
--	_set_sysfs_policy_must_fail $dev $attr ${policy}_
--	_set_sysfs_policy_must_fail $dev $attr _${policy}_
--	_set_sysfs_policy_must_fail $dev $attr ${policy}:
--	# Test policy longer than 32 chars fails stable.
--	_set_sysfs_policy_must_fail $dev $attr 'jfdkkkkjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjffjfjfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
--
--	# Test policy specified correctly. Must pass.
--	_set_sysfs_policy $dev $attr $policy
--
--	# If the policy has no value return
--	if [[ -z $value ]]; then
--		return
--	fi
--
--	# Test value specified wrongly. Must fail.
--	_set_sysfs_policy_must_fail $dev $attr "'$policy: $value'"
--	_set_sysfs_policy_must_fail $dev $attr "'$policy:$value '"
--	_set_sysfs_policy_must_fail $dev $attr "'$policy:$value typo'"
--	_set_sysfs_policy_must_fail $dev $attr "'$policy:${value}typo'"
--	_set_sysfs_policy_must_fail $dev $attr "'$policy :$value'"
--
--	# Test policy and value all specified correctly. Must pass.
--	_set_sysfs_policy $dev $attr $policy:$value
--}
+-	local attr=$1
+-	local dname=$(_short_dev $TEST_DEV)
++	if [ $# -eq 1 ];then
++		dev=$TEST_DEV
++		attr=$1
++	else
++		dev=$1
++		attr=$2
++	fi
++	_has_fs_sysfs_dev_attr "$dev" "$attr" && return
+ 
++	local dname=$(_fs_sysfs_dname $dev)
+ 	_notrun "This test requires /sys/fs/${FSTYP}/${dname}/${attr}"
+ }
+ 
+diff --git a/common/xfs b/common/xfs
+index 8bd144e3..cb0f6e0b 100644
+--- a/common/xfs
++++ b/common/xfs
+@@ -1226,13 +1226,13 @@ _xfs_prepare_for_eio_shutdown()
+ 	_add_dmesg_filter "Internal error"
+ 
+ 	# Don't retry any writes during the (presumably) post-shutdown unmount
+-	_has_fs_sysfs "$ctlfile" && _set_fs_sysfs_dev_attr $dev "$ctlfile" 1
++	_has_fs_sysfs_dev_attr $dev "$ctlfile" && _set_fs_sysfs_dev_attr $dev "$ctlfile" 1
+ 
+ 	# Disable retry of metadata writes that fail with EIO
+ 	for ctl in max_retries retry_timeout_seconds; do
+ 		ctlfile="error/metadata/EIO/$ctl"
+ 
+-		_has_fs_sysfs "$ctlfile" && _set_fs_sysfs_dev_attr $dev "$ctlfile" 0
++		_has_fs_sysfs_dev_attr $dev "$ctlfile" && _set_fs_sysfs_dev_attr $dev "$ctlfile" 0
+ 	done
+ }
+ 
 diff --git a/tests/btrfs/253 b/tests/btrfs/253
-index 5843643d..27c35dc9 100755
+index d8b58f49..5843643d 100755
 --- a/tests/btrfs/253
 +++ b/tests/btrfs/253
-@@ -25,7 +25,6 @@
- #       value is in megabytes.
- #
- . ./common/preamble
--. ./common/sysfs
- _begin_fstest auto
+@@ -90,8 +90,8 @@ _scratch_mkfs_sized $((10 * 1024 * 1024 * 1024)) >> $seqres.full 2>&1
+ _scratch_mount >> $seqres.full 2>&1
  
- # Parse a size string which is in the format "XX.XXMib".
-@@ -226,7 +225,7 @@ alloc_size "Data" FOURTH_DATA_SIZE_MB
- # Force chunk allocation of system block type must fail.
- #
- echo "Force allocation of system block type must fail."
--_set_sysfs_policy_must_fail ${SCRATCH_BDEV} allocation/system/force_chunk_alloc 1
-+_set_btrfs_sysfs_dev_policy_must_fail ${SCRATCH_BDEV} allocation/system/force_chunk_alloc 1
+ # Check if there is sufficient sysfs support.
+-_require_fs_sysfs allocation/metadata/chunk_size
+-_require_fs_sysfs allocation/metadata/force_chunk_alloc
++_require_fs_sysfs_dev_attr allocation/metadata/chunk_size
++_require_fs_sysfs_dev_attr allocation/metadata/force_chunk_alloc
  
- #
- # Verification of initial allocation.
-diff --git a/tests/btrfs/329 b/tests/btrfs/329
-index f4fadded..9d6ccce9 100755
---- a/tests/btrfs/329
-+++ b/tests/btrfs/329
-@@ -9,13 +9,12 @@
- . ./common/preamble
- _begin_fstest auto quick
+ # Get free space.
+ free_space  FREE_SPACE_MB
+diff --git a/tests/btrfs/285 b/tests/btrfs/285
+index 5ceb69d4..6a1eb236 100755
+--- a/tests/btrfs/285
++++ b/tests/btrfs/285
+@@ -16,7 +16,7 @@ sysfs_size_classes() {
  
--. ./common/sysfs
- . ./common/filter
+ _require_scratch
+ _require_btrfs_fs_sysfs
+-_require_fs_sysfs allocation/data/size_classes
++_require_fs_sysfs_dev_attr allocation/data/size_classes
  
- _require_test
--_require_fs_sysfs_attr_policy $TEST_DEV read_policy round-robin
-+_require_btrfs_sysfs_dev_policy $TEST_DEV read_policy round-robin
+ f="$SCRATCH_MNT/f"
+ small=$((16 * 1024))
+diff --git a/tests/xfs/006 b/tests/xfs/006
+index e03ade1d..443e2db2 100755
+--- a/tests/xfs/006
++++ b/tests/xfs/006
+@@ -25,7 +25,7 @@ _cleanup()
  
--_verify_sysfs_syntax $TEST_DEV read_policy round-robin 4096
-+_verify_btrfs_sysfs_dev_syntax $TEST_DEV read_policy round-robin 4096
+ _require_scratch
+ _require_dm_target error
+-_require_fs_sysfs error/fail_at_unmount
++_require_fs_sysfs_dev_attr error/fail_at_unmount
  
- status=0
- exit
-diff --git a/tests/btrfs/334 b/tests/btrfs/334
-index 08b66dc7..8c0f226e 100755
---- a/tests/btrfs/334
-+++ b/tests/btrfs/334
-@@ -9,13 +9,12 @@
- . ./common/preamble
- _begin_fstest auto quick
+ _scratch_mkfs > $seqres.full 2>&1
+ _dmerror_init
+diff --git a/tests/xfs/177 b/tests/xfs/177
+index 38b68a7d..e9b4661d 100755
+--- a/tests/xfs/177
++++ b/tests/xfs/177
+@@ -48,7 +48,7 @@ _require_scratch
  
--. ./common/sysfs
- . ./common/filter
+ # We require /sys/fs/xfs/$device/stats/stats to monitor per-filesystem inode
+ # cache usage.
+-_require_fs_sysfs stats/stats
++_require_fs_sysfs_dev_attr stats/stats
  
- _require_test
- _require_fs_sysfs_dev_attr $TEST_DEV allocation/data/chunk_size
+ count_xfs_inode_objs() {
+ 	_get_fs_sysfs_dev_attr $SCRATCH_DEV stats/stats | awk '/vnodes/ {print $2}'
+diff --git a/tests/xfs/264 b/tests/xfs/264
+index c8a2f714..0820eecd 100755
+--- a/tests/xfs/264
++++ b/tests/xfs/264
+@@ -24,9 +24,9 @@ _cleanup()
  
--_verify_sysfs_syntax $TEST_DEV allocation/data/chunk_size 256m
-+_verify_btrfs_sysfs_dev_syntax $TEST_DEV allocation/data/chunk_size 256m
+ _require_scratch
+ _require_dm_target error
+-_require_fs_sysfs error/fail_at_unmount
+-_require_fs_sysfs error/metadata/EIO/max_retries
+-_require_fs_sysfs error/metadata/EIO/retry_timeout_seconds
++_require_fs_sysfs_dev_attr error/fail_at_unmount
++_require_fs_sysfs_dev_attr error/metadata/EIO/max_retries
++_require_fs_sysfs_dev_attr error/metadata/EIO/retry_timeout_seconds
  
- status=0
- exit
+ _scratch_mkfs >> $seqres.full 2>&1
+ _dmerror_init
 -- 
 2.55.0
 

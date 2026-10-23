@@ -1,54 +1,54 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792745522;
-	b=139weZ/ZJ+eaYZ29rIb9E+5tRjVb8U26LtM5Fr1ftBNe7X1cdVotyUeaQEeysjbWRJYW
-	 ukN/th/dinoWShaKZSHGbpnfG6GVYYim3XEyr415+4VPJz93cOxkjXIHTxnE2NyQNQ3sD
-	 cz7Z+zIDpmfnZVZmJr11rqrchQ7VtQjSFYhQcKFUwfZi3YI6AhvGej+6odPmqV80mKmBZ
-	 5OwFlLxbJbPm4jh/AHoDwuziPp03mteeWm2aygCdTAQG4oprqZW+EDZkbwAcaQ3UjnMXD
-	 cmFC8NFdvYAQnumaQDY+1DAEn4PdkHRzPDit7Iq0mS3pEBzEGxLTIONtjFRV2FE+IlQ==
+	t=1792745945;
+	b=G8kqOEMT380Dx7fKe6+oT8z0BKLdumD2Jn4cJ8TwJnFNmFazTVSASAiLH2oLNckvOWX9
+	 /A0XzkCXzoACxr8eRq0bcxNrWQir69t2SKsoTi2/3kZG8Ju4beV8n/lidi1Pom+fZvzfc
+	 ZlZtEwYZhZMd4rm6bpHSd+lx34dn7u7pjKF6fpZzZW9d2zPiDnV8C4VDTyj4cyVq62dS4
+	 iNujudSGyAbBmPraQl0rBxPk788Ly6nCcPylnJtGgvLvRC9rXgKLn2jO+AUBbLFKJRKbV
+	 WjQ9pvqOzM2bhVl6rw5k3synzWf4i6Tcr/SzdiQVMuXhp4AwbfV/XyeqvgVCXocuR0g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792745522;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792745945;
 	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
 	 MIME-Version:References:In-Reply-To:From:Date:
 	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
 	 Content-Type:Content-Transfer-Encoding;
-	bh=kjKs2ugBhVLa3Zw0ZNYMnUgCeH2NfBtm3pbvNDkoBG4=;
-	b=NVUcjYJVOeyl/B3uO+0TSfUhG1Am9O5DzPmqqVdLIyJn3ydObVTqH9JIjlWlwYjQ5Tsj
-	 8yILLc7n1on5NQREnArH75ZaroZWreqR+LWGxvIqKvZQZzR1VkgSbCLDIPP1p9+JIji+5
-	 RTARUlwYaB+zdHlI5reyE3qk8MPvmhIBLEYjC2ymcCs7ETj3k4zeEcgcZr9DTnOomHYvj
-	 ts7Tbtrp9Or7LpX5alvy2JP2l9fT9NS+hVpHap2+6Wr28AjdJ2I7QlAb2taDn24wila0V
-	 D7iCHgj2/9tzT/c1gu/K5FXr1qt7LL6DklZEfILRPj37w4EmKHq3R3V4yfyiYDRcu2g==
+	bh=XC4/7BWEVpdI5Gz3sarix5Zb88sOSjizSRYyuOGH0jU=;
+	b=ZPujd8oXNI1JwCjdYOk8xnY+RgJUXxhpx68X+KeVvVDP1qfEfMe3BHCivniSMEJc5XVl
+	 bmzatcbM4J8Bg8YbGgvJrCYG8vVNt4PASf3NKb0EEqKx85/9ae4cA+6lRoSP7G959ClHS
+	 TuDjsbh8atc8Wy8S5WNHVNmdAayOE4BibkEoHLlcMmuLYxfLd02qfdvOl5zCoHEXdVQhw
+	 w3TwjuWDsLQFAP9fheUt8opURI6HaCqcoWA4mwy2IXjOkrJVQvQnGuyLwEUeDdI2C0auI
+	 oTGuVZhjqmP8fplLZpyy+VBtpkLxNJ7esgbPjTG0hfL4CQIj3WAcD1vfKIOUDoZEgqw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hWDxxEas;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=JXTyo27C;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 76CA3606A31A
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 08:52:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E1C7606A31B
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 08:59:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hWDxxEas
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 54C281F031E6
-	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 08:52:02 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=JXTyo27C
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E85F41F031E1
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 08:59:04 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792745522;
-	bh=kjKs2ugBhVLa3Zw0ZNYMnUgCeH2NfBtm3pbvNDkoBG4=;
+	s=k20260515; t=1792745944;
+	bh=XC4/7BWEVpdI5Gz3sarix5Zb88sOSjizSRYyuOGH0jU=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=hWDxxEasAHboDOK7VeYbudXwnpU8/AT0yseoq6EN1hI7i7Ogw2KAL46dybQggZw9+
-	 lC9nRux59GS+wyMYr4L05SASfES1odpV02/xPWJDx+E8BmL+gibIOrsaZ/Xf9arSXN
-	 7IKTqZZnACEMQat5+DnbnWglJWEgrIXb49l7K462cnuEetriMRUKGMIjwdRo/tpyJI
-	 1NMomyv0HKm34LupgjkU+JwlCOoeDAz6K9KtO8hDy79pYu+4+gXDar1GMLdk9/Z9OH
-	 WtD8CQGTiHhuirXUYsssIJBkvxhvXqeKYoBso3jWIKfNtLFu1FuN/21srN/s7geU7J
-	 oJB6c9Qh2xTSw==
-Received: by mail-vs1-f42.google.com with SMTP id ada2fe7eead31-7cb6dc850c7so216909137.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 01:52:02 -0700 (PDT)
-X-Gm-Message-State: AFq9FYIs5sdFhJ9Uvd0nVRPpDtQWaUqpjin9hehQEqu+yHDlnizrk0r8
-	vs+owd214eRKS/AbCSJX1nh/CItTjbjPmYa2NdXg/8szBe3gj3YF7LgKX6BOcyVFEKn1fR2bsVX
-	HqJMSAr83AT+3p7UOImFlF5uL2jZxtgk=
-X-Received: by 2002:a05:6102:442b:b0:7c1:75c5:c4c with SMTP id
- ada2fe7eead31-7ccc33558f2mr628956137.25.1792745521468; Fri, 23 Oct 2026
- 01:52:01 -0700 (PDT)
+	b=JXTyo27CdLLPCOPCTlFqiMm9elmB1Y2vSNf+9CShKCG+y/8Cl4ZumbFOFt6ZrD3QY
+	 2/hbn/hTbGga0xnIXb+WAv/LtNwk9aAME1883GS85pM/alThd4oBGEY2pdneDHrgBB
+	 icsv6st0DxVyhbH22ln+n51F2RwyJMJVKaG/rKE4yn86GDyONJyH6v0icYrZORSIHQ
+	 RCY0iJ9rfy643zAnU2UWEcQ6nc7R3v1Pt2j2FkYgk7lSVwP3ttam5pN5trIT4+F6qp
+	 8jfEatzSEmp+C/XCe/O5Nh0P7HPckGJOPoiLFymF5IXp2PUMeakIaSyCyekX78L9io
+	 74k7v4gjFz3Rg==
+Received: by mail-ua1-f43.google.com with SMTP id a1e0cc1a2514c-980c4f5c921so279913241.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2026 01:59:04 -0700 (PDT)
+X-Gm-Message-State: AFq9FYJw8cIaV4tQ3B987jaDGkFlqPxsFieM/Q4kdWYTa7lDYkknrDqp
+	sh/gBKocVWWuMSh+Fij36M1BVb/IlDOldjiSDjIOnWd27VLbkc2APA8oEMh/9BUU8msgJRa0Qdz
+	ybQkYa7KetXyuOyTHmaejI8KzOsMztUc=
+X-Received: by 2002:a05:6102:d92:b0:7cc:23e7:e742 with SMTP id
+ ada2fe7eead31-7ccc32777e9mr597701137.21.1792745944081; Fri, 23 Oct 2026
+ 01:59:04 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,177 +58,182 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <25a6b104e8af433508c425cd7470426470f811f2.1792613378.git.fdmanana@suse.com>
- <087634ad0970d81654b2f1cc72cd35bbde47df97.1792618636.git.fdmanana@suse.com> <31e4e491-c331-43fa-bbf5-7459860834de@gmx.com>
-In-Reply-To: <31e4e491-c331-43fa-bbf5-7459860834de@gmx.com>
+References: <20261022090754.2584747-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20261022090754.2584747-1-johannes.thumshirn@wdc.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 23 Oct 2026 09:51:23 +0100
-X-Gmail-Original-Message-ID: <CAL3q7H6r_2REGMQvCdO+O7L6aPus=FsmfdRV3Pzh1rrAB+PF1A@mail.gmail.com>
-X-Gm-Features: AclHuK_8H9JZYFnpgbmf1VYD1bjTjLpGOvwNU7n-FnL_VqQzQb-B0EXL7ffJUI0
-Message-ID: <CAL3q7H6r_2REGMQvCdO+O7L6aPus=FsmfdRV3Pzh1rrAB+PF1A@mail.gmail.com>
-Subject: Re: [PATCH v2] btrfs: send: fix missing hole punching during
- incremental send
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
+Date: Fri, 23 Oct 2026 09:58:27 +0100
+X-Gmail-Original-Message-ID: <CAL3q7H5sKk3+P=AUf1OQ8mgD3Sb6hnDiuhgBMmovo-Wc1Ub99A@mail.gmail.com>
+X-Gm-Features: AclHuK-NG4ZMe9pfrcpZvYuait6K4jlxe2DSDNlZHtrv8iEnsWP4X38s5zFHxHA
+Message-ID: <CAL3q7H5sKk3+P=AUf1OQ8mgD3Sb6hnDiuhgBMmovo-Wc1Ub99A@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: test that fsynced data on a RAID stripe tree
+ survives a power failure
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Oct 23, 2026 at 7:39=E2=80=AFAM Qu Wenruo <quwenruo.btrfs@gmx.com> =
-wrote:
+On Thu, Oct 22, 2026 at 10:15=E2=80=AFAM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
 >
->
->
-> =E5=9C=A8 2026/10/22 08:11, fdmanana@kernel.org =E5=86=99=E9=81=93:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > When using the no-holes feature (enabled by default since btrfs-progs
-> > v5.15) and doing an incremental send, we can miss issuing a hole punchi=
-ng
-> > command when the following conditions happen:
-> >
-> > 1) A hole is punched in a tail section of a file extent item that happe=
-ns
-> >     to be the last item in a leaf (for example the extent covers the fi=
-le
-> >     range [1M, 3M) and a hole is punched in the range [2M, 3M)). Betwee=
-n
-> >     the end of this file extent item's range and the i_size, there are
-> >     other file extent items;
-> >
-> > 2) The next leaf was not modified in the send snapshot, remaining share=
-d
-> >     with the parent snapshot.
-> >
-> > In this scenario we are unable to detect a hole was punched and never
-> > issue a hole punch command because with no-holes there we don't have an
-> > exlicit file extent item to mark a hole.
-> >
-> > Fix this by teaching maybe_send_hole() to detect such case.
-> > A test case for fstests will follow soon.
-> >
-> > Reported-by: Tristan Elvers <tristanelvers@gmail.com>
-> > Link: https://lore.kernel.org/linux-btrfs/CAFoLKK+aErV4p6ZJPnVeH5SHQ5++=
-0f=3D8ZgxPWe-E-CkeKBs8PA@mail.gmail.com/
-> > Fixes: 16e7549f045d ("Btrfs: incompatible format change to remove hole =
-extents")
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >
-> > V2: Address a couple issues pointed by sashiko, simplify a few things.
-> >
-> >   fs/btrfs/send.c | 62 +++++++++++++++++++++++++++++++++++++++++++++---=
--
-> >   1 file changed, 58 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> > index c523bf950c89..cec1aae5ce14 100644
-> > --- a/fs/btrfs/send.c
-> > +++ b/fs/btrfs/send.c
-> > @@ -6371,6 +6371,8 @@ static int range_is_hole_in_parent(struct send_ct=
-x *sctx,
-> >   static int maybe_send_hole(struct send_ctx *sctx, struct btrfs_path *=
-path,
-> >                          struct btrfs_key *key)
-> >   {
-> > +     BTRFS_PATH_AUTO_FREE(next_path);
-> > +     u64 next_offset;
-> >       int ret =3D 0;
-> >
-> >       if (sctx->cur_ino !=3D key->objectid || !need_send_hole(sctx))
-> > @@ -6397,14 +6399,66 @@ static int maybe_send_hole(struct send_ctx *sct=
-x, struct btrfs_path *path,
-> >               ret =3D range_is_hole_in_parent(sctx,
-> >                                             sctx->cur_inode_last_extent=
-,
-> >                                             key->offset);
-> > -             if (ret < 0)
-> > -                     return ret;
-> > -             else if (ret =3D=3D 0)
-> > +             if (ret =3D=3D 0)
-> >                       ret =3D send_hole(sctx, key->offset);
-> > -             else
-> > +             else if (ret =3D=3D 1)
-> >                       ret =3D 0;
-> > +
-> > +             if (ret < 0)
-> > +                     return ret;
-> >       }
-> >       sctx->cur_inode_last_extent =3D btrfs_file_extent_end(path);
-> > +
-> > +     /*
-> > +      * If we are the last file extent item in a leaf, we may have had=
- a tail
-> > +      * section that got a hole punched, and if there is no change in =
+> A data extent in a block-group that uses the RAID stripe tree has its log=
+ical
+> to physical mapping stored in that tree, which only becomes durable when =
 the
-> > +      * next leaf, we must find out if we have such a hole and punch i=
-t.
-> > +      */
-> > +     if (path->slots[0] !=3D btrfs_header_nritems(path->nodes[0]) - 1)
-> > +             return ret;
+> stripe tree is written out at transaction commit. The log tree cannot car=
+ry
+> that mapping, so an fsync served by the log logs a file-extent item whose
+> logical range could not be resolved afterwards. Log replay restored the f=
+ile
+> with the correct size, but reading it failed with EIO.
 >
-> Just a nitpick, do we need to check NO_HOLES features? IIRC without
-> NO_HOLES, we should always have a file extent covering i_size, thus
-> without NO_HOLES, we should not need to check for the next leaf?
+> Extents reach the log both from log_one_extent() and from copy_items(), s=
+o
+> cover a fast fsync and a full fsync.
+>
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+> Changes to v2:
+> - Also test full fsync
+>
+>
+>  tests/btrfs/363     | 67 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/363.out | 15 ++++++++++
+>  2 files changed, 82 insertions(+)
+>  create mode 100755 tests/btrfs/363
+>  create mode 100644 tests/btrfs/363.out
+>
+> diff --git a/tests/btrfs/363 b/tests/btrfs/363
+> new file mode 100755
+> index 00000000..834f2673
+> --- /dev/null
+> +++ b/tests/btrfs/363
+> @@ -0,0 +1,67 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 Western Digital Corporation.  All Rights Reserved.
+> +#
+> +# FS QA Test 363
+> +#
+> +# Test that data fsynced on a RAID stripe tree file system is still read=
+able
+> +# after a power failure, both for a fast fsync and for a full fsync.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick log volume raid-stripe-tree
+> +
+> +_fixed_by_kernel_commit XXXXXXXXXXXX \
+> +       "btrfs: force a transaction commit when fsyncing stripe-tree exte=
+nts"
+> +
+> +_cleanup()
+> +{
+> +       _cleanup_flakey
+> +       rm -fr $tmp
+> +}
+> +
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +_require_btrfs_mkfs_feature "raid-stripe-tree"
+> +_require_btrfs_fs_feature "raid_stripe_tree"
+> +_require_scratch
+> +_require_dm_target flakey
+> +
+> +# DUP keeps its mapping in the stripe tree, so a single device is enough=
+ and
+> +# dm-flakey can be layered on top of it.
+> +_scratch_mkfs -d dup -m dup -O raid-stripe-tree >> $seqres.full 2>&1 || =
+\
+> +       _fail "mkfs failed"
+> +
+> +_init_flakey
+> +_scratch_mount
+> +
+> +# The first fsync of an inode is always a full fsync. Do one here and th=
+en
+> +# commit the transaction, so that the second fsync of this file below is=
+ a
+> +# fast fsync.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 128K" -c fsync $SCRATCH_MNT/fast | =
+\
+> +       _filter_xfs_io
+> +_scratch_sync
+> +
+> +# Fast fsync: only the extents changed since the last fsync are logged.
+> +$XFS_IO_PROG -c "pwrite -S 0xbb 0 128K" -c fsync $SCRATCH_MNT/fast | \
+> +       _filter_xfs_io
+> +
+> +# Full fsync: this is the first fsync of this inode, so all of its items=
+ are
+> +# logged.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xcc 0 128K" -c fsync $SCRATCH_MNT/full | =
+\
+> +       _filter_xfs_io
 
-It could check that, but NO_HOLES is enabled by default for quite some
-years now, plus skipped it for consistency with the existing code that
-is exclusive for NO_HOLES but also misses the check.
-Since I have another optimization to skip that check and sending empty
-holes, I'll include it in the next version.
+Btw this is not a very good way to test.
+
+If we have a regression in the fast fsync path someday, this test will
+miss it, because the full fsync on file 'full' triggers a transaction
+commit, hiding the bug in the fast fsync path for file 'fast'.
+
+So we should test differently:
+
+1) do fast fsync
+2) trigger power failure and mount
+3) check file 'fast' data
+4) do the full fsync
+5) trigger power failure and mount
+6) check file 'full' data
+
+Sashiko pointed this:
+
+https://sashiko.dev/#/patchset/20261022090754.2584747-1-johannes.thumshirn%=
+40wdc.com
 
 Thanks.
 
+
+> +
+> +# Simulate a power failure. The log is replayed on the next mount and bo=
+th
+> +# files must still have the data they were fsynced with.
+> +_flakey_drop_and_remount
+> +
+> +echo "fast fsync:"
+> +_hexdump $SCRATCH_MNT/fast
+> +echo "full fsync:"
+> +_hexdump $SCRATCH_MNT/full
+> +
+> +_scratch_unmount
+> +
+> +# success, all done
+> +status=3D0
+> +exit
+> diff --git a/tests/btrfs/363.out b/tests/btrfs/363.out
+> new file mode 100644
+> index 00000000..fcf6e0a7
+> --- /dev/null
+> +++ b/tests/btrfs/363.out
+> @@ -0,0 +1,15 @@
+> +QA output created by 363
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +fast fsync:
+> +000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  >...............=
+.<
+> +*
+> +020000
+> +full fsync:
+> +000000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc  >...............=
+.<
+> +*
+> +020000
+> --
+> 2.56.0
 >
-> Thanks,
-> Qu
->
-> > +
-> > +     next_path =3D alloc_path_for_send();
-> > +     if (!next_path)
-> > +             return -ENOMEM;
-> > +
-> > +     ret =3D btrfs_search_slot(NULL, sctx->send_root, key, next_path, =
-0, 0);
-> > +     if (ret < 0)
-> > +             return ret;
-> > +     if (WARN_ON(ret !=3D 0))
-> > +             return -EUCLEAN;
-> > +
-> > +     ret =3D btrfs_next_leaf(sctx->send_root, next_path);
-> > +     if (ret < 0) {
-> > +             return ret;
-> > +     } else if (ret > 0) {
-> > +             /*
-> > +              * No next leaf, must punch hole to i_size and set the pa=
-th back
-> > +              * to where it was before.
-> > +              */
-> > +             next_offset =3D sctx->cur_inode_size;
-> > +     } else {
-> > +             struct btrfs_key next_key;
-> > +
-> > +             btrfs_item_key_to_cpu(next_path->nodes[0], &next_key,
-> > +                                   next_path->slots[0]);
-> > +             if (next_key.objectid !=3D key->objectid ||
-> > +                 next_key.type !=3D BTRFS_EXTENT_DATA_KEY)
-> > +                     next_offset =3D sctx->cur_inode_size;
-> > +             else
-> > +                     next_offset =3D next_key.offset;
-> > +     }
-> > +
-> > +     btrfs_free_path(next_path);
-> > +     next_path =3D NULL;
-> > +
-> > +     ret =3D range_is_hole_in_parent(sctx, sctx->cur_inode_last_extent=
-, next_offset);
-> > +     if (ret =3D=3D 0)
-> > +             ret =3D send_hole(sctx, next_offset);
-> > +     else if (ret =3D=3D 1)
-> > +             ret =3D 0;
-> > +
-> > +     sctx->cur_inode_last_extent =3D next_offset;
-> > +
-> >       return ret;
-> >   }
-> >
 >

@@ -1,92 +1,55 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.179
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792951393;
-	b=NZoLq3LQL6L66GmwCZx7746MY73w+oIEjy54ZVsuTI4md9cvujeewTb0xQsLjR2bfphp
-	 xpE4BnOf2Xp65qg8N4gCLX0EowVmYar4HVNAQCeu/6YHEJIwsW86ZoZaFQHa/r7B1HA4R
-	 4ds47uWlQIxUhFiRTD9R8K3zB6R97/vxcCjJr9OsYRQvV33enMC13i/fwYX/dh+9qBxkc
-	 3pCHguOX0JSRWMrhFNJGE4VRsl5Ly9JTaxnoRgv/F7EzoXnnIPylh/KxnExF+xNirlD1O
-	 OtRl5hlJsyQgi+zn73flvG9L16MhT9mfgq8iJ8si6M0TYiP1ddlhWodw+E/kQpyapyQ==
+	t=1792960771;
+	b=wWG9ygaQEH78g+4HN3IfkyGVCHiyl4B2YfHj+UPd4cuDkXSVO6Ywv4k6EaoMW0G+8bfU
+	 xaiSKKFjkDjvont+0BMRz35No60ak71grLS17hMwwaGpOGUM+wX+owtrsAEC5TRFXIucF
+	 nfbZCoGpYlAx7dDB+rsbATiuggb7v9TjAcRLtkG1+ztNUXpbDM6Om1ZJp0s/DiqYXWkG2
+	 uTOyQE2t5U9RIsXvSWaWuyDNzJIGgrCpWSi5X90xFGxc8UARDL9T/ioAryZDgPPIX34d9
+	 DYfMU6LNB2LB/Vxam+d/WdwXzKuWlnY3G5dZJdeE4qxDCKiVqG2AxKLF5lhTN5FK1iA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792951393;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=VG1kakSy/ebeV5Fcb7mxyA3cU1SZU5ucHZy7SeqjczM=;
-	b=wUULt/ow75JljPnjWyDRFznGOK/XLvXpBz3j0uL157eX8ccRQDwmvCQA6UxzNZYsJuNy
-	 lcWHKeodV/EJ2iGUDprOIRzSgwtanRoQkSoLxNb9/UdEWlJy7AZCg3v9X4cvSLLoj6TUP
-	 t69r3CRc4VXiWD4w7TCSJjqmtnCW9yDS3Qi4woJf+w7BisvMISVdAykzCCD52QgKs/u6v
-	 HoHTq/IOLA5aaC7pAWH8Kikw0zQQM6WjeVmGE3XJ/+KE/J8bLtxRt+5dHXZxyLLpLmde7
-	 z8niVMWsjo2W2dWDX2OI3ddc1PoSx3WfkvhFQFfydg6ir+F7CTBmMKWITZmz7zEdC7g==
+	a=rsa-sha256; c=relaxed/relaxed; t=1792960771;
+	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=Dec6d23kzD9Q7ZmgTNaLfCaR3TzF+qKAdsnxeeBx+Qk=;
+	b=5VjIbbib1YBRzp0kaL7Ila5RnBZQeIeBm93SZSDvE44IGJIaH0ogJeem3ssT5kHJIBUx
+	 0mL3fWf16aKv4GuoMAONRWgRq+Sql31c20IekC6FhduGMcCYekHJN8BLIX+l88nU/8XvP
+	 iosSSz7iYYUrtomPSzK2asZ7tV/oSHEF7gf1KTpvFgUpKv4ajBh8xnbZkmqitJcUZUBy0
+	 TXrrj5+jkA+fSln9DkO3BL0FoUGemWyaLrjth2nx4cfQwJT/BKSj3bISd0YiiglwSu710
+	 Yhb8pjAXoLL2Pu4miaAGNtANMnCJBCt4qCealVHeBjvx8tIWgJAscFu9Eispm7lR7ag==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=QJzyqzmN;
-	arc=none smtp.remote-ip=74.125.82.179
-Received: from mail-dy1-f179.google.com (mail-dy1-f179.google.com [74.125.82.179])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=iSToPKTP;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38F5F606A32C
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 18:03:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 38F5F606A32C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94C3F606A31A;
+	Sun, 25 Oct 2026 20:39:31 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=QJzyqzmN
-Received: by mail-dy1-f179.google.com with SMTP id 5a478bee46e88-354ba08cfd1so4251085eec.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 11:03:12 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1792951392; x=1793556192; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=VG1kakSy/ebeV5Fcb7mxyA3cU1SZU5ucHZy7SeqjczM=;
-        b=QJzyqzmNSSDEj/DOGlwGG+4c7WgmcTkkbyWvUHwvOjDPxGmVDYZUkHuYJmeNxB4Xqx
-         kmphu4T4TTx7qVzj+/JBEmCUOYRhpXX6kQRGEgfUJn1ICoY6sxMaoAih/bFPJpl3xzHT
-         4OmKGdY4WEHqyMLIzXAko3Z9zUhVUKtcqLx7aJQkm1dHi8WqKvldaPviiDLtZJwI9+wP
-         TLQbYb6wTRs+Api6ghoi+guDvptaThK3pK1S1Rmu0IrpvDEifFLmCtJq7rUFkZ4OxCgw
-         gnL+AKpyj+IYHfqlFgecU0orKweeCrCyTWotJHsj6oUCvhAnTF1Xs0Xe3sUGe1ev9MAd
-         EZFw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1792951392; x=1793556192;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=VG1kakSy/ebeV5Fcb7mxyA3cU1SZU5ucHZy7SeqjczM=;
-        b=zvirtdUTLcE4yTRiZ5TnoolnYrF77MTZcwspk/Xm98GMlm5rsKq0aQiIDF6nyUFQvZ
-         U6BxlTx78iHhKFvko8dvnlXKQ/gNqvcSAj4fa7qJy/DIrjbGgvGg5E2UMD4Je3X0MR/t
-         UfBpI71HWq0jz0/a3cC3kLmfTHmmR6nrk+Zg4j2V/U8ZOVOe+jUQ6vOMlLcgCIFIOZBB
-         pvbqBK0TNZvC2j8tDE1H3bviw0exmzVT0EQSpWJ9EbpG2p37boZgL+UzXMwAv0p5OWFc
-         6mY9h/l44tgjyTBqI/eU+I2aG1WTkrlNPbHYffZweTXm05CnSY6u0JbkWSGXlDViuq70
-         aDRw==
-X-Forwarded-Encrypted: i=1; AKwUvBwbOEKxnJVey5w1NZXZv+MLa6D6gDMNLvyGJeFl7scaUwn1msM4P4TEz8TvXhLAt898tbTJV/B75xrSQg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYL3sJxvNS63koscUtMnWLpMdheyp9M8zrfIyuFAQX/4BHXRlKhe
-	7+OkQyVA8hbuCtdbwnMGwHhY+om9woHLkn7yHnwsiKYMAsX3yZKdtZwI
-X-Gm-Gg: AYBFou0a4eE8L9In5TPuLcOKQJ5IZaSJ12UmszmEQFIaqDp5/NArU5IjX255giQ4cpW
-	fQD1+scgmizwVdYM0QlRR67kItmaMxRzPYo8cGkEObfcW93rCEm7tRM/ZG8ouPb1t72SAwmbQHh
-	KX2hpGOP6bd6auvUz8GSmfuqoLaUUai5ZgMMMlvd3aKcA46EPn2L/Ae6JXfBUb8J5gIIXGufBwj
-	3TtgPYAwVjuNQBwZwfHLFf/S3DBxBvJklJieDKjPK7KZ3aQqO2X/pmGRHpq3H05ehQ2w2cfvgD3
-	X/isq4AVcErxOcZFRm9pJROn7dkIKvchgfWvcMgeACN1Ewp8vkcgVJcyaQNORLLo/OZukmHRZrC
-	GdYfPv1unSaGko2We1a7+TbyIcmkCQtKFhxkEuENt1nPsCh/1dHJJr4+/CIBp5J59MZtmeD1itZ
-	UK4myqdXmq2NK41NCqWAPMNYCyjChxM/SSGTDcFTIgiiNb1MifPsq1lY/wrOAnHpc6+ftI/zYN7
-	NTzfF6D5/m5O8jNUk/OH0OhVDF1hwIeuVngolVpwzFW6Jtp8FXQvb0e6T0GFXGMTV/iV7+dvAUI
-	IfTo8g8joghczgFHr5Nz
-X-Received: by 2002:a05:7300:ccb0:b0:366:4c26:2968 with SMTP id 5a478bee46e88-369e84e560emr7285982eec.26.1792951391990;
-        Sun, 25 Oct 2026 11:03:11 -0700 (PDT)
-Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-369e8db7b23sm24657672eec.19.2026.10.25.11.03.09
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 25 Oct 2026 11:03:11 -0700 (PDT)
-From: Cheng Yongkang <teel4res@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=iSToPKTP
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0B87C1F01825;
+	Sun, 25 Oct 2026 20:39:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1792960771;
+	bh=Dec6d23kzD9Q7ZmgTNaLfCaR3TzF+qKAdsnxeeBx+Qk=;
+	h=From:To:Cc:Subject:Date;
+	b=iSToPKTPDNDUaXbuV1jJFmBiMVnkKX8KG92NdwNokA9KpYlv8kvLJ77rJ6Ff2OC64
+	 B0+5gSWk92sPlFZBNMujMaYXdWDiwpMpvYeR/rhkBovuTDLEuYKBaDRtLqLOhiVG95
+	 FU8E14i1657mzsPlsMkDu60KJ14dzl71px8W1BVWeoZfPmXvN63+yY3tpUJXTT+7r7
+	 0yR6XyCr2XJhhFLjgcsHBaE8erCrbiA0QwC2PC5LKafNF06F7oTwno6syFiR73a9v+
+	 SYTSqta1GeWULcIY00+ImdRvrKdbcnk31RS4wXhWpnB4Tq1WKVG0mBZg59Nl2OjATA
+	 UwWDKnaZ/8TrA==
+From: Eric Biggers <ebiggers@kernel.org>
+To: fsverity@lists.linux.dev
+Cc: linux-ext4@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Cheng Yongkang <teel4res@gmail.com>
-Subject: [PATCH] btrfs: return an error for unrepaired RAID56 scrub sectors
-Date: Sun, 25 Oct 2026 11:03:04 -0700
-Message-Id: <20261025180304.349254-1-teel4res@gmail.com>
-X-Mailer: git-send-email 2.34.1
+	Eric Biggers <ebiggers@kernel.org>,
+	stable@vger.kernel.org
+Subject: [PATCH] fsverity: Be more careful with return value of ->get_verity_descriptor()
+Date: Sun, 25 Oct 2026 13:38:31 -0700
+Message-ID: <20261025203831.120095-1-ebiggers@kernel.org>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -98,39 +61,100 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-scrub_raid56_parity_stripe() returns the leftover value of
-scrub_find_fill_first_stripe() (0 or 1) when it detects unrepaired
-sectors in a data stripe.  Scrub callers only treat negative values as
-errors, so the unrepaired state is masked as success and P/Q
-regeneration is skipped; a device replace can then copy corrupted data.
+If fsverity_operations::get_verity_descriptor() returns that the verity
+descriptor has 0 size, then a zero-size buffer is allocated to hold it,
+and it's called again with bufsize=0.
 
-Return -EIO so the unrepaired sectors are reported and the corrupt
-stripe is not treated as healthy.
+But bufsize=0 is a special case that says to return the actual size.  If
+in the meantime the filesystem has decided that the size is some
+actually valid size, it will return that size, and then
+validate_fsverity_descriptor() will read from ZERO_SIZE_PTR and crash.
 
-The masked-success behavior was reproduced 3/3 times: baseline scrub
-returned 0 with "finished ... status: 0", left P/Q unregenerated, and a
-device replace copied corruption.  With this change scrub returns -EIO
-and the replace is canceled; healthy RAID1/RAID5 scrub still succeeds.
+Of course, for the filesystem to misbehave in that strange way, it
+generally would require direct writes to the block device.
 
-Assisted-by: LLM
-Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+Regardless, fsverity_get_descriptor() might as well guard against it.
+Make it do so.  Specifically, validate that the first call to
+->get_verity_descriptor() returns at least the minimum descriptor size,
+and validate that the second call returns the same size as the first.
+
+Fixes: fd2d1acfcadf ("fs-verity: add the hook for file ->open()")
+Cc: stable@vger.kernel.org
+Signed-off-by: Eric Biggers <ebiggers@kernel.org>
 ---
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/verity/open.c | 38 +++++++++++++++++++-------------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 479c0e0..ba2e27c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2250,7 +2250,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- "scrub: unrepaired sectors detected, full stripe %llu data stripe %u errors %*pbl",
- 				  full_stripe_start, i, stripe->nr_sectors,
- 				  &error);
--			return ret;
-+			return -EIO;
- 		}
- 		bitmap_or(&extent_bitmap, &extent_bitmap, &has_extent,
- 			  stripe->nr_sectors);
+diff --git a/fs/verity/open.c b/fs/verity/open.c
+index 6646290430380..78a65154b8957 100644
+--- a/fs/verity/open.c
++++ b/fs/verity/open.c
+@@ -270,12 +270,6 @@ static bool validate_fsverity_descriptor(struct inode *inode,
+ 					 const struct fsverity_descriptor *desc,
+ 					 size_t desc_size)
+ {
+-	if (desc_size < sizeof(*desc)) {
+-		fsverity_err(inode, "Unrecognized descriptor size: %zu bytes",
+-			     desc_size);
+-		return false;
+-	}
+-
+ 	if (desc->version != 1) {
+ 		fsverity_err(inode, "Unrecognized descriptor version: %u",
+ 			     desc->version);
+@@ -314,31 +308,37 @@ static bool validate_fsverity_descriptor(struct inode *inode,
+ int fsverity_get_descriptor(struct inode *inode,
+ 			    struct fsverity_descriptor **desc_ret)
+ {
+-	int res;
++	int size, res;
+ 	struct fsverity_descriptor *desc;
+ 
+-	res = inode->i_sb->s_vop->get_verity_descriptor(inode, NULL, 0);
+-	if (res < 0) {
+-		fsverity_err(inode,
+-			     "Error %d getting verity descriptor size", res);
+-		return res;
++	size = inode->i_sb->s_vop->get_verity_descriptor(inode, NULL, 0);
++	if (size < 0) {
++		fsverity_err(inode, "Error %d getting verity descriptor size",
++			     size);
++		return size;
+ 	}
+-	if (res > FS_VERITY_MAX_DESCRIPTOR_SIZE) {
+-		fsverity_err(inode, "Verity descriptor is too large (%d bytes)",
+-			     res);
++	if (size < sizeof(*desc) || size > FS_VERITY_MAX_DESCRIPTOR_SIZE) {
++		fsverity_err(inode,
++			     "Verity descriptor has invalid size (%d bytes)",
++			     size);
+ 		return -EMSGSIZE;
+ 	}
+-	desc = kmalloc(res, GFP_KERNEL);
++	desc = kmalloc(size, GFP_KERNEL);
+ 	if (!desc)
+ 		return -ENOMEM;
+-	res = inode->i_sb->s_vop->get_verity_descriptor(inode, desc, res);
++	res = inode->i_sb->s_vop->get_verity_descriptor(inode, desc, size);
+ 	if (res < 0) {
+ 		fsverity_err(inode, "Error %d reading verity descriptor", res);
+ 		kfree(desc);
+ 		return res;
+ 	}
+-
+-	if (!validate_fsverity_descriptor(inode, desc, res)) {
++	if (res != size) {
++		fsverity_err(inode, "Verity descriptor size changed (%d => %d)",
++			     size, res);
++		kfree(desc);
++		return -EINVAL;
++	}
++	if (!validate_fsverity_descriptor(inode, desc, size)) {
+ 		kfree(desc);
+ 		return -EINVAL;
+ 	}
+
+base-commit: 21a7f44fd0765fcc5194130b28767786eba1d1e7
 -- 
-2.34.1
+2.56.0
 

@@ -1,79 +1,79 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
 	t=1792948956;
-	b=rPwdvA8lcZKcSJbXbRFrcnMSGf8fpjXK8jXKUY1R+rI2y9RdRZ1DEvrkeATsOI06A5jb
-	 f8uckilN3k3WBRBo1pT2SPje0PCPykHhCj+gZjZlwQqtFpdN+XmoeNSxfUtJli67Zi8CV
-	 nksKWJUqzpBDw5ZQO+YWASkheQcBzbrSSBAyC9DAQNLc96pVZ32PSkt2DjMNJLFA/rTVo
-	 dMGTqMedzNAx3+Ce5haM9jri2/tb0hkRWUQb9adom5nJDnCE2qnqCzUets3loa2pw5ajn
-	 w6W7AloIBQ9xJPndmwDnZW/tLKUVMw4VaC75xa6JANxKjsucnOmJQ7Mksbmzg0mUwcA==
+	b=UglQ3bINHXn7VIT85o3jQdMpDv/zOOKxIHNNEA27Z5cBwFrdI/TzF4yqLqKTXEVCgJjx
+	 Usp7uGP7HR9sT6fxP5b6BLv0/3E2vYV+IAPjhwnHEXc5HZHBWN5HcK9aQ980d6T8U8bZg
+	 MWYB9rb5ExYkjrzm0ND9uZtPT8Z8WIxpImMt9IIt6sBpVwRrllZjsx3scIKhqIexC7SOJ
+	 VSXKY47l105rf0lBh8BtxNcvPciobU1GyJEg0GqGIOff/5Rbctgrop0roO4sg6i8pQRTw
+	 /h5amSG8ux06dKRPjPQFxnO7XSiP8bAgRPrkjwyk+H/Pmg2rFA2QdDaBVL+xOu+QH+Q==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1792948956;
-	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
-	 Content-Type:Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=9s3/DcJlrpkCAoApVeyckZg4DZMh9L5p5qco2ZrUrbI=;
-	b=bD3iALctp5CudkkfSHrT8kvrQ6nvinLrPJWC6zhaRarERfaRr1BLymeBykpCTtxakrqO
-	 uFALZFJc7Uwx8lFe/44s1rMut7bDBSxYaPrwb+TIJPh0wBcVLsLCnzd+xOICLG1VFNhg6
-	 SB2bvb3mKhTlz+57z+IY8Uh1JlxY4sy1jFf8fOovTijJUPtrGpkCqcgGyYRe4T22+iDrw
-	 f5tjsuN/XO4k/dMJbCRryuwXl4MQzuWhS7iQhSGnHc1rXQR/WiXNV2TRq9sEsFe1p50Ot
-	 6qnxrMZk1qve2ordLj5EXUmNyiCVP01WfylEva4EJGG879ZUqAHCXK/MlWYLdtjIHrg==
+	h=Received:DKIM-Signature:Received:From:Subject:Date:Message-Id:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding:X-B4-Tracking:
+	 X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:
+	 X-Endpoint-Received:X-Original-From:Reply-To;
+	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
+	b=xfs/I1PA7dgxZsBZpae4p0OvNtDD3DK4VmWQ6fqgd4Z2EWLwH68p9/1bUPMXSSSfPXZc
+	 Fy8hUJsfvKFlR0PcVdTXkpZyrjr2dz5WhzItMAu7M6TcsG3d4LfR88RWGahp9LHp1hK30
+	 7yFt8AQlkdtL3cVOFRmuOmgzU5KzJv2mKu/V76FBXxxIDKtA/n1bTw6fDL4lwsitJFydm
+	 xKZKpwAemnBxSJq8Lde6Ytjuvn94aq1/RI7u/7o3Q/BpShKhxa27L+dDQ77HmLqSQpq7N
+	 rqYx/qtqLiwi8pZepftlioqiQU3qvvLYEoB93dJ8NbtH7LJbLyezA0u3GxVwkZmIjRQ==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZzcMPDcH;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bxCUeihU;
 	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 53008606A320;
-	Sun, 25 Oct 2026 17:22:36 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C505F606A31A;
+	Sun, 25 Oct 2026 17:22:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZzcMPDcH
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bxCUeihU
 Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
 ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1792948956;
-	b=zODgorz23rYgjSHtu3sSCuZKtA/sq6DEnT7pccTC6IJbE1MpgvZYFed/ZlRov/b733Ah
-	 Wud6RSqhKVyOykINyS01JW8v+uq1RggzkQ+3pzLFFAOFqAsMK+Mzxojq8qrWtX97N2Vtg
-	 6bT+4M4AOfDPNpAgAOQ8+SlkBeojiWgN4FtGU4hYHRsG82kwCLvC6OUt6TZbCs/jB3F6O
-	 vcFDCPEyzqI+t+wu/hg/JxMXtWnmCOcEJivORxMocjPURm+E2M8mcek7O1WrdfW2UChoP
-	 RIEeEmdg8yVYxpjU/94eUZs/KVnAWlbhKGrYPIn7lxR1DAbRjEeni5Uo3POvtLG5IoQ==
+	t=1792948955;
+	b=1dzbpF1SSVh6n0+TKlNIlx1+5PPkHgH71yV1MDzGng7z7bmpoKX1kLAABhhHYLRoEWzz
+	 5GqzzVdlyThaww9YimMZ96s7B9W9nORDBBTjj6hqNUBAHuDibPzoD/ohBNAzdhtb8Op9r
+	 vB5fg0/JdJlH1V+XcWN4e8xIcxFl4xQzXBSfcZN01aUj8g8GT3WqESQSFt1l4geUcyeM/
+	 2WNF90t0KCn3eQeVxw6VLJgZvuxSZRjCggsRCuhOhmc2I173ieJYuf8qAedXjG5WbF5t0
+	 DLqNVyeLTozEI/S82Q48NlYg/O+Ek9gXjr0xzAPe0mOIak6esBq+sqX6EN6JwPnKmcA==
 ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1792948956;
-	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
-	 Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=9s3/DcJlrpkCAoApVeyckZg4DZMh9L5p5qco2ZrUrbI=;
-	b=UDk9He9E2DX/Vz1wP3okD3ppHph1XdPEZw9cVp4fT5jujHtXKLmyoASxTdoZQjQ6mh1v
-	 FlT5RNscBFQYhYIbjDiUxs/KDnjaCfG64ySzDtDApaAwN7VXnMs0iZgiC8PBjKpajX/X8
-	 nIKLjPKSr125FLtYUiMeu/jCDoWLTPRFFYisXxmGjoiegilw4M5BF/+vVlbFi9ij1bLdD
-	 t6Iv2T8PFSZw5UqMaCzQrNu34ObZhAwF+vA9TEEHC7qSM3LGWFhRvU0TOorsh+3QJyl3u
-	 gRoqwam68nN4HlDC3pUzYW8Dkmf7CkI4jPEzgnRRDo4K+MvYcLSyS0d4mW/8BqGFNIw==
+	c=relaxed/relaxed; t=1792948955;
+	h=DKIM-Signature:Received:From:Subject:Date:Message-Id:MIME-Version:
+	 Content-Type:Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:
+	 Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
+	 X-Original-From:Reply-To;
+	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
+	b=MC7EbC9YTHPJ5zg6fE31qFK0NQWfHRThyg05PIKYodLsNqJIwQBQGNLH8lxLS2u88rzM
+	 AQLtEM5UwLVLgz8/gDTqcKh42I7PitFv2WGQWxV4fJwSCEZTiHYX/uGwhBMhyy51GQlWh
+	 1uJV9lgjXDsCgstonANZrUui/bJDD9de/MhLvgST5KKYZCSVOeKELpjzvszQHKXhqmfL3
+	 JYI7v6ZlcQO85kQSJrio1B0O8XGk/JJbgEf2wcIiwJXfzOxY3ZsvtJaMNx5IpxRacDuE0
+	 y7WekLXvFjsRwC6ekw3SAohPYsH4WpM9L77Bjt5B3Np2hDzaK0D9KHh3JZhskuevS5g==
 ARC-Authentication-Results: i=1; smtp.kernel.org; 
 	arc=none smtp.remote-ip=100.80.115.77
 Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id D17EB1F01825;
+	by smtp.kernel.org (Postfix) with ESMTPS id D3B9C1F01828;
 	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792948956;
-	bh=9s3/DcJlrpkCAoApVeyckZg4DZMh9L5p5qco2ZrUrbI=;
-	h=From:Date:Subject:References:In-Reply-To:To:Cc:Reply-To;
-	b=ZzcMPDcH/eLBb5N65uQUs4RJPUuHMBStaBLJ3gIqVMRB5CW1m5+4sSrOf/FcG4nhT
-	 BoJFpW90YD/PFKwdJvLlKK2eCZ0716C3Cdd+g1zP0jOU7gyHa+mdrkqNvaj2JgxueN
-	 BxK0xv25LPN4P0u6n+wlDcXctOeVmLss1aq47gto3pGFteD2gum+/Lz8vX3ZD6wu+Q
-	 Wd9BRw3uuSE4uhFw2JE0zMawLXfbdUxHGR1WJ54S+HLQd2pZ32CaMFWIjX9ePjyzh1
-	 uf2lCRZs0bOgylLqbhIpEB0QcauI8qKm1QwHllVLM4r33MFC5++rFWOlzD4wdiXvdn
-	 1N0ezkpurwerQ==
+	s=k20260515; t=1792948955;
+	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
+	h=From:Subject:Date:To:Cc:Reply-To;
+	b=bxCUeihUbGn9BXhJnQP1Ptx2vyiCeVGuJAkLxv4urYJ4pf//qhXjarelay0Rq4e1c
+	 W0WeOcaLbR2glQUyFxRO2tD3xVzXnG2FOcJmc9jH4MDCr4B+naQ7dg6q5p7LrJWGUq
+	 n7Ove6gyc8/9uj87uwGtEid45Zd0UF6SxMQwD5FmHkqFPPFhettmGuM1rtlILuo8HS
+	 kzzEtQhmZwMAXHsJK14bbZ5o0ocLVfghTi+taNSai1i6Woxt/aSe3T4VPp8EoucvTS
+	 A04eOm+a33u/VX2BTvRwsbwd3v2eephQkVw2mnMtQynlLOkankq8Ydibatr9l0jUro
+	 XYd73bq+Z1KcA==
 Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 4672744A84;
+	by lkml.kernel.org (Postfix) with ESMTP id 3357C44A80;
 	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
 From: Dhruva Gole via B4 Relay <devnull+goledhruva.gmail.com@kernel.org>
-Date: Sun, 25 Oct 2026 17:21:51 +0000
-Subject: [PATCH v2 2/3] btrfs: check NOCOMPRESS preserves holes and
- preallocation
+Subject: [PATCH v2 0/3] btrfs: add NOCOMPRESS defrag regression coverage
+Date: Sun, 25 Oct 2026 17:21:49 +0000
+Message-Id: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -84,147 +84,66 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261025-b4-btrfs-nocomp-v2-v2-2-628c1986f9b9@gmail.com>
-References: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
-In-Reply-To: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAK063moC/02OzY6DIBSFX6Vh3Wv40St01feYdAEISlOlAUqma
+ Xz3qrOZ5Zec853zIdml4DK5nD4kuRpyiMsG/HwidtLL6CAMGxNOOTLKOzAtmJJ8hiXaOD+hcpD
+ GS49CIBeabMVncj78HtKf2x/nl7k7W3bTnvApzlCm5PQhN0oh68wAyvQWWmkQtO0pDG1HNVIUU
+ trrOOvwaLbNXTCFXGJ6H7cr24eIjdWlhvWKCdUh0mYMpRnjww1TelX9r39b1/ULkarSx/kAAAA
+ =
+X-Change-ID: 20261025-b4-btrfs-nocomp-v2-8bf8f633623a
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Anand Jain <asj@kernel.org>, 
  Filipe Manana <fdmanana@suse.com>, Zorro Lang <zlang@kernel.org>, 
  Qu Wenruo <wqu@suse.com>, Dhruva Gole <goledhruva@gmail.com>
 X-Mailer: b4 0.16.0
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1792948953; l=4278;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1792948953; l=1705;
  i=goledhruva@gmail.com; s=remote-20261025; h=from:subject:message-id;
- bh=6fh0L2Df1MA5vL1mDztYUnELsLKDU3e6oyTbelQ73h4=;
- b=ShAubn445l75XjgcJ1k8Rh3ZDdnPu2vfo0f8VzKryzadZIr5ejww+4b15ugONMU/FyfZ1oNDt
- FgeTBgq9qu4CTWQ634FgO7o58KWBDYtRv5wlztXcZ4fMZqcbKZrvB7D
+ bh=n/3vRrou5YbrZbVXlPGDJ5JH9mPmNCyJhEtjuKyblUY=;
+ b=TF5Be2fLrDmjFsrgaGVtq+0CJ2TckeeXNSMK6gzl6vf8rXeZGO1SlA65WqLezGf9fI4sa+oHm
+ KhbxzEKxqirDQo6OETxURIR1OAXtVIA4HQE7V0xfQ8kUtDWSs+/GqR+
 X-Developer-Key: i=goledhruva@gmail.com; a=ed25519;
  pk=OBz78Vw5K+/+HyXjxg9mNOV2Bq087eJgHL749H+Xe/k=
 X-Endpoint-Received: by B4 Relay for goledhruva@gmail.com/remote-20261025
  with auth_id=1318
 X-Original-From: Dhruva Gole <goledhruva@gmail.com>
 Reply-To: goledhruva@gmail.com
-Content-Transfer-Encoding: 7bit
 
-From: Dhruva Gole <goledhruva@gmail.com>
+Add three tests for btrfs filesystem defragment --nocomp: range and EOF
+handling, preservation of holes and preallocation, and inline eligibility
+and short EOF tails. Check extent layouts and file contents after remount.
 
-Create a file with compressed extents separated by holes, a preallocated
-extent inside EOF and a preallocated extent beyond EOF. Test that defrag
---nocomp uncompresses the data extents while the holes and preallocated
-extents are left untouched, checking the layout with fiemap and the file
-contents with md5sum after a remount.
+Changes in v2 (thanks to Qu Wenruo and Filipe Manana):
+- Replace the private helper framework and C ioctl probe with direct
+  btrfs-progs, xfs_io and md5sum calls checked against golden output.
+- Move the capability probe to _require_btrfs_defrag_nocompress() in
+  common/btrfs.
+- Use a test-local FIEMAP filter preserving all flags, including INLINE,
+  as suggested by Qu; leave the shared filter interface unchanged.
+- Improve naming of variables/ filenames to be more descriptive
+
+v1: https://lore.kernel.org/linux-btrfs/b99615bd-9b7c-48b6-ac70-d450a606388c@gmail.com/
 
 Signed-off-by: Dhruva Gole <goledhruva@gmail.com>
 ---
- tests/btrfs/356     | 64 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/356.out | 28 +++++++++++++++++++++++
- 2 files changed, 92 insertions(+)
+Dhruva Gole (3):
+      btrfs: exercise NOCOMPRESS range and EOF handling
+      btrfs: check NOCOMPRESS preserves holes and preallocation
+      btrfs: cover NOCOMPRESS inline eligibility and short tails
 
-diff --git a/tests/btrfs/356 b/tests/btrfs/356
-new file mode 100755
-index 00000000..b1d89f43
---- /dev/null
-+++ b/tests/btrfs/356
-@@ -0,0 +1,64 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Meta Platforms, Inc. and affiliates. All Rights Reserved.
-+#
-+# FS QA Test 356
-+#
-+# Test that defrag --nocomp uncompresses data extents but leaves holes and
-+# preallocated extents, including one beyond EOF, untouched.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick defrag compress prealloc fiemap
-+
-+. ./common/filter
-+. ./common/punch # for _filter_fiemap_flags
-+
-+_require_btrfs_defrag_nocompress
-+_require_btrfs_support_sectorsize 4096
-+_require_btrfs_no_nodatacow
-+_require_btrfs_no_nodatasum
-+_require_btrfs_no_autodefrag
-+_require_xfs_io_command "fiemap"
-+_require_xfs_io_command "falloc" "-k"
-+
-+_wants_kernel_commit 009b2056cb25 \
-+	"btrfs: defrag: add flag to force no-compression"
-+
-+_scratch_mkfs -s 4k >> $seqres.full 2>&1 || _fail "mkfs failed"
-+_scratch_mount -o compress=zlib
-+
-+# Compressed extents at 0, 512K and 1M, holes in between, a preallocated
-+# extent at 256K and a preallocated extent beyond EOF at 1280K. Fsync before
-+# fallocating, otherwise the data would be written as NOCOW, uncompressed.
-+$XFS_IO_PROG -f -c "pwrite -S 0xab 0 128K" \
-+	     -c "pwrite -S 0xcd 512K 128K" \
-+	     -c "pwrite -S 0xef 1M 128K" \
-+	     -c "fsync" \
-+	     -c "falloc 256K 128K" \
-+	     -c "falloc -k 1280K 128K" \
-+	     $SCRATCH_MNT/compressed_sparse_file | _filter_xfs_io
-+
-+echo "fiemap before defrag:"
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/compressed_sparse_file | _filter_fiemap_flags 1
-+
-+# Check the physical start of each preallocated extent as in btrfs/257.
-+prealloc=$(_get_file_extent_sector "$SCRATCH_MNT/compressed_sparse_file" 262144)
-+prealloc_eof=$(_get_file_extent_sector "$SCRATCH_MNT/compressed_sparse_file" 1310720)
-+
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp $SCRATCH_MNT/compressed_sparse_file
-+
-+# Check that the extent layout and data persist across a remount.
-+_scratch_cycle_mount compress=zlib
-+
-+if [ "$prealloc" != "$(_get_file_extent_sector "$SCRATCH_MNT/compressed_sparse_file" 262144)" ]; then
-+	echo "preallocation inside EOF moved"
-+fi
-+if [ "$prealloc_eof" != "$(_get_file_extent_sector "$SCRATCH_MNT/compressed_sparse_file" 1310720)" ]; then
-+	echo "preallocation beyond EOF moved"
-+fi
-+
-+echo "fiemap after defrag:"
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/compressed_sparse_file | _filter_fiemap_flags 1
-+md5sum $SCRATCH_MNT/compressed_sparse_file | _filter_scratch
-+
-+_exit 0
-diff --git a/tests/btrfs/356.out b/tests/btrfs/356.out
-new file mode 100644
-index 00000000..777fdf1e
---- /dev/null
-+++ b/tests/btrfs/356.out
-@@ -0,0 +1,28 @@
-+QA output created by 356
-+wrote 131072/131072 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 524288
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 131072/131072 bytes at offset 1048576
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+fiemap before defrag:
-+0: [0..255]: encoded
-+1: [256..511]: hole
-+2: [512..767]: unwritten
-+3: [768..1023]: hole
-+4: [1024..1279]: encoded
-+5: [1280..2047]: hole
-+6: [2048..2303]: encoded
-+7: [2304..2559]: hole
-+8: [2560..2815]: unwritten
-+fiemap after defrag:
-+0: [0..255]: none
-+1: [256..511]: hole
-+2: [512..767]: unwritten
-+3: [768..1023]: hole
-+4: [1024..1279]: none
-+5: [1280..2047]: hole
-+6: [2048..2303]: none
-+7: [2304..2559]: hole
-+8: [2560..2815]: unwritten
-+dc61af0129fdc173b1bc986ca00096bc  SCRATCH_MNT/compressed_sparse_file
+ common/btrfs        | 14 +++++++++
+ tests/btrfs/355     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/355.out | 45 +++++++++++++++++++++++++++++
+ tests/btrfs/356     | 64 ++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/356.out | 28 ++++++++++++++++++
+ tests/btrfs/357     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/357.out | 39 ++++++++++++++++++++++++++
+ 7 files changed, 347 insertions(+)
+---
+base-commit: 3e1ee800e52a0f53d7d9a7809be1ffc80ec1788f
+change-id: 20261025-b4-btrfs-nocomp-v2-8bf8f633623a
 
--- 
-2.43.0
+Best regards,
+--  
+Dhruva Gole <goledhruva@gmail.com>
 
 

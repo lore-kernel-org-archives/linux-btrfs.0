@@ -1,84 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1792917743;
-	b=uezZADgSv4pYWYV0tLi8BnY5n7vgve4JnUwOsZL4G+RzOao6l+xoPQ45hLbTFmQrS4Jx
-	 c0Knt/FzynGUzRJpA27+EEufMAZcgM41QjUB6rHgnIQ8o85fvBk/kpkBxV3KZ4SQqtf6a
-	 qSr++eq9rA2FtRtE1cyJ/ZIJgeYR4pdvKxgMSu1aIFxCjc/GHJ9F4owGh0EzsE7gkicj/
-	 oTv0PRx3LqSOEikwm1qZIr5l4VVN27/j4w1Hti+w5hJJ0Ws33tWhJ4HoTBATDVAQx2Doe
-	 mhTyYFbl/2ltpep7FL9PXd1kHHXaH9prVHlBP+s1rmuif79VctiOKyMkyAUC5G4u8vg==
+	t=1792917744;
+	b=nPSQIFIiLf8OMd983fNdzPxuh81njeDiWCr8eWZnId4hw5czDE6Fhf9MmjIdnCAOztLi
+	 kqfeXQ8pUBsv+HrLgrIYvqBwFSNOQcBtnYx94vr291ESCd98SHRJAcgupFWFr2LPNGRFq
+	 BkIrVEpmuYkif8XmalAVN/H69ZAtvknvrBY3Fs3ruq6+puh4gAzYLVLuqK+lp/8h+eqsW
+	 UsRTBKV/jtHPMLrPjVdhLzxgkseFm1omRLwZJ2B2OSNgf53W1sbSFztNuhThHnqsLblUq
+	 jeL3+ontrqbUyJLUtj45xgzT9efW6JoN8bD2OX8BHlLHAlFFdcj5JYzITu+dzlJsRzg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792917743;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792917744;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
-	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
-	 X-Spamd-Result:X-Spam-Score;
-	bh=8+WaKHQfuI6LEJ3DwFqPybAbvLLVJX9Uwl8Rt59is50=;
-	b=qV4uLmagtxNAmOOSyxjm9e0qg5T/b0nL1vcQINhwCemniQYDml8tvsJbyPufizOg2uIh
-	 dSnO2QItmDZnlvtRxqjIQns7tXcvUKG+Z1so6srwXExwuTwJhj2DOwnvkHut1Nnpau4i8
-	 xNYJyRN8oz+HznZhRczdRL8qn7HfmcMMwZ1T7wtpKObVjJucZlI2UIhPcDqv7wQeQjSzC
-	 uBvf0anFlTs8oR7qqtnGK+ZPQAUeQyfH3Csjqeo0sRqnsAhADYRqMYaVpGGsx9wsrDtsr
-	 EQyESR/G9J2pZn+k+yIdC1WWGd/ugkHWjejhW3FtK0GWVThqzI2LZQI3BpbvitSlOKg==
+	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
+	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
+	bh=MwhxpCEq0HVclgIlvvHTY3YMRlF4miDFpY6qJFFcUxE=;
+	b=vU4g5WPnKkVZ+cywGnlFejmZVRBxNfpXjfyJS+sygtOBHocWVtJhe/JPGUM6DxrOeVQN
+	 wU9rRZ0MdKMLBgVJbQVTb7WAvcKeYXgcpbHmhmxeKSV3N7yBXFORP68J02ZoMY9zCstuI
+	 khIcZMgjuHnSZoqJPN1wJ5l3c8lvwBOtDQ7H+HibbCym48+XK0XkCDrbfJQJgu6Oj7fwH
+	 lxV2OZ2GWyrMZSkAwPmetX3Fn6LpoCKokIvmoznKnEBN9n8SbAGyfucLtZwPC6mP/Ny4+
+	 281N6keDVKm8C0kl4wC42s+V23Fe0ngtoSqQft5F9dhjiq6UsYda1rea9gWSc6otV3A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AzzGhUw5;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=D3ka4HP5;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ZJrajwES;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ZJrajwES;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88C95606A31A
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 88C95606A31A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3D7EF606A31E
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3D7EF606A31E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AzzGhUw5;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=D3ka4HP5
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ZJrajwES;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ZJrajwES
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id F3DE022252
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:20 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9BCD61F38A
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:22 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792917741; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792917742; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=8+WaKHQfuI6LEJ3DwFqPybAbvLLVJX9Uwl8Rt59is50=;
-	b=AzzGhUw50Zyg7a5si+Lom1f6RpBViRqDMOjteMHbg7EOzOV8mqc0fNbWoXbajXrrBQKjmK
-	M+HARU91S5EQH16lYWCJDzd+JhCCTy7K5L1jtuvPED6MufcvCDEFf8noktbu6viZYe1z45
-	M5giNlNg/xofE8EeEPjku+lU2R+O2hE=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=D3ka4HP5
+	bh=MwhxpCEq0HVclgIlvvHTY3YMRlF4miDFpY6qJFFcUxE=;
+	b=ZJrajwESSTSrRKjDQO/XLJj/cAKeeIZMStfzdzfEBTJRFk7fHM48VxLAMYJ8yjWAGtFb7u
+	47nNUbVh6ptlkdHYRmwFYmf4GwhXIAERf8foTrH29IXL51wrQTUBs0W31M3V49Flp+BjFs
+	lcrLwZDQcRuBLXBNjUATvfqOR6JQnYk=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1792917740; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1792917742; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=8+WaKHQfuI6LEJ3DwFqPybAbvLLVJX9Uwl8Rt59is50=;
-	b=D3ka4HP5YYk4cZZ8Yw3tC/g7J7wGjPkDTRsUsIjeGkUj0RG6Rqvg0H0JZanrfKrSRfk7w9
-	/SMst9w4FylIqwhT1NXQPAY5OIWueEhe4DA45jV0Ntjm9HSH+b/oC04UEYJKGGC7RqMDY/
-	YqJriVVDMQtweRZ8pqWs4nc904fAcqw=
+	bh=MwhxpCEq0HVclgIlvvHTY3YMRlF4miDFpY6qJFFcUxE=;
+	b=ZJrajwESSTSrRKjDQO/XLJj/cAKeeIZMStfzdzfEBTJRFk7fHM48VxLAMYJ8yjWAGtFb7u
+	47nNUbVh6ptlkdHYRmwFYmf4GwhXIAERf8foTrH29IXL51wrQTUBs0W31M3V49Flp+BjFs
+	lcrLwZDQcRuBLXBNjUATvfqOR6JQnYk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DE69E13314
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:19 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 84DFF13314
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:21 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id mglvH9zA3Wq5HgAAD6G6ig:T10
+	id mglvH9zA3Wq5HgAAD6G6ig:T11
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:19 +0000
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 08:42:21 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 09/12] btrfs-progs: image: fix overwritten ret in restore_metadump()
-Date: Sun, 25 Oct 2026 19:11:43 +1030
-Message-ID: <513c0c3dcc4813415afb2b58060c24febb4a3fd3.1792914402.git.wqu@suse.com>
+Subject: [PATCH 10/12] btrfs-progs: image: validate the nritems before reading the content
+Date: Sun, 25 Oct 2026 19:11:44 +1030
+Message-ID: <70bed4ad16d48a0a5fa5a90badd6bd96b9c4aa41.1792914402.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1792914402.git.wqu@suse.com>
 References: <cover.1792914402.git.wqu@suse.com>
@@ -92,76 +91,93 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: F3DE022252
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-12.01 / 50.00];
+X-Spamd-Result: default: False [-11.80 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -12.01
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-In the "while(!mdrestore.error) {}" loop if we got a bad header or
-add_cluster() failed, we break the loop.
+When iterating a header, we read out one 1KiB buffer, then grab the
+cluster->header->nritems to grab the number of items stored in the 1K
+block.
 
-But immediately after breaking out the loop, we call wait_for_worker(),
-which overwrites @ret, and also continue to open_ctree().
+However if a corrupted or maliciously crafted header is passed in, we
+can easily grab a huge number as @nritems, and easily go beyond the 1KiB
+buffer.
 
-Fix the problem by directly jumping to out label.
-Also for bad header case, update the error code to -EUCLEAN.
+Fix it by rejecting obviously incorrect nritems before iterating, this
+involves 3 call sites:
+
+- build_chunk_tree()
+- search_for_chunk_blocks()
+- add_cluster()
 
 Assisted-by: LLM (exposing the bug)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- image/image-restore.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ image/image-restore.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
 diff --git a/image/image-restore.c b/image/image-restore.c
-index 4929beeb697e..3f2a7fcf797c 100644
+index 3f2a7fcf797c..525cdd4d32bc 100644
 --- a/image/image-restore.c
 +++ b/image/image-restore.c
-@@ -1852,13 +1852,13 @@ int restore_metadump(const char *input, FILE *out, int old_restore,
- 		if (get_unaligned_le64(&header->magic) != current_version->magic_cpu ||
- 		    get_unaligned_le64(&header->bytenr) != bytenr) {
- 			error("bad header in metadump image");
--			ret = -EIO;
--			break;
+@@ -1030,6 +1030,12 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres)
+ 
+ 		bytenr += IMAGE_BLOCK_SIZE;
+ 		nritems = get_unaligned_le32(&header->nritems);
++		if (nritems > ITEMS_PER_CLUSTER) {
++			error("invalid nritems, has %u expect <= %zu",
++			      nritems, ITEMS_PER_CLUSTER);
 +			ret = -EUCLEAN;
 +			goto out;
- 		}
- 		ret = add_cluster(cluster, &mdrestore, &bytenr);
- 		if (ret) {
- 			error("failed to add cluster: %d", ret);
--			break;
-+			goto out;
- 		}
- 	}
- 	ret = wait_for_worker(&mdrestore);
++		}
+ 
+ 		/* Search items for tree blocks in sys chunks */
+ 		for (i = 0; i < nritems; i++) {
+@@ -1138,6 +1144,11 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
+ 
+ 	mdres->compress_method = header->compress;
+ 	nritems = get_unaligned_le32(&header->nritems);
++	if (nritems > ITEMS_PER_CLUSTER) {
++		error("invalid nritems, has %u expect <= %zu",
++		      nritems, ITEMS_PER_CLUSTER);
++		return -EUCLEAN;
++	}
+ 	for (i = 0; i < nritems; i++) {
+ 		item = &cluster->items[i];
+ 
+@@ -1316,6 +1327,11 @@ static int add_cluster(struct meta_cluster *cluster,
+ 
+ 	bytenr = get_unaligned_le64(&header->bytenr) + IMAGE_BLOCK_SIZE;
+ 	nritems = get_unaligned_le32(&header->nritems);
++	if (nritems > ITEMS_PER_CLUSTER) {
++		error("invalid nritems, has %u expect <= %zu",
++		      nritems, ITEMS_PER_CLUSTER);
++		return -EUCLEAN;
++	}
+ 	for (i = 0; i < nritems; i++) {
+ 		item = &cluster->items[i];
+ 		async = calloc(1, sizeof(*async));
 -- 
 2.56.0
 

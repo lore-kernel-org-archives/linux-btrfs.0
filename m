@@ -1,78 +1,79 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1792948956;
-	b=G3Honn0Yaad6Av9K6OBGBve642gK4Bp0VGG55HYaWwqOY4Iod5SMauqKq51tmEKUiTL5
-	 JU+X9rv2grcxPwKvST6pxeQjZxo63KmQFcued86EqD31jrWUcbJ3OxEPdRkK8c4zJK8oD
-	 HyL1xxxZzAI/wnsyWq4NWToe5WTrHwPAvi2PacCvzl86DAdCoqUehAneShja2jD9eTXkO
-	 qfFsm5wOgwo8Cj57EDN6dBxq2WVNiL3TZhPOvC7w6hOvXC6hgHkby3kL3WbK0NkLHXwHG
-	 nySj1VtbbUjhCX7ye4KvnYiw61v7L22cwDk4qkBWUMPUvsJ7uMydthhmU2JG+FDqy8g==
+	t=1792948957;
+	b=kXHoF73bAUHoT/IWbJpsC2/XW/oXMw4dv1Dh6y4a2kxb7ONoyChQgJJMg5e4Aue5o27r
+	 Vk66ezMpSf/355CABi6NT5UZcRSMeZuBu/0JrtlFN7WoE6XKWhYUlROz9KrUxSGXmBrA1
+	 k3aIdsBkmi6+hhWe+Qa0PJV5pSAGtZhAahFecYeHiSB1mPAlpmGC9UzMPoW5pBD5+GuKy
+	 VHCS7w/o7wzXaVNIwUmb1r4ZukgjfG3Nx1j45404wyKZTfpOri2KYa+svmxi4DcgI2aA3
+	 32xhCcux/Uh+95ZOqYQAb4t+7U9oQRumV+I+MrTnk0c+ujMy+m6dRC2q8Ba37bjIGgQ==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792948956;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792948957;
 	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
 	 Content-Type:Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=h1nGHx4vMQ+43ZjYamu+W6gEkU9ENuft+DX8Y06qt+g=;
-	b=ehbnDozzcyoPZvNg8ymEOj12eBY7yHbS0QJNl/xWdTZ8i7Hp/L9pHn01hddf9xeDUjFM
-	 eKMds1j1WH0g6AMlBT3BbndvAWECg2ueERMVCerP/McOl3lkjtp73Mog3jeL/2UHVduNj
-	 Vgl/7T4B4bagW4pq9H4OARHAHHGCQuJxcbYRogp+BvyqGiSXo/v47NkGxInWqlQiE2JbF
-	 mteSHRUCSw1cSqcGLI46z2vgGb2mW7GUCY8i1gHX7sTMPJXA8wQzP/nk6nTEyK6IudpTI
-	 0yIpXqi692aXLxTLOR6YvqSf0fJNgaUTfrO+wtWa1uCRIXzKJ6zRcwFSUN1inmGamug==
+	bh=eS9Y9d3Zb14keEWC7bLDKOdub+3GfIlcm4vYIcfTgIc=;
+	b=HmPBbQRTfywqkKHQolw9GRT2j8XpS9Mzpnn8XCgbXCOBaisi4TGhUsYN9wAv0XBTIdpT
+	 2Mz4Y2QqiMhNsqs3nuyUYnjj5maKxVkVZRL+4BKH6vNlnVy7NRFOZSaAg/fzwG46x5axR
+	 Qn/nOt+a9cjEG2vv8ekomsRi5xiyTU1NUyWp+4jPwIr5Vuck1W7xX+rnldpdnL4YiF1LA
+	 Lv8jJxMNbdO9azEu3Pv6k8cPMU89Lz2rAc5MAb+ouGnqGhTPIMtR/HbFMm0ajEHV8zHRC
+	 hcT/G76vxgJmnGJLHRwvqtmfWaYBk9gQC2BKWU3PfwA2ar5q2IduoRQx3HW1Sp/UfnA==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=a0HYBK0I;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=gzYoCSIR;
 	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1BFE6606A31D;
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1AE3D606A326;
 	Sun, 25 Oct 2026 17:22:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=a0HYBK0I
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=gzYoCSIR
 Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
 ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
 	t=1792948956;
-	b=XBrs0WQkt9gFTAAvI1kiIlI59+V4lMv2vY79Tchs7XLMGmjAAiJw0RYGQ+eraNC6OQV7
-	 pjdTRXlGL+60987WW3xPiBfa2fe9GIAPa55lv4zADofDR0M3iLv4nNp2orphZbkAT0Bwk
-	 kE3ldRlahLS0jqb/0DBAaNuBSLm6dZlJ+mW6ux4XQQYRT4QThBNkA0xww2KjkJZkMLK20
-	 dDZWosg/PPAvieauwnwv+w9jRbnc67hFA7A7gpFGMQL/MeHE2K0ECUN/nGMXDyk5c/MCQ
-	 x9cDQs8T5YgB9W1ocljozA83zOWhCInAgEvBRCXqYRKqI8Ewt2lgiwom62PUbfXI4cg==
+	b=d9cHS83JBQINF5NPk0uzi4TjvoVDJrJf5ovYeesdv4gwWKr43XhGkaa8oqNOllozZpZD
+	 xrRNT2vxHwTtY5NM47kvGQRbF7WXR2kB1UWAQQFbvYsNIb5YuUFac02AFz0M1xVX4481C
+	 sMBZae7/p3YUxI0ALyF/5FyYlXvEGr0rTeMTNOZHO9HVshKlZg1K1mxnw4GVvm9hX09gh
+	 8ueS6tvJMFoDzCOIDJOeTK+ax3XX7n4LdOUja/X+7Ncnoy/OOFScY7XiQk0KmTFt6olWo
+	 9Rj8WeM5dxw7Sp/QlLjr6xZJp9CQ2nXYuBxXmyOTdfeWICfWaZelAjhBk+MCR/5rvBA==
 ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
 	c=relaxed/relaxed; t=1792948956;
 	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
 	 Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=h1nGHx4vMQ+43ZjYamu+W6gEkU9ENuft+DX8Y06qt+g=;
-	b=2rN0VIvYnFYHRAK3x/bYO60tmTl7rc2J6ky3Xd+Cbqf+SOqKZGkFyLcif3HSdf6UTzuU
-	 W2Mgf7u1a0mQ0y0xwRfsudp4hq9H0MS2ER/6NM2t3CTJVpukhu2kebOHC09NyfucG2ucL
-	 UaURtKQL4S/hCpSuDaKbEWLhSPPLUW8YbRLryaYoxLuP/b9EV/LHLJXGF+yPyiEMR34pV
-	 r02J1BeMVPwBX7WzeJVDDN57uEeRg6CL7uDnxiC4awEb2LLE7GUxN1O2K1hBl/X5VRViV
-	 RL7DZ48xSg9LKvGPYz/XIHKrcbESrNCjJl4TdCA2MKArYgwE8lRqHPEMLaFNKXXm7hg==
+	bh=eS9Y9d3Zb14keEWC7bLDKOdub+3GfIlcm4vYIcfTgIc=;
+	b=wO+bCDUgxx3ynboNsfPcwHzY4xmoB0vzYSteEd6nxVOjMRkpKJpEOvgoqHXVQhxBbe53
+	 mARj0Z6eWFuuVR/TTK3O7rBb9GQ5w1KyDDdsgPgdo6ssyVaIIGT2h+Kb6aesjJof3UOQi
+	 iBAVL37Ikp1x/lyY2E6xBL6eochSkjPToujDx6ZNZ+EBFrKFWP4AVNHf8KGEa52WOFikX
+	 fWmHhtMSBgzHeTZmlnLMzkFhCdBLqEFpobfYobJo3nU4gACNuANRjzIsCy9UMKWpgCz2G
+	 Vcr07sGwv3J8JjjJzNtIEePQD66BgZpvSBuNGvfkvBcdbNkd5icwjCPRpysQN/pDI1A==
 ARC-Authentication-Results: i=1; smtp.kernel.org; 
 	arc=none smtp.remote-ip=100.80.115.77
 Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id D67D51F01829;
+	by smtp.kernel.org (Postfix) with ESMTPS id D92751F031E0;
 	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792948955;
-	bh=h1nGHx4vMQ+43ZjYamu+W6gEkU9ENuft+DX8Y06qt+g=;
+	s=k20260515; t=1792948956;
+	bh=eS9Y9d3Zb14keEWC7bLDKOdub+3GfIlcm4vYIcfTgIc=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc:Reply-To;
-	b=a0HYBK0Ipsr4da69QIHlVSLgMR5fC13Ra63TJ32vmvY6yH3xf7cTVpTDjZUr3gKqJ
-	 QxnbqMFEhFNLD6WphAMjI+5vTvPP4atdpzsG2NckQxYIR/ehYf5bsRvpahnJ+pU0gQ
-	 G0hKP+RhtY7lwbOWUu2aY0AOq/LxL31/Yq3kQuuePtKT03dcc+TSk11xua8H8OsD1j
-	 +O6z8EoLYAFOdKgeG94BAvJBdzs0mkjU8z/g01nbY5DgaD9hxpJqpYNWsZpgI2JzuK
-	 xQJFCYX99q1kVq/loFkxSxzWTMa8H0P4E0ImlTs6iR4ZJCgfEDoysCfIeucfjPFCHN
-	 jlUcgNteZtOsg==
+	b=gzYoCSIRZgN/oAWuu7NzVu8jzRstM1Ftn6g4v2DGjiEHQC1NRk/1HGhMt+P6vjsux
+	 LkvH5q4bTSunKcHJDqcmTL1Ke4MIS2qbIKhk49AvmcryrciIJiEPsY9ImokcXAlPmn
+	 8/vWAxrV47/MsTKwGehu3nR1/8+fb6iro5f4v0Ki8aN53aCRD697s0s+H5HWje2SQK
+	 BImHIUSiG+kCo8x/ohm0QZHMdyVPP1GCG3nmpOpIIPbDl1udgmst+laU7QXZ/RPAjO
+	 ZXM7u7qKkN2h2RPJURpVLshZj09YQudQq98Dfytx/yDorcGzd9GdXKhHGO4n7G8djV
+	 biqpEMDzATHqw==
 Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 3E0A144A7D;
+	by lkml.kernel.org (Postfix) with ESMTP id 4F69B44A88;
 	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
 From: Dhruva Gole via B4 Relay <devnull+goledhruva.gmail.com@kernel.org>
-Date: Sun, 25 Oct 2026 17:21:50 +0000
-Subject: [PATCH v2 1/3] btrfs: exercise NOCOMPRESS range and EOF handling
+Date: Sun, 25 Oct 2026 17:21:52 +0000
+Subject: [PATCH v2 3/3] btrfs: cover NOCOMPRESS inline eligibility and
+ short tails
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -83,7 +84,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261025-b4-btrfs-nocomp-v2-v2-1-628c1986f9b9@gmail.com>
+Message-Id: <20261025-b4-btrfs-nocomp-v2-v2-3-628c1986f9b9@gmail.com>
 References: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
 In-Reply-To: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
 To: fstests@vger.kernel.org
@@ -91,11 +92,11 @@ Cc: linux-btrfs@vger.kernel.org, Anand Jain <asj@kernel.org>,
  Filipe Manana <fdmanana@suse.com>, Zorro Lang <zlang@kernel.org>, 
  Qu Wenruo <wqu@suse.com>, Dhruva Gole <goledhruva@gmail.com>
 X-Mailer: b4 0.16.0
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1792948953; l=6350;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1792948953; l=5180;
  i=goledhruva@gmail.com; s=remote-20261025; h=from:subject:message-id;
- bh=rRd6hUvaJQlEGRR2dEfgYnu+HGutmczMTsoASyOLXxY=;
- b=SkharaxXvjVQZxtxYZQCPXM0qx1I8o3U9QmitPNI3GoUELseXrPfKAiHr4T6SAqVfPmUX6+ms
- aL/MbOIzyS0BAQ2UFyXSp4MffcfV4rBbclpuS+IiaKPv0Af3p5b8LaH
+ bh=nSeOy4HCHBGmnWIBWdeEUmRx3/Kf0uqzyuynzDLXb2s=;
+ b=hdLjnwCyiP7mZH3rd0qyBYpJRAVlsuGvMxA3admyu/205BegJe6BiIsNncxZGX/LijREG3lfU
+ snXSbmIk/7PDvwR8r7g7t8LFvLGNfEBaAFET5ijcwwuzqtl4PmrbC7U
 X-Developer-Key: i=goledhruva@gmail.com; a=ed25519;
  pk=OBz78Vw5K+/+HyXjxg9mNOV2Bq087eJgHL749H+Xe/k=
 X-Endpoint-Received: by B4 Relay for goledhruva@gmail.com/remote-20261025
@@ -106,178 +107,151 @@ Content-Transfer-Encoding: 7bit
 
 From: Dhruva Gole <goledhruva@gmail.com>
 
-Test that defrag --nocomp only uncompresses the requested range of a file
-with compressed extents, and that the range handling works for a partial
-final sector, a zero length (up to EOF) and a length extending past EOF.
-Check the resulting layout with fiemap and the file contents with md5sum
-after a remount, against the golden output.
-
-Also, add _require_btrfs_defrag_nocompress() to common/btrfs, which skips
-the test if either btrfs-progs or the kernel lacks support for
-defrag --nocomp.
+Test that defrag --nocomp keeps a compressed inline extent while it is still
+allowed by max_inline, and that it uncompresses the extent once remounted
+with max_inline=0. Also exercise files with sizes of 1 byte, a sector minus
+one byte, a sector plus one byte and a maximum compressed extent plus one
+byte. Check the layouts with fiemap and the file contents with md5sum after
+a remount.
 
 Signed-off-by: Dhruva Gole <goledhruva@gmail.com>
 ---
- common/btrfs        | 14 ++++++++++
- tests/btrfs/355     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/355.out | 45 +++++++++++++++++++++++++++++++
- 3 files changed, 135 insertions(+)
+ tests/btrfs/357     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/357.out | 39 ++++++++++++++++++++++++++
+ 2 files changed, 120 insertions(+)
 
-diff --git a/common/btrfs b/common/btrfs
-index 0bfb02dd..609f3f0a 100644
---- a/common/btrfs
-+++ b/common/btrfs
-@@ -1080,3 +1080,17 @@ _require_btrfs_iouring_encoded_read()
- 		_notrun "btrfs io_uring encoded read failed with -EOPNOTSUPP"
- 	fi
- }
-+
-+# Check that both btrfs-progs and the kernel support defrag --nocomp.
-+_require_btrfs_defrag_nocompress()
-+{
-+	_require_scratch
-+	_require_btrfs_command filesystem defragment --nocomp
-+
-+	_scratch_mkfs > /dev/null 2>&1
-+	_scratch_mount
-+	touch $SCRATCH_MNT/foo
-+	$BTRFS_UTIL_PROG filesystem defragment --nocomp $SCRATCH_MNT/foo \
-+		> /dev/null 2>&1 || _notrun "kernel does not support defrag --nocomp"
-+	_scratch_unmount
-+}
-diff --git a/tests/btrfs/355 b/tests/btrfs/355
+diff --git a/tests/btrfs/357 b/tests/btrfs/357
 new file mode 100755
-index 00000000..13934de3
+index 00000000..f9c790bb
 --- /dev/null
-+++ b/tests/btrfs/355
-@@ -0,0 +1,76 @@
++++ b/tests/btrfs/357
+@@ -0,0 +1,81 @@
 +#! /bin/bash
 +# SPDX-License-Identifier: GPL-2.0
 +# Copyright (c) 2026 Meta Platforms, Inc. and affiliates. All Rights Reserved.
 +#
-+# FS QA Test 355
++# FS QA Test 357
 +#
-+# Test that defrag --nocomp only uncompresses the requested range, including
-+# a partial final sector, a zero length and a length extending past EOF.
++# Test that defrag --nocomp keeps a compressed inline extent while it can stay
++# inline, uncompresses it once max_inline no longer allows it, and handles
++# files with short EOF tails.
 +#
 +. ./common/preamble
 +_begin_fstest auto quick defrag compress fiemap
 +
 +. ./common/filter
-+. ./common/punch # for _filter_fiemap_flags
++. ./common/punch # for _coalesce_extents
++
++# Keep all flags, including DATA_INLINE (0x200) and ENCODED (0x8), while
++# filtering out physical addresses. A compressed inline extent has flags 0x309
++# (DATA_INLINE | NOT_ALIGNED | ENCODED | LAST).
++_filter_fiemap_keep_flags()
++{
++	$AWK_PROG '
++		$3 == "hole" {
++			print $1, $2, $3;
++			next;
++		}
++		$5 ~ /^0x[[:xdigit:]]+$/ {
++			print $1, $2, $5;
++		}' | _coalesce_extents
++}
 +
 +_require_btrfs_defrag_nocompress
 +_require_btrfs_support_sectorsize 4096
 +_require_btrfs_no_nodatacow
 +_require_btrfs_no_nodatasum
 +_require_btrfs_no_autodefrag
++_require_btrfs_inline_extents_creation
 +_require_xfs_io_command "fiemap"
 +
 +_wants_kernel_commit 009b2056cb25 \
 +	"btrfs: defrag: add flag to force no-compression"
 +
 +_scratch_mkfs -s 4k >> $seqres.full 2>&1 || _fail "mkfs failed"
-+_scratch_mount -o compress=zlib
++_scratch_mount -o compress=zlib,max_inline=4096
 +
-+# 4M is chosen as a convenient size, uncompress [1M, 1.5M) later
-+$XFS_IO_PROG -f -c "pwrite -S 0xab 0 4M" $SCRATCH_MNT/range | _filter_xfs_io
-+
-+# A file with a compressed extent covering a partial final sector at
-+# [128K, 132K + 1). Uncompress one byte of it, then the rest up to EOF.
-+$XFS_IO_PROG -f -c "pwrite -S 0xcd 0 $((132 * 1024 + 1))" $SCRATCH_MNT/partial_sector | \
++# Create a compressed inline extent and check both ENCODED and DATA_INLINE.
++$XFS_IO_PROG -f -c "pwrite -S 0xab 0 2K" $SCRATCH_MNT/compressed-inline | \
 +	_filter_xfs_io
-+
-+# Zero length means up to EOF, a length past EOF is clamped to EOF.
-+# The name zero_length refers to the later -l 0 argument.
-+$XFS_IO_PROG -f -c "pwrite -S 0xef 0 256K" $SCRATCH_MNT/zero_length | _filter_xfs_io
-+# An independent file here lets -l 16M be tested without the earlier -l 0 conversion
-+# affecting it
-+$XFS_IO_PROG -f -c "pwrite -S 0xef 0 256K" $SCRATCH_MNT/past_eof | _filter_xfs_io
-+
-+# As in btrfs/280, defrag first to avoid writeback timing leaving compressed
-+# extents smaller than 128K and changing the last extent's logical start.
-+for f in range partial_sector zero_length past_eof; do
-+	$BTRFS_UTIL_PROG filesystem defragment -czlib -f $SCRATCH_MNT/$f \
-+		>> $seqres.full 2>&1
-+done
-+
 +echo "fiemap before defrag:"
-+for f in range partial_sector zero_length past_eof; do
-+	echo "$f:"
-+	$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/$f | _filter_fiemap_flags 1
-+done
++$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/compressed-inline | \
++	_filter_fiemap_keep_flags
 +
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp -s 1M -l 512K $SCRATCH_MNT/range
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp -s 128K -l 1 $SCRATCH_MNT/partial_sector
-+echo "partial_sector after uncompressing one byte:"
-+$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/partial_sector | _filter_fiemap_flags 1
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp -s $((128 * 1024 + 1)) -l 4K \
-+	$SCRATCH_MNT/partial_sector
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp -s 128K -l 0 $SCRATCH_MNT/zero_length
-+$BTRFS_UTIL_PROG filesystem defragment --nocomp -s 128K -l 16M $SCRATCH_MNT/past_eof
++$BTRFS_UTIL_PROG filesystem defragment --nocomp $SCRATCH_MNT/compressed-inline
++_scratch_cycle_mount compress=zlib,max_inline=4096
++echo "fiemap after defrag with max_inline=4096:"
++$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/compressed-inline | \
++	_filter_fiemap_keep_flags
++
++_scratch_cycle_mount compress=zlib,max_inline=0
++$BTRFS_UTIL_PROG filesystem defragment --nocomp $SCRATCH_MNT/compressed-inline
++
++for len in 1 4095 4097 131073; do
++	$XFS_IO_PROG -f -c "pwrite -S 0xcd 0 $len" $SCRATCH_MNT/tail-$len | \
++		_filter_xfs_io
++	echo "tail-$len fiemap before defrag:"
++	$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/tail-$len | \
++		_filter_fiemap_keep_flags
++	$BTRFS_UTIL_PROG filesystem defragment --nocomp $SCRATCH_MNT/tail-$len
++done
 +
 +# Check the new layout and data are persisted.
-+_scratch_cycle_mount compress=zlib
++_scratch_cycle_mount compress=zlib,max_inline=0
 +
-+echo "fiemap after defrag:"
-+for f in range partial_sector zero_length past_eof; do
-+	echo "$f:"
-+	$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/$f | _filter_fiemap_flags 1
++for f in compressed-inline tail-1 tail-4095 tail-4097 tail-131073; do
++	echo "$f fiemap after defrag:"
++	$XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/$f | _filter_fiemap_keep_flags
 +done
-+md5sum $SCRATCH_MNT/{range,partial_sector,zero_length,past_eof} | _filter_scratch
++md5sum $SCRATCH_MNT/{compressed-inline,tail-1,tail-4095,tail-4097,tail-131073} | \
++	_filter_scratch
 +
 +_exit 0
-diff --git a/tests/btrfs/355.out b/tests/btrfs/355.out
+diff --git a/tests/btrfs/357.out b/tests/btrfs/357.out
 new file mode 100644
-index 00000000..340105d7
+index 00000000..2351f68b
 --- /dev/null
-+++ b/tests/btrfs/355.out
-@@ -0,0 +1,45 @@
-+QA output created by 355
-+wrote 4194304/4194304 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 135169/135169 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 262144/262144 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 262144/262144 bytes at offset 0
++++ b/tests/btrfs/357.out
+@@ -0,0 +1,39 @@
++QA output created by 357
++wrote 2048/2048 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +fiemap before defrag:
-+range:
-+0: [0..7935]: encoded
-+1: [7936..8191]: encoded|last
-+partial_sector:
-+0: [0..255]: encoded
-+1: [256..271]: encoded|last
-+zero_length:
-+0: [0..255]: encoded
-+1: [256..511]: encoded|last
-+past_eof:
-+0: [0..255]: encoded
-+1: [256..511]: encoded|last
-+partial_sector after uncompressing one byte:
-+0: [0..255]: encoded
-+1: [256..263]: none
-+2: [264..271]: encoded|last
-+fiemap after defrag:
-+range:
-+0: [0..2047]: encoded
-+1: [2048..3071]: none
-+2: [3072..7935]: encoded
-+3: [7936..8191]: encoded|last
-+partial_sector:
-+0: [0..255]: encoded
-+1: [256..271]: last
-+zero_length:
-+0: [0..255]: encoded
-+1: [256..511]: last
-+past_eof:
-+0: [0..255]: encoded
-+1: [256..511]: last
-+e9295e0e0a926a8922168f1fc481ef90  SCRATCH_MNT/range
-+6190a9bc8f51d424927964094f0ce4d1  SCRATCH_MNT/partial_sector
-+832cb356cb2524376d8faa4f76cfcfcd  SCRATCH_MNT/zero_length
-+832cb356cb2524376d8faa4f76cfcfcd  SCRATCH_MNT/past_eof
++0: [0..7]: 0x309
++fiemap after defrag with max_inline=4096:
++0: [0..7]: 0x309
++wrote 1/1 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++tail-1 fiemap before defrag:
++0: [0..7]: 0x1
++wrote 4095/4095 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++tail-4095 fiemap before defrag:
++0: [0..7]: 0x1
++wrote 4097/4097 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++tail-4097 fiemap before defrag:
++0: [0..15]: 0x9
++wrote 131073/131073 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++tail-131073 fiemap before defrag:
++0: [0..255]: 0x8
++1: [256..263]: 0x1
++compressed-inline fiemap after defrag:
++0: [0..7]: 0x1
++tail-1 fiemap after defrag:
++0: [0..7]: 0x1
++tail-4095 fiemap after defrag:
++0: [0..7]: 0x1
++tail-4097 fiemap after defrag:
++0: [0..15]: 0x1
++tail-131073 fiemap after defrag:
++0: [0..263]: 0x1
++a97d075b76a2d5d777ebadd4e3f3be94  SCRATCH_MNT/compressed-inline
++e6cf2aa82fa371b686171ecd6a734e5d  SCRATCH_MNT/tail-1
++eb7177e6602dec278d9eb99dfcb32764  SCRATCH_MNT/tail-4095
++915c2ed4a6fdedfd3ef3bb4198d9b4f8  SCRATCH_MNT/tail-4097
++1e71d33e1f1368bb15cbe39b7b9f2447  SCRATCH_MNT/tail-131073
 
 -- 
 2.43.0

@@ -1,79 +1,92 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1792948956;
-	b=UglQ3bINHXn7VIT85o3jQdMpDv/zOOKxIHNNEA27Z5cBwFrdI/TzF4yqLqKTXEVCgJjx
-	 Usp7uGP7HR9sT6fxP5b6BLv0/3E2vYV+IAPjhwnHEXc5HZHBWN5HcK9aQ980d6T8U8bZg
-	 MWYB9rb5ExYkjrzm0ND9uZtPT8Z8WIxpImMt9IIt6sBpVwRrllZjsx3scIKhqIexC7SOJ
-	 VSXKY47l105rf0lBh8BtxNcvPciobU1GyJEg0GqGIOff/5Rbctgrop0roO4sg6i8pQRTw
-	 /h5amSG8ux06dKRPjPQFxnO7XSiP8bAgRPrkjwyk+H/Pmg2rFA2QdDaBVL+xOu+QH+Q==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1792948956;
-	h=Received:DKIM-Signature:Received:From:Subject:Date:Message-Id:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding:X-B4-Tracking:
-	 X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:
-	 X-Endpoint-Received:X-Original-From:Reply-To;
-	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
-	b=xfs/I1PA7dgxZsBZpae4p0OvNtDD3DK4VmWQ6fqgd4Z2EWLwH68p9/1bUPMXSSSfPXZc
-	 Fy8hUJsfvKFlR0PcVdTXkpZyrjr2dz5WhzItMAu7M6TcsG3d4LfR88RWGahp9LHp1hK30
-	 7yFt8AQlkdtL3cVOFRmuOmgzU5KzJv2mKu/V76FBXxxIDKtA/n1bTw6fDL4lwsitJFydm
-	 xKZKpwAemnBxSJq8Lde6Ytjuvn94aq1/RI7u/7o3Q/BpShKhxa27L+dDQ77HmLqSQpq7N
-	 rqYx/qtqLiwi8pZepftlioqiQU3qvvLYEoB93dJ8NbtH7LJbLyezA0u3GxVwkZmIjRQ==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bxCUeihU;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C505F606A31A;
-	Sun, 25 Oct 2026 17:22:35 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bxCUeihU
-Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
-ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1792948955;
-	b=1dzbpF1SSVh6n0+TKlNIlx1+5PPkHgH71yV1MDzGng7z7bmpoKX1kLAABhhHYLRoEWzz
-	 5GqzzVdlyThaww9YimMZ96s7B9W9nORDBBTjj6hqNUBAHuDibPzoD/ohBNAzdhtb8Op9r
-	 vB5fg0/JdJlH1V+XcWN4e8xIcxFl4xQzXBSfcZN01aUj8g8GT3WqESQSFt1l4geUcyeM/
-	 2WNF90t0KCn3eQeVxw6VLJgZvuxSZRjCggsRCuhOhmc2I173ieJYuf8qAedXjG5WbF5t0
-	 DLqNVyeLTozEI/S82Q48NlYg/O+Ek9gXjr0xzAPe0mOIak6esBq+sqX6EN6JwPnKmcA==
-ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1792948955;
-	h=DKIM-Signature:Received:From:Subject:Date:Message-Id:MIME-Version:
-	 Content-Type:Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:
-	 Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To;
-	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
-	b=MC7EbC9YTHPJ5zg6fE31qFK0NQWfHRThyg05PIKYodLsNqJIwQBQGNLH8lxLS2u88rzM
-	 AQLtEM5UwLVLgz8/gDTqcKh42I7PitFv2WGQWxV4fJwSCEZTiHYX/uGwhBMhyy51GQlWh
-	 1uJV9lgjXDsCgstonANZrUui/bJDD9de/MhLvgST5KKYZCSVOeKELpjzvszQHKXhqmfL3
-	 JYI7v6ZlcQO85kQSJrio1B0O8XGk/JJbgEf2wcIiwJXfzOxY3ZsvtJaMNx5IpxRacDuE0
-	 y7WekLXvFjsRwC6ekw3SAohPYsH4WpM9L77Bjt5B3Np2hDzaK0D9KHh3JZhskuevS5g==
-ARC-Authentication-Results: i=1; smtp.kernel.org; 
-	arc=none smtp.remote-ip=100.80.115.77
-Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.171
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1792951380;
+	b=A5j3wvoe8jUw1GHQxUpiB+lrgeJF+35uHJT0LNBVpZnqPIj0Xe9nO/vbFhcIC1pr3vMK
+	 5feHAL0iL4k4LLwP0reOW1f6HYSBkHRVq//tklxGJT0Je5u1wrQWx9xI3ZB6G4fwR7ZBT
+	 +oUBLKmo2tQaw0uZDylNj03hnEqWjo5t6n2Cghue9vB73d6QnF6qMpx6Cjn7c+Vxj04cg
+	 AHNTXAigAggE6thjIohQ0UPYgnZv+qKBSRSEsa/czQ5zAhmrVQiT+RSvvuAMceyea+i9d
+	 ZO1BxhJ/CArqrdJd1SEjrFTZAqpJZuIABIp1hJltkUOg1IgpBZCth2cAxTEVeikSP7Q==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1792951380;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=nGkB92t+CooeFQ9Nv+jcXvyrRqhslN6vzmsTBz1kQ1E=;
+	b=uUjj/rKLamub2x1TCQqRGhQY3xNSZYoo7nrnV7arwwr8HSiysS6r9iifa0hchtdNGeJV
+	 XpMqUmClVFTsvXAUbPbHtNzbVmnzANzN002/Hfmm6Yu71wXcN2iMEVLBWeuzJO0+frQUN
+	 CA5E6FK5tkjdyl4XI5HRe0QEMG4o6FKTHRBayCAy17ExxbXc0VuBJfdP6+ajE3pKPLpDl
+	 nCF0MmnLZvgJI1OU9Kd0iSVgaIRhwAX4VlzBGimHkw5BDmPGZ8HQLbwHb5c6wxez8rSLy
+	 I3zcxnvP7bWulZPbmxsebZNnd45/+zLthOfGiSVbUJdWp5T90mSpO7YwktpA/TQSvlg==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=bZOJ0b30;
+	arc=none smtp.remote-ip=74.125.82.171
+Received: from mail-dy1-f171.google.com (mail-dy1-f171.google.com [74.125.82.171])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id D3B9C1F01828;
-	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1792948955;
-	bh=IYktqvR9gwXXxuYOBAkhLZsB3ZcIwbWeiU0WdHED43M=;
-	h=From:Subject:Date:To:Cc:Reply-To;
-	b=bxCUeihUbGn9BXhJnQP1Ptx2vyiCeVGuJAkLxv4urYJ4pf//qhXjarelay0Rq4e1c
-	 W0WeOcaLbR2glQUyFxRO2tD3xVzXnG2FOcJmc9jH4MDCr4B+naQ7dg6q5p7LrJWGUq
-	 n7Ove6gyc8/9uj87uwGtEid45Zd0UF6SxMQwD5FmHkqFPPFhettmGuM1rtlILuo8HS
-	 kzzEtQhmZwMAXHsJK14bbZ5o0ocLVfghTi+taNSai1i6Woxt/aSe3T4VPp8EoucvTS
-	 A04eOm+a33u/VX2BTvRwsbwd3v2eephQkVw2mnMtQynlLOkankq8Ydibatr9l0jUro
-	 XYd73bq+Z1KcA==
-Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 3357C44A80;
-	Sun, 25 Oct 2026 17:22:34 +0000 (UTC)
-From: Dhruva Gole via B4 Relay <devnull+goledhruva.gmail.com@kernel.org>
-Subject: [PATCH v2 0/3] btrfs: add NOCOMPRESS defrag regression coverage
-Date: Sun, 25 Oct 2026 17:21:49 +0000
-Message-Id: <20261025-b4-btrfs-nocomp-v2-v2-0-628c1986f9b9@gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65777606A322
+	for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 18:03:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 65777606A322
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=bZOJ0b30
+Received: by mail-dy1-f171.google.com with SMTP id 5a478bee46e88-353804b591eso4286908eec.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2026 11:03:00 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1792951380; x=1793556180; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=nGkB92t+CooeFQ9Nv+jcXvyrRqhslN6vzmsTBz1kQ1E=;
+        b=bZOJ0b30bXZgvp232UNHOAMQJmTlfPOnQ2z3tTgcHuj7D081iTqv8KQLpQ6SmSIz9c
+         iqnmeTavtswTQ5eV747Ex7MihLD1WdX72t6pYcvyiUuawNC8tfzdMt/9THyt00Js/X/G
+         VJJ+gnp0Icuf8MKR3hhGI3vz+ktCvzyS88Y5tJ56+v+tL74xer0O1MYK4NFQAJ6K7FdG
+         wMcbjs16xp3QW9FsTJ497vqjB2n1gWm8UsL0r9K9g3xWLLVrYXfEAAxpyCj/V3e4jh0K
+         ikpSbNDd+Fgmv5PP3gm0CjjZsaDTMps/bMbu2WOv0f3AGfBxn0PhoHj7pdHieWyVKedh
+         iusg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1792951380; x=1793556180;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=nGkB92t+CooeFQ9Nv+jcXvyrRqhslN6vzmsTBz1kQ1E=;
+        b=hhOdg85w0DqhTzsZIY1pzYUjKQKIVg3ALbw/SItthMbuqoJ1nbDplzKq8L7afaknbn
+         miFKXGtkN/3wkEPgct1owjbr07zol7Kk+VuCj84QfUFlhIEh4Vh2Ctjz8oB6Mwi4rK6L
+         47wJ2EduqpW3WZiHH4uJAiMX55W4UY+L19ltR5Zrf1vJjL5MDFE5Xpzx8OjBH+CutwdR
+         jIH0MoPogpRWvfw5GVZOhdu6bxNrvWS2bofjBQBj6mwGiaWpgatgYD6bljVgRkT/aTLu
+         8jp3+zYZpu+1mNBoEfQ7BoC0GIWXymu7jGzArXARK1sGXzb5iiBxFWF0qr0UiuNt5j9/
+         Kppg==
+X-Forwarded-Encrypted: i=1; AKwUvBz3d77jFQcAJPmHwyUQ8wjaNfd7BKKZnoRRFJv3ofDPOwJ8nrvx7F0UJLrjs0y7fszyqrVGLpbkmLyFPg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJyLJIML9vzkaARnqdZLHQDtOgAsBwfk4gVTMgNg+OJ6hsv9dw2
+	9Wk23wsMj2sWG26sX3Bid9VJfFgLmlg174CgIrZJOgcriMVjQI63Y5rg
+X-Gm-Gg: AYBFou0eAe9vzjzxkvCJip16A/oodPiRI8TDxVYYsuvDLsnlZc7mhkyrSThU2mJirVM
+	8u/rAcj+KOq+LtctAJwaBEP+acUf75nasW8bLoqHaFXkJX793Mx5mXRdhzigDlEHS3As/oNh0tl
+	xhPjweC8/8DQ14KL9Ei8GwEMiIdsM9oJrqz7ikpbZQ9m2fWq0KJd8LoI1/0/aswS8faEjng0jzX
+	Dfj5sNQP8q5mENYhkCeAiBZSchbbygm2mTZnVcEAGHFGitUirddeqYGVMjaXDXUMKE0Tekesf6k
+	jJp6fgPV4yinmxB36cHB6U7wwTG4TbhDUgPuhe2G7eA6mswj8sR/oIX3oc3Gq6UID1jwcOKEl7L
+	t4c8qpLRaJ+MAoFfBgZlQzNnFtTvP00iYig2TA14LLcxicVWCwCDLR2AqVtgKuVQ7294hvPlBwR
+	ndUGqXnLLKxp15chlZYBIFBAo405EjjwTu8WoGROj8UM8+9nvGwr7oQpX1SrCWv4LFfqkskdMPO
+	mMVoSk55hhINGXIkZi5OW1VQMY4svjKEc9voKNHTvsY9dAoLPUf2uddPOG5CFskIa5grBF4Be7Y
+	QYtzCgc3YvmT5kfXkF8=
+X-Received: by 2002:a05:693c:65cb:b0:369:38e3:5363 with SMTP id 5a478bee46e88-369e847a65cmr6902562eec.7.1792951379486;
+        Sun, 25 Oct 2026 11:02:59 -0700 (PDT)
+Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36a01fa4c58sm1829947eec.21.2026.10.25.11.02.57
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 25 Oct 2026 11:02:58 -0700 (PDT)
+From: Cheng Yongkang <teel4res@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Cheng Yongkang <teel4res@gmail.com>
+Subject: [PATCH] btrfs: remove devid kobject when deleting a missing device
+Date: Sun, 25 Oct 2026 11:02:52 -0700
+Message-Id: <20261025180252.349049-1-teel4res@gmail.com>
+X-Mailer: git-send-email 2.34.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -83,67 +96,73 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAK063moC/02OzY6DIBSFX6Vh3Wv40St01feYdAEISlOlAUqma
- Xz3qrOZ5Zec853zIdml4DK5nD4kuRpyiMsG/HwidtLL6CAMGxNOOTLKOzAtmJJ8hiXaOD+hcpD
- GS49CIBeabMVncj78HtKf2x/nl7k7W3bTnvApzlCm5PQhN0oh68wAyvQWWmkQtO0pDG1HNVIUU
- trrOOvwaLbNXTCFXGJ6H7cr24eIjdWlhvWKCdUh0mYMpRnjww1TelX9r39b1/ULkarSx/kAAAA
- =
-X-Change-ID: 20261025-b4-btrfs-nocomp-v2-8bf8f633623a
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Anand Jain <asj@kernel.org>, 
- Filipe Manana <fdmanana@suse.com>, Zorro Lang <zlang@kernel.org>, 
- Qu Wenruo <wqu@suse.com>, Dhruva Gole <goledhruva@gmail.com>
-X-Mailer: b4 0.16.0
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1792948953; l=1705;
- i=goledhruva@gmail.com; s=remote-20261025; h=from:subject:message-id;
- bh=n/3vRrou5YbrZbVXlPGDJ5JH9mPmNCyJhEtjuKyblUY=;
- b=TF5Be2fLrDmjFsrgaGVtq+0CJ2TckeeXNSMK6gzl6vf8rXeZGO1SlA65WqLezGf9fI4sa+oHm
- KhbxzEKxqirDQo6OETxURIR1OAXtVIA4HQE7V0xfQ8kUtDWSs+/GqR+
-X-Developer-Key: i=goledhruva@gmail.com; a=ed25519;
- pk=OBz78Vw5K+/+HyXjxg9mNOV2Bq087eJgHL749H+Xe/k=
-X-Endpoint-Received: by B4 Relay for goledhruva@gmail.com/remote-20261025
- with auth_id=1318
-X-Original-From: Dhruva Gole <goledhruva@gmail.com>
-Reply-To: goledhruva@gmail.com
+Content-Transfer-Encoding: 8bit
 
-Add three tests for btrfs filesystem defragment --nocomp: range and EOF
-handling, preservation of holes and preallocation, and inline eligibility
-and short EOF tails. Check extent layouts and file contents after remount.
+btrfs_rm_device() removes the sysfs device entry only when
+device->bdev_file is non-NULL.  A missing device (created by
+add_missing_dev() for an absent disk) has bdev_file == NULL, but
+btrfs_sysfs_add_device() still registers its devid kobject under
+/sys/fs/btrfs/<uuid>/devinfo/<devid>.
 
-Changes in v2 (thanks to Qu Wenruo and Filipe Manana):
-- Replace the private helper framework and C ioctl probe with direct
-  btrfs-progs, xfs_io and md5sum calls checked against golden output.
-- Move the capability probe to _require_btrfs_defrag_nocompress() in
-  common/btrfs.
-- Use a test-local FIEMAP filter preserving all flags, including INLINE,
-  as suggested by Qu; leave the shared filter interface unchanged.
-- Improve naming of variables/ filenames to be more descriptive
+When such a device is deleted, btrfs_free_device() frees the
+btrfs_device while the devid kobject remains registered.  The kobject
+is embedded in the freed btrfs_device and its show functions use
+container_of() to reach it, so reading any devinfo attribute is a
+use-after-free:
 
-v1: https://lore.kernel.org/linux-btrfs/b99615bd-9b7c-48b6-ac70-d450a606388c@gmail.com/
+  BUG: KASAN: slab-use-after-free in sysfs_kf_seq_show+0x157/0x490
+  Read of size 8 at addr ffff88801d8172a8 by task poc/9385
+  ...
+  Freed by task 9385:
+   kfree
+   btrfs_rm_device+0x11ee/0x17b0
+   btrfs_ioctl_rm_dev+0x265/0x400
+  Allocated by task 9390:
+   btrfs_alloc_device+0x7e/0x400
+   device_list_add
+   btrfs_scan_one_device
+   btrfs_control_ioctl
 
-Signed-off-by: Dhruva Gole <goledhruva@gmail.com>
+The freed object is kmalloc-1k and the faulting access is 680 bytes
+inside it (offsetof(struct btrfs_device, devid_kobj) = 640 plus
+offsetof(struct kobject, ktype) = 40), confirming the embedded
+devid_kobj.
+
+Reproducer: create a three-device RAID1 btrfs, detach one device,
+mount with -o degraded, delete the missing device with
+BTRFS_IOC_RM_DEV("missing"), then read
+/sys/fs/btrfs/<uuid>/devinfo/<devid>/fsid.
+
+btrfs_sysfs_remove_device() already skips the block-device link when
+device->bdev is NULL and only touches the devid kobject when it is
+initialized.  Call it for missing devices too.
+
+Assisted-by: LLM
+Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
 ---
-Dhruva Gole (3):
-      btrfs: exercise NOCOMPRESS range and EOF handling
-      btrfs: check NOCOMPRESS preserves holes and preallocation
-      btrfs: cover NOCOMPRESS inline eligibility and short tails
+ fs/btrfs/volumes.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- common/btrfs        | 14 +++++++++
- tests/btrfs/355     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/355.out | 45 +++++++++++++++++++++++++++++
- tests/btrfs/356     | 64 ++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/356.out | 28 ++++++++++++++++++
- tests/btrfs/357     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/357.out | 39 ++++++++++++++++++++++++++
- 7 files changed, 347 insertions(+)
----
-base-commit: 3e1ee800e52a0f53d7d9a7809be1ffc80ec1788f
-change-id: 20261025-b4-btrfs-nocomp-v2-8bf8f633623a
-
-Best regards,
---  
-Dhruva Gole <goledhruva@gmail.com>
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 85ea9c5..912a1ef 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2479,11 +2479,11 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 
+ 	btrfs_assign_next_active_device(device, NULL);
+ 
+-	if (device->bdev_file) {
++	if (device->bdev_file)
+ 		cur_devices->open_devices--;
+-		/* remove sysfs entry */
+-		btrfs_sysfs_remove_device(device);
+-	}
++
++	/* remove sysfs entry, including for a missing device */
++	btrfs_sysfs_remove_device(device);
+ 
+ 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
+ 	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
+-- 
+2.34.1
 

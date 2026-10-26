@@ -1,82 +1,111 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793050585;
-	b=xUHw6lOUVOmwuVoSq6zsE8LVY9VIXAqmRDxsQVw24ehPqUGYW1YXRGbeMJLdTYZz0Ndi
-	 HJ+DdGvvnIKLcTsCRwMfP1EvQRF5qpaI3oMu1hclfY0gz17vPIglIE8pyg2FgtqXh8b0r
-	 jh90Xb1tE9/Z/U/M2eVFi0GgSXVn/1DFDOrQKHBl6NTTaU4w6GDIgx93/RpKNEGmJpRsO
-	 USCRmn4pU1eHXk/w/WoINpMmYp2SAfv2yummCsSh2cPcapCQGRFhWZgi/q7aRr7LEt1p3
-	 s9S4k9OjFA6tsK6nvHmuCg+nER2x56/y1zmK8JbJpB0UdYn7qo8sh93YOcPPWmkuy7A==
+	t=1793051364;
+	b=vMNqSfRnWS88rpQMdgm8gCbXhMRvEAsCogkVXolv6vdKNlAR65ybD2xTb6DjwWlLdIvW
+	 i5BPlcao0fUNXFppsbsuq+UsIMy12J8LIL/PSTvkWV/AjOloQ17lfFj6zaKS8c9HXFvqT
+	 8P9P9fdG7JKxZPWwcKtVCp6q+UMINL1HfJlhrV3+6s7dzBMowxBeap5V8vNWPFzECqlUy
+	 YtrC3tXePU21DaUXQG3BLHaJ2hM9t/yoIq2bvaH82W3uynoaH8IeixD/MwqqEPMU6K6kb
+	 VjI3QMp93+wBDeq34adSKJJ4X2CFVAuyKF7euPs1otkrVoIuJTrXByEkCwz1k2+k2aA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793050585;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=h4TtMxiD7qIIu9haOuhPNclvY/+UQ3UGNUpsBEbNloQ=;
-	b=Irs4J/MrNAvjhHwLm6sTG2s5KogXU890rYGXLl+07KGxTPPMm/Z+qmvaMUmybvLEdXnV
-	 eh3BrtJVddoGb+elY2MfUOCkfrw8aWZY8wh/lJU87s92iNiMU76P3vuCDmOsWVgZn9onH
-	 7FIqLwNHKH656ztKuwr09zRs2h7Y+rEL7yPe7tG879Ll7HtO2SmRMJPcq81hxmS6D4rEU
-	 5f5V/KLvJ08n7jSZj2qYEydBzLy3HMNmGrVLAIABpLHPwFMrNR+BwD2q7xZqsVOSdCxZx
-	 BVaVLkpSLTWnOMoIxcxnX4w+Zx8NZlymJnNVvq3CATzmjO7DiGNapbX1YFeoDz0HLpg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793051364;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Rspamd-Queue-Id:X-Spam-Level:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:X-Spam-Score;
+	bh=bVpJ81jbb6s/k9oeKUE3zACKDLs87mB6qiXsiIpROrw=;
+	b=IRmMZOUsVjPwVEtZIRj5TQyF7YGybUL87uW5/NC3ENoG7NwLUsmhzinJbji+l1KrLpBs
+	 +E0PqmlolLk2qinWO2+nTTjtWcPPi4vFvCkhmljRz6MSQ492o66IRwkIpG/U5EA6FgJBS
+	 uS7qTmb/939sTygT97pOUNfsdygOrB0bfCYE76bzFqQWlfktMVmb7jTarcrrEh9/0iTrp
+	 MVAp31LvvDyu100Q8M0OODIyLZkmIEAEbGp6oHOnAnZPvU6VfUwnTD2ae53u7bXLFNJXw
+	 SiV/C29ftaDXQu8q6yTPjDCcBcRvSVY6wgMYa0/DSWNazXS0vNKqe9cS5jRRHIYhEfw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=bUscyYxT;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=CtlJPjFD;
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=eCinZKry;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=c7Cedkm8;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=eCinZKry;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=c7Cedkm8;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4C26606A327;
-	Mon, 26 Oct 2026 21:36:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B4C26606A327
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B196606A326;
+	Mon, 26 Oct 2026 21:49:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4B196606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=bUscyYxT;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=CtlJPjFD
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=eCinZKry;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=c7Cedkm8;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=eCinZKry;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=c7Cedkm8
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 519E11F387;
-	Mon, 26 Oct 2026 21:36:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793050580; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=h4TtMxiD7qIIu9haOuhPNclvY/+UQ3UGNUpsBEbNloQ=;
-	b=bUscyYxTzRHt7QzisXqdXlxQUubRjiOUGOidOft0pS+MW5uKQpOzP97RW1o9ZvAu0mrLSL
-	UkNv7f4VGOeLWWU9116tuM5kvC57BVLgh1xpXFIwnFpaikH0J8zpCcuKxJVp4Wck964Ff1
-	jtT18Lw6jtTCKd3mXSfU+x1aTc/vrkU=
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9F2381F395;
+	Mon, 26 Oct 2026 21:49:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793051354; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bVpJ81jbb6s/k9oeKUE3zACKDLs87mB6qiXsiIpROrw=;
+	b=eCinZKry9BdBG2Tuub+XI9hK94YcOOBUoAy5NiqDtrxCIfhiDCpKBYosrzHbGoQPdqVcVF
+	/qUyW0flh+XLgtYLcWFiEdoa2BT99gfRo3PcAl738bcEs9klDFkXP6z2X4Nbo/EaPFu13F
+	/G1VPtqe+OHGGNMTOwe+xOIuqM2+o+Y=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793051354;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bVpJ81jbb6s/k9oeKUE3zACKDLs87mB6qiXsiIpROrw=;
+	b=c7Cedkm86DrLmBhaRecl63q8E2NQXs91lGx1midza1J1rGGNKflLD0QKxcMpGk83nRyC0X
+	IUBu035ZLkrDe3DA==
 Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793050579; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=h4TtMxiD7qIIu9haOuhPNclvY/+UQ3UGNUpsBEbNloQ=;
-	b=CtlJPjFDCyd41j9BThmW9qsY23WmTQboRN+liXN7lS6xSvKvQM9D9qNCFj+n+zDsNmz3kx
-	urv7G3eSGrDb/GjU+VJwvIMNwMd9lk3sV2+2UHASugLYSplWmRuIqJjzISZsdFVBrmQlxg
-	UOFCiTMXtLC+05jKSraiTeafvUixCdU=
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=eCinZKry;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=c7Cedkm8
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793051354; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bVpJ81jbb6s/k9oeKUE3zACKDLs87mB6qiXsiIpROrw=;
+	b=eCinZKry9BdBG2Tuub+XI9hK94YcOOBUoAy5NiqDtrxCIfhiDCpKBYosrzHbGoQPdqVcVF
+	/qUyW0flh+XLgtYLcWFiEdoa2BT99gfRo3PcAl738bcEs9klDFkXP6z2X4Nbo/EaPFu13F
+	/G1VPtqe+OHGGNMTOwe+xOIuqM2+o+Y=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793051354;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=bVpJ81jbb6s/k9oeKUE3zACKDLs87mB6qiXsiIpROrw=;
+	b=c7Cedkm86DrLmBhaRecl63q8E2NQXs91lGx1midza1J1rGGNKflLD0QKxcMpGk83nRyC0X
+	IUBu035ZLkrDe3DA==
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 34A8E13408;
-	Mon, 26 Oct 2026 21:36:16 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4D9BA13408;
+	Mon, 26 Oct 2026 21:49:14 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 9xdpIdDH32qmdQAAD6G6ig
-	(envelope-from <wqu@suse.com>); Mon, 26 Oct 2026 21:36:16 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org,
-	linux-xfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org
-Cc: stable@vger.kernel.org
-Subject: [PATCH v2] iomap: only follow dio alignment requirement if specified
-Date: Tue, 27 Oct 2026 08:05:58 +1030
-Message-ID: <28b1681495dc0b46d8bf98364e471be9f4eb0ba4.1793050525.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	id eRk0CtrK32pSBAAAD6G6ig
+	(envelope-from <jack@suse.cz>); Mon, 26 Oct 2026 21:49:14 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id CCA06A1419; Mon, 26 Oct 2026 22:49:09 +0100 (CET)
+Date: Mon, 26 Oct 2026 22:49:09 +0100
+From: Jan Kara <jack@suse.cz>
+To: Andrea Parri <parri.andrea@gmail.com>
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Christian Brauner <brauner@kernel.org>, Jan Kara <jack@suse.cz>, 
+	Andrew Morton <akpm@linux-foundation.org>, linux-fsdevel@vger.kernel.org, linux-block@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-mm@kvack.org, linux-api@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] iov_iter: take an unsigned long segment count in
+ import_iovec()
+Message-ID: <yb2p27fkrqamzmzfwqbqjwsxhw7cdlpgjzc26eqtimw2puhxrz@mhrjegarlm5a>
+References: <20261026180619.4147910-1-parri.andrea@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,168 +115,181 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261026180619.4147910-1-parri.andrea@gmail.com>
+X-Rspamd-Queue-Id: 9F2381F395
 X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-11.51 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
+	SUSPICIOUS_RECIPS(1.50)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MID_RHS_NOT_FQDN(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_THREE(0.00)[3];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	FREEMAIL_TO(0.00)[gmail.com];
+	RCVD_TLS_LAST(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[];
+	RCPT_COUNT_SEVEN(0.00)[11];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_THREE(0.00)[4];
-	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
+	TAGGED_RCPT(0.00)[];
+	MISSING_XM_UA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:dkim,suse.cz:email,suse.com:email]
+X-Spam-Score: -11.51
 
-[BUG]
-After commit 4025185cf953 ("iomap: follow the alignment requirement for
-iomap_dio_hole_iter()"), generic/091 fails on both xfs and ext4:
+On Mon 26-10-26 19:06:18, Andrea Parri wrote:
+> readv(), writev() and their positional variants, process_vm_readv(),
+> process_vm_writev(), vmsplice(), process_madvise(), vectored aio and
+> the btrfs encoded I/O ioctls all take a full-width segment count, and
+> all of them hand it to import_iovec() or __import_iovec().  Those take
+> an unsigned int count, so on 64-bit kernels the upper 32 bits are
+> dropped before iovec_from_user() checks the count against UIO_MAXIOV.
+> 
+> A count of 0x100000001 is therefore imported as one segment: writev()
+> on a pipe writes a byte and readv() reads it back, instead of both
+> failing with EINVAL.  A count of 0x100000000 returns 0 as an empty
+> vector.
+> 
+> import_iovec() was added with an unsigned int count, but the helper it
+> wrapped, rw_copy_check_uvector(), took an unsigned long, as does
+> iovec_from_user() today.  Until v4.1, readv(), writev(), preadv(),
+> pwritev(), process_vm_readv(), process_vm_writev() and vectored aio
+> therefore failed these counts with EINVAL, as did vmsplice() until
+> v4.18.
+> 
+> Widen nr_segs in both import helpers so the UIO_MAXIOV check sees the
+> count the caller passed.  Callers with 32-bit counts are unaffected.
+> 
+> AI assistance was used to find the bug, develop the fix, and run the
+> reproducers.
+> 
+> Fixes: bc917be81059 ("saner iov_iter initialization primitives")
+> Signed-off-by: Andrea Parri <parri.andrea@gmail.com>
 
- FSTYP         -- ext4
- PLATFORM      -- Linux/x86_64 btrfs-vm 7.3.0-custom+ #6 SMP PREEMPT_DYNAMIC Mon Oct 26 16:04:56 ACDT 2026
- MKFS_OPTIONS  -- -F /dev/mapper/test-scratch1
- MOUNT_OPTIONS -- -o acl,user_xattr /dev/mapper/test-scratch1 /mnt/scratch
+Looks good. Feel free to add:
 
- generic/091  6s ... [failed, exit status 1]- output mismatch (see /home/adam/xfstests/results//generic/091.out.bad)
-     --- /home/adam/xfstests/tests/generic/091.out	2022-05-11 11:25:30.766666664 +0930
-     +++ /home/adam/xfstests/results//generic/091.out.bad	2026-10-26 16:43:49.387401669 +1030
-     @@ -1,7 +1,25 @@
-      QA output created by 091
-      fsx -N 10000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
-     -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
-     -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
-     -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
-     -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
-     -fsx -N 10000 -o 128000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -W
-     ...
-     (Run 'diff -u /home/adam/xfstests/tests/generic/091.out /home/adam/xfstests/results//generic/091.out.bad'  to see the entire diff)
- Ran: generic/091
- Failures: generic/091
- Failed 1 of 1 tests
+Reviewed-by: Jan Kara <jack@suse.cz>
 
-[CAUSE]
-The failed command of fsx is COPY_RANGE:
+								Honza
 
- copy range: 0x6800 to 0xa200 at 0x3f200
- do_copy_range:: Resource temporarily unavailable
- LOG DUMP (8 total operations):
- 1(  1 mod 256): SKIPPED (no operation)
- 2(  2 mod 256): SKIPPED (no operation)
- 3(  3 mod 256): WRITE    0x14400 thru 0x211ff	(0xce00 bytes) HOLE
- 4(  4 mod 256): FALLOC   0x72bf4 thru 0x76221	(0x362d bytes) EXTENDING
- 5(  5 mod 256): SKIPPED (no operation)
- 6(  6 mod 256): INSERT 0x11000 thru 0x13fff	(0x3000 bytes)
- 7(  7 mod 256): TRUNCATE DOWN	from 0x79221 to 0xa800
- 8(  8 mod 256): COPY 0x6800 thru 0xa1ff	(0x3a00 bytes) to 0x3f200 thru 0x42bff
- Log of operations saved to "/mnt/test/junk.fsxops"; replay with --replay-ops
- Correct content saved for comparison
- (maybe hexdump "/mnt/test/junk" vs "/mnt/test/junk.fsxgood")
-
-Both ext4 and xfs only require direct IO to be aligned to the logical
-block size of the device, not the fs block size. So the 0x3a00 bytes
-read at 0x6800 is allowed, and should succeed.
-
-But that range is a hole, and that commit makes iomap_dio_hole_iter()
-round the zeroed length down to the fs block size unconditionally.
-The first iteration zeroes 0x3a00 bytes but only advances 0x3000 bytes,
-then the next iteration zeroes the remaining 0xa00 bytes, which is
-rounded down to 0, so -EFAULT is returned.
-
-As ext4 and xfs do not pass IOMAP_DIO_PARTIAL, the whole read fails
-with -EFAULT, which is then converted to -EAGAIN by copy_splice_read().
-Every retry of fsx hits the same -EAGAIN, failing the run.
-
-That commit breaks all direct reads which range is not fs block aligned
-for ext4 and xfs.
-
-[FIX]
-Do not revert the range unless the dio has IOMAP_DIO_FSBLOCK_ALIGNED flag.
-
-iomap_dio_hole_iter() is only called for reads, and for now only btrfs
-reads can reach this path with the flag set. Btrfs has the proper
-fallback when dio returns -EFAULT.
-
-Also update the comment of IOMAP_DIO_FSBLOCK_ALIGNED flag, to indicate
-that both bio and hole zeroing are all fs block aligned.
-
-Fixes: 4025185cf953 ("iomap: follow the alignment requirement for iomap_dio_hole_iter()")
-Cc: stable@vger.kernel.org
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Update the comment of IOMAP_DIO_FSBLOCK_ALIGNED
-  To indicate that hole zeroing is also affected.
----
- fs/iomap/direct-io.c  | 26 ++++++++++++++++----------
- include/linux/iomap.h |  3 ++-
- 2 files changed, 18 insertions(+), 11 deletions(-)
-
-diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
-index 45bb24934f3d..ad041ac3252a 100644
---- a/fs/iomap/direct-io.c
-+++ b/fs/iomap/direct-io.c
-@@ -590,18 +590,24 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
- static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
- {
- 	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
--	unsigned int bs = i_blocksize(iter->inode);
--	loff_t aligned_copied = round_down(copied, bs);
- 
--	/*
--	 * If fs block size is larger than page size, page fault failure
--	 * can cause @copied to be page aligned but not fs block aligned.
--	 */
--	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
--	dio->size += aligned_copied;
--	if (!aligned_copied)
-+	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED) {
-+		loff_t aligned_copied = round_down(copied,
-+						   i_blocksize(iter->inode));
-+
-+		/*
-+		 * For fs passing IOMAP_DIO_FSBLOCK_ALIGNED flag, if fs block
-+		 * size is larger than page size, page fault failure
-+		 * can cause @copied to be page aligned but not fs block
-+		 * aligned.
-+		 */
-+		iov_iter_revert(dio->submit.iter, copied - aligned_copied);
-+		copied = aligned_copied;
-+	}
-+	dio->size += copied;
-+	if (!copied)
- 		return -EFAULT;
--	return iomap_iter_advance(iter, aligned_copied);
-+	return iomap_iter_advance(iter, copied);
- }
- 
- static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
-diff --git a/include/linux/iomap.h b/include/linux/iomap.h
-index 59718f73c15a..5254430844b2 100644
---- a/include/linux/iomap.h
-+++ b/include/linux/iomap.h
-@@ -693,7 +693,8 @@ struct iomap_dio_ops {
- #define IOMAP_DIO_PARTIAL		(1 << 2)
- 
- /*
-- * Ensure each bio is aligned to fs block size.
-+ * Ensure every operation, including bio and hole zeroing, is aligned to fs
-+ * block size.
-  *
-  * For filesystems which need to calculate/verify the checksum of each fs
-  * block. Otherwise they may not be able to handle unaligned bios.
+> ---
+> Tested on x86_64 with virtme-ng, base 734bef548a96e vs patched:
+> readv, writev, preadv, pwritev, preadv2, pwritev2, vectored aio,
+> process_madvise, process_vm_readv, process_vm_writev and vmsplice with
+> counts 0, 1, 1024, 1025, UINT_MAX, 2^32, 2^32+1, 2^32+1024, 2^32+1025
+> and ULONG_MAX (LONG_MAX for aio).  The base kernel accepts 2^32,
+> 2^32+1 and 2^32+1024 on every path; the patched kernel rejects every
+> count above 1024 with EINVAL.  Also built every caller with
+> allmodconfig W=1, and lib/iov_iter.o and the readv, vmsplice and
+> process_vm callers with i386 defconfig W=1.
+> 
+> Reproducer (64-bit userspace):
+>   cc -Wall -Wextra -O2 repro.c -o repro
+>   ./repro
+> 
+> // SPDX-License-Identifier: GPL-2.0-only
+> #define _GNU_SOURCE
+> #include <errno.h>
+> #include <stdio.h>
+> #include <stdlib.h>
+> #include <string.h>
+> #include <sys/syscall.h>
+> #include <sys/uio.h>
+> #include <unistd.h>
+> 
+> int main(void)
+> {
+> 	char source = 'x', received = '-';
+> 	struct iovec wiov = { .iov_base = &source, .iov_len = 1 };
+> 	struct iovec riov = { .iov_base = &received, .iov_len = 1 };
+> 	const unsigned long count = (1UL << 32) + 1;
+> 	long wret, rret;
+> 	int pipefd[2], werr;
+> 
+> 	if (pipe(pipefd)) {
+> 		perror("pipe");
+> 		return EXIT_FAILURE;
+> 	}
+> 	errno = 0;
+> 	wret = syscall(SYS_writev, pipefd[1], &wiov, count);
+> 	werr = errno;
+> 	close(pipefd[1]);
+> 	errno = 0;
+> 	rret = syscall(SYS_readv, pipefd[0], &riov, count);
+> 	printf("writev=%ld (%s) readv=%ld (%s) byte=%c\n",
+> 	       wret, strerror(werr), rret, strerror(errno), received);
+> 	close(pipefd[0]);
+> 	return EXIT_SUCCESS;
+> }
+> 
+>  include/linux/uio.h | 8 ++++----
+>  lib/iov_iter.c      | 6 +++---
+>  2 files changed, 7 insertions(+), 7 deletions(-)
+> 
+> diff --git a/include/linux/uio.h b/include/linux/uio.h
+> index fe2e985d74d24..529c6cd53df7a 100644
+> --- a/include/linux/uio.h
+> +++ b/include/linux/uio.h
+> @@ -362,11 +362,11 @@ struct iovec *iovec_from_user(const struct iovec __user *uvector,
+>  		unsigned long nr_segs, unsigned long fast_segs,
+>  		struct iovec *fast_iov, bool compat);
+>  ssize_t import_iovec(int type, const struct iovec __user *uvec,
+> -		 unsigned nr_segs, unsigned fast_segs, struct iovec **iovp,
+> -		 struct iov_iter *i);
+> +		 unsigned long nr_segs, unsigned int fast_segs,
+> +		 struct iovec **iovp, struct iov_iter *i);
+>  ssize_t __import_iovec(int type, const struct iovec __user *uvec,
+> -		 unsigned nr_segs, unsigned fast_segs, struct iovec **iovp,
+> -		 struct iov_iter *i, bool compat);
+> +		 unsigned long nr_segs, unsigned int fast_segs,
+> +		 struct iovec **iovp, struct iov_iter *i, bool compat);
+>  int import_ubuf(int type, void __user *buf, size_t len, struct iov_iter *i);
+>  
+>  static inline void iov_iter_ubuf(struct iov_iter *i, unsigned int direction,
+> diff --git a/lib/iov_iter.c b/lib/iov_iter.c
+> index 2072c04e99d05..55cf2ff5bfdad 100644
+> --- a/lib/iov_iter.c
+> +++ b/lib/iov_iter.c
+> @@ -1362,8 +1362,8 @@ static ssize_t __import_iovec_ubuf(int type, const struct iovec __user *uvec,
+>  }
+>  
+>  ssize_t __import_iovec(int type, const struct iovec __user *uvec,
+> -		 unsigned nr_segs, unsigned fast_segs, struct iovec **iovp,
+> -		 struct iov_iter *i, bool compat)
+> +		 unsigned long nr_segs, unsigned int fast_segs,
+> +		 struct iovec **iovp, struct iov_iter *i, bool compat)
+>  {
+>  	ssize_t total_len = 0;
+>  	unsigned long seg;
+> @@ -1434,7 +1434,7 @@ ssize_t __import_iovec(int type, const struct iovec __user *uvec,
+>   * Return: Negative error code on error, bytes imported on success
+>   */
+>  ssize_t import_iovec(int type, const struct iovec __user *uvec,
+> -		 unsigned nr_segs, unsigned fast_segs,
+> +		 unsigned long nr_segs, unsigned int fast_segs,
+>  		 struct iovec **iovp, struct iov_iter *i)
+>  {
+>  	return __import_iovec(type, uvec, nr_segs, fast_segs, iovp, i,
+> 
+> base-commit: 734bef548a96e8774d6eef5dfa2026c6edc4e80b
+> -- 
+> 2.53.0
+> 
 -- 
-2.56.0
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

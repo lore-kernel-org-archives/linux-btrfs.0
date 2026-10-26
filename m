@@ -1,118 +1,57 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.153.144
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793029007;
-	b=j1wonHQaAYTUYfKJUklk69vLyjTln1AyGa5x9GPPK/FURp8pMV6HNHjS/c9Nhxx9do1F
-	 woL8Y3T27AbLx20Uj4Xk36V9rDUfGSiydj6nTMNkytzYJkxtJqR5akJmNAuT8lP5sIBiv
-	 /jJWw9DFJKLgt0/WsW4zKdbpPRjZ/gRw0Tq6DJc4P/joV0EXxp4h5qPrSPBbmecskSoCP
-	 vLDD8n610J+ygj1e96x6T7IAfsIxsyCi7ZRbUXPuhdnzJipE/hyTJUOq12LSofiCkqY12
-	 ONB2gy/TcNIyiUI015YSDWZv06nY9cAnmIuonwMdKkVA1lCZiiLWrNcsoLEVIF/E0gw==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793029007;
-	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
-	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:Message-ID:
-	 Date:User-Agent:Subject:To:References:Content-Language:From:
-	 In-Reply-To:Content-Type:Content-Transfer-Encoding:X-ClientProxiedBy:
-	 MIME-Version:X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
-	 X-MS-Office365-Filtering-Correlation-Id:X-LD-Processed:WDCIPOUTBOUND:
-	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
-	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
-	 X-Forefront-Antispam-Report:
-	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-MessageData-0:
-	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
-	 X-MS-Exchange-CrossTenant-Network-Message-Id:
-	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
-	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
-	 X-MS-Exchange-CrossTenant-FromEntityHeader:
-	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
-	 X-MS-Exchange-CrossTenant-UserPrincipalName:
-	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
-	bh=w4M6FYhl6qwbPTnAJ3reUELJVeAMeei7INIuLxgItQM=;
-	b=sjJZQKNEb3gZ8hpMKX98hHB+SHPj15X/KpT1OZnUo887jbfWt5t03QHZT9ronbJ3GG2c
-	 CAc2OQPn1Ai4aUVTn3yVq62YWZboShRA2kG2eWbUIWpEPrdHMzm5YLo74DpBsUI/RUYI9
-	 8jy0NYdESbCqbVJjSqudJN7eVW8Ho0GIDJu6gd/qSagWen3WHwk4N4m6lkYGBCQTfUyMi
-	 OnygVEbccN3Wpq+kdkbeVuxHrIU3eq4ofA3bvae1D1T17EHa2XDtKqn1MfJ5OJ4+d5+Ca
-	 GtviEChRd/fyksGMPnIbTI5Zjh4rNVAOhoSSdPEOsc1QSS8IjPlOIY7ln1IykT8JH5w==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=wdc.com;
-	spf=pass smtp.mailfrom=wdc.com;
-	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=Ea97K4jx;
-	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=q3AN8KbZ;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.153.144
-Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1793029659;
+	b=MGPdbTleF/AZh+cCia2+SxHlgpg4R33TJZqDTnjv6Wxwrxm3L4YIPGRWwyZgRmvKvPSn
+	 GQ8oX2kElZphnYhCvox+EndRUkuoyKeqX/dPniZZvvwiiE5EnLDt/TfkYBPG16jQqDsTL
+	 7H+gTt8iGRrzdRx+u69YBrSo6hZYVnaHoVHGO9xeqAp77fzuWdrNYGN0BKsGLwfPdJchA
+	 YzRubW+DrG3rWnFPSQYijJvr6RVvUn1GOFVaxs7l7ujXIlr7wPc7JRYJkL42a11uqsPOh
+	 97Ku3N2LQTBVrg1h0mMlTUF3PU/svrAarGKU4BVe3b80ltqClYs+OoiwEQZ0hTWy2wQ==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793029659;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=4bHsgxkd71yp0PyHCQx8V+wNDlg3bK6SdmD3N4zjE+Y=;
+	b=kOr8mSu1MWp9fYpHr93Bhr/+Fy4iLqlMHsXIN/NUi0qMTFNhXvvKPBq4onqanuV099tR
+	 m/GxeHi5x+csxyjRzWjRZHrmimuQ9VFPHRiI9X56HAAZZnOVSO5XCPF7/b2fVgB3RyjZc
+	 0y1kHdpUeL2OsvHuDdXonAdyKz2n5sCjCWK59m2OdI6otVPSIvUmOwPJHUwiDg35djDcx
+	 NyM5Y1kPMYV/hlmV5IIbRZHFB50F/Ymk0kReFGWHw74n7flh+CTHJ1eECTpQb32t+xviG
+	 G/sQVdi0i4XiyE2S5UdvNjdfhI1//GiiK4LypBcrgq7fK11YXN4fTPZV3j5FNIXffNQ==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=e9MT3Q9d;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 915F8606A31A
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2026 15:36:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 915F8606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 06B38606A31A;
+	Mon, 26 Oct 2026 15:47:38 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=Ea97K4jx;
-	dkim=pass (1024-bit key, unprotected) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=q3AN8KbZ
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1793029006; x=1824565006;
-  h=message-id:date:subject:to:references:from:in-reply-to:
-   content-transfer-encoding:mime-version;
-  bh=BH1WZabrnGcnrr3mMFtfNeABl0IXNj5pIrkxT0aFggk=;
-  b=Ea97K4jxaFn6NeU6aAxdex3+ZJgTMyvJgpglmjYIveLvtf77NNrHusrq
-   Yd8FMvhE/tn6bYb4IHPv6z96zsIlcYGDZmociKnf45qWlMEUU+XNw2IFX
-   cu+rXOL6vY5Yic0vUyFENXinOmy7aKniq7Gu2KfnlZcWTvZtTQ3sEDk58
-   98t07RxkeMni6OmrqXLP+LwegWXK17EbQ5bYENdyN0i7H7Di2EZs3i9nx
-   VZkApUp8xESaRUtrOPSEjoWI4YjYDNwbo/7b/ASFua+b2Tr96QT7lcuVS
-   XOWdiI3/6LCAmv8LgSYSDsyTUpyetMmUqksWTlf/hPwYvJETJw1F/DA0b
-   A==;
-X-CSE-ConnectionGUID: 7pr6yTwnSj27z/84RE3pdQ==
-X-CSE-MsgGUID: m1Avx4vvQm6ZTK/elOYZTg==
-X-IronPort-AV: E=Sophos;i="6.27,179,1786982400"; 
-   d="scan'208";a="158066425"
-Received: from mail-southcentralusazon11012008.outbound.protection.outlook.com (HELO SN4PR2101CU001.outbound.protection.outlook.com) ([40.93.195.8])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 26 Oct 2026 23:36:39 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=daKs6kE/Ige4ND8gOUVxQv8XJCERW2iDM1IbQA67SZ8kqeZv8xeYrj74NLr9Kzjk1c2fVtKvgVPfl8XWGA8Ai+nlu47sNjojx3Jhg08a70C7QMGmJdgDSs9ZVyc0RqbDhTmusPHNG6El7r92+424SHjwKd2QOVtInT31N7T2rN5VGuOlMpS4BI7cChlJ2ReWwYlxTQ+vDaSp7VHlfaOdI1BRM/oSCORqW3s25fzydgXUwGQAfZ1ohmQWFxBpiH+NFV7WOCUAgv2rxMCf23PyUgPmzONye21T/LPAHF7WTQjszKLnIf5FA0oPxsLf4NiJAttKot5kBR9B9aIaQfJS5Q==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=w4M6FYhl6qwbPTnAJ3reUELJVeAMeei7INIuLxgItQM=;
- b=iNNmkU90rVh9NdoTfqgX8bnEEVGRLq68q4OBwvujMt8Bsfh7xGHIqUnPRVLYaUkCnBhgQk3t7pdWr2nH+XR6CSfHzH46Givd3tYaisj1wWKT0jP5OY2G2/GpnFdKTAYV3D9hrTI+atKMiPnE3fUpHHvzFjKsualj9kJef93VscrCeWezzbEWPZ2Cx+SJ3vutxlkiXViKwS3xd7Z9b3VoKI4zpfnQDSRgU/gC3lGWY61m1IEIR7T3VRhnbezRFNjd8D98IPNB7e/Glu6nek0E5xFiHVJcvtueolnlZwtznBDhAuS/KDP8opTmlL3omDacohmoud3dsLmYe26D8WbCfg==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=w4M6FYhl6qwbPTnAJ3reUELJVeAMeei7INIuLxgItQM=;
- b=q3AN8KbZ2tcchRzmpUFfs8dvgQ62iGdyNTu2RmoW4Vci+lwMdGC4zcoDDToqw1oXdPSWx4MMVhklNTBInfnE7e/J4R6+8qqe6rLJ8LrJvwuJ79kXXwbHF2AA97/4zSOCLJMSkeI8Wrp5ff0kV2181d++bJSiXjzzlP/0JqK6+AQ=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by CY5PR04MB994355.namprd04.prod.outlook.com (2603:10b6:930:123::9) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.546.22; Mon, 26 Oct
- 2026 15:36:38 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0546.021; Mon, 26 Oct 2026
- 15:36:38 +0000
-Message-ID: <9aaab5c2-b23b-4a3a-8cf8-4b8a4b530372@wdc.com>
-Date: Mon, 26 Oct 2026 16:36:34 +0100
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 3/3] btrfs: add stripe_len < PAGE_SIZE support for
- alloc_rbio_*_pages()
-To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-References: <cover.1792661955.git.wqu@suse.com>
- <537e80067fc55362a47b06404295b7777c0c27b6.1792661955.git.wqu@suse.com>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <537e80067fc55362a47b06404295b7777c0c27b6.1792661955.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: FR4P281CA0106.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:bb::10) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=e9MT3Q9d
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DA3121F01825;
+	Mon, 26 Oct 2026 15:47:34 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1793029658;
+	bh=4bHsgxkd71yp0PyHCQx8V+wNDlg3bK6SdmD3N4zjE+Y=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=e9MT3Q9dNOnd4/4jQtaYx6MDPElbph8E8e8bDp5d45U3S/mSIC3dc2U/E8bZtWxtS
+	 98ZgoNKtdajAsgkYvnBqNYIM5xS0jmG8ZW1dDpgise2qbYRTRduEW0jZwwJsju+U1i
+	 mcxv9Sn4OzQmU4rSQQZp4GntWRUY6rf0fDkzt/QaNI/WcnnCl7f0ryOKubu5DSmL6j
+	 YkK2xu7CXwY6u9rFw6I7LDcvkcFcml07Vxs91gXvBh8tmS2ur3U4CpHhfDbVW7u9l6
+	 qAIryVh7eYNq1N0e0aMrWe95Nqk76WZ+qUx26oJM3ZzMXDxjJ5tAImaDWFvEkJQdT3
+	 ERkRCZktx0x0w==
+Date: Mon, 26 Oct 2026 23:47:29 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, 
+	Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+Subject: Re: [PATCH v3] btrfs: test that fsynced data on a RAID stripe tree
+ survives a power failure
+Message-ID: <at9zEEwdEjoJW2bP@zlang-mailbox>
+Mail-Followup-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
+	Zorro Lang <zlang@redhat.com>, fstests@vger.kernel.org, Filipe Manana <fdmanana@suse.com>, 
+	linux-btrfs@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+References: <20261023123451.90365-1-johannes.thumshirn@wdc.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -122,90 +61,148 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|CY5PR04MB994355:EE_
-X-MS-Office365-Filtering-Correlation-Id: 3c94d304-b3e4-48db-c4ef-08df3376ecea
-X-LD-Processed: b61c8803-16f3-4c35-9b17-6f65f441df86,ExtAddr
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
- BCL:0;ARA:13230040|19092799006|366016|23010399003|1800799024|10070799003|376014|261022105027099003|10067099003|56012099006|261026121527099003|22082099003|18002099003|11063799006|4143699003|261026140227099003;
-X-Microsoft-Antispam-Message-Info:
- BTw97epzgroGa1KEOgX07jZnfBQwIV8rrWcb1n5F/OTybYYiQBk4GLCQuRAdbuIDHzIauWJRe1Hu0zZVnHx+kDQ2487i4if0OpGLYJ9AIQQcNbMFaKmjpp6snANj/lGQIexJWbgxWwzvCvSi7R/B8HNnKFP5aOtRVquDLJrK3M5lr6/hKJz6WsWsEZZHR/a4ruFdE75NNxnmzdEK2kwsN192IcoOx5eVA4okfHq3XzYNhqvH10w+gVeB+ssQ+Px2V528t6eoAK27w/6Fl6YEeJfCLLJizujnSpC5Zsu9z4bCCux+wz328TqHbUKWL4JkPuFDZHU5xcmPknxH7EDuN/j0myIxLpJCGvlHH+6g2doPCrLTXp1va9iuH8OV37PPibbz9SDkoQsan300siYxzFWThF2E72sQAwgY6pniJfyUWHIkdHkCig70llzBmS3nCHws9sJNrJ+8x6CAR/uDcpVY+pe/DDxwRn0SjUy2T0Lw6cpxcQc+0v8przdEUkjW9mzuWyEmE/gbqUFORmiUI6fhu+e/7NC6KkU5BKFubWjoUYz6Or1bHMs9yC/L9KwybU6510wVN6liw+cHx1A2QgPywsY78VY33rxqiX7r72ZmBxSr700CAn8Ye2WAnhQVk30cc65A44pgF/VU+CiKWRGKC3Tix+8OQAn8H2qY8DM=
-X-Forefront-Antispam-Report:
- CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(366016)(23010399003)(1800799024)(10070799003)(376014)(261022105027099003)(10067099003)(56012099006)(261026121527099003)(22082099003)(18002099003)(11063799006)(4143699003)(261026140227099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
- =?utf-8?B?RFBUQVFxVmdneTBWTjRjMDRtUG4xdk1YQUcyMkxhUndKWWFzOXEzRWUza2ll?=
- =?utf-8?B?UFQydVM4WWxiUEN3Mk5veHVicHJJL1hsN2pYR0lzWnJHczl5YU42eFg1QzVz?=
- =?utf-8?B?a1M1dTR1NEs2RjBMM09XbThHUDV3aTB1ZlE4blYyVXdQRmF2R0FHQUtEeVMw?=
- =?utf-8?B?TkNvNlVIc1BtNWNFTHZuL05XT1FQZXI1M1FtQjRUOXMwMHIxbnArSk1LUVJn?=
- =?utf-8?B?VWRpRXNlcVhmbWNSZ2E1YjNvaFNPN3U4ZnZGbjJGc1ZiUE8wRS9FSEQ1MjRV?=
- =?utf-8?B?M1ZwZUJnYzJpRXkwMWptSVhKQVNEMlVhaEgxMCtsc3N1UHEzdW9VeDgyNTBu?=
- =?utf-8?B?SklJUGtmclk4UStBMlYrcHpxeFBZdk45TFNhL0c4dkdsd3RURXVlVG1wQzJ6?=
- =?utf-8?B?U3FsYXNFT2JFQ09HQ2Z1UWxkZVlIeHAzblZHNkY4dGJvbTZVUDVvWG9GWTZv?=
- =?utf-8?B?VEd4WWxwSXB1aDBCVnU4eFkwVjd2SlZKR29IczBjQnhvNG1ZQTNhWWNGSUNI?=
- =?utf-8?B?SW1iYUVITUlNL2U4NDVrNGFKTFFzK2VaWUlYQyt5OWthZnVkK3FQSnNIUFBI?=
- =?utf-8?B?d2J0N1J0UHdiREllb2I0NEVYRkUzU1hVQ2JIOUFqblRKcld4bkxDVlZVYjFk?=
- =?utf-8?B?MVJqcFoxQmRoRngwVVdjeFZNUXYxUUxjR09MSm96RHBrZ3dGVGtITiszQlJz?=
- =?utf-8?B?OTZPdW9TU3p3Smh2SGxPSTdhdjBQUkRsZStQZEhhcEJOcXpjRGs5Rldwb0M3?=
- =?utf-8?B?cTVUNm5DRHUzdjVVNm13NUc4OVZXSWlWTnR3SVg4U1huMEtWUWhQVXFxRFl1?=
- =?utf-8?B?UGw2SDd0c1grcjFsMGlrODZJRXJ6Qm94N0NVLzcrbEIvU1ZFWWpHcHZXMUZI?=
- =?utf-8?B?QVZyUVJGZzJQZkF0S1ladWZWRUNVMUFDTUw3ZkVsYU9TMWhjOXVDM0hDUG12?=
- =?utf-8?B?VzVZczl1aDUyclR0V1VFRVJGM0hvVXVscWlCdkdHNmlJK2cwT0lLeG53a2cv?=
- =?utf-8?B?RTNKL05ub2NxVysyOVdYRStJMmUzT3RPVE10NXdOTXVZOGV3WHpLOWxCYlBL?=
- =?utf-8?B?dWZoZmVjMEdjdUNaYno2Nzlyd2F5ZFp0Y0ZLcE5nUnlhWEJ0OEJ2ampiRyto?=
- =?utf-8?B?OFp4WUVVL3V2ZTlDOXVuckFINDhHcVQwdkZwWHBSdVoyVXJESk11RTZob2Rq?=
- =?utf-8?B?azF5TTJqUUtZZHN1MXBIbStYRjdwQWdmMDFaQ05CdXgwS25rbCtuK3Z6WmpS?=
- =?utf-8?B?dnZPcDZqVm9XSUdDMXF4OFgrbitTOER3NFdjczFtZXJkZDNqTFYvOFlqV3c1?=
- =?utf-8?B?VmhWNjZtc1FQcjNZTnRtSmVPNENYbUNDSFc0Z0txaHcrcXdSS0p2Qk45QUdU?=
- =?utf-8?B?enNNQmoyK3p5N2JKUm1oRTdWQnUvL24vcDhVRTZqdmwzNjZEQTNRQmVvNWF5?=
- =?utf-8?B?aEZCUVJoYUhTT0t1RCtmMkQ3b21FdEdsVzdubFA5SHAxTmp4Q3c2bTRuTlhL?=
- =?utf-8?B?cGMvNlJHcEJ2cmRrK0xBS3AybzVHMmJjRExKZE84dkxlZUdEMTdsRFQyTmF1?=
- =?utf-8?B?M1BXRHl6RGNXWkY0aUorVHo0cCtoY3FRRW5XRXVUV1M1elN0VmE4V1NRVWVW?=
- =?utf-8?B?aENiT2xsWmNsTGxvQ3FGSkJYVWZ2QUx1SVBDeUsyNEtBODkwbEpUcHlBT1RN?=
- =?utf-8?B?V3dQZjF1Q2JneVNISTEzSGQ1dXFPNWl5MGxCNGlaYy9Kd3RPeGNxdzV0WHZp?=
- =?utf-8?B?OWNjZnFBRVc1S0FkU0drZjRzaW9KQzJScFFBOUJMeXF2ZjBvcGVCWk5jZS9o?=
- =?utf-8?B?ek1FNldNSWt0blM3dlkvY0d5Zno1Qk1MeHh2aEJENFM3ZDlJdnJwdThsaGlJ?=
- =?utf-8?B?UEVwd2RCZVRnK1JiRFZ3MEZraDdTdWZkZW9HYmRGOExvNFo4NlNUTWtSWVpZ?=
- =?utf-8?B?VzVZNy9ybEU0NUJMV2wrMi81RkFJTUpWSjZJMHVqbVc4clg5TjZST0ZnOGJz?=
- =?utf-8?B?NzJ6NHRxUlVHZzNNbWZ6ZkFxMjcwak9RRjlEL1B0SlRTVG5pdnZqTWJ6SmFI?=
- =?utf-8?B?cm9TYklWUnhReHI5Z0xRMDlzNkI2Q2Foc0JWUW1oQ2NWTkZPMUdxVGN0eUlq?=
- =?utf-8?B?RUVxMW5id2hvcWxzb09penZTVlJvMHNqSDBPM3B0R1BLRjA2MURwbDJMMStP?=
- =?utf-8?B?QmhIdy81bXVNN0RtVXlsS2tIaGRiMkY3dEpwZmw5ZHZpbS9wcVRldzhrblBT?=
- =?utf-8?B?SU5MVVFHSlQxSGl0R2xld0FWYmN2aWhDZkJpbDZIdEc1Zkt4ZzhLaDJCcGpD?=
- =?utf-8?B?eGg3V0IwS3c4Nko4Y0RWVU1ETXIyWlUvYjhQT2N0Vm1iL1JjbFRadUlnYU5m?=
- =?utf-8?Q?rRFGuBsHYpJKx18KK81d/vjaYBdZXBYLW9Lfc73BBnZhV?=
-X-MS-Exchange-AntiSpam-MessageData-1: tEikhQZfp+Qyiw==
-X-Exchange-RoutingPolicyChecked:
-	srX5W/7OarM+3d3iE9+yLTBF9JihfsbsK5rkVdzV4g8XhNwK4x2EANyiDdcZSwf5CbmNzgFoBBBk3/jvRKfO0IVrYmXcZ4hNALKxL+dz/T1GxkVH5v/jY7SS1s8ImE1GnjYlPZhtD9NfVIjk/zz6zQ7aOY/qXQBYotBSTA8QQNV2fdo0yJ0FmA1lHOWuLiS139ovdZIw1fYyEYxLDaLABjWRC0YYm+FNrGTkGJh/pRGf7nncRKMKOcSCOKD4J/JzZDsTJzBLI/SRwZH/2qgwgM/edJE29WWx4Bu+75Y0RzTnQ1FNZAkptJM326iFKM2pE9vXgUaUiCDmsCHrRV2Gsw==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	/jDPJFFdZ1noh4vmqtadyARwNFDKioAEXylY8BrEhzHHYT+OyXtBsOOgnEv9Oy2HIz2SiojnkaySPeszgLVwKMExGMUdeJGel1XFYIKlKh9Ici1AacnT9flW1Qt6i2iKgNFBsV+75WMkkcSzO/E9wUygHDTO0IyAfP3tYcnkTFpw/K/qkDW0m/WWv9a1WthsY1jpHARZQO6XHstoX0b4ACGuQ45zf6xh6ySKL93GCGM4Qmc4w7JZtzK5ihWxttfkQQx1VmMr2+Sv+Q03gf0rcr3Z6pyHfGSc6+J7/WddwrZhUtY9er31fgMn8Z2L20PiSH+48ll0EH53GIHiOHey8m3AAzMSueUsAwLhHz7SawLObhMnTiUZfGx+HCio0J3f1D8LunnofrGGFN8O9930gBXODUbjUcIwRN4Ocp/HyshMgZe+APJUx/k9d2fYe9YK+FZgJA1dyQm2F8UHrduTJCpRFAriZ0HGRnJNBLimLtfLGePVai6768feerIT+5hzjjn8O/KDE00GAj+uspxDrUk3VRKUfKEaAxU1ZmKYUTjLJcsvdhZqtagJmeAkftsn984D0C79M3BL5g/xaTY6ahb9GFl3dlwb50ZEL9qsDvCoN9Mys43uX1QX51hw8VG1
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 3c94d304-b3e4-48db-c4ef-08df3376ecea
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 26 Oct 2026 15:36:38.6268
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: zGBZx/pai3P7SKTnYkhaeYB5gbS3GnH1541NP5GJ/Fhn6nr8X+SeMriKbv3VNbrLJCA3xD188EP+hLW8x5KwTaN3OAsEPuldD+xSsHn0hk4=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: CY5PR04MB994355
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261023123451.90365-1-johannes.thumshirn@wdc.com>
 
-On 10/22/26 11:39 AM, Qu Wenruo wrote:
-> +	const unsigned int first_pq_page = round_down(rbio->nr_data *
-> +					rbio->bioc->stripe_len, PAGE_SIZE) >>
-> +					PAGE_SHIFT;
+On Fri, Oct 23, 2026 at 02:34:51PM +0200, Johannes Thumshirn wrote:
+> A data extent in a block-group that uses the RAID stripe tree has its logical
+> to physical mapping stored in that tree, which only becomes durable when the
+> stripe tree is written out at transaction commit. The log tree cannot carry
+> that mapping, so an fsync served by the log logs a file-extent item whose
+> logical range could not be resolved afterwards. Log replay restored the file
+> with the correct size, but reading it failed with EIO.
+> 
+> Extents reach the log both from log_one_extent() and from copy_items(), so
+> cover a fast fsync and a full fsync. Each one is followed by its own power
+> failure, so a transaction commit triggered by one cannot hide a bug in the
+> other.
+> 
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+> Changes to v2:
+> - Add a _flakey_drop_and_remount between the fast and full fsync
+> 
+>  tests/btrfs/363     | 68 +++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/363.out | 15 ++++++++++
+>  2 files changed, 83 insertions(+)
+>  create mode 100755 tests/btrfs/363
+>  create mode 100644 tests/btrfs/363.out
+> 
+> diff --git a/tests/btrfs/363 b/tests/btrfs/363
+> new file mode 100755
+> index 00000000..b71dff0f
+> --- /dev/null
+> +++ b/tests/btrfs/363
+> @@ -0,0 +1,68 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 Western Digital Corporation.  All Rights Reserved.
+> +#
+> +# FS QA Test 363
+> +#
+> +# Test that data fsynced on a RAID stripe tree file system is still readable
+> +# after a power failure, both for a fast fsync and for a full fsync.
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick log volume raid-stripe-tree
+> +
+> +_fixed_by_kernel_commit XXXXXXXXXXXX \
+> +	"btrfs: force a transaction commit when fsyncing stripe-tree extents"
+> +
+> +_cleanup()
+> +{
 
->   static int alloc_rbio_data_pages(struct btrfs_raid_bio *rbio)
->   {
-> -	int data_pages;
-> +	const unsigned int data_pages = round_up(rbio->nr_data *
-> +			rbio->bioc->stripe_len, PAGE_SIZE) >> PAGE_SHIFT;
+  cd /
 
-This is the same calculation twice, maybe extract into a 'unsigned int 
-rbio_nr_data_pages(rbio)'?
+> +	_cleanup_flakey
+> +	rm -fr $tmp
 
+It should be "$tmp.*", not "$tmp" .
+
+> +}
+> +
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +_require_btrfs_mkfs_feature "raid-stripe-tree"
+> +_require_btrfs_fs_feature "raid_stripe_tree"
+> +_require_scratch
+> +_require_dm_target flakey
+> +
+> +# DUP keeps its mapping in the stripe tree, so a single device is enough and
+> +# dm-flakey can be layered on top of it.
+> +_scratch_mkfs -d dup -m dup -O raid-stripe-tree >> $seqres.full 2>&1 || \
+> +	_fail "mkfs failed"
+> +
+> +_init_flakey
+> +_scratch_mount
+> +
+> +# The first fsync of an inode is always a full fsync. Do one here and then
+> +# commit the transaction, so that the second fsync of this file below is a
+> +# fast fsync.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 128K" -c fsync $SCRATCH_MNT/fast | \
+> +	_filter_xfs_io
+> +_scratch_sync
+> +
+> +# Fast fsync: only the extents changed since the last fsync are logged.
+> +$XFS_IO_PROG -c "pwrite -S 0xbb 0 128K" -c fsync $SCRATCH_MNT/fast | \
+> +	_filter_xfs_io
+> +
+> +_flakey_drop_and_remount
+> +
+> +echo "fast fsync:"
+> +_hexdump $SCRATCH_MNT/fast
+> +
+> +# Full fsync: this is the first fsync of this inode, so all of its items are
+> +# logged.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xcc 0 128K" -c fsync $SCRATCH_MNT/full | \
+> +	_filter_xfs_io
+> +
+> +_flakey_drop_and_remount
+> +
+> +echo "full fsync:"
+> +_hexdump $SCRATCH_MNT/full
+> +
+> +_scratch_unmount
+
+Is this necessary to reproduce the bug? If not, we can remove this line.
+
+> +
+> +# success, all done
+> +status=0
+> +exit
+
+_exit 0
+
+These are all minor review points. If there are no other comments, I can
+do these changes when merging.
+
+Thanks,
+Zorro
+
+> diff --git a/tests/btrfs/363.out b/tests/btrfs/363.out
+> new file mode 100644
+> index 00000000..9e5f1fa2
+> --- /dev/null
+> +++ b/tests/btrfs/363.out
+> @@ -0,0 +1,15 @@
+> +QA output created by 363
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +fast fsync:
+> +000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb  >................<
+> +*
+> +020000
+> +wrote 131072/131072 bytes at offset 0
+> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+> +full fsync:
+> +000000 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc  >................<
+> +*
+> +020000
+> -- 
+> 2.56.0
+> 
+> 

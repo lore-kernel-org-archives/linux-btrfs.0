@@ -1,93 +1,108 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.52
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793011882;
-	b=5TBMdbHJNPBWcXb5J9mJ5pwloT8TZ81VghJDFhnmUM+8Gr9v12JEij6S98pLGaI7er3F
-	 AzS7BvnB3J3SIUiYCRbpBQgNZrKWG5w1zoRUQQ0VCwdVm6Gp5EPVkTlgRZsC5VeK+mfJP
-	 2iOr7PPfINpsGR3EKNIrXSDP8ANxl9Nie3vES2AIM8eMf9DD3nl/kLMFZM9TaOCX+znOy
-	 vMrtU3PJsxA+CI9t8f9U29YLaa/rFYi6amsAF9kBGOlN4Vu946nBLoTdZt7AqnVz4pZQQ
-	 eJ7s3VVVRMeJLaL0ZJvRFHwp3gdzlJnDgAI254xk2OWmbgg4uP5oj39hvGq0Cn82CAQ==
+	t=1793021690;
+	b=yE4fuW8oyT1fLibgcEcqFcksWe+6L/YpB78/G3prQKoEN72rlS/m8vemxDnlCqCb7Gbw
+	 Se3WXyL/azsPXGr/wDYZ+G1GeO7nv02CMhH4XgDHhGiKeOyRzbd4HTDgMQQa/4ZA9rAnU
+	 Qmgra7qZmZCQF+Jze32pm+5ch/bDX2uGQyN0IlvmL0+gGNZtI0v7yVWjf7riLKBlDGvcW
+	 sBZP6WoE/PteXZYXvZ5P23Xj9h7sPrOsG2J8SKbx2xClNa/iddNYWu9Yx6thVAPiE4S0s
+	 xP7leZjSOOHONZQ0Ylirjv9m7YivwsJKp6R2WalvqxgPSN/4rg5+HstSXULdiDson8g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793011882;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=QXblNSR8xULU+e1FuWNkvIygdbsQqdtYiPxZfiJKQg0=;
-	b=CSjGhGmueHNzD/sOWNZGp21r1w3o41ANO/RcpXgLG+/AEwB1WgBpdyfsRA1uxaxJwKXQ
-	 Jg0mnQP8C7daUJqlkMvU71nY8ArkI9Wj1BKLOEjXp8A+D0aXWdeQRLZU3ytU/mAYjdpmB
-	 uH1VuXknMjKxCeIT5ZTbAe58tg2F8UcKwBGTBfc+3YVbordayrc1cFVwvGxWcZOgaDm7w
-	 SBppnq+SQkh7uqGoCaWkYqIhtM+p6iN66ZMbA4IjT0av5XYLlPN4POYgzRw3mR3jayRew
-	 UjL1RABL85ikOPjsZsuZrlJ3VdPAuEnIwrSRXElc/OpkpDtKQSmhfhczdGyBS4oyAtQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793021690;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Rspamd-Queue-Id:X-Spam-Level:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:X-Spam-Score;
+	bh=4UlIvTTjkwmlBrzOjLPzKgJbLMN24EsBnbSBGjdQ+TE=;
+	b=2VI7S75yrPWWolOXo3YtsWpn+inAdHCjWcGHeRm1/awmFw1/b1qmo/OjPcUPsiR70TpM
+	 GE5byCsv+XT1ubAkJnj6urSy0LXwKjuSiT4Ga9m6k1B/In3g/NSl6geAl0j3VhXwbtf0+
+	 AfljbQfwOTZlWBh3tDMptZnENDsAJxOtELMHJluh0ecb5EUZ6BiVVSyqOGnfMFXDZS7bj
+	 zy1VLXDEFfU8n+iGHgps5QkOIKDlmEFKk0eGxDWg9ECyr8Hr8ashawXBQGTaneEvc4bdo
+	 wCKma788Extoe/hK6RNsmv+IyaPrAcx94IaoKtFMWnBHI1/58VxPCEISnXc1Z3tPSvQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=Qrw5sAsh;
-	arc=none smtp.remote-ip=74.125.82.52
-Received: from mail-dl1-f52.google.com (mail-dl1-f52.google.com [74.125.82.52])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=baI+UOMl;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=7pHTPEqS;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=baI+UOMl;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=7pHTPEqS;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5521E606A320
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2026 10:51:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 5521E606A320
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6B31606A31A
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2026 13:34:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A6B31606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20251104 header.b=Qrw5sAsh
-Received: by mail-dl1-f52.google.com with SMTP id a92af1059eb24-188406bb948so2125379c88.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2026 03:51:21 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20251104; t=1793011880; x=1793616680; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=QXblNSR8xULU+e1FuWNkvIygdbsQqdtYiPxZfiJKQg0=;
-        b=Qrw5sAshChMITFyQBNK3qy3rOjPlqRKLvy0I10a+jkUn8D1B3To+HKYWuYF2rGn3m7
-         juWhgnE8SDB/Y9XsNhNk9BNJmcrr32JiEZ+3bOJ51hfSsqUSGdTrrMPvPJ3dNJxmk+KR
-         LxmVAxcCtSOuF7OUIPU7cnx+gvsLnU4XGQDarjd4zGn4rYHquEMBBSeOfd43w8VyxUiq
-         9yylOy2Qxz6JGtTdb0i3lgtNGdg5i5koFxqMLjDGxI7HgyNGRKEzgXIK272K0hbmWItQ
-         73gmlT9YJDTna7Fnjj+daCsoq+8iSSTvCCvMLe5kSwQLgSRwQPB4JAHx7KgGI6YfVvIT
-         K1+Q==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793011880; x=1793616680;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=QXblNSR8xULU+e1FuWNkvIygdbsQqdtYiPxZfiJKQg0=;
-        b=genVGDwynoJ5wJOjSlWxov4iV+SV9gqeWMaWOCLaDspyAeyIJ/DHhiajpxnJfzgtYA
-         +uD+skLiOis2x2a4tgXOX44Bd66Vr6YhVrJhKyuKQXWp+QDCtZ4/23S2DWWvGOgsY46a
-         b7j/lBUQWhcyksvJnIaKYqzqu3FOcN6lsXqmTCSJ9wqAbzB9EQEQtrfgn5Vv4Xf3wFVF
-         bM05F3+A+lR32/e4rs2eOrvzL9y5fd56Otmk+/OJsR3Z1uGcv5ETmeSNq5zXiorxXZHN
-         dp4FjtyY0DAG2toWoYVWjG+pZyTy/B4Ar94Mrr7wTVe7+bRH6T1nmgzXMB2c5bX0FcyH
-         OY4A==
-X-Forwarded-Encrypted: i=1; AKwUvBxvSEddvCDcOoscZSwmrKMip3Nua85qfxfxq+dKBLqbX/NICkZMetmkax8TxzAiEglGpGTW9/hNQfdAPA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIanBcHuJv0wzo7tb7FbYke+7rYxxB0Eo7/92lZ32t3HpkHes4l
-	SW+UPsSae8FQNJcZclCDbLVUQSFwPgl3k7Ub+uZcRRGCupZQf6UyWqV1
-X-Gm-Gg: AYBFou2sA77uHe5LEX2xBAXI4rO3BcjSB1azfP+WMajIrB77GacJgAUyHAUkPReFKAY
-	Q9NmAsKtKb3uypvWFtTQGtV0qbMjz0FPOsORBmtARId5NQOx8aVEeEc+LAzZC70/PA4Vx+Y3sL1
-	szpgHDSRztDvvbbbcz/m4jUGYmaLGC/dQSspxYzWjzGbAtcYYZgicAQ5gRqmm7qi4IV8a60ZRvz
-	GGZeP8bFeKjHwh78RBDydrwtNac07POOBdauQWUTN7oQHwaVM/aOB3Cz6NtKQsccnTEA4DnK/eB
-	F3ik8gzfzzKipzVGkY4vEeOS5Burd5IchvzmCugd6+A3Se9BJwpURcxcoDARXH6Kl0rHF/SNFXS
-	cXwLExaE8QY0SCNxFJCll+hfQF31Zjc9aYrBWawAn2jfTJ6irtUEYrz2I7ThAeZO4RxAmLFSHcE
-	tyleg9T1wGhyaVhVvEEYL2xipUlcvaYbUX/y8o2OG1Dh583DkSqzY4Zr+2xa02RuELPsv213vtq
-	AqyjDgErfQ7lx9mW6WZ25emIvqHIyVg5qfAG/GGQsAoE+SgarVzR+/H9WGkdWdL6ZwwPbSFgUlV
-	M/wKjMrgTO/zmGbPlzXl
-X-Received: by 2002:a05:7022:4387:b0:1a1:8974:593f with SMTP id a92af1059eb24-1a1897459a7mr3025660c88.30.1793011880275;
-        Mon, 26 Oct 2026 03:51:20 -0700 (PDT)
-Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-198a0e8d700sm27785940c88.10.2026.10.26.03.51.16
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 26 Oct 2026 03:51:19 -0700 (PDT)
-From: Cheng Yongkang <teel4res@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org,
-	Qu Wenruo <wqu@suse.com>
-Subject: [PATCH v2] btrfs: remove devid kobject when deleting a missing device
-Date: Mon, 26 Oct 2026 03:51:09 -0700
-Message-Id: <20261026105109.1148939-1-teel4res@gmail.com>
-X-Mailer: git-send-email 2.34.1
+	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=baI+UOMl;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=7pHTPEqS;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=baI+UOMl;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=7pHTPEqS
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B845E1F7A1;
+	Mon, 26 Oct 2026 13:34:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793021687; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4UlIvTTjkwmlBrzOjLPzKgJbLMN24EsBnbSBGjdQ+TE=;
+	b=baI+UOMlKVAy3SWCcAr98EiYZLZvmrWlccCTf02DOWVOrnJX/ISyma56FnRwTFbfuCon6h
+	lx/tzrp4GMc1zXOWaDywKiyMLCCR7zodJecV0Zdvx82R9Dp0z4l82nnID/cBxa+Pz+Uq+c
+	QMOerZp32U/ZYvdRD6F9awM2TMH6IuE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793021687;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4UlIvTTjkwmlBrzOjLPzKgJbLMN24EsBnbSBGjdQ+TE=;
+	b=7pHTPEqSTCXYGCNfP9M5J0/15pUqHHP0l/X4U8Nb4FAiZSRQLT/xF1CGaS5QDMbQNLb2u3
+	QKVaoBXGziMD4sBw==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=baI+UOMl;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=7pHTPEqS
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793021687; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4UlIvTTjkwmlBrzOjLPzKgJbLMN24EsBnbSBGjdQ+TE=;
+	b=baI+UOMlKVAy3SWCcAr98EiYZLZvmrWlccCTf02DOWVOrnJX/ISyma56FnRwTFbfuCon6h
+	lx/tzrp4GMc1zXOWaDywKiyMLCCR7zodJecV0Zdvx82R9Dp0z4l82nnID/cBxa+Pz+Uq+c
+	QMOerZp32U/ZYvdRD6F9awM2TMH6IuE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793021687;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=4UlIvTTjkwmlBrzOjLPzKgJbLMN24EsBnbSBGjdQ+TE=;
+	b=7pHTPEqSTCXYGCNfP9M5J0/15pUqHHP0l/X4U8Nb4FAiZSRQLT/xF1CGaS5QDMbQNLb2u3
+	QKVaoBXGziMD4sBw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8B7D3134EA;
+	Mon, 26 Oct 2026 13:34:47 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id G4pgF/dW32pJfQAAD6G6ig
+	(envelope-from <jack@suse.cz>); Mon, 26 Oct 2026 13:34:47 +0000
+Received: by quack3.suse.cz (Postfix, from userid 1000)
+	id 0753BA1419; Mon, 26 Oct 2026 14:34:43 +0100 (CET)
+Date: Mon, 26 Oct 2026 14:34:42 +0100
+From: Jan Kara <jack@suse.cz>
+To: Saleh Mammadof <salehmammadof@gmail.com>
+Cc: linux-mm@kvack.org, jack@suse.cz, hch@lst.de, dhowells@redhat.com, 
+	linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
+Subject: Re: filemap_invalidate_inode() - losing -EBUSY from
+ invalidate_inode_pages2_range?
+Message-ID: <o5sj6bswd6arkusrxj5w5ww3jwk5hz7ktzxvdik72h7c4uen5i@fnwkmk6hvuf5>
+References: <CAKu0nJUGwnmuuT6fBz0phH=1Nyi6BguH2PHvs9+hDnrc_X0zWw@mail.gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -97,75 +112,78 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <CAKu0nJUGwnmuuT6fBz0phH=1Nyi6BguH2PHvs9+hDnrc_X0zWw@mail.gmail.com>
+X-Rspamd-Queue-Id: B845E1F7A1
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	SUBJECT_ENDS_QUESTION(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_THREE(0.00)[3];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FREEMAIL_TO(0.00)[gmail.com];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	RCVD_TLS_LAST(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	TO_DN_SOME(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	MISSING_XM_UA(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:dkim,suse.com:email]
+X-Spam-Score: -12.01
 
-btrfs_rm_device() removes the sysfs device entry only when
-device->bdev_file is non-NULL.  A missing device (created by
-add_missing_dev() for an absent disk) has bdev_file == NULL, but
-btrfs_sysfs_add_device() still registers its devid kobject under
-/sys/fs/btrfs/<uuid>/devinfo/<devid>.
+Hi!
 
-When such a device is deleted, btrfs_free_device() frees the
-btrfs_device while the devid kobject remains registered.  The kobject
-is embedded in the freed btrfs_device and its show functions use
-container_of() to reach it, so reading any devinfo attribute is a
-use-after-free:
+On Sun 25-10-26 02:27:13, Saleh Mammadof wrote:
+> Been going through mm/filemap.c lately and something caught my eye in
+> filemap_invalidate_inode(). It calls filemap_fdatawrite_range() (or
+> the wbc variant) and then invalidate_inode_pages2_range(), but doesn't
+> seem to check either return value directly - just falls through to
+> filemap_check_errors() at the end.
+> 
+> The thing is, invalidate_inode_pages2_range() can return -EBUSY if a
+> folio won't evict (release_folio failing, launder_folio erroring out,
+> folio going dirty again mid-invalidation, etc), and filemap_check_errors()
+> only looks at AS_ENOSPC/AS_EIO on the mapping. So that -EBUSY just...
+> disappears?
 
-  BUG: KASAN: slab-use-after-free in sysfs_kf_seq_show+0x157/0x490
-  Read of size 8 at addr ffff88801d8172a8 by task poc/9385
-  ...
-  Freed by task 9385:
-   kfree
-   btrfs_rm_device+0x11ee/0x17b0
-   btrfs_ioctl_rm_dev+0x265/0x400
-  Allocated by task 9390:
-   btrfs_alloc_device+0x7e/0x400
-   device_list_add
-   btrfs_scan_one_device
-   btrfs_control_ioctl
+Yes. Whether it matters or not depends on the caller I guess so you should
+discuss with the users of filemap_invalidate_inode() what they'd like the
+function to do. Adding btrfs people into the loop.
 
-The freed object is kmalloc-1k and the faulting access is 680 bytes
-inside it (offsetof(struct btrfs_device, devid_kobj) = 640 plus
-offsetof(struct kobject, ktype) = 40), confirming the embedded
-devid_kobj.
+								Honza
 
-btrfs_sysfs_remove_device() already skips the block-device link when
-device->bdev is NULL and only touches the devid kobject when it is
-initialized.  Call it for missing devices too.
-
-Link: https://lore.kernel.org/all/20261025180252.349049-1-teel4res@gmail.com/
-Fixes: 668e48af7a94 ("btrfs: sysfs, add devid/dev_state kobject and device attributes")
-Cc: stable@vger.kernel.org
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Assisted-by: LLM
-Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
----
-v2: add Link, Fixes and stable tags, keep the Reviewed-by because the code is
-unchanged, and remove local validation details from the commit message.
-
- fs/btrfs/volumes.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 85ea9c5..912a1ef 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2479,11 +2479,11 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_assign_next_active_device(device, NULL);
- 
--	if (device->bdev_file) {
-+	if (device->bdev_file)
- 		cur_devices->open_devices--;
--		/* remove sysfs entry */
--		btrfs_sysfs_remove_device(device);
--	}
-+
-+	/* remove sysfs entry, including for a missing device */
-+	btrfs_sysfs_remove_device(device);
- 
- 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
- 	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
+> If I'm reading this right it could matter for callers that actually
+> branch on the return value - btrfs reflink bails out on a negative
+> return when clearing the destination cache, cifs sets
+> CIFS_INO_INVALID_MAPPING again on failure, that kind of thing. If they
+> get back 0 when a folio was actually left behind, they'd think the
+> invalidation fully succeeded.
+> 
+> Could be I'm missing some other path that catches this, genuinely not
+> sure. Haven't tried to reproduce it, just going off reading the code.
+> Let me know if I'm off base here.
+> 
+> Saleh
 -- 
-2.34.1
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

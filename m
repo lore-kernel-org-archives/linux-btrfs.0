@@ -1,45 +1,45 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793053844;
-	b=GpDNJ4gGZyfLWJ5cV1hGblC8sRyf8zajUKyGXcnI6oDZUzdbWUlplz7OCd3kgcT+d2Yw
-	 ka4FXNAkp+a9VKSmToACWw3HKkvwnw8MVxoT9EIYNVHjvL4YmKH4SH+TrSLKguX+Dojf3
-	 Ae/rF1ooXGLI2Xj7/CEl7ApSUCL2NmDD97Djm2Kzm3IM3H4x5f7k291wbc21ZzCxZ7Gqi
-	 fnmMWnTD0u/3b/gIqnXql0IdCJYdmBHvwN4EwHuZeuBNMIWQQvHKliKx2e7qDB69bxffI
-	 cweerDNk93OYb1DZogS21AL3NF3eMmw/hYXj4kMFUXH7k0X0LoRHp/5iTRGDFfgMDwA==
+	t=1793053846;
+	b=G+3sSeobXOBBW8+8ZhgtA1zGCxDGoQl2jCYZY/Jltb8U9hDfN2CvwycxZJuwvn0z4qqG
+	 uiuil6Drz0zt4I1Jl8WCplzBYd3bJBFLc8kbINr7DB9i/9vu4EyCkPH/lBAV/2zHTy+VF
+	 YwvcuRCW3uQr2CAeXzY6kXg+dtVoNedDywS3bB6mdyHUUs5+cVEFkB1KaPd1srSwhTbhs
+	 bQjI4/jP4Y+gFgPtnnNnyaSdPhwPjXz1W4fFyLMKEuMMwQHX+lA/yFqb02VoyE77B6FWR
+	 l2PA8yPqShFTx2CH0Il37sbNERaGThzxqFn4wiufAiWDoXvhmug+hJK/Xyato1CokPw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793053844;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793053846;
 	h=Received:DKIM-Signature:Content-Type:MIME-Version:Message-Id:
 	 In-Reply-To:References:Subject:From:To:Cc:Date;
-	bh=dmscNNXpR9Tlb5LZlm76LmXvzMKP1GvB98Aa5akaxVg=;
-	b=roF2vcylbXjHHmBtey48wbiwzWjbnbqr0abKVkOtfsUyG+f3rKp48NBZ99BOz8h7zs/5
-	 b4ds34yZhn3us/Rc03vRvPeQBw6XLmj8qKcJOYKBAB7hqRtqjcxTP+D9gRFC/KK7BnteV
-	 0nAB+HZErlusxAydn5MHf/I+Yx6nboD37jxhNbZVktg+0+ewNofQDJ2tBeK53yNO1Axd2
-	 lLZb0U4XNJ/BYrN9++oJT7Y8sT+FFNyPGJMuhIflRuRe9GsTxevz34Cdxj0b60xtM4MrS
-	 zjWaWl2YAVVbYzN5jOBbaLfD8EBdiw0BsRVzzcw3jgOy6ZYBm/GrKNpBOGb5+xve0Vw==
+	bh=hDtNVLezgn7PdnL8lxuAMKA3HktkOtqQ7BOccgZ24og=;
+	b=pxXrQR3Dl6Wt8VQcBnML9YgMyx4QEGRrSE0GGnYf33pn8l4uaxu71Hr2q0AP30vja+De
+	 2B6xnQ5GK/4dH4KCfPNyCm3tfMEeYCTR570U4S47DWfM0Sw2dsp4USy/cwPnQHGjtiui6
+	 SAUtAY0nzNjRgyulb536i3ghJWCJqylBgksWQXyR+LpNBiaQxLt/tT9ZDB4TF5OdYN3t3
+	 kHCKLH9g0qUtpjZHFM3FIjtwFssCboawddl+Hk6banDKKvp0xmnu2CTScff6WiVVTBhcG
+	 lRCHBOy75nnq8bn35wo1RsoD5Cg3Q0LnN0hh66FP6naPBq4PMJeRMf5LloCAoUFZ8kw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=fail reason="signature verification failed" header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=dr+bFo+7;
+	dkim=fail reason="signature verification failed" header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WFbyZTea;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 20A93606A31A;
-	Mon, 26 Oct 2026 22:30:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B554606A331;
+	Mon, 26 Oct 2026 22:30:46 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=fail reason="signature verification failed" (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=dr+bFo+7
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E46EC1F01825;
-	Mon, 26 Oct 2026 22:30:42 +0000 (UTC)
+	dkim=fail reason="signature verification failed" (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WFbyZTea
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2237D1F01829;
+	Mon, 26 Oct 2026 22:30:45 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793053843;
-	bh=dmscNNXpR9Tlb5LZlm76LmXvzMKP1GvB98Aa5akaxVg=;
+	s=k20260515; t=1793053845;
+	bh=hDtNVLezgn7PdnL8lxuAMKA3HktkOtqQ7BOccgZ24og=;
 	h=In-Reply-To:References:Subject:From:To:Cc:Date;
-	b=dr+bFo+7z5+CTwiGHeYIy9H24IjvPgf4TRxSimSjSs3n/yAhL9aRSZINo/x5mroHe
-	 IomSvINKTXigvFZ4T2r4pQS6DcTQna3EE9nzEaCD82hejA4AZ3C7UlSxPbJbhFSHxy
-	 Di/MXuc0u3/DB8dqNapb7z2siMBwUqQB6nYCMuq4/0PMPiMdvRGNrUrJkXSpvs0w3z
-	 2AT3Q8x/a6nwJyggelSWmXb4qTG5Z6QAbLhvcEzt6dxwgv3iYRFYhWUqc9QXSKF1rA
-	 6AS+VQieQSX/Ma92ZXhyBaeeXWlR1S0w7QnMoMkQeDXfNXkfAbaABsGjNgcpENxttB
-	 vTydLvfW/5xGw==
-Content-Type: multipart/mixed; boundary="===============5289104665204023220=="
+	b=WFbyZTeaLbCY7ikuEs02jXbJsHCKJuFY/nfKSONWHoJU/2S/39wsTuAQ8g+/Md79e
+	 DB4TvvDXjasmcGt144E8xgtFsxUljyQhx2sGVcmNSUlwQK8UT6v1M2yr3CugiNXCkX
+	 m6MweNqwjERuBLkScl1t31HP2jc07sHYYSpdSJ68gbrdL/+ctrs3iVv9aC7CSLkAjN
+	 6sfOzrtVhHenVSn7PIuB9pFdtoetDWKLPpn/MlWVg4bOXaxKC0xsmnyNj/ErH2Bc6b
+	 sj8C/3hyI7le0llJhynkd5e0XA9841gGOYgDuz95tXwTXvafMEg0Jn8hmj5vP/quKy
+	 U4OyEGKm4+pCg==
+Content-Type: multipart/mixed; boundary="===============9203731180031934646=="
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -49,76 +49,82 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Message-Id: <bce97570ea9665a2f83216d4dfd7ab7ce17d54aa777f761c3d12db430ba21bb9@mail.kernel.org>
-In-Reply-To: <20261026215226.3713941-5-jthoughton@google.com>
-References: <20261026215226.3713941-5-jthoughton@google.com>
-Subject: Re: [RFC PATCH 04/10] stacktrace: Don't unwind the user stack without an mm
+Message-Id: <10ab2f3b005f0df2c0a88e93e6917826d928bb1f82c6a645f942c099e48f8b6e@mail.kernel.org>
+In-Reply-To: <20261026215226.3713941-4-jthoughton@google.com>
+References: <20261026215226.3713941-4-jthoughton@google.com>
+Subject: Re: [RFC PATCH 03/10] bpf: Fail sleepable user copy helpers when current->mm is NULL
 From: bot+bpf-ci@kernel.org
 To: jthoughton@google.com,akpm@linux-foundation.org,viro@zeniv.linux.org.uk
 Cc: tglx@kernel.org,peterz@infradead.org,kees@kernel.org,arnd@arndb.de,david@kernel.org,ljs@kernel.org,liam@infradead.org,vbabka@kernel.org,rppt@kernel.org,surenb@google.com,mhocko@suse.com,seanjc@google.com,pbonzini@redhat.com,jmattson@google.com,axboe@kernel.dk,asml.silence@gmail.com,James.Bottomley@HansenPartnership.com,mkp@kernel.org,dsterba@suse.com,mason@kernel.org,ast@kernel.org,daniel@iogearbox.net,john.fastabend@gmail.com,jpoimboe@kernel.org,rostedt@goodmis.org,mhiramat@kernel.org,mathieu.desnoyers@efficios.com,mingo@redhat.com,acme@kernel.org,namhyung@kernel.org,linux-mm@kvack.org,linux-fsdevel@vger.kernel.org,kvm@vger.kernel.org,io-uring@vger.kernel.org,linux-scsi@vger.kernel.org,linux-btrfs@vger.kernel.org,bpf@vger.kernel.org,linux-trace-kernel@vger.kernel.org,linux-perf-users@vger.kernel.org,linux-kernel@vger.kernel.org,jthoughton@google.com,ast@kernel.org,andrii@kernel.org,daniel@iogearbox.net,martin.lau@kernel.org,eddyz87@gmail.com,yonghong.song@linux.dev,mason@kernel.
  org,ihor.solodrai@linux.dev
-Date: Mon, 26 Oct 2026 22:30:42 +0000 (UTC)
+Date: Mon, 26 Oct 2026 22:30:45 +0000 (UTC)
 
---===============5289104665204023220==
+--===============9203731180031934646==
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 
-> stacktrace: Don't unwind the user stack without an mm
+> bpf: Fail sleepable user copy helpers when current->mm is NULL
 
-TL;DR: Commit message only: the Fixes: tag may point at the wrong commit;
-7e8e6816c649, which dropped the !current->mm check, looks like the real
-culprit rather than 214d8ca6ee85.
+TL;DR: Commit message only: the security_file_release() example of a sleepable
+program running from a kworker looks inaccurate, since such a program appears
+not to be attachable there. The fix itself looks justified.
 
-> stacktrace: Don't unwind the user stack without an mm
+> bpf: Fail sleepable user copy helpers when current->mm is NULL
 >
-> stack_trace_save_user() only refuses to unwind the user stack of tasks
-> with PF_KTHREAD set. That doesn't cover all tasks without an mm:
->  - A user task that has already gone through exit_mm(), e.g. when an
->    event fires from exit_files(), exit_task_work() or the final context
->    switch in do_exit().
->  - PID 1 before it execs init, and usermode helper children before they
->    exec, which are created with user_mode_thread() and don't have
->    PF_KTHREAD set. E.g. booting with trace_options=userstacktrace and
->    an event enabled with trace_event= unwinds PID 1's "user stack"
->    during initcalls.
-> With the ftrace userstacktrace option enabled, the architecture
-> unwinders then read the user stack without an mm. That access does not
-> reliably fail: the user half of the address space belongs to whatever
-> mm happens to be lazily loaded, if any, so the unwinder may read
+> Sleepable BPF programs can run on behalf of a kernel thread, or of a
+> task that has already gone through exit_mm(). For example, bpf_wq
+> callbacks always run from a kworker, bpf_task_work callbacks queued
+> late enough run from exit_task_work(), and lsm.s or fentry.s programs
+> may be attached to functions called during exit_files(),
+> exit_task_work() or from kernel threads (e.g. security_file_release()
+> from a kworker running delayed_fput()).
+> In such contexts, bpf_copy_from_user(), bpf_copy_from_user_str() and
+> bpf_copy_from_user{,_str}_dynptr() (when reading from the current task)
+> call copy_from_user() or strncpy_from_user() without an mm. That access
+> does not reliably fail: the user half of the address space belongs to
+> whatever mm happens to be lazily loaded, if any, so the program may read
 > another task's memory.
-> Use is_user_task() instead, which also checks current->mm, as perf
-> already does for the same reason since commit 76ed27608f7d ("perf:
-> sched: Fix perf crash with new is_user_task() helper"). This also stops
-> unwinding the user stack of PF_USER_WORKER threads, which never run in
-> user space, matching perf.
-> Fixes: 214d8ca6ee85 ("stacktrace: Provide common infrastructure")
+> As there is no user memory to read from in this case, fail with -EFAULT
+> without attempting the access.
+> Fixes: 07be4c4a3e7a ("bpf: Add bpf_copy_from_user() helper.")
+> Fixes: 65ab5ac4df01 ("bpf: Add bpf_copy_from_user_str kfunc")
+> Fixes: a498ee7576de ("bpf: Implement dynptr copy kfuncs")
 > Signed-off-by: James Houghton <jthoughton@google.com>
 
-Is the Fixes: tag pointing at the right commit?
+The commit message gives security_file_release() as an example of a place
+where an lsm.s or fentry.s program can run from a kworker:
 
-When 214d8ca6ee85 added the ARCH_STACKWALK version of
-stack_trace_save_user(), it guarded the unwind with:
+> (e.g. security_file_release() from a kworker running delayed_fput())
 
-	/* Trace user stack if not a kernel thread */
-	if (!current->mm)
-		return 0;
+Is this example accurate for the tree being patched?
 
-That check already covers both cases described above (a task past exit_mm(),
-and PID 1 or usermode helpers before exec, which have mm == NULL).
+bpf_lsm_file_release is not in the sleepable_lsm_hooks set in
+kernel/bpf/bpf_lsm.c, so btf_id_allow_sleepable() rejects a sleepable
+BPF_PROG_TYPE_LSM program there.  bpf_lsm_file_free_security, the other hook
+reached from __fput() through file_free(), is in untrusted_lsm_hooks rather
+than the sleepable set.
 
-The check was replaced by commit 7e8e6816c649 ("stacktrace: Use PF_KTHREAD to
-check for kernel threads"), which switched it to:
+For a BPF_PROG_TYPE_TRACING program, check_attach_sleepable() requires
+within_error_injection_list(addr) (or a syscall prefix when
+CONFIG_FUNCTION_ERROR_INJECTION is off), or an fmodret set with
+KF_SLEEPABLE.  Neither security_file_release() nor bpf_lsm_file_release()
+has ALLOW_ERROR_INJECTION, and the only fmodret sets are in
+net/bpf/test_run.c, net/mptcp/bpf.c and bpf_testmod.
 
-	if (current->flags & PF_KTHREAD)
-		return 0;
+That suggests a program attached to security_file_release() is never
+sleepable and cannot call bpf_copy_from_user() or the KF_SLEEPABLE copy
+kfuncs.
 
-That dropped the no-mm protection, which looks like what this patch restores
-via is_user_task().
+The fix itself still looks justified, since bpf_wq callbacks run from a
+kworker and is_async_cb_sleepable() is true for them.  Only the example
+appears to be off.
 
-Should this be:
-
-  Fixes: 7e8e6816c649 ("stacktrace: Use PF_KTHREAD to check for kernel threads")
+Would an example that is actually reachable keep the changelog accurate?
+For instance, bpf_lsm_task_alloc() when kthreadd forks a kernel thread
+(current is kthreadd), or bpf_lsm_kernel_read_file() and bpf_lsm_file_open()
+when a kworker loads firmware with kernel_read_file().  All three hooks are
+in sleepable_lsm_hooks.
 
 
 ---
@@ -126,4 +132,4 @@ AI reviewed your patch. Please fix the bug or email reply why it's not a bug.
 See: https://github.com/kernel-patches/vmtest/blob/master/ci/claude/README.md
 
 CI run summary: https://github.com/kernel-patches/bpf/actions/runs/40410166379
---===============5289104665204023220==--
+--===============9203731180031934646==--

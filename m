@@ -1,100 +1,102 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.53
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793116254;
-	b=XF6FVYGUTSIuGPJiXHZb2SMfXh36GlineuYMZ9mh/a7W/tQGRtKq1BdG45uYOyYHk2eH
-	 YFR8kcjCaZ0+s1itm4j+6hT95mqSlvhB+92soqOHfAqKjIws0Zz5+4MpMRJePJtaKZ3F6
-	 ny3ssbIJSlgSPJCOkdkWNYIfSUGac3GHlmXc7oJPJiQYhA+x1w8YpnQreXP01y3k6gsr6
-	 C/QKRCQkl8g/s+GPbmy6qIHQGuzblreB1HFPm86Knp8dg3a3/Rcl+ZMmBewyp0PvjmnKR
-	 lcL1DQLlnxRaCZjGxCY+HeToDn9hKx1sjdmEtjVYokrL0drZ+7NdRGZqdUYT4md6e0A==
+	t=1793122228;
+	b=Q5PzUfQ/l79x5AAX8O4q9ufWxtq7ro5hSf13g62Fgu8wseWrMMfMTNpP7HNIjUKNa+bL
+	 nQ1y03iUcvoiGSggvfudCcSPE+MIVH5e417Gk7Vdsf3H5+wLximsShACzCM6YGBJpVQw4
+	 8sOQU1zpOeG4OgpKIkeSBFXUZZ2jTar/UjeS6gtS6Q3iaZrfGk0g21wcermuEdvRh3BcY
+	 wfx5r0wbykbFiBBq6hhqs0jYvgkeExlRMRjLtLbg+YLLwE7vwMX5lP2L7Lr25dG5byri8
+	 fEkdqLxf2GH1QGIe+fR0u5ksTr++pZFuy78fslbeEKwhUmqvh7SbcMIdxGFq0w/A8gw==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793116254;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793122228;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
 	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type;
-	bh=Mcs8JnL10jM1KxNtIsGEU+k5bUFOThMnLKcaam3QLzY=;
-	b=IcPZhOGWY8aC89R8YyPF9Ej/+CgwA6Eox7lqb0f6hM280EtXHk1RS20plijWsynL7hFq
-	 PR9M3TLJzudgo8fzkcEq7oaRaoGetQ649Nc4OFiHhGphWklE6ZQzKMk7xo5uzlYLT7+MD
-	 EAEjhfBaFhcfFdi6BM92Q+gG0EGAd2iyaLi+lQMX9mfWXIM5GGCW9tN1RchEFlMP75fRY
-	 yE8YkM+Ww39q2p9p6MIcXHqONlDgtwCSTdGlVzrWyqpeiu227JOM8W7d6J4VKuHar/K4v
-	 EJfpEHZb941rkQQuEOUkxW74gNWll3WvwHe1YolWMWgoLrZtBEoJ0SegjMlxLm3DzDg==
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=7gQ+97vReKa4toS9130cb0MEUCUe5fofr2ehSKz/dNw=;
+	b=SwrbA6XEgx61oGl+YLXHBUtL4DBWArYOukbHfpm1iOe2Hfq/XrEJmkPGtbNvTAd3vfLA
+	 RqP5Iw1sjAWEOdHM2vHcWxHE6B+D/VpqzEchJYDsvFomtgBAADLofkUVgv7KEDW49V1A1
+	 66jKzkfLl3GJP4d8GwzGfnYTOU2R1GHz3w5wUgQaxm/4eVL1oiUnAwn5Sh5iCj5C7XROv
+	 Hhio4nBUTWNGZ1XlGnuS4C0MgeoNT3vGdKI13ejfdkfMCtC7n8eDzPekE/KoThzSWcGt6
+	 r+JC6KpcdlzOsQOk8UDyyL7ut66dgN2WWQrroqPa5SUyhlDcMyCqyffysgt7SXloULg==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=K9ItsBD6;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.49
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=AH5XVSYu;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.53
+Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6EEC6606E6C8
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 15:50:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6EEC6606E6C8
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 918D9606A324
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 17:30:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 918D9606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=K9ItsBD6
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4a35a60499eso10165e9.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 08:50:53 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1793116252; cv=none;
+	dkim=pass (2048-bit key, unprotected) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=AH5XVSYu
+Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-c49b431f022so10357266b.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 10:30:23 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793122222; cv=none;
         d=google.com; s=arc-20260327;
-        b=A2iRgFB7kCuuKX296a96HEg86IQThwiztYRsO7J8991KZDc2NozpM418Yx/WkBH5kZ
-         2Lp2SxSER5EPln9t3F3dV39ftF2x3Qq9GaegfPlKGTzwRhOBXb6bLTTkiSeaaICrfjpo
-         xkHfYdfUWVfq78n+vEUbU91YF12jLRdKMsNFPVtsJLIz7iWA2grxFvsOowkHdAC4WHDl
-         cF1hGkTrL7SR+omLNAMVXVGavwfBRtLOTu3SjSYHljWwYMTYUqccn3wKdyPKD081ZNB1
-         bOGQixNOBtBZqLp6fpFyj9BbAjMkcNvbVsg1hqhBcUi8NNQKoJ82A/aT2UGdVQnRohb/
-         /Iaw==
+        b=hZdWoggj4p53uVi//ksSKuziGvNepww+BASHgI934AxKkjSgR1p6UtPv2kJWXw/Y6V
+         pO1ydZuxUVhFoud0TohOPgTcN0Ssc2MbCNxa8sdugWEqrdsRwxtsGP96UqIe76CaIVJk
+         9EMFVbr/bRFUaICjlyVvEq+AEM+ZKT14XwjHMs4YlntNsG/1mr0cKk3JsBB/E8cJGQnC
+         aL8xW7jxXK2DYYxqFRfg49ZAbxSQkOaEoIgtoIL4ARUbQVJi16m7iPIZVkzyanu1E9jN
+         YbkmNuDG8Rq0c4a+YhU0SqtCBWG9QBOi3r6jIyJszjyKFlZxcbyogqu0sm40NNstphpz
+         APTQ==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=Mcs8JnL10jM1KxNtIsGEU+k5bUFOThMnLKcaam3QLzY=;
-        fh=rRq5PM0gonS1wijBUpVrOIX7zjeIN4/nVL9f3lfc3rA=;
-        b=GqqCrRaFhRViAsYHcMcnJaAS7MOZpzankgJA81nvhi9juEKf8vgVRmkpswlkeH6Bxy
-         43kv+ZqMcSO71qSgn4nOZSLWrjsAg7J/z1vfBosTgaV1FOQt15+PeuFEyVmHjImpGYbO
-         i6Uo6XdF9GawSyrO4n8RTxc7j4WgFoSvQ6eGrybBTg5hnfpsJoBCFyCBeJp8Os8VlHMf
-         7JcQs9KiOc657ksBZAYtxrP3emJTYE0/FMQyiJ+F2yyf5VfwkyGk8/XSw1cHKsWtwaQt
-         X1BYj4Vobl9cKITuFOpbqHw8HiQB/zDBj7mqqrG11vV3rXkdsma0CDxsA3ErtCEE3VoI
-         VW9w==;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=7gQ+97vReKa4toS9130cb0MEUCUe5fofr2ehSKz/dNw=;
+        fh=nO8NQ34pUvNJpRpjgri5rXnzTFVe+Pluh7PeAg5G1vY=;
+        b=B3AaUXtTtXrY32+scxDDsHpP2ORube8vBT8Mu4piQpuYfAkue6TpUa1UdxJYTr5zsl
+         pgvg49JMXcWXOjGsXQFRSOvbU6Oxv0Us51wUa+BrhIRxhaPyPYFAWw9hfhRAcwzP3K0H
+         fINXm88RPMW7mqkkqvCTvMIaHF+rXTVGeGPxBatOqJOXJ1NlW1itb1tem6zpoNpGfT9H
+         jUVkY+FxEkB3m88MxXBEwZNUrFlFsTFoV5i8/YVdQDWJBPkuam8DOTRFVBKIOSJ8HBci
+         HPDjN9a4HMYzHEyKlgYhRXi9g/iVf5zUO0AdQi3MM3NTBHUhknI3npmGskIbHlSFpxn5
+         mgiw==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793116252; x=1793721052; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Mcs8JnL10jM1KxNtIsGEU+k5bUFOThMnLKcaam3QLzY=;
-        b=K9ItsBD67RRqrnEFh+zCaHtcW3bD3TS4JwznM/2q2ashS19zlSHQQyu5GjBet9ZHlJ
-         s0rgQz83BdLAcNfjH6v4sPBGE+VBRctYKF2oLhKwp5yuXotXI41qtCuOvNlkfX3q8u6Q
-         zAaIokQ9LfIZoiy66T5i0pJ5+tmNeyJ6+gTtgRhCwLtf77Pp6n2uMuPq9x2Fif30lh0H
-         BB/bWb8s5dbB6xUhWMbw18Gz2f8vIWpr5gu8h4SL+dKHKeBtQjqkbn+xGBEJA3ap3Cv7
-         NVqWDQ0KPmDgQRMcnp1onsiqnm1SRgpjf+IYuzn3wHZyvJcGaZmEpWMQdpcKl4hgDs77
-         Yc+Q==
+        d=google.com; s=20260707; t=1793122222; x=1793727022; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=7gQ+97vReKa4toS9130cb0MEUCUe5fofr2ehSKz/dNw=;
+        b=AH5XVSYuq6HUx6QejcrLzJHXiZbWI9DboIxOz+yByNgh84gxZAIKBuzZHV99EG6rqB
+         sL71z4Wm6MSPA3Nnza0i731ilrImuFj3jUTow6hkS/0r7bYzxQobbOzdeIyt6ASGeEbF
+         yTa0PHt944q+HSgG6NrCVe3wZJYFAVwhpzaLqX011nHEVLqO4I7UJy1zd5cfMTXQHdaA
+         BSUKBBxl7R08MamwKyO7Ss8mI2wGFLi7Y2RxS2XZ75lMQCOMaDZ6YNjy/Um35SI/BQEx
+         H9A/IMXo16KCWMivgQdBOKUL0g+UWglSQzebhEs3U4Ckl7bH2Y72gGHNDHSXACje/sxH
+         22yg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793116252; x=1793721052;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Mcs8JnL10jM1KxNtIsGEU+k5bUFOThMnLKcaam3QLzY=;
-        b=KkdBHDJ8Eh30vwkWuVxtJNlg27QxiQrXj1u5RGir/LmDMQDnj/I2R5V1n7YqJAE9v7
-         mqnAGC7FaAziUJ/QYXHImUQNbdu4rTUbhEdO+feHqViMVukjmJB5Pmp1OkCzUHwn1j/C
-         YV/K+v4NV1YxgrTfLVxnaqryG5SCsnvP10Zm4fVu9aZz0qhghq6VZo7sn9JGqltzhO/T
-         BQloZ5sWX4yFiEqW+L5S6/D/WHJjupBsiLpCiaganwp1oxVMYODAjuERIlR2A5YbZSfL
-         BUplUAu8USCEFKsfoanlkIB0IuOZdwACyuyGcXv73OKVwiwPetM+D2/5bIlX/P+/JMYT
-         ZNLg==
-X-Forwarded-Encrypted: i=1; AKwUvBxaXA/YXTWTHmZhnCYqAVAhnUAmPG9pEhqGKnp2+pbISLVs/ya+mfjV39nvKXtxjDGHyEkwXwQpjC86sA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKb0YWfdIc92P58/3plgh+/ftJqxtbXuVfdJmWnSBlfHKQbsjyn
-	YOHKs6QG/2TveA2TmNY/tz3N0RHx7RrDLYeUrKiPJqzE8fqOVi2bb1F8CxglGCxYSINKUpJ71JB
-	bwTK7Lhx6C+vXTl/NCsEIH5urOFa8ilsPFi/GvJQy7Q==
-X-Gm-Gg: AYBFou2Dn4xQmeTru36YXA6YuBpG0zDQHGO/p2azoMSYvAmhewNpXpQXbu6nV8x8YRS
-	5ksMpsa7TDqNE0hbH3VCAbwHuEhcVRwvY8hEZTtliEI462mLHdKsPC6zO3eVIUALd09y7gDj2No
-	UeUSdq1T2B8Iz7Q1nWDXUjXn2D+89h41Vv118brtft/CUr29K5BKeUbJswtmwThemLe9WmsJFO8
-	ec4tMycV+nAnth5m0u2tcF5opo6+qoHvIQXaXYIDqMjZ6lJHg7+xqCGEQoqXFWYVZ+kTSv4mwft
-	rKfdt+Vg23YQqRX965Bk8zb07WG/E8EVvKwJVy1xqpVYu4/czI6BPXS17OWYmnrluny2/ZYjJo6
-	S3XjCrWc5r+xaRKLN/fyGOhXVP4j5vvut+pyDbX2jNNQZnCMRXqHvF8bAYPgVwwPHEO97TYhPDU
-	HAxuDLMGFPPAe0pksjG0NrBRYP1rS/CefT9g==
-X-Received: by 2002:a05:600d:82c3:b0:4a5:1cf1:b7bd with SMTP id
- 5b1f17b1804b1-4a51cf1b880mr182424845e9.16.1793116251642; Tue, 27 Oct 2026
- 08:50:51 -0700 (PDT)
+        d=1e100.net; s=20260707; t=1793122222; x=1793727022;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=7gQ+97vReKa4toS9130cb0MEUCUe5fofr2ehSKz/dNw=;
+        b=EG9RsquZcsv2PYi2FVgSRg1YUHN0BGAPFR+sL+Ku8lXyfsDWQduAeYEYh2n42ffZc+
+         7Ep3o//iIRSp1lgz5D1kllH7pEY61Ew9+mzJnm+5UcVXiTTSpFG/r2GYvWWKN4C+VJem
+         RpfyHM2ROoYIBKoiyXSQv/67v8/zcGCBZdDbhUZ+EYXd3EGSZ2Qb7+Wb+/antunY3g9U
+         BdgtO+CHZJvxNY+kcOwTnfjot4MqFfnWAjSsZFpBYQUiGffGTVlWQIAYSzFSDJtDSCKe
+         Rkox/0MN8+TDoeywraplSLh1+OO4qD3QjdrKdsyADgrMc6A+nhG4Mp7NJ6sgcRNihH5H
+         m01A==
+X-Forwarded-Encrypted: i=1; AKwUvBy/HNQlIinSbj44T2nXOtQEeOjxRPyvpUva3Mzp3QCtUMxbQ9hv2vMkULGJEN7iqucpD7ve9qn8EikUMg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJKDHoWDK6hhjGJlH1Cn3yAVAT4yXFuDTOL5Z8c2ygQXp707EoE
+	frNc4Yz6s7gAkOv48Z/KJ9+4fHWXJ2sUbKvZWwgeqX4G9pb/pD9z//U1Fto8CjzYEa8HJaYmVcd
+	vSj0b+FKmuAogGIdmaOLClRh4D4NdHernlqiUGbXS
+X-Gm-Gg: AYBFou0J6iGjTsy3Xz2o2ZvHs46u3aZd/6+4kRT8DE/pEW7rd4yEv+8rpD+bxb2Ag6N
+	85fiR/aySbvz6vynOgcx72kLfBLWM2NyQ0wexs71F864l6bRAoq/7493rk5Ci8GxTT1Ajafx01K
+	f9tOi2Z7zBBmXNZuVJsIllAFnopMdBxy7bzDXgTcCCly0kP2wzlHBYYzo2l0gHUjxd6p1kiJDUC
+	o7fcxQbKJxhMc1BP+A66G/xfPdmE5b35JFyXKXjw/gSWFFM7NrNmbZaL1O4Mb+oNNOz1pySA89M
+	RMgcdMDjcuhh0C1hiKrhy8Dkx7Sgqg9ecUkgPzav+dHniZvxA6G1YGul0pSItSvkzVB9ap0akYY
+	9FPcx/YJceeC6WmNXAhK1pXFNxxVX7ZEKmzNkVBTqM+TE09X2yPKJ/kELtme65RxhnmYkGg/AqR
+	rJMKkeV9rNT8HZuP6i90Ho29x+phpSv+1jNaLPljMviOPWwdsc0iVkmNugAuB1qzy2+JYM32oAl
+	PjGtNCC6vrsSf6+g/phkHPRxC15U4gOYA==
+X-Received: by 2002:a17:907:80c:b0:c46:6a50:40c2 with SMTP id
+ a640c23a62f3a-c46bdee2675mr1178260566b.39.1793122221137; Tue, 27 Oct 2026
+ 10:30:21 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,201 +106,121 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <6ad8d80e.d1c214cc.659fa.0028.GAE@google.com>
-In-Reply-To: <6ad8d80e.d1c214cc.659fa.0028.GAE@google.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Tue, 27 Oct 2026 16:50:40 +0100
-X-Gm-Features: AclHuK95_P7g-eyR-PQyHjKwzWo9AfVPW4hzwamPk4eA0FOPUTWk7TuuODd_Eg8
-Message-ID: <CAPjX3Ff7_R7XkiQu+CPr8WSEZtfu6jjpdeSahaSjFTMCKV1Tyg@mail.gmail.com>
-Subject: Re: [syzbot] [btrfs?] WARNING in btrfs_put_transaction (6)
-To: syzbot <syzbot+08b7cbf4e9ac1f9139bf@syzkaller.appspotmail.com>, 
-	WenRuo Qu <wqu@suse.com>, Filipe Manana <fdmanana@suse.com>
-Cc: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, mason@kernel.org, 
-	syzkaller-bugs@googlegroups.com
+References: <20261026215226.3713941-1-jthoughton@google.com> <14f5f919-55bd-47c6-a1c8-6f1445cce733@app.fastmail.com>
+In-Reply-To: <14f5f919-55bd-47c6-a1c8-6f1445cce733@app.fastmail.com>
+From: James Houghton <jthoughton@google.com>
+Date: Tue, 27 Oct 2026 10:29:43 -0700
+X-Gm-Features: AclHuK_V7ZmMdE83iy-wOvaliSqHMUcbKVcnfqQwnRgRgjPYRFDHKTZOMwXOk5E
+Message-ID: <CADrL8HXQdzcroeGN-ACjyy-jSAdBNHiT1_BCVVe0P+Y8ZueiyA@mail.gmail.com>
+Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
+ current->mm is NULL
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Thomas Gleixner <tglx@kernel.org>, Peter Zijlstra <peterz@infradead.org>, Kees Cook <kees@kernel.org>, 
+	"David Hildenbrand (Red Hat)" <david@kernel.org>, Lorenzo Stoakes <ljs@kernel.org>, 
+	"Liam R. Howlett" <liam@infradead.org>, "Vlastimil Babka (SUSE)" <vbabka@kernel.org>, Mike Rapoport <rppt@kernel.org>, 
+	Suren Baghdasaryan <surenb@google.com>, Michal Hocko <mhocko@suse.com>, 
+	Sean Christopherson <seanjc@google.com>, Paolo Bonzini <pbonzini@redhat.com>, 
+	Jim Mattson <jmattson@google.com>, Jens Axboe <axboe@kernel.dk>, 
+	Pavel Begunkov <asml.silence@gmail.com>, 
+	"James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>, 
+	"Martin K. Petersen" <mkp@kernel.org>, David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+	Alexei Starovoitov <ast@kernel.org>, Daniel Borkmann <daniel@iogearbox.net>, 
+	John Fastabend <john.fastabend@gmail.com>, Josh Poimboeuf <jpoimboe@kernel.org>, 
+	Steven Rostedt <rostedt@goodmis.org>, Masami Hiramatsu <mhiramat@kernel.org>, 
+	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Ingo Molnar <mingo@redhat.com>, 
+	Arnaldo Carvalho de Melo <acme@kernel.org>, Namhyung Kim <namhyung@kernel.org>, linux-mm@kvack.org, 
+	linux-fsdevel@vger.kernel.org, kvm@vger.kernel.org, io-uring@vger.kernel.org, 
+	linux-scsi@vger.kernel.org, linux-btrfs@vger.kernel.org, bpf@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, linux-perf-users@vger.kernel.org, 
+	linux-kernel@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Wed, 21 Oct 2026 at 17:26, syzbot
-<syzbot+08b7cbf4e9ac1f9139bf@syzkaller.appspotmail.com> wrote:
+On Mon, Oct 26, 2026 at 5:13=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> wrote=
+:
 >
-> Hello,
+> On Mon, Oct 26, 2026, at 22:52, James Houghton wrote:
+> >
+> > This series comes out of a set of bugs that were found in KVM where the
+> > kernel can sometimes write to a random process's user memory[1]. The KV=
+M
+> > fixes at [1] are still required, even with this uaccess series, as note=
+d
+> > by Sean here[2] and below in this cover letter. The beginning of this
+> > series includes fixes for similar bugs found through static analysis
+> > with Claude Opus 5.5. I don't think any of these bugs are more severe
+> > than the KVM bugs[1].
+> >
+> > We hit one of the KVM bugs in production, and it was challenging to
+> > debug. This series makes such bugs, where the kernel is doing uaccess
+> > without an mm, much more obvious.
 >
-> syzbot found the following issue on:
->
-> HEAD commit:    58161ead29e5 Merge tag 'drm-fixes-2026-10-17' of https://g..
-> git tree:       upstream
-> console output: https://syzkaller.appspot.com/x/log.txt?x=12d89621580000
-> kernel config:  https://syzkaller.appspot.com/x/.config?x=4ccb65e03706547e
-> dashboard link: https://syzkaller.appspot.com/bug?extid=08b7cbf4e9ac1f9139bf
-> compiler:       Debian clang version 22.1.8 (1~deb13u4), Debian LLD 22.1.8
->
-> Unfortunately, I don't have any reproducer for this issue yet.
->
-> Downloadable assets:
-> disk image (non-bootable): https://storage.googleapis.com/syzbot-assets/d900f083ada3/non_bootable_disk-58161ead.raw.xz
-> vmlinux: https://storage.googleapis.com/syzbot-assets/b76eb31da21c/vmlinux-58161ead.xz
-> kernel image: https://storage.googleapis.com/syzbot-assets/fca526cf319c/bzImage-58161ead.xz
->
-> IMPORTANT: if you fix the issue, please add the following tag to the commit:
-> Reported-by: syzbot+08b7cbf4e9ac1f9139bf@syzkaller.appspotmail.com
->
-> RAX: ffffffffffffffda RBX: 00007fc8df425fa0 RCX: 00007fc8df19e559
-> RDX: 000020000001e740 RSI: 000000008004587d RDI: 0000000000000008
-> RBP: 00007fc8df235ab8 R08: 0000000000000000 R09: 0000000000000000
-> R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-> R13: 00007fc8df426038 R14: 00007fc8df425fa0 R15: 00007ffe864adf08
->  </TASK>
-> FAULT_INJECTION: forcing a failure.
-> name failslab, interval 1, probability 5, space 0, times 9992
-> CPU: 0 UID: 0 PID: 5325 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
-> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-> Call Trace:
->  <TASK>
->  dump_stack_lvl+0xe8/0x150 lib/dump_stack.c:120
->  fail_dump lib/fault-inject.c:73 [inline]
->  should_fail_ex+0x410/0x560 lib/fault-inject.c:174
->  should_failslab+0xa8/0x100 mm/failslab.c:46
->  slab_pre_alloc_hook mm/slub.c:4638 [inline]
->  slab_alloc_node mm/slub.c:4974 [inline]
->  kmem_cache_alloc_lru_noprof+0xa7/0x5f0 mm/slub.c:5029
->  __xas_nomem+0x33d/0x420 lib/xarray.c:341
->  __xa_cmpxchg_raw lib/xarray.c:1789 [inline]
->  __xa_cmpxchg+0x138/0x1f0 lib/xarray.c:1769
->  xa_cmpxchg include/linux/xarray.h:699 [inline]
->  xa_reserve include/linux/xarray.h:1088 [inline]
->  add_delayed_ref+0x2ac/0x1ed0 fs/btrfs/delayed-ref.c:1073
->  btrfs_alloc_tree_block+0xce7/0x1160 fs/btrfs/extent-tree.c:5426
->  btrfs_force_cow_block+0x562/0x1bf0 fs/btrfs/ctree.c:501
->  btrfs_cow_block+0x3f1/0xaf0 fs/btrfs/ctree.c:696
->  btrfs_search_slot+0xd70/0x2d20 fs/btrfs/ctree.c:-1
->  btrfs_insert_empty_items+0xa3/0x1a0 fs/btrfs/ctree.c:4310
->  btrfs_insert_delayed_item fs/btrfs/delayed-inode.c:755 [inline]
->  btrfs_insert_delayed_items fs/btrfs/delayed-inode.c:832 [inline]
->  __btrfs_commit_inode_delayed_items+0xb0e/0x1ec0 fs/btrfs/delayed-inode.c:1115
->  __btrfs_run_delayed_items+0x1d0/0x420 fs/btrfs/delayed-inode.c:1158
->  btrfs_commit_transaction+0x844/0x3170 fs/btrfs/transaction.c:2384
->  sync_filesystem+0x1d2/0x240 fs/sync.c:66
->  freeze_super+0x52e/0x11c0 fs/super.c:2300
->  btrfs_ioctl_shutdown+0x146/0x1b0 fs/btrfs/ioctl.c:5183
->  btrfs_ioctl+0xbcd/0xd50 fs/btrfs/ioctl.c:5697
->  vfs_ioctl fs/ioctl.c:51 [inline]
->  __do_sys_ioctl fs/ioctl.c:597 [inline]
->  __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->  do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->  do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-> RIP: 0033:0x7fc8df19e559
-> Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-> RSP: 002b:00007fc8e012ffe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-> RAX: ffffffffffffffda RBX: 00007fc8df425fa0 RCX: 00007fc8df19e559
-> RDX: 000020000001e740 RSI: 000000008004587d RDI: 0000000000000008
-> RBP: 00007fc8df235ab8 R08: 0000000000000000 R09: 0000000000000000
-> R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-> R13: 00007fc8df426038 R14: 00007fc8df425fa0 R15: 00007ffe864adf08
->  </TASK>
-> BTRFS error (device loop0 state A): Transaction 9 aborted (-ENOMEM)
-> BTRFS: error (device loop0 state A) in __btrfs_run_delayed_items:1161: errno=-12 Out of memory
-> BTRFS info (device loop0 state EA): forced readonly
-> BTRFS warning (device loop0 state EA): Skipping commit of aborted transaction.
-> BTRFS: error (device loop0 state EA) in cleanup_transaction:2074: errno=-12 Out of memory
-> ------------[ cut here ]------------
-> !xa_empty(&transaction->delayed_refs.head_refs)
-> WARNING: fs/btrfs/transaction.c:146 at btrfs_put_transaction+0x537/0x570 fs/btrfs/transaction.c:146, CPU#0: syz.0.0/5325
+> Nice work!
 
-Maybe something like this (totally untested):
+Thanks!
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 097fe6ec60ba..cadbb73e40fa 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1155,11 +1155,11 @@ static int __btrfs_run_delayed_items(struct
-btrfs_trans_handle *trans, int nr)
+> > Such an access does not reliably fail. The user portion of the address
+> > space belongs to whatever mm happens to be lazily loaded, if any. If
+> > the access faults, the fault handler refuses to handle it and the copy
+> > fails, but if the page is already mapped, the access silently reads or
+> > writes another task's memory.
+>
+> This sounds like the problem depends a lot on the architecture,
+> and to what degree they implement lazy mm switching. If an architecture
+> makes all user pointers invalid for a kernel thread, this does not
+> actually happen, right?
+>
+> E.g. on arm64 with CONFIG_ARM64_SW_TTBR0_PAN, the page table base for
+> the current process is only set in user_access_begin() and would
+> not point to any task here. Without ttbr0_pan, it should be
+> covered by cpu_set_reserved_ttbr0() turning off all user space access
+> for kernel threads.
+>
+> Should this perhaps be addressed in architecture specific code
+> instead of in a common place?
 
-     curr_node = btrfs_first_delayed_node(fs_info, &curr_delayed_node_tracker);
-     while (curr_node && (!count || nr--)) {
--        ret = __btrfs_commit_inode_delayed_items(trans, path,
--                             curr_node);
--        if (unlikely(ret)) {
--            btrfs_abort_transaction(trans, ret);
--            break;
-+        if (!ret) {
-+            ret = __btrfs_commit_inode_delayed_items(trans, path, curr_node);
-+
-+            if (unlikely(ret))
-+                btrfs_abort_transaction(trans, ret);
-         }
+You're right that whether corruption can actually occur depends on the
+architecture and config. I'll write a note about this in the v2 cover
+letter.
 
-         prev_node = curr_node;
-@@ -1184,8 +1184,6 @@ static int __btrfs_run_delayed_items(struct
-btrfs_trans_handle *trans, int nr)
-      */
-     btrfs_free_path(path);
+That being said, I still think the right thing to do is to have the
+new check(s) in common code. Instances of improper uaccesses are still
+bugs, even if no corruption occurs.
 
--    if (curr_node)
--        btrfs_release_delayed_node(curr_node, &curr_delayed_node_tracker);
-     trans->block_rsv = block_rsv;
+> > =3D=3D The New WARN =3D=3D
+> >
+> > The rest of the series makes the generic uaccess helpers WARN_ON_ONCE()
+> > and refuse the access when current->mm is NULL:
+> >
+> >  - Patch 6 adds uaccess_should_fail(), which combines the existing
+> >    should_fail_usercopy() fault injection check with the NULL mm check,
+> >    and uses it in place of should_fail_usercopy(). This covers
+> >    copy_{to,from}_user() on all architectures (including the masked
+> >    user access paths, which never call access_ok()), the
+> >    __copy_{to,from}_user() variants used by KVM's guest memory
+> >    accessors, the user-backed iov_iter copy routines and
+> >    strncpy_from_user().
+> ...
+> > The checks are deliberately limited to generic code. Accesses
+> > implemented entirely by architectures (get_user(), put_user(),
+> > clear_user(), and direct users of user_access_begin() or
+> > masked_user_access_begin()) are not covered. Please let me know if the
+> > new check should be placed elsewhere.
+>
+> I would think that user_access_begin() is a more natural place
+> for the added checks, as this should be called exactly once for
+> any function that accesses user space and also stays out of the
+> way of the copy_from_kernel_nofault() etc.
 
-     return ret;
+user_access_begin() isn't used in a lot of places that I want to
+catch, including the KVM case. Roughly:
 
---nX
+  kvm_write_guest_cached() --> __copy_to_user() --> raw_copy_to_user()
 
-> Modules linked in:
-> CPU: 0 UID: 0 PID: 5325 Comm: syz.0.0 Not tainted syzkaller #0 PREEMPT(full)
-> Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-> RIP: 0010:btrfs_put_transaction+0x537/0x570 fs/btrfs/transaction.c:146
-> Code: fd fb ff ff e8 9a e8 ac fd 4c 89 f7 be 03 00 00 00 48 83 c4 18 5b 41 5c 41 5d 41 5e 41 5f 5d e9 6f 17 c7 00 e8 7a e8 ac fd 90 <0f> 0b 90 e9 65 fb ff ff e8 6c e8 ac fd 90 0f 0b 90 e9 82 fb ff ff
-> RSP: 0018:ffffc9000f7978b0 EFLAGS: 00010287
-> RAX: ffffffff841b39b6 RBX: ffff888013966000 RCX: 0000000000100000
-> RDX: ffffc9000ef1a000 RSI: 000000000002eb87 RDI: 000000000002eb88
-> RBP: dffffc0000000000 R08: ffff888013966013 R09: 1ffff1100272cc02
-> R10: dffffc0000000000 R11: ffffed100272cc03 R12: ffff888053ca4758
-> R13: ffff888054d34d40 R14: ffff888013966350 R15: dffffc0000000000
-> FS:  00007fc8e01306c0(0000) GS:ffff88808b0b4000(0000) knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> CR2: 00007fc8d3fff000 CR3: 0000000044c6d000 CR4: 0000000000352ef0
-> Call Trace:
->  <TASK>
->  cleanup_transaction+0x5c5/0x7c0 fs/btrfs/transaction.c:2122
->  btrfs_commit_transaction+0x2627/0x3170 fs/btrfs/transaction.c:2676
->  sync_filesystem+0x1d2/0x240 fs/sync.c:66
->  freeze_super+0x52e/0x11c0 fs/super.c:2300
->  btrfs_ioctl_shutdown+0x146/0x1b0 fs/btrfs/ioctl.c:5183
->  btrfs_ioctl+0xbcd/0xd50 fs/btrfs/ioctl.c:5697
->  vfs_ioctl fs/ioctl.c:51 [inline]
->  __do_sys_ioctl fs/ioctl.c:597 [inline]
->  __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
->  do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
->  do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
-> RIP: 0033:0x7fc8df19e559
-> Code: ff c3 66 2e 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 48 89 f8 48 89 f7 48 89 d6 48 89 ca 4d 89 c2 4d 89 c8 4c 8b 4c 24 08 0f 05 <48> 3d 01 f0 ff ff 73 01 c3 48 c7 c1 e8 ff ff ff f7 d8 64 89 01 48
-> RSP: 002b:00007fc8e012ffe8 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
-> RAX: ffffffffffffffda RBX: 00007fc8df425fa0 RCX: 00007fc8df19e559
-> RDX: 000020000001e740 RSI: 000000008004587d RDI: 0000000000000008
-> RBP: 00007fc8df235ab8 R08: 0000000000000000 R09: 0000000000000000
-> R10: 0000000000000000 R11: 0000000000000246 R12: 0000000000000000
-> R13: 00007fc8df426038 R14: 00007fc8df425fa0 R15: 00007ffe864adf08
->  </TASK>
->
->
-> ---
-> This report is generated by a bot. It may contain errors.
-> See https://goo.gl/tpsmEJ for more information about syzbot.
-> syzbot engineers can be reached at syzkaller@googlegroups.com.
->
-> syzbot will keep track of this issue. See:
-> https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
->
-> If the report is already addressed, let syzbot know by replying with:
-> #syz fix: exact-commit-title
->
-> If you want to overwrite report's subsystems, reply with:
-> #syz set subsystems: new-subsystem
-> (See the list of subsystem names on the web dashboard)
->
-> If the report is a duplicate of another one, reply with:
-> #syz dup: exact-subject-of-another-report
->
-> If you want to undo deduplication, reply with:
-> #syz undup
->
+There's no user_access_begin() in there. :/
+
+I do think user_access_begin() should have the new check though, so
+I've added it in the v2.
+
+Thanks for the feedback, Arnd. :)

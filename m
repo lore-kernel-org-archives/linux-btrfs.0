@@ -1,75 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.210.199
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793143050;
-	b=v9d9njSOjQD0MSVvLspIjO3sp71iAzUpzIo8R3Z5mwNPxTr8gTdojobApp5f+TZhzf34
-	 WkdT0LFDFzqmfxRXRmiyYXKr3IrQ/T0uSqO13R/OL5fpAnHbRmcegqFIaq57X7JBP4Ef2
-	 rqDDet1POWnNvTM8viifjwskyRcN8N5FwbwbNOFOYwHU0VyIqvhfDUzFIq9CX1vF+rc/P
-	 lCf1IypbdumZAsKbHS7WszBXMi7Dx+rEpBicO1HypQC0Sdt1PUJ8nKjouIZwrNQge+7N4
-	 8cN+kC+HMazPq9KtP2NpSaNIsDRhT8nDxOcU8qcclv4P+WHp5NaX6ovPc+mI3BSSS+g==
+	t=1793143719;
+	b=g0lNS2bFJTOSnyGjpPzjRXALVZHQ0rF/9SxFn8V+XddZ0mawqaDK5YrmjFSP9K8w3onF
+	 fyYBPbYnzUi0Jwv25VkIdy+sG2PFttT9NacfYoY6CnrCCSnBUP6fqAUo5cdUK6gMHF/9X
+	 ExFN54gJ5hFZ+A+v2/kvkoBdcU/TLGgV7GAtuobyroTkpaT5EcoGPX9cfhbxDGai69ymd
+	 RYW9V8qI2sglHVZoWgbht46Ov+Bi6Hi3Oq+2IZeVDuAqSeoxl86BKUGix879PKlBSle03
+	 EpVHJ0WO4Xywcr1ClL1kFB6/5iAWdHWF2SC8ZR+xUXJkWU1gCQHiHCrlPAPQKfzPNiw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793143050;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:In-Reply-To:
-	 Mime-Version:References:X-Mailer:Message-ID:Subject:From:To:Cc:
-	 Content-Type;
-	bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
-	b=PQsH7vjcAoiDQ0pKMvY3zniZnC4DVljo3lBwUnb3ZiL9jCSjZHUXvTLlrHjX0YPrRm9R
-	 iZgdB2VPhWIFEiGhCOUJAsQlbLJA1h+u3QUpl9prJjpfmDnQPHFSRPvCbvcyG2KYcvit+
-	 rm67yI9cLwSszMHAr2257Oap4nmIfW6C8rg24ibNPf9fmqxb3AESeUBLNYyznZ/PNcD2C
-	 G+OCWqrBC9tuZsFO3pFfuNKNDZ874bl3avYTqmp17HRs1YJmrFI/D4Hfh42KhyEk057iG
-	 HFIBdKBHLusCx3Qctg1feX+m7RHTCC8FPqZQaxRrWnBxF1fyeZRSUdKkJNE/n9JFsUw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793143719;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=+ATlGoOVknM6NwVjn4flzNNb7j2Gcucnj/4DPzZI+ms=;
+	b=ja/alO7jrIL4gqWfgObMUgZyhoU4GU5hhfaK7Jg0sfmUaRsF/n5IFeZnmt7acwnR2dgS
+	 Do9DjPECpmAp8IEVueW8sbxOWxayI0SvkbHvYZYXHahLx2Ov9KoWhAilxW8nQSFfbUkx/
+	 /HodNRsiI605MbRpTCb+fsaRMnYnxfgHZnrU77vy2ignnP38PkY57KLFnMakW5YqkGdaL
+	 0OvVbStgF/5E2ueJrUDCZRPG5Cds8dRVW87oRXjhAvLMrVyKsf96Ves/cy1408tGtS+a5
+	 JLHcRzIQtlWbBGPt7gduAMdCpvs+xcg5KcmENLeEgLP5EYRIutOxY40KE5QKF8MMQqw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=google.com;
-	spf=pass smtp.mailfrom=flex--jthoughton.bounces.google.com;
-	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b="PE/zx+6A";
-	arc=none smtp.remote-ip=209.85.210.199
-Received: from mail-pf1-f199.google.com (mail-pf1-f199.google.com [209.85.210.199])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=iCPtS522;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=iCPtS522;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD76E606A31F
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 23:17:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org AD76E606A31F
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--jthoughton.bounces.google.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A13F9606A31A;
+	Tue, 27 Oct 2026 23:28:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A13F9606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=PE/zx+6A
-Received: by mail-pf1-f199.google.com with SMTP id d2e1a72fcca58-8a01e2962a1so488904b3a.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 16:17:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20260707; t=1793143049; x=1793747849; darn=vger.kernel.org;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
-        b=PE/zx+6Af4cB6kwCb3KWCo2kLDvj8fl2ys7izWUyFpH5zLYmX810u3AzXitpejplQE
-         /jQClQeXVkg24Hq2EtapZZmYZqBqVAzhuerBOXqcEml3pCLmsPFzhUKaKVVRYh78e5jo
-         h8KkCLUPmxBFXlpb/JITMIblABhQ7NlF7KMjGGjdd9IyszPk9+1oO7oOT2MoBvY5XheR
-         C7sZ+dVfMbfS+HyT7uTrugl1sk73k+pwHG2Pfa3KfOiBB28qEE/Udtp4Y7cVn9gp7foT
-         HEcU/cZ1gEdP98XXJk+xlaxcfEGrza6u+gZED9q0MMpJmn/0VM46cFjFyrKNEI0geaag
-         VHHA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793143049; x=1793747849;
-        h=content-type:cc:to:from:subject:message-id:references:mime-version
-         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
-        b=pgukk71WFkob8gm5E1TMg3McI597CXvj8xNmDFf5H41HtyJfPU3Rp7Pk9V6AnjOr6J
-         fQc/fm5THenoSR5Pi/rGhBVAFJBZarf4a9qGT2Bnar9w+KPcgKGF880I5npgr/T6U0mH
-         TraZ5Rsmwbeju92eYlqDKvnmb237jf7ecKkAjEXIAlyUaZIGsRK3FQ7TwQG0TUv9KhlZ
-         FZCm6UmwNHQdyZ24bD1dRAXkF1dThnTEAKb4I0ZfnoVHIThxHdzAGl72jVjoqb+vGj8x
-         ej+y5N/ncIYVYtTzMgJ/AdZe0x9u0qsP9a+66dXwxG57hO/93n2CEHBWm8crZaknTylT
-         Hg1Q==
-X-Forwarded-Encrypted: i=1; AKwUvBzvlJxB/qoQgvaHQ1VXoCTK19a4s6ceIcP2vovaaJX6+odW25ZQivqh3tckR0HlkuyfcCpGTyRCsIenOg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYK0OIF5yPeXanCgNqL6caVtvBMg4W4V64X6eQD4lo2B48h87Rya
-	AoiHGA5mmRAGAaQmAJnZ2kZE5W7u6tpDElBbOgW1XZ8RofTqhUYpfKSt1tUW8I67WkjuPr4gkuV
-	5VoI4YqhW9oCXmBGdpqYuLQ==
-X-Received: from pgcgn27-n2.prod.google.com ([2002:a05:6a02:6a1b:20b0:cda:df40:b50f])
- (user=jthoughton job=prod-delivery.src-stubby-dispatcher) by
- 2002:a05:6a20:b7a6:b0:3e2:4c65:5905 with SMTP id adf61e73a8af0-3e902404531mr513567637.60.1793143048797;
- Tue, 27 Oct 2026 16:17:28 -0700 (PDT)
-Date: Tue, 27 Oct 2026 23:17:28 +0000
-In-Reply-To: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=iCPtS522;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=iCPtS522
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5FF3522002;
+	Tue, 27 Oct 2026 23:28:36 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793143716; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=+ATlGoOVknM6NwVjn4flzNNb7j2Gcucnj/4DPzZI+ms=;
+	b=iCPtS522kANSIt2uEM+Ot9hyESE6ZZHcyNEPz2KXWxyGAJAPlQUCBZs34WAhfHQTDjtrRb
+	yFsS/pBhc4u48SqceW80dsiGQ+4jB2cpwWCHg03rczOwUx7iYfFSTYmwNcyAByjncX3ra9
+	NNDxrpBqngM5m8UyxU/iS70+MhzR5Dk=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=iCPtS522
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793143716; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=+ATlGoOVknM6NwVjn4flzNNb7j2Gcucnj/4DPzZI+ms=;
+	b=iCPtS522kANSIt2uEM+Ot9hyESE6ZZHcyNEPz2KXWxyGAJAPlQUCBZs34WAhfHQTDjtrRb
+	yFsS/pBhc4u48SqceW80dsiGQ+4jB2cpwWCHg03rczOwUx7iYfFSTYmwNcyAByjncX3ra9
+	NNDxrpBqngM5m8UyxU/iS70+MhzR5Dk=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 424D81321C;
+	Tue, 27 Oct 2026 23:28:33 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id kCylJKEz4WogMAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 27 Oct 2026 23:28:33 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-xfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org
+Cc: "Pankaj Raghav(Samsung)" <pankaj.raghav@linux.dev>
+Subject: [PATCH v3] iomap: only follow dio alignment requirement if specified
+Date: Wed, 28 Oct 2026 09:58:11 +1030
+Message-ID: <1559d839fc32f47db7e8da8c8b2a5ea9b63afb46.1793143679.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -78,193 +86,184 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-References: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
-X-Mailer: git-send-email 2.56.0.307.g5fe7bd680c-goog
-Message-ID: <20261027231728.1466446-1-jthoughton@google.com>
-Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
- current->mm is NULL
-From: James Houghton <jthoughton@google.com>
-To: arnd@arndb.de
-Cc: James.Bottomley@hansenpartnership.com, acme@kernel.org, 
-	akpm@linux-foundation.org, asml.silence@gmail.com, ast@kernel.org, 
-	axboe@kernel.dk, bpf@vger.kernel.org, daniel@iogearbox.net, david@kernel.org, 
-	dsterba@suse.com, io-uring@vger.kernel.org, jmattson@google.com, 
-	john.fastabend@gmail.com, jpoimboe@kernel.org, jthoughton@google.com, 
-	kees@kernel.org, kvm@vger.kernel.org, liam@infradead.org, 
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-mm@kvack.org, 
-	linux-perf-users@vger.kernel.org, linux-scsi@vger.kernel.org, 
-	linux-trace-kernel@vger.kernel.org, ljs@kernel.org, mason@kernel.org, 
-	mathieu.desnoyers@efficios.com, mhiramat@kernel.org, mhocko@suse.com, 
-	mingo@redhat.com, mkp@kernel.org, namhyung@kernel.org, pbonzini@redhat.com, 
-	peterz@infradead.org, rostedt@goodmis.org, rppt@kernel.org, seanjc@google.com, 
-	surenb@google.com, tglx@kernel.org, vbabka@kernel.org, 
-	viro@zeniv.linux.org.uk
-Content-Type: text/plain; charset="UTF-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: 5FF3522002
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Score: -12.01
 
-On Tue, Oct 27, 2026 at 11:32 AM Arnd Bergmann <arnd@arndb.de> wrote:
->
-> On Tue, Oct 27, 2026, at 18:29, James Houghton wrote:
-> > On Mon, Oct 26, 2026 at 5:13 PM Arnd Bergmann <arnd@arndb.de> wrote:
-> >>
-> >> E.g. on arm64 with CONFIG_ARM64_SW_TTBR0_PAN, the page table base for
-> >> the current process is only set in user_access_begin() and would
-> >> not point to any task here. Without ttbr0_pan, it should be
-> >> covered by cpu_set_reserved_ttbr0() turning off all user space access
-> >> for kernel threads.
-> >>
-> >> Should this perhaps be addressed in architecture specific code
-> >> instead of in a common place?
-> >
-> > You're right that whether corruption can actually occur depends on the
-> > architecture and config. I'll write a note about this in the v2 cover
-> > letter.
-> >
-> > That being said, I still think the right thing to do is to have the
-> > new check(s) in common code. Instances of improper uaccesses are still
-> > bugs, even if no corruption occurs.
->
-> I agree we have to do something to prevent the problem for most
-> configurations and find any newly introduced bugs.  The questions
-> that need to be properly decided are
->
->  - does there need to be any compile-time configuration to skip
->    the extra checks and/or the warnings?
+[BUG]
+After commit 4025185cf953 ("iomap: follow the alignment requirement for
+iomap_dio_hole_iter()"), generic/091 fails on both xfs and ext4:
 
-Since patch 10 moves the warning out of line, it costs nothing on the
-fast path, so making the WARN configurable wouldn't save anything. The
-question is really whether the mm check itself should be configurable,
-and that check is also what makes the access safe.
+ FSTYP         -- ext4
+ PLATFORM      -- Linux/x86_64 btrfs-vm 7.3.0-custom+ #6 SMP PREEMPT_DYNAMIC Mon Oct 26 16:04:56 ACDT 2026
+ MKFS_OPTIONS  -- -F /dev/mapper/test-scratch1
+ MOUNT_OPTIONS -- -o acl,user_xattr /dev/mapper/test-scratch1 /mnt/scratch
 
-The text size increase seems manageable[1], but it would be great to
-hear other people's thoughts. For the runtime cost, I'll do some
-performance testing. My guess is that a load of current->mm and a
-well-predicted branch per user access will be negligible, but I'll get
-numbers.
+ generic/091  6s ... [failed, exit status 1]- output mismatch (see /home/adam/xfstests/results//generic/091.out.bad)
+     --- /home/adam/xfstests/tests/generic/091.out	2022-05-11 11:25:30.766666664 +0930
+     +++ /home/adam/xfstests/results//generic/091.out.bad	2026-10-26 16:43:49.387401669 +1030
+     @@ -1,7 +1,25 @@
+      QA output created by 091
+      fsx -N 10000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+     -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+     -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+     -fsx -N 10000 -o 8192 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+     -fsx -N 10000 -o 32768 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -R -W
+     -fsx -N 10000 -o 128000 -l 500000 -r PSIZE -t BSIZE -w BSIZE -Z -W
+     ...
+     (Run 'diff -u /home/adam/xfstests/tests/generic/091.out /home/adam/xfstests/results//generic/091.out.bad'  to see the entire diff)
+ Ran: generic/091
+ Failures: generic/091
+ Failed 1 of 1 tests
 
->  - are there any cheaper ways to make it safe than to add a
->    condition on each user access?
->    E.g. the original lazy mm switch was intended to avoid
->    expensive TLB flushes when switching to a kernel thread and
->    back to the original task on 32-bit x86. On modern CPUs,
->    the MMU can deal with multiple ASIDs cheaply, so turning
->    off user access in a kernel thread may be cheaper than
->    adding code to uaccess depending on the architecture.
+[CAUSE]
+The failed command of fsx is COPY_RANGE:
 
-That's a fair point. If user memory were inaccessible in kernel threads
-and after exit_mm(), every such access would fault, and the fault
-handler could WARN about it (x86's do_user_addr_fault() already has a
-!mm branch), so it could still be loud without a check on every access.
+ copy range: 0x6800 to 0xa200 at 0x3f200
+ do_copy_range:: Resource temporarily unavailable
+ LOG DUMP (8 total operations):
+ 1(  1 mod 256): SKIPPED (no operation)
+ 2(  2 mod 256): SKIPPED (no operation)
+ 3(  3 mod 256): WRITE    0x14400 thru 0x211ff	(0xce00 bytes) HOLE
+ 4(  4 mod 256): FALLOC   0x72bf4 thru 0x76221	(0x362d bytes) EXTENDING
+ 5(  5 mod 256): SKIPPED (no operation)
+ 6(  6 mod 256): INSERT 0x11000 thru 0x13fff	(0x3000 bytes)
+ 7(  7 mod 256): TRUNCATE DOWN	from 0x79221 to 0xa800
+ 8(  8 mod 256): COPY 0x6800 thru 0xa1ff	(0x3a00 bytes) to 0x3f200 thru 0x42bff
+ Log of operations saved to "/mnt/test/junk.fsxops"; replay with --replay-ops
+ Correct content saved for comparison
+ (maybe hexdump "/mnt/test/junk" vs "/mnt/test/junk.fsxgood")
 
-I'll look into disabling lazy mm switching on x86 and doing some
-performance testing with that (like comparing the per-uaccess check
-with the added cost of non-lazy mm switching).
+Both ext4 and xfs only require direct IO to be aligned to the logical
+block size of the device, not the fs block size. So the 0x3a00 bytes
+read at 0x6800 is allowed, and should succeed.
 
-Other than the performance difference, I see these issues with making
-uaccess safe entirely with the mm switch mechanics:
+But that range is a hole, and that commit makes iomap_dio_hole_iter()
+round the zeroed length down to the fs block size unconditionally.
+The first iteration zeroes 0x3a00 bytes but only advances 0x3000 bytes,
+then the next iteration zeroes the remaining 0xa00 bytes, which is
+rounded down to 0, so -EFAULT is returned.
 
- - It only helps on architectures (and configs) that implement it,
-   while the common check works everywhere today.
+As ext4 and xfs do not pass IOMAP_DIO_PARTIAL, the whole read fails
+with -EFAULT, which is then converted to -EAGAIN by copy_splice_read().
+Every retry of fsx hits the same -EAGAIN, failing the run.
 
- - The fault handler would need to tell legitimate faults apart from
-   bugs, e.g. copy_from_user_nofault() from BPF or perf in a kernel
-   thread is fine and must stay quiet. The series handles that today by
-   checking current->mm in the nofault helpers (patch 6).
+That commit breaks all direct reads which range is not fs block aligned
+for ext4 and xfs.
 
-The two approaches are mostly complementary: if non-lazy switching
-turns out to be cheap enough, an architecture that does this will have
-better defense against uaccess bugs. But I'd still like the common
-check so that these bugs are reported on every architecture.
+[FIX]
+Do not revert the range unless the dio has IOMAP_DIO_FSBLOCK_ALIGNED flag.
 
-> >> I would think that user_access_begin() is a more natural place
-> >> for the added checks, as this should be called exactly once for
-> >> any function that accesses user space and also stays out of the
-> >> way of the copy_from_kernel_nofault() etc.
-> >
-> > user_access_begin() isn't used in a lot of places that I want to
-> > catch, including the KVM case. Roughly:
-> >
-> >   kvm_write_guest_cached() --> __copy_to_user() --> raw_copy_to_user()
-> >
-> > There's no user_access_begin() in there. :/
->
-> Good point, yes. After the changes described in
-> https://lwn.net/Articles/1102061/, I had assumed that all
-> __copy_{from,to}_user() are going from common code, but it looks
-> like the series so far only touches __{get,put}_user().
->
-> There are of course few enough of these left that I think
-> we can consider doing the same thing here and turn them all
-> into the checking version:
->
-> $ git grep -wl __copy_'\(from\|to\)'_user  drivers mm virt
-> drivers/gpu/drm/i915/gem/i915_gem_execbuffer.c
-> drivers/gpu/drm/i915/i915_gem.c
-> drivers/gpu/drm/i915/i915_query.c
-> drivers/usb/gadget/udc/atmel_usba_udc.c
-> drivers/vhost/scsi.c
-> drivers/vhost/vhost.c
-> mm/kasan/kasan_test_c.c
-> virt/kvm/kvm_main.c
+iomap_dio_hole_iter() is only called for reads, and for now only btrfs
+reads can reach this path with the flag set. Btrfs has the proper
+fallback when dio returns -EFAULT.
 
-Agreed, I think we should clean those up, but that can be done
-separately. This series already adds the check to the common
-__copy_{from,to}_user() and __copy_{from,to}_user_inatomic() wrappers
-in include/linux/uaccess.h (patches 7 and 8), so the KVM path is
-covered without converting the callers first.
+Also update the comment of IOMAP_DIO_FSBLOCK_ALIGNED flag, to indicate
+that both bio and hole zeroing are all fs block aligned.
 
-> > I do think user_access_begin() should have the new check though, so
-> > I've added it in the v2.
->
-> I had the details confused here. Seing that user_access_begin()
-> and the other accessors always call access_ok() at some
-> point, maybe that would be enough?:
->
-> --- a/include/asm-generic/access_ok.h
-> +++ b/include/asm-generic/access_ok.h
-> @@ -33,6 +33,9 @@ static inline int __access_ok(const void __user *ptr, unsigned long size)
->         unsigned long limit = TASK_SIZE_MAX;
->         unsigned long addr = (unsigned long)ptr;
->
-> +       if (WARN_ONCE(!current->mm))
-> +               return false;
-> +
->         if (IS_ENABLED(CONFIG_ALTERNATE_USER_ADDRESS_SPACE) ||
->             !IS_ENABLED(CONFIG_MMU))
->                 return true;
->
-> (plus the few extra copies of access_ok()/__access_ok())
->
-> As a quick fix I would probably start with just the 'if (!mm) return false'
-> bit here to get something merged while we still discuss the other
-> details.
+Fixes: 4025185cf953 ("iomap: follow the alignment requirement for iomap_dio_hole_iter()")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Reviewed-by: Pankaj Raghav(Samsung) <pankaj.raghav@linux.dev>
+---
+Changelog:
+v3:
+- Drop CC: stable
+  The commit is only in the v7.4 release cycle, not affecting any stable
+  release.
 
-Making the same point as Sean[2] but with a little more detail, I had
-thought about making the change in access_ok(), but:
+- Add Reviewed-by tag from Pankaj
 
- - On x86-64 and powerpc, the masked user access paths don't call
-   access_ok() at all. That includes copy_from_user(),
-   strncpy_from_user(), strnlen_user() and every scoped_user_*_access()
-   block, which is where many of the converted __get_user() users ended
-   up.
+v2:
+- Update the comment of IOMAP_DIO_FSBLOCK_ALIGNED
+  To indicate that hole zeroing is also affected.
+---
+ fs/iomap/direct-io.c  | 26 ++++++++++++++++----------
+ include/linux/iomap.h |  3 ++-
+ 2 files changed, 18 insertions(+), 11 deletions(-)
 
- - __copy_{from,to}_user() and __copy_from_user_inatomic() skip it too,
-   and the KVM bug followed exactly that pattern: the range was checked
-   once up front, and the access came much later from a different
-   context.
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 45bb24934f3d..ad041ac3252a 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -590,18 +590,24 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ {
+ 	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
+-	unsigned int bs = i_blocksize(iter->inode);
+-	loff_t aligned_copied = round_down(copied, bs);
+ 
+-	/*
+-	 * If fs block size is larger than page size, page fault failure
+-	 * can cause @copied to be page aligned but not fs block aligned.
+-	 */
+-	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
+-	dio->size += aligned_copied;
+-	if (!aligned_copied)
++	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED) {
++		loff_t aligned_copied = round_down(copied,
++						   i_blocksize(iter->inode));
++
++		/*
++		 * For fs passing IOMAP_DIO_FSBLOCK_ALIGNED flag, if fs block
++		 * size is larger than page size, page fault failure
++		 * can cause @copied to be page aligned but not fs block
++		 * aligned.
++		 */
++		iov_iter_revert(dio->submit.iter, copied - aligned_copied);
++		copied = aligned_copied;
++	}
++	dio->size += copied;
++	if (!copied)
+ 		return -EFAULT;
+-	return iomap_iter_advance(iter, aligned_copied);
++	return iomap_iter_advance(iter, copied);
+ }
+ 
+ static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 59718f73c15a..5254430844b2 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -693,7 +693,8 @@ struct iomap_dio_ops {
+ #define IOMAP_DIO_PARTIAL		(1 << 2)
+ 
+ /*
+- * Ensure each bio is aligned to fs block size.
++ * Ensure every operation, including bio and hole zeroing, is aligned to fs
++ * block size.
+  *
+  * For filesystems which need to calculate/verify the checksum of each fs
+  * block. Otherwise they may not be able to handle unaligned bios.
+-- 
+2.56.0
 
- - access_ok() is also used as a plain range check where having no mm
-   is fine. For example, copy_{from,to}_user_nofault() call
-   __access_ok()/access_ok(), and BPF and perf legitimately call those
-   from kernel threads, so a WARN there would fire on valid tracing.
-
-Even the quiet 'if (!mm) return false' version would have missed the
-KVM case, because of the first two points. I don't think there's really
-a "small" fix here, unfortunately. :/
-
-Thanks again for all the feedback, Arnd. I really hope we can get this
-series into a mergeable state. :)
-
-[1] https://lore.kernel.org/linux-mm/CADrL8HUZ3t8RdMEeBPfqsy1_1rN0Ty9B2c4iP6OzNS12te6vOg@mail.gmail.com/
-[2] https://lore.kernel.org/kvm/auEVMrMDqVuKtDqh@google.com/

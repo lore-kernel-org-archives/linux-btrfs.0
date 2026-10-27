@@ -1,94 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=90.155.50.34
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=91.218.175.218
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793099403;
-	b=hoi/K6ym7mTBdKxY3nYs27ilDMAtA2MzQKfXtH8BWpWg4ZuVdOno5vNCW4AJhW0pV6+G
-	 nauLcKJ5ToB1x9rHUt6wY21IM9o+6aRKr7ugRqJlF8rIEwKrE/AC8pp3YoJAGbXnIn/qL
-	 aeeuv5DNZd/uLkHxzgGTQ19Jy2hl7BVeiBY5k4l4o/7olN/Vkap7+6atC1vfA7gbeld2V
-	 hVDAaufs1B70xFZb+PlPMXQYjDyF8pFilSn6JkEaYLBWb5BJRn+f8cj7KOcv3UooCr2I9
-	 pdSx4cjfQ8Krpgaum5IbWVGv0tN/QOBDNMxzkr18mi+03k03nV16JeQXP7KGH9oz1ZA==
+	t=1793099698;
+	b=AShKs0SHtB/7sB+NFHCwR+bMjrBs4qQuye+jh0QsekClBhRRs32AABBG7cNX6Kxp1hyB
+	 V5LxSkJRVHpHwOMm6Yqugm6c61di9m5TtBykcE+kA5OuwrICD06l5o7avi3BNqHUU1JWx
+	 7IOvaD6+f3vUifCllO8xv/URaE6v7n0Z4r9qxE534zJcUnJs+ZXcombRh8rVsjFfLf5dp
+	 I5zWv5kFLLS+JsFxCqq47vYFX+7Jgm6EwTJ3KzcDRaVTjA36PUlRfa7YUyE9VmgBY67E4
+	 Zuen0B/lpQMNw1s8Rst7gLOyfr5m49I6fSo9A6RWRKj7drGd3KZd2K9dA3n2rdhpawg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793099403;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Date:From:To:Cc:
-	 Subject:Message-ID:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To;
-	bh=8BryABgcZ7DA+XBYIpyIPDmj1TmISKJ+oIODypTsFPw=;
-	b=MXVvH2F8h17+v9i0YehnEsGLYpqNyMqtibeDicZ9UHw7Hjhi+1CKCzIJcaov7dQABCFf
-	 N0MgGny8WJ1EbKnX+Zr9uhiZjomfnaZ/nCkQbgmTuhXSV9ip2ZjLXzNnF3H3rDo9L0uUS
-	 hxd6BDsJ4g7Ls2nTl7+631DSqrJvYM+2adcAkMLebXVtY8CsHTw7NX6PPFld/J3/N6wMh
-	 2KqdjRbEEVXpTgu0y2n+9sCpYMUCgbQVrH0B3OnCHXMhvTpRSFINbjCgi9Pi7vJUocIGs
-	 avCwmz6wb2/JuC5upb/dlWuYbRxkD8hCHfIz8Ik8R9DhkBJT0dw7Pz5cFS9etNbfLBw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793099698;
+	h=DMARC-Filter:X-Envelope-To:DKIM-Signature:X-Envelope-To:Received:
+	 X-Mizu-Trace-ID:X-Migadu-Flow:Message-ID:Date:MIME-Version:User-Agent:
+	 Subject:To:Cc:References:Content-Language:From:In-Reply-To:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=erC0p436ipwyI6asEt7WUOhnni2WzxvEwWVFbMmqkS0=;
+	b=weyZ5LUojnqOgobdwwsUShX22frUqwjnAcpM9Dj5aOXAEBVy81uDXe25AmfcT9BjHvfF
+	 OJoiS9mEQKlmp39Io5BJHsPyRQu091anzwGB/8tITXCta67e96i6A48VZPJCwihxCPJnD
+	 SAFA4JQUauJDWd7vsbuOLLi9x91bNoeWTy/QxuHqqlg1pKnwAu7jFF4zbLtBdZmK+M4xy
+	 vxl+mabWs5+lgnZ/wmtukeCG0drwmPUtn9I9zh/6vZl1aczZ6YC7Rygf6XPFfBTouW6CI
+	 ltq3DBAr6S6I06a98FTxM4ti3t5KhhM/7CMw+NtIsfViGhcY+IOobN6oW5SRnHlBuXw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=infradead.org;
-	spf=pass smtp.mailfrom=infradead.org;
-	dkim=pass header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=casper.20170209 header.b=tec1jmsz;
-	arc=none smtp.remote-ip=90.155.50.34
-Received: from casper.infradead.org (casper.infradead.org [90.155.50.34])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=linux.dev;
+	spf=pass smtp.mailfrom=linux.dev;
+	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=CBfck7VX;
+	arc=none smtp.remote-ip=91.218.175.218
+Received: from mta0.migadu.com (out-218.mta0.migadu.com [91.218.175.218])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48CDD606A31A;
-	Tue, 27 Oct 2026 11:10:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 48CDD606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FDA2606A328
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 11:14:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0FDA2606A328
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=casper.20170209 header.b=tec1jmsz
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=casper.20170209; h=In-Reply-To:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=8BryABgcZ7DA+XBYIpyIPDmj1TmISKJ+oIODypTsFPw=; b=tec1jmszyHzg20Gsi9B9OGtdi0
-	bsCvcBUhd46e/5/GXq6SGAww+LVpHIHQwe0YKWk72ihksfy4XUJrxTbGdLAnv+D/3l8x0l5pOrtHd
-	7acMwSIp8xdaNQ1AIn1SBzFfdKqfG47ktiRrG9Gdqsr6nFLRAKQwd+iSUVX0qRopMxZbjuME3IWYU
-	rWWjhVhXS7N+lyNQrK9sV4YC1izjgWJLVZnwjd0PysDBxqh4LXHJQqVbGOqt8gUresF7JGcKsKk/M
-	4u4+TrZIvctu40uV383GKM/IXYMeeS9/2czQz3WkAwKHaXgRu8pQpjnw4c+liTKeH/5Cd28W8xTcV
-	Jq4Gy6Aw==;
-Received: from 77-249-17-252.cable.dynamic.v4.ziggo.nl ([77.249.17.252] helo=noisy.programming.kicks-ass.net)
-	by casper.infradead.org with esmtpsa (Exim 4.100.1 #2 (Red Hat Linux))
-	id 1xLf3s-0000000D9LE-3APy;
-	Tue, 27 Oct 2026 11:09:48 +0000
-Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
-	id 385DE300312; Tue, 27 Oct 2026 12:09:48 +0100 (CET)
-Date: Tue, 27 Oct 2026 12:09:48 +0100
-From: Peter Zijlstra <peterz@infradead.org>
-To: James Houghton <jthoughton@google.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Thomas Gleixner <tglx@kernel.org>, Kees Cook <kees@kernel.org>,
-	Arnd Bergmann <arnd@arndb.de>, David Hildenbrand <david@kernel.org>,
-	Lorenzo Stoakes <ljs@kernel.org>,
-	"Liam R. Howlett" <liam@infradead.org>,
-	Vlastimil Babka <vbabka@kernel.org>,
-	Mike Rapoport <rppt@kernel.org>,
-	Suren Baghdasaryan <surenb@google.com>,
-	Michal Hocko <mhocko@suse.com>,
-	Sean Christopherson <seanjc@google.com>,
-	Paolo Bonzini <pbonzini@redhat.com>,
-	Jim Mattson <jmattson@google.com>, Jens Axboe <axboe@kernel.dk>,
-	Pavel Begunkov <asml.silence@gmail.com>,
-	"James E.J. Bottomley" <James.Bottomley@hansenpartnership.com>,
-	"Martin K. Petersen" <mkp@kernel.org>,
-	David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
-	Alexei Starovoitov <ast@kernel.org>,
-	Daniel Borkmann <daniel@iogearbox.net>,
-	John Fastabend <john.fastabend@gmail.com>,
-	Josh Poimboeuf <jpoimboe@kernel.org>,
-	Steven Rostedt <rostedt@goodmis.org>,
-	Masami Hiramatsu <mhiramat@kernel.org>,
-	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>,
-	Ingo Molnar <mingo@redhat.com>,
-	Arnaldo Carvalho de Melo <acme@kernel.org>,
-	Namhyung Kim <namhyung@kernel.org>, linux-mm@kvack.org,
-	linux-fsdevel@vger.kernel.org, kvm@vger.kernel.org,
-	io-uring@vger.kernel.org, linux-scsi@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, bpf@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org,
-	linux-perf-users@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [RFC PATCH 05/10] perf/core: Don't unwind the user stack without
- an mm
-Message-ID: <20261027110948.GI2668564@noisy.programming.kicks-ass.net>
-References: <20261026215226.3713941-1-jthoughton@google.com>
- <20261026215226.3713941-6-jthoughton@google.com>
+	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=CBfck7VX
+X-Envelope-To: linux-btrfs@vger.kernel.org
+DKIM-Signature: a=rsa-sha256; bh=KtPACx9uluOb4kE38HVLKkwCk631bhedpoXc64nfCOM=;
+ c=simple/simple; d=linux.dev;
+ h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
+ t=1793099690; v=1; x=1793704490;
+ b=CBfck7VXkbPtz+84PzdUCArP23RlwI/MjoPzn3kF7zRwsbYD08nN61iITlgHo4p8UHYKUa3B
+ dFExtvyN8LH0WRdS47W0F2c43aTTsDYpuOqJLLTbubJNMztnFbqYsrzwOl92SM6rFrkucwqAHZz
+ ry6BkY5woJ25nA7t/x/KqnLw=
+X-Envelope-To: linux-btrfs@vger.kernel.org
+Received: by smtp.migadu.com with ESMTPS id cbc3ab62f1579971;
+	Tue, 27 Oct 2026 11:14:50 +0000
+X-Mizu-Trace-ID: cbc3ab62f1579971
+X-Migadu-Flow: FLOW_OUT
+Message-ID: <3048fa10-007e-41d1-9b95-5be5923e4a68@linux.dev>
+Date: Tue, 27 Oct 2026 12:14:48 +0100
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -98,61 +58,43 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261026215226.3713941-6-jthoughton@google.com>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] iomap: only follow dio alignment requirement if specified
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org, stable@vger.kernel.org, da.gomez@kernel.org,
+ gost.dev@samsung.com
+References: <9fae60fcce5ae356deef5e38931124b9634dba3b.1792997261.git.wqu@suse.com>
+ <at-p1QXETaTvvj_r@quentin> <5f49d819-12ec-48b2-b9b2-adce264d266d@gmx.com>
+ <0046bdae-1dd1-4f4b-a1e5-9eb7fe8b5fe0@linux.dev>
+ <04a7e656-567d-458c-99b0-e9aa5960bd99@gmx.com>
+Content-Language: en-US
+From: Pankaj Raghav <pankaj.raghav@linux.dev>
+In-Reply-To: <04a7e656-567d-458c-99b0-e9aa5960bd99@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-On Mon, Oct 26, 2026 at 09:52:21PM +0000, James Houghton wrote:
-> get_perf_callchain() only checks is_user_task(current) when the regs it
-> is given aren't user mode regs. However, BPF's bpf_get_task_stack() (and
-> bpf_get_task_stack_sleepable()) pass task_pt_regs(current) when called on
-> the current task, which are user mode regs for a user task, even if that
-> task has already gone through exit_mm(), e.g. when called from a program
-> attached to exit_files() or to the dying task's final sched_switch.
-> 
-> perf_callchain_user() then unwinds the user stack without an mm. That
-> access does not reliably fail: the user half of the address space
-> belongs to whatever mm happens to be lazily loaded, if any, so the
-> unwinder may read another task's memory. This affects e.g. arm64,
-> riscv, loongarch and csky, whose perf_callchain_user() doesn't check
-> current->mm itself. perf events themselves are not affected, as
-> perf_callchain() already clears the user callchain request when
-> current is not a user task with an mm.
-> 
-> Check is_user_task(current) regardless of the regs' mode.
-> 
-> Fixes: fa28dcb82a38 ("bpf: Introduce helper bpf_get_task_stack()")
-> Signed-off-by: James Houghton <jthoughton@google.com>
-> ---
->  kernel/events/callchain.c | 12 ++++++++----
->  1 file changed, 8 insertions(+), 4 deletions(-)
-> 
-> diff --git a/kernel/events/callchain.c b/kernel/events/callchain.c
-> index 9d24b6e0c91f..a451ca2a5573 100644
-> --- a/kernel/events/callchain.c
-> +++ b/kernel/events/callchain.c
-> @@ -245,11 +245,15 @@ get_perf_callchain(struct pt_regs *regs, bool kernel, bool user,
->  	}
->  
->  	if (user && !crosstask) {
-> -		if (!user_mode(regs)) {
-> -			if (!is_user_task(current))
-> -				goto exit_put;
-> +		/*
-> +		 * Even if @regs are user mode regs, e.g. task_pt_regs(current)
-> +		 * passed in by bpf_get_task_stack(), current may already have
-> +		 * gone through exit_mm().
-> +		 */
-> +		if (!is_user_task(current))
-> +			goto exit_put;
-> +		if (!user_mode(regs))
->  			regs = task_pt_regs(current);
-> -		}
->  
->  		if (defer_cookie) {
->  			/*
 
-We have perf_event_exit_task() before exit_mm().
 
-Still, it doesn't hurt to be cautious. So no real objection, but perhaps
-adjust the Changelog?
+On 10/27/2026 11:12 AM, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/10/27 20:37, Pankaj Raghav 写道:
+>>
+>>
+> [...]
+>>>>> Cc: stable@vger.kernel.org
+>>
+>> FYI, your patches are not in 7.3 and only in linux-next. So we don't need to 
+>> cc stable?
+> 
+> Unfortunately, it's already upstreamed.
+> 
+> The commit hash, 4025185cf953 ("iomap: follow the alignment requirement for 
+> iomap_dio_hole_iter()"), is already in the upstream.
+> 
+Yes. My point is this was merged as a part of the current v7.4 merge window, so 
+the fixes can go as a part of RCs? Does it still require a CC to stable?
+
+--
+Pankaj

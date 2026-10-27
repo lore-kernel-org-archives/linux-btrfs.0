@@ -1,100 +1,120 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.176
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793112532;
-	b=qTW9ULZMOqAPlEQB8tIzTBfkihjCzuWlWxc23nMlu54P3Xox4E/eq5pFMVafa+Vmnjm+
-	 bn6TUz+2Zwq70w/hPVofAPMZnlrc54nh5uOFmXqdXBuogzvt7/laqhOBQHgszpOC36QcX
-	 v7Yrum6pKsQKJoRTvwa3Ng1Wh1W5bYSuaqoFACZuuzwBqtmBNkscNBT72hNa0tZ0Anbgg
-	 FeMBR/dD725e1Xk+tAumOZ20Svva5ilmuIunSwi8O0ZW43CNMK47EV2/nfvHf+fgNDIrh
-	 is41Lbr4JWFMAu0YrmDZOZ2l7ip+x11icI6nvVh95SbZ/RGRg2xJ2nN9wYUEaXU+T+Q==
+	t=1793113577;
+	b=tlPDprd9SAeRZzHERT2f+E1PZfElfQePZ0+RkWdFCfdc8u3w/qvTCYX+XYU513hewXQu
+	 jIUnxfHWBW28H5xSkUVe6zLqIoSD6LcWHwkk77eOSEdBTWCFk4CBoDnoFp29bjv3bWEcI
+	 xtRgG1WHc16oUkNUgnNpjHUlTq2OOzo5P68ovenduj8y2VvDoWXBuDjH0Fyo1Od9zeQHp
+	 wXe6m5uwbp42EwQiT5j1BBSdPpoz/9O6A6WQzDLCplqib2VI53eZAPex+9qBUk4WGpgv8
+	 xgdqWXhgHQtep6E1gNuXy9bOzTLwcJpiyDao6gr0IQczAsgxbRbuzpjI219o3QT/ydQ==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793112532;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type;
-	bh=bMTKtUBzmCPTnkeWiQ5sE4dUtN2GcFHXBw8QPd9CNCE=;
-	b=Vlb2vXljUruNWkqHrHM73uWBIZNIRWurQ67lSPeybw2D2Z8SmuKqsGBndH0tWWKF7AtM
-	 CFBKTiidRKaYcwegAsBe41v1TFtt9Yh1jQs7HLyHTp9ehDcEAsYJWcsSnU7z83QhkVqtm
-	 BA3gpEGdCfo/ErKFeg70hdsYTnkl+ROUNt5+fy4BqfiTi1GHjOwgCv/BDoZ4rSlqAZGUT
-	 zJIAP+zoOD288jr3dvb92GgHoZw0xHz3XNYIXSe+w62Sk98V3eE90RxDkXLXkj5H7Txv+
-	 9EEOgzUBamz/eq78JgNg4lKCxS6ojo9IgR1F8QXAMCxCdWsMbTRijK7DFF0IQTyRkRw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793113577;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:Message-ID:
+	 Date:User-Agent:Subject:To:Cc:References:Content-Language:From:
+	 In-Reply-To:Content-Type:Content-Transfer-Encoding:X-ClientProxiedBy:
+	 MIME-Version:X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
+	 X-MS-Office365-Filtering-Correlation-Id:WDCIPOUTBOUND:
+	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
+	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
+	 X-Forefront-Antispam-Report:
+	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-MessageData-0:
+	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
+	 X-MS-Exchange-CrossTenant-Network-Message-Id:
+	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
+	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
+	 X-MS-Exchange-CrossTenant-FromEntityHeader:
+	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
+	 X-MS-Exchange-CrossTenant-UserPrincipalName:
+	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
+	bh=hBtNHxrWWtsc/tl+NuoMI20S+j74pXgDoW7f9+ibuPc=;
+	b=AQUIn/h1lG1imc/z55tktyLCGrdqfR8NsY8Y9YUeHxWu2hvgwtPVHrQF3eVuTjoPWwVN
+	 KBZntJrKmJfIYi2pXbwWActcCAbJHzjyjuWKh8QSF5MRd/Mzg+A8img7js3UF8PPG2wJD
+	 zZdc49kSaFMrUhuZjtwt526KtQGiXcT0hIin7y2ZTlOyyXGtxRx3JFlf62aruvUmUUbnU
+	 qpznQ8tJFtPQrL7/WLn+o9BKQolCRJGlrtISWaMfo3ZGb7HaupN/ixjoEisGryhn9JFP3
+	 9gNtvmcrqoZ9t+I47UgLQgSBZgIjIfJjOwC+Ufx2R57pMX3T7kSTXNaYiDcVZ4NpCGQ==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Rvi3BkCY;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.176
-Received: from mail-dy1-f176.google.com (mail-dy1-f176.google.com [74.125.82.176])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=wdc.com;
+	spf=pass smtp.mailfrom=wdc.com;
+	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b="CEt5H/Cn";
+	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b="SuzGx1/7";
+	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3768D606A31B
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 14:48:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3768D606A31B
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D77E606A31A;
+	Tue, 27 Oct 2026 15:06:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D77E606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Rvi3BkCY
-Received: by mail-dy1-f176.google.com with SMTP id 5a478bee46e88-353804b591eso7444995eec.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 07:48:52 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1793112531; cv=none;
-        d=google.com; s=arc-20260327;
-        b=g+FU08JSwu8bCBdhHWdwar6E0I7a2YzlmnNOpkyRhvlY0kNEMF8+Khd9EPlVWmViAj
-         P6q21aB2MhmmgC8qB2Ghxk3Z4AuEcEg3hVG0O8FbOMcZ+U0ag5vPo02RRlDfViuYrmMV
-         UM8hxY38cCE6h1LfGRK0FjK29uGlb+J4zyu+9RQLXRgciDGaKofJCVwe0tLhZ3s0uCc1
-         +CNq0ZcTRgsokCHFG3eexTz0E14k6i3pO5Ka9lOMq69pODU0QE8PlPTbAMnlDd+gsVvK
-         Ut6i+5YerPFykg64Qk404REtOVEqVwj1NKRIt7h6P3784LWDgpGxaB5p6m588ChWlW6m
-         SKJw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=bMTKtUBzmCPTnkeWiQ5sE4dUtN2GcFHXBw8QPd9CNCE=;
-        fh=D7tJ5qHN0+SESQT0D/gyxhEPfiL27Q0ATfsEm/dhTNQ=;
-        b=JI5LlRkCv74GB0nizt2Ih4sEPyiukaUQu0Cn/roAxTM/1cAWIMRKCQaY2GH+Pf22L6
-         nXsUHOWJ31gUHA5l8coQExYF0keTS/LduuK9Ly66ylVkmV8jIGLQOAxzm84r/owl8vNT
-         7SxsNpbcTP3ltM0Rax+qrGfZ5rZvAEcKWAGMh0wZy9xe6y4ST6HoZEVVEpOWT/UAmdR6
-         Zxmz9sw7eqXiSWV82BnZ4g6MvqfM8iNwOpZktmQIvNFpWrWat52Q+RWzGNv7cjAp/tkj
-         1ocQdmdpYS+eZJw+IM825TJzb2zuiiM0PsEAmmAO3PEYTWrDUNl0gCQUgRNbcfhMq5SL
-         NRig==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=CEt5H/Cn;
+	dkim=pass (1024-bit key, unprotected) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=SuzGx1/7
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1793113583; x=1824649583;
+  h=message-id:date:subject:to:cc:references:from:
+   in-reply-to:content-transfer-encoding:mime-version;
+  bh=NaPhE3f01GfxszoVOLKw1fFh4a9ILNFtwCznrFXP8BE=;
+  b=CEt5H/CnU4FngNwYmdl3ZDwH1GmIc0JNYNWYUBDybNvqaqJSFIWNDfEK
+   iUCE4Lg1LnmKXFIpqM3L4QqBZj8TACINAru3u+PdxjN4AIDNVrEY3k+b9
+   STYG7clnRg/I7nk93zMh9CdT3DXRRIDd49EH8htJjRoAVARsxNhJNVePa
+   T6KSnuX7Ldq9KFbcBr/dmpm3f8cCzLHNMXYpGiXQL8lqHSe5qEsi3NkBs
+   Pis1q2Pa9Dmo+63MOnAx8Ex1CPi29V4zrCI/33lu85LFULVUUMzf74p48
+   xAt1lRd3C8qBg7ic441SQ4yyqNAXn3FfrU+li+DFEYHZTX/qqvh0wuHDb
+   g==;
+X-CSE-ConnectionGUID: VxfCvTpZS7G/WdwMMEsFgg==
+X-CSE-MsgGUID: AE3MwD5FSZiTM5lpb3I2ew==
+X-IronPort-AV: E=Sophos;i="6.27,181,1786982400"; 
+   d="scan'208";a="154893300"
+Received: from mail-eastusazon11012068.outbound.protection.outlook.com (HELO BL0PR03CU003.outbound.protection.outlook.com) ([52.101.53.68])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 27 Oct 2026 23:06:16 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=cSK1NQaVFmu03F/Y0XtQFIucg3RNdfZEh45a1bcBes3cA3PoQHC5oRFWv00nV08o33bq0bNGQqR7E+t+37b3e6KAtIGAzv7QIaQKGSJ5InA7+Nh//OI8dEsaUVrj4MLFHNqren5LANbZnvE5aWhlPThUbwT8qIsHnv0HJe62w190tbGCDo/aVHwsKtXCmrzaq6hBzl0kFS4dqkiCSeEdVW4AzZb+kOMvrhCYOK7T3UT6r5aBcFkmYJxYi4cNB5aeRkUq1ObST7YWJblyUjoa+E63nfLrPzV2l1tDX8Zsd4xrPWd135AVxQhLg1z4m5kFVfBdZ33LLBKLwCM1iYDOTg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=hBtNHxrWWtsc/tl+NuoMI20S+j74pXgDoW7f9+ibuPc=;
+ b=y8Dp2E/tKS5MWt122I+pOr/M40tdVG+/OuFuNjtu92LG3VSJW1p3OISENOTpCGoxJvgTLRFZoH4DbGXY/6K86U/aALA3S3u8n411wchfqjYQXf1cCwKewhQpGKzlEPwdraI5dOJHAqHzFzcqcf+viCk/8OoJzW54uXxj7pZsZf3sqNDLTxmlzYNoa2rzSc4c1kELQhcJ1sHnj9seQb6kUp3S1NQvKtygh9Dt86o2nBVDXNiKoRTzjPNtWiwoa9nPSNoh6FJyIz5oC835qQ2d12/YKUCMu1eTxVlw9ABM+MYcH9Ygf1W+dHhumZaKC+qZFAssWCdcxs4bOCYoZhnvnQ==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793112531; x=1793717331; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=bMTKtUBzmCPTnkeWiQ5sE4dUtN2GcFHXBw8QPd9CNCE=;
-        b=Rvi3BkCYSYfzOgJgOkQyB2tTkqGyBGHC+KDcKSsI5yuHwejlXqhvY2CuJ8XWmTV15I
-         at8EvX3AQh6r2jSg66cM/KMCQWcOyyOrlmMYbwQKTJNpY69F7M8TqmRYVKnkmU+INlUB
-         +sLVhwCOZ0nI8L4PF/IoVG5h9YuDr6KNYQZSkGeK36Ftvp8GuHkCCMJ3uyAbmCZyKsCf
-         GxP6bc+StxK1JJDInInPRUwBF70zj+sWRmREwMT4dqNWvctDlDVAOJi0b0gsisEyBuKx
-         TPz9Y+gnS9GV8qRJqFqDoOH7WjHs5l2e7FzvYNGzbmwVNbs6VJDx7gRx0OyGdGiL4Ad2
-         OGRg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793112531; x=1793717331;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=bMTKtUBzmCPTnkeWiQ5sE4dUtN2GcFHXBw8QPd9CNCE=;
-        b=GUto2qgw8BHO43GJkrFPT7sYF2hJQ8sgZ+mJox4eyxzNcplyhptMXZBm54GLJ9E9py
-         NHJyj21hvgt+1jyChhfdTIoK6FjGbzUv9yI+x3flGiSUAn36nP+9+NhacMWuN9PT+PNl
-         sBcJ/1ADB230y82bz/nhw2UtDWMrMWBGG4Cba6vj9w6TI0do0YnJH8TJkC3Qy8w7ErBY
-         VJFOBfuEd+sKu+WopjVPaa1FKsg0jEIdy/B26oNn/QHwpWmrX7suuG0pFsf9p30Od2Jv
-         nb6HiCKsb66ABT5ik8UMgaxXAvZ/Bb1cpAKh2VoXR932LLNS33z6a9qetMJQvkSU0Enk
-         Q8Gg==
-X-Forwarded-Encrypted: i=1; AKwUvBzufmsDSZ8HIUp5NrF3CeWixDMACpsqC21ILIwmvd4BylC1WIlvWyTdupFSn1tFDTOKTWI3zA6AbNrCQg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYJwMcnTLcRJed6GKMypnJdulrnNqQVyhngCAeIQG9gJq+yG89LS
-	T42/ImIqrYhHYzh0iB6fDEz6cMMgqyciJWYWrGKb8tjT0nlsuEPfHUEWqJkhm4RQZOS/UhHT0Lz
-	jJ+uGf7QcxzVZRFlDhknpcqR70kBqO+U=
-X-Gm-Gg: AYBFou12jAuCjIpyV9QJbagZl5ACHkTfZOEBcufWiKLd6udXxaRXwf238Gm1gZnHq42
-	XY0+xma8Ko6pJt6j3vKWBKsbQvWA0KBLbe/Y62ECHqN98Mnefiqc1QO5FeTdqcWirTN0Nw9SY++
-	YT1X0Gm13DPgYp9XPbDXmFJBqDIoTqE3mNjFCiuz85sxRzwdTBgirctkzqGYNEZVSrAYLpV7J2r
-	yIHA1jZznGKyK8JMARxGekGebCRumwX4AbvY8Eov+LXL9QS+5d6V/7gODGzcMcTv64J4no/CC3G
-	UeUFLxBgEvo7vqembILozQnqtV62kwIuyXNavr8cgCNG+SczfrmiVQ+l1kYbGzRDAnmXcA8iZqG
-	hhMi1ynhCtXmzj+6NOQ0Z3KwzI2aiYg3gLWf2tBGoWvtk/sLy46cXhE9FfP1nk7buQUExXhgSM8
-	/HWv9LRjU0IFrgrHh16zOabvZep545nEQ8JIf9uFrXZ0Db7g==
-X-Received: by 2002:a05:693c:6206:b0:36a:dbb:2607 with SMTP id
- 5a478bee46e88-36a0dbb4fd4mr4524952eec.23.1793112530884; Tue, 27 Oct 2026
- 07:48:50 -0700 (PDT)
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=hBtNHxrWWtsc/tl+NuoMI20S+j74pXgDoW7f9+ibuPc=;
+ b=SuzGx1/7dhMuK9mQFmIvvncAROXrViscqnVJ4ryigl6SJ6eAlXfZNagNYtLpvZz4tFUM37duUGNkvPJ+W9iAPuvYZiBjOhBZ97AEjeV9qZcydB39RdZMzOy2VpBHPTnO/LK+dOZCCvkC03q7SjTIR6f/xGcYg0+dC3PEPA6YS2g=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by CH2PR04MB6757.namprd04.prod.outlook.com (2603:10b6:610:98::13) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.546.22; Tue, 27 Oct
+ 2026 15:06:02 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0546.021; Tue, 27 Oct 2026
+ 15:06:02 +0000
+Message-ID: <ba9e4a81-6959-4ed2-aed3-123aee594dff@wdc.com>
+Date: Tue, 27 Oct 2026 16:05:58 +0100
+User-Agent: Mozilla Thunderbird
+Subject: Re: [RFC] btrfs: zoned: reset stale zones in unallocated device space
+To: =?UTF-8?B?0JzQsNGA0Log0JrQvtGA0LXQvdCx0LXRgNCz?= <socketpair@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+References: <CAEmTpZGu5x9PS7vFwgc_dFH80rL3cFD4-geuuL_w8i=vFDo8AA@mail.gmail.com>
+ <52925d79-4dce-4621-b9e1-fd062b47e35d@wdc.com>
+ <CAEmTpZGifFxr+yaKddZcG8UxhntYvZROygi6s-8goAoxuUzqHQ@mail.gmail.com>
+Content-Language: en-US
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <CAEmTpZGifFxr+yaKddZcG8UxhntYvZROygi6s-8goAoxuUzqHQ@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: FR4P281CA0290.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:e7::20) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,354 +124,115 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <CAEmTpZGu5x9PS7vFwgc_dFH80rL3cFD4-geuuL_w8i=vFDo8AA@mail.gmail.com>
- <52925d79-4dce-4621-b9e1-fd062b47e35d@wdc.com>
-In-Reply-To: <52925d79-4dce-4621-b9e1-fd062b47e35d@wdc.com>
-From: =?UTF-8?B?0JzQsNGA0Log0JrQvtGA0LXQvdCx0LXRgNCz?= <socketpair@gmail.com>
-Date: Tue, 27 Oct 2026 19:48:38 +0500
-X-Gm-Features: AclHuK9cOSmFsR2g2E8QdJz-sb9spC7usp4ACkTou4qLNNRyiBLa1H1T0ER5iq4
-Message-ID: <CAEmTpZGifFxr+yaKddZcG8UxhntYvZROygi6s-8goAoxuUzqHQ@mail.gmail.com>
-Subject: Re: [RFC] btrfs: zoned: reset stale zones in unallocated device space
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: multipart/mixed; boundary="000000000000729e65065ed38b76"
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|CH2PR04MB6757:EE_
+X-MS-Office365-Filtering-Correlation-Id: 8b560054-edd0-4899-05a5-08df343bd0b9
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|376014|10070799003|23010399003|366016|19092799006|1800799024|261026140227099003|11063799006|4143699003|5023799004|56012099006|261026121527099003|261021121427099003|261022075727099003|261009223027099003|261022105027099003|10067099003|22082099003|18002099003|6133799003;
+X-Microsoft-Antispam-Message-Info:
+	ibJmSIDg6HwY1h8H0STSdgkUyYpFI0ZZIsF1bzpSJQsdOunqvsgBL1f84THwxhH657qEr1ogNx4J/hrCJJMOKqEZVRtaqJdT6gF6gj9fWFXZtl0sATvyF9IjzPGWUfRd7oIVMudmovE9wvS7cEDsP9d+XoLMylEOMIkIOR/pdU1LG9Hmgz+s7mg/DWff5n9zJPhTWi/vW/sU/YvnYbHJXZZI9H7JEAVicE4ciiMT8OberiQGcBAVDV56xhIJSB9oRE3rxJiwlIg6lL1FUL/ZEA2BEDSqbam8iNc94hQiFOc7Pnr/fjhH77zJymXQ431s3gBCBnKDJfASeKW4pLNYt5WTnGcLXkr/bUsOYjd9l0fPLg/n1UzN8/ZjIm6MuPcktwZjT+GpxXiGSxrVw3gV4OmEOOy/oWHKAoLMisd6Z7duvlQH0RiP1s1PlbBS0hnj/nL8AvnZUuMtv5o71nXLkyPDB2RoCO7joaO2Z5YCOTH01zMHCd4PmGEafjNEGfUv0s4/RBGiaHMVM1Fpe5u695z8jJ4NU6RKpu93/u+QJIca5gx9lQwU3qwRKX1qrTyKyhfQxFHAMnlU+XpE6sgsiLoLPXrb/dJgkcZTpUyljkjbHtswBtaNW4uG2S6wCBxYZLFZX3W1fpqXZywMUcTk0nK97ehlrKQCRlRDButNUgA=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(376014)(10070799003)(23010399003)(366016)(19092799006)(1800799024)(261026140227099003)(11063799006)(4143699003)(5023799004)(56012099006)(261026121527099003)(261021121427099003)(261022075727099003)(261009223027099003)(261022105027099003)(10067099003)(22082099003)(18002099003)(6133799003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?SDdzaWsyV1ZMbmxBYVZPU2FqaWxTelZxZVhmcDNGbGlVRUZQL2RjQ01sZlI1?=
+ =?utf-8?B?aHloTjBwdXJ6VU9TSGpPNGxKSndneTQzNlVRdzBxOTZUbG9RdmpEYlREYXJz?=
+ =?utf-8?B?a2Y5UEdicnhVbjd6dXpNSjRyTkhpT0NGYVJHOEZhMTgyTFNDQnV5NDQ3QUVX?=
+ =?utf-8?B?WkNkYVdPemF0TUo3UVVZNldlWGlLV28zOVNTczM2d1J2MENlVGtGUTNEUklO?=
+ =?utf-8?B?K3hPMDNwd0FyaWl6REs1YVlXcC9lMlhQK1BuUWdOWHpFTjk1TkFBcXlJc2N0?=
+ =?utf-8?B?eURseUF4Z05xbWlEblJlYjBuMHhGcGhGUUpKTjRTNVFUVmZoblpyNjQ0UGtW?=
+ =?utf-8?B?RThpKzBRT3lwbzFuRHVVdVpiUTdTSkQ3dUM2S0FLeW5BQWQrRW9nM1piSHFQ?=
+ =?utf-8?B?R3MxZkNFSDdXVStDUWFOb1ZZd2xlb1NiWEJ3S1pFdFRUQXFZWWVGbDhJY1hM?=
+ =?utf-8?B?YUhqTUNPakZJbHIrS3FkZXRlV2l2WnBRRWVFRnVJTGdEWXppZzBKNGFoRGV6?=
+ =?utf-8?B?Vkw5d3VMQVc1SDY3TzF0TDV4UFdyUUdMRGRjUTJHd095NDBDZ3BvbmltWFlN?=
+ =?utf-8?B?QXAwL3ZXOTlZQ1dRVlJkMDRjUVN1SnRhQk4zdy9QMkF1TU1UL0ZEU3NTek83?=
+ =?utf-8?B?NTdKeUdSVnVJSWdZclkydFN6YzVtQy8vRmJDOWRjcERER1RMZnVKUVdCVlgr?=
+ =?utf-8?B?QTYzcjV4dmlRRUZNeGZpTUVxYndVTzAyVERkcUZyUzZFL0xxam1QZXBlVFdv?=
+ =?utf-8?B?RWJIZjE1ZEtsTXhWV2s5TktCSVU0WHArS2VuSmNSVzVvU1FGWkJWNEZRbmht?=
+ =?utf-8?B?UXN2d0cvSUV5a1R2Z3Y0aDd3d3U5eUtIbXZ4VUZ3dUtRZlcrZUc5TlhCTUxo?=
+ =?utf-8?B?UVlBNVpDZEtjSStMR2ljMkZmQ3Q3bU9CUUowZ2FPK1prNkYzNklTYmVpWk1F?=
+ =?utf-8?B?azFDQm4wemdvUFJXTU5rT1oyVzNVa0V3aUVBTVlOdWxTR05CU045VHlTVXhY?=
+ =?utf-8?B?UnNGV1B5UEZMVnUvVjJkZEN1OE1qbGpFeElCZDZVTjY1dUhLTjhKN0QrWStD?=
+ =?utf-8?B?c0xSOTVIMHhXNFdVVjNPLzFWSWt5cnJKNXBzUzFubmI0TFRzaHFhU2lEYVRp?=
+ =?utf-8?B?WG1FcmZDM0NWUkRVS2J6cGljdnRoMGEvU09MTzdJZXB1S0dPbHBMMmRRb1hY?=
+ =?utf-8?B?YmtuRHlYZDBzNC9ya0xOL1ZsaXA5TVplbnVPUDNjbzc2RnJxeU9RTjhBK25U?=
+ =?utf-8?B?VW1LVWxYd1NaV3pZbWRVWkxzNldpSCsveEpleHBWNUJaS3JzU3JtMGlEVlR6?=
+ =?utf-8?B?SHNaTVh2dlhzUlJ2WFoxczc3eEFoQjJGR2lQd0R6bW1ZWmhrZFRFbFgwSzNI?=
+ =?utf-8?B?cWd2SXdkdDVPL2x1MGU2Y0kvSGEvZTFucWppdG5Nd3RmQ2FlSG4xaVRuQ0xw?=
+ =?utf-8?B?OGxwM1B2U3hWSGc4L0x2blBYRGNOeUszdnBDc3VTMllDeW5Gc3RwOVpOdHkx?=
+ =?utf-8?B?c0NHTTFCQlJ3TUhET2xENTM4b0JSYXQyZUJWNFhuQ2VZajAvdm9FNjdqK3Fq?=
+ =?utf-8?B?bWhGZ1p2OXNwTnIxWmIvc21FK2ZKRzhZT2YzOUZmWVVzVlF5OVBwUTJFSDR3?=
+ =?utf-8?B?RkF1OFhRb1dRQW5DU3dLKzZGVHNEd1ExWFlnOE9jUUxVcXdDa2JxY2RNc2I2?=
+ =?utf-8?B?dUVoNFhzazQ4RWl2TmFaL3graEJobDFWMENwVjJvRG1GRmgyNHl5cEx3eG11?=
+ =?utf-8?B?a1FQeXpaTWlvT0RDdVVLN2JLejV0WXozemRZY2FRaXE1eHNRUDlhanI1STRG?=
+ =?utf-8?B?STkwNzBWb1pIa0dFQXdydGtJUmVIbnp2K3I2Q0Npc1BENFRuUmlHQVJSN1VD?=
+ =?utf-8?B?eEw4aGZBbXpuQy9XMncyeThzODJCb01KaHFJSm9zT1BJWkd1WkFyeE5aL0NT?=
+ =?utf-8?B?VmttWjRXZ3hGbk80YVlMRVJjRGx2MlA4UlJSWDE2ckRpb1AxK3lKT1FsN2or?=
+ =?utf-8?B?QmgweXBvbXdlL0h2V2hEZ2pmUkFCTFc4L1lLazhYZDRqdi9rUDZDSEdTdytu?=
+ =?utf-8?B?aUwwOGtVZ1ZSMTh3eGljVHhwV3VMd2hhcDl3QlNQMkp6U3RxSkRVQ2RtWnNT?=
+ =?utf-8?B?U3NDNWZ2M09tY2lEamRRdm9NZ3pVVG1CelhyQytoT1lIVThESVRERFlLTjdt?=
+ =?utf-8?B?ejQwSXdqRzVWdlpFSHBaSXBjSUVTRG80aUIvMUJHOHNjR1k3VU5iWXN6b1Ry?=
+ =?utf-8?B?L3dMOE1GeTJjLzV1d3lBQkQ0R3NqUCtQalJhTkhOVXZCU3RKL1VGWkZLRlh3?=
+ =?utf-8?B?NHFuNllNQklETG05S0NMZ1EzUVpLYUZNTTl4dmFmTFNPOUorTmFsNU5RNm9n?=
+ =?utf-8?Q?0KCH+VpeES+mbggAM28O/uQpU2dmBHTkGsqnSmWJvTzsQ?=
+X-MS-Exchange-AntiSpam-MessageData-1: Wxfp49FhbGBCLlrIYQhMDpK/T1z1qzlGyOo=
+X-Exchange-RoutingPolicyChecked:
+	pnbPSxtIawsXyKcZjTMOT8UYRjiTt0abXUVf6ohGGoKyox8p9bEn/jWBCLHdkYtiDcRR4hVSsiom+1ICC5hrsWtOyTRoLt1U2uwtNphxvGQoi515+BmhPUOhgK2XOmO3PDjdHEKmXJEorFgH+/UvR8Wo9GW67mZw1wnl+6HN0Z2e+nCyLBEy9F7AipzeaN7r2X9CSYMRsml6sbo3ML5wUlqzYPK7KjeoootqJ5S0Qd23DvPgbSpLkQivM6upFJou/WIH+ef/0PlrpqXx/UN/GtgzqdjlsRT4OVJkdQ4AFMbPm0+v84xpK3zFmHFXZ6VYnxXP9u3GP+jRdS38Dk3OHw==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	bamJ+rrxrbYOrBhGOkIdEuJQEEQakViFd3iZpDYrb1xugLkdscpAQJVyLpgLrxFb7+JftsG5q0P27h6aGARBXLMDs/DO2y5R+k7Y5mNeMW9BO48sTrRXUAsqFb9+sYRGCrOl4qPBxKjSFKLm3EjthtZXH0/xpeQskF4HCERZoz8MMRTQDWesphPi0jFnqyGxT0qh0sLqC6KwuC4gwf7uYPyIR2749MLRy/f4joox5KO6Kj/brr+Woff3lgWp5m9Z3PQVUnTo7z0kiWax06s8JsADt4WCTPeJC/D47DOwwygs1xYa09NrVubDkRdVF1hUpu1vT5+odIgKWJTiLEGR4fMW2CYwRRhH8FcEmeQQKtUQgWTiK9mFQtWrzfKykL8FsfAPxYs6wF87zkcvRsDbGxwqqn76pxQzbqXUy4/mYnFLqXrjhDEokwWo3sf0hav1+216U9vRXMhx8wUIYqEMZr5Awmlj0DEEPfoYJjG1GRjfJ4i0kOdlKaC+DMf6Jzq0JRkT3g5xO5ENXs36KO0qYET1wRg02FZtlHIphRrGdM0Ui/NG4uRdJsVNz8UsU4CU84l6aWV8YMkZ+xBXmYVlI4VJMmDZNGoSutzYoOtKLXOjloCpZxScazaW3x+dzB/1
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: 8b560054-edd0-4899-05a5-08df343bd0b9
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 27 Oct 2026 15:06:02.1779
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: +LAJsBs/Id9aFSM7JjAhzPTJXvDfywAzId3BqLSN5QO9IH3rwMtFAyXJZ/KdrGcwI6AZAbQA+zufkGc/qbERkO1D+dZ7thAhei1jBnsd5K0=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CH2PR04MB6757
 
---000000000000729e65065ed38b76
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-Hi Johannes,
-
-I rebased your patch onto current master and found a few problems in
-review, so I reworked it. v2 is attached. Main issues:
-
-1) Data loss during device replace: the replace target has no chunk
-   stripes until the replace finishes, so all data already copied to
-   it was reset, and the resumed replace never copies it again.
-   Trigger: start a replace, umount or remount,ro, then mount rw.
-   v2 skips the pass while a replace is ongoing.
-
-2) Races: chunks can be allocated (data reloc bg, transaction kthread)
-   and removed (relocating repair after a read error) while the pass
-   runs, and the removal is not committed yet. v2 takes
-   reclaim_bgs_lock, commits, and holds chunk_mutex.
-
-3) Used zones: v1 marked only the zone where each stripe starts. Today
-   stripes are exactly one zone long, but mount does not enforce that,
-   so a longer stripe would get its other zones reset. v2 checks
-   device->alloc_state instead, the allocator's own record of which
-   ranges belong to chunks, over the full stripe length. This also
-   drops the bitmap allocation that could fail the mount.
-
-4) Zones that must not be reset: zones beyond total_bytes, read-only
-   devices, offline and read-only zones. v2 skips them.
-
-5) v2 resets adjacent zones in one call and logs each reset range.
-
-The commit message also now says why the existing code does not help:
-btrfs_find_allocatable_zones() skips non-empty zones, so leaked zones
-are never reused. And the typo in your Signed-off-by is fixed.
-
-I used an AI assistant (Claude) for the review and for v2. v2 is build
-tested and checkpatch clean, not runtime tested yet.
-
-Please check that it still covers the case you hit, and tell me if you
-prefer to fold it into your patch or keep it as a fix on top.
-
-Thanks,
-Mark
-
-
-=D0=B2=D1=82, 27 =D0=BE=D0=BA=D1=82. 2026=E2=80=AF=D0=B3. =D0=B2 15:27, Joh=
-annes Thumshirn <johannes.thumshirn@wdc.com>:
+On 10/27/26 3:48 PM, Марк Коренберг wrote:
+> Hi Johannes,
 >
-> On 10/27/26 9:36 AM, =D0=9C=D0=B0=D1=80=D0=BA =D0=9A=D0=BE=D1=80=D0=B5=D0=
-=BD=D0=B1=D0=B5=D1=80=D0=B3 wrote:
-> > Hi,
-> >
-> > I'd like to propose a feature for zoned btrfs. I'm not planning to
-> > implement it myself, but I'd like to get feedback and, if the idea is
-> > considered reasonable, have it tracked as a TODO / project idea.
-> >
-> > Background
-> > ----------
-> > I maintain a host-managed zoned block device implemented with ublk,
-> > where each zone is backed by S3 objects. Storage cost is proportional
-> > to the amount of data actually held in zones, so zones that contain
-> > data but are not referenced by the filesystem are a real cost, not
-> > just lost capacity.
-> >
-> > Problem
-> > -------
-> > With a long commit interval (e.g. commit=3D300) and heavy buffered
-> > writes, btrfs may allocate new block groups and write a large amount
-> > of data into their zones before the transaction commits. If the
-> > filesystem then goes down uncleanly before the commit, this is fine
-> > from a consistency point of view: nobody called fsync(), and after
-> > the next mount the filesystem is consistent at the last committed
-> > transaction.
-> >
-> > For a virtual device like mine, "goes down uncleanly" is more likely
-> > the ublk server crashing or losing connectivity to S3 than an actual
-> > power loss, but the effect on btrfs is the same: the running
-> > transaction never commits.
-> >
-> > The device extents of those new block groups were never persisted, so
-> > after the next mount the corresponding zones belong to unallocated
-> > device space from btrfs' point of view, while on the device they are
-> > still non-empty (write pointer > zone start) and hold data.
+> I rebased your patch onto current master and found a few problems in
+> review, so I reworked it. v2 is attached. Main issues:
 >
-> I have a patch lying around doing this in an old stale branch. I've
-> attached it, but not tried rebasing it onto latest for-next. If you're
-> brave enough to test it I'd be happy.
+> 1) Data loss during device replace: the replace target has no chunk
+>     stripes until the replace finishes, so all data already copied to
+>     it was reset, and the resumed replace never copies it again.
+>     Trigger: start a replace, umount or remount,ro, then mount rw.
+>     v2 skips the pass while a replace is ongoing.
 >
+> 2) Races: chunks can be allocated (data reloc bg, transaction kthread)
+>     and removed (relocating repair after a read error) while the pass
+>     runs, and the removal is not committed yet. v2 takes
+>     reclaim_bgs_lock, commits, and holds chunk_mutex.
 >
-> > As far as I can tell, btrfs currently handles this lazily: such zones
-> > are reset only when the allocator picks that range for a new chunk
-> > (btrfs_ensure_empty_zones()). Until then they hold stale data
-> > indefinitely. On SMR HDDs this does not matter much, but on ZNS SSDs
-> > (where a reset helps the device's internal GC) and especially on
-> > virtual/cloud-backed zoned devices it does.
-> >
-> > (Stale data past the committed alloc_offset inside *existing* block
-> > groups is accounted as zone_unusable and can only be reclaimed via
-> > relocation; this proposal does not try to address that case.)
-> >
-> > Current workaround
-> > ------------------
-> > The only safe way I see today is offline: unmount, walk the dev tree
-> > to collect allocated dev extents, and issue BLKRESETZONE for every
-> > non-empty sequential zone not covered by a dev extent. Doing this on
-> > a mounted filesystem from userspace is unsafe, because it races with
-> > chunk allocation (a dev extent may be allocated in the running
-> > transaction but not yet visible in the committed dev tree).
-> >
-> > Proposal
-> > --------
-> > Let the kernel do it, since it can serialize against chunk allocation
-> > (chunk_mutex / device->alloc_state). The operation itself: reset
-> > every sequential zone that is fully contained in unallocated device
-> > space and whose write pointer is not at the zone start.
-> >
-> > Possible interfaces, in order of my preference:
-> >
-> >   1. Automatic background cleanup, e.g. once after mount (after the
-> >      dev extents are loaded) and/or as part of the existing
-> >      reclaim/discard workers, possibly behind a mount option or sysfs
-> >      knob. This requires no administrator action and covers the
-> >      problem completely.
-> >
-> >   2. FITRIM: on zoned filesystems, apply the reset to unallocated
-> >      device space as part of fstrim. Many distributions already run
-> >      fstrim periodically (fstrim.timer), so this would also work
-> >      without extra configuration in most setups, and it fits the
-> >      "release unused space to the device" semantics.
-> >
-> >   3. A dedicated trigger: a new ioctl (exposed as a btrfs-progs
-> >      subcommand) or a sysfs knob under /sys/fs/btrfs/<UUID>/ that
-> >      starts the cleanup on demand. Least convenient, but still much
-> >      better than the current offline-only workaround.
-> >
-> > Risk
-> > ----
-> > With corrupted metadata (a dev extent missing from the dev tree),
-> > this could reset a zone that actually holds live data. But the
-> > allocator already makes exactly the same assumption today when it
-> > resets non-empty zones before reusing them, so this does not add a
-> > new class of risk; it only performs the reset earlier. If automatic
-> > cleanup is considered too aggressive, options 2 and 3 are explicit
-> > and opt-in.
-> >
-> > Questions
-> > ---------
-> >   - Does this sound like something you would accept upstream?
-> >   - Which interface would you prefer?
-> >   - Am I missing a reason why the reset is intentionally deferred to
-> >     allocation time?
-> >
-> > If the idea is acceptable, I'd appreciate it being added to the btrfs
-> > TODO list so that someone interested could pick it up.
-> >
-> > Thanks,
-> > Korenberg Mark
+> 3) Used zones: v1 marked only the zone where each stripe starts. Today
+>     stripes are exactly one zone long, but mount does not enforce that,
+>     so a longer stripe would get its other zones reset. v2 checks
+>     device->alloc_state instead, the allocator's own record of which
+>     ranges belong to chunks, over the full stripe length. This also
+>     drops the bitmap allocation that could fail the mount.
 >
-
-
---=20
-Segmentation fault
-
---000000000000729e65065ed38b76
-Content-Type: text/x-patch; charset="US-ASCII"; 
-	name="v2-0001-btrfs-zoned-reset-leaked-zones-on-read-write-moun.patch"
-Content-Disposition: attachment; 
-	filename="v2-0001-btrfs-zoned-reset-leaked-zones-on-read-write-moun.patch"
-Content-Transfer-Encoding: base64
-Content-ID: <f_mvqsvrpc0>
-X-Attachment-Id: f_mvqsvrpc0
-
-RnJvbSBjYzA5Mjk5MmZlMDUwYjRlZGNkZTY5MTgyOTQzNWExZTA5YjRmYjQ3IE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiBKb2hhbm5lcyBUaHVtc2hpcm4gPGpvaGFubmVzLnRodW1zaGly
-bkB3ZGMuY29tPgpEYXRlOiBUdWUsIDggU2VwIDIwMjYgMTE6NDI6MDUgKzAyMDAKU3ViamVjdDog
-W1BBVENIIHYyXSBidHJmczogem9uZWQ6IHJlc2V0IGxlYWtlZCB6b25lcyBvbiByZWFkLXdyaXRl
-IG1vdW50CgpJZiBhIHRyYW5zYWN0aW9uIGNvbW1pdCBpcyBhYm9ydGVkIGFmdGVyIHRoZSB6b25l
-cyBvZiBhIG5ldyBibG9jayBncm91cAp3ZXJlIHdyaXR0ZW4gYnV0IGJlZm9yZSB0aGUgc3VwZXJi
-bG9jayB3YXMsIHRoZSBjaHVuayBpdGVtIGFuZCB0aGUgZGV2CmV4dGVudCBhcmUgbmV2ZXIgcGVy
-c2lzdGVkIGFuZCB0aGUgem9uZXMgbGVhay4gVGhlIGNodW5rIGFsbG9jYXRvciBza2lwcwpub24t
-ZW1wdHkgem9uZXMsIHNvIHRoZXkgYXJlIG5ldmVyIHJldXNlZCwgb3BlbiBvbmVzIGtlZXAgY291
-bnRpbmcKYWdhaW5zdCB0aGUgYWN0aXZlIHpvbmUgbGltaXQsIGFuZCBidHJmcyBjaGVjayByZXBv
-cnRzIHRoZW0gYXMKdW5yZWZlcmVuY2VkLgoKT24gYSByZWFkLXdyaXRlIG1vdW50LCByZXNldCBl
-dmVyeSBub24tZW1wdHkgc2VxdWVudGlhbCB6b25lIHRoYXQgaXMKbmVpdGhlciBhIHN1cGVyYmxv
-Y2sgbG9nIHpvbmUgbm9yIGFsbG9jYXRlZCB0byBhIGNodW5rLiBDb21taXQgdGhlCnJ1bm5pbmcg
-dHJhbnNhY3Rpb24gdW5kZXIgcmVjbGFpbV9iZ3NfbG9jayBmaXJzdCwgc28gdGhhdCBhIGNodW5r
-CnJlbW92YWwgaXMgbm90IG1pc3Rha2VuIGZvciBhIGxlYWssIGhvbGQgY2h1bmtfbXV0ZXggc28g
-dGhhdCBubyBjaHVuayBpcwphbGxvY2F0ZWQgbWVhbndoaWxlLCBhbmQgc2tpcCBpdCBhbGwgd2hp
-bGUgYSBkZXZpY2UgcmVwbGFjZSBpcyBvbmdvaW5nLAphcyBubyBjaHVuayByZWZlcmVuY2VzIHRo
-ZSByZXBsYWNlIHRhcmdldCB5ZXQuCgpTaWduZWQtb2ZmLWJ5OiBKb2hhbm5lcyBUaHVtc2hpcm4g
-PGpvaGFubmVzLnRodW1zaGlybkB3ZGMuY29tPgotLS0KCk5vdGVzOgogICAgQ2hhbmdlcyBpbiB2
-MjoKICAgIC0gU2tpcCB3aGlsZSBhIGRldmljZSByZXBsYWNlIGlzIG9uZ29pbmc7IHYxIHJlc2V0
-IHRoZSBkYXRhIGFscmVhZHkKICAgICAgY29waWVkIHRvIHRoZSByZXBsYWNlIHRhcmdldC4KICAg
-IC0gSG9sZCBjaHVua19tdXRleDsgdjEgcmFjZWQgd2l0aCBjaHVuayBhbGxvY2F0aW9uIGluIG9w
-ZW5fY3RyZWUoKS4KICAgIC0gSG9sZCByZWNsYWltX2Jnc19sb2NrIGFuZCBjb21taXQgZmlyc3Q7
-IHYxIGNvdWxkIHJlc2V0IHRoZSB6b25lcyBvZiBhCiAgICAgIGNodW5rIHJlbW92ZWQgYnkgYSBy
-ZWxvY2F0aW5nIHJlcGFpciBiZWZvcmUgdGhlIHJlbW92YWwgd2FzIGNvbW1pdHRlZC4KICAgIC0g
-Q2hlY2sgY292ZXJhZ2UgaW4gZGV2aWNlLT5hbGxvY19zdGF0ZTogY292ZXJzIHdob2xlIHN0cmlw
-ZXMsIG5vCiAgICAgIGJpdG1hcCBhbGxvY2F0aW9uLCBubyBOVUxMIHBoeXNpY2FsX21hcCBjYXNl
-LgogICAgLSBXYWxrIGFsbG9jX2xpc3QgKHdyaXRlYWJsZSBkZXZpY2VzKSB1bmRlciBjaHVua19t
-dXRleCBpbnN0ZWFkIG9mIHRoZQogICAgICBkZXZpY2UgbGlzdCB1bmRlciBkZXZpY2VfbGlzdF9t
-dXRleCwgb25seSB1cCB0byB0b3RhbF9ieXRlcy4KICAgIC0gU2tpcCBvZmZsaW5lIGFuZCByZWFk
-LW9ubHkgem9uZXMsIHRoZXkgY2Fubm90IGJlIHJlc2V0LgogICAgLSBSZXNldCBhZGphY2VudCB6
-b25lcyBpbiBvbmUgY2FsbCBhbmQgbG9nIGVhY2ggcmVzZXQgcmFuZ2UuCiAgICAKICAgIFJldmll
-d2VkIHdpdGggdGhlIGhlbHAgb2YgYW4gQUkgYXNzaXN0YW50IChDbGF1ZGUpLCB3aGljaCBhbHNv
-IGRyYWZ0ZWQKICAgIHRoZSB2MiBjaGFuZ2VzLiBCdWlsZCB0ZXN0ZWQgb25seS4KCiBmcy9idHJm
-cy9kaXNrLWlvLmMgfCAgIDIgKwogZnMvYnRyZnMvem9uZWQuYyAgIHwgMTU5ICsrKysrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKwogZnMvYnRyZnMvem9uZWQuaCAgIHwg
-ICAzICsKIDMgZmlsZXMgY2hhbmdlZCwgMTY0IGluc2VydGlvbnMoKykKCmRpZmYgLS1naXQgYS9m
-cy9idHJmcy9kaXNrLWlvLmMgYi9mcy9idHJmcy9kaXNrLWlvLmMKaW5kZXggYzQ1Y2RhNDI5MGQ1
-Li5mM2UxNWM1NzVlOGEgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2Rpc2staW8uYworKysgYi9mcy9i
-dHJmcy9kaXNrLWlvLmMKQEAgLTMwNTksNiArMzA1OSw4IEBAIGludCBidHJmc19zdGFydF9wcmVf
-cndfbW91bnQoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pCiAJaW50IHJldDsKIAlib29s
-IHJlYnVpbGRfZnJlZV9zcGFjZV90cmVlID0gZmFsc2U7CiAKKwlidHJmc19yZXNldF91bnJlZmVy
-ZW5jZWRfem9uZXMoZnNfaW5mbyk7CisKIAlpZiAoYnRyZnNfdGVzdF9vcHQoZnNfaW5mbywgQ0xF
-QVJfQ0FDSEUpICYmCiAJICAgIGJ0cmZzX2ZzX2NvbXBhdF9ybyhmc19pbmZvLCBGUkVFX1NQQUNF
-X1RSRUUpKSB7CiAJCWlmIChidHJmc19mc19pbmNvbXBhdChmc19pbmZvLCBFWFRFTlRfVFJFRV9W
-MikpCmRpZmYgLS1naXQgYS9mcy9idHJmcy96b25lZC5jIGIvZnMvYnRyZnMvem9uZWQuYwppbmRl
-eCAxY2RhODgzMzIyODQuLjhiMDMzMWJjOGZhYiAxMDA2NDQKLS0tIGEvZnMvYnRyZnMvem9uZWQu
-YworKysgYi9mcy9idHJmcy96b25lZC5jCkBAIC0zMjI2LDYgKzMyMjYsMTY1IEBAIGludCBidHJm
-c19yZXNldF91bnVzZWRfYmxvY2tfZ3JvdXBzKHN0cnVjdCBidHJmc19zcGFjZV9pbmZvICpzcGFj
-ZV9pbmZvLCB1NjQgbnVtCiAJcmV0dXJuIDA7CiB9CiAKKy8qCisgKiBBIHpvbmUgaXMgbGVha2Vk
-IGlmIGl0IGlzIGEgbm9uLWVtcHR5IHNlcXVlbnRpYWwgem9uZSB0aGF0IGlzIG5laXRoZXIgYQor
-ICogc3VwZXJibG9jayBsb2cgem9uZSBub3IgcGFydCBvZiBhbnkgc3RyaXBlIG9mIGFueSBjaHVu
-ay4gQ2h1bmsgc3RyaXBlcyBhcmUKKyAqIGxvb2tlZCB1cCBpbiB0aGUgZGV2aWNlJ3MgYWxsb2Nf
-c3RhdGUsIHdoaWNoIGNvdmVycyBldmVyeSBjaHVuayBpbiB0aGUKKyAqIG1hcHBpbmcgdHJlZSBv
-dmVyIHRoZSB3aG9sZSBzdHJpcGUgbGVuZ3RoLgorICovCitzdGF0aWMgYm9vbCBpc19sZWFrZWRf
-em9uZShzdHJ1Y3QgYnRyZnNfZGV2aWNlICpkZXZpY2UsIHUzMiB6bm8pCit7CisJc3RydWN0IGJ0
-cmZzX3pvbmVkX2RldmljZV9pbmZvICp6aW5mbyA9IGRldmljZS0+em9uZV9pbmZvOworCXU2NCBz
-dGFydCA9ICh1NjQpem5vIDw8IHppbmZvLT56b25lX3NpemVfc2hpZnQ7CisJc3RydWN0IGJsa196
-b25lIHpvbmU7CisJdW5zaWduZWQgaW50IG5vZnNfZmxhZ3M7CisJaW50IHJldDsKKworCWlmICgh
-YnRyZnNfZGV2X2lzX3NlcXVlbnRpYWwoZGV2aWNlLCBzdGFydCkpCisJCXJldHVybiBmYWxzZTsK
-KworCWlmIChidHJmc19kZXZfaXNfZW1wdHlfem9uZShkZXZpY2UsIHN0YXJ0KSkKKwkJcmV0dXJu
-IGZhbHNlOworCisJaWYgKGJ0cmZzX3Rlc3RfcmFuZ2VfYml0X2V4aXN0cygmZGV2aWNlLT5hbGxv
-Y19zdGF0ZSwgc3RhcnQsCisJCQkJCXN0YXJ0ICsgemluZm8tPnpvbmVfc2l6ZSAtIDEsCisJCQkJ
-CUNIVU5LX0FMTE9DQVRFRCkpCisJCXJldHVybiBmYWxzZTsKKworCWZvciAoaW50IG1pcnJvciA9
-IDA7IG1pcnJvciA8IEJUUkZTX1NVUEVSX01JUlJPUl9NQVg7IG1pcnJvcisrKSB7CisJCXUzMiBz
-Yl96bm8gPSBzYl96b25lX251bWJlcih6aW5mby0+em9uZV9zaXplX3NoaWZ0LCBtaXJyb3IpOwor
-CisJCWlmIChzYl96bm8gKyBCVFJGU19OUl9TQl9MT0dfWk9ORVMgPiB6aW5mby0+bnJfem9uZXMp
-CisJCQljb250aW51ZTsKKwkJaWYgKHpubyA+PSBzYl96bm8gJiYgem5vIDwgc2Jfem5vICsgQlRS
-RlNfTlJfU0JfTE9HX1pPTkVTKQorCQkJcmV0dXJuIGZhbHNlOworCX0KKworCS8qCisJICogT2Zm
-bGluZSBhbmQgcmVhZC1vbmx5IHpvbmVzIGFyZSBuZXZlciBtYXJrZWQgZW1wdHkgZWl0aGVyLCBi
-dXQgdGhleQorCSAqIGNhbm5vdCBiZSByZXNldC4gVGhlaXIgY29uZGl0aW9uIGlzIG5vdCBjYWNo
-ZWQsIHNvIGFzayB0aGUgZGV2aWNlLgorCSAqIFdlIGhvbGQgY2h1bmtfbXV0ZXggaGVyZSwgc28g
-ZG9uJ3QgcmVjdXJzZSBpbnRvIHRoZSBmaWxlc3lzdGVtLgorCSAqLworCW5vZnNfZmxhZ3MgPSBt
-ZW1hbGxvY19ub2ZzX3NhdmUoKTsKKwlyZXQgPSBidHJmc19nZXRfZGV2X3pvbmUoZGV2aWNlLCBz
-dGFydCwgJnpvbmUpOworCW1lbWFsbG9jX25vZnNfcmVzdG9yZShub2ZzX2ZsYWdzKTsKKwlpZiAo
-cmV0KQorCQlyZXR1cm4gZmFsc2U7CisKKwlpZiAoem9uZS5jb25kID09IEJMS19aT05FX0NPTkRf
-T0ZGTElORSkKKwkJcmV0dXJuIGZhbHNlOworCisJaWYgKHpvbmUuY29uZCA9PSBCTEtfWk9ORV9D
-T05EX1JFQURPTkxZKQorCQlyZXR1cm4gZmFsc2U7CisKKwlyZXR1cm4gdHJ1ZTsKK30KKwordm9p
-ZCBidHJmc19yZXNldF91bnJlZmVyZW5jZWRfem9uZXMoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZz
-X2luZm8pCit7CisJc3RydWN0IGJ0cmZzX2ZzX2RldmljZXMgKmZzX2RldmljZXMgPSBmc19pbmZv
-LT5mc19kZXZpY2VzOworCXN0cnVjdCBidHJmc19kZXZfcmVwbGFjZSAqZGV2X3JlcGxhY2UgPSAm
-ZnNfaW5mby0+ZGV2X3JlcGxhY2U7CisJc3RydWN0IGJ0cmZzX2RldmljZSAqZGV2aWNlOworCWJv
-b2wgcmVwbGFjZV9vbmdvaW5nOworCWludCByZXQ7CisKKwlpZiAoIWJ0cmZzX2lzX3pvbmVkKGZz
-X2luZm8pKQorCQlyZXR1cm47CisKKwkvKgorCSAqIE5vIGNodW5rIHN0cmlwZSBwb2ludHMgdG8g
-dGhlIHRhcmdldCBvZiBhbiBpbnRlcnJ1cHRlZCBkZXZpY2UgcmVwbGFjZQorCSAqIHVudGlsIHRo
-ZSByZXBsYWNlIGZpbmlzaGVzLCBzbyB0aGUgZGF0YSBhbHJlYWR5IGNvcGllZCB0byBpdCB3b3Vs
-ZAorCSAqIGxvb2sgbGVha2VkLiBUaGUgcmVwbGFjZSByZXN1bWVzIGZyb20gdGhlIGxhc3QgY29t
-bWl0dGVkIGN1cnNvciBhbmQKKwkgKiB3b3VsZCBuZXZlciBjb3B5IHRoYXQgZGF0YSBhZ2Fpbi4K
-KwkgKgorCSAqIFRoZSB0YXJnZXQgaXMgbm90IG9uIGFsbG9jX2xpc3QsIHdoaWNoIGlzIHdhbGtl
-ZCBiZWxvdywgc28gc3RyaWN0bHkKKwkgKiBzcGVha2luZyBpdCB3b3VsZCBiZSBlbm91Z2ggdG8g
-c2tpcCBvbmx5IHRoZSBkZXZpY2UgdGhhdCBoYXMKKwkgKiBCVFJGU19ERVZfU1RBVEVfUkVQTEFD
-RV9UR1Qgc2V0LiBTdGlsbCwgZG8gbm90IHJlc2V0IGFueXRoaW5nIGF0IGFsbAorCSAqIHdoaWxl
-IGEgcmVwbGFjZSBpcyBvbmdvaW5nLCB0aGUgbGVha2VkIHpvbmVzIGNhbiBiZSByZWNsYWltZWQg
-b24gdGhlCisJICogbmV4dCBtb3VudCBhZnRlciB0aGUgcmVwbGFjZSBoYXMgZmluaXNoZWQgb3Ig
-d2FzIGNhbmNlbGVkLgorCSAqCisJICogRG8gbm90IGhvbGQgdGhlIHJ3c2VtIGFjcm9zcyB0aGUg
-cGFzcywgdGhlIHJlcGxhY2UgY29kZSB0YWtlcyBpdAorCSAqIGFmdGVyIGNodW5rX211dGV4LiBB
-IHJlcGxhY2UgY2Fubm90IGJlIHN0YXJ0ZWQgd2hpbGUgd2UgYXJlIGluIHRoZQorCSAqIChyZSlt
-b3VudCBwYXRoLgorCSAqLworCWRvd25fcmVhZCgmZGV2X3JlcGxhY2UtPnJ3c2VtKTsKKwlyZXBs
-YWNlX29uZ29pbmcgPSBidHJmc19kZXZfcmVwbGFjZV9pc19vbmdvaW5nKGRldl9yZXBsYWNlKTsK
-Kwl1cF9yZWFkKCZkZXZfcmVwbGFjZS0+cndzZW0pOworCWlmIChyZXBsYWNlX29uZ29pbmcpIHsK
-KwkJYnRyZnNfaW5mbyhmc19pbmZvLAorCQkJICAgInpvbmVkOiBkZXZpY2UgcmVwbGFjZSBpcyBv
-bmdvaW5nLCBub3QgcmVzZXR0aW5nIGxlYWtlZCB6b25lcyIpOworCQlyZXR1cm47CisJfQorCisJ
-LyoKKwkgKiBDaHVua3MgYXJlIG9ubHkgcmVtb3ZlZCB1bmRlciByZWNsYWltX2Jnc19sb2NrLCBh
-bmQgdGhlaXIgem9uZXMgbXVzdAorCSAqIG5vdCBiZSByZXNldCBiZWZvcmUgdGhlIHJlbW92YWwg
-aXMgY29tbWl0dGVkLiBBIHJlbG9jYXRpbmcgcmVwYWlyLAorCSAqIHN0YXJ0ZWQgYnkgYSByZWFk
-IGVycm9yIGR1cmluZyBtb3VudCwgbWF5IGFscmVhZHkgaGF2ZSByZW1vdmVkIG9uZSBpbgorCSAq
-IHRoZSBydW5uaW5nIHRyYW5zYWN0aW9uLCBzbyBjb21taXQgaXQgYmVmb3JlIGxvb2tpbmcgZm9y
-IGxlYWtlZCB6b25lcy4KKwkgKi8KKwltdXRleF9sb2NrKCZmc19pbmZvLT5yZWNsYWltX2Jnc19s
-b2NrKTsKKwlyZXQgPSBidHJmc19jb21taXRfY3VycmVudF90cmFuc2FjdGlvbihmc19pbmZvLT50
-cmVlX3Jvb3QpOworCWlmIChyZXQpIHsKKwkJYnRyZnNfd2Fybihmc19pbmZvLAorCQkJICAgInpv
-bmVkOiBmYWlsZWQgdG8gY29tbWl0IHRyYW5zYWN0aW9uLCBub3QgcmVzZXR0aW5nIGxlYWtlZCB6
-b25lczogJXBlIiwKKwkJCSAgIEVSUl9QVFIocmV0KSk7CisJCWdvdG8gb3V0OworCX0KKworCS8q
-CisJICogSG9sZCBjaHVua19tdXRleCwgd2hpY2ggYWxzbyBwcm90ZWN0cyBhbGxvY19saXN0LCBz
-byB0aGF0IG5vIGNodW5rIGNhbgorCSAqIGJlIGFsbG9jYXRlZCBiZXR3ZWVuIGNoZWNraW5nIGEg
-em9uZSBhbmQgcmVzZXR0aW5nIGl0LgorCSAqLworCW11dGV4X2xvY2soJmZzX2luZm8tPmNodW5r
-X211dGV4KTsKKwlsaXN0X2Zvcl9lYWNoX2VudHJ5KGRldmljZSwgJmZzX2RldmljZXMtPmFsbG9j
-X2xpc3QsIGRldl9hbGxvY19saXN0KSB7CisJCXN0cnVjdCBidHJmc196b25lZF9kZXZpY2VfaW5m
-byAqemluZm8gPSBkZXZpY2UtPnpvbmVfaW5mbzsKKwkJdTMyIG5yX3pvbmVzOworCisJCWlmICgh
-ZGV2aWNlLT5iZGV2IHx8ICF6aW5mbyB8fCAhYmRldl9pc196b25lZChkZXZpY2UtPmJkZXYpKQor
-CQkJY29udGludWU7CisKKwkJLyogTm90aGluZyBpcyBldmVyIGFsbG9jYXRlZCBiZXlvbmQgdG90
-YWxfYnl0ZXMsIGxlYXZlIGl0IGFsb25lLiAqLworCQlucl96b25lcyA9IG1pbl90KHU2NCwgemlu
-Zm8tPm5yX3pvbmVzLAorCQkJCSBkZXZpY2UtPnRvdGFsX2J5dGVzID4+IHppbmZvLT56b25lX3Np
-emVfc2hpZnQpOworCisJCWZvciAodTMyIHpubyA9IDA7IHpubyA8IG5yX3pvbmVzOyB6bm8rKykg
-eworCQkJdTMyIGZpcnN0ID0gem5vOworCQkJdTY0IHJlc2V0X2J5dGVzOworCisJCQljb25kX3Jl
-c2NoZWQoKTsKKworCQkJd2hpbGUgKHpubyA8IG5yX3pvbmVzICYmIGlzX2xlYWtlZF96b25lKGRl
-dmljZSwgem5vKSkKKwkJCQl6bm8rKzsKKwkJCWlmICh6bm8gPT0gZmlyc3QpCisJCQkJY29udGlu
-dWU7CisKKwkJCXJldCA9IGJ0cmZzX3Jlc2V0X2RldmljZV96b25lKGRldmljZSwKKwkJCQkJCSAg
-ICAgICh1NjQpZmlyc3QgPDwgemluZm8tPnpvbmVfc2l6ZV9zaGlmdCwKKwkJCQkJCSAgICAgICh1
-NjQpKHpubyAtIGZpcnN0KSA8PCB6aW5mby0+em9uZV9zaXplX3NoaWZ0LAorCQkJCQkJICAgICAg
-JnJlc2V0X2J5dGVzKTsKKwkJCS8qCisJCQkgKiBPbiBmYWlsdXJlIHRoZSBydW4gY291bGQgYmUg
-cmV0cmllZCB6b25lIGJ5IHpvbmUsIHNvIHRoYXQKKwkJCSAqIGEgc2luZ2xlIHpvbmUgZmFpbGlu
-ZyB0byByZXNldCBkb2VzIG5vdCBrZWVwIHRoZSBvdGhlcgorCQkJICogem9uZXMgb2YgdGhlIHJ1
-biBmcm9tIGJlaW5nIHJlY2xhaW1lZC4gQSBmYWlsZWQgcmVzZXQgaXMKKwkJCSAqIGxpa2VseSBz
-bG93IGFscmVhZHksIHNvIGp1c3QgbG9nIGl0IGFuZCBtb3ZlIG9uLCB0aGUgcnVuCisJCQkgKiBp
-cyByZXRyaWVkIG9uIHRoZSBuZXh0IG1vdW50LgorCQkJICovCisJCQlpZiAocmV0KQorCQkJCWJ0
-cmZzX3dhcm4oZnNfaW5mbywKKwkJCQkJICAgInpvbmVkOiBmYWlsZWQgdG8gcmVzZXQgbGVha2Vk
-IHpvbmVzICV1LSV1IG9uIGRldmljZSAlcyAoZGV2aWQgJWxsdSk6ICVwZSIsCisJCQkJCSAgIGZp
-cnN0LCB6bm8gLSAxLCBidHJmc19kZXZfbmFtZShkZXZpY2UpLAorCQkJCQkgICBkZXZpY2UtPmRl
-dmlkLCBFUlJfUFRSKHJldCkpOworCQkJZWxzZQorCQkJCWJ0cmZzX2luZm8oZnNfaW5mbywKKwkJ
-CQkJICAgInpvbmVkOiByZXNldCBsZWFrZWQgem9uZXMgJXUtJXUgb24gZGV2aWNlICVzIChkZXZp
-ZCAlbGx1KSIsCisJCQkJCSAgIGZpcnN0LCB6bm8gLSAxLCBidHJmc19kZXZfbmFtZShkZXZpY2Up
-LCBkZXZpY2UtPmRldmlkKTsKKwkJfQorCX0KKwltdXRleF91bmxvY2soJmZzX2luZm8tPmNodW5r
-X211dGV4KTsKK291dDoKKwltdXRleF91bmxvY2soJmZzX2luZm8tPnJlY2xhaW1fYmdzX2xvY2sp
-OworfQorCiB2b2lkIGJ0cmZzX3Nob3dfem9uZWRfc3RhdHMoc3RydWN0IGJ0cmZzX2ZzX2luZm8g
-KmZzX2luZm8sIHN0cnVjdCBzZXFfZmlsZSAqc2VxKQogewogCXN0cnVjdCBidHJmc19ibG9ja19n
-cm91cCAqYmc7CmRpZmYgLS1naXQgYS9mcy9idHJmcy96b25lZC5oIGIvZnMvYnRyZnMvem9uZWQu
-aAppbmRleCA4ZTIxYTgzNmY4NTguLjc2YjQwZTgxY2EzMiAxMDA2NDQKLS0tIGEvZnMvYnRyZnMv
-em9uZWQuaAorKysgYi9mcy9idHJmcy96b25lZC5oCkBAIC05Nyw2ICs5Nyw3IEBAIGludCBidHJm
-c196b25lX2ZpbmlzaF9vbmVfYmcoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8pOwogaW50
-IGJ0cmZzX3pvbmVkX2FjdGl2YXRlX29uZV9iZyhzdHJ1Y3QgYnRyZnNfc3BhY2VfaW5mbyAqc3Bh
-Y2VfaW5mbywgYm9vbCBkb19maW5pc2gpOwogdm9pZCBidHJmc19jaGVja19hY3RpdmVfem9uZV9y
-ZXNlcnZhdGlvbihzdHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbyk7CiBpbnQgYnRyZnNfcmVz
-ZXRfdW51c2VkX2Jsb2NrX2dyb3VwcyhzdHJ1Y3QgYnRyZnNfc3BhY2VfaW5mbyAqc3BhY2VfaW5m
-bywgdTY0IG51bV9ieXRlcyk7Cit2b2lkIGJ0cmZzX3Jlc2V0X3VucmVmZXJlbmNlZF96b25lcyhz
-dHJ1Y3QgYnRyZnNfZnNfaW5mbyAqZnNfaW5mbyk7CiB2b2lkIGJ0cmZzX3Nob3dfem9uZWRfc3Rh
-dHMoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8sIHN0cnVjdCBzZXFfZmlsZSAqc2VxKTsK
-IAogI2lmZGVmIENPTkZJR19CVFJGU19GU19SVU5fU0FOSVRZX1RFU1RTCkBAIC0yODcsNiArMjg4
-LDggQEAgc3RhdGljIGlubGluZSBpbnQgYnRyZnNfcmVzZXRfdW51c2VkX2Jsb2NrX2dyb3Vwcyhz
-dHJ1Y3QgYnRyZnNfc3BhY2VfaW5mbyAqc3BhY2UKIAlyZXR1cm4gMDsKIH0KIAorc3RhdGljIGlu
-bGluZSB2b2lkIGJ0cmZzX3Jlc2V0X3VucmVmZXJlbmNlZF96b25lcyhzdHJ1Y3QgYnRyZnNfZnNf
-aW5mbyAqZnNfaW5mbykgeyB9CisKIHN0YXRpYyBpbmxpbmUgaW50IGJ0cmZzX3Nob3dfem9uZWRf
-c3RhdHMoc3RydWN0IGJ0cmZzX2ZzX2luZm8gKmZzX2luZm8sIHN0cnVjdCBzZXFfZmlsZSAqc2Vx
-KQogewogCXJldHVybiAwOwoKYmFzZS1jb21taXQ6IGQxMzVhYjQ1M2E3NDAwYTM0OTMwYmRkYTFl
-ZjRiZGM4YWNmYWM4MGUKLS0gCjIuNTYuMAoK
---000000000000729e65065ed38b76--
+> 4) Zones that must not be reset: zones beyond total_bytes, read-only
+>     devices, offline and read-only zones. v2 skips them.
+>
+> 5) v2 resets adjacent zones in one call and logs each reset range.
+>
+> The commit message also now says why the existing code does not help:
+> btrfs_find_allocatable_zones() skips non-empty zones, so leaked zones
+> are never reused. And the typo in your Signed-off-by is fixed.
+>
+> I used an AI assistant (Claude) for the review and for v2. v2 is build
+> tested and checkpatch clean, not runtime tested yet.
+>
+> Please check that it still covers the case you hit, and tell me if you
+> prefer to fold it into your patch or keep it as a fix on top.
+Feel free to take over the patch, I have enough patches in flight atm 
+that I need to get in, so one less on the plate is fine for me.

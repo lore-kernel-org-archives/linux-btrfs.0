@@ -1,99 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.216
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793101177;
-	b=kKiLNrsKyon5lu7BdAdON+O2NidCt5VHtxZdbtHlGVltODSDrTYlNwUhNsH0NXakcma0
-	 FTX2Su4NfYzy6BwOWHD4EDiJ7FIITsr4osSDu4/39Gdn7us3gOAqkG6cVE1eZSSGq1feQ
-	 nw0zHOaoRfE8kPqC7ovC+8gCsUQtuIfdyvr0JnOU+2SJ8oI6zh9uWJj7L9OWLPmVnhcFX
-	 Z/S0v1tAmJ3rX+9coYhLzAmH+qmOJHvOAYsNeZCI1Wy/Mufs+kQWpZNxXCyZSnFYk6lQR
-	 64Ew7d2g+UektBy1wOcsE6qD9jKO0kTmMjCrRfwIWhqtRBrCxvjJvuCVxPizq5YD0Zg==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793101177;
-	h=DMARC-Filter:dkim-signature:Received:Received:Received:From:To:CC:
-	 Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
-	 Content-Type:X-Originating-IP:X-ClientProxiedBy;
-	bh=+4h+LosMEKQAOXs4e0h/oSVn5K7clxVAvpe79xJ2Y28=;
-	b=wR/VwIdXMIHlOSNZujtMYYsMdeeM+n1W9tUxO0DZYLC2tqgWuiAmlTcdWWqX40tPT5DP
-	 tRBafxwk9wEQN5IuWMg2dhnPsaFsgHrah/ZSgT3o4eJWU9gvR2RxizYQRbv8L8G1tIX3b
-	 AchWy3kFMUmUMh9HWL8eZU1zHPCK6G6e+22snP7/uf4MJB3opY5nkN0vUoazSMp+714j0
-	 osGjfHYXNVxB8Ge4fD/v3clvWH1psAHPtOx0oiYJ5SQZzd1gn1SJixu8B85/GsglgGvRb
-	 R8f6gd3sxD2Yj6SFlyFqq5ezPb9wIhi2ZYPDqahYUMdY8wdtjzhfGDx3vgAaNSdttBA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=huawei.com;
-	spf=pass smtp.mailfrom=huawei.com;
-	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=FJiGDug6;
-	arc=none smtp.remote-ip=113.46.200.216
-Received: from canpmsgout01.his.huawei.com (canpmsgout01.his.huawei.com [113.46.200.216])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.42
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793101585;
+	b=eoox1UJz/1Mhu65Jvz9uHne7myGkkLPdzpo30O3q52tuGio91qHa740nfj2xDkHAZKTn
+	 MaV0SPAKvNKn2aR0td2RdTbSQEvpMrQ5tbXKLFTzxWA+l9lEFGeAlg0cSfmxYUn5N2Ffv
+	 bQm+91pduw7V6MokbJcqXfKBIoEmZca4RiE9jU30zTocJCjaz1WHnHZQeMZJEzyuU87Vf
+	 EY3rSS+NPAF1uH9I42QXT993fRrl7qSOuaKG23/6fnTWMW1JK7NTM9iztdZe65JCT0Qgb
+	 wlmOyRn20f8+YOGoxL5th1oXUr/Y/7/MspwfKiO3KQrHXJG7mS2y7a8B23UXMkYQPOg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793101585;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
+	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=uquc3keTWvct/whTSpSvOimDv/crOMpbNcTOz3mLlLM=;
+	b=EltcdudHoav7t/xkI1AB4kODnF+Gw55Wc9K1R7KoWc++6D04fPbv0VxAVeDVb+MWC9jK
+	 awm2ZG7whJE94Ih3nYK0oWl7Jka47XeyQDK0QjcvnKkZNLqqFPZCZs1U3vjccwancSubA
+	 tq/KTsULveB3ORHiRkHeY7wRjFbfH5PHGC6/zBjStDP5uiZewze9DPHy02BOyFEG45vaw
+	 1A34OSQAFWLmgNZalvqU5Xw/pT4e8mwNtTkZwglZJft+Ck4V0Q3YtUVlNrSlL5mqONlBc
+	 KjBdqRB0XSy33qOdaT53riC/OHFBrw6lojNO0jNZXWEU/m2KURNFcCOLNfHqNx38img==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=en+zxM5N;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.42
+Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4710606A9C6;
-	Tue, 27 Oct 2026 11:39:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C4710606A9C6
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D909E606A339
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 11:46:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D909E606A339
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=FJiGDug6
-dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
-	c=relaxed/relaxed; q=dns/txt;
-	h=From;
-	bh=+4h+LosMEKQAOXs4e0h/oSVn5K7clxVAvpe79xJ2Y28=;
-	b=FJiGDug68WjNx0xWDIzzod6vppyeMsZslGo8cml9EB76SuctefkJ1J7l0uWFKlc3YKPxW95A0
-	Bi33/6VwmJN6lAx71JiANxrC22DyaCsZCZaCobac9XLQmXSkIwoHQMC8HwTUXdA6AEouF8htbgB
-	4K7LxD9HDjrnfxGspaDKDWw=
-Received: from mail.maildlp.com (unknown [172.19.162.197])
-	by canpmsgout01.his.huawei.com (SkyGuard) with ESMTPS id 4jDT6j2ylBz1T4G1;
-	Tue, 27 Oct 2026 19:39:25 +0800 (CST)
-Received: from whupemk100010.china.huawei.com (unknown [7.152.184.41])
-	by mail.maildlp.com (Postfix) with ESMTPS id BCEA64057D;
-	Tue, 27 Oct 2026 19:39:33 +0800 (CST)
-Received: from octopus.huawei.com (10.67.174.191) by
- whupemk100010.china.huawei.com (7.152.184.41) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.45; Tue, 27 Oct 2026 19:39:28 +0800
-From: Cai Xinchen <caixinchen1@huawei.com>
-To: <mic@digikod.net>, <gnoack@google.com>, <paul@paul-moore.com>,
-	<jmorris@namei.org>, <serge@hallyn.com>, <corbet@lwn.net>,
-	<skhan@linuxfoundation.org>, <utilityemal77@gmail.com>,
-	<caixinchen1@huawei.com>
-CC: <ast@kernel.org>, <daniel@iogearbox.net>, <andrii@kernel.org>,
-	<eddyz87@gmail.com>, <memxor@gmail.com>, <martin.lau@linux.dev>,
-	<song@kernel.org>, <yonghong.song@linux.dev>, <jolsa@kernel.org>,
-	<emil@etsalapatis.com>, <ihor.solodrai@linux.dev>, <rdunlap@infradead.org>,
-	<gregkh@linuxfoundation.org>, <rafael@kernel.org>, <dakr@kernel.org>,
-	<johan@kernel.org>, <dlemoal@kernel.org>, <hch@lst.de>, <axboe@kernel.dk>,
-	<viro@zeniv.linux.org.uk>, <brauner@kernel.org>, <jack@suse.cz>,
-	<dhowells@redhat.com>, <code@tyhicks.com>, <linkinjeon@kernel.org>,
-	<sj1557.seo@samsung.com>, <yuezhang.mo@sony.com>,
-	<hirofumi@mail.parknet.co.jp>, <cel@kernel.org>, <jlayton@kernel.org>,
-	<neil@brown.name>, <okorniev@redhat.com>, <Dai.Ngo@oracle.com>,
-	<tom@talpey.com>, <hyc.lee@gmail.com>, <miklos@szeredi.hu>,
-	<amir73il@gmail.com>, <senozhatsky@chromium.org>,
-	<chenxiaosong@chenxiaosong.com>, <dsterba@suse.com>, <mason@kernel.org>,
-	<kpsingh@kernel.org>, <matt@bobrowski.net>, <rostedt@goodmis.org>,
-	<mhiramat@kernel.org>, <mathieu.desnoyers@efficios.com>,
-	<john.johansen@canonical.com>, <georgia.garcia@canonical.com>,
-	<zohar@linux.ibm.com>, <roberto.sassu@huawei.com>,
-	<dmitry.kasatkin@gmail.com>, <eric.snowberg@oracle.com>,
-	<stephen.smalley.work@gmail.com>, <omosnacek@gmail.com>,
-	<casey@schaufler-ca.com>, <takedakn@nttdata.co.jp>,
-	<penguin-kernel@I-love.SAKURA.ne.jp>, <xiujianfeng@huawei.com>,
-	<nanx95726@gmail.com>, <djwong@kernel.org>, <lujialin4@huawei.com>,
-	<bpf@vger.kernel.org>, <linux-doc@vger.kernel.org>,
-	<linux-kernel@vger.kernel.org>, <linux-security-module@vger.kernel.org>,
-	<driver-core@lists.linux.dev>, <linux-block@vger.kernel.org>,
-	<linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-	<netfs@lists.linux.dev>, <ecryptfs@vger.kernel.org>, <exfat@lists.linux.dev>,
-	<linux-nfs@vger.kernel.org>, <ntfs@lists.linux.dev>,
-	<linux-unionfs@vger.kernel.org>, <linux-cifs@vger.kernel.org>,
-	<linux-trace-kernel@vger.kernel.org>, <apparmor@lists.ubuntu.com>,
-	<linux-integrity@vger.kernel.org>, <selinux@vger.kernel.org>,
-	<linux-kselftest@vger.kernel.org>
-Subject: [PATCH v3 -next 18/18] Documentation: Update landlock doc for metadata rights
-Date: Tue, 27 Oct 2026 20:11:51 +0800
-Message-ID: <20261027121151.1887650-19-caixinchen1@huawei.com>
-X-Mailer: git-send-email 2.18.0.huawei.25
-In-Reply-To: <20261027121151.1887650-1-caixinchen1@huawei.com>
-References: <20261027121151.1887650-1-caixinchen1@huawei.com>
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=en+zxM5N
+Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-48e0d1da913so835389f8f.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 04:46:24 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793101583; cv=none;
+        d=google.com; s=arc-20260327;
+        b=WYbJuQV6ceVSwVzv1j/OKY8wUU77aZC2IsawgGNwxwDPIAlmWlVYjRpg1BcbN24tKy
+         NPpolAgVelDhLi5uNAfg4mdrNbpwfdl0GvFZ39chN+t+LmS9YdNBjJfAJ6WBs4j5aM/G
+         d13zLsYAr8wfscFnJ/2Nvm6bRAMuW5nXg7sa081d8isP5Mkc2h3nmxufPOliyjQ6JfWI
+         30sbJboKyW+irO4vL+AP6nkZNr3Z7OwaBmkdzJuARZQYC68hkcBUwyZvVUL02SJldj34
+         2r8KlugpsVkAteGSLAEcRqRgO5KEezWDuxql7OWE3YIH3q7FHDxEHUzmcbACbv2axNSi
+         2RGg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=uquc3keTWvct/whTSpSvOimDv/crOMpbNcTOz3mLlLM=;
+        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
+        b=SP5P5+cVJ5G8TzqySxvcx6iWKJmMxmnJNRQhOlPNTXdBszeByIICCCo0VNYwdTLazw
+         z/1vjo8+TGafNAhWUv6WPqDANqt9nZE4ppaXg4ZzaHiDMtLkGX7hd7z+c7qaDSOS0Hy9
+         OOpeHWCJGtg089Hs2hXA6B7whcfiOFbY7o8yWa+Z1cu9bheuES7AJsKs5XwJRAi/VmTI
+         UhEQwypP7qlkEK71x4j7/cbSvIMOWq9znPFj91E1rJR4+eZSz+vSD9vbZkyXpSs9u3P8
+         3sfj6ZFe2nYXxvq/fN6/Lfd51uwXnTSL1p98bwmqL8MBYGqvoJ7/AQzLyWneE9gojtQR
+         snfQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1793101583; x=1793706383; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=uquc3keTWvct/whTSpSvOimDv/crOMpbNcTOz3mLlLM=;
+        b=en+zxM5N0hWloXosLd8aYYS4uVHcQLP5wXHh65xkznRFyXKcpvxCmY9JXfML4z9Rks
+         SF7C60FlksLDblXZJw5xmV3gIkxfA1Au42FE+BNSfXszyM2m8c0DxF+BO4k2g3u6P5P6
+         8SQePvmUI3ahKmM4lQeP1+BYKJ5bz99u7psH6CICIivPkzOqI70PpCy4QTgAeUQSN1+j
+         C6Dvsed8VIupoZBjgUwRcZQCwk+lbNhqHPZn5D7HTcd8g0k3dX0sR6I1gcKa6cKfrxpD
+         ASLEEYVQIDXOzZpmTZglnRBT1IYW2Xaw12dLGHSN3zZR4x/WQRnPiduJp9k7HlmxfFdG
+         +ffg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793101583; x=1793706383;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=uquc3keTWvct/whTSpSvOimDv/crOMpbNcTOz3mLlLM=;
+        b=2XNqHlDsFa2vxKvdRPa18JHp4lbIEOGItiGDBvBk7Za+Dp9eQBL9J+CVI0SXv3gtRh
+         S1uyFKvXOGGmAg1WfBkmo0LZmaWz3tY/T/UuI+FnyeCppFrHJ7QUQjmEkzBFClVX02Do
+         G2+H1twh95+Wi7l1Dtq7HBpF+OqpqwoOhSuCO1RuDmr7Y6nKv5wriAl2S8MO0hRkm3Xn
+         nEn5VeKesuCryw6wMj19EfvnDiRtiPV85ig07bLPgANQhVrLxFxRqqCHv3HvJFZlyNF9
+         sM4JqaklWAtbEfs/lJqt0HCOu7FvVXv1NZJAX5zknfdiVKVjUuIGU4Wg2MVR5CW73wLd
+         0unA==
+X-Gm-Message-State: AFq9FYKWc3ULJnTb5P5ldHZXv/oh+XaGuefXr489mUNHz6xtx87eygAl
+	CY3R/Ex5dkylaPdGAmyrQDN4XCGpfiCIviGHzqTlR7NLICQYbpxGW31pp5nwk0ZZIATvtJPjpvP
+	M3fOCCdhrIMKKlesMdQXYX563uzMPqUKpkcGsvyuLYTRvrVyZ+vq52T4=
+X-Gm-Gg: AYBFou2QGj4M2GH6SRTYilrjSV0+RQ8+x01EYA+muxrCC2sXILa9+9PtHW8KKc6iTgx
+	AaGrlI3hImdfM2VpCPSJ6os7C/ToLpcuDwnhvOgIni+yGhh/QmuZaw9hkwiRpbL8dU9N46r/MWb
+	/3pAdTM2PBIwSPIbK9k41AigC5Mj/avbyehGMJdFoTd84gDk8uaoN87i/tBKL4YqzUjroyx2p4g
+	QGUytDh80BaR/oC3EnWdj0ALs+/2iGbplQMr14GwozLRUNsr9W0NfwS5h9FtJCP84b65779h5Pq
+	OPU7//fKYLS5ybBJnDIOp7CRRto4rPn3UV8gmsLDukLhgvk8RiPgIHJ6BlN/ApQHMoF3lV5wh+g
+	YnDpWI5HGjqm9FZL3bAm8TQ7H2JT4aBBe9gGRVa9Fax6OoTjYbjGhElvObtWaKdpzgmJD+JZBIv
+	rVnUTp0Xk2wA6wxIlMPXVbEPprRj3U9dv1FQ==
+X-Received: by 2002:a5d:5f44:0:b0:48e:55bd:9ce2 with SMTP id
+ ffacd0b85a97d-48e55bd9d56mr5307925f8f.20.1793101583194; Tue, 27 Oct 2026
+ 04:46:23 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,166 +103,48 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain
-X-ClientProxiedBy: kwepems500002.china.huawei.com (7.221.188.17) To
- whupemk100010.china.huawei.com (7.152.184.41)
+References: <cover.1793093611.git.wqu@suse.com>
+In-Reply-To: <cover.1793093611.git.wqu@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Tue, 27 Oct 2026 12:46:11 +0100
+X-Gm-Features: AclHuK8Y1PPMcukWcCh6wkD6u4wAVdl6MgUspOkFTyfjq5jmsZ3-ljT-LK8ziW0
+Message-ID: <CAPjX3FeK70U+co5j34oKOD2=KC62kBhOCw6OAC-qeW=kP7AD2A@mail.gmail.com>
+Subject: Re: [PATCH v2 0/2] btrfs-progs: simple cleanup related to LLVM (not LLM)
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Update the user space documentation for the new
-LANDLOCK_ACCESS_FS_READ_METADATA and
-LANDLOCK_ACCESS_FS_WRITE_METADATA access rights: add them to the
-example ruleset attributes, extend the ABI version fallback switch
-to remove them for ABI < 13, and document their semantics in a new
-"File metadata" section, including the fact that only explicit
-metadata changes requested by user space are restricted.
+On Tue, 27 Oct 2026 at 10:39, Qu Wenruo <wqu@suse.com> wrote:
+> [CHANGELOG]
+> v2:
+> - Fix the second patch
+>   Which added the GNUmakefile, not adding the file into .gitginore.
+>   Facepalm.
+>
+> When using LLVM to compile btrfs-progs, two unused global variables are exposed.
+> Fix them.
+>
+> Secondly recently I move to use `GNUmakefile` to customize the make behavior,
+> e.g. add "-j12" make flags, without modifying the existing Makefile.
+>
+> Also add GNUmakefile to gitignore.
+>
+> Qu Wenruo (2):
+>   btrfs-progs: remove set but unused variables
+>   btrfs-progs: gitignore: add GNUmakefile
+>
+>  .gitignore                      | 1 +
+>  cmds/inspect-tree-stats.c       | 3 ---
+>  cmds/rescue-fix-data-checksum.c | 2 --
+>  3 files changed, 1 insertion(+), 5 deletions(-)
 
-The new section also documents the open-time semantic of both
-rights: metadata accesses requested through an already opened file
-descriptor are granted according to the rights available at open(2)
-time, like for LANDLOCK_ACCESS_FS_TRUNCATE, whereas path-based
-accesses and O_PATH file descriptors are always checked against the
-rights of the calling thread.  The "Rights associated with
-file descriptors" section is updated accordingly.
+For the series:
 
-Finally, the new section warns that most of the time,
-LANDLOCK_ACCESS_FS_READ_METADATA should be granted together with
-LANDLOCK_ACCESS_FS_READ_FILE and LANDLOCK_ACCESS_FS_READ_DIR:
-programs commonly read metadata alongside file contents and
-directory listings (e.g. with stat(2)) and do not expect such calls
-to fail, while denying only READ_FILE or READ_DIR does not hide
-metadata.
+Reviewed-by: Daniel Vacek <neelx@suse.com>
 
-Signed-off-by: Cai Xinchen <caixinchen1@huawei.com>
----
- Documentation/userspace-api/landlock.rst | 92 ++++++++++++++++++++++--
- 1 file changed, 86 insertions(+), 6 deletions(-)
+Thanks
 
-diff --git a/Documentation/userspace-api/landlock.rst b/Documentation/userspace-api/landlock.rst
-index 3d45b956b640..489306ab0da8 100644
---- a/Documentation/userspace-api/landlock.rst
-+++ b/Documentation/userspace-api/landlock.rst
-@@ -87,7 +87,9 @@ to be explicit about the denied-by-default access rights.
-             LANDLOCK_ACCESS_FS_REFER |
-             LANDLOCK_ACCESS_FS_TRUNCATE |
-             LANDLOCK_ACCESS_FS_IOCTL_DEV |
--            LANDLOCK_ACCESS_FS_RESOLVE_UNIX,
-+            LANDLOCK_ACCESS_FS_RESOLVE_UNIX |
-+            LANDLOCK_ACCESS_FS_READ_METADATA |
-+            LANDLOCK_ACCESS_FS_WRITE_METADATA,
-         .handled_access_net =
-             LANDLOCK_ACCESS_NET_BIND_TCP |
-             LANDLOCK_ACCESS_NET_CONNECT_TCP |
-@@ -159,6 +161,12 @@ version, and only use the available subset of access rights:
-         ruleset_attr.handled_permissions &=
-             ~(LANDLOCK_PERMISSION_NAMESPACE_USE |
-               LANDLOCK_PERMISSION_CAPABILITY_USE);
-+        __attribute__((fallthrough));
-+    case 12:
-+        /* Removes metadata rights for ABI < 13 */
-+        ruleset_attr.handled_access_fs &=
-+            ~(LANDLOCK_ACCESS_FS_READ_METADATA |
-+              LANDLOCK_ACCESS_FS_WRITE_METADATA);
-     }
- 
- This enables the creation of an inclusive ruleset that will contain our rules.
-@@ -669,14 +677,73 @@ for writing, sidestepping the ``LANDLOCK_ACCESS_FS_TRUNCATE`` right.
- 
- The truncate right is associated with the opened file (see below).
- 
-+File metadata
-+-------------
-+
-+The ``LANDLOCK_ACCESS_FS_READ_METADATA`` right governs reading file and
-+directory metadata: :manpage:`stat(2)` and friends,
-+:manpage:`getxattr(2)`, :manpage:`listxattr(2)` and friends, and POSIX ACL
-+reads.
-+
-+The ``LANDLOCK_ACCESS_FS_WRITE_METADATA`` right governs explicit changes to
-+file and directory metadata: :manpage:`chmod(2)` and friends,
-+:manpage:`chown(2)` and friends, :manpage:`utimensat(2)`,
-+:manpage:`setxattr(2)`, :manpage:`removexattr(2)` and friends, and POSIX ACL
-+changes.  Both rights apply to files and directories alike.
-+
-+Implicit metadata changes performed by the kernel are not restricted by
-+``LANDLOCK_ACCESS_FS_WRITE_METADATA``: reading a file may update its access
-+time, writing a file updates its modification and change times and may change
-+the file size, and writing to or truncating a file with a set-user-ID or
-+set-group-ID bit clears these bits.  File size changes through
-+:manpage:`truncate(2)` and friends are governed by
-+``LANDLOCK_ACCESS_FS_TRUNCATE`` instead.  An explicit metadata change request
-+that changes nothing, e.g. :manpage:`chown(2)` with owner and group ``-1`` on
-+a file without a set-user-ID or set-group-ID bit, is not restricted either;
-+the same :manpage:`chown(2)` on a file carrying such a bit explicitly
-+requests clearing it, and therefore requires
-+``LANDLOCK_ACCESS_FS_WRITE_METADATA``.
-+
-+.. warning::
-+
-+   Many programs read metadata as part of reading file contents or listing
-+   directories (e.g. calling :manpage:`stat(2)` before or after
-+   :manpage:`open(2)`), and do not expect such calls to fail with
-+   ``EACCES``.  Most of the time, ``LANDLOCK_ACCESS_FS_READ_METADATA``
-+   should therefore be granted together with
-+   ``LANDLOCK_ACCESS_FS_READ_FILE`` and ``LANDLOCK_ACCESS_FS_READ_DIR``.
-+   Conversely, denying only ``LANDLOCK_ACCESS_FS_READ_FILE`` or
-+   ``LANDLOCK_ACCESS_FS_READ_DIR`` does not hide metadata: it remains
-+   readable through :manpage:`stat(2)` and friends unless
-+   ``LANDLOCK_ACCESS_FS_READ_METADATA`` is denied as well.  Tailored
-+   programs that do not read metadata at all can still deny this right to
-+   further restrict their sandbox.
-+
-+Both metadata rights are associated with opened files, like
-+``LANDLOCK_ACCESS_FS_TRUNCATE`` (see below): metadata accesses and changes
-+requested through an already opened file descriptor, e.g. with
-+:manpage:`fchmod(2)`, :manpage:`fchown(2)`, :manpage:`utimensat(2)` on an
-+empty path, :manpage:`fstat(2)`, :manpage:`fgetxattr(2)`,
-+:manpage:`fsetxattr(2)`, :manpage:`ioctl(2)` with ``FS_IOC_GETFLAGS`` or
-+``FS_IOC_SETFLAGS``, or ``file_getattr(2)`` and ``file_setattr(2)`` with
-+``AT_EMPTY_PATH``, are granted according to the rights available at
-+:manpage:`open(2)` time, not according to the rights of the calling thread.
-+Metadata accesses requested through a path (e.g. :manpage:`chmod(2)`,
-+:manpage:`stat(2)`) are always checked against the rights of the calling
-+thread.  ``O_PATH`` file descriptors are not opened through the open
-+permission checks: metadata accesses through them are checked against the
-+rights of the calling thread as well.
-+
- Rights associated with file descriptors
- ---------------------------------------
- 
--When opening a file, the availability of the ``LANDLOCK_ACCESS_FS_TRUNCATE`` and
--``LANDLOCK_ACCESS_FS_IOCTL_DEV`` rights is associated with the newly created
--file descriptor and will be used for subsequent truncation and ioctl attempts
--using :manpage:`ftruncate(2)` and :manpage:`ioctl(2)`.  The behavior is similar
--to opening a file for reading or writing, where permissions are checked during
-+When opening a file, the availability of the ``LANDLOCK_ACCESS_FS_TRUNCATE``,
-+``LANDLOCK_ACCESS_FS_IOCTL_DEV``, ``LANDLOCK_ACCESS_FS_READ_METADATA`` and
-+``LANDLOCK_ACCESS_FS_WRITE_METADATA`` rights is associated with the newly
-+created file descriptor and will be used for subsequent truncation, ioctl
-+and metadata attempts using :manpage:`ftruncate(2)`, :manpage:`ioctl(2)` and
-+the file descriptor-based metadata system calls.  The behavior is similar to
-+opening a file for reading or writing, where permissions are checked during
- :manpage:`open(2)`, but not during the subsequent :manpage:`read(2)` and
- :manpage:`write(2)` calls.
- 
-@@ -1051,6 +1118,19 @@ fd-reference acquisition (:manpage:`open_tree(2)`, :manpage:`fsmount(2)`) with
- the new ``LANDLOCK_PERMISSION_NAMESPACE_USE`` permission flag and
- ``LANDLOCK_RULE_NAMESPACE`` rule type.
- 
-+File metadata (ABI < 13)
-+------------------------
-+
-+Starting with the Landlock ABI version 13, it is possible to restrict
-+file metadata access with the new ``LANDLOCK_ACCESS_FS_READ_METADATA``
-+and ``LANDLOCK_ACCESS_FS_WRITE_METADATA`` access rights, which control
-+reading file and directory metadata (e.g. with :manpage:`stat(2)` and
-+:manpage:`getxattr(2)`) and changing it (e.g. with :manpage:`chmod(2)`
-+and :manpage:`setxattr(2)`).  As with ``LANDLOCK_ACCESS_FS_TRUNCATE``,
-+these rights are tied to opened files: metadata accesses through an
-+already opened file descriptor are granted according to the rights
-+available at :manpage:`open(2)` time.
-+
- .. _kernel_support:
- 
- Kernel support
--- 
-2.18.0.huawei.25
-
+> --
+> 2.56.0
+>
+>

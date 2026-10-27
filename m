@@ -1,88 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.219.42
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.160.169
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793135386;
-	b=SyTzptgfejIvJ9fpDUB24H4zMCIjpiAx2RddlThSxOFku/sBDKjn1Bd9BSg41tJNZfdE
-	 /pRsyftJF4eEB44K8s0I6HK4s+FNyNXI4XN+fUx7My5+gTundSPxrO+Iz3vRX7vGASm9R
-	 jKoJW+FKOhS/jeV5UMq8UfOaUwPEnrQ3ZaNPp0Igl4CcTW+Q8D5ISG5MLIFYIMS9jriHj
-	 5iWDIudVbLTGH9FBvzHOuetoolyrIgDMzHkdOkR3lvc472aDRjooXCpbgwjatq/rJJHTB
-	 nHS+aP6Yk1vR2iPmb+srw5wnsaSaR5jZN2Od2py4wK7P9PxUJL27EnEeP6qpUhKScLQ==
+	t=1793135393;
+	b=M/mOfDz/3DGNgImwHZWUyNVvZcHnXmwz/B4qYoeOxqR9VWtPAAqhuVHHfaTDsfwLFYMQ
+	 7nNHXZbcvpMbPcVStLBYu9KVMM4MQ4rqzF21QFbIs9LVGdrhMhBiUmNLDiFW5zYjxO2X7
+	 N4ojas4rxZ52KWclGgXG9tgihVcXPkoKgbiC2cds+blGmAUaMZKSvLgefYSkY7+csWFue
+	 wLniGqqbO4VZePeycrRBwMZFELFo90lOmPNTqOEJNBUvGg/uJ0VasBgjuokhxrQDJwfIn
+	 HU9ZFhxCDKK3ie9A5nBMadEmMQtdO2eWfW07NmQ/e+D5+e5dswWIQOnaYb5zzD4iV3g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793135386;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793135393;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:Subject:Date:Message-Id:MIME-Version:Content-Type:
-	 Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
+	 From:Date:Subject:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key;
-	bh=5yaV0MrGZjfbjClKYo8Ny4CNWoT1WKIK7K51uc+1CPs=;
-	b=f6LOaNrb67lHJV4pm7ZlcjKipI/PmrvdcJpkeAOh64lX7pjcXCudMaWAC9yn4EMePM69
-	 PJC+TY0fEO2s/RZlwE4f7w2kRFH9TZSm7eatQZJohGI6Fg7+YbHbkdRiYn/v7ej6z0xHr
-	 kqgH2rueQ7Shb7xXpIKAJPKgLye+kanx0WSU8HbqN72xP790nDKgz1wLf00fc2lCuKi7W
-	 4S3fxrMwO+8sirwCIO8wQ+GgC6D1tCfgshWz4YbDGQ92UMytYxqvLwGgsLN4hUHv9ml1r
-	 e5bULE8v0jgFSDRF06Hm0kiThK2uOSRol17UnzuylxGQli8UBVnkLLupe+xZlWQkyIA==
+	bh=HAhPDfSNI1m9jMsgOVCEGKYJnC7ZRumB7Co5M2j8QiA=;
+	b=q5PCXgzmvSKi75eesfh+D/tXhndr50mW9rqQhfZK28O7z/KbJ7O1SmU092DyFiggg2Qg
+	 SoZjBsiLf1SxiOPj7I/OqdH85I9F/FUlc80I7TMsHthmzZ/+WRXiu8LeZfXpKb6qIgL3J
+	 zKY8CP83ImaQFQ7A2tgUHdn7KWyVDe++Pi1DKDKJU6iZ1e9bWd9RJaQXbBtvjhEnkmDxZ
+	 7DHqn0hPCZ/N6kp8RFWlPFwyNJWGQMFRv5vK48IIqOhMgObVHgTCoiJyUfTxpVrdNU3RA
+	 B8AWV8fTF5b3A0vQ75iByZvkbZfLbCs98P9WmUqeirsR1Ii3qjUKes4UUbtYj+mEwfg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=toxicpanda.com;
 	spf=pass smtp.mailfrom=toxicpanda.com;
-	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=RBotA6AM;
-	arc=none smtp.remote-ip=209.85.219.42
-Received: from mail-qv1-f42.google.com (mail-qv1-f42.google.com [209.85.219.42])
+	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=hOU79HFU;
+	arc=none smtp.remote-ip=209.85.160.169
+Received: from mail-qt1-f169.google.com (mail-qt1-f169.google.com [209.85.160.169])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 90056606A329
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 21:09:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 90056606A329
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B82F860A262D
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 21:09:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B82F860A262D
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=RBotA6AM
-Received: by mail-qv1-f42.google.com with SMTP id 6a1803df08f44-91c751d2769so3693886d6.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 14:09:45 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=hOU79HFU
+Received: by mail-qt1-f169.google.com with SMTP id d75a77b69052e-53bb57f1310so4194081cf.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 14:09:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda.com; s=google; t=1793135384; x=1793740184; darn=vger.kernel.org;
-        h=cc:to:content-transfer-encoding:content-type:mime-version
-         :message-id:date:subject:from:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=5yaV0MrGZjfbjClKYo8Ny4CNWoT1WKIK7K51uc+1CPs=;
-        b=RBotA6AMrY5SW4z7ZoMZxTZ13mjyqmrSaedFef1gawwn5x+0q28a7dBuM6gBzJinqI
-         VtLhc/f5y72w/EoeH/t/yCTbASy+Pl5iW+eh6Ixb60pzGz0s79DL9lIXwngqLwWC9h8W
-         3CSn1qyAWgAh44IIK5+iQ1ziFdFlGPyFGqMzTbZgTHFtx6CyHxc+qeVe0oL1l+aIbiDk
-         IMyzp+XV+9v8LlusQ2paqxdSmed7+3YiZ+Lttgqf+KJ57+C3cFhMqQCDF4zAu2p2AXbc
-         jl14UoPymgVRUJr/Ly1hSIhTbXf7QaVAmmpk2yr5v4BmJFT1CzQnzIfCsuwafT3PTxbl
-         ASJg==
+        d=toxicpanda.com; s=google; t=1793135392; x=1793740192; darn=vger.kernel.org;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=HAhPDfSNI1m9jMsgOVCEGKYJnC7ZRumB7Co5M2j8QiA=;
+        b=hOU79HFUF5XVQIP1i0LutIU/umJRpfeIAGlIU85PQ+VvN8AhJ2xV/+Ckj7hUn0FiXT
+         Vo7Bqt5A2O7gVi2FXZ7LR1GJBkC3682be/KrfbJUx3Oze79iZ02cF+nWdL8HAMH+TkA/
+         RqJRdc529Hs/8A6MizbL1tlCPDHiaNo4rAfVeS4PCd+pYvNB8GiE3hhXUKHhQVK+xtN8
+         JXcziCJ3xyZB8L1d8uSyg8o8tM/93MhtFnhO+nATDdlG/gpAAJwbl8XdWTjLI3geZAFt
+         Fqe9NEA86+d0c+71frtm+HrDiotx5CzEsaAF6tQp+yTnBApEwLxl6fqpDPD3/OU7RekT
+         j33Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793135384; x=1793740184;
-        h=cc:to:content-transfer-encoding:content-type:mime-version
-         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=5yaV0MrGZjfbjClKYo8Ny4CNWoT1WKIK7K51uc+1CPs=;
-        b=RbzGnAIXs199zvbtANjdplZ54AeAgxXIsmTJfAgJAnI+pVqELh0tc0wWRPztg2MCMC
-         RgnE94Hdq9h6Y1+dC7rxx081CxJin34TtuawBha9n+eA40NNoogfqavolR82y+hRgXWW
-         o9fbMWoEa8kwo/ZEW/LMSOEnc6AKN2tZZRq6z7DKiRWZkH773cEu3CnYtqklliXynsbm
-         S7GRY3t4BcUFs3/x+LHwB+GL0wc3yxLUM6VdUhsS+7uDHzh/rLw6JMAw1u2GeXJvKXiA
-         Y4FtnSex0cRBzy6/y9HtPlQpWRqdur9EXaNTdo4X4pivywTYPfwqT6hGLqNGyoOQcc+v
-         bnPA==
-X-Forwarded-Encrypted: i=1; AKwUvBx1MHl0AI3S2QVjo3yagelGuRHtryMChBLKQKX0pNYjib1Ab9dLyuw9UjMdDr883Vl9mEszHdf+8lNP7w==@vger.kernel.org
-X-Gm-Message-State: AFq9FYJrUqDNIPG/pfHhjR5L7Ai3s6xwRz+DyTah+7oiLFkSP6zdaSZz
-	8lmR8f6uki1AySHKQu7h0gmUsjBRJ8heqZdXuSsj8nyq97hZfbMiQ6VwzpRlS9AjDdEbF285Ol6
-	Pd/QK
-X-Gm-Gg: AYBFou3wz3UClaIiF249uGwabqO/dNHbmQtACmIkYuUn5dgo9pWCuyqs9bAI+s4E+WM
-	q1tHHghgw2W5KHlj0UvRSfrb6rr3WEX/tsSLlD1LhnWVMYtGXPxCovhsDxoUrjca863ChL5Flii
-	yFlq9ZCGxN3TigbO5zVwvauSka+wpU75sbYpNvjGfIGZ5pLttwBkhfvO3k2Jfgw2716wH4hbJXe
-	uO5M4uLn/eWEPlfLW0LFm8lhjZoJ0F8cPZKoCz8IBgrnhEewErxbegnwMh++yYVZjrRYbI8D3Ph
-	NybUGRoPTMZIVaiUpxSPdfYJpguEA9Zai4WMWQ++K7v2rhY0OEueyjjBfMIAiPmNVySDnuvsAIp
-	h37q4I7tAyjXrymofUFp23Jel2Uu+iUNLKuMYRV9hOJH4/aZ8Hz1f74OCZ44eZncBZuDXQZUN54
-	uiTvqkRuSUno6EPmHnSN+/hFOxlMoZM3MhMSiS+YBiGMygfGVmyC035SFqnQadoRAAbvSycHoJF
-	EcQRZa11v7b0W0KJdyIbA9uO8LWTCXHfy3yr9IyVM+dUufPLCZG6ny+zemCK+tQVbGJScPH
-X-Received: by 2002:a05:6214:27cb:b0:91c:75ef:5532 with SMTP id 6a1803df08f44-91c7d1d3ademr5763756d6.39.1793135384460;
-        Tue, 27 Oct 2026 14:09:44 -0700 (PDT)
-Received: from toxicpanda.com ([153.61.196.248])
-        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91c47c6f3bcsm115390716d6.29.2026.10.27.14.09.43
+        d=1e100.net; s=20260707; t=1793135392; x=1793740192;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=HAhPDfSNI1m9jMsgOVCEGKYJnC7ZRumB7Co5M2j8QiA=;
+        b=Oed4OtVzk+pN1EWJYv5ZQOQA+DoHKqB4VXu8+NKSHdHL8qhGycnqu5GhWCFZVx7ev0
+         BRDgBbnHb1LMUyW2QlGrcA27Nvt06sAuYbSKMj22VcDyqv8AS/UGeOeHduqowTPzI1tp
+         A09OrFy7pdmwfz4HwgHSdB6FFLXNVC34KhYKQhrG2SZRiOzeRkJo44eIYUl7yFultt3+
+         zqDs9YXzr+Fjm+1n8YAxjEpXYKrfqlD2Q2Oim7DohJBik2PQgCax+nZEVNXMTepsaNUu
+         bR8ouVdOSVBleq+6FRqumSrcMfMRJMW3iCdDO6+iffzyEQodEiMBneu9VRgRdF3JFgan
+         9xLA==
+X-Forwarded-Encrypted: i=1; AKwUvBwMWdqXLC5Sj+mTk3903AkF2llug3PY3VD8maQnxQsIbZiVBLgFoTHo/lh2n/pTVG2hLB+V7a2C6dO3+Q==@vger.kernel.org
+X-Gm-Message-State: AFq9FYKmvaeL8UIhrjAYcuQ38s7or+l5d4jHND7ZHCYl5/KTuCRbcgWx
+	fGmm2fQmNIVphqbbJtSYwjawiYpvudCD8kl93+6ikj8OTOScI94m7baQ9IUM2hkwufY=
+X-Gm-Gg: AYBFou1Ls6MgUgqLCvrmDHzP1UfYJu7r/uRnVgJr7JNTjGf1h706CioiXZrUPgFH9T4
+	rAHL6JpiZbKDRgOZOIKgWI2ifPYBHb/PmnHOb+U8EJPsbGvzpVJJW1eWCN64O0aFBx6dGzPtoqz
+	PoRR75QznptTblAcCDXOHS6PuyTujUGKygs5ASfeKfQbIKZ6P6Gn/xcn3FLEr1Ikakx7IRMtyl+
+	90VQR49f8nIP11CUyc0wFfcHAmoDss38ScefNonHnUw4/m9ehJOblvF5qNqeUxZ/ver+gpPfz24
+	827phjEOVdmm7dIfdWXHyf4cmhq2yLhRpAjmsmhReFo01M+Ly/LxFXq+rPHqTvYjej7EbAyIXcs
+	F560x2/PPm6ym0lsEh1Rd6PMgl60NXuwA6StC1dAEVK1i7a69EgA/njeHn9qXEalk92FpFB2EhP
+	goGk89SSERp9Zc3gbBAmLefhgkQFDbR1WmeW5BecVjFb5Lfo19B4OItqnUeRB0DMiVWDmCYzJvN
+	MhGi0+02oZow0wF6DOGNFsAtoXddYRUvSOaFhwH6F15QcLDGG4m1lPOSxDjzp8j7Nr5mSz+hmUi
+	LtTtUGUaJGREqm4X/A==
+X-Received: by 2002:a05:622a:8887:b0:535:92a6:22f2 with SMTP id d75a77b69052e-53fcb20dfd5mr9618051cf.15.1793135391683;
+        Tue, 27 Oct 2026 14:09:51 -0700 (PDT)
+Received: from toxicpanda.com ([153.61.196.253])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-538394c565esm88811961cf.6.2026.10.27.14.09.51
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 Oct 2026 14:09:43 -0700 (PDT)
+        Tue, 27 Oct 2026 14:09:51 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH 00/10] ovl: only sync what was written through the overlay
-Date: Tue, 27 Oct 2026 21:09:26 +0000
-Message-Id: <20261027-b4-ovl-containerized-sync-v1-0-802e512379a6@toxicpanda.com>
+Date: Tue, 27 Oct 2026 21:09:30 +0000
+Subject: [PATCH 04/10] btrfs: set SB_I_OVL_USE_SYNC_FS
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -94,10 +94,9 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAAgT4WoC/22MwQrCMBBEf6Xs2UVTilB/RTxskq1dkY1k26KW/
- ruJXj3M4Q0zbwXjLGxwalbIvIhJ0gJu10AYSa+MEgtDe2iPrgR9h2m5Y0g6kWg5vzmivTSg63r
- P0dHAPUH5PzIP8vy6z5cf2+xvHKYqrAtPxugzaRhrVXH/Xw7b9gEmEA4UqwAAAA==
-X-Change-ID: 20261026-b4-ovl-containerized-sync-149bed1afe9a
+Message-Id: <20261027-b4-ovl-containerized-sync-v1-4-802e512379a6@toxicpanda.com>
+References: <20261027-b4-ovl-containerized-sync-v1-0-802e512379a6@toxicpanda.com>
+In-Reply-To: <20261027-b4-ovl-containerized-sync-v1-0-802e512379a6@toxicpanda.com>
 To: Miklos Szeredi <miklos@szeredi.hu>, Amir Goldstein <amir73il@gmail.com>, 
  Christian Brauner <brauner@kernel.org>
 Cc: Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>, 
@@ -106,139 +105,40 @@ Cc: Alexander Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.cz>,
  Chengguang Xu <cgxu519@mykernel.net>, linux-unionfs@vger.kernel.org, 
  linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, 
  linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org, 
- linux-kernel@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>, 
- Chengguang Xu <charliecgxu@tencent.com>
+ linux-kernel@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
 X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=openssh-sha256; t=1793135381; l=5905;
+X-Developer-Signature: v=1; a=openssh-sha256; t=1793135381; l=741;
  i=josef@toxicpanda.com; h=from:subject:message-id;
- bh=+crzd0tBMr/UBfX6IWY1ogoL1S7H36SezVAnEBaM4h4=;
+ bh=KS+Jdp4IcUSZ6tCav8kl7acTQpMUNvtXOKDv7b4wQHs=;
  b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
  JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
- QLNA+g18G2UYQwcLgDAIZjnxe1y3YDkj2blf+cEZ1mNJj1wlMBGOCr6nzxrJ4/i8scm2uN0rurD
- a7WYNNeMrSgo=
+ QJlIHMWE4mD9Fg4D+/nCw/fqbncWcTX25kEPMy8XebnWW9mJFVsO6uNMHNrIavR2Gh6YLS/9QxQ
+ cP8BX8zQgBQ0=
 X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
  fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
 
-Hello,
+Metadata is changed in a transaction, and btrfs_sync_fs() waits for the
+ordered extents and commits it.  There is no ->write_inode().
 
-This picks up Chengguang Xu's "implement containerized syncfs for
-overlayfs", last posted as RFC V6 in November 2021 [1].
-
-syncfs() on an overlay and unmounting one call sync_filesystem() on the
-upper file system, so they write every dirty inode on it no matter who
-dirtied it. We run a lot of containers on one upper file system, and
-stopping one of them writes out the dirty data of all the others. That
-can take a very long time, and s_umount of the upper file system is held
-the whole time, so anything that wants it exclusively queues up and then
-everybody else queues up behind that.
-
-With this an overlay only writes the upper inodes that were changed
-through it, and then has the upper file system commit its metadata.
-
-The V6 discussion ended with a direction but no V7, so that's what I
-tried to follow:
-
- - V6 kept every overlay inode with an upper inode dirty for good. Jan
-   and Amir didn't like the cost of walking them. Now an overlay inode
-   is marked dirty when the upper inode is changed, mostly from
-   ovl_copyattr() as Amir and Miklos suggested.
- - It never looks at the dirty flags of the upper inode, Miklos pointed
-   out that they're cleared when writeback starts.
- - ->write_inode() goes through write_inode_now() on the upper inode,
-   and keeps the overlay inode dirty while the upper inode is open for
-   writing, which covers shared mappings.
- - V6 marked the inodes DONTCACHE, which Jan was worried about. This
-   goes back to the v5 patch that keeps dirty overlay inodes cached.
-
-One thing is new. V6 called wait_sb_inodes() on the upper file system to
-catch writeback that was started but not finished, which waits for
-everybody's writeback. Instead ->write_inode() keeps the overlay inode
-dirty while the upper inode has pages tagged dirty or under writeback.
-The tags don't have the problem the inode flags have, the writeback tag
-is set before the dirty tag is cleared. So a clean overlay inode means
-its data is on disk, and syncfs() only waits for its own inodes.
-
-That takes care of the data. Metadata is harder, a lot of what is
-changed on the upper file system has no overlay inode that could be on
-the dirty list: the root of the overlay isn't hashed, and whiteouts,
-index entries, the work directories and their parent have none. File
-systems that log their metadata don't care, ->sync_fs() commits it. ext2
-does, there a whiteout was gone after a crash. I first had overlayfs
-write all of those itself and kept finding more of them, the last one
-was the link count of the shared whiteout when a whiteout is removed.
-
-So patch 1 adds a superblock flag, SB_I_OVL_USE_SYNC_FS, by which a file
-system says that ->sync_fs() commits all of its metadata, and patches 2
-to 4 set it for ext4 with a journal, xfs and btrfs. Without the flag on
-the upper file system nothing changes, no inode is marked dirty and
-syncfs() and unmount call sync_filesystem() like they always did.
-
-Patches 5, 7, 8 and 10 are Chengguang's with changes noted in them,
-patches 6 and 9 are new. I dropped Jan's Reviewed-by tags from V6 since
-the patches changed.
-
-lazytime on the upper file system needs its own handling. The flusher
-leaves the timestamps in memory for up to 12 hours, so the overlay inode
-can't be clean, but it can't stay dirty and pinned for that long either.
-Patch 9 gives it I_DIRTY_TIME like the upper inode has, and forwards
-->sync_lazytime() to the upper inode.
-
-Things I know about:
-
- - An overlay inode that loses its last reference while it is dirty is
-   kept until it has been written and then sits on the LRU, like with
-   any other file system. Clean and unlinked ones are still freed right
-   away.
- - Every overlay on such an upper file system gets a bdi.
- - I haven't measured syncfs() with a very large number of dirty inodes.
-
-For testing I put several overlays on one upper file system and dirty
-192M next to the overlay under test, through another overlay and
-directly. Then syncfs() or unmount the one overlay, copy the block
-device as it is at that moment, mount the copy, and check that
-everything that was changed through the overlay is in it and that the
-192M aren't. That passes with ext4, xfs and btrfs as the upper file
-system. With KASAN and lockdep on, syncfs() goes from 239-284ms to
-45-48ms and unmount from 126-234ms to 39-44ms. With ext2 and ext4
-without a journal the 192M are written as before.
-
-fstests with -overlay, the auto groups of generic and overlay, gives the
-same results with and without the series on ext4 and on xfs.
-
-[1] https://lore.kernel.org/r/20211122030038.1938875-1-cgxu519@mykernel.net
-
-Thanks,
-
-Josef
-
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
-Chengguang Xu (4):
-      ovl: setup overlayfs' private bdi
-      ovl: implement overlayfs' own ->write_inode operation
-      ovl: cache dirty overlayfs' inode
-      ovl: implement containerized syncfs for overlayfs
+ fs/btrfs/super.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Josef Bacik (6):
-      fs: add SB_I_OVL_USE_SYNC_FS
-      ext4: set SB_I_OVL_USE_SYNC_FS if there is a journal
-      xfs: set SB_I_OVL_USE_SYNC_FS
-      btrfs: set SB_I_OVL_USE_SYNC_FS
-      ovl: mark the overlay inode dirty on modification
-      ovl: handle lazytime on the upper filesystem
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 7fabb775d4e3..cdecf90bdae0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -981,7 +981,7 @@ static int btrfs_fill_super(struct super_block *sb,
+ #endif
+ 	sb->s_xattr = btrfs_xattr_handlers;
+ 	sb->s_time_gran = 1;
+-	sb->s_iflags |= SB_I_CGROUPWB | SB_I_ALLOW_HSM;
++	sb->s_iflags |= SB_I_CGROUPWB | SB_I_ALLOW_HSM | SB_I_OVL_USE_SYNC_FS;
+ 
+ 	ret = super_setup_bdi(sb);
+ 	if (ret) {
 
- fs/btrfs/super.c               |   2 +-
- fs/ext4/super.c                |   1 +
- fs/overlayfs/copy_up.c         |   2 +
- fs/overlayfs/dir.c             |   1 +
- fs/overlayfs/file.c            |   8 ++-
- fs/overlayfs/inode.c           |  21 +++++-
- fs/overlayfs/overlayfs.h       |  28 ++++++++
- fs/overlayfs/super.c           | 145 ++++++++++++++++++++++++++++++++++++++---
- fs/overlayfs/util.c            |  14 +++-
- fs/xfs/xfs_super.c             |   2 +-
- include/linux/fs/super_types.h |   1 +
- 11 files changed, 211 insertions(+), 14 deletions(-)
----
-base-commit: 2c8a968b488c134d05ccefff890270ac8ab899a8
-change-id: 20261026-b4-ovl-containerized-sync-149bed1afe9a
+-- 
+2.55.0
 

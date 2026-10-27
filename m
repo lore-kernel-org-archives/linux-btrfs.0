@@ -1,55 +1,55 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.224
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.226
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793101111;
-	b=yiR5S0Ty+RB4mOU7SBjt8ayoqX1iiNR+ZLkvbvjz7heLYpq6YSvqd4A/hpH0g84smKXI
-	 tngItu1rdTJt285hSeWqniABNKKZNMkeGatZ3AZfeJSAjpS5ULf//z2qwg4xRKCdC2wGh
-	 5p971gO2/aDZqTJc/hyetGjhW0QWd0qKyRTYq/VSQRoXinN8k8TaNOLQMTz0URCpW5Ewj
-	 mUlleK2LEpDcnFrY0LON7u3EvKzLCbDiEZmZAlEHWZVyL302pa1n4OOANwWxBg53D9CJd
-	 oJxLaWl9NkBO3KXIhxn0NKRH6wKsdf4AsFYESLmyq597VhwNxH5KbYHNqVjQfcx0qgA==
+	t=1793101124;
+	b=gIKkj9lVEn+CcXoqQTPnRgaM6HnK4YG/vmdgF5hrreN0LmOnzCowXaTxt+N/ocpLc7sa
+	 GOQS+kSrd4C5wyT7xOevJYghG8q/j9qvW5i1axdZcKYtWGHova/pelcUYGDT1olT71vkg
+	 /FKGytRPGolMJGTllhWZGlxz54qi9NJZ4P1vPf0U58pxulIhiOdwmWDBhjWDas98uwfyw
+	 oTwHfVJsSFkC5YLmKUal2y9fNtb6JquUrmbISOOrWrmXXZQPqu0dicsz6h9dfvFqt43GR
+	 hduvlOV6szaqceFevVgKygEMTZF3Tl+Ea5I3i73GkUjR9W3QwQHR+umWapRbrXVsyPg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793101111;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793101124;
 	h=DMARC-Filter:dkim-signature:Received:Received:Received:From:To:CC:
 	 Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
 	 Content-Type:X-Originating-IP:X-ClientProxiedBy;
-	bh=/NtnJSOdjz1gLfDSreIhGeIs1D5UxVR0DX+9y7QpD3Q=;
-	b=LnmMH1FtxCnVHQDaZYEFoqlQim1lqeI6d9AYb4brwG3NExb/kfqPbIXGmSh+Xsw5HpT1
-	 Exc9PBowX71ZuTQRTjda4L/tW3WTv0E/pPAf00//d1LHvVYnlW1EqQ8TAaiSAcuYj71Ps
-	 +LqayEF+mfLBIjuGt8FFPpfARqprcE3n05C3NBAFN7VAqv8f3+/TstzFq36oRU3SS55nI
-	 SaQyMZ6B+xF+VVHLOo2561BgCfHqYcpMVR2h/FEb86Lu5VAm7GYp28GN+2zWFUY8xkafy
-	 XUa/l0NI0PL69Sc/PM9zeY7PATaCB6WQwciDrmCrI+5bvG08y1M/vC+l0gj4jelQLxg==
+	bh=YerwU0p4pLOK/cBPNcD1AFaNeHGn8Zf78P255+AuK3E=;
+	b=CGcS2fREFD/CBe3sgdCfaQZuJkcx9lwzCwK9MGMQ8ZqAMmY2nMCqoQFyK2CGo+x2i8eE
+	 CHKrxW7+6swbLPbQagq7Bk2hAojNplII6ckupUOhm6JvxLsf7Ce476BttiMYrqCJ83NRu
+	 eiMpBD/vehrjmpd9z1513Bdq5qH+71Ax5mIBw9rNepVQQx6M00pD44xBHXw6lO4u4dsmp
+	 04JdvrHGBMRCs2C0SElBtlSkPQEbzV9NUPknOkW2OQaZCGfY3PjblRGXFOwfHPQfnLbKC
+	 frJUIndNXTtw3MiKTorO7nGn57r0+LJsX7rodC6r66HGz0yoqcge0zdkKEf4K3KM4rg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=huawei.com;
 	spf=pass smtp.mailfrom=huawei.com;
-	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=6V+SBwMG;
-	arc=none smtp.remote-ip=113.46.200.224
-Received: from canpmsgout09.his.huawei.com (canpmsgout09.his.huawei.com [113.46.200.224])
+	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=Sc49se6G;
+	arc=none smtp.remote-ip=113.46.200.226
+Received: from canpmsgout11.his.huawei.com (canpmsgout11.his.huawei.com [113.46.200.226])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EFA70606A323;
-	Tue, 27 Oct 2026 11:38:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EFA70606A323
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A1527606B5E9;
+	Tue, 27 Oct 2026 11:38:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A1527606B5E9
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=6V+SBwMG
+	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=Sc49se6G
 dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
 	c=relaxed/relaxed; q=dns/txt;
 	h=From;
-	bh=/NtnJSOdjz1gLfDSreIhGeIs1D5UxVR0DX+9y7QpD3Q=;
-	b=6V+SBwMGHZH//Ti8XuWJqNrnIBCQdrBl0dszw8l7fUqEEG7UgoTam+Z7dgwvtruDeak5X+5ZR
-	n+yoYht/WNBG6FdgIvlP58zRD6jip6+cNlx0mr7wgdwXAwHmGEbrH/aCXfrd/hw8HqAfoJgl5Up
-	uL6fS6oTJ4bStAbFUvAIbIc=
-Received: from mail.maildlp.com (unknown [172.19.163.15])
-	by canpmsgout09.his.huawei.com (SkyGuard) with ESMTPS id 4jDT5S4T9Dz1cyQt;
-	Tue, 27 Oct 2026 19:38:20 +0800 (CST)
+	bh=YerwU0p4pLOK/cBPNcD1AFaNeHGn8Zf78P255+AuK3E=;
+	b=Sc49se6GnGiyAQW0UVSrsHVT+t0gg1WPL4K9LboVhpwggyH8GAy69PWgXZ7Rts/sJTbitGBvl
+	QvSkctwhPHbLNyHrj+QsMA4VEz+Rxx+QxV3JLrSEOaf/I0kBObFqlIegY13IIeIycrJFaXPGUPM
+	NTOgu3pHdUd97zc2Cu/+hqw=
+Received: from mail.maildlp.com (unknown [172.19.163.200])
+	by canpmsgout11.his.huawei.com (SkyGuard) with ESMTPS id 4jDT5W3wpTzKmZJ;
+	Tue, 27 Oct 2026 19:38:23 +0800 (CST)
 Received: from whupemk100010.china.huawei.com (unknown [7.152.184.41])
-	by mail.maildlp.com (Postfix) with ESMTPS id B15C840578;
-	Tue, 27 Oct 2026 19:38:26 +0800 (CST)
+	by mail.maildlp.com (Postfix) with ESMTPS id E2D464055B;
+	Tue, 27 Oct 2026 19:38:31 +0800 (CST)
 Received: from octopus.huawei.com (10.67.174.191) by
  whupemk100010.china.huawei.com (7.152.184.41) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.45; Tue, 27 Oct 2026 19:38:21 +0800
+ 15.2.2562.45; Tue, 27 Oct 2026 19:38:26 +0800
 From: Cai Xinchen <caixinchen1@huawei.com>
 To: <mic@digikod.net>, <gnoack@google.com>, <paul@paul-moore.com>,
 	<jmorris@namei.org>, <serge@hallyn.com>, <corbet@lwn.net>,
@@ -88,9 +88,9 @@ CC: <ast@kernel.org>, <daniel@iogearbox.net>, <andrii@kernel.org>,
 	<linux-trace-kernel@vger.kernel.org>, <apparmor@lists.ubuntu.com>,
 	<linux-integrity@vger.kernel.org>, <selinux@vger.kernel.org>,
 	<linux-kselftest@vger.kernel.org>
-Subject: [PATCH v3 -next 05/18] LSM: pass struct path and struct file to the inode_setattr hook
-Date: Tue, 27 Oct 2026 20:11:38 +0800
-Message-ID: <20261027121151.1887650-6-caixinchen1@huawei.com>
+Subject: [PATCH v3 -next 06/18] LSM: pass struct path and struct file to the inode xattr hooks
+Date: Tue, 27 Oct 2026 20:11:39 +0800
+Message-ID: <20261027121151.1887650-7-caixinchen1@huawei.com>
 X-Mailer: git-send-email 2.18.0.huawei.25
 In-Reply-To: <20261027121151.1887650-1-caixinchen1@huawei.com>
 References: <20261027121151.1887650-1-caixinchen1@huawei.com>
@@ -107,727 +107,1418 @@ Content-Type: text/plain
 X-ClientProxiedBy: kwepems500002.china.huawei.com (7.221.188.17) To
  whupemk100010.china.huawei.com (7.152.184.41)
 
-The inode_setattr hook is called from notify_change(), which now
-holds a struct path and a struct file, together with the idmap that
-was taken from the mount when the path was checked.  The other
-in-kernel caller, the fat and exfat attribute ioctls, already holds
-a struct file and can pass its f_path and its file_mnt_idmap()
-directly.
+The inode_setxattr, inode_getxattr, inode_listxattr and
+inode_removexattr hooks are called from fs/xattr.c, whose helpers
+now hold a struct path together with the idmap that was taken from
+the mount when the path was checked, and derive the dentry from
+the path just for the hook calls.
 
-Convert the hook and its SELinux, Smack and EVM implementations to
-take the struct path and the struct file, next to the idmap: the
-dentry is taken from the path, while the idmap remains a separate
-argument, as it must be passed down unchanged so that the VFS and
-the LSM are guaranteed to see the same idmap; ecryptfs, for example,
-applies attribute changes to a lower path with &nop_mnt_idmap,
-which deriving the idmap from that path would not reproduce.
-
-Also pass the struct file through which an attribute change is
-requested, when there is one, so that LSMs can later authorize
-file descriptor-based operations (fchmod(2), fchown(2),
-fchmodat2(2), fchownat(2) and utimensat(2) with AT_EMPTY_PATH, and
-the fat/exfat attribute ioctls) with the rights available at
-open(2) time.  To that end, do_fchmodat(), do_fchownat() and
-do_utimes_path() now follow the vfs_fstatat() pattern and dispatch
-an empty path with AT_EMPTY_PATH to the file descriptor-based
-vfs_fchmod(), vfs_fchown() and vfs_utimes() callers.  The file is
-threaded through notify_change(), chmod_common(), chown_common()
-and vfs_utimes(), and set to NULL for path-based operations, for
-server-side callers that only hold a path, and for internal kernel
-changes: the implicit setuid clearing through __remove_privs(), the
-size changes in do_truncate(), which are governed by the truncate
-hooks, and the nfsd delegation cmtime updates.  No implementation
-uses the file yet, so this is a purely mechanical change with no
+Convert the hooks and their commoncap, SELinux, Smack, EVM and IMA
+implementations to take a const struct path.  The implementations
+take the dentry they still need from the path, while the idmap
+remains a separate argument for the inode_setxattr and
+inode_removexattr hooks, which already take one, as it must be
+passed down unchanged so that the VFS and the LSM are guaranteed
+to see the same idmap; the inode_getxattr and inode_listxattr
+hooks take no idmap.  This is a purely mechanical change with no
 behavior change.
+
+Also pass the struct file through which an xattr operation is
+requested, when there is one, so that LSMs can later authorize
+file descriptor-based operations (fsetxattr(2), fgetxattr(2),
+flistxattr(2), fremovexattr(2), the *xattrat(2) syscalls with
+AT_EMPTY_PATH, and io_uring's IORING_OP_FSETXATTR and
+IORING_OP_FGETXATTR) with the rights available at open(2) time.
+The file is threaded through __vfs_setxattr_locked(),
+vfs_setxattr(), vfs_getxattr(), vfs_listxattr(),
+__vfs_removexattr_locked() and vfs_removexattr(), and set to NULL
+for path-based operations and for in-kernel users: overlayfs,
+ecryptfs, nfsd, the SMB server, cachefiles, zloop, and the SELinux
+and Smack setsecctx implementations.  io_uring and the f*xattr(2)
+family get the file for free through file_setxattr(),
+file_getxattr() and the other file-based helpers.  No
+implementation uses the file yet, so this part is a purely
+mechanical change with no behavior change either.
+
+Also update the BPF selftest programs that attach to the changed
+hooks (test_get_xattr.c, test_set_remove_xattr.c and
+verifier_lsm_init_xattr.c) to the new signatures, passing
+path->dentry to the dentry xattr kfuncs.  The bpf_lsm_* attach
+stubs themselves are generated from lsm_hook_defs.h and need no
+changes.
 
 Signed-off-by: Cai Xinchen <caixinchen1@huawei.com>
 ---
- drivers/base/devtmpfs.c           |  4 +--
- fs/attr.c                         | 14 +++++----
- fs/btrfs/volumes.c                |  2 +-
- fs/ecryptfs/inode.c               |  4 +--
- fs/exfat/file.c                   |  2 +-
- fs/fat/file.c                     |  2 +-
- fs/init.c                         |  6 ++--
- fs/inode.c                        |  2 +-
- fs/internal.h                     |  6 ++--
- fs/nfsd/nfs4state.c               |  4 +--
- fs/nfsd/vfs.c                     |  4 +--
- fs/open.c                         | 50 +++++++++++++++++++++++--------
- fs/overlayfs/overlayfs.h          |  2 +-
- fs/smb/server/smb2pdu.c           |  2 +-
- fs/smb/server/smbacl.c            |  2 +-
- fs/utimes.c                       | 21 +++++++++----
- include/linux/fs.h                |  6 ++--
- include/linux/lsm_hook_defs.h     | 12 ++++++--
- include/linux/security.h          |  8 +++--
- init/initramfs.c                  |  2 +-
- security/integrity/evm/evm_main.c |  9 ++++--
- security/security.c               | 10 ++++---
- security/selinux/hooks.c          |  6 ++--
- security/smack/smack_lsm.c        |  9 ++++--
- 24 files changed, 127 insertions(+), 62 deletions(-)
+ drivers/block/zloop.c                         |  5 +-
+ fs/cachefiles/xattr.c                         | 14 ++--
+ fs/ecryptfs/inode.c                           |  2 +-
+ fs/nfsd/vfs.c                                 | 15 ++--
+ fs/overlayfs/copy_up.c                        |  4 +-
+ fs/overlayfs/overlayfs.h                      |  8 ++-
+ fs/overlayfs/xattrs.c                         |  6 +-
+ fs/smb/server/vfs.c                           | 12 ++--
+ fs/xattr.c                                    | 70 +++++++++++--------
+ include/linux/lsm_hook_defs.h                 | 12 ++--
+ include/linux/security.h                      | 43 +++++++-----
+ include/linux/xattr.h                         | 18 +++--
+ security/commoncap.c                          | 24 +++----
+ security/integrity/evm/evm_main.c             | 20 ++++--
+ security/integrity/ima/ima_appraise.c         | 16 +++--
+ security/security.c                           | 55 ++++++++-------
+ security/selinux/hooks.c                      | 23 +++---
+ security/smack/smack_lsm.c                    | 25 ++++---
+ .../selftests/bpf/progs/test_get_xattr.c      |  5 +-
+ .../bpf/progs/test_set_remove_xattr.c         | 30 ++++----
+ .../bpf/progs/verifier_lsm_init_xattr.c       |  6 +-
+ 21 files changed, 243 insertions(+), 170 deletions(-)
 
-diff --git a/drivers/base/devtmpfs.c b/drivers/base/devtmpfs.c
-index 410906a66ee9..00f2e3e7e27e 100644
---- a/drivers/base/devtmpfs.c
-+++ b/drivers/base/devtmpfs.c
-@@ -291,7 +291,7 @@ static int handle_create(const char *nodename, umode_t mode, kuid_t uid,
- 		newattrs.ia_gid = gid;
- 		newattrs.ia_valid = ATTR_MODE|ATTR_UID|ATTR_GID;
- 		inode_lock(d_inode(dentry));
--		notify_change(&nop_mnt_idmap, &attr_path, &newattrs, NULL);
-+		notify_change(&nop_mnt_idmap, &attr_path, &newattrs, NULL, NULL);
- 		inode_unlock(d_inode(dentry));
+diff --git a/drivers/block/zloop.c b/drivers/block/zloop.c
+index 4cf502454100..107457fed18e 100644
+--- a/drivers/block/zloop.c
++++ b/drivers/block/zloop.c
+@@ -719,7 +719,8 @@ static int zloop_record_safe_wps(struct zloop_device *zlo)
+ 		if (!zloop_zone_is_active(zone))
+ 			continue;
+ 		ret = vfs_setxattr(file_mnt_idmap(file), &file->f_path,
+-				"user.zloop.wp", &zone->wp, sizeof(zone->wp), 0);
++				"user.zloop.wp", &zone->wp, sizeof(zone->wp),
++				0, NULL);
+ 		if (ret) {
+ 			pr_err("%pg: failed to record write pointer (%d)\n",
+ 				zlo->disk->part0, ret);
+@@ -1423,7 +1424,7 @@ static void zloop_forget_cache(struct zloop_device *zlo)
+ 			continue;
  
- 		/* mark as kernel-created inode */
-@@ -392,7 +392,7 @@ static int handle_remove(const char *nodename, struct device *dev)
- 		newattrs.ia_valid =
- 			ATTR_UID|ATTR_GID|ATTR_MODE;
- 		inode_lock(d_inode(dentry));
--		notify_change(&nop_mnt_idmap, &attr_path, &newattrs, NULL);
-+		notify_change(&nop_mnt_idmap, &attr_path, &newattrs, NULL, NULL);
- 		inode_unlock(d_inode(dentry));
- 		err = vfs_unlink(&nop_mnt_idmap, d_inode(parent.dentry),
- 				 dentry, NULL);
-diff --git a/fs/attr.c b/fs/attr.c
-index cc06fd676e6b..67fa5ee6b30e 100644
---- a/fs/attr.c
-+++ b/fs/attr.c
-@@ -400,7 +400,8 @@ EXPORT_SYMBOL(may_setattr);
- static int do_notify_change(const struct path *const path,
- 			    const struct mnt_idmap *const idmap,
- 			    struct dentry *const dentry, struct iattr *attr,
--			    struct delegated_inode *delegated_inode)
-+			    struct delegated_inode *delegated_inode,
-+			    struct file *const file)
- {
- 	struct inode *inode = dentry->d_inode;
- 	umode_t mode = inode->i_mode;
-@@ -518,7 +519,7 @@ static int do_notify_change(const struct path *const path,
- 	 * filesystem, were already checked on the user-facing path.
- 	 */
- 	if (path) {
--		error = security_inode_setattr(idmap, dentry, attr);
-+		error = security_inode_setattr(idmap, path, attr, file);
- 		if (error)
- 			return error;
+ 		ret = vfs_getxattr(file_mnt_idmap(file), &file->f_path,
+-				"user.zloop.wp", &old_wp, sizeof(old_wp));
++				"user.zloop.wp", &old_wp, sizeof(old_wp), NULL);
+ 		if (ret == -ENODATA) {
+ 			old_wp = 0;
+ 		} else if (ret != sizeof(old_wp)) {
+diff --git a/fs/cachefiles/xattr.c b/fs/cachefiles/xattr.c
+index afdce5ce3b73..1e814183ade4 100644
+--- a/fs/cachefiles/xattr.c
++++ b/fs/cachefiles/xattr.c
+@@ -56,7 +56,8 @@ int cachefiles_preset_object_xattr(struct cachefiles_object *object, struct file
+ 		if (ret == 0) {
+ 			ret = vfs_setxattr(&nop_mnt_idmap, &file->f_path,
+ 					   cachefiles_xattr_cache, buf,
+-					   sizeof(struct cachefiles_xattr) + len, 0);
++					   sizeof(struct cachefiles_xattr) + len,
++					   0, NULL);
+ 			mnt_drop_write_file(file);
+ 		}
  	}
-@@ -570,7 +571,8 @@ static int do_notify_change(const struct path *const path,
- int __notify_change(const struct mnt_idmap *idmap, struct dentry *dentry,
- 		    struct iattr *attr, struct delegated_inode *delegated_inode)
- {
--	return do_notify_change(NULL, idmap, dentry, attr, delegated_inode);
-+	return do_notify_change(NULL, idmap, dentry, attr, delegated_inode,
-+				NULL);
- }
- EXPORT_SYMBOL(__notify_change);
- 
-@@ -580,6 +582,7 @@ EXPORT_SYMBOL(__notify_change);
-  * @path:	object affected
-  * @attr:	new attributes
-  * @delegated_inode: returns inode, if the inode is delegated
-+ * @file:	file through which the attribute change is requested, if any
-  *
-  * The caller must hold the i_rwsem exclusively on the affected object.
-  *
-@@ -604,9 +607,10 @@ EXPORT_SYMBOL(__notify_change);
-  * Return: 0 on success, or a negative error on failure.
-  */
- int notify_change(const struct mnt_idmap *idmap, const struct path *path,
--		  struct iattr *attr, struct delegated_inode *delegated_inode)
-+		  struct iattr *attr, struct delegated_inode *delegated_inode,
-+		  struct file *file)
- {
- 	return do_notify_change(path, idmap, path->dentry, attr,
--				delegated_inode);
-+				delegated_inode, file);
- }
- EXPORT_SYMBOL(notify_change);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f1305f68b1f8..2f91b81bbd30 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2152,7 +2152,7 @@ static void update_dev_time(const char *device_path)
+@@ -120,7 +121,8 @@ int cachefiles_set_object_xattr(struct cachefiles_object *object)
+ 		if (ret == 0) {
+ 			ret = vfs_setxattr(&nop_mnt_idmap, &file->f_path,
+ 					   cachefiles_xattr_cache, buf,
+-					   sizeof(struct cachefiles_xattr) + len, 0);
++					   sizeof(struct cachefiles_xattr) + len,
++					   0, NULL);
+ 			mnt_drop_write_file(file);
+ 		}
  	}
- 
- 	if (!err) {
--		vfs_utimes(&path, NULL);
-+		vfs_utimes(&path, NULL, NULL);
- 		path_put(&path);
+@@ -174,7 +176,7 @@ int cachefiles_check_auxdata(struct cachefiles_object *object, struct file *file
+ 	xlen = cachefiles_inject_read_error();
+ 	if (xlen == 0)
+ 		xlen = vfs_getxattr(&nop_mnt_idmap, &file->f_path,
+-				    cachefiles_xattr_cache, buf, tlen);
++				    cachefiles_xattr_cache, buf, tlen, NULL);
+ 	if (xlen != tlen) {
+ 		if (xlen < 0) {
+ 			ret = xlen;
+@@ -234,7 +236,7 @@ int cachefiles_remove_object_xattr(struct cachefiles_cache *cache,
+ 		ret = mnt_want_write(cache->mnt);
+ 		if (ret == 0) {
+ 			ret = vfs_removexattr(&nop_mnt_idmap, &path,
+-					      cachefiles_xattr_cache);
++					      cachefiles_xattr_cache, NULL);
+ 			mnt_drop_write(cache->mnt);
+ 		}
  	}
- }
+@@ -299,7 +301,7 @@ bool cachefiles_set_volume_xattr(struct cachefiles_volume *volume)
+ 		if (ret == 0) {
+ 			ret = vfs_setxattr(&nop_mnt_idmap, &path,
+ 					   cachefiles_xattr_cache,
+-					   buf, len, 0);
++					   buf, len, 0, NULL);
+ 			mnt_drop_write(volume->cache->mnt);
+ 		}
+ 	}
+@@ -345,7 +347,7 @@ int cachefiles_check_volume_xattr(struct cachefiles_volume *volume)
+ 	xlen = cachefiles_inject_read_error();
+ 	if (xlen == 0)
+ 		xlen = vfs_getxattr(&nop_mnt_idmap, &path,
+-				    cachefiles_xattr_cache, buf, len);
++				    cachefiles_xattr_cache, buf, len, NULL);
+ 	if (xlen != len) {
+ 		if (xlen < 0) {
+ 			ret = xlen;
 diff --git a/fs/ecryptfs/inode.c b/fs/ecryptfs/inode.c
-index 7db6fa6e5274..a6de40fcce4c 100644
+index a6de40fcce4c..782bcca83874 100644
 --- a/fs/ecryptfs/inode.c
 +++ b/fs/ecryptfs/inode.c
-@@ -822,7 +822,7 @@ static int __ecryptfs_truncate(struct dentry *dentry, const struct iattr *ia)
- set_size:
- 	lower_ia.ia_valid |= ATTR_SIZE;
- 	inode_lock(d_inode(lower_dentry));
--	rc = notify_change(&nop_mnt_idmap, &lower_path, &lower_ia, NULL);
-+	rc = notify_change(&nop_mnt_idmap, &lower_path, &lower_ia, NULL, NULL);
- 	inode_unlock(d_inode(lower_dentry));
- out:
- 	ecryptfs_put_lower_file(inode);
-@@ -932,7 +932,7 @@ static int ecryptfs_setattr(const struct mnt_idmap *idmap,
- 
- 		inode_lock(d_inode(lower_path.dentry));
- 		rc = notify_change(&nop_mnt_idmap, &lower_path, &lower_ia,
--				   NULL);
-+				   NULL, NULL);
- 		inode_unlock(d_inode(lower_path.dentry));
+@@ -1003,7 +1003,7 @@ ecryptfs_setxattr(struct dentry *dentry, struct inode *inode,
  	}
- out:
-diff --git a/fs/exfat/file.c b/fs/exfat/file.c
-index 1386149916bb..27b4917e02cb 100644
---- a/fs/exfat/file.c
-+++ b/fs/exfat/file.c
-@@ -552,7 +552,7 @@ static int exfat_ioctl_set_attributes(struct file *file, u32 __user *user_attr)
- 	 * module, just because it maps to a file mode.
- 	 */
- 	err = security_inode_setattr(file_mnt_idmap(file),
--				     file->f_path.dentry, &ia);
-+			     &file->f_path, &ia, file);
- 	if (err)
- 		goto out_unlock_inode;
+ 	inode_lock(lower_inode);
+ 	rc = __vfs_setxattr_locked(&nop_mnt_idmap, &lower_path, name, value,
+-				   size, flags, NULL);
++				   size, flags, NULL, NULL);
+ 	inode_unlock(lower_inode);
+ 	if (!rc && inode)
+ 		fsstack_copy_attr_all(inode, lower_inode);
+diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
+index 2ab92a0e3b6b..7050ec0992a1 100644
+--- a/fs/nfsd/vfs.c
++++ b/fs/nfsd/vfs.c
+@@ -703,7 +703,7 @@ int nfsd4_is_junction(const struct path *path)
+ 	if (!(inode->i_mode & S_ISVTX))
+ 		return 0;
+ 	if (vfs_getxattr(&nop_mnt_idmap, path, NFSD_JUNCTION_XATTR_NAME,
+-			 NULL, 0) <= 0)
++			 NULL, 0, NULL) <= 0)
+ 		return 0;
+ 	return 1;
+ }
+@@ -2668,7 +2668,7 @@ nfsd_getxattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char *name,
  
-diff --git a/fs/fat/file.c b/fs/fat/file.c
-index 70583e791bdc..a044270379e4 100644
---- a/fs/fat/file.c
-+++ b/fs/fat/file.c
-@@ -93,7 +93,7 @@ static int fat_ioctl_set_attributes(struct file *file, u32 __user *user_attr)
- 	 * module, just because it maps to a file mode.
- 	 */
- 	err = security_inode_setattr(file_mnt_idmap(file),
--				     file->f_path.dentry, &ia);
-+			     &file->f_path, &ia, file);
- 	if (err)
- 		goto out_unlock_inode;
+ 	inode_lock_shared(inode);
  
-diff --git a/fs/init.c b/fs/init.c
-index 33e312d74f58..b65e47e59ee0 100644
---- a/fs/init.c
-+++ b/fs/init.c
-@@ -107,7 +107,7 @@ int __init init_chown(const char *filename, uid_t user, gid_t group, int flags)
+-	len = vfs_getxattr(&nop_mnt_idmap, &path, name, NULL, 0);
++	len = vfs_getxattr(&nop_mnt_idmap, &path, name, NULL, 0, NULL);
+ 
+ 	/*
+ 	 * Zero-length attribute, just return.
+@@ -2695,7 +2695,7 @@ nfsd_getxattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char *name,
+ 		goto out;
+ 	}
+ 
+-	len = vfs_getxattr(&nop_mnt_idmap, &path, name, buf, len);
++	len = vfs_getxattr(&nop_mnt_idmap, &path, name, buf, len, NULL);
+ 	if (len <= 0) {
+ 		kvfree(buf);
+ 		buf = NULL;
+@@ -2742,7 +2742,7 @@ nfsd_listxattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char **bufp,
+ 
+ 	inode_lock_shared(inode);
+ 
+-	len = vfs_listxattr(&path, NULL, 0);
++	len = vfs_listxattr(&path, NULL, 0, NULL);
+ 	if (len <= 0) {
+ 		err = nfsd_xattr_errno(len);
+ 		goto out;
+@@ -2759,7 +2759,7 @@ nfsd_listxattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char **bufp,
+ 		goto out;
+ 	}
+ 
+-	len = vfs_listxattr(&path, buf, len);
++	len = vfs_listxattr(&path, buf, len, NULL);
+ 	if (len <= 0) {
+ 		kvfree(buf);
+ 		err = nfsd_xattr_errno(len);
+@@ -2808,7 +2808,8 @@ nfsd_removexattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char *name)
+ 	err = fh_fill_pre_attrs(fhp);
+ 	if (err != nfs_ok)
+ 		goto out_unlock;
+-	ret = __vfs_removexattr_locked(&nop_mnt_idmap, &path, name, NULL);
++	ret = __vfs_removexattr_locked(&nop_mnt_idmap, &path, name,
++				       NULL, NULL);
+ 	err = nfsd_xattr_errno(ret);
+ 	fh_fill_post_attrs(fhp);
+ out_unlock:
+@@ -2840,7 +2841,7 @@ nfsd_setxattr(struct svc_rqst *rqstp, struct svc_fh *fhp, char *name,
+ 	if (err != nfs_ok)
+ 		goto out_unlock;
+ 	ret = __vfs_setxattr_locked(&nop_mnt_idmap, &path, name, buf, len,
+-				    flags, NULL);
++				    flags, NULL, NULL);
+ 	fh_fill_post_attrs(fhp);
+ 	err = nfsd_xattr_errno(ret);
+ out_unlock:
+diff --git a/fs/overlayfs/copy_up.c b/fs/overlayfs/copy_up.c
+index 6dc241f195a6..94ca09fc1c5f 100644
+--- a/fs/overlayfs/copy_up.c
++++ b/fs/overlayfs/copy_up.c
+@@ -83,7 +83,7 @@ int ovl_copy_xattr(struct super_block *sb, const struct path *oldpath, struct de
+ 	if (!old->d_inode->i_op->listxattr || !new->d_inode->i_op->listxattr)
+ 		return 0;
+ 
+-	list_size = vfs_listxattr(oldpath, NULL, 0);
++	list_size = vfs_listxattr(oldpath, NULL, 0, NULL);
+ 	if (list_size <= 0) {
+ 		if (list_size == -EOPNOTSUPP)
+ 			return 0;
+@@ -94,7 +94,7 @@ int ovl_copy_xattr(struct super_block *sb, const struct path *oldpath, struct de
+ 	if (!buf)
+ 		return -ENOMEM;
+ 
+-	list_size = vfs_listxattr(oldpath, buf, list_size);
++	list_size = vfs_listxattr(oldpath, buf, list_size, NULL);
+ 	if (list_size <= 0) {
+ 		error = list_size;
+ 		goto out;
+diff --git a/fs/overlayfs/overlayfs.h b/fs/overlayfs/overlayfs.h
+index a169f27258a0..9ffa985fe8f2 100644
+--- a/fs/overlayfs/overlayfs.h
++++ b/fs/overlayfs/overlayfs.h
+@@ -295,7 +295,8 @@ static inline ssize_t ovl_do_getxattr(const struct path *path, const char *name,
+ 
+ 	WARN_ON(path->dentry->d_sb != path->mnt->mnt_sb);
+ 
+-	err = vfs_getxattr(mnt_idmap(path->mnt), path, name, value, size);
++	err = vfs_getxattr(mnt_idmap(path->mnt), path, name, value, size,
++			   NULL);
+ 	len = (value && err > 0) ? err : 0;
+ 
+ 	pr_debug("getxattr(%pd2, \"%s\", \"%*pE\", %zu, 0) = %i\n",
+@@ -335,7 +336,7 @@ static inline int ovl_do_setxattr(struct ovl_fs *ofs, struct dentry *dentry,
+ 
+ 	/* Use vfs_setxattr(), not __vfs_setxattr(): it idmaps the security.capability rootid. */
+ 	int err = vfs_setxattr(ovl_upper_mnt_idmap(ofs), &path, name,
+-			       value, size, flags);
++			       value, size, flags, NULL);
+ 
+ 	pr_debug("setxattr(%pd2, \"%s\", \"%*pE\", %zu, %d) = %i\n",
+ 		 dentry, name, min((int)size, 48), value, size, flags, err);
+@@ -357,7 +358,8 @@ static inline int ovl_do_removexattr(struct ovl_fs *ofs, struct dentry *dentry,
+ 		.dentry = dentry,
+ 	};
+ 
+-	int err = vfs_removexattr(ovl_upper_mnt_idmap(ofs), &path, name);
++	int err = vfs_removexattr(ovl_upper_mnt_idmap(ofs), &path, name,
++			  NULL);
+ 	pr_debug("removexattr(%pd2, \"%s\") = %i\n", dentry, name, err);
+ 	return err;
+ }
+diff --git a/fs/overlayfs/xattrs.c b/fs/overlayfs/xattrs.c
+index 2a97a9ec642a..7bd12daba28a 100644
+--- a/fs/overlayfs/xattrs.c
++++ b/fs/overlayfs/xattrs.c
+@@ -46,7 +46,7 @@ static int ovl_xattr_set(struct dentry *dentry, struct inode *inode, const char
+ 		ovl_path_lower(dentry, &realpath);
+ 		with_ovl_creds(dentry->d_sb)
+ 			err = vfs_getxattr(mnt_idmap(realpath.mnt), &realpath,
+-					   name, NULL, 0);
++					   name, NULL, 0, NULL);
+ 		if (err < 0)
+ 			goto out;
+ 	}
+@@ -88,7 +88,7 @@ static int ovl_xattr_get(struct dentry *dentry, struct inode *inode, const char
+ 	/* Use vfs_getxattr(), not __vfs_getxattr(): it idmaps the security.capability rootid. */
+ 	with_ovl_creds(dentry->d_sb)
+ 		return vfs_getxattr(mnt_idmap(realpath.mnt), &realpath,
+-				    name, value, size);
++				    name, value, size, NULL);
+ }
+ 
+ static bool ovl_can_list(struct super_block *sb, const char *s)
+@@ -117,7 +117,7 @@ ssize_t ovl_listxattr(struct dentry *dentry, char *list, size_t size)
+ 	ovl_path_real(dentry, &realpath);
+ 
+ 	with_ovl_creds(dentry->d_sb)
+-		res = vfs_listxattr(&realpath, list, size);
++		res = vfs_listxattr(&realpath, list, size, NULL);
+ 	if (res <= 0 || size == 0)
+ 		return res;
+ 
+diff --git a/fs/smb/server/vfs.c b/fs/smb/server/vfs.c
+index 63af977d8767..cfb9a811363e 100644
+--- a/fs/smb/server/vfs.c
++++ b/fs/smb/server/vfs.c
+@@ -880,7 +880,7 @@ ssize_t ksmbd_vfs_listxattr(const struct path *path, char **list)
+ 	ssize_t size;
+ 	char *vlist = NULL;
+ 
+-	size = vfs_listxattr(path, NULL, 0);
++	size = vfs_listxattr(path, NULL, 0, NULL);
+ 	if (size <= 0)
+ 		return size;
+ 
+@@ -889,7 +889,7 @@ ssize_t ksmbd_vfs_listxattr(const struct path *path, char **list)
+ 		return -ENOMEM;
+ 
+ 	*list = vlist;
+-	size = vfs_listxattr(path, vlist, size);
++	size = vfs_listxattr(path, vlist, size, NULL);
+ 	if (size < 0) {
+ 		ksmbd_debug(VFS, "listxattr failed\n");
+ 		kvfree(vlist);
+@@ -902,7 +902,7 @@ ssize_t ksmbd_vfs_listxattr(const struct path *path, char **list)
+ ssize_t ksmbd_vfs_xattr_len(const struct mnt_idmap *idmap,
+ 			    const struct path *path, char *xattr_name)
+ {
+-	return vfs_getxattr(idmap, path, xattr_name, NULL, 0);
++	return vfs_getxattr(idmap, path, xattr_name, NULL, 0, NULL);
+ }
+ 
+ /**
+@@ -931,7 +931,7 @@ ssize_t ksmbd_vfs_getxattr(const struct mnt_idmap *idmap,
+ 		return -ENOMEM;
+ 
+ 	xattr_len = vfs_getxattr(idmap, path, xattr_name,
+-				 (void *)buf, xattr_len);
++				 (void *)buf, xattr_len, NULL);
+ 	if (xattr_len > 0)
+ 		*xattr_buf = buf;
+ 	else
+@@ -968,7 +968,7 @@ int ksmbd_vfs_setxattr(const struct mnt_idmap *idmap,
+ 			   attr_name,
+ 			   attr_value,
+ 			   attr_size,
+-			   flags);
++			   flags, NULL);
+ 	if (err)
+ 		ksmbd_debug(VFS, "setxattr failed, err %d\n", err);
+ 	if (get_write == true)
+@@ -1255,7 +1255,7 @@ int ksmbd_vfs_remove_xattr(const struct mnt_idmap *idmap,
+ 			return err;
+ 	}
+ 
+-	err = vfs_removexattr(idmap, path, attr_name);
++	err = vfs_removexattr(idmap, path, attr_name, NULL);
+ 
+ 	if (get_write == true)
+ 		mnt_drop_write(path->mnt);
+diff --git a/fs/xattr.c b/fs/xattr.c
+index ad0d0cc1cca8..747c041e66fa 100644
+--- a/fs/xattr.c
++++ b/fs/xattr.c
+@@ -293,11 +293,13 @@ int __vfs_setxattr_noperm(const struct mnt_idmap *idmap,
+  *  @flags: flags to pass into filesystem operations
+  *  @delegated_inode: on return, will contain an inode pointer that
+  *  a delegation was broken on, NULL if none.
++ *  @file: file to perform setxattr on, or NULL
+  */
+ int
+ __vfs_setxattr_locked(const struct mnt_idmap *idmap, const struct path *path,
+ 		      const char *name, const void *value, size_t size,
+-		      int flags, struct delegated_inode *delegated_inode)
++		      int flags, struct delegated_inode *delegated_inode,
++		      struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+@@ -307,8 +309,8 @@ __vfs_setxattr_locked(const struct mnt_idmap *idmap, const struct path *path,
+ 	if (error)
+ 		return error;
+ 
+-	error = security_inode_setxattr(idmap, dentry, name, value, size,
+-					flags);
++	error = security_inode_setxattr(idmap, path, name, value, size,
++					flags, file);
+ 	if (error)
+ 		goto out;
+ 
+@@ -326,7 +328,8 @@ EXPORT_SYMBOL_GPL(__vfs_setxattr_locked);
+ 
+ int
+ vfs_setxattr(const struct mnt_idmap *idmap, const struct path *path,
+-	     const char *name, const void *value, size_t size, int flags)
++	     const char *name, const void *value, size_t size, int flags,
++	     struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+@@ -344,7 +347,7 @@ vfs_setxattr(const struct mnt_idmap *idmap, const struct path *path,
+ retry_deleg:
+ 	inode_lock(inode);
+ 	error = __vfs_setxattr_locked(idmap, path, name, value, size,
+-				      flags, &delegated_inode);
++				      flags, &delegated_inode, file);
+ 	inode_unlock(inode);
+ 
+ 	if (is_delegated(&delegated_inode)) {
+@@ -451,7 +454,7 @@ EXPORT_SYMBOL(__vfs_getxattr);
+ 
+ ssize_t
+ vfs_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+-	     const char *name, void *value, size_t size)
++	     const char *name, void *value, size_t size, struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+@@ -461,7 +464,7 @@ vfs_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+ 	if (error)
+ 		return error;
+ 
+-	error = security_inode_getxattr(dentry, name);
++	error = security_inode_getxattr(path, name, file);
+ 	if (error)
+ 		return error;
+ 
+@@ -488,6 +491,7 @@ EXPORT_SYMBOL_GPL(vfs_getxattr);
+  * @path: the path from whose inode the xattr names are retrieved
+  * @list: buffer to store xattr names into
+  * @size: size of the buffer
++ * @file: file through which the xattr names are retrieved, if any
+  *
+  * This function returns the names of all xattrs associated with the
+  * inode of @path->dentry.
+@@ -506,13 +510,14 @@ EXPORT_SYMBOL_GPL(vfs_getxattr);
+  *         negative error code.
+  */
+ ssize_t
+-vfs_listxattr(const struct path *path, char *list, size_t size)
++vfs_listxattr(const struct path *path, char *list, size_t size,
++	      struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = d_inode(dentry);
+ 	ssize_t error;
+ 
+-	error = security_inode_listxattr(dentry);
++	error = security_inode_listxattr(path, file);
+ 	if (error)
+ 		return error;
+ 
+@@ -559,11 +564,13 @@ EXPORT_SYMBOL(__vfs_removexattr);
+  *  @name: name of xattr to remove
+  *  @delegated_inode: on return, will contain an inode pointer that
+  *  a delegation was broken on, NULL if none.
++ *  @file: file to perform removexattr on, or NULL
+  */
+ int
+ __vfs_removexattr_locked(const struct mnt_idmap *idmap,
+ 			 const struct path *path, const char *name,
+-			 struct delegated_inode *delegated_inode)
++			 struct delegated_inode *delegated_inode,
++			 struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+@@ -573,7 +580,7 @@ __vfs_removexattr_locked(const struct mnt_idmap *idmap,
+ 	if (error)
+ 		return error;
+ 
+-	error = security_inode_removexattr(idmap, dentry, name);
++	error = security_inode_removexattr(idmap, path, name, file);
+ 	if (error)
+ 		goto out;
+ 
+@@ -595,7 +602,7 @@ EXPORT_SYMBOL_GPL(__vfs_removexattr_locked);
+ 
+ int
+ vfs_removexattr(const struct mnt_idmap *idmap, const struct path *path,
+-		const char *name)
++		const char *name, struct file *file)
+ {
+ 	struct dentry *dentry = path->dentry;
+ 	struct inode *inode = dentry->d_inode;
+@@ -604,7 +611,8 @@ vfs_removexattr(const struct mnt_idmap *idmap, const struct path *path,
+ 
+ retry_deleg:
+ 	inode_lock(inode);
+-	error = __vfs_removexattr_locked(idmap, path, name, &delegated_inode);
++	error = __vfs_removexattr_locked(idmap, path, name, &delegated_inode,
++					  file);
+ 	inode_unlock(inode);
+ 
+ 	if (is_delegated(&delegated_inode)) {
+@@ -658,14 +666,14 @@ int setxattr_copy(const char __user *name, struct kernel_xattr_ctx *ctx)
+ }
+ 
+ static int do_setxattr(const struct mnt_idmap *idmap, const struct path *path,
+-		       struct kernel_xattr_ctx *ctx)
++		       struct kernel_xattr_ctx *ctx, struct file *file)
+ {
+ 	if (is_posix_acl_xattr(ctx->kname->name))
+ 		return do_set_acl(idmap, path, ctx->kname->name,
+ 				  ctx->kvalue, ctx->size);
+ 
+ 	return vfs_setxattr(idmap, path, ctx->kname->name,
+-			ctx->kvalue, ctx->size, ctx->flags);
++			ctx->kvalue, ctx->size, ctx->flags, file);
+ }
+ 
+ int file_setxattr(struct file *f, struct kernel_xattr_ctx *ctx)
+@@ -674,7 +682,7 @@ int file_setxattr(struct file *f, struct kernel_xattr_ctx *ctx)
+ 
+ 	if (!error) {
+ 		audit_file(f);
+-		error = do_setxattr(file_mnt_idmap(f), &f->f_path, ctx);
++		error = do_setxattr(file_mnt_idmap(f), &f->f_path, ctx, f);
+ 		mnt_drop_write_file(f);
+ 	}
+ 	return error;
+@@ -692,7 +700,7 @@ int filename_setxattr(int dfd, struct filename *filename,
  		return error;
  	error = mnt_want_write(path.mnt);
  	if (!error) {
--		error = chown_common(&path, user, group);
-+		error = chown_common(&path, user, group, NULL);
+-		error = do_setxattr(mnt_idmap(path.mnt), &path, ctx);
++		error = do_setxattr(mnt_idmap(path.mnt), &path, ctx, NULL);
  		mnt_drop_write(path.mnt);
  	}
  	path_put(&path);
-@@ -122,7 +122,7 @@ int __init init_chmod(const char *filename, umode_t mode)
- 	error = kern_path(filename, LOOKUP_FOLLOW, &path);
+@@ -793,7 +801,7 @@ SYSCALL_DEFINE5(fsetxattr, int, fd, const char __user *, name,
+  */
+ static ssize_t
+ do_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+-	    struct kernel_xattr_ctx *ctx)
++	    struct kernel_xattr_ctx *ctx, struct file *file)
+ {
+ 	ssize_t error;
+ 	char *kname = ctx->kname->name;
+@@ -810,7 +818,8 @@ do_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+ 	if (is_posix_acl_xattr(kname))
+ 		error = do_get_acl(idmap, path, kname, kvalue, ctx->size);
+ 	else
+-		error = vfs_getxattr(idmap, path, kname, kvalue, ctx->size);
++		error = vfs_getxattr(idmap, path, kname, kvalue,
++				     ctx->size, file);
+ 	if (error > 0) {
+ 		if (ctx->size && copy_to_user(ctx->value, kvalue, error))
+ 			error = -EFAULT;
+@@ -827,7 +836,7 @@ do_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+ ssize_t file_getxattr(struct file *f, struct kernel_xattr_ctx *ctx)
+ {
+ 	audit_file(f);
+-	return do_getxattr(file_mnt_idmap(f), &f->f_path, ctx);
++	return do_getxattr(file_mnt_idmap(f), &f->f_path, ctx, f);
+ }
+ 
+ ssize_t filename_getxattr(int dfd, struct filename *filename,
+@@ -839,7 +848,7 @@ ssize_t filename_getxattr(int dfd, struct filename *filename,
+ 	error = filename_lookup(dfd, filename, lookup_flags, &path, NULL);
  	if (error)
  		return error;
--	error = chmod_common(&path, mode);
-+	error = chmod_common(&path, mode, NULL);
- 	path_put(&path);
- 	return error;
- }
-@@ -201,7 +201,7 @@ int __init init_utimes(char *filename, struct timespec64 *ts)
- 	error = kern_path(filename, 0, &path);
- 	if (error)
- 		return error;
--	error = vfs_utimes(&path, ts);
-+	error = vfs_utimes(&path, ts, NULL);
- 	path_put(&path);
- 	return error;
- }
-diff --git a/fs/inode.c b/fs/inode.c
-index fe176293fd36..d69973fabd52 100644
---- a/fs/inode.c
-+++ b/fs/inode.c
-@@ -2366,7 +2366,7 @@ static int __remove_privs(const struct mnt_idmap *idmap,
- 	 * Note we call this on write, so notify_change will not
- 	 * encounter any conflicting delegations:
- 	 */
--	return notify_change(idmap, path, &newattrs, NULL);
-+	return notify_change(idmap, path, &newattrs, NULL, NULL);
- }
- 
- static int file_remove_privs_flags(struct file *file, unsigned int flags)
-diff --git a/fs/internal.h b/fs/internal.h
-index dcbc54f9803c..e90de99de5ea 100644
---- a/fs/internal.h
-+++ b/fs/internal.h
-@@ -201,10 +201,12 @@ struct file *file_close_fd_locked(struct files_struct *files, unsigned fd);
- int filp_close_sync(struct file *filp, fl_owner_t id);
- 
- int do_ftruncate(struct file *file, loff_t length, unsigned int flags);
--int chmod_common(const struct path *path, umode_t mode);
-+int chmod_common(const struct path *path, umode_t mode,
-+		  struct file *file);
- int do_fchownat(int dfd, const char __user *filename, uid_t user, gid_t group,
- 		int flag);
--int chown_common(const struct path *path, uid_t user, gid_t group);
-+int chown_common(const struct path *path, uid_t user, gid_t group,
-+		  struct file *file);
- extern int vfs_open(const struct path *, struct file *);
- int vfs_open_consume(struct path *, struct file *);
- 
-diff --git a/fs/nfsd/nfs4state.c b/fs/nfsd/nfs4state.c
-index 3a08c56a27c6..38451d1de587 100644
---- a/fs/nfsd/nfs4state.c
-+++ b/fs/nfsd/nfs4state.c
-@@ -10510,7 +10510,7 @@ static int cb_getattr_update_times(const struct path *path,
- 
- 	attrs.ia_valid |= ATTR_DELEG;
- 	inode_lock(inode);
--	ret = notify_change(&nop_mnt_idmap, path, &attrs, NULL);
-+	ret = notify_change(&nop_mnt_idmap, path, &attrs, NULL, NULL);
- 	inode_unlock(inode);
- 	return ret;
- }
-@@ -10791,7 +10791,7 @@ void nfsd_update_cmtime_attr(struct file *f, unsigned int flags)
- 	};
- 
- 	inode_lock(inode);
--	ret = notify_change(&nop_mnt_idmap, &f->f_path, &attr, NULL);
-+	ret = notify_change(&nop_mnt_idmap, &f->f_path, &attr, NULL, NULL);
- 	inode_unlock(inode);
- 	if (ret)
- 		pr_notice_ratelimited("nfsd: Unable to update timestamps on "
-diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-index 397f417e77b3..2ab92a0e3b6b 100644
---- a/fs/nfsd/vfs.c
-+++ b/fs/nfsd/vfs.c
-@@ -478,7 +478,7 @@ static int __nfsd_setattr(const struct path *path, struct iattr *iap)
- 			return -EFBIG;
- 
- 		host_err = notify_change(&nop_mnt_idmap, path, &size_attr,
--					  NULL);
-+					  NULL, NULL);
- 		if (host_err)
- 			return host_err;
- 		iap->ia_valid &= ~ATTR_SIZE;
-@@ -504,7 +504,7 @@ static int __nfsd_setattr(const struct path *path, struct iattr *iap)
- 	if (!(iap->ia_valid & ATTR_DELEG))
- 		iap->ia_valid |= ATTR_CTIME;
- 
--	return notify_change(&nop_mnt_idmap, path, iap, NULL);
-+	return notify_change(&nop_mnt_idmap, path, iap, NULL, NULL);
- }
- 
- /**
-diff --git a/fs/open.c b/fs/open.c
-index 294d0ea7488e..882985d4008b 100644
---- a/fs/open.c
-+++ b/fs/open.c
-@@ -65,8 +65,13 @@ int do_truncate(const struct mnt_idmap *idmap, const struct path *path,
- 	if (ret)
- 		return ret;
- 
--	/* Note any delegations or leases have already been broken: */
--	ret = notify_change(idmap, path, &newattrs, NULL);
-+	/*
-+	 * Note any delegations or leases have already been broken.  Size
-+	 * changes are governed by the truncate hooks, which are checked at
-+	 * ftruncate(2) time on the opened file, so no struct file is passed
-+	 * to the setattr hook.
-+	 */
-+	ret = notify_change(idmap, path, &newattrs, NULL, NULL);
- 	inode_unlock(dentry->d_inode);
- 	return ret;
- }
-@@ -665,7 +670,7 @@ SYSCALL_DEFINE2(fchroot, int, fd, unsigned int, flags)
- 	return error;
- }
- 
--int chmod_common(const struct path *path, umode_t mode)
-+int chmod_common(const struct path *path, umode_t mode, struct file *file)
- {
- 	struct inode *inode = path->dentry->d_inode;
- 	struct delegated_inode delegated_inode = { };
-@@ -685,7 +690,7 @@ int chmod_common(const struct path *path, umode_t mode)
- 	newattrs.ia_mode = (mode & S_IALLUGO) | (inode->i_mode & ~S_IALLUGO);
- 	newattrs.ia_valid = ATTR_MODE | ATTR_CTIME;
- 	error = notify_change(mnt_idmap(path->mnt), path, &newattrs,
--			      &delegated_inode);
-+			      &delegated_inode, file);
- out_unlock:
- 	inode_unlock(inode);
- 	if (is_delegated(&delegated_inode)) {
-@@ -701,7 +706,7 @@ int chmod_common(const struct path *path, umode_t mode)
- int vfs_fchmod(struct file *file, umode_t mode)
- {
- 	audit_file(file);
--	return chmod_common(&file->f_path, mode);
-+	return chmod_common(&file->f_path, mode, file);
- }
- 
- SYSCALL_DEFINE2(fchmod, unsigned int, fd, umode_t, mode)
-@@ -724,12 +729,22 @@ static int do_fchmodat(int dfd, const char __user *filename, umode_t mode,
- 	if (unlikely(flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)))
- 		return -EINVAL;
- 
-+	CLASS(filename_maybe_null, name)(filename, flags);
-+
-+	if (!name && dfd >= 0) {
-+		CLASS(fd, f)(dfd);
-+
-+		if (fd_empty(f))
-+			return -EBADF;
-+
-+		return vfs_fchmod(fd_file(f), mode);
-+	}
-+
- 	lookup_flags = (flags & AT_SYMLINK_NOFOLLOW) ? 0 : LOOKUP_FOLLOW;
--	CLASS(filename_uflags, name)(filename, flags);
- retry:
- 	error = filename_lookup(dfd, name, lookup_flags, &path, NULL);
- 	if (!error) {
--		error = chmod_common(&path, mode);
-+		error = chmod_common(&path, mode, NULL);
- 		path_put(&path);
- 		if (retry_estale(error, lookup_flags)) {
- 			lookup_flags |= LOOKUP_REVAL;
-@@ -786,7 +801,8 @@ static inline bool setattr_vfsgid(struct iattr *attr, kgid_t kgid)
- 	return true;
- }
- 
--int chown_common(const struct path *path, uid_t user, gid_t group)
-+int chown_common(const struct path *path, uid_t user, gid_t group,
-+		 struct file *file)
- {
- 	const struct mnt_idmap *idmap;
- 	struct user_namespace *fs_userns;
-@@ -824,7 +840,7 @@ int chown_common(const struct path *path, uid_t user, gid_t group)
- 		from_vfsgid(idmap, fs_userns, newattrs.ia_vfsgid));
- 	if (!error)
- 		error = notify_change(idmap, path, &newattrs,
--				      &delegated_inode);
-+				      &delegated_inode, file);
- 	inode_unlock(inode);
- 	if (is_delegated(&delegated_inode)) {
- 		error = break_deleg_wait(&delegated_inode);
-@@ -844,14 +860,24 @@ int do_fchownat(int dfd, const char __user *filename, uid_t user, gid_t group,
- 	if ((flag & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) != 0)
- 		return -EINVAL;
- 
-+	CLASS(filename_maybe_null, name)(filename, flag);
-+
-+	if (!name && dfd >= 0) {
-+		CLASS(fd, f)(dfd);
-+
-+		if (fd_empty(f))
-+			return -EBADF;
-+
-+		return vfs_fchown(fd_file(f), user, group);
-+	}
-+
- 	lookup_flags = (flag & AT_SYMLINK_NOFOLLOW) ? 0 : LOOKUP_FOLLOW;
--	CLASS(filename_uflags, name)(filename, flag);
- retry:
- 	error = filename_lookup(dfd, name, lookup_flags, &path, NULL);
- 	if (!error) {
- 		error = mnt_want_write(path.mnt);
- 		if (!error) {
--			error = chown_common(&path, user, group);
-+			error = chown_common(&path, user, group, NULL);
- 			mnt_drop_write(path.mnt);
- 		}
- 		path_put(&path);
-@@ -888,7 +914,7 @@ int vfs_fchown(struct file *file, uid_t user, gid_t group)
- 	if (error)
- 		return error;
- 	audit_file(file);
--	error = chown_common(&file->f_path, user, group);
-+	error = chown_common(&file->f_path, user, group, file);
- 	mnt_drop_write_file(file);
- 	return error;
- }
-diff --git a/fs/overlayfs/overlayfs.h b/fs/overlayfs/overlayfs.h
-index fc5e7accc1f0..a169f27258a0 100644
---- a/fs/overlayfs/overlayfs.h
-+++ b/fs/overlayfs/overlayfs.h
-@@ -213,7 +213,7 @@ static inline int ovl_do_notify_change(struct ovl_fs *ofs,
- 		.dentry = upperdentry,
- 	};
- 
--	return notify_change(ovl_upper_mnt_idmap(ofs), &path, attr, NULL);
-+	return notify_change(ovl_upper_mnt_idmap(ofs), &path, attr, NULL, NULL);
- }
- 
- static inline int ovl_do_rmdir(struct ovl_fs *ofs,
-diff --git a/fs/smb/server/smb2pdu.c b/fs/smb/server/smb2pdu.c
-index 07b0a71a4353..91e201af66c2 100644
---- a/fs/smb/server/smb2pdu.c
-+++ b/fs/smb/server/smb2pdu.c
-@@ -8778,7 +8778,7 @@ static int set_file_basic_info(struct ksmbd_file *fp,
- 			return -EACCES;
- 
- 		inode_lock(inode);
--		rc = notify_change(idmap, &filp->f_path, &attrs, NULL);
-+		rc = notify_change(idmap, &filp->f_path, &attrs, NULL, filp);
- 		inode_unlock(inode);
- 	}
- 	return rc;
-diff --git a/fs/smb/server/smbacl.c b/fs/smb/server/smbacl.c
-index 94bf83d07452..c0f8f6d8ea98 100644
---- a/fs/smb/server/smbacl.c
-+++ b/fs/smb/server/smbacl.c
-@@ -1749,7 +1749,7 @@ int set_info_sec(struct ksmbd_conn *conn, struct ksmbd_tree_connect *tcon,
- 	}
- 
- 	inode_lock(inode);
--	rc = notify_change(idmap, path, &newattrs, NULL);
-+	rc = notify_change(idmap, path, &newattrs, NULL, NULL);
- 	inode_unlock(inode);
- 	if (rc)
- 		goto out;
-diff --git a/fs/utimes.c b/fs/utimes.c
-index 5193d504d289..6021c481e742 100644
---- a/fs/utimes.c
-+++ b/fs/utimes.c
-@@ -18,7 +18,8 @@ static bool nsec_valid(long nsec)
- 	return nsec >= 0 && nsec <= 999999999;
- }
- 
--int vfs_utimes(const struct path *path, struct timespec64 *times)
-+int vfs_utimes(const struct path *path, struct timespec64 *times,
-+	       struct file *file)
- {
- 	int error;
- 	struct iattr newattrs;
-@@ -65,7 +66,7 @@ int vfs_utimes(const struct path *path, struct timespec64 *times)
- retry_deleg:
- 	inode_lock(inode);
- 	error = notify_change(mnt_idmap(path->mnt), path, &newattrs,
--			      &delegated_inode);
-+			      &delegated_inode, file);
- 	inode_unlock(inode);
- 	if (is_delegated(&delegated_inode)) {
- 		error = break_deleg_wait(&delegated_inode);
-@@ -88,15 +89,25 @@ static int do_utimes_path(int dfd, const char __user *filename,
- 	if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH))
- 		return -EINVAL;
- 
-+	CLASS(filename_maybe_null, name)(filename, flags);
-+
-+	if (!name && dfd >= 0) {
-+		CLASS(fd, f)(dfd);
-+
-+		if (fd_empty(f))
-+			return -EBADF;
-+
-+		return vfs_utimes(&fd_file(f)->f_path, times, fd_file(f));
-+	}
-+
- 	if (!(flags & AT_SYMLINK_NOFOLLOW))
- 		lookup_flags |= LOOKUP_FOLLOW;
- 
--	CLASS(filename_uflags, name)(filename, flags);
- retry:
- 	error = filename_lookup(dfd, name, lookup_flags, &path, NULL);
- 	if (error)
- 		return error;
--	error = vfs_utimes(&path, times);
-+	error = vfs_utimes(&path, times, NULL);
+-	error = do_getxattr(mnt_idmap(path.mnt), &path, ctx);
++	error = do_getxattr(mnt_idmap(path.mnt), &path, ctx, NULL);
  	path_put(&path);
  	if (retry_estale(error, lookup_flags)) {
  		lookup_flags |= LOOKUP_REVAL;
-@@ -113,7 +124,7 @@ static int do_utimes_fd(int fd, struct timespec64 *times, int flags)
- 	CLASS(fd, f)(fd);
- 	if (fd_empty(f))
- 		return -EBADF;
--	return vfs_utimes(&fd_file(f)->f_path, times);
-+	return vfs_utimes(&fd_file(f)->f_path, times, fd_file(f));
+@@ -930,7 +939,8 @@ SYSCALL_DEFINE4(fgetxattr, int, fd, const char __user *, name,
+  * Extended attribute LIST operations
+  */
+ static ssize_t
+-listxattr(const struct path *path, char __user *list, size_t size)
++listxattr(const struct path *path, char __user *list, size_t size,
++	   struct file *file)
+ {
+ 	ssize_t error;
+ 	char *klist = NULL;
+@@ -943,7 +953,7 @@ listxattr(const struct path *path, char __user *list, size_t size)
+ 			return -ENOMEM;
+ 	}
+ 
+-	error = vfs_listxattr(path, klist, size);
++	error = vfs_listxattr(path, klist, size, file);
+ 	if (error > 0) {
+ 		if (size && copy_to_user(list, klist, error))
+ 			error = -EFAULT;
+@@ -962,7 +972,7 @@ static
+ ssize_t file_listxattr(struct file *f, char __user *list, size_t size)
+ {
+ 	audit_file(f);
+-	return listxattr(&f->f_path, list, size);
++	return listxattr(&f->f_path, list, size, f);
  }
  
- /*
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 960334128b83..9c344cbad296 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1818,7 +1818,8 @@ int vfs_mkobj(struct dentry *, umode_t,
+ static
+@@ -976,7 +986,7 @@ ssize_t filename_listxattr(int dfd, struct filename *filename,
+ 	error = filename_lookup(dfd, filename, lookup_flags, &path, NULL);
+ 	if (error)
+ 		return error;
+-	error = listxattr(&path, list, size);
++	error = listxattr(&path, list, size, NULL);
+ 	path_put(&path);
+ 	if (retry_estale(error, lookup_flags)) {
+ 		lookup_flags |= LOOKUP_REVAL;
+@@ -1035,11 +1045,11 @@ SYSCALL_DEFINE3(flistxattr, int, fd, char __user *, list, size_t, size)
+  */
+ static long
+ removexattr(const struct mnt_idmap *idmap, const struct path *path,
+-	    const char *name)
++	    const char *name, struct file *file)
+ {
+ 	if (is_posix_acl_xattr(name))
+ 		return vfs_remove_acl(idmap, path, name);
+-	return vfs_removexattr(idmap, path, name);
++	return vfs_removexattr(idmap, path, name, file);
+ }
  
- int vfs_fchown(struct file *file, uid_t user, gid_t group);
- int vfs_fchmod(struct file *file, umode_t mode);
--int vfs_utimes(const struct path *path, struct timespec64 *times);
-+int vfs_utimes(const struct path *path, struct timespec64 *times,
-+		struct file *file);
+ static int file_removexattr(struct file *f, struct xattr_name *kname)
+@@ -1048,7 +1058,8 @@ static int file_removexattr(struct file *f, struct xattr_name *kname)
  
- #ifdef CONFIG_COMPAT
- extern long compat_ptr_ioctl(struct file *file, unsigned int cmd,
-@@ -2717,7 +2718,8 @@ static inline int bmap(struct inode *inode,  sector_t *block)
- int __notify_change(const struct mnt_idmap *, struct dentry *,
- 		    struct iattr *, struct delegated_inode *);
- int notify_change(const struct mnt_idmap *, const struct path *,
--		  struct iattr *, struct delegated_inode *);
-+		  struct iattr *, struct delegated_inode *,
-+		  struct file *);
- int inode_permission(const struct mnt_idmap *, struct inode *, int);
- int generic_permission(const struct mnt_idmap *, struct inode *, int);
- static inline int file_permission(struct file *file, int mask)
+ 	if (!error) {
+ 		audit_file(f);
+-		error = removexattr(file_mnt_idmap(f), &f->f_path, kname->name);
++		error = removexattr(file_mnt_idmap(f), &f->f_path,
++				    kname->name, f);
+ 		mnt_drop_write_file(f);
+ 	}
+ 	return error;
+@@ -1066,7 +1077,8 @@ static int filename_removexattr(int dfd, struct filename *filename,
+ 		return error;
+ 	error = mnt_want_write(path.mnt);
+ 	if (!error) {
+-		error = removexattr(mnt_idmap(path.mnt), &path, kname->name);
++		error = removexattr(mnt_idmap(path.mnt), &path,
++				    kname->name, NULL);
+ 		mnt_drop_write(path.mnt);
+ 	}
+ 	path_put(&path);
 diff --git a/include/linux/lsm_hook_defs.h b/include/linux/lsm_hook_defs.h
-index 539525648b30..ea6e0fbaa3b9 100644
+index ea6e0fbaa3b9..2315961b6d71 100644
 --- a/include/linux/lsm_hook_defs.h
 +++ b/include/linux/lsm_hook_defs.h
-@@ -141,8 +141,16 @@ LSM_HOOK(int, 0, inode_follow_link, struct dentry *dentry, struct inode *inode,
- 	 bool rcu)
- LSM_HOOK(int, 0, inode_permission, const struct mnt_idmap *idmap,
- 	 struct inode *inode, int mask)
--LSM_HOOK(int, 0, inode_setattr, const struct mnt_idmap *idmap, struct dentry *dentry,
--	 struct iattr *attr)
-+/*
-+ * For the hooks that pass a struct path: the VFS only sanctions
-+ * passing the path to VFS helpers taking a struct path (e.g.,
-+ * notify_change(), the *xattr() helpers); it makes no guarantees
-+ * with regard to path->mnt, whose layout and implementation details
-+ * are subject to change.  Implementations must not rely on its
-+ * properties.
-+ */
-+LSM_HOOK(int, 0, inode_setattr, const struct mnt_idmap *idmap,
-+	 const struct path *path, struct iattr *attr, struct file *file)
- LSM_HOOK(void, LSM_RET_VOID, inode_post_setattr, const struct mnt_idmap *idmap,
- 	 struct dentry *dentry, int ia_valid)
+@@ -156,14 +156,16 @@ LSM_HOOK(void, LSM_RET_VOID, inode_post_setattr, const struct mnt_idmap *idmap,
  LSM_HOOK(int, 0, inode_getattr, const struct path *path)
+ LSM_HOOK(int, 0, inode_xattr_skipcap, const char *name)
+ LSM_HOOK(int, 0, inode_setxattr, const struct mnt_idmap *idmap,
+-	 struct dentry *dentry, const char *name, const void *value,
+-	 size_t size, int flags)
++	 const struct path *path, const char *name, const void *value,
++	 size_t size, int flags, struct file *file)
+ LSM_HOOK(void, LSM_RET_VOID, inode_post_setxattr, struct dentry *dentry,
+ 	 const char *name, const void *value, size_t size, int flags)
+-LSM_HOOK(int, 0, inode_getxattr, struct dentry *dentry, const char *name)
+-LSM_HOOK(int, 0, inode_listxattr, struct dentry *dentry)
++LSM_HOOK(int, 0, inode_getxattr, const struct path *path, const char *name,
++	 struct file *file)
++LSM_HOOK(int, 0, inode_listxattr, const struct path *path,
++	 struct file *file)
+ LSM_HOOK(int, 0, inode_removexattr, const struct mnt_idmap *idmap,
+-	 struct dentry *dentry, const char *name)
++	 const struct path *path, const char *name, struct file *file)
+ LSM_HOOK(void, LSM_RET_VOID, inode_post_removexattr, struct dentry *dentry,
+ 	 const char *name)
+ LSM_HOOK(int, 0, inode_file_setattr, struct dentry *dentry, struct file_kattr *fa)
 diff --git a/include/linux/security.h b/include/linux/security.h
-index 225f822470e2..8b660c118dee 100644
+index 8b660c118dee..35693bc328d3 100644
 --- a/include/linux/security.h
 +++ b/include/linux/security.h
-@@ -429,7 +429,8 @@ int security_inode_follow_link(struct dentry *dentry, struct inode *inode,
- int security_inode_permission(const struct mnt_idmap *idmap,
- 			      struct inode *inode, int mask);
- int security_inode_setattr(const struct mnt_idmap *idmap,
--			   struct dentry *dentry, struct iattr *attr);
-+			   const struct path *path, struct iattr *attr,
-+			   struct file *file);
- void security_inode_post_setattr(const struct mnt_idmap *idmap, struct dentry *dentry,
+@@ -185,10 +185,12 @@ extern int cap_capset(struct cred *new, const struct cred *old,
+ 		      const kernel_cap_t *inheritable,
+ 		      const kernel_cap_t *permitted);
+ extern int cap_bprm_creds_from_file(struct linux_binprm *bprm, const struct file *file);
+-int cap_inode_setxattr(struct dentry *dentry, const char *name,
+-		       const void *value, size_t size, int flags);
++int cap_inode_setxattr(const struct path *path, const char *name,
++		       const void *value, size_t size, int flags,
++		       struct file *file);
+ int cap_inode_removexattr(const struct mnt_idmap *idmap,
+-			  struct dentry *dentry, const char *name);
++			  const struct path *path, const char *name,
++			  struct file *file);
+ int cap_inode_need_killpriv(struct dentry *dentry);
+ int cap_inode_killpriv(const struct mnt_idmap *idmap, struct dentry *dentry);
+ int cap_inode_getsecurity(const struct mnt_idmap *idmap,
+@@ -435,8 +437,9 @@ void security_inode_post_setattr(const struct mnt_idmap *idmap, struct dentry *d
  				 int ia_valid);
  int security_inode_getattr(const struct path *path);
-@@ -995,8 +996,9 @@ static inline int security_inode_permission(const struct mnt_idmap *idmap,
+ int security_inode_setxattr(const struct mnt_idmap *idmap,
+-			    struct dentry *dentry, const char *name,
+-			    const void *value, size_t size, int flags);
++			    const struct path *path, const char *name,
++			    const void *value, size_t size, int flags,
++			    struct file *file);
+ int security_inode_set_acl(const struct mnt_idmap *idmap,
+ 			   struct dentry *dentry, const char *acl_name,
+ 			   struct posix_acl *kacl);
+@@ -451,10 +454,13 @@ void security_inode_post_remove_acl(const struct mnt_idmap *idmap,
+ 				    const char *acl_name);
+ void security_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 				  const void *value, size_t size, int flags);
+-int security_inode_getxattr(struct dentry *dentry, const char *name);
+-int security_inode_listxattr(struct dentry *dentry);
++int security_inode_getxattr(const struct path *path,
++			    const char *name, struct file *file);
++int security_inode_listxattr(const struct path *path,
++			      struct file *file);
+ int security_inode_removexattr(const struct mnt_idmap *idmap,
+-			       struct dentry *dentry, const char *name);
++			       const struct path *path, const char *name,
++			       struct file *file);
+ void security_inode_post_removexattr(struct dentry *dentry, const char *name);
+ int security_inode_file_setattr(struct dentry *dentry,
+ 			      struct file_kattr *fa);
+@@ -1014,10 +1020,11 @@ static inline int security_inode_getattr(const struct path *path)
  }
  
- static inline int security_inode_setattr(const struct mnt_idmap *idmap,
--					 struct dentry *dentry,
--					 struct iattr *attr)
-+					 const struct path *path,
-+					 struct iattr *attr,
-+					 struct file *file)
+ static inline int security_inode_setxattr(const struct mnt_idmap *idmap,
+-		struct dentry *dentry, const char *name, const void *value,
+-		size_t size, int flags)
++		const struct path *path, const char *name,
++		const void *value, size_t size, int flags,
++		struct file *file)
+ {
+-	return cap_inode_setxattr(dentry, name, value, size, flags);
++	return cap_inode_setxattr(path, name, value, size, flags, file);
+ }
+ 
+ static inline int security_inode_set_acl(const struct mnt_idmap *idmap,
+@@ -1056,22 +1063,24 @@ static inline void security_inode_post_setxattr(struct dentry *dentry,
+ 		const char *name, const void *value, size_t size, int flags)
+ { }
+ 
+-static inline int security_inode_getxattr(struct dentry *dentry,
+-			const char *name)
++static inline int security_inode_getxattr(const struct path *path,
++			const char *name, struct file *file)
  {
  	return 0;
  }
-diff --git a/init/initramfs.c b/init/initramfs.c
-index ebddde9c8f0d..c8172440276e 100644
---- a/init/initramfs.c
-+++ b/init/initramfs.c
-@@ -144,7 +144,7 @@ static void __init do_utime(char *filename, time64_t mtime)
- static void __init do_utime_path(const struct path *path, time64_t mtime)
+ 
+-static inline int security_inode_listxattr(struct dentry *dentry)
++static inline int security_inode_listxattr(const struct path *path,
++					   struct file *file)
  {
- 	struct timespec64 t[2] = { { .tv_sec = mtime }, { .tv_sec = mtime } };
--	vfs_utimes(path, t);
-+	vfs_utimes(path, t, NULL);
+ 	return 0;
  }
  
- static __initdata LIST_HEAD(dir_list);
+ static inline int security_inode_removexattr(const struct mnt_idmap *idmap,
+-					     struct dentry *dentry,
+-					     const char *name)
++					     const struct path *path,
++					     const char *name,
++					     struct file *file)
+ {
+-	return cap_inode_removexattr(idmap, dentry, name);
++	return cap_inode_removexattr(idmap, path, name, file);
+ }
+ 
+ static inline void security_inode_post_removexattr(struct dentry *dentry,
+diff --git a/include/linux/xattr.h b/include/linux/xattr.h
+index 68301f0b3de2..158e269cfe7a 100644
+--- a/include/linux/xattr.h
++++ b/include/linux/xattr.h
+@@ -26,6 +26,7 @@
+ 
+ struct inode;
+ struct dentry;
++struct file;
+ 
+ static inline bool is_posix_acl_xattr(const char *name)
+ {
+@@ -78,8 +79,10 @@ struct xattr {
+ 
+ ssize_t __vfs_getxattr(struct dentry *, struct inode *, const char *, void *, size_t);
+ ssize_t vfs_getxattr(const struct mnt_idmap *idmap, const struct path *path,
+-		     const char *name, void *value, size_t size);
+-ssize_t vfs_listxattr(const struct path *path, char *list, size_t size);
++		     const char *name, void *value, size_t size,
++		     struct file *file);
++ssize_t vfs_listxattr(const struct path *path, char *list, size_t size,
++		      struct file *file);
+ int __vfs_setxattr(const struct mnt_idmap *, struct dentry *, struct inode *,
+ 		   const char *, const void *, size_t, int);
+ int __vfs_setxattr_noperm(const struct mnt_idmap *, struct dentry *,
+@@ -87,15 +90,18 @@ int __vfs_setxattr_noperm(const struct mnt_idmap *, struct dentry *,
+ int __vfs_setxattr_locked(const struct mnt_idmap *idmap,
+ 			  const struct path *path, const char *name,
+ 			  const void *value, size_t size, int flags,
+-			  struct delegated_inode *delegated_inode);
++			  struct delegated_inode *delegated_inode,
++			  struct file *file);
+ int vfs_setxattr(const struct mnt_idmap *idmap, const struct path *path,
+-		 const char *name, const void *value, size_t size, int flags);
++		 const char *name, const void *value, size_t size, int flags,
++		 struct file *file);
+ int __vfs_removexattr(const struct mnt_idmap *, struct dentry *, const char *);
+ int __vfs_removexattr_locked(const struct mnt_idmap *idmap,
+ 			     const struct path *path, const char *name,
+-			     struct delegated_inode *delegated_inode);
++			     struct delegated_inode *delegated_inode,
++			     struct file *file);
+ int vfs_removexattr(const struct mnt_idmap *idmap, const struct path *path,
+-		    const char *name);
++		    const char *name, struct file *file);
+ 
+ ssize_t generic_listxattr(struct dentry *dentry, char *buffer, size_t buffer_size);
+ int vfs_getxattr_alloc(const struct mnt_idmap *idmap,
+diff --git a/security/commoncap.c b/security/commoncap.c
+index 565c893c6d4b..0a94b9cd231f 100644
+--- a/security/commoncap.c
++++ b/security/commoncap.c
+@@ -14,6 +14,7 @@
+ #include <linux/netlink.h>
+ #include <linux/ptrace.h>
+ #include <linux/xattr.h>
++#include <linux/path.h>
+ #include <linux/mount.h>
+ #include <linux/sched.h>
+ #include <linux/prctl.h>
+@@ -1007,11 +1008,12 @@ int cap_bprm_creds_from_file(struct linux_binprm *bprm, const struct file *file)
+ 
+ /**
+  * cap_inode_setxattr - Determine whether an xattr may be altered
+- * @dentry: The inode/dentry being altered
++ * @path: The inode/path being altered
+  * @name: The name of the xattr to be changed
+  * @value: The value that the xattr will be changed to
+  * @size: The size of value
+  * @flags: The replacement flag
++ * @file: the file through which the xattr change is requested, if any
+  *
+  * Determine whether an xattr may be altered or set on an inode, returning 0 if
+  * permission is granted, -ve if denied.
+@@ -1019,9 +1021,11 @@ int cap_bprm_creds_from_file(struct linux_binprm *bprm, const struct file *file)
+  * This is used to make sure security xattrs don't get updated or set by those
+  * who aren't privileged to do so.
+  */
+-int cap_inode_setxattr(struct dentry *dentry, const char *name,
+-		       const void *value, size_t size, int flags)
++int cap_inode_setxattr(const struct path *path, const char *name,
++		       const void *value, size_t size, int flags,
++		       struct file *file)
+ {
++	struct dentry *dentry = path->dentry;
+ 	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
+ 
+ 	/* Ignore non-security xattrs */
+@@ -1044,25 +1048,21 @@ int cap_inode_setxattr(struct dentry *dentry, const char *name,
+ /**
+  * cap_inode_removexattr - Determine whether an xattr may be removed
+  *
+- * @idmap:	idmap of the mount the inode was found from
+- * @dentry:	The inode/dentry being altered
++ * @path:	The inode/path being altered
+  * @name:	The name of the xattr to be changed
++ * @file:	the file through which the xattr removal is requested, if any
+  *
+  * Determine whether an xattr may be removed from an inode, returning 0 if
+  * permission is granted, -ve if denied.
+  *
+- * If the inode has been found through an idmapped mount the idmap of
+- * the vfsmount must be passed through @idmap. This function will then
+- * take care to map the inode according to @idmap before checking
+- * permissions. On non-idmapped mounts or if permission checking is to be
+- * performed on the raw inode simply pass @nop_mnt_idmap.
+- *
+  * This is used to make sure security xattrs don't get removed by those who
+  * aren't privileged to remove them.
+  */
+ int cap_inode_removexattr(const struct mnt_idmap *idmap,
+-			  struct dentry *dentry, const char *name)
++			  const struct path *path, const char *name,
++			  struct file *file)
+ {
++	struct dentry *dentry = path->dentry;
+ 	struct user_namespace *user_ns = dentry->d_sb->s_user_ns;
+ 
+ 	/* Ignore non-security xattrs */
 diff --git a/security/integrity/evm/evm_main.c b/security/integrity/evm/evm_main.c
-index ac8328812e6e..9526bffe34aa 100644
+index 9526bffe34aa..2e1978cbe369 100644
 --- a/security/integrity/evm/evm_main.c
 +++ b/security/integrity/evm/evm_main.c
-@@ -950,17 +950,20 @@ static int evm_attr_change(const struct mnt_idmap *idmap,
+@@ -595,11 +595,12 @@ static int evm_protect_xattr(const struct mnt_idmap *idmap,
  /**
-  * evm_inode_setattr - prevent updating an invalid EVM extended attribute
+  * evm_inode_setxattr - protect the EVM extended attribute
   * @idmap: idmap of the mount
 - * @dentry: pointer to the affected dentry
 + * @path: pointer to the affected object
-  * @attr: iattr structure containing the new file attributes
-+ * @file: file through which the attribute change is requested, if any
+  * @xattr_name: pointer to the affected extended attribute name
+  * @xattr_value: pointer to the new extended attribute value
+  * @xattr_value_len: pointer to the new extended attribute value length
+  * @flags: flags to pass into filesystem operations
++ * @file: file through which the xattr change is requested, if any
   *
-  * Permit update of file attributes when files have a valid EVM signature,
-  * except in the case of them having an immutable portable signature.
+  * Before allowing the 'security.evm' protected xattr to be updated,
+  * verify the existing value is valid.  As only the kernel should have
+@@ -607,11 +608,14 @@ static int evm_protect_xattr(const struct mnt_idmap *idmap,
+  * userspace from writing HMAC value.  Writing 'security.evm' requires
+  * requires CAP_SYS_ADMIN privileges.
   */
--static int evm_inode_setattr(const struct mnt_idmap *idmap, struct dentry *dentry,
--			     struct iattr *attr)
-+static int evm_inode_setattr(const struct mnt_idmap *idmap,
-+			     const struct path *path,
-+			     struct iattr *attr, struct file *file)
+-static int evm_inode_setxattr(const struct mnt_idmap *idmap, struct dentry *dentry,
++static int evm_inode_setxattr(const struct mnt_idmap *idmap,
++			      const struct path *path,
+ 			      const char *xattr_name, const void *xattr_value,
+-			      size_t xattr_value_len, int flags)
++			      size_t xattr_value_len, int flags,
++			      struct file *file)
  {
- 	unsigned int ia_valid = attr->ia_valid;
- 	enum integrity_status evm_status;
+ 	const struct evm_ima_xattr_data *xattr_data = xattr_value;
 +	struct dentry *dentry = path->dentry;
  
- 	/* Policy permits modification of the protected attrs even though
+ 	/* Policy permits modification of the protected xattrs even though
  	 * there's no HMAC key loaded
+@@ -633,15 +637,19 @@ static int evm_inode_setxattr(const struct mnt_idmap *idmap, struct dentry *dent
+ /**
+  * evm_inode_removexattr - protect the EVM extended attribute
+  * @idmap: idmap of the mount
+- * @dentry: pointer to the affected dentry
++ * @path: pointer to the affected object
+  * @xattr_name: pointer to the affected extended attribute name
++ * @file: file through which the xattr removal is requested, if any
+  *
+  * Removing 'security.evm' requires CAP_SYS_ADMIN privileges and that
+  * the current value is valid.
+  */
+-static int evm_inode_removexattr(const struct mnt_idmap *idmap, struct dentry *dentry,
+-				 const char *xattr_name)
++static int evm_inode_removexattr(const struct mnt_idmap *idmap,
++				 const struct path *path,
++				 const char *xattr_name, struct file *file)
+ {
++	struct dentry *dentry = path->dentry;
++
+ 	/* Policy permits modification of the protected xattrs even though
+ 	 * there's no HMAC key loaded
+ 	 */
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 134174d2e3f0..ebf050195cf0 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -759,11 +759,14 @@ static int validate_hash_algo(struct dentry *dentry,
+ 	return -EACCES;
+ }
+ 
+-static int ima_inode_setxattr(const struct mnt_idmap *idmap, struct dentry *dentry,
++static int ima_inode_setxattr(const struct mnt_idmap *idmap,
++			      const struct path *path,
+ 			      const char *xattr_name, const void *xattr_value,
+-			      size_t xattr_value_len, int flags)
++			      size_t xattr_value_len, int flags,
++			      struct file *file)
+ {
+ 	const struct evm_ima_xattr_data *xvalue = xattr_value;
++	struct dentry *dentry = path->dentry;
+ 	int digsig = 0;
+ 	int result;
+ 	int err;
+@@ -801,16 +804,17 @@ static int ima_inode_set_acl(const struct mnt_idmap *idmap, struct dentry *dentr
+ 	return 0;
+ }
+ 
+-static int ima_inode_removexattr(const struct mnt_idmap *idmap, struct dentry *dentry,
+-				 const char *xattr_name)
++static int ima_inode_removexattr(const struct mnt_idmap *idmap,
++				 const struct path *path,
++				 const char *xattr_name, struct file *file)
+ {
+ 	int result, digsig = -1;
+ 
+-	result = ima_protect_xattr(dentry, xattr_name, NULL, 0);
++	result = ima_protect_xattr(path->dentry, xattr_name, NULL, 0);
+ 	if (result == 1 || evm_revalidate_status(xattr_name)) {
+ 		if (!strcmp(xattr_name, XATTR_NAME_IMA))
+ 			digsig = 0;
+-		ima_reset_appraise_flags(d_backing_inode(dentry), digsig);
++		ima_reset_appraise_flags(d_backing_inode(path->dentry), digsig);
+ 		if (result == 1)
+ 			result = 0;
+ 	}
 diff --git a/security/security.c b/security/security.c
-index 49cd3393c207..9c1e27f0e5cb 100644
+index 9c1e27f0e5cb..83132d40cc9c 100644
 --- a/security/security.c
 +++ b/security/security.c
-@@ -1867,8 +1867,9 @@ int security_inode_permission(const struct mnt_idmap *idmap,
+@@ -1922,14 +1922,15 @@ int security_inode_getattr(const struct path *path)
  /**
-  * security_inode_setattr() - Check if setting file attributes is allowed
+  * security_inode_setxattr() - Check if setting file xattrs is allowed
   * @idmap: idmap of the mount
 - * @dentry: file
 + * @path: file (the VFS makes no guarantees with regard to @path->mnt)
-  * @attr: new attributes
-+ * @file: file through which the attribute change is requested, if any
+  * @name: xattr name
+  * @value: xattr value
+  * @size: size of xattr value
+  * @flags: flags
++ * @file: file through which the xattr change is requested, if any
   *
-  * Check permission before setting file attributes.  Note that the kernel call
-  * to notify_change is performed from several locations, whenever file
-@@ -1878,11 +1879,12 @@ int security_inode_permission(const struct mnt_idmap *idmap,
+  * This hook performs the desired permission checks before setting the extended
+- * attributes (xattrs) on @dentry.  It is important to note that we have some
++ * attributes (xattrs) on @path.  It is important to note that we have some
+  * additional logic before the main LSM implementation calls to detect if we
+  * need to perform an additional capability check at the LSM layer.
+  *
+@@ -1946,23 +1947,24 @@ int security_inode_getattr(const struct path *path)
   * Return: Returns 0 if permission is granted.
   */
- int security_inode_setattr(const struct mnt_idmap *idmap,
--			   struct dentry *dentry, struct iattr *attr)
-+			   const struct path *path, struct iattr *attr,
-+			   struct file *file)
+ int security_inode_setxattr(const struct mnt_idmap *idmap,
+-			    struct dentry *dentry, const char *name,
+-			    const void *value, size_t size, int flags)
++			    const struct path *path, const char *name,
++			    const void *value, size_t size, int flags,
++			    struct file *file)
+ {
+ 	int rc;
+ 
+-	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
++	if (unlikely(IS_PRIVATE(d_backing_inode(path->dentry))))
+ 		return 0;
+ 
+ 	/* enforce the capability checks at the lsm layer, if needed */
+ 	if (!call_int_hook(inode_xattr_skipcap, name)) {
+-		rc = cap_inode_setxattr(dentry, name, value, size, flags);
++		rc = cap_inode_setxattr(path, name, value, size, flags, file);
+ 		if (rc)
+ 			return rc;
+ 	}
+ 
+-	return call_int_hook(inode_setxattr, idmap, dentry, name, value, size,
+-			     flags);
++	return call_int_hook(inode_setxattr, idmap, path, name, value,
++			     size, flags, file);
+ }
+ 
+ /**
+@@ -2078,45 +2080,49 @@ void security_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 
+ /**
+  * security_inode_getxattr() - Check if xattr access is allowed
+- * @dentry: file
++ * @path: file (the VFS makes no guarantees with regard to @path->mnt)
+  * @name: xattr name
++ * @file: file through which the xattr access is requested, if any
+  *
+  * Check permission before obtaining the extended attributes identified by
+- * @name for @dentry.
++ * @name for @path.
+  *
+  * Return: Returns 0 if permission is granted.
+  */
+-int security_inode_getxattr(struct dentry *dentry, const char *name)
++int security_inode_getxattr(const struct path *path,
++			    const char *name, struct file *file)
  {
 -	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
 +	if (unlikely(IS_PRIVATE(d_backing_inode(path->dentry))))
  		return 0;
--	return call_int_hook(inode_setattr, idmap, dentry, attr);
-+	return call_int_hook(inode_setattr, idmap, path, attr, file);
+-	return call_int_hook(inode_getxattr, dentry, name);
++	return call_int_hook(inode_getxattr, path, name, file);
  }
- EXPORT_SYMBOL_GPL(security_inode_setattr);
  
+ /**
+  * security_inode_listxattr() - Check if listing xattrs is allowed
+- * @dentry: file
++ * @path: file (the VFS makes no guarantees with regard to @path->mnt)
++ * @file: file through which the xattr names are listed, if any
+  *
+  * Check permission before obtaining the list of extended attribute names for
+- * @dentry.
++ * @path.
+  *
+  * Return: Returns 0 if permission is granted.
+  */
+-int security_inode_listxattr(struct dentry *dentry)
++int security_inode_listxattr(const struct path *path, struct file *file)
+ {
+-	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
++	if (unlikely(IS_PRIVATE(d_backing_inode(path->dentry))))
+ 		return 0;
+-	return call_int_hook(inode_listxattr, dentry);
++	return call_int_hook(inode_listxattr, path, file);
+ }
+ 
+ /**
+  * security_inode_removexattr() - Check if removing an xattr is allowed
+  * @idmap: idmap of the mount
+- * @dentry: file
++ * @path: file (the VFS makes no guarantees with regard to @path->mnt)
+  * @name: xattr name
++ * @file: file through which the xattr removal is requested, if any
+  *
+  * This hook performs the desired permission checks before setting the extended
+- * attributes (xattrs) on @dentry.  It is important to note that we have some
++ * attributes (xattrs) on @path.  It is important to note that we have some
+  * additional logic before the main LSM implementation calls to detect if we
+  * need to perform an additional capability check at the LSM layer.
+  *
+@@ -2133,21 +2139,22 @@ int security_inode_listxattr(struct dentry *dentry)
+  * Return: Returns 0 if permission is granted.
+  */
+ int security_inode_removexattr(const struct mnt_idmap *idmap,
+-			       struct dentry *dentry, const char *name)
++			       const struct path *path, const char *name,
++			       struct file *file)
+ {
+ 	int rc;
+ 
+-	if (unlikely(IS_PRIVATE(d_backing_inode(dentry))))
++	if (unlikely(IS_PRIVATE(d_backing_inode(path->dentry))))
+ 		return 0;
+ 
+ 	/* enforce the capability checks at the lsm layer, if needed */
+ 	if (!call_int_hook(inode_xattr_skipcap, name)) {
+-		rc = cap_inode_removexattr(idmap, dentry, name);
++		rc = cap_inode_removexattr(idmap, path, name, file);
+ 		if (rc)
+ 			return rc;
+ 	}
+ 
+-	return call_int_hook(inode_removexattr, idmap, dentry, name);
++	return call_int_hook(inode_removexattr, idmap, path, name, file);
+ }
+ 
+ /**
 diff --git a/security/selinux/hooks.c b/security/selinux/hooks.c
-index 548a14ff0664..3d8636149f59 100644
+index 3d8636149f59..4a88bcdbd99a 100644
 --- a/security/selinux/hooks.c
 +++ b/security/selinux/hooks.c
-@@ -3316,10 +3316,12 @@ static int selinux_inode_permission(const struct mnt_idmap *idmap,
- 	return rc;
+@@ -3389,9 +3389,11 @@ static int selinux_inode_xattr_skipcap(const char *name)
  }
  
--static int selinux_inode_setattr(const struct mnt_idmap *idmap, struct dentry *dentry,
--				 struct iattr *iattr)
-+static int selinux_inode_setattr(const struct mnt_idmap *idmap,
-+				 const struct path *path,
-+				 struct iattr *iattr, struct file *file)
+ static int selinux_inode_setxattr(const struct mnt_idmap *idmap,
+-				  struct dentry *dentry, const char *name,
+-				  const void *value, size_t size, int flags)
++				  const struct path *path,
++				  const char *name, const void *value,
++				  size_t size, int flags, struct file *file)
  {
- 	const struct cred *cred = current_cred();
 +	struct dentry *dentry = path->dentry;
  	struct inode *inode = d_backing_inode(dentry);
- 	unsigned int ia_valid = iattr->ia_valid;
- 	u32 av = FILE__WRITE;
+ 	struct inode_security_struct *isec;
+ 	struct superblock_security_struct *sbsec;
+@@ -3533,26 +3535,29 @@ static void selinux_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 	spin_unlock(&isec->lock);
+ }
+ 
+-static int selinux_inode_getxattr(struct dentry *dentry, const char *name)
++static int selinux_inode_getxattr(const struct path *path,
++				  const char *name, struct file *file)
+ {
+ 	const struct cred *cred = current_cred();
+ 
+-	return dentry_has_perm(cred, dentry, FILE__GETATTR);
++	return dentry_has_perm(cred, path->dentry, FILE__GETATTR);
+ }
+ 
+-static int selinux_inode_listxattr(struct dentry *dentry)
++static int selinux_inode_listxattr(const struct path *path, struct file *file)
+ {
+ 	const struct cred *cred = current_cred();
+ 
+-	return dentry_has_perm(cred, dentry, FILE__GETATTR);
++	return dentry_has_perm(cred, path->dentry, FILE__GETATTR);
+ }
+ 
+ static int selinux_inode_removexattr(const struct mnt_idmap *idmap,
+-				     struct dentry *dentry, const char *name)
++				     const struct path *path,
++				     const char *name, struct file *file)
+ {
+ 	/* if not a selinux xattr, only check the ordinary setattr perm */
+ 	if (strcmp(name, XATTR_NAME_SELINUX))
+-		return dentry_has_perm(current_cred(), dentry, FILE__SETATTR);
++		return dentry_has_perm(current_cred(), path->dentry,
++				       FILE__SETATTR);
+ 
+ 	if (!selinux_initialized())
+ 		return 0;
+@@ -7148,7 +7153,7 @@ static int selinux_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen
+ static int selinux_inode_setsecctx(const struct path *path, void *ctx, u32 ctxlen)
+ {
+ 	return __vfs_setxattr_locked(&nop_mnt_idmap, path, XATTR_NAME_SELINUX,
+-				     ctx, ctxlen, 0, NULL);
++				     ctx, ctxlen, 0, NULL, NULL);
+ }
+ 
+ static int selinux_inode_getsecctx(struct inode *inode, struct lsm_context *cp)
 diff --git a/security/smack/smack_lsm.c b/security/smack/smack_lsm.c
-index b39bee15b70c..ede1314030af 100644
+index ede1314030af..f739756acb3e 100644
 --- a/security/smack/smack_lsm.c
 +++ b/security/smack/smack_lsm.c
-@@ -1267,15 +1267,18 @@ static int smack_inode_permission(const struct mnt_idmap *idmap, struct inode *i
+@@ -1343,21 +1343,24 @@ static int smack_inode_xattr_skipcap(const char *name)
  /**
-  * smack_inode_setattr - Smack check for setting attributes
+  * smack_inode_setxattr - Smack check for setting xattrs
   * @idmap: idmap of the mount
 - * @dentry: the object
 + * @path: the object
-  * @iattr: for the force flag
-+ * @file: file through which the attribute change is requested, if any
+  * @name: name of the attribute
+  * @value: value of the attribute
+  * @size: size of the value
+  * @flags: unused
++ * @file: file through which the xattr change is requested, if any
+  *
+  * This protects the Smack attribute explicitly.
   *
   * Returns 0 if access is permitted, an error code otherwise
   */
--static int smack_inode_setattr(const struct mnt_idmap *idmap, struct dentry *dentry,
--			       struct iattr *iattr)
-+static int smack_inode_setattr(const struct mnt_idmap *idmap,
-+			       const struct path *path,
-+			       struct iattr *iattr, struct file *file)
+ static int smack_inode_setxattr(const struct mnt_idmap *idmap,
+-				struct dentry *dentry, const char *name,
+-				const void *value, size_t size, int flags)
++				const struct path *path,
++				const char *name, const void *value,
++				size_t size, int flags, struct file *file)
+ {
+ 	struct smk_audit_info ad;
++	struct dentry *dentry = path->dentry;
+ 	struct smack_known *skp;
+ 	int check_priv = 0;
+ 	int check_import = 0;
+@@ -1459,14 +1462,17 @@ static void smack_inode_post_setxattr(struct dentry *dentry, const char *name,
+ 
+ /**
+  * smack_inode_getxattr - Smack check on getxattr
+- * @dentry: the object
++ * @path: the object
+  * @name: unused
++ * @file: file through which the xattr access is requested, if any
+  *
+  * Returns 0 if access is permitted, an error code otherwise
+  */
+-static int smack_inode_getxattr(struct dentry *dentry, const char *name)
++static int smack_inode_getxattr(const struct path *path,
++			const char *name, struct file *file)
  {
  	struct smk_audit_info ad;
 +	struct dentry *dentry = path->dentry;
  	int rc;
  
- 	/*
+ 	smk_ad_init(&ad, __func__, LSM_AUDIT_DATA_DENTRY);
+@@ -1480,18 +1486,21 @@ static int smack_inode_getxattr(struct dentry *dentry, const char *name)
+ /**
+  * smack_inode_removexattr - Smack check on removexattr
+  * @idmap: idmap of the mount
+- * @dentry: the object
++ * @path: the object
+  * @name: name of the attribute
++ * @file: file through which the xattr removal is requested, if any
+  *
+  * Removing the Smack attribute requires CAP_MAC_ADMIN
+  *
+  * Returns 0 if access is permitted, an error code otherwise
+  */
+ static int smack_inode_removexattr(const struct mnt_idmap *idmap,
+-				   struct dentry *dentry, const char *name)
++				   const struct path *path,
++				   const char *name, struct file *file)
+ {
+ 	struct inode_smack *isp;
+ 	struct smk_audit_info ad;
++	struct dentry *dentry = path->dentry;
+ 	int rc = 0;
+ 
+ 	if (strcmp(name, XATTR_NAME_SMACK) == 0 ||
+@@ -4984,7 +4993,7 @@ static int smack_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen)
+ static int smack_inode_setsecctx(const struct path *path, void *ctx, u32 ctxlen)
+ {
+ 	return __vfs_setxattr_locked(&nop_mnt_idmap, path, XATTR_NAME_SMACK,
+-				     ctx, ctxlen, 0, NULL);
++				     ctx, ctxlen, 0, NULL, NULL);
+ }
+ 
+ static int smack_inode_getsecctx(struct inode *inode, struct lsm_context *cp)
+diff --git a/tools/testing/selftests/bpf/progs/test_get_xattr.c b/tools/testing/selftests/bpf/progs/test_get_xattr.c
+index 54305f4c9f2d..97361ff10e9f 100644
+--- a/tools/testing/selftests/bpf/progs/test_get_xattr.c
++++ b/tools/testing/selftests/bpf/progs/test_get_xattr.c
+@@ -56,7 +56,8 @@ int BPF_PROG(test_file_open, struct file *f)
+ }
+ 
+ SEC("lsm.s/inode_getxattr")
+-int BPF_PROG(test_inode_getxattr, struct dentry *dentry, char *name)
++int BPF_PROG(test_inode_getxattr, const struct path *path, char *name,
++	     struct file *file)
+ {
+ 	struct bpf_dynptr value_ptr;
+ 	__u32 pid;
+@@ -69,7 +70,7 @@ int BPF_PROG(test_inode_getxattr, struct dentry *dentry, char *name)
+ 	bpf_dynptr_from_mem(value2, sizeof(value2), 0, &value_ptr);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(xattr_names); i++) {
+-		ret = bpf_get_dentry_xattr(dentry, xattr_names[i], &value_ptr);
++		ret = bpf_get_dentry_xattr(path->dentry, xattr_names[i], &value_ptr);
+ 		if (ret == sizeof(expected_value))
+ 			break;
+ 	}
+diff --git a/tools/testing/selftests/bpf/progs/test_set_remove_xattr.c b/tools/testing/selftests/bpf/progs/test_set_remove_xattr.c
+index 6a612cf168d3..06656ac9a777 100644
+--- a/tools/testing/selftests/bpf/progs/test_set_remove_xattr.c
++++ b/tools/testing/selftests/bpf/progs/test_set_remove_xattr.c
+@@ -33,7 +33,8 @@ static inline bool name_match_foo(const char *name)
+ 
+ /* Test bpf_set_dentry_xattr and bpf_remove_dentry_xattr */
+ SEC("lsm.s/inode_getxattr")
+-int BPF_PROG(test_inode_getxattr, struct dentry *dentry, char *name)
++int BPF_PROG(test_inode_getxattr, const struct path *path, char *name,
++	     struct file *file)
+ {
+ 	struct bpf_dynptr value_ptr;
+ 	__u32 pid;
+@@ -50,25 +51,25 @@ int BPF_PROG(test_inode_getxattr, struct dentry *dentry, char *name)
+ 	bpf_dynptr_from_mem(read_value, sizeof(read_value), 0, &value_ptr);
+ 
+ 	/* read security.bpf.bar */
+-	ret = bpf_get_dentry_xattr(dentry, xattr_bar, &value_ptr);
++	ret = bpf_get_dentry_xattr(path->dentry, xattr_bar, &value_ptr);
+ 
+ 	if (ret < 0) {
+ 		/* If security.bpf.bar doesn't exist, set it */
+ 		bpf_dynptr_from_mem(value_bar, sizeof(value_bar), 0, &value_ptr);
+ 
+-		ret = bpf_set_dentry_xattr(dentry, xattr_bar, &value_ptr, 0);
++		ret = bpf_set_dentry_xattr(path->dentry, xattr_bar, &value_ptr, 0);
+ 		if (!ret)
+ 			set_security_bpf_bar_success = true;
+-		ret = bpf_set_dentry_xattr(dentry, xattr_selinux, &value_ptr, 0);
++		ret = bpf_set_dentry_xattr(path->dentry, xattr_selinux, &value_ptr, 0);
+ 		if (ret)
+ 			set_security_selinux_fail = true;
+ 	} else {
+ 		/* If security.bpf.bar exists, remove it */
+-		ret = bpf_remove_dentry_xattr(dentry, xattr_bar);
++		ret = bpf_remove_dentry_xattr(path->dentry, xattr_bar);
+ 		if (!ret)
+ 			remove_security_bpf_bar_success = true;
+ 
+-		ret = bpf_remove_dentry_xattr(dentry, xattr_selinux);
++		ret = bpf_remove_dentry_xattr(path->dentry, xattr_selinux);
+ 		if (ret)
+ 			remove_security_selinux_fail = true;
+ 	}
+@@ -87,9 +88,10 @@ bool locked_remove_security_selinux_fail;
+  * properly.
+  */
+ SEC("lsm.s/inode_setxattr")
+-int BPF_PROG(test_inode_setxattr, struct mnt_idmap *idmap,
+-	     struct dentry *dentry, const char *name,
+-	     const void *value, size_t size, int flags)
++int BPF_PROG(test_inode_setxattr, const struct mnt_idmap *idmap,
++	     const struct path *path,
++	     const char *name, const void *value, size_t size, int flags,
++	     struct file *file)
+ {
+ 	struct bpf_dynptr value_ptr;
+ 	__u32 pid;
+@@ -106,25 +108,25 @@ int BPF_PROG(test_inode_setxattr, struct mnt_idmap *idmap,
+ 	bpf_dynptr_from_mem(read_value, sizeof(read_value), 0, &value_ptr);
+ 
+ 	/* read security.bpf.bar */
+-	ret = bpf_get_dentry_xattr(dentry, xattr_bar, &value_ptr);
++	ret = bpf_get_dentry_xattr(path->dentry, xattr_bar, &value_ptr);
+ 
+ 	if (ret < 0) {
+ 		/* If security.bpf.bar doesn't exist, set it */
+ 		bpf_dynptr_from_mem(value_bar, sizeof(value_bar), 0, &value_ptr);
+ 
+-		ret = bpf_set_dentry_xattr(dentry, xattr_bar, &value_ptr, 0);
++		ret = bpf_set_dentry_xattr(path->dentry, xattr_bar, &value_ptr, 0);
+ 		if (!ret)
+ 			locked_set_security_bpf_bar_success = true;
+-		ret = bpf_set_dentry_xattr(dentry, xattr_selinux, &value_ptr, 0);
++		ret = bpf_set_dentry_xattr(path->dentry, xattr_selinux, &value_ptr, 0);
+ 		if (ret)
+ 			locked_set_security_selinux_fail = true;
+ 	} else {
+ 		/* If security.bpf.bar exists, remove it */
+-		ret = bpf_remove_dentry_xattr(dentry, xattr_bar);
++		ret = bpf_remove_dentry_xattr(path->dentry, xattr_bar);
+ 		if (!ret)
+ 			locked_remove_security_bpf_bar_success = true;
+ 
+-		ret = bpf_remove_dentry_xattr(dentry, xattr_selinux);
++		ret = bpf_remove_dentry_xattr(path->dentry, xattr_selinux);
+ 		if (ret)
+ 			locked_remove_security_selinux_fail = true;
+ 	}
+diff --git a/tools/testing/selftests/bpf/progs/verifier_lsm_init_xattr.c b/tools/testing/selftests/bpf/progs/verifier_lsm_init_xattr.c
+index b706bf17b556..9b7a15c1862f 100644
+--- a/tools/testing/selftests/bpf/progs/verifier_lsm_init_xattr.c
++++ b/tools/testing/selftests/bpf/progs/verifier_lsm_init_xattr.c
+@@ -234,8 +234,10 @@ int BPF_PROG(reject_lsm_cgroup, struct inode *inode, struct inode *dir,
+ 
+ SEC("lsm/inode_setxattr")
+ __failure __msg("calling kernel function bpf_inode_init_xattr is not allowed")
+-int BPF_PROG(reject_wrong_hook, struct mnt_idmap *idmap, struct dentry *dentry,
+-	     const char *name, const void *value, size_t size, int flags)
++int BPF_PROG(reject_wrong_hook, const struct mnt_idmap *idmap,
++	     const struct path *path,
++	     const char *name, const void *value, size_t size, int flags,
++	     struct file *file)
+ {
+ 	struct bpf_dynptr val;
+ 
 -- 
 2.18.0.huawei.25
 

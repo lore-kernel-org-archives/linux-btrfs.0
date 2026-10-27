@@ -1,101 +1,75 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.210.199
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793138785;
-	b=EwWw2stGv5lkbpIVzQXdkOZDIsRV3dHtcQe47rC1ntuE5pDXjnLrZLo/F/HlMw2DFydK
-	 PnuqWUi6l56lQvXzoh1BKhluWLb7zjb+/+zzHl1/K0l3LK9tR02Z5zkGM6NRoffj0yo6z
-	 Mv154bqClxpHJKP1bL163flISaurwyyy09DBBKvtXeReGi2QBUqNYRoFxwCC6Hj/kbckA
-	 ocFdtQhYxRaqbvMGT6IWFRjHFdOc7puAPcE53guDNBj9vkSAahkwu2+nzRSIW2+TODvp8
-	 qWXxd793ATl12IeXFVEEFetQqqKnnlnxWqQegr7/RTbpoHlVfIVoVrpYEn0VkU7TVHg==
+	t=1793143050;
+	b=v9d9njSOjQD0MSVvLspIjO3sp71iAzUpzIo8R3Z5mwNPxTr8gTdojobApp5f+TZhzf34
+	 WkdT0LFDFzqmfxRXRmiyYXKr3IrQ/T0uSqO13R/OL5fpAnHbRmcegqFIaq57X7JBP4Ef2
+	 rqDDet1POWnNvTM8viifjwskyRcN8N5FwbwbNOFOYwHU0VyIqvhfDUzFIq9CX1vF+rc/P
+	 lCf1IypbdumZAsKbHS7WszBXMi7Dx+rEpBicO1HypQC0Sdt1PUJ8nKjouIZwrNQge+7N4
+	 8cN+kC+HMazPq9KtP2NpSaNIsDRhT8nDxOcU8qcclv4P+WHp5NaX6ovPc+mI3BSSS+g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793138785;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793143050;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=KJA0Ab4y4XV4nkf+zcy3vs2gbR14WeGZC9I9U2lvy3k=;
-	b=Jv2bas1dSN3dqQtcMSi0Iz2O081wfikXuyb0ctP5fdSFxFAw6XsL/dQ8sYeyV+U6l4OS
-	 FraRArNcsIIwTCL8dKAiMNgYLPz7dC4ke4b3mjvKcqYXvTevXkJAceNjeSGs7Jq5nI7mq
-	 cD3imAOuhTKWqRfPp9QR6yVtacQMBJTXYBSLICbjHmuJ4IR0kAn1Fh3dkYWI9yLnd5GNu
-	 rM3EpOALxmu9v2ti6GO/bauvTohrES0voLaLFDkOm2jtoFcK343ln9eSTt+AQOX6wf8wc
-	 nhXcEsPa2d74zMbUytjsbk4Q38WR741THtEkEps/8x1YMuh5QjQcXnW4SCOgqLcsBmg==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Received:Date:In-Reply-To:
+	 Mime-Version:References:X-Mailer:Message-ID:Subject:From:To:Cc:
+	 Content-Type;
+	bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
+	b=PQsH7vjcAoiDQ0pKMvY3zniZnC4DVljo3lBwUnb3ZiL9jCSjZHUXvTLlrHjX0YPrRm9R
+	 iZgdB2VPhWIFEiGhCOUJAsQlbLJA1h+u3QUpl9prJjpfmDnQPHFSRPvCbvcyG2KYcvit+
+	 rm67yI9cLwSszMHAr2257Oap4nmIfW6C8rg24ibNPf9fmqxb3AESeUBLNYyznZ/PNcD2C
+	 G+OCWqrBC9tuZsFO3pFfuNKNDZ874bl3avYTqmp17HRs1YJmrFI/D4Hfh42KhyEk057iG
+	 HFIBdKBHLusCx3Qctg1feX+m7RHTCC8FPqZQaxRrWnBxF1fyeZRSUdKkJNE/n9JFsUw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zahr34wS;
-	arc=none smtp.remote-ip=209.85.128.41
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=flex--jthoughton.bounces.google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b="PE/zx+6A";
+	arc=none smtp.remote-ip=209.85.210.199
+Received: from mail-pf1-f199.google.com (mail-pf1-f199.google.com [209.85.210.199])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED7F3606A33D
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 22:06:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org ED7F3606A33D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD76E606A31F
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 23:17:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org AD76E606A31F
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=flex--jthoughton.bounces.google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zahr34wS
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4a60f9474c4so4029735e9.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 15:06:24 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=PE/zx+6A
+Received: by mail-pf1-f199.google.com with SMTP id d2e1a72fcca58-8a01e2962a1so488904b3a.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2026 16:17:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793138783; x=1793743583; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=KJA0Ab4y4XV4nkf+zcy3vs2gbR14WeGZC9I9U2lvy3k=;
-        b=zahr34wSrzVg0KvoehWXmJGpFAn5e46qXa1CWDc9bDCIdA6Bw40CT49u9IOwuXvjTk
-         nyVgH+gqIeEGrIfsmxVhwBlnwsQPhLNxW9019gH4BruaudrISUVwn1A8mqyrw3biTO/O
-         YUI5ToyFNZx7PsX6xoDwIBTvHc2SgvbXRjMieyAkPzrKJ4NOe0YpaSCponJFDFPoPAJs
-         4LkgmQ8401Z2XGg/qkeert2kW0KxfpDKHp8++44GMtL5QFB68tShU9ZZdgpABtlOtOR0
-         vTlRpE6oDLhpkbDiG/GyWu3owRCPXKWY7joefwf3E1s5vqJH7juI/1slBcqHfHoWNjsb
-         9c1w==
+        d=google.com; s=20260707; t=1793143049; x=1793747849; darn=vger.kernel.org;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
+        b=PE/zx+6Af4cB6kwCb3KWCo2kLDvj8fl2ys7izWUyFpH5zLYmX810u3AzXitpejplQE
+         /jQClQeXVkg24Hq2EtapZZmYZqBqVAzhuerBOXqcEml3pCLmsPFzhUKaKVVRYh78e5jo
+         h8KkCLUPmxBFXlpb/JITMIblABhQ7NlF7KMjGGjdd9IyszPk9+1oO7oOT2MoBvY5XheR
+         C7sZ+dVfMbfS+HyT7uTrugl1sk73k+pwHG2Pfa3KfOiBB28qEE/Udtp4Y7cVn9gp7foT
+         HEcU/cZ1gEdP98XXJk+xlaxcfEGrza6u+gZED9q0MMpJmn/0VM46cFjFyrKNEI0geaag
+         VHHA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793138783; x=1793743583;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=KJA0Ab4y4XV4nkf+zcy3vs2gbR14WeGZC9I9U2lvy3k=;
-        b=mzz1nBG9OE83Sbrt8ODOuMiJKKINkBRHKq6vBHnRqJ1IvvpUFX+UZ/cOaB+o/4xp4L
-         U7/3/3FLKV605XJw0YItMCY88uPAMtqKacJ68S3WP+6uM7Yp4JS+a8kC57Q4CLitCWHU
-         LEiYCVwytLlq2a1QuNxMp+qTQe8R1LMf6/bJBlZZr+zZ0xQJrT+ebMtNxd2xDO9ms9pI
-         wVSfHaJ7az5XnNky7oXd9wLNPYbOoTWFKXGRlyOr9akpxJPaIH1jXw7rig/UeGYkf02P
-         GVM2jBY0V1eYMzM3Md5hJoy0uByiAaekniAh71VkktAzC0s8KpWvJn4hx5C7w2NuvRpp
-         f8Yg==
-X-Forwarded-Encrypted: i=1; AKwUvByi169n5JMVTRpifff+G42XP8IjfmIRIJIdHVfHq9UlH4321y8Zvpl2fIPrQjphE7ePSHzam0qH5qhQDw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLiuDPyGNghWTOuOvfli1l1ZZN5sIpVcOzW+leU7kudNlVvCRDZ
-	3qA6CqtjFFml36fMCDMI6ea/zBKpnA6R3l6fKVdfdUdCJY5aGz366guY
-X-Gm-Gg: AYBFou1pHdAbYWDwNF5g2FT57fITutG2MVffH0uXtZrtxvmkdjmTQI+eGA9rSUS+kpJ
-	STPVV/86C9WKHoD/H7udK3/Js9IxEREBMH8w9NMEo7oA311GyYqTNXzjy4XTVH2TYbOkVabwqPz
-	MYW7IKIb1cArEiLQnOoVTPMXZFzzgGAEEtZSxKqgnH22kU51e5IKw+e7DbuE1UTpxJ/21lCMol3
-	RK5S0q29fnxSCMmvcNYj4hKuubEbjCTGp1UrSNpwzM/vJsU9+b5RDt2tzYrYQT6+L9sHYRn9Dqm
-	+OZdU2cfh1EZGAFioJ/2gRLAKXNp2r4pacGNfZeVGZHsO8E4W0IufjAbv6dBKEg7JahKYCeXKh5
-	w/JSIBwLlAItGeDvNa2Q8yivhWgX5nNe/cBNkMQ8Bk/5MO+c9LJ/pDz4beG72GkDKqTjCIO1sn2
-	ueA5h85j0LlZi+/K37faxRVNaEtnLcA3dwbuwAihMTqUM5TIJ+eBAjy72Z1Yu8qBxRm6vq5Cq80
-	1uI/i4gMixxu2rzdUkchqovxA9tro/bf1Qs7plFHhKo1z3XFyI=
-X-Received: by 2002:a05:600c:4e43:b0:4a6:42cc:bf65 with SMTP id 5b1f17b1804b1-4a96658730cmr6093585e9.17.1793138783296;
-        Tue, 27 Oct 2026 15:06:23 -0700 (PDT)
-Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4a977edc08fsm1752495e9.4.2026.10.27.15.06.21
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 27 Oct 2026 15:06:22 -0700 (PDT)
-From: koraynilay <koray.fra@gmail.com>
-To: David Sterba <dsterba@suse.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>
-Cc: Chris Mason <mason@kernel.org>,
-	Jan Kara <jack@suse.cz>,
-	"Darrick J . Wong" <djwong@kernel.org>,
-	Sean Smith <defendthedisabled@gmail.com>,
-	Andrey Albershteyn <aalbersh@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	koraynilay <koray.fra@gmail.com>
-Subject: [RFC PATCH 2/2] btrfs: add provenance time (ptime)
-Date: Tue, 27 Oct 2026 23:05:32 +0100
-Message-ID: <20261027220532.736352-3-koray.fra@gmail.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261027220532.736352-1-koray.fra@gmail.com>
-References: <20261027220532.736352-1-koray.fra@gmail.com>
+        d=1e100.net; s=20260707; t=1793143049; x=1793747849;
+        h=content-type:cc:to:from:subject:message-id:references:mime-version
+         :in-reply-to:date:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=ZDGRVgYI+YuLX6sEG6mHKRJT8belKw9rO3epzepDmXc=;
+        b=pgukk71WFkob8gm5E1TMg3McI597CXvj8xNmDFf5H41HtyJfPU3Rp7Pk9V6AnjOr6J
+         fQc/fm5THenoSR5Pi/rGhBVAFJBZarf4a9qGT2Bnar9w+KPcgKGF880I5npgr/T6U0mH
+         TraZ5Rsmwbeju92eYlqDKvnmb237jf7ecKkAjEXIAlyUaZIGsRK3FQ7TwQG0TUv9KhlZ
+         FZCm6UmwNHQdyZ24bD1dRAXkF1dThnTEAKb4I0ZfnoVHIThxHdzAGl72jVjoqb+vGj8x
+         ej+y5N/ncIYVYtTzMgJ/AdZe0x9u0qsP9a+66dXwxG57hO/93n2CEHBWm8crZaknTylT
+         Hg1Q==
+X-Forwarded-Encrypted: i=1; AKwUvBzvlJxB/qoQgvaHQ1VXoCTK19a4s6ceIcP2vovaaJX6+odW25ZQivqh3tckR0HlkuyfcCpGTyRCsIenOg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYK0OIF5yPeXanCgNqL6caVtvBMg4W4V64X6eQD4lo2B48h87Rya
+	AoiHGA5mmRAGAaQmAJnZ2kZE5W7u6tpDElBbOgW1XZ8RofTqhUYpfKSt1tUW8I67WkjuPr4gkuV
+	5VoI4YqhW9oCXmBGdpqYuLQ==
+X-Received: from pgcgn27-n2.prod.google.com ([2002:a05:6a02:6a1b:20b0:cda:df40:b50f])
+ (user=jthoughton job=prod-delivery.src-stubby-dispatcher) by
+ 2002:a05:6a20:b7a6:b0:3e2:4c65:5905 with SMTP id adf61e73a8af0-3e902404531mr513567637.60.1793143048797;
+ Tue, 27 Oct 2026 16:17:28 -0700 (PDT)
+Date: Tue, 27 Oct 2026 23:17:28 +0000
+In-Reply-To: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,254 +78,193 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Mime-Version: 1.0
+References: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
+X-Mailer: git-send-email 2.56.0.307.g5fe7bd680c-goog
+Message-ID: <20261027231728.1466446-1-jthoughton@google.com>
+Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
+ current->mm is NULL
+From: James Houghton <jthoughton@google.com>
+To: arnd@arndb.de
+Cc: James.Bottomley@hansenpartnership.com, acme@kernel.org, 
+	akpm@linux-foundation.org, asml.silence@gmail.com, ast@kernel.org, 
+	axboe@kernel.dk, bpf@vger.kernel.org, daniel@iogearbox.net, david@kernel.org, 
+	dsterba@suse.com, io-uring@vger.kernel.org, jmattson@google.com, 
+	john.fastabend@gmail.com, jpoimboe@kernel.org, jthoughton@google.com, 
+	kees@kernel.org, kvm@vger.kernel.org, liam@infradead.org, 
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-mm@kvack.org, 
+	linux-perf-users@vger.kernel.org, linux-scsi@vger.kernel.org, 
+	linux-trace-kernel@vger.kernel.org, ljs@kernel.org, mason@kernel.org, 
+	mathieu.desnoyers@efficios.com, mhiramat@kernel.org, mhocko@suse.com, 
+	mingo@redhat.com, mkp@kernel.org, namhyung@kernel.org, pbonzini@redhat.com, 
+	peterz@infradead.org, rostedt@goodmis.org, rppt@kernel.org, seanjc@google.com, 
+	surenb@google.com, tglx@kernel.org, vbabka@kernel.org, 
+	viro@zeniv.linux.org.uk
+Content-Type: text/plain; charset="UTF-8"
 
-Implement provenance time (ptime) in Btrfs, as introduced in the
-previous commit ("vfs: add provenance time (ptime)").
+On Tue, Oct 27, 2026 at 11:32 AM Arnd Bergmann <arnd@arndb.de> wrote:
+>
+> On Tue, Oct 27, 2026, at 18:29, James Houghton wrote:
+> > On Mon, Oct 26, 2026 at 5:13 PM Arnd Bergmann <arnd@arndb.de> wrote:
+> >>
+> >> E.g. on arm64 with CONFIG_ARM64_SW_TTBR0_PAN, the page table base for
+> >> the current process is only set in user_access_begin() and would
+> >> not point to any task here. Without ttbr0_pan, it should be
+> >> covered by cpu_set_reserved_ttbr0() turning off all user space access
+> >> for kernel threads.
+> >>
+> >> Should this perhaps be addressed in architecture specific code
+> >> instead of in a common place?
+> >
+> > You're right that whether corruption can actually occur depends on the
+> > architecture and config. I'll write a note about this in the v2 cover
+> > letter.
+> >
+> > That being said, I still think the right thing to do is to have the
+> > new check(s) in common code. Instances of improper uaccesses are still
+> > bugs, even if no corruption occurs.
+>
+> I agree we have to do something to prevent the problem for most
+> configurations and find any newly introduced bugs.  The questions
+> that need to be properly decided are
+>
+>  - does there need to be any compile-time configuration to skip
+>    the extra checks and/or the warnings?
 
-Update the on-disk format by claiming 12 bytes from the reserved[] space
-in btrfs_inode_item, putting ptime before other timestamps.
+Since patch 10 moves the warning out of line, it costs nothing on the
+fast path, so making the WARN configurable wouldn't save anything. The
+question is really whether the mm check itself should be configurable,
+and that check is also what makes the access safe.
 
-Also add the fileattr_has_fsx_mask() helper to include/linux/fileattr.h
-to let filesystems check for unsupported xflags while allowing supported
-ones (like ptime). This helper can be used in the same way as
-fileattr_has_fsx().
+The text size increase seems manageable[1], but it would be great to
+hear other people's thoughts. For the runtime cost, I'll do some
+performance testing. My guess is that a load of current->mm and a
+well-predicted branch per user access will be negligible, but I'll get
+numbers.
 
-Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.4.7
-Signed-off-by: koraynilay <koray.fra@gmail.com>
----
- fs/btrfs/btrfs_inode.h          |  4 ++++
- fs/btrfs/delayed-inode.c        |  6 ++++++
- fs/btrfs/inode.c                | 17 ++++++++++++++++-
- fs/btrfs/ioctl.c                | 12 +++++++++++-
- fs/btrfs/print-tree.c           |  1 +
- fs/btrfs/tree-log.c             |  3 +++
- include/linux/fileattr.h        | 22 +++++++++++++++++++---
- include/uapi/linux/btrfs_tree.h |  3 ++-
- 8 files changed, 62 insertions(+), 6 deletions(-)
+>  - are there any cheaper ways to make it safe than to add a
+>    condition on each user access?
+>    E.g. the original lazy mm switch was intended to avoid
+>    expensive TLB flushes when switching to a kernel thread and
+>    back to the original task on 32-bit x86. On modern CPUs,
+>    the MMU can deal with multiple ASIDs cheaply, so turning
+>    off user access in a kernel thread may be cheaper than
+>    adding code to uaccess depending on the architecture.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 0227789e911d..5afcf99b758c 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -332,6 +332,10 @@ struct btrfs_inode {
- 	u64 i_otime_sec;
- 	u32 i_otime_nsec;
- 
-+	/* File *data* creation (provenance) time. */
-+	s64 i_ptime_sec;
-+	u32 i_ptime_nsec;
-+
- 	/* Hook into fs_info->delayed_iputs */
- 	struct list_head delayed_iput;
- 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 333ce8b52489..eef73ebb4a52 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1932,6 +1932,9 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
- 
- 	btrfs_set_stack_timespec_sec(&inode_item->otime, inode->i_otime_sec);
- 	btrfs_set_stack_timespec_nsec(&inode_item->otime, inode->i_otime_nsec);
-+
-+	btrfs_set_stack_timespec_sec(&inode_item->ptime, inode->i_ptime_sec);
-+	btrfs_set_stack_timespec_nsec(&inode_item->ptime, inode->i_ptime_nsec);
- }
- 
- int btrfs_fill_inode(struct btrfs_inode *inode, u32 *rdev)
-@@ -1981,6 +1984,9 @@ int btrfs_fill_inode(struct btrfs_inode *inode, u32 *rdev)
- 	inode->i_otime_sec = btrfs_stack_timespec_sec(&inode_item->otime);
- 	inode->i_otime_nsec = btrfs_stack_timespec_nsec(&inode_item->otime);
- 
-+	inode->i_ptime_sec = btrfs_stack_timespec_sec(&inode_item->ptime);
-+	inode->i_ptime_nsec = btrfs_stack_timespec_nsec(&inode_item->ptime);
-+
- 	vfs_inode->i_generation = inode->generation;
- 	if (S_ISDIR(vfs_inode->i_mode))
- 		inode->index_cnt = (u64)-1;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 1272e0d01485..7c3cd06113bc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4094,6 +4094,9 @@ static int btrfs_read_locked_inode(struct btrfs_inode *inode, struct btrfs_path
- 	inode->i_otime_sec = btrfs_timespec_sec(leaf, &inode_item->otime);
- 	inode->i_otime_nsec = btrfs_timespec_nsec(leaf, &inode_item->otime);
- 
-+	inode->i_ptime_sec = btrfs_timespec_sec(leaf, &inode_item->ptime);
-+	inode->i_ptime_nsec = btrfs_timespec_nsec(leaf, &inode_item->ptime);
-+
- 	inode_set_bytes(vfs_inode, btrfs_inode_nbytes(leaf, inode_item));
- 	inode->generation = btrfs_inode_generation(leaf, inode_item);
- 	inode->last_trans = btrfs_inode_transid(leaf, inode_item);
-@@ -4286,6 +4289,9 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_timespec_sec(leaf, &item->otime, BTRFS_I(inode)->i_otime_sec);
- 	btrfs_set_timespec_nsec(leaf, &item->otime, BTRFS_I(inode)->i_otime_nsec);
- 
-+	btrfs_set_timespec_sec(leaf, &item->ptime, BTRFS_I(inode)->i_ptime_sec);
-+	btrfs_set_timespec_nsec(leaf, &item->ptime, BTRFS_I(inode)->i_ptime_nsec);
-+
- 	btrfs_set_inode_nbytes(leaf, item, inode_get_bytes(inode));
- 	btrfs_set_inode_generation(leaf, item, BTRFS_I(inode)->generation);
- 	btrfs_set_inode_sequence(leaf, item, inode_peek_iversion(inode));
-@@ -6025,6 +6031,8 @@ static struct btrfs_inode *new_simple_dir(struct inode *dir,
- 	inode_set_atime_to_ts(vfs_inode, inode_get_atime(dir));
- 	inode->i_otime_sec = ts.tv_sec;
- 	inode->i_otime_nsec = ts.tv_nsec;
-+	inode->i_ptime_sec = ts.tv_sec;
-+	inode->i_ptime_nsec = ts.tv_nsec;
- 
- 	vfs_inode->i_uid = dir->i_uid;
- 	vfs_inode->i_gid = dir->i_gid;
-@@ -6751,6 +6759,8 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
- 	ts = simple_inode_init_ts(inode);
- 	BTRFS_I(inode)->i_otime_sec = ts.tv_sec;
- 	BTRFS_I(inode)->i_otime_nsec = ts.tv_nsec;
-+	BTRFS_I(inode)->i_ptime_sec = ts.tv_sec;
-+	BTRFS_I(inode)->i_ptime_nsec = ts.tv_nsec;
- 
- 	/*
- 	 * We're going to fill the inode item now, so at this point the inode
-@@ -8095,6 +8105,9 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->i_otime_sec = 0;
- 	ei->i_otime_nsec = 0;
- 
-+	ei->i_ptime_sec = 0;
-+	ei->i_ptime_nsec = 0;
-+
- 	inode = &ei->vfs_inode;
- 	btrfs_extent_map_tree_init(&ei->extent_tree);
- 
-@@ -8241,9 +8254,11 @@ static int btrfs_getattr(const struct mnt_idmap *idmap,
- 	u32 blocksize = btrfs_sb(inode->i_sb)->sectorsize;
- 	u32 bi_flags = BTRFS_I(inode)->flags;
- 
--	stat->result_mask |= STATX_BTIME;
-+	stat->result_mask |= (STATX_BTIME | STATX_PTIME);
- 	stat->btime.tv_sec = BTRFS_I(inode)->i_otime_sec;
- 	stat->btime.tv_nsec = BTRFS_I(inode)->i_otime_nsec;
-+	stat->ptime.tv_sec = BTRFS_I(inode)->i_ptime_sec;
-+	stat->ptime.tv_nsec = BTRFS_I(inode)->i_ptime_nsec;
- 	if (bi_flags & BTRFS_INODE_APPEND)
- 		stat->attributes |= STATX_ATTR_APPEND;
- 	if (bi_flags & BTRFS_INODE_COMPRESS)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f3e2afe221be..48598a99bddb 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -275,6 +275,9 @@ int btrfs_fileattr_get(struct dentry *dentry, struct file_kattr *fa)
- 	const struct btrfs_inode *inode = BTRFS_I(d_inode(dentry));
- 
- 	fileattr_fill_flags(fa, btrfs_inode_flags_to_fsflags(inode));
-+	fa->fsx_ptime.tv_sec = inode->i_ptime_sec;
-+	fa->fsx_ptime.tv_nsec = inode->i_ptime_nsec;
-+	fa->fsx_xflags |= FS_XFLAG_PTIME;
- 	return 0;
- }
- 
-@@ -294,7 +297,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	if (btrfs_root_readonly(root))
- 		return -EROFS;
- 
--	if (fileattr_has_fsx(fa))
-+	/* We now support FS_XFLAG_PTIME, so exclude it from the unsupported
-+	 * check
-+	 */
-+	if (fileattr_has_fsx_mask(fa, FS_XFLAG_PTIME))
- 		return -EOPNOTSUPP;
- 
- 	fsflags = btrfs_mask_fsflags_for_type(&inode->vfs_inode, fa->flags);
-@@ -436,6 +442,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	}
- 
- update_flags:
-+	if (fa->fsx_xflags & FS_XFLAG_PTIME) {
-+		inode->i_ptime_sec = fa->fsx_ptime.tv_sec;
-+		inode->i_ptime_nsec = fa->fsx_ptime.tv_nsec;
-+	}
- 	inode->flags = inode_flags;
- 	btrfs_update_inode_mapping_flags(inode);
- 	btrfs_sync_inode_flags_to_i_flags(inode);
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index 53e726119ca7..ba385d0ed9ed 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -263,6 +263,7 @@ static void print_inode_item(const struct extent_buffer *eb, int i)
- 	print_timespec(eb, &ii->ctime, "\t\tctime ", "\n");
- 	print_timespec(eb, &ii->mtime, "\t\tmtime ", "\n");
- 	print_timespec(eb, &ii->otime, "\t\totime ", "\n");
-+	print_timespec(eb, &ii->ptime, "\t\tptime ", "\n");
- }
- 
- static void print_dir_item(const struct extent_buffer *eb, int i)
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1d9dfb63fc5a..72a4a92b40b9 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4631,6 +4631,9 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_timespec_sec(leaf, &item->otime, inode->i_otime_sec);
- 	btrfs_set_timespec_nsec(leaf, &item->otime, inode->i_otime_nsec);
- 
-+	btrfs_set_timespec_sec(leaf, &item->ptime, inode->i_ptime_sec);
-+	btrfs_set_timespec_nsec(leaf, &item->ptime, inode->i_ptime_nsec);
-+
- 	/*
- 	 * We do not need to set the nbytes field, in fact during a fast fsync
- 	 * its value may not even be correct, since a fast fsync does not wait
-diff --git a/include/linux/fileattr.h b/include/linux/fileattr.h
-index 0b93f9609284..f45377fdaf38 100644
---- a/include/linux/fileattr.h
-+++ b/include/linux/fileattr.h
-@@ -64,6 +64,24 @@ int copy_fsxattr_to_user(const struct file_kattr *fa, struct fsxattr __user *ufa
- void fileattr_fill_xflags(struct file_kattr *fa, u32 xflags);
- void fileattr_fill_flags(struct file_kattr *fa, u32 flags);
- 
-+
-+/**
-+ * fileattr_has_fsx_mask - check for extended flags/attributes
-+ * @fa:				fileattr pointer
-+ * @allowed_xflags_mask:	additional xflags permitted
-+ *
-+ * Return: true if any attributes are present that are not represented in
-+ * ->flags or @allowed_xflags_mask.
-+ */
-+static inline bool fileattr_has_fsx_mask(const struct file_kattr *fa,
-+					 u32 allowed_xflags_mask)
-+{
-+	return fa->fsx_valid &&
-+		((fa->fsx_xflags & ~(FS_XFLAG_COMMON | allowed_xflags_mask)) ||
-+		 fa->fsx_extsize != 0 || fa->fsx_projid != 0 ||
-+		 fa->fsx_cowextsize != 0);
-+}
-+
- /**
-  * fileattr_has_fsx - check for extended flags/attributes
-  * @fa:		fileattr pointer
-@@ -73,9 +91,7 @@ void fileattr_fill_flags(struct file_kattr *fa, u32 flags);
-  */
- static inline bool fileattr_has_fsx(const struct file_kattr *fa)
- {
--	return fa->fsx_valid &&
--		((fa->fsx_xflags & ~FS_XFLAG_COMMON) || fa->fsx_extsize != 0 ||
--		 fa->fsx_projid != 0 ||	fa->fsx_cowextsize != 0);
-+	return fileattr_has_fsx_mask(fa, 0);
- }
- 
- int vfs_fileattr_get(struct dentry *dentry, struct file_kattr *fa);
-diff --git a/include/uapi/linux/btrfs_tree.h b/include/uapi/linux/btrfs_tree.h
-index 47ee52859b45..c360b3e95f45 100644
---- a/include/uapi/linux/btrfs_tree.h
-+++ b/include/uapi/linux/btrfs_tree.h
-@@ -900,7 +900,8 @@ struct btrfs_inode_item {
- 	 * a little future expansion, for more than this we can
- 	 * just grow the inode item and version it
- 	 */
--	__le64 reserved[4];
-+	__le32 reserved[5];
-+	struct btrfs_timespec ptime;
- 	struct btrfs_timespec atime;
- 	struct btrfs_timespec ctime;
- 	struct btrfs_timespec mtime;
--- 
-2.56.0
+That's a fair point. If user memory were inaccessible in kernel threads
+and after exit_mm(), every such access would fault, and the fault
+handler could WARN about it (x86's do_user_addr_fault() already has a
+!mm branch), so it could still be loud without a check on every access.
 
+I'll look into disabling lazy mm switching on x86 and doing some
+performance testing with that (like comparing the per-uaccess check
+with the added cost of non-lazy mm switching).
+
+Other than the performance difference, I see these issues with making
+uaccess safe entirely with the mm switch mechanics:
+
+ - It only helps on architectures (and configs) that implement it,
+   while the common check works everywhere today.
+
+ - The fault handler would need to tell legitimate faults apart from
+   bugs, e.g. copy_from_user_nofault() from BPF or perf in a kernel
+   thread is fine and must stay quiet. The series handles that today by
+   checking current->mm in the nofault helpers (patch 6).
+
+The two approaches are mostly complementary: if non-lazy switching
+turns out to be cheap enough, an architecture that does this will have
+better defense against uaccess bugs. But I'd still like the common
+check so that these bugs are reported on every architecture.
+
+> >> I would think that user_access_begin() is a more natural place
+> >> for the added checks, as this should be called exactly once for
+> >> any function that accesses user space and also stays out of the
+> >> way of the copy_from_kernel_nofault() etc.
+> >
+> > user_access_begin() isn't used in a lot of places that I want to
+> > catch, including the KVM case. Roughly:
+> >
+> >   kvm_write_guest_cached() --> __copy_to_user() --> raw_copy_to_user()
+> >
+> > There's no user_access_begin() in there. :/
+>
+> Good point, yes. After the changes described in
+> https://lwn.net/Articles/1102061/, I had assumed that all
+> __copy_{from,to}_user() are going from common code, but it looks
+> like the series so far only touches __{get,put}_user().
+>
+> There are of course few enough of these left that I think
+> we can consider doing the same thing here and turn them all
+> into the checking version:
+>
+> $ git grep -wl __copy_'\(from\|to\)'_user  drivers mm virt
+> drivers/gpu/drm/i915/gem/i915_gem_execbuffer.c
+> drivers/gpu/drm/i915/i915_gem.c
+> drivers/gpu/drm/i915/i915_query.c
+> drivers/usb/gadget/udc/atmel_usba_udc.c
+> drivers/vhost/scsi.c
+> drivers/vhost/vhost.c
+> mm/kasan/kasan_test_c.c
+> virt/kvm/kvm_main.c
+
+Agreed, I think we should clean those up, but that can be done
+separately. This series already adds the check to the common
+__copy_{from,to}_user() and __copy_{from,to}_user_inatomic() wrappers
+in include/linux/uaccess.h (patches 7 and 8), so the KVM path is
+covered without converting the callers first.
+
+> > I do think user_access_begin() should have the new check though, so
+> > I've added it in the v2.
+>
+> I had the details confused here. Seing that user_access_begin()
+> and the other accessors always call access_ok() at some
+> point, maybe that would be enough?:
+>
+> --- a/include/asm-generic/access_ok.h
+> +++ b/include/asm-generic/access_ok.h
+> @@ -33,6 +33,9 @@ static inline int __access_ok(const void __user *ptr, unsigned long size)
+>         unsigned long limit = TASK_SIZE_MAX;
+>         unsigned long addr = (unsigned long)ptr;
+>
+> +       if (WARN_ONCE(!current->mm))
+> +               return false;
+> +
+>         if (IS_ENABLED(CONFIG_ALTERNATE_USER_ADDRESS_SPACE) ||
+>             !IS_ENABLED(CONFIG_MMU))
+>                 return true;
+>
+> (plus the few extra copies of access_ok()/__access_ok())
+>
+> As a quick fix I would probably start with just the 'if (!mm) return false'
+> bit here to get something merged while we still discuss the other
+> details.
+
+Making the same point as Sean[2] but with a little more detail, I had
+thought about making the change in access_ok(), but:
+
+ - On x86-64 and powerpc, the masked user access paths don't call
+   access_ok() at all. That includes copy_from_user(),
+   strncpy_from_user(), strnlen_user() and every scoped_user_*_access()
+   block, which is where many of the converted __get_user() users ended
+   up.
+
+ - __copy_{from,to}_user() and __copy_from_user_inatomic() skip it too,
+   and the KVM bug followed exactly that pattern: the range was checked
+   once up front, and the access came much later from a different
+   context.
+
+ - access_ok() is also used as a plain range check where having no mm
+   is fine. For example, copy_{from,to}_user_nofault() call
+   __access_ok()/access_ok(), and BPF and perf legitimately call those
+   from kernel threads, so a WARN there would fire on valid tracing.
+
+Even the quiet 'if (!mm) return false' version would have missed the
+KVM case, because of the first two points. I don't think there's really
+a "small" fix here, unfortunately. :/
+
+Thanks again for all the feedback, Arnd. I really hope we can get this
+series into a mergeable state. :)
+
+[1] https://lore.kernel.org/linux-mm/CADrL8HUZ3t8RdMEeBPfqsy1_1rN0Ty9B2c4iP6OzNS12te6vOg@mail.gmail.com/
+[2] https://lore.kernel.org/kvm/auEVMrMDqVuKtDqh@google.com/

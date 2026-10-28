@@ -1,95 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.42
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793181106;
-	b=dJeT9eFav2q6tUCKQnliMwEOlXSAfKI8LutFhGNbM1mdZXT3wvAqCyAFDC63G8wQYDKW
-	 mz1M9avVtvWt8bR6q0UWDAoV2mwoKKqgZkSI9I78KuW7i6MQSbTQyMbi7mZvENPBz62QJ
-	 aVhjb6dJY6M4ZwVGxoKHYzl9iBJOWFM5QnLcTeM/9Pk8mp1dTH/IGD/rUf7lk6RcoROvv
-	 uk4PniDldZMnq2D5E5UqqPTLIRiyYzKfHSog6RcyMCjkBUm5vkagMjmfUjHrmc79YAj+Z
-	 +vxudZ5R4DoLeiIDEuY4N+jvWVXJI/GPPV5nhUNgOlSVpUIOLMciY6vxPsYoQAN+E2g==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793181106;
+Authentication-Results: smtp.subspace.kernel.org; arc=fail smtp.remote-ip=209.85.214.171
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=fail;
+	t=1793183013;
+	b=fQXc7tkaiZBf238LFrJLf4dA5GuIdnFdqgoh8WDDozMnKUDCfYNHhVMdZoLfO67nBm4X
+	 +m55rP6xAxZcVkDhEaFU+EqorFacK187FUsgKO/IC17OJN9DVjHpt67DacFVOSXrpwOE4
+	 YOiNujtoUVOFw3Th38SMFYw2KmEly5wTrwK6DI73KTCvmuH2u5oV5a49IVkaZISbtDv4p
+	 jn3zadMLm7h90pvfTHQ3o/UAJwAnCx7FWTtx4YTnn6k5uf6WTo+4mypLSDH78buAJb8vn
+	 4fuzRMdvTumvV0lDihn0FCnwCcH6B5tuU2z1F/PGfsBE+Zo7ZEcKVQ4EeZhzffwEvYQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793183013;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=DbKwU23jSrZK1UdP6vJH7WyOhF86zBsgvRqTgUfNiQ0=;
-	b=cSp8WnX17lrZxon9Z2z+mqbb4YNbM/ip63SGIW6ddXOodT+DZy1asLEC3AUP3vNp41k7
-	 uDd37GcbTKrzO3tYxWmsSdmK2qB0Z+ffaeEBFhFzEFY8wrnd8moV8zUj+wRrwM/0pYsQ8
-	 CABCeEbVkGvJJ4T8o2lv8hNDmHmmlBeOQnLZYGxzq/NrAzJ6YhbMe6cC0tRnI7+KW3t9c
-	 noGNqN0zn//gxU4moa332jM9nthu6y3th6qtQQbPAIoOVm78zjX70ePI1XCfv338srBUY
-	 20mjPRLj9f9WQ3HSND6l8/H1ShwLGRQr5uWdpVql13TVHJvZX1y70m2BxV2GGDBiz0g==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=h7H5p3/8MmY2hRf2o1iZplE7/tq7UTMN+hAVuumZtQQ=;
+	b=D/Ji6Y2x1m4I/OeaIUE1dENKuC71Fv0jm+saLV58sjLcLIRXWNHtsf2J4H58D8geznd5
+	 Z4bOLZGJDVzQ1rJ15LZiktQeaXCUUcAkoaUnA4p+RMtIRow1enh2Om3QjEBKPXeyqI8+e
+	 cd39t0CF7vIP08KPGl23xQTKiHT3eod+nAYnDIsj2pJrCwEvn4KwoVDUgd9/PEpXJX1/F
+	 V3LU5UqfiY8srUB5Hp2Mq3jXVimuP6+2Cx+i0UEtePanpgsdyVyNtBEO68LyxKw6MVEL2
+	 NKoq0J/9r8CpWZSituNE8yigYdEMn7FfXQAyNx4pVcimkvvX3I9cdLaupaIU0nObyVg==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=BgEgNzyT;
-	arc=none smtp.remote-ip=209.85.128.42
-Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=oXrx7cNs;
+	arc=fail smtp.remote-ip=209.85.214.171
+Received: from mail-pl1-f171.google.com (mail-pl1-f171.google.com [209.85.214.171])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3497A606A322
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 09:51:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3497A606A322
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E766E606A31A
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 10:23:32 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E766E606A31A
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=BgEgNzyT
-Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-4a20be3b39eso835325e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 02:51:46 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=oXrx7cNs
+Received: by mail-pl1-f171.google.com with SMTP id d9443c01a7336-2ea0efd636dso6385215ad.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 03:23:32 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793183012; cv=none;
+        d=google.com; s=arc-20260327;
+        b=UN9Pw/VbiUPkjT2g+3cDDdMlWFw16QkfjZyPPFtuYsERf//xUvQvEmXa5i/ifAed+T
+         bDZm3mTolHvG3IBAsGIWPNqS6LF/sZLr6Walqd/jNdQVRJHy46xhEkxEzfNOWvtexAOl
+         CiCLk7Pdqa+TA+MFPUR8JDAE2/oxIWgHB4Alx8jQi6kApQI3wVkJrW2eO4/TlyLHx/wn
+         Uf/6Mz+VJmX0EgllmjetjdzHv70RHXr2/crVvgV5UUDiXJgHUJLueuq45VBaRVy2/Elb
+         spChdHilJi5N2nrf+m3zK3MwUjvCTPAYGi901c6JGelvXPqenK8VgV9f+KeJYZg9us4H
+         tmeg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=h7H5p3/8MmY2hRf2o1iZplE7/tq7UTMN+hAVuumZtQQ=;
+        fh=xeZTQdWvPnF59lvhQDCsrlFBZxy3u4YZjJInPA+PfYY=;
+        b=AqbHQkp3rVnnDFNE7xppXQlCMQJ/z5d2ZXsmubLHnjmJwjvLcm9+Nb8MURqo4CxDLE
+         kIqVA4ocoS9RCuSh7WLYQq44a+2WvKgY0dHevG45oSJhO951kmDzZOKNGa+rbxUFgBKi
+         0+C90SwK3wKEViK5T4QLnfHEdunvXQO/dEN2+V4fLuRWaqycctHIZJ0VyOAseGhUD+O2
+         /bResR+gemZXDg2KFOl33e1fDJhRKdKJyegI+piHKi3OL2jcxxDitZUxQWRFmDmpAL4e
+         JI2/NSR6Bw/2WegAMbf+dCFbRS8G5oDPo2Ia0b0PbL5wk1MR+RRJm4XqMpskdcsu9Rze
+         HAoQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793181105; x=1793785905; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=DbKwU23jSrZK1UdP6vJH7WyOhF86zBsgvRqTgUfNiQ0=;
-        b=BgEgNzyTIjMWtkSWmPLDCcn2YgLoG5EjawL2ES59oO1gO+nSzZrCvLXdNDqehm5nIQ
-         xljOtI5a80Q511qxdKayhe03PC3vcrAdoiEqz9/1q1Cj3BW8euLKXdIbQlIhBSHNEqVG
-         QCEvFlonWvrq22n1CyaGURkf0kGuiLODsUN4p/08GvaZ+OT8D9Dc1F1ERUXFx5XKMGYf
-         ygPgBM8T1LwR8QI0jUgsjytn+NwyVlgvER8EVt/40C2Y90og2WgNPDZKHLXBHsEm4/Qn
-         SgT/cAOWzaSWrcqwNhK3yPOrLJJSWGNkNYHYA+bG6plzSjcS8KbeyEL9mmuBfUm4mj1i
-         BiOQ==
+        d=gmail.com; s=20260707; t=1793183012; x=1793787812; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=h7H5p3/8MmY2hRf2o1iZplE7/tq7UTMN+hAVuumZtQQ=;
+        b=oXrx7cNsisFgzIbJAbxRsjycjR5P/FTNIwQcCoFXpEm8b5OuGsX1ZAeYcfy10xRWrA
+         /IAdNzehwadoWFQ0ARxy6GH0VNgIMsMaeBzyjN6YfwViBH/OX5a8uBnb7C/6hPNiVTAj
+         RiHflQbveoBiXlairYL4JdXjOew6ZDuJ7Ck/cFqNtLF8WJLG2tzxeTfqmQ5jRejXW4DB
+         NsLSkFEJDfAXwwacbCW8VhzPraBIR/WembaCMhqhf/lzLSreGUCC128Y+T+nWXhyY6Jp
+         WSdkpBSdiE1LsKoP0SW7l2j0ujp4qzT+meKsOxzgXUkSIlKg0OKt1Nf5wnawAGkPXOIh
+         uixA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793181105; x=1793785905;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=DbKwU23jSrZK1UdP6vJH7WyOhF86zBsgvRqTgUfNiQ0=;
-        b=Uy8YKclAwknL+eM2z5RFqaB4WLQp6YKGCg4ItdxYXgdv6mgUQlkByMejwU/WUC6O64
-         2q4uDZJdDV3om8WWqIsSU9tbhE7FyIu29+08yhc93rZSuR8wi0jxUBNo467Aoh0FJFEE
-         Q2uYPDn1kWYZnkfVfNNDpl7MmvHNh+cjdIhnO4K6sZzIRgJNQ6MUWBgfwevt2wd6Ew/p
-         4dlMN76jIa+wiI5r1SH88PQuXTQhoKdWf2JzAvgg9vjaAfhLbGEXGJv4zKrf8cXio54c
-         n6EYIG3AoE38bBV1cVCnvdkIGOYu+kPYiandWiFJPQFBjyEJJK/H6466BNLtojnC570y
-         O8kA==
-X-Forwarded-Encrypted: i=1; AKwUvBxXlxp6/plWYcIdTGWiiudzist/dyCRqXSv1mB8uO+DDA956SKGR10nLRHhoOdNMVVgUggH8u0hr3aEvQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLGSsu3gw9YpbK3HFVipQ2xnjinLuzcSS85KrRuzsvTBqtcGFIH
-	FT97AL5W5XNEs853M0zqTlsBwyOIsvGGjbStSqeVwn+Vw2/h/ogBuq5Jii22Lg==
-X-Gm-Gg: AYBFou1jMVHLf0qj8Rtlnk75ixHGy+EkPooiizupnTc8mmYVzxWvqFBYgmHOWh2Rvpu
-	yV7fSWfY3ODWVDX5R7gAvrwAgDaqzrTWTMp3bUiEFJam6ZDZez8TnrbPsoOZTkF7DJ4ZtkmoMDU
-	J3eZ9ox3jR4J/DegdAzHb7XkytszCy0RZgFda6odInAAcbf2aUMQaQzMXb+sP1UrCfKUHJL6UaO
-	5LvsnIpHDyD/0KMecB94SahO5h3HIVMR4bqVac5rld0thuSidhyuLl8d3dU3t35Pan1yRnCsy9Z
-	HQ67iI7770dzRfcDqM4rnY6qckJobIFqgKfvERLxp1tDiBqYEmkwtRRb6mgT0P7ZpRw6Dia7MpS
-	BUIcW/JVK1w5E6EWg8/1YmDzy9fUUhq3h7W/5QbNVaVi2NKiQqpLDe3K+3Rc3MIbyuwxFPQ0P20
-	kjUaFp2dLNSaup2MgwSo+8wxBD6UMW0KHsA+9EbhqyKBxalYZjGQg6PYt7eTzhecC9+S36ssdS7
-	kd4QDm4QZLTa9cuTN1XKzhib/yHK3jWByi52xcmRXUdz1pGztMEvZUSZ4hGFWfijzOxhm9SHS8m
-	doZcaO3qthHT8CfOnq56LoK5PHPtqPYtK04btUn+is2TDcnnQSx3MSdzGWFh0JIfxEOJC48tUrC
-	WjIEetWDLnL4pNV6mGmY+6Q==
-X-Received: by 2002:a05:600c:c3cc:20b0:4a0:1f9e:5f78 with SMTP id 5b1f17b1804b1-4a96179c9d9mr26099685e9.0.1793181104449;
-        Wed, 28 Oct 2026 02:51:44 -0700 (PDT)
-Received: from thomas-precision3591.paris.inria.fr (wifi-pro-83-149.paris.inria.fr. [128.93.83.149])
-        by smtp.googlemail.com with ESMTPSA id ffacd0b85a97d-48e3ebd4bc5sm27552365f8f.34.2026.10.28.02.51.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 28 Oct 2026 02:51:44 -0700 (PDT)
-From: Thomas Fourier <fourier.thomas@gmail.com>
-To: 
-Cc: Thomas Fourier <fourier.thomas@gmail.com>,
-	David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM),
-	linux-kernel@vger.kernel.org (open list)
-Subject: [PATCH] btrfs: zoned: fix double free of bitmaps on clone failure
-Date: Wed, 28 Oct 2026 10:50:51 +0100
-Message-ID: <20261028095053.20459-2-fourier.thomas@gmail.com>
-X-Mailer: git-send-email 2.53.0
+        d=1e100.net; s=20260707; t=1793183012; x=1793787812;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=h7H5p3/8MmY2hRf2o1iZplE7/tq7UTMN+hAVuumZtQQ=;
+        b=FZT6/RqDxUqmDubHg1aEwrPW3PyJUjkcpnkfaK5vznhDKSyigixvRcRbz1CaMvK2cI
+         6bMYnNSXZMlczUUmUZbCbT0roJj3FPOSdjpn7sk/7fBqrJqAjqv+V8efWrmEYjpIjXDy
+         dH4zQG1+UJo3pvnAGE0Vhgi8Esc7kVe1QXIJGc0WbjhqhoBVuzyJbN8a7DPdS4wHwQBZ
+         DCQmTT9QZ0kHJRWWNM6dyJVEBAzUS0Pjj0c74kkgo9Itp3hj8mspyITDuwZTkFAARDQ0
+         YiVZnH7BLR32eCyWa8/vHHvgk2X1nvyNrZyTHTzxEoFzNwi32YJC2aGEvIaMKTQPZMmc
+         hDWA==
+X-Forwarded-Encrypted: i=1; AKwUvBwHWw5Oc+Ez5oRY9ZEan5hvpE586yuqeiX3Fh2XkdyLxWOlXDBQfMY/GIf2DfoE/+jsB7RA19zsCl3prQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYK+naEyV5xILsR3wHdT1FawZ5lmMJvFcHnTRC3m8/cbYBi28evW
+	fhTcnfkERxU97Q1eUufbPaeSMq5LeojdrHpDND+JECxehoakRM5ZvGtILud1ZY4hddE5qJE1oa5
+	u5S9BV+xoqcvMsRPENNb4NYeJLLLzTG8=
+X-Gm-Gg: AYBFou1UUAc7M3cgNqzotNwZ1vcpuEVl4aTRt65L4f9edbo7DoMD9gWuaHuJjzrYcJH
+	Vu5UvlPWKhmIb0BVloMIvc8n5PbIAWXVLDTCA3HSpW0u0Lh7ztnkxy14v5oZsSb+FcQPH/ruMYX
+	X1dKYD9L6forhkuN2fLTUj/ne1KoZPT3oD9LjmtFjZwRPN26sqOO8dXsk/wcWR5XpoIMutT3yP2
+	nwD9Ex/N+KoN1qT2ZbeNpDTpOeShKd+CxpI1SdlBu7twmsKqHjxls6Rmih7uL/CEEI8S1zaN7fN
+	cGJIZLKN7nIKxdvheQbu7OBR9NAf3EDWPzrMy/iprPa1UF8jg4bt4U1xhAKdMAhJjy7TORj68xx
+	GKylGsiV43slFWg1Y5YyCVis3q72jStqtXEE=
+X-Received: by 2002:a17:902:da86:b0:2e9:5b4e:b8a7 with SMTP id
+ d9443c01a7336-2eb005d279cmr16426375ad.51.1793183012215; Wed, 28 Oct 2026
+ 03:23:32 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -99,40 +104,75 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20261028-btrfs-fitrim-freezer-v1-1-0ad1d58aa94d@zliang.me>
+ <CAO0HQ0UE5BtevPHHfV9mQo5HoqzxzDDjAkj9e=pD_0AaXmSYFQ@mail.gmail.com>
+ <65fd2260-78e1-4521-9df1-b042788ae7bc@suse.com> <CAO0HQ0W3rALzPX59mVONjDtK1otyS8bo6_hGG6og3qwyLepmnA@mail.gmail.com>
+ <84d8eb19-4264-49a5-b9b0-733c4e971433@suse.com>
+In-Reply-To: <84d8eb19-4264-49a5-b9b0-733c4e971433@suse.com>
+From: Luca Stefani <luca.stefani.ge1@gmail.com>
+Date: Wed, 28 Oct 2026 11:23:20 +0100
+X-Gm-Features: AclHuK-TMMY98rKDlXfL_veOnxxf99WHKRVy94H0MfYOd5RXWKEpFis_Hy3-fi0
+Message-ID: <CAO0HQ0VTd-5Pu_4MmNfcOCjd4G20K4L2=qtkOBfAjYaOj0ZD0g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: do not leak -ERESTARTSYS from FITRIM to userspace
+To: Qu Wenruo <wqu@suse.com>
+Cc: zhiwei.liang@zliang.me, David Sterba <dsterba@suse.com>, 
+	Chris Mason <mason@kernel.org>, Filipe Manana <fdmanana@suse.com>, Robbie Ko <robbieko@synology.com>, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-btrfs_clone_dev_zone_info() duplicates the original orig_dev->zone_info
-with kmemdup(), which also copies the seq_zones, empty_zones and
-active_zones pointers. The clone then replaces them one by one with
-fresh bitmaps. If one of the allocations fails, the error path frees all
-three pointers, including those not yet replaced, which still point to
-the bitmaps owned by the original device.
+On Wed, 28 Oct 2026 at 10:42, Qu Wenruo <wqu@suse.com> wrote:
+>
+>
+>
+> =E5=9C=A8 2026/10/28 19:50, Luca Stefani =E5=86=99=E9=81=93:
+> > On Wed, 28 Oct 2026 at 09:57, Qu Wenruo <wqu@suse.com> wrote:
+> [...]
+> >>> I don't know what the intention of btrfs: handle user interrupt
+> >>> properly in btrfs_trim_fs()
+> >>> was, maybe we should just swallow the ERESTARTSYS case in those scena=
+rios.
+> >>
+> >> I agree on that btrfs is the exception, we should follow ext4/xfs, not
+> >> rely on some tricky signal handling behavior for suspension.
+> > When I updated btrfs_trim_interrupted I used the same "checks" as
+> > seen in ext4 so at least on that part it's identical.
+> >
+> > What differs is our error handling: we set/handle -ERESTARTSYS, ext4 do=
+es not.
+> > ext4_try_to_trim_range only ever succeeds by returning the count of
+> > trimmed bytes
+> > even if it checks for trim interruptions.
+> >
+> > I think if we remove ret =3D -ERESTARTSYS; from the
+> > btrfs_trim_interrupted branches
+> > we'd align the behavior (plus reverting the previous change as that's
+> > now useless)
+>
+> I think that's would work for most call sites, but there are some call
+> sites that we may want to know if it's interrupted.
+>
+> E.g. btrfs_issue_discard() is very deep inside all trim calls, if we
+> drop the return value without any other extra way to notify the caller,
+> it will incorrectly return 0, which is definitely not a good idea.
+>
+> A safer solution would be keep the existing ERESTARTSYS, but change it
+> to return 0 for now.
+That would work, I think.
+But that would only solve the userspace problem, as checking for
+freezing(current) might be wrong in those points, which was pointed
+out in this change.
+Maybe the "old" btrfs_trim_interrupted users should go back to
+fatal_signal_pending(current) only while the free discarding phase
+keep it.
 
-Clear the three pointers right after kmemdup() so the error path only frees
-what this function allocated.
-
-Fixes: 21e61ec6d0bb ("btrfs: zoned: clone zoned device info when cloning a device")
-Signed-off-by: Thomas Fourier <fourier.thomas@gmail.com>
----
- fs/btrfs/zoned.c | 5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 08a15465a087..7dab7aac7b96 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -645,6 +645,11 @@ struct btrfs_zoned_device_info *btrfs_clone_dev_zone_info(struct btrfs_device *o
- 	if (!zone_info)
- 		return NULL;
- 
-+	/* Don't let the error path free the bitmaps still owned by @orig_dev. */
-+	zone_info->seq_zones = NULL;
-+	zone_info->empty_zones = NULL;
-+	zone_info->active_zones = NULL;
-+
- 	zone_info->seq_zones = bitmap_zalloc(zone_info->nr_zones, GFP_KERNEL);
- 	if (!zone_info->seq_zones)
- 		goto out;
--- 
-2.53.0
-
+This looks similar to what some places in ext4 do, but I'm no expert.
+>
+> But if you have a better solution and can completely remove ERESTARTSYS,
+> I can't be more happier.
+I wish I could help, but as long as it's a targeted change I'd be
+happy to help, but I don't know enough about the fs :)
+>
+> Thanks,
+> Qu

@@ -1,88 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.210.71
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793177868;
-	b=g5tDR+Bpvm1BIt8PEPxaJsTqqv6215OfqOKsmN/8fu/vDJnLDrySizxGEFlmi9jTngZW
-	 DaiDxuEvSZ4IALIdZZHzG9ak05f3xLrNiZxiWGlkID6taxjnb6z0kS9COHHl0bG2YgHOv
-	 Edd+sQah5LabngzqKYW1o4vYAVZ5Y2cqHNUP1aC8IIln8cP0QmcO9g5p/CjVH+1AhPx7L
-	 FlSnik11pkt0WeQ0QE0y44LduYxGqQrQLYOiBmSrF+Jqx0sLRyUCPC5paNAf3hO4H5Rxy
-	 jX3Q8gdj0xSLO/UwI6GlZlVjHGuDrRbspSOcFcwJP4mVWGmHSbfcouJwE3gW/lCFXuw==
+	t=1793177973;
+	b=xD7r1fg4Vs83mAwCO0yiAlfdl7ihgD3p/+8sP1KlHz/XGq1cAeDdUfUeklAOXljncpPr
+	 YTxWDkWAR6ekdikxQuZLGa2B2+BjrrVnDjslJBmGx78DPIlS5E+Il9Zsi/nz1J4dQR0Ku
+	 9M5XzKPrcFWelHDJRoprfowwEZU5HNAP3CCvG8OsdsJiDwHj9zScGccNcByFO2y2g+pF8
+	 bIDQCKKSOSQyN2b1KBXSHptwap1uUdAIFO1yV51Hk18+5gF3kWfwwENONTIBMFUEaVXIX
+	 8rfR6uSquW0xC3ujxbv2yI36zy9F1f5M8S0YWP3cRPYHmhpzm2tU1qs3f1B4E5tQAIg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793177868;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=/WqBXbdrr81VFuR+G6HpIUqhONN25pqT1vt0MHbETgY=;
-	b=E0DxkUih6VlaT5PTZS+k3lgp41sE35JnB+v+IDvkWInJLFSdJsk6GmHeSfvZ1hs3xcDd
-	 1R35R3vCo3KUJ7N57RFrR/ljKJ+yIOqgYuIpwwL/BvWwjzR1PmNnpeqH8O8M7Pou9HPzE
-	 dvoCJ3x/lluZqf4vNsUNWUu5PJaoRu8xrsgFJvuxXq0bYGYNlSERQXfOg1bP7s8XnluOS
-	 BlN9DtDahCtUQNMwmVdA30YkQrNZ1Tt6ixIjQaW1DqfWnVBPUjWSh23CJX7zQGGUxaa/R
-	 ncZ0dtxugonsflKtSA+aDCyOsJ7D5ahVEJF9m6YHahHOTef7/Slay2BdY+3qrxQAeLQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793177973;
+	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:MIME-Version:X-Received:Date:In-Reply-To:
+	 X-Google-Appengine-App-Id:X-Google-Appengine-App-Id-Alias:Message-ID:
+	 Subject:From:To:Content-Type;
+	bh=RiNXpN9laP8Jfj7XRLDYlapATM5DZemLq0Y788hUrRg=;
+	b=X6IZFZ9YQOdgCd++++UrRPAMVnfds+rksjUQ/BP1sc/wqnYJ/EEhxOKpqeFd8SawnB6F
+	 Yn4+xjVW34iqflgc/8yPiFg9rAqh5CmyjGDwo1DjdGXSSTrpiZAVfVa9cY0jH0OjZo0lu
+	 OaXhZb8kemKvAKZRH8oR6MhpNSjQEtcWZbKDBKfRQ1MmzOVEw44tjiVwNj/dYuWAd7Baz
+	 epcQqXU0KczNhVv6tu2adNcfdxjzh9LpNJNOIshv/cc4P83YDXSXNhAAgrJkGWBSfpJP/
+	 A4zinAbLIJlQ91NL/Vuhu0NPz640bfQJgVFD3spPmvx542Wl3s3rXim7p41cqT6yeMA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=CFv5AfZu;
-	arc=none smtp.remote-ip=209.85.128.41
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
+	dmarc=fail header.from=syzkaller.appspotmail.com;
+	spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com;
+	arc=none smtp.remote-ip=209.85.210.71
+Received: from mail-ot1-f71.google.com (mail-ot1-f71.google.com [209.85.210.71])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E22C9606A31D
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 08:57:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E22C9606A31D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=CFv5AfZu
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4a2069b9710so6343955e9.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 01:57:47 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793177866; x=1793782666; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=/WqBXbdrr81VFuR+G6HpIUqhONN25pqT1vt0MHbETgY=;
-        b=CFv5AfZu5I2b9KXFq0rOQPwx5UV0ZFc+xHcUWQMTcUuoaaCCbTqUKE2sjAMCyCKKuS
-         rdafitpNcg5oiyS0CZjoKlJY3o0peJuKFzL4a68vw2whwjYNLbygWPA6iyXxMkbCHuaw
-         lUi2hjyacO81EYVMX03X18jKuZU+N3fY4n3qLOWvkNEcFnZc/QJyPIafW9EJMx6h+bbV
-         MynPWKZhKIjQEaGEPpKkDOueqoolfl/FAZVoFCjoG9TEoWiWSgaswZqeDErFDuDIo23A
-         qg50u0QBJv2HO7OuqmLq+2lWtgZZGerhOBvXBAA68k/meQvgU+UgtZCkxSju6ioa7mD1
-         Y7hw==
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 08456606A31A
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 08:59:32 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 08456606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-ot1-f71.google.com with SMTP id 46e09a7af769-81b50ab16edso942695a34.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 01:59:32 -0700 (PDT)
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793177866; x=1793782666;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=/WqBXbdrr81VFuR+G6HpIUqhONN25pqT1vt0MHbETgY=;
-        b=18z/i9RmejRt2ZowtYiaORPDyVD3ahaO4o4/SvTaz/3LJ/WC/U5isTI+wnnW1vUahQ
-         jUUGSufoCvwa7p+n08CtaATixxUCiTILf/cONj8rlg4OhungaOrarKuBO4f7rFDNVBf/
-         f2YYUhS4ovBPDSvi518oL+T3dZZ0Kb8uRS71+J8ygLi/yn6D9H0iQLZrvYY/uXny8lM4
-         UdjcMxsgBJe/24VTiU8qP2LADwJB0miO+ukI02Vi8dQYqWs2C3shFkknR+TW8ujTJmcT
-         dwcCt7XmuC18vzFZlm6UZ73YVOTedSHgmJnf0QPeuSLaazd0cRs6pY+FKVhnYk3bmD4D
-         G87A==
-X-Forwarded-Encrypted: i=1; AKwUvBx2nr+XegyCfe9EZeCBX3O9HkE8/ZSPmhCmMxzA1R+Nx2Z3VyyU70vItp+lv+M1kT+h3DnmkqNO5iNZ/A==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLaCuSeZkSWByUCQIR9dR+B5K6uv1GBFEHYwY03s4sDvoJG71yk
-	H4CPk8BMohXh5QnHCnQQpx92lu+LjHdS+VeS04UjuuQ/9GjjHLc4mOof8Y3wVr9YDK8=
-X-Gm-Gg: AYBFou3oFyxKR6i5DPcumO6JMq4kOzwwHDMJJn83PDIEVyaKjR/Ciip+2qvpOu3Ajan
-	ni+4yeq1c2ZsBI18PKhK/qcUOSsZzVF2FOnZnYs0bJs5ZwHvYsp7V0FrRobTpVtBnrvR5RxvZJw
-	ka9z4q28AuFJlG+Axity5L36MjEyvZ1UpXkoNE4TIQRg0xs7DcQV6JX/TMPOnXGKdYo6fA8FzXt
-	dYZDNh02oX560n31CFLyJdCv1YhgLjb5MDi3nJd3WMVMWPrauw3TQpqZNFMDqeWkZqUVRagnMRs
-	bKLcJjxLj3FxBN9lf7DFLZfdaZX6zlbsCqSfky8oCSdQ5vHoSOkBY4c64JcRgIu6Mh8Osf5FtPn
-	kaP2uvn4Hr92W3hW9GJQk7V9tmc8aGMgZW/xZ5s5EyGgguyVmIXtAIrJ5sHcrPv1FoRk+0VnPcT
-	CZdLdpFKN1PMOJyTQx8l/7h00A8w8Iru541WBjeTSt8qe4EBsxI3IFFc/L04wmDP0pYTePgOt8N
-	uRoxqK0PkH8NYyGBUfU8qHN3U9SxIP9bHeOZ6Mz+P2Gaeqy8NQWmKwlze/DDvyKclRxlvoqRRN2
-	k9zPY+C2/kHxTDiWeQwCHA==
-X-Received: by 2002:a05:600c:8715:b0:4a1:7ec7:a479 with SMTP id 5b1f17b1804b1-4a967ab1ce3mr32942435e9.33.1793177866215;
-        Wed, 28 Oct 2026 01:57:46 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae5a9035casm2084162a91.2.2026.10.28.01.57.42
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2026 01:57:45 -0700 (PDT)
-Message-ID: <65fd2260-78e1-4521-9df1-b042788ae7bc@suse.com>
-Date: Wed, 28 Oct 2026 19:27:39 +1030
+        d=1e100.net; s=20260707; t=1793177972; x=1793782772;
+        h=content-type:to:from:subject:message-id:in-reply-to:date
+         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=RiNXpN9laP8Jfj7XRLDYlapATM5DZemLq0Y788hUrRg=;
+        b=LoLZIED2muQuNT3uHvZGbmn0sz5G0OV+ejbMEghAHvpbuEmPHhotOabl3gCSk1Yno7
+         5/5Gk6AHcbax/op0qbVP4dPGqT5URHwEt2GIPm/BTrYeY1O4i107szZ5PDB611PNGv0u
+         y6QVpwL3rnzW9bSS1MjdhxMKtTstXcZ9aIjdYmZmehxfGMYvQV+fiLYfCd6SLutlZwXW
+         LnC047R4blBq0axCnzhWRv+yBPFfdjR9D4CA0w2E/V/Dz8TOp2UkNEj2yByxx7b50+Qu
+         9ukNkW1dQW/F4kLLai4arFdP9lSrBeRkPeCaXP7JhnOjSbD8i1l4LPEczYA/goQ0vVvt
+         6Rjw==
+X-Forwarded-Encrypted: i=1; AKwUvByJN4O7uwG9KGS9HAtiFy+Wuf/qQNbVMwMCamI5INTsxciCEy8+dZzLrIFukvp6EnMcSMcbp8V/p+uoUw==@vger.kernel.org
+X-Gm-Message-State: AFq9FYK+pz3lU6f7LAXZpwYO0JcHTzN3NXJK6ylsCqTg6ZIKkZlDlwkM
+	/rmXbL+O6jI6yoOsJocCPeWMIkzzCTV9FQARylpF3nYjpI+Sy03F7S2qHaBEDtqPREoeZLxN0ho
+	vy7DT8Xkzy1pftfF5pNqQ+xnPUfTMwEH8AlDDXJNhMjyHOa2wCZTeS1bpc1c=
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,161 +58,82 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: do not leak -ERESTARTSYS from FITRIM to userspace
-To: Luca Stefani <luca.stefani.ge1@gmail.com>, zhiwei.liang@zliang.me
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- Filipe Manana <fdmanana@suse.com>, Robbie Ko <robbieko@synology.com>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- stable@vger.kernel.org
-References: <20261028-btrfs-fitrim-freezer-v1-1-0ad1d58aa94d@zliang.me>
- <CAO0HQ0UE5BtevPHHfV9mQo5HoqzxzDDjAkj9e=pD_0AaXmSYFQ@mail.gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <CAO0HQ0UE5BtevPHHfV9mQo5HoqzxzDDjAkj9e=pD_0AaXmSYFQ@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+X-Received: by 2002:a05:6808:5181:b0:53c:af69:84e2 with SMTP id
+ 5614622812f47-5637e8f9974mr1122691b6e.6.1793177971994; Wed, 28 Oct 2026
+ 01:59:31 -0700 (PDT)
+Date: Wed, 28 Oct 2026 01:59:31 -0700
+In-Reply-To: <6a8a83d2.91706f20.16b6e3.02c2.GAE@google.com>
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6ae1b973.768774f5.3237ab.004f.GAE@google.com>
+Subject: Re: [syzbot] [btrfs?] WARNING in btrfs_add_to_free_space_tree (2)
+From: syzbot <syzbot+554a2e08e4abc56984a9@syzkaller.appspotmail.com>
+To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+Content-Type: text/plain; charset="UTF-8"
+
+syzbot has found a reproducer for the following issue on:
+
+HEAD commit:    65ba8f34ec88 Merge tag 'xtensa-20261027' of https://github..
+git tree:       git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
+console output: https://syzkaller.appspot.com/x/log.txt?x=13253ee1580000
+kernel config:  https://syzkaller.appspot.com/x/.config?x=9050e63bb81bd52
+dashboard link: https://syzkaller.appspot.com/bug?extid=554a2e08e4abc56984a9
+compiler:       Debian clang version 22.1.8 (1~deb13u4), Debian LLD 22.1.8
+C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=1116e469580000
+
+IMPORTANT: if you fix the issue, please add the following tag to the commit:
+Reported-by: syzbot+554a2e08e4abc56984a9@syzkaller.appspotmail.com
+
+BTRFS info (device loop0): turning on async discard
+BTRFS info (device loop0): enabling free space tree
+------------[ cut here ]------------
+btrfs_abort_should_print_stack(__error)
+WARNING: fs/btrfs/free-space-tree.c:1050 at btrfs_add_to_free_space_tree+0x4e1/0x5b0 fs/btrfs/free-space-tree.c:1050, CPU#0: syz-executor158/5666
+Modules linked in:
+CPU: 0 UID: 0 PID: 5666 Comm: syz-executor158 Not tainted syzkaller #0 PREEMPT(full) 
+Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+RIP: 0010:btrfs_add_to_free_space_tree+0x4e1/0x5b0 fs/btrfs/free-space-tree.c:1050
+Code: e2 74 1a 41 83 fd fb 74 0d 41 83 fd f4 75 15 e8 d5 f7 7d fd eb 17 e8 ce f7 7d fd eb 10 e8 c7 f7 7d fd eb 09 e8 c0 f7 7d fd 90 <0f> 0b 90 44 89 e9 f7 d9 4c 8b 24 24 e9 95 fe ff ff 89 d9 80 e1 07
+RSP: 0018:ffffc90001f5f410 EFLAGS: 00010293
+RAX: ffffffff844b2d30 RBX: ffff88800c15c001 RCX: ffff88804022cb00
+RDX: 0000000000000000 RSI: ffffffff90818f40 RDI: 00000000ffffffe4
+RBP: ffff888013dc88d0 R08: ffff88804022cb00 R09: 0000000000000003
+R10: 00000000fffffffb R11: 0000000000000000 R12: ffff88800fcb2790
+R13: 00000000ffffffe4 R14: ffff888035d692c0 R15: 1ffff110027b9126
+FS:  0000555563bef400(0000) GS:ffff88808aa11000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f0b1e41a000 CR3: 0000000013f09000 CR4: 0000000000352ef0
+Call Trace:
+ <TASK>
+ do_free_extent_accounting fs/btrfs/extent-tree.c:3187 [inline]
+ __btrfs_free_extent+0x1422/0x38a0 fs/btrfs/extent-tree.c:3554
+ run_delayed_tree_ref fs/btrfs/extent-tree.c:1824 [inline]
+ run_one_delayed_ref fs/btrfs/extent-tree.c:1851 [inline]
+ btrfs_run_delayed_refs_for_head fs/btrfs/extent-tree.c:2058 [inline]
+ __btrfs_run_delayed_refs+0x1669/0x43a0 fs/btrfs/extent-tree.c:2134
+ btrfs_run_delayed_refs+0xdc/0x2a0 fs/btrfs/extent-tree.c:2246
+ btrfs_commit_transaction+0x287/0x3010 fs/btrfs/transaction.c:2283
+ btrfs_quota_enable+0x1274/0x1f70 fs/btrfs/qgroup.c:1241
+ btrfs_ioctl_quota_ctl+0x186/0x1f0 fs/btrfs/ioctl.c:3581
+ vfs_ioctl fs/ioctl.c:51 [inline]
+ __do_sys_ioctl fs/ioctl.c:597 [inline]
+ __se_sys_ioctl+0xfc/0x170 fs/ioctl.c:583
+ do_syscall_x64 arch/x86/entry/syscall_64.c:61 [inline]
+ do_syscall_64+0x166/0x520 arch/x86/entry/syscall_64.c:84
+ entry_SYSCALL_64_after_hwframe+0x77/0x7f
+RIP: 0033:0x7f559f52b9fb
+Code: 00 48 89 44 24 18 31 c0 48 8d 44 24 60 c7 04 24 10 00 00 00 48 89 44 24 08 48 8d 44 24 20 48 89 44 24 10 b8 10 00 00 00 0f 05 <89> c2 3d 00 f0 ff ff 77 1c 48 8b 44 24 18 64 48 2b 04 25 28 00 00
+RSP: 002b:00007ffdce719570 EFLAGS: 00000246 ORIG_RAX: 0000000000000010
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00007f559f52b9fb
+RDX: 00007ffdce7197b0 RSI: 00000000c0109428 RDI: 0000000000000004
+RBP: 0000000000000003 R08: 0000000000000000 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffdce719820
+R13: 0000000000000004 R14: 00007ffdce719a70 R15: 00007ffdce7198c0
+ </TASK>
 
 
-
-在 2026/10/28 19:21, Luca Stefani 写道:
-> On Wed, 28 Oct 2026 at 07:57, Zhiwei Liang via B4 Relay
-> <devnull+zhiwei.liang.zliang.me@kernel.org> wrote:
->>
->> From: Zhiwei Liang <zhiwei.liang@zliang.me>
->>
->> When a suspend starts during FITRIM, fstrim can fail with:
->>
->>    fstrim: /: FITRIM ioctl failed: Unknown error 512
->>
->> On a Fedora 44 laptop with kernel 7.2.7, 3 of the last 21 weekly
->> fstrim.service runs were in progress when an automatic suspend started.
->> All three failed this way and left the filesystem untrimmed.
->>
->> Since commit 69313850dce3 ("btrfs: add cancellation points to trim
->> loops"), the trim loops return -ERESTARTSYS when
->> btrfs_trim_interrupted() sees freezing(current), and FITRIM returns it
->> to userspace. Since commit bfb670b9183b ("btrfs: handle user interrupt
->> properly in btrfs_trim_fs()"), btrfs_trim_fs() returns it right away.
->>
->> -ERESTARTSYS is only valid while a signal is pending, because only the
->> signal handling on syscall exit turns it into a restart. But
->> freeze_processes() first sets pm_freezing, which makes freezing() true
->> for every user task. Then it walks the task list and sends each task a
->> fake signal. The trim loops check btrfs_trim_interrupted() after every
->> extent. If a check falls in this window, the loop returns -ERESTARTSYS
->> with no signal pending. Nothing restarts the syscall. On that laptop,
->> with a few thousand threads, freezing user space took 2 to 5 ms in each
->> of the three suspends above, and all three runs hit this window.
->>
->> Make btrfs_trim_interrupted() treat a freeze as an interruption only
->> once the fake signal has arrived, i.e. when
->> freezing(current) && signal_pending(current). freeze_processes() sends
->> that signal in the same call. The trim loop stops at the next check
->> after it, so suspend is not delayed.
-> Looking at how ext4 handles this scenario it seems to me they don't set
-> the error code to -ERESTARTSYS and (from a quick glance) return the
-> bytes discarded to the caller.
-> And like before they continue the discard (which will skip/fail again) until
-> there's nothing to be done.
-> 
-> I don't know what the intention of btrfs: handle user interrupt
-> properly in btrfs_trim_fs()
-> was, maybe we should just swallow the ERESTARTSYS case in those scenarios.
-
-I agree on that btrfs is the exception, we should follow ext4/xfs, not 
-rely on some tricky signal handling behavior for suspension.
-
-I think the tokens of the author should be spent on unifying the btrfs 
-fstrim suspension behavior instead.
-
-
->>
->> The restarted syscall re-reads struct fstrim_range from user memory.
->> When the device phase is interrupted, btrfs_trim_fs() has already stored
->> the trimmed byte count in range->len, and btrfs_ioctl_fitrim() copies
->> the struct back unconditionally. The restart is then asked to trim
->> [start, start + trimmed) instead of the requested range, or fails with
->> -EINVAL when nothing was counted yet. Skip the copy_to_user() for
->> -ERESTARTSYS. In all other cases the partial count is still copied back.
->>
->> Tested in a VM with pm_test=freezer. Without the patch, 18 of 20 freezes
->> during a trim leaked errno 512, and 10 of 10 restarts after a
->> device-phase interruption failed with -EINVAL. With the patch, all 30
->> runs restarted and trimmed the full amount.
->>
->> Fixes: 69313850dce3 ("btrfs: add cancellation points to trim loops")
->> CC: stable@vger.kernel.org # 5.15+
->> Signed-off-by: Zhiwei Liang <zhiwei.liang@zliang.me>
->> ---
->>   fs/btrfs/free-space-cache.h | 3 ++-
->>   fs/btrfs/ioctl.c            | 7 +++++++
->>   2 files changed, 9 insertions(+), 1 deletion(-)
->>
->> diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
->> index e22443598b..cba2f5fd6b 100644
->> --- a/fs/btrfs/free-space-cache.h
->> +++ b/fs/btrfs/free-space-cache.h
->> @@ -58,7 +58,8 @@ static inline bool btrfs_free_space_trimming_bitmap(
->>
->>   static inline bool btrfs_trim_interrupted(void)
->>   {
->> -       return fatal_signal_pending(current) || freezing(current);
->> +       return fatal_signal_pending(current) ||
->> +              (freezing(current) && signal_pending(current));
->>   }
->>
->>   /*
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index ac070c745b..b02c59cbb0 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -529,6 +529,13 @@ static noinline int btrfs_ioctl_fitrim(struct btrfs_fs_info *fs_info,
->>          range.minlen = max(range.minlen, minlen);
->>          ret = btrfs_trim_fs(fs_info, &range);
->>
->> +       /*
->> +        * A restart re-reads the range from user space, so do not clobber it
->> +        * with the partial len the rerun would otherwise take as its input.
->> +        */
->> +       if (ret == -ERESTARTSYS)
->> +               return ret;
->> +
->>          if (copy_to_user(arg, &range, sizeof(range)))
->>                  return -EFAULT;
->>
->>
->> ---
->> base-commit: e17e64baf63f7c85bec209ed73f14c1b2a7e39fb
->> change-id: 20261028-btrfs-fitrim-freezer-d4cba16e7e13
->>
->> Best regards,
->> --
->> Zhiwei Liang <zhiwei.liang@zliang.me>
->>
->>
-
+---
+If you want syzbot to run the reproducer, reply with:
+#syz test: git://repo/address.git branch-or-commit-hash
+If you attach or paste a git patch, syzbot will apply it before testing.

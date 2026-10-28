@@ -1,54 +1,78 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793206364;
-	b=sPNnvCm40iWhSl0dGME5ny3Kf0i66g5PjGASMv46udxvPvLdzrISbCqo2lWCj/vdNsHm
-	 0oJaAVcaoWHd91QFahiCLbSFgn38XD9TCRO124kcTnAclThjZufLM610Hh34lX9TbVPhF
-	 T6iOS9n/CpjRSsSwaXy5nCOm9vvZ6RFnbHJXjABKvHUpoKyiLfXL4dV97OIUclsVuBk6v
-	 hnbqIJlLQbz5WSrdlA8PaIantvYQCACxZKmAnML1V50tnbH6d8RbPxJCzulmKu0+1ghMe
-	 65CvILs3NtV+yZ5/HwJ6LXc/W/QvlYaVcNhacqNeV81XcclmTfc7AhciSGNKR83+YyA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793206364;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=wpc7iCC/LNDm9DEIf8Z2u5xVKDp7xq2SKdOl4V25TyI=;
-	b=J2osLvSJP3JtuOmF6mROvgyIZmveyTRdhR2atJaKdxO52ZQWO6AI87+Ok9QWAUCXVYrb
-	 bCX+ERTjZfZ3KwfBW1QgQSB8wUigQUeN9ugc9YhOv1X6TivWw5FoEfre6uvhwmSG5bylz
-	 FIw+lNrN458YN5nQUgusCwkh99Vb3ZLcd6RH2pY+hh+7nF7LdJjNeqN6DjV6BGJAoTy9r
-	 /i6ceOPcj22xTP1Wt57s9tiH9HmlBmR2FexoXxODDHmVg3F7zYmlxSLsYgVHl+QGSjMK5
-	 6yO+igovkfR7tOXlWpmIUDssjoyZaAWV1v4rF2u0i27rc6a9p4Xr66jbGHiOpcnJwIw==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PdRJKbnT;
-	arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793210152;
+	b=meukmYuAU8Zbgb8eKtua5xqZrknagL26mk4G3LDDGUiSupVOW0vTlRqN8nI+2bBqPTzT
+	 /KRz8VmVjtk8CBAbU8duRJamsEKY+H1jw0EY+dQToTkGqA1xBAa0Y8xNCwe0s0100aZ9n
+	 MD1TK5O1/2xrommuG5IVBffgCdX04gTveMODcdNIvv71W17g8AkpWOTUoVp294ahkLqvz
+	 1Q+p5AgUAPRoIOAJKvejOVgdJrEgGLswD8xQAykJ8CpsNHv/H/arWCdas93xa+aHpV2zD
+	 8gweUygI9SU/CxGbIGHORuKS9w8HZe7x0sRQC2Sm+WjuDe2zdDm8trBu1W74ZgWGHPg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793210152;
+	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
+	 Content-Type:Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
+	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
+	 X-Original-From:Reply-To:Content-Transfer-Encoding;
+	bh=jCwdFFAk7cO3b4/5/yWM/E+7msGcjMisvh+RoNy9MPg=;
+	b=fs5FaLcwBbpNeFVz0x5Fl7o3/nC5qleQgdTJjeE7ZRyPDOqeT7CexR7Pq06E5WSONwex
+	 N3tjmQmSKT7FufAzFZLl/y9eYjHM2UfblnlRL5Iz0Xr18BuZX3RwY5LNI3bszirVjF/4L
+	 8Fe5RYPPnZ1N6yBIT/0c5cSFyw0fxL+7Gv9J9HNq5HOm5nR0yX/p9E61qEqQ0zaspHBn5
+	 ID4pv4Xd7pSvt9lVvagu3lWAQxXgloMDKKUbQa7hiP8rethrSuSgVr/jSpn66xeI+6fAD
+	 1ZubmDEMNVQnvPRmcPh2IxE0uQJtOc+aK15rretghSuxCVelWpmr4V0xf0rvDcFZWIA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lOvEQre0;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A257606A31C
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 16:52:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D101B606A321;
+	Wed, 28 Oct 2026 17:55:51 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PdRJKbnT
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 94AEA1F01825
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 16:52:43 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lOvEQre0
+Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
+ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
+	t=1793210151;
+	b=0YDEQvFj1/rMhxtcPKQdGYC96YlVcq55ty2u4vVXC1AfA2aaH/dMXSYOkAcEy48YEbnZ
+	 Kd7REQvaPMeNVrsqPZtxs4Bk3rkyvwhxbUb4Vl43DiCkXhj5pHfTK3IRKP+EqDPKltDL8
+	 hfPdt/n+nFvlmRvRdKDlKqKqp4vLKKyuuRUzjhuAUCAPPJydxWJxl3QEHjmT6lVFE5W7Q
+	 NPqovO0EQouktBtQJIFhefWX/ZLPIsrzFgQSJYRoCUXi3r49FxM8CltSqTXCh78mDptvB
+	 KpMMgb5prglj6axQ1t/xPPbaxde6OoSvex3rYTjQGYI8EivX00SQRhTkvYyUiOsNPVQ==
+ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
+	c=relaxed/relaxed; t=1793210151;
+	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
+	 Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
+	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
+	 X-Original-From:Reply-To:Content-Transfer-Encoding;
+	bh=jCwdFFAk7cO3b4/5/yWM/E+7msGcjMisvh+RoNy9MPg=;
+	b=2XeUDd7JVPt/CNmpSRsBUcrOR3WZWmbMlN0ZOSC1jWsYgPOZfCJXLGG1SfEFMQfdkVv/
+	 x1nFT+T74hiYEjfu3HE57Lp+FcSFJN3kT9qftJWZG4+T+JyuOb5PJ6IB36fw0w6hK1oTd
+	 SNh0bOXXBpSJVoUgcZjl+guOemyVxlm6L96sKYY+JFOxZz8sKwaUBcvurfuMVl2WyHvs1
+	 BlAqLwvNCTtLsn3kFD8KVFiQYBkyjtXUWO+8d5lcw3gOAUe3LRZqMU6p41yrLswxKsONz
+	 S6KsRJkauNWUs4pB8U6umZeS6qZJPKVCgeUsWo+EtszJMLhkAVSARy/6Ym6FL+K6jyA==
+ARC-Authentication-Results: i=1; smtp.kernel.org; 
+	arc=none smtp.remote-ip=100.80.115.77
+Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	(No client certificate requested)
+	by smtp.kernel.org (Postfix) with ESMTPS id E6A5A1F031E0;
+	Wed, 28 Oct 2026 17:55:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793206363;
-	bh=wpc7iCC/LNDm9DEIf8Z2u5xVKDp7xq2SKdOl4V25TyI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=PdRJKbnT1qyMVZUtBlffaO02vmS1nIQptoLaiGvornTtNHfXxc28gi1DIyRMvNCT/
-	 jePaF0UEK6GLBLKUE7v5fMgfklx8QRdmzVGj/Rh7tdcJKKH9Z8y0pUW9T7TQRdACYa
-	 x7FZTNA7xDLEfSbYRhmMGTdOXxd1nkS7fVwH9an2CU55z0aTATo558wfpgA4RbfB1q
-	 bQR+N3tgmfS2N5/S+NcyC/oWi31k3IROwwfFnuihSAyF5xajpGQp3yLO2D+0OEgZjT
-	 CqO+jl42AiHg70lC/KE7P6oPMBj1ReDvHpDKCsZoJJZS3DkSrUm9AxaAeXewvXvq4G
-	 2SkbD4XjSK+Og==
-Received: by mail-oa1-f49.google.com with SMTP id 586e51a60fabf-475920b9ca2so398640fac.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 09:52:43 -0700 (PDT)
-X-Gm-Message-State: AFq9FYIazZGLdeAuTt2QJ7jC6v36pmwfibwug7EFtCo75xEx7hOMYiNO
-	MzE50mf0L7LbZtwJrPpTMT4Wt5XlzpKPxFjWVrLtj6GMzT/6qss0qG5g5sW7mPCNrKEC8WqIgw5
-	xDNaVuXH8QHsoWCGmqjnqX1DVn0rQyPY=
-X-Received: by 2002:a05:6870:51cf:b0:49b:a2da:91e1 with SMTP id
- 586e51a60fabf-4a8bb5c5c9emr2124775fac.9.1793206362707; Wed, 28 Oct 2026
- 09:52:42 -0700 (PDT)
+	s=k20260515; t=1793210151;
+	bh=jCwdFFAk7cO3b4/5/yWM/E+7msGcjMisvh+RoNy9MPg=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:Reply-To;
+	b=lOvEQre0ZaumLbA0DXYVH8icCzAA1vfzvCUdAkWrGx2BP+RFd4hvKeWAnTK5yW7gP
+	 sbNRoTS1TEx5SAsUVx3rCQJyNZHubfsYxS35ojY4mfkP9J3F9ovJ23+3D0+r+Gxsp9
+	 vqIinvFcctlpHNPUCdvcHFteZjkDEbv1RmrPSevDx/av8MZLCQQCGH5sW184QGj6TZ
+	 KeWO7i78d+Z7z3wKv/Rw1LGiic2aUvsfcbd6J6vqX5FP0BGK7aFkG+0eg1V+V/jjzS
+	 b8uxukstl7gRrB9tBOhuyNWlDmDYBJvxnTjTw71G56Hkxea0pKHzz5aguIs6e9dLPH
+	 cLKlDum6UGxrA==
+Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
+	by lkml.kernel.org (Postfix) with ESMTP id 7316145528;
+	Wed, 28 Oct 2026 17:55:50 +0000 (UTC)
+From: Luca Stefani via B4 Relay <devnull+luca.stefani.ge1.gmail.com@kernel.org>
+Date: Wed, 28 Oct 2026 18:55:50 +0100
+Subject: [PATCH 2/2] btrfs: don't report failure when trim is interrupted
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,48 +82,67 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <cover.1793168898.git.wqu@suse.com>
-In-Reply-To: <cover.1793168898.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 28 Oct 2026 16:52:05 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5K=wdMWFsjV=mP5pNSauLTB6G+16Ro2Zydj2q3m=zyWQ@mail.gmail.com>
-X-Gm-Features: AclHuK_b-1zAdhnJWfcRTqa4YyJRjyjhrufI8_EmXj5Ae01HfbvX9V2wGaikNYk
-Message-ID: <CAL3q7H5K=wdMWFsjV=mP5pNSauLTB6G+16Ro2Zydj2q3m=zyWQ@mail.gmail.com>
-Subject: Re: [PATCH 0/2] btrfs: raid56: minor fixes to rmw_rbio()
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
+Message-Id: <20261028-b4-btrfs-fitrim-interruption-v1-2-bf5c53738b3a@gmail.com>
+References: <20261028-b4-btrfs-fitrim-interruption-v1-0-bf5c53738b3a@gmail.com>
+In-Reply-To: <20261028-b4-btrfs-fitrim-interruption-v1-0-bf5c53738b3a@gmail.com>
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+ Luca Stefani <luca.stefani.ge1@gmail.com>
+Cc: Robbie Ko <robbieko@synology.com>, Filipe Manana <fdmanana@suse.com>, 
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ Zhiwei Liang <zhiwei.liang@zliang.me>, Qu Wenruo <wqu@suse.com>
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1793210149; l=1270;
+ i=luca.stefani.ge1@gmail.com; s=20261028; h=from:subject:message-id;
+ bh=SHRYs75MlS7h15FzpDG0vGMIMQ3guuhpE4HMc+f+OLg=;
+ b=PqMIpIsvrDz40U2W8kqPvIIUiPvJl384C2hgujzHQfvCa78g9smaGobCvkjcJb5ARaj9kwnD4
+ LtACyEsLihdAxU1shFVoLAH5KkOvKavqdgLPOLRFCW7Luu38T+iiiNz
+X-Developer-Key: i=luca.stefani.ge1@gmail.com; a=ed25519;
+ pk=0OIKU9oiaC0ALN4kqvw7ZbPFXqsBLvWm7MhEDYv3PyI=
+X-Endpoint-Received: by B4 Relay for luca.stefani.ge1@gmail.com/20261028
+ with auth_id=1347
+X-Original-From: Luca Stefani <luca.stefani.ge1@gmail.com>
+Reply-To: luca.stefani.ge1@gmail.com
+Content-Transfer-Encoding: 7bit
 
-On Wed, Oct 28, 2026 at 6:31=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
->
-> I was checking the bio_list_lock usage as some call sites doesn't look
-> sane, e.g. spin_lock(); set_bit(); spin_unlock();.
->
-> But during the cleanup and reviewing, LLM exposed two new bugs:
->
-> - rbio_orig_end_io() can race with lock_stripe_add()
->   And rbio_orig_end_io() didn't hold the bio_list_lock, under certain
->   race condition, a bio can even be missing.
->
->   Fixed by the first patch.
->
-> - Failed rbio can still be cached
->   Fixed by the second patch.
->
-> Qu Wenruo (2):
->   btrfs: fix racy bio_list changes for failed RMW rbio
->   btrfs: don't cache rbio if an error is hit
+From: Luca Stefani <luca.stefani.ge1@gmail.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Treat cancellation as a successful partial trim as ext4 and XFS do.
 
-Thanks.
+Reported-by: Zhiwei Liang <zhiwei.liang@zliang.me>
+Closes: https://lore.kernel.org/20261028-btrfs-fitrim-freezer-v1-1-0ad1d58aa94d@zliang.me/
+Suggested-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Luca Stefani <luca.stefani.ge1@gmail.com>
+---
+ fs/btrfs/extent-tree.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
->
->  fs/btrfs/raid56.c | 35 +++++++++++++++++++++++------------
->  1 file changed, 23 insertions(+), 12 deletions(-)
->
-> --
-> 2.56.0
->
->
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 242db255cf1c..90e581c29609 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6926,7 +6926,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 			bg_failed, ERR_PTR(bg_ret));
+ 
+ 	if (ret == -ERESTARTSYS || ret == -EINTR)
+-		return ret;
++		goto out;
+ 
+ 	ret = btrfs_trim_free_extents(fs_info, &group_trimmed, &dev_failed, &dev_ret);
+ 	trimmed += group_trimmed;
+@@ -6935,9 +6935,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, struct fstrim_range *range)
+ 		btrfs_warn(fs_info,
+ 			"failed to trim %llu device(s), first error %pe",
+ 			dev_failed, ERR_PTR(dev_ret));
++out:
+ 	range->len = trimmed;
+-	if (ret == -ERESTARTSYS || ret == -EINTR)
+-		return ret;
+ 	if (bg_ret)
+ 		return bg_ret;
+ 	return dev_ret;
+
+-- 
+2.56.0
+
+

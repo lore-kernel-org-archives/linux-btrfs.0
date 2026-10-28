@@ -1,83 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.42
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.45
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793221955;
-	b=kYZdW/QRQyr8jKSAyyZIEd9HXzPa36+sNEXjReC4FFzpQ2r6J/pUMQThio3R8sZ8Qh3/
-	 FRKYzGxmf58cDU/dYJ2oHrv5YNhgwU/AJF35PnqaN4jPqPXIV2t9GNB/bP3bc5hHG4WhY
-	 pqHSbVoLhgT4ezHD7M1oGbfpRGnR+Tn3vuev6nQj8IPVvz/Ts1l/mk43a5dHXxivZ5t+H
-	 wjGX5hm2pqcz7q1IesujnXGNATmfeBlhpcLS79UuOYjWpTQAk/wm4cj5BZMXxeUTjVXm6
-	 33oXTOoK5FfQPmI7gHUE3WM8za8K58ybibdZ0eQzl4BxXwXUGSjoTMj6SXOhb8rBCvA==
+	t=1793222974;
+	b=hCLh5p9qwdCVWV5J4dOgRSBZBEXHjI5C5FuOh9xSfnUPpVKS7jDFBPe1M8uzXD4Jvnuc
+	 CJOA5kINJ/O3TqpdeCVP8/nC1+yM8RF78QXQlvTc7vm2z4L5hRmO/mgzXyarW9dwsUPQY
+	 ctkupFQH/je4veykG/Go1Yxg2YanXmewqscoE64JyZxHtyR0YLWhc+WEyw9Cx6C9hyu9/
+	 RiPJCOcdRD8xn8UnEjwsQYgSEjnWE+r9jstmjEsSrqZLyLP50NxrEMXvrIEjz9BDsrYjK
+	 4C2HKOFawcYNo/78wxUbHzH8U145wRXGTGfpLivHY5KZ2+uacAqm3JWEbFu3m6cFSZg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793221955;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793222974;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:To:Cc:Subject:From:X-Mailer:
-	 References:In-Reply-To;
-	bh=xQYG6Eek7tElytcLfy1wx1UEuQsespAi1XALnFrixwk=;
-	b=LUVByfd7QoDj4YQ6jeCr993rvsUcwpF5xNT2iDfwIsTlr8OgKRUetwmkiq5WJhjP2qg6
-	 ivBgNxon54kvOlOCeW7nfSFFFanCxeKxWpPO5Edc71x8QRUr5vkFZoiUS758DTUbasSUY
-	 lMtz/7wxSt/1TyN2VGljrYlkhrv7CxSBiynB7B87r9LyJmdCpAnivTup3BaEGu1/b5+rF
-	 aF8fWg9x+H21sgrY1CZz2BDurjEMLCHRyInDL6sVs4Xjv+JE5LWqTT4vqCCOTeiXhm22u
-	 QqILQ4nC4+fkXBJxMrEoBXvbrd9/BTWAN5KqeVnrxdlKqR2aHuXe+ruh8aJOuZyiGaw==
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=iAaWZBXA5nN4dTKF7tG2rnH5xjAMPLpn110ikOB8TOs=;
+	b=teEfrDxdiU3sRlp/+BMk41cP/qYpaJM3o0AGqdjZYATRPKw9fQx6Yr40Vnbo870kUOoI
+	 QkB1917D9+xASasde8YearGorFvtBQdk57GEj+pSt4tUmVxyCWOe9ZG7tmSkMc5UrdjlO
+	 Us6wZzYt+xIour0d7rd5hcwFJmYp2Gbe6sYMamRoFMmQHlXFuX1D+bW2+3k4bUpfQHhdX
+	 JCy9fyZl+IoU9Mgf9Dzq8gWc5kKC5UWhGAL34z8zskKOBjyF/Obo8U74EY589OzNBo/zZ
+	 /0mHS1EB7i0UApPcEWanEycOQnO2dus7FpT7lxsFfXrz4mHIsn0iOg3Si/EdRP7vXpw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MBhdeAFs;
-	arc=none smtp.remote-ip=209.85.221.42
-Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=MOhiOJEm;
+	arc=none smtp.remote-ip=209.85.128.45
+Received: from mail-wm1-f45.google.com (mail-wm1-f45.google.com [209.85.128.45])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8254606A323
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 21:12:34 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A8254606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ACFE7606A321
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 21:29:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org ACFE7606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MBhdeAFs
-Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-48c4d870d54so964631f8f.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 14:12:34 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=MOhiOJEm
+Received: by mail-wm1-f45.google.com with SMTP id 5b1f17b1804b1-4a140e7405dso15423085e9.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 14:29:33 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793221953; x=1793826753; darn=vger.kernel.org;
-        h=in-reply-to:references:from:subject:cc:to:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=xQYG6Eek7tElytcLfy1wx1UEuQsespAi1XALnFrixwk=;
-        b=MBhdeAFsQ4fJS9yta/S1s+KXAQFfwSDfwbV5Eugq9byXI7ZZumVDaWmVrAY1pFSkU+
-         WXtgEI+tt4/gCJESMnuNeIrRg84JRF6une+kiz0smneo63C7Mdba4MDTMJ8IXU3lkvQ6
-         0lKJM/hz/wTYNxUYTr6KLA44Qv2kqBcbi2Twl2d3nJJVcCvb21BHZqCl0UC4kxxQG8h9
-         JJ2qCT8UlStGXxTBua22UapnaM7e7nItbpLioHv6YZ7iCNfIgErMyNX9HdK421gmNfAR
-         unCsxuxOkz4l92pugfOIkH5jV5WfcPbxMkAYkwZ0VX/3YZdv/2gd7rNhC6qdL7lZgH7v
-         /XFA==
+        d=suse.com; s=google; t=1793222972; x=1793827772; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=iAaWZBXA5nN4dTKF7tG2rnH5xjAMPLpn110ikOB8TOs=;
+        b=MOhiOJEmeakhgW/quEB/e6J5P6z5sobhJGKnpRnCJLRsLpUPIrKLfm78MCpTrJdqbU
+         csfoCr9LXvwL3tauswaJOoCgC5IbGR/IMtqg5SI5MApyzaObbTbmNnO0+f1FguPaqCem
+         C0JOk4Kr3ABtNyATsqkmv6/Motq5SbruCA1nK1p6n3IhYM2l73qJOVoCdyLZnpqk978F
+         GDc6tdMjiTSdAPOB7jqysS8yNeywCN8UFIByAy4a9Kb5YjLvD45NTaYmDI9KeE2lSN+Y
+         e55Yq9TjditZ3XfkSJiShA9KzpErgXKQnAHftIxfCJXOBqHD6Pj2K9FYDPITIbTDt7IE
+         iuJw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793221953; x=1793826753;
-        h=in-reply-to:references:from:subject:cc:to:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=xQYG6Eek7tElytcLfy1wx1UEuQsespAi1XALnFrixwk=;
-        b=Wj7TD3v/c7DPIGIGG/+6A6pU0jtzZhLUtBUd78WZS2mCXKyLG46YGrPjkh2OL+x8gK
-         4Z+EzdBXU+wUB75oyAaCMixmO3h7RRN2pf98kidB4JZGhH2eWLfP9jngF93QSO4BlhcJ
-         Iox+sleHQBbJMd4xW6AU/drXxOWdd8oIGEzwYDBDAMRxizLxm4kxE/vbly4lzndq4Bkr
-         kmQAXmdu/6Oj0XTYAj56tfZ57x8z4p0+zy6eOdhDgamcuDup+Jusz32qoydYuAKQ7byl
-         fYdSAOwS4QHDBlU8/IJDxeaYm9QV4pf8r+RuDuqwbAgrBxHoK1q8MptVl/BYaM7PgmKS
-         9dwQ==
-X-Forwarded-Encrypted: i=1; AKwUvBxpe+WL6Sk2zqHBbmGU3tQWfDDAZ8oboL6CTx708l9SFtA8oe5GWw5ZHSwhwosbS6tYlrnbi1nQZinpOw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYK0pgHFGLEK0aAJ8hAsSVAopusOQlxZJL2fhaC8Txrg2hwj8J/z
-	tmZEqVwHPEOpsHt1db5XA1X4qk6++eWyiL7JnqaNmP1jYRNaznrJOOO1
-X-Gm-Gg: AYBFou0QH7x+cvJuIAcaEJK4mktxzgt0CsXnf+XLNge6bl9c4/8F17/wPl+/rnU4VQg
-	zHXYFWppmA4wenz7zXk8Zp/Y/ze+uuqulynLf7INPUmSaAHe8eYW+g9ztrgQ+YqR1C83eMB9wOH
-	opOF4/IQHxEdZ190tdtrQnZWVg4s65Ro67PW0J43xckMM2+1rWbFk7D6j6hiq+gOy79jhTn6rgt
-	brdEddtrhuUbl1V7islGKSD/c/+XA0g/yAP/HL8s33xvYjMr+kZhtwANU5rSMi9lvyeB92ITGf5
-	kmmSpL5e7Ec0rXfRd1YrfzfJenmpXi4u66mlqViiCDsIpIcdnHN1rgD09uqElQ+QWEIfiecoE02
-	mh6OA2SMMzwy2nwtqzebMTKjkhM/dDKJpvpSQkxRmsYRA+9Ty7a1I7EJ8DX/NVitLx/91/vZ0Rr
-	o3BTMZNuNvBoXgrS323i+QXMmAq5orFd9h/QeH1UEl9VUt0DdF9ivD239Yxiw/h66seEdaxk1K2
-	i2wPFKlbiw7BKB2xVLlzSIuFqjdgcml8mhpEquRCjz9EXnLKp0kDM05W3Tp7O0XLF9CBcXvZcq7
-	CKG1pV+hzW/r/TbL1qoWem0ZDQ==
-X-Received: by 2002:a05:6000:2304:b0:486:f9ea:796f with SMTP id ffacd0b85a97d-48e5d5a4195mr8378579f8f.41.1793221952869;
-        Wed, 28 Oct 2026 14:12:32 -0700 (PDT)
-Received: from localhost ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48e3ebd48fasm30209675f8f.31.2026.10.28.14.12.31
+        d=1e100.net; s=20260707; t=1793222972; x=1793827772;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=iAaWZBXA5nN4dTKF7tG2rnH5xjAMPLpn110ikOB8TOs=;
+        b=l6x6S2KUwEYk6A2PJ/WLPxfDEBkatlNpPnow3swohXWDUzoersL9+xZV6eFCHWAYM6
+         c48ylLAX6yd3H5cBHgWdXo4J+lsCWW/D4hXxAhpiYaM/n4yJH8p7qzpVhcqGDOBNOPo0
+         udUgenn3YKLaG9UihYDzDYZS7bwx/MaONiJN251zr+XD9G4odHm0U4Ytew/lx4agr4a2
+         6WjrJJpS669UOgCqiTZ056/PkBOhujfqsps6HeUI80xM7fteWXCmVsOF36GdAo5/ceo+
+         dWIP9CrFOFVj5ZKMBSr8bOEmmLVnXuutiiu+Atw44XdeC0VkDE8XRVkSXUajJCH9N6J0
+         agtw==
+X-Forwarded-Encrypted: i=1; AKwUvBy8JZF9TzGZLCcmVAuqFNwV3pb1uycbR8+BPNlxUxzBUAbRvjd/0Yn1KJrBkSON5xMZWgjigNXBJjeBNw==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJhFK6StIk9XBCh2yTIRaAuW92SdiB2AheG/fbkSPwZp0xFPryr
+	h93KOaEIwXKT1KNyX9i9bcO8VgjoEnDu+uvo+q1NKL/ylgYgHeKJRHTSTuo5BcxrzLY=
+X-Gm-Gg: AYBFou1Qzi6f9wTjaBukAdPG0sP/VmCsUFH0b2R/pUsDxtZs0zKI3gHPAgm5z4kN52v
+	ymdv75iXeNAV1Wz3yoCTBWFlCsE8IBdusPuOUzKTUXpd6MdPFRZSj+vZPSBze6w4ZFAvWg319y0
+	JnZOt898cITRSuZxrld0Vtuvzwxd7OF34hZSlU5cp7mOBXzxL7QKAhlD4UdM5v2CpClqTTLoYWa
+	e880XZtodIxTIugmEpN/ZOadwzObf5gOkzzLz6bPuCVVQH3EDlyocGdhMSw/+fkiQjSIq30edHH
+	lxQ8DTDXC0gVqAnOHNhh9ur8wctEkwMZBYS8pJXxCL6Ai0HC1oCey17Kk8q8ehxzFK45+UFOJY9
+	N1MATPAVLwVP4SG11LvlXQNJsZZYN+udvVdN8D5360pb+iS41dqT9P/Y9305A+9Y0H9BxUmhFmR
+	KecwTHOiPkv5y9oRXsbdLu8a/6Mxo3FEthyvP4tS8K4QsLXsExG9RZ6BgmvnnNKTpc2z/bO9DfN
+	BVFjiFhcyE/IdpoVXPghlO87wHQ/D62tkYcXJhdhGlGY3qIPprQrG/ZeY4atwa95PouKdnd7fVN
+	zjva1JQKGhS/HKkUZlunTH9Ii+UzES/eH4//ABi5c8Y=
+X-Received: by 2002:a05:600c:8b38:b0:4a3:5a91:5f61 with SMTP id 5b1f17b1804b1-4a966c4062fmr83695695e9.14.1793222972048;
+        Wed, 28 Oct 2026 14:29:32 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae6e7ac746sm1047389a91.1.2026.10.28.14.29.29
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2026 14:12:32 -0700 (PDT)
+        Wed, 28 Oct 2026 14:29:31 -0700 (PDT)
+Message-ID: <128df277-19d1-4328-9591-79bb991def7f@suse.com>
+Date: Thu, 29 Oct 2026 07:59:27 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,101 +90,84 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=ef721ab95fb5240873f3268166b2e5d67a30159a361b9b3396093633bbb7;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Wed, 28 Oct 2026 22:12:24 +0100
-Message-Id: <DMGS4KQLY24Q.14MUTR6U93GIC@gmail.com>
-To: "Pedro Falcato" <pfalcato@suse.de>, "koraynilay" <koray.fra@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>, "Alexander Viro"
- <viro@zeniv.linux.org.uk>, "Christian Brauner" <brauner@kernel.org>, "Chris
- Mason" <mason@kernel.org>, "Jan Kara" <jack@suse.cz>, "Darrick J . Wong"
- <djwong@kernel.org>, "Sean Smith" <defendthedisabled@gmail.com>, "Andrey
- Albershteyn" <aalbersh@kernel.org>, <linux-btrfs@vger.kernel.org>,
- <linux-fsdevel@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [RFC PATCH v2 1/2] vfs: add provenance time (ptime)
-From: "koraynilay" <koray.fra@gmail.com>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
-References: <20261028134728.294127-1-koray.fra@gmail.com>
- <20261028134728.294127-2-koray.fra@gmail.com>
- <auILs54TUcWXf3us@pedro-suse.tail5790ac.ts.net>
-In-Reply-To: <auILs54TUcWXf3us@pedro-suse.tail5790ac.ts.net>
+MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: zstd: prevent leak of workspace below maximum
+ level
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <c305694d12ec20fc431cffd4cc718efb1a3823d9.1793204767.git.fdmanana@suse.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <c305694d12ec20fc431cffd4cc718efb1a3823d9.1793204767.git.fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
---ef721ab95fb5240873f3268166b2e5d67a30159a361b9b3396093633bbb7
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
 
-On Wed Oct 28, 2026 at 3:56 PM CET, Pedro Falcato wrote:
-> On Wed, Oct 28, 2026 at 02:47:27PM +0100, koraynilay wrote:
->> Add provenance time (ptime), indicating the time when a file or
->> directory was created. This is user-settable via file_setattr() and
->> retrievable via statx(2) (using STATX_PTIME) or file_getattr().
->>=20
->> The semantics of when to preserve this new timestamp are the same as
->> mtime, the idea being that there is a correspondence like this:
->>=20
->> ctime <-> btime
->> mtime <-> ptime
->>=20
->> so every operation (copying, moving, ...) that currently preserves mtime
->> should also preserve ptime.
->>=20
->> Furthermore, in order to avoid the legacy FS_IOC_FSSETXATTR accepting
->> FS_XFLAG_PTIME, add an FS_FILE_ATTR_XFLAGS_MASK mask to support new
->> xflags, and use it in fileattr_to_file_attr()/file_attr_to_fileattr() to
->> allow ptime to be used with the file_setattr()/file_getattr() syscalls.
->
-> Random comment, but: could this be doable with xattrs instead? I'm not su=
-re
-> where I would put the xattrs code (if in userspace exclusively, or if hoo=
-king
-> the VFS up with this, or if doing it on the filesystem side), but it woul=
-d
-> surely be less disruptive than modifying a bunch of filesystems one-by-on=
-e.
->
 
-Thanks for the comment, I actually wanted to include the "why not xattr"
-explanation in the cover letter but totally forgot lol.
+在 2026/10/29 03:02, fdmanana@kernel.org 写道:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> When putting a workspace we always protect the workspace for the maximum
+> level from reclaim, since it can be used not just for that level but as
+> well for any level below it. However the logic is flawed because if we do
+> the put for a workspace at level 10 for example (maximum is level 15) and
+> there is currently no idle workspace for the maximum level because all
+> are currently being used, we don't add the workspace to the lru list and
+> that can result in leaking it if we don't get more compression or
+> decompression requests for level 10 or any level below 10.
+> 
+> Fix this by skipping the addition to the lru list only if the level of
+> the workspace matches the maximum level too (besides the list of idle
+> workspaces for the maximum level being empty).
+> 
+> Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-I actually have been using fully userspace xattrs[1] for a few months,
-mostly for backups, and it "works"; but last week I wanted to merge 2
-FSs (and have another merge I have to do), so I ran [1] on all files and
-then compared all metadata/data between source and destination and
-noticed there were quite a lot of files that didn't have the xattr set.
-So I looked online and learned that xattrs only work on regular
-files/directories, not on symlinks or anything else (and the missing
-ones were of symlinks).
-This is what prompted me to search more if anyone had already proposed a
-new timestamp (instead of making btime settable) and found the linked
-email thread from april, which gave me the excuse to finally work on a
-proper patch.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-[1]: https://github.com/koraynilay/btime-to-xattr
+Thanks,
+Qu
 
-> This patch is quite simple, but changing btrfs, then ext4, xfs, etc is a
-> mess, and inevitably you can't get these timestamps until you upgrade you=
-r
-> filesystems.
+> ---
+>   fs/btrfs/zstd.c | 3 ++-
+>   1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+> index 9235aa7b922e..b686f67d52ec 100644
+> --- a/fs/btrfs/zstd.c
+> +++ b/fs/btrfs/zstd.c
+> @@ -347,7 +347,8 @@ void zstd_put_workspace(struct btrfs_fs_info *fs_info, struct list_head *ws)
+>   	/* A node is only taken off the lru if we are the corresponding level */
+>   	if (clip_level(workspace->req_level) == workspace->level) {
+>   		/* Hide a max level workspace from reclaim */
+> -		if (list_empty(&zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
+> +		if (workspace->level == ZSTD_BTRFS_MAX_LEVEL - 1 &&
+> +		    list_empty(&zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1])) {
+>   			INIT_LIST_HEAD(&workspace->lru_list);
+>   		} else {
+>   			workspace->last_used = jiffies;
 
-So yeah while I do agree it touches a lot of code that could create
-problems, IMO this is the best solution and it would complete files'
-timestamps like other OSs have (and this, I think, is necessary for
-both backup/archival and migrations).
-
-Best,
-koraynilay
-
---ef721ab95fb5240873f3268166b2e5d67a30159a361b9b3396093633bbb7
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCauJlOAAKCRDmj22qf5IG
-XM7fAP9ndP88PL7Eqo6Vig804tPfrb6wBJOZQWGAifFB0IK6hwD/YzPGX0GZGF3x
-jpAvJTnHPxC3rS9RbTeSHSP+qDz7igE=
-=GcKG
------END PGP SIGNATURE-----
-
---ef721ab95fb5240873f3268166b2e5d67a30159a361b9b3396093633bbb7--

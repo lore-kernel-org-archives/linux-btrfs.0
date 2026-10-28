@@ -1,88 +1,121 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.49
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793223014;
-	b=H07/ogo/UWBn4h/imeWiV4KUgUiVU/jIV7tqj7LqxQQArUAM20tEYCrkzIF71p9SQ6qL
-	 LY1Mdepoydg8wrpLdjPh/pbQTVMlkoNIQeZKcU891Ry7Ed2+eOc1lcM8tQJ5F7IE80FQk
-	 Gx+OpouqOX4Ssx0yOb9h6Bev+OSCLEsbpKlZuxGi4wcMVrKYE5gMX+jHFLU7/+sbCk6Az
-	 6i52xlO9Gsp+jqIKhagTD1ALZLR0JkbhF5UfXIIRMc2qe8WyDqYZITXIjBwpCbXy2W2SL
-	 bBjkK2RAmsdiCvnd0o6KEISsbpy9Jj7yeLVnOdIsDUzeFX1XNF3Wbk7PQcmtXpCf+Yw==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793223014;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=170.10.133.124
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793225388;
+	b=y/kZhB4eoWUR1j4wjuSLz6Aric9cFAb0Gc7EpOd1XTSs/SNBFbQt2e5P9UWrln4FiGPp
+	 354l3LDU6EP4YfIsda/KXnQHlhEQMrdr9MZ4XfskRmfGiyJrHiwpyM4J/ZtXb92UhPO4A
+	 othiVAtL6QlGr72Ya+XOvmsTOfO6IJkbV/nLqS8JLHtFyJQ6exbvtz0mtdJSqcsbE90V/
+	 ixXLow+OwLFL+CVeB3wkiQmNiVT2B4MxuCfgZ2sjAwaMOnBpWpXtF1VcF8H7YYf2Zc7lJ
+	 Nji29geGKgyZFwFKah+VY4Ayp6ANqKmVNd4twTbHszrFM74nAXRrY8+A/vgTrh3m87Q==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793225388;
+	h=DMARC-Filter:DKIM-Signature:Received:X-MC-Unique:
+	 X-Mimecast-MFC-AGG-ID:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 X-Received:MIME-Version:References:In-Reply-To:From:Date:
+	 X-Gm-Features:Message-ID:Subject:To:Cc:Content-Type:
 	 Content-Transfer-Encoding;
-	bh=k6NKEhRpgnQ/t1wv9GeOUJo/LkdrhgjkTUxIizCdmdk=;
-	b=gjmlquqnkuFxZ/AhSLIQ0I/p9ijQSJM5RXKMeW4lZEhmiRlF2lxZICxIwDYlX1Ai+NT7
-	 QCDGsQ8mucTnK8Vzdwdrq7xSKrfmqOFdlZ9gLPAirJFgaK6reW38E9AHbVXlVhAuvHa/0
-	 BHQNtI//S531cFlXi2nUY4CF/0dZzm+0CHoeegYSmhVXrSv0KnLuzUBjLE7cNVXd41MlV
-	 fqvBT/WRRuUNtFMhRyrs8ze12GEcvWMyPTeg3pZolurIBpimg499zgiaXIFv77aFWnUZk
-	 AvDN2LA6atI42E2d6b4WgL1/buBOJZF1JQOv/+7mEuw4tX1lwLcS2WgUkOFIuzJ0Ghg==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=V5HPXscF;
-	arc=none smtp.remote-ip=209.85.128.49
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	bh=j5xHrk121VJ6jsiOiBImMpaem11Ex15L22vqkzMRx+Y=;
+	b=Co4JEYHfDMKeUF5o6b32P6qXHFB65senXJ+UX06lo8FXinnd2StsJ4ZU1JZhUdwdJkd0
+	 t8EtOQvjGeB3AXaFtqiAo2wwvlKLiZyI0ZU7yVqTx9UNSKfAlcWfgoO8y/o+IsVpjCzyd
+	 g7gEuGYHruyBjYNpXmCheu18lx5JV2rNyolTdCupufwWbQRhEB8hT66M6zd45XyXXsO5U
+	 nKeHXDX/eqmqjVV3oGMK7nILpvfbwHMtX73tluOEfdhfom2BT+AfuJE+2MxfVW+fTG0bg
+	 mG9m9gG08fjIFhBv1OmEh8o+w9btXU8EPkqavmoONO8I78c5DOnDl9cjgv7QHD1fdVw==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=redhat.com;
+	spf=pass smtp.mailfrom=redhat.com;
+	dkim=pass header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=mimecast20190719 header.b=ZPz9gBSh;
+	dkim=pass header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=google header.b=dMvVeWef;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=170.10.133.124
+Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.133.124])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A493C606A31A
-	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 21:30:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A493C606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B6D32606A32F
+	for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 22:09:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B6D32606A32F
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=V5HPXscF
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4a215e64962so16391815e9.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 14:30:13 -0700 (PDT)
+	dkim=pass (1024-bit key, unprotected) header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=mimecast20190719 header.b=ZPz9gBSh;
+	dkim=pass (2048-bit key, unprotected) header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=google header.b=dMvVeWef
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
+	s=mimecast20190719; t=1793225386;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=j5xHrk121VJ6jsiOiBImMpaem11Ex15L22vqkzMRx+Y=;
+	b=ZPz9gBSh/yBDILl4Wre1GwBJEJXRNCKDy8H1++h5ea/mHhewpVcmtz4SCdXdBmonsKpZe1
+	QK1fPZIYqd8QAOBgp8EV/s4fRwGOPz1p9Kchisl5RmbGzn4ytpw5/9xqYRXzNr/WdCGxH6
+	pq4S89wJjHyakIP5ukEWtbeAwDoljB0=
+Received: from mail-yx1-f69.google.com (mail-yx1-f69.google.com
+ [74.125.224.69]) by relay.mimecast.com with ESMTP with STARTTLS
+ (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
+ us-mta-498-ypmTcVu6Pd-kBQWyC8uBAg-1; Wed, 28 Oct 2026 18:09:43 -0400
+X-MC-Unique: ypmTcVu6Pd-kBQWyC8uBAg-1
+X-Mimecast-MFC-AGG-ID: ypmTcVu6Pd-kBQWyC8uBAg_1793225383
+Received: by mail-yx1-f69.google.com with SMTP id 956f58d0204a3-6795a39e53fso247618d50.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2026 15:09:43 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793225383; cv=none;
+        d=google.com; s=arc-20260327;
+        b=FMxXOfBO7J9XeSkaIMlEMQiAcdF2zX5enjH4XSSdkEtNKEE8KoVggEnPwGgPJvEhmy
+         8LKFs4/LQwdGqOQCaYI4quDqNrQdTrP/xlghFN8QYBydAdbaMb16vkJ3asF7zd92bZDv
+         30FVe7c/EMd+6x8ERV2gU0X5lFuDKAyR4/Gi1fwLRcxQHmXAZKmN7b8iZ9JTxD1zXlY9
+         HUfnY1zy1Ej4OKBvmvJZ6R2Y4htxw8/ueWLNot7BBXdq2B3P9AQw//G7SYih+tqOSS+P
+         TtzhXG7ZXokRPWb5urfLtshvNSPuRnBsAsPlpAp8WgS8k4lfLqcCew6XeBDDlL3CllxN
+         R77Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=j5xHrk121VJ6jsiOiBImMpaem11Ex15L22vqkzMRx+Y=;
+        fh=VYuv5Ezub9a7Uydt6h6tU2OdSNMYEWzL8dmeTeqvAhU=;
+        b=ZtSL5Tr0HU4bFYUId7DEbzuTQf2LlHAwR02tmk//WdQlDVRAXDzdXXKP6e6uW8cZ+V
+         QeMJoU3smeh7sZQIPenSvT9fGuWTrroF8alGxllrMgNuqYrWBRJ4JN+FuPEF+S4yaxT2
+         avXUyXRfYzm7QrEYeVpWv7I6aeGWgfJcCBiTr/OZtV6mAEe34M+P2msyMO23NWweCiJ2
+         sZESQpOYs1K25q65eOZ4D1aDwJFCvilD+3715e47w/7QTZLviIhTnJ7cibcjRhxmJ/Fp
+         GvqysAriT/K3npl5IP31FDlAEjb4xedI+M7cXPZXL06QpGYw+jbZDk4Bv3k1Pl3q83Iv
+         WipA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793223012; x=1793827812; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=k6NKEhRpgnQ/t1wv9GeOUJo/LkdrhgjkTUxIizCdmdk=;
-        b=V5HPXscFzvjZ98kBkT1vTSTZPqkMEPRKV36YgDBdyY6t9SktEjAldUZagGvdID2+6H
-         LeAwAattyjOgb1cEELwAxzla83kEPrsJ16iTURvaUYxnDsOFvrkO4ealH+uA0/Wa5AUX
-         S3U8LdYa2u/xxO2xMyBS4OPbcWEkDlMHi5VDhX2DWGr6o8GLmTt3ILJEXnjJB5y27PQX
-         K9MZFS4WvznTa+JJPPWSlx4XiK3okHujJ4QjRShHJT89+nUGMxU1j+Ce9BmKH1kvB6RG
-         2YOuR6NJ8o4HG5QEDG3F2EvoboS2Na0/qWpPJhecE/MGLa1wIspfOreWnHUXFJeQxsg9
-         +vLQ==
+        d=redhat.com; s=google; t=1793225383; x=1793830183; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=j5xHrk121VJ6jsiOiBImMpaem11Ex15L22vqkzMRx+Y=;
+        b=dMvVeWefC8P+UdQKNVCTRzDnhWHngZQGob2rSgzwsZSnRN8SAHr7CL96OPYJXufFq7
+         zSTFFPllhPr/w76wrseeWsykFIT3XNeylizZvRvScikFw2Vx8ZBVf5aKYuJSSTUPuuch
+         XBaTxNgE5Gyy25Odb94BXqgaNMMlvyhAsHvl+cohQ1ckCaDBDm4+NkPEdFeD/j45D4SX
+         9JdubWa1Rkola0sqbNiDrUuR0ynjj8Js5euvpFf83x/dOZOzpzImQtYe9Q9exxMiq/qr
+         mXS/pEC6VjG6Gc4ktJQ1wDheP9WEZsIfL+MfkoZBHHuqMX4NfKOOS6gRPfYVsrX4HqWa
+         L7zw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793223012; x=1793827812;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=k6NKEhRpgnQ/t1wv9GeOUJo/LkdrhgjkTUxIizCdmdk=;
-        b=dE0rC6gYw3PdAUHExb/hWzdQtUcRfY2n3HiiGJCjaD+wfLZjskz51rcGB0jiLaz6/N
-         QnHtfYzKhJ93GHVL2Yd88l/8v91MFrIPsI1hLyzNsvKRfrcWJYQPLMFM3VngyrJQ/Z43
-         +JNbakLwfZO2KM3nDhyYrz+SKQTWF+bpEXMdeYVU3D1Vw8BzPBSe/9Va6K0tjp8o/rYM
-         BBSC83nXneQH90aQ9ieC1DVNNF1+JNVjs1Da4/9rahdjRKjPZjsIqqr8J35eqwxfMiT8
-         5UG2P+ZbD32IWnH8t3wvomj8YmwFUWjGDP+ewBdJZpeSYHEuMEjW9NrxGJY5Xpn1FeWs
-         3QDg==
-X-Forwarded-Encrypted: i=1; AKwUvBw2Gr+8zICUVr19Ns17kIRDgUwJdssLu/wZcmtyxWl6sHkqlBLj9eJZBVBi7vqdS1gqN4f4B/E/A1qYrw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLpO3X6KjbBKmYuEjQhvJZ6umxcZ8IzNT947nw833I+kr1mHTrX
-	vg5RWMJ80gBwBT3EX4JaZm7qjQz8aix9m2TGPOsUvcdVLFjyuehD2KH1PJT1kvAu5rTrzZZ7/Mw
-	dCfWytAvYbg==
-X-Gm-Gg: AYBFou06HOiwYdqmSRojUThsua8yf1qZeCpM0PNJ5XAkwSVowXljn1DxIG9mepWkVsG
-	R8KqT5VhESkRZ3jytl8SlKhyCcLC+jbqO7NTsb9ZN0dhi3qOB4CIyV9Zx63ysH02X6g0rkThz8A
-	LOAqXpMHJrcCCiFzR46ZXgiXv3+V/sEn+baLq2ZlIFiAL3HZ5bsAckdQke2UfY0axEw3dfGATi0
-	lAeN21B4cmKRdNo6YueolpsCoHNKfwen5LMDkDsBUO31RZ4xqW4xRvz5Sm2QrXrT3AZEf1Ld783
-	R8TtGdD02/+x4ka6tp6tPy75Oq2FYNKiXA8qoB6AwuGzcwiKYe+3I6lXKL1JtS7WLCTrkm69F8n
-	Hrf0C1Vm39cMORUOehtM231d8B+hdGJEiV6c7FLSCT56UbZOK/acLZe/ZgHkXWohN8gjBm1/W/g
-	3JDSfYGmlRmPXH2mooBJtkH0nYRsgkdjLK07VOndX4JAAPKzdpSuJd4jrDcGxlMH1kTx/gE6XtT
-	S6zsLlYZg0SKtYxZWoLo0N85K2mk0WRd031hfmXJnlJtP1o+8n/twa4mBVspslKcJzFPZd5rPz8
-	vPAgrMm4nIotJMJYgQBTbw==
-X-Received: by 2002:a05:600c:1c17:b0:4a3:59c9:a756 with SMTP id 5b1f17b1804b1-4a965dd3247mr84799675e9.6.1793223011668;
-        Wed, 28 Oct 2026 14:30:11 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae6e7d429fsm1049632a91.2.2026.10.28.14.30.09
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 28 Oct 2026 14:30:10 -0700 (PDT)
-Message-ID: <e192962b-4a9c-49fe-ae6f-4015c74391af@suse.com>
-Date: Thu, 29 Oct 2026 08:00:06 +1030
+        d=1e100.net; s=20260707; t=1793225383; x=1793830183;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=j5xHrk121VJ6jsiOiBImMpaem11Ex15L22vqkzMRx+Y=;
+        b=sapdQufc4aJrY8+s3m2/l/n735TQuUqumEFQB1uoFDfHSnUyj+ldoErb5fZJUjpnnx
+         0pwMk6Qq29vmNXvOa8GxBYmJTR9vEzXVRjvCEE1NKt3ZUDxw9AuP8z+dZUg3LzoCpYZj
+         G9Anh3nYZhIvvFxhbza+PV/TAJ2z9ARSWmKo6vuinKWzusFm9bzjMe8NE58csd0K2Ref
+         ijiVeTXMcAgtnAOHdBs5WqJmaFnVy5bC1uB5YqrFe3+JLfB0t0QnJFKzX9NgDOUIauk0
+         XLNvEji3CLY2uYVnIaiycWYeWeFxC2iMoNNRWIktQGSiD04o8mtvqqvpTogBo0IrfbqB
+         BpRA==
+X-Forwarded-Encrypted: i=1; AKwUvBwTXWhEQ9wPrdk8F7y1oILY71p+MEB9EBpCNbGIqa8ZDm79lOzAODY4VR6+7mKyiF/e0cxBqrZFXsz3wA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYL0U41FkhD3lwzigmFGKFd7lCn5lYfP6+esLbI2czUdF+uDSd4/
+	LRJmlS1XFvrJ1DDXC0YPeemUEqsR3D81t+aSlVbGGOu+Q3ia5rqMr/KLkjGLC0aj32F+e4L1SgN
+	ELg8DoNfrrOAnQb5rQlb8BAHkprFYYevU0dPLwx0CGEB0E9qyTe6hOBXeggKLsZWLmFqTP5Uhq/
+	Y2lqD5bB8wi0USkbL/apUpaMEuDRKpZBxsUwMdMH4=
+X-Gm-Gg: AYBFou33XsMnUbgOuPeKfL0QZs+9H2sP6iCuPaIjgxGYywcCV4Bux2CH7eC3UXWgQHK
+	Y6DlvRov7WzvNw7g+vmcD4ppudvK2ejYDtzscyDjirKU/ttGjUVyFwjXif3p1K2vf1s4WDbpsKH
+	roqVuTc3syY9iKku7W9+XYi8yBd7oJQqqzJEySenZOmUR26PBWXPAKD4O2Hge8p3kHzx2KA1uCs
+	wpAopu2SccPDdxnhmVTlHADUV7deEDWRZZ/eBc0ZeF7eA==
+X-Received: by 2002:a05:690e:1918:b0:679:ad2f:3fbf with SMTP id 956f58d0204a3-67a8d0047a5mr704866d50.8.1793225382836;
+        Wed, 28 Oct 2026 15:09:42 -0700 (PDT)
+X-Received: by 2002:a05:690e:1918:b0:679:ad2f:3fbf with SMTP id
+ 956f58d0204a3-67a8d0047a5mr704846d50.8.1793225382297; Wed, 28 Oct 2026
+ 15:09:42 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,73 +125,43 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: zstd: pass fs_info to btrfs_warn() on failure to
- allocate workspace manager
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <10b9e2d858daf0143a1b7f200989a59857272389.1793205219.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <10b9e2d858daf0143a1b7f200989a59857272389.1793205219.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+References: <20261012-work-fs-sb_rdonly-v1-0-60743a3dc326@kernel.org>
+ <20261012-work-fs-sb_rdonly-v1-21-60743a3dc326@kernel.org>
+ <CAHc6FU6z4kX5R3Og8m0dYOHsjFcw+4Btvfe87AGPxy_EWs0E7A@mail.gmail.com> <20261028-zurschaustellen-okkupieren-inkompatibel-d11525ce88b8@brauner>
+In-Reply-To: <20261028-zurschaustellen-okkupieren-inkompatibel-d11525ce88b8@brauner>
+From: Andreas Gruenbacher <agruenba@redhat.com>
+Date: Wed, 28 Oct 2026 23:09:31 +0100
+X-Gm-Features: AclHuK9MzobLdiG2EG9M5KT_ibZzYxdrTghiXff6ZlesOE7YSK8Ag_RtXekxyZI
+Message-ID: <CAHc6FU6VSAWQ4RJTO_eLnpqN5qvrShbJeT+ADwiA6ohpq8dO4Q@mail.gmail.com>
+Subject: Re: [PATCH RFC 21/28] gfs2: don't set SB_RDONLY on withdraw
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net, 
+	linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, 
+	linux-fsdevel@vger.kernel.org, ntfs@lists.linux.dev, 
+	ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org, 
+	gfs2@lists.linux.dev, linux-efi@vger.kernel.org, 
+	linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org, 
+	stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
+On Wed, Oct 28, 2026 at 5:02=E2=80=AFPM Christian Brauner <brauner@kernel.o=
+rg> wrote:
+> On Fri, Oct 16, 2026 at 02:01:00AM +0200, Andreas Gruenbacher wrote:
+> > According to commit d564053f0746 ("GFS2: Clean up freeze code"), the
+> > idea of the freeze sysfs file was to make it behave like the FIFREEZE
+> > / FITHAW ioctls. This isn't what the code is doing at all.
+>
+> That's a pre-existing and separate from this series. freeze_store() calls
+> freeze_super() and thaw_super() directly with FREEZE_HOLDER_USERSPACE and=
+ never
+> goes through gfs2_freeze_super() and gfs2_thaw_super(). So it never takes=
+ the
+> freeze glock. I don't think that's for this series to fix.
 
-
-在 2026/10/29 03:03, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> The workspace manager is per filesystem and we have access to the fs_info
-> structure of the filesystem in zstd_alloc_workspace_manager(), so pass it
-> to the btrfs_warn() call so that we get a better log message (including
-> the device, state, etc).
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+I mainly wanted to point out that this behavior isn't intentional.
 
 Thanks,
-Qu
-
-> ---
->   fs/btrfs/zstd.c | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
-> index cc92d0b1b948..9235aa7b922e 100644
-> --- a/fs/btrfs/zstd.c
-> +++ b/fs/btrfs/zstd.c
-> @@ -200,7 +200,7 @@ int zstd_alloc_workspace_manager(struct btrfs_fs_info *fs_info)
->   
->   	ws = zstd_alloc_workspace(fs_info, ZSTD_BTRFS_MAX_LEVEL);
->   	if (IS_ERR(ws)) {
-> -		btrfs_warn(NULL, "cannot preallocate zstd compression workspace");
-> +		btrfs_warn(fs_info, "cannot preallocate zstd compression workspace");
->   	} else {
->   		set_bit(ZSTD_BTRFS_MAX_LEVEL - 1, &zwsm->active_map);
->   		list_add(ws, &zwsm->idle_ws[ZSTD_BTRFS_MAX_LEVEL - 1]);
+Andreas
 

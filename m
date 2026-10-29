@@ -1,79 +1,79 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
 	t=1793261814;
-	b=aogN3+Gcj2dd5uaFWkhpRkSEX8fkM8m8FweVAGTx+5PpZ+SUXyHA/4ypQkiRPPgO4pqO
-	 rSuyd0wUzF55GTRu0pIUHSkg38PzFNUMSzuIwABcw6cc7tgWdl2ts89mtX+nfmjhzxw1o
-	 tzu7zpMECxT3fm14HTSOfg0nK3rF25Za+yH5g0erFzL0GFPin/zMLDDCQ9zfQBsghGm5P
-	 IDZKQ8zf7lrNCm5zk/C0CN47sEjAlLK1AER4XM1bhb9dx7Z02P/EcaJqkiGW2lhGPcPr9
-	 E3pGn4NQe8hlFkJVx4c9ySkT9cUBS3Sym9LSE0ChRYPj738feZjJDP1adMKg9P8zt+Q==
+	b=MuTf4sUwy8vk1ZV8dDyryvCyL2XcCTO/saKhZPTF/OFSx/FW5z9Hg+fP4LaOYkMGwSqO
+	 lpTQ3uccqzjj4SOAFBzU3EEvZMUFcxpG2B37EmBxnstB7NJv9eb4Lu4s5RHkMWzbTQ5Zk
+	 oGnXXGkq2kq49e8LTRfZV1akPkgTao79KE3PGY/nXCWJFHY5xkW9o4f5v7JZN98GWlPch
+	 Pik7YW+4trSq7/yMIfrLLf+3zbAx2PI5lrDnoJOyLir1bu4ZDOt+pGMLZWHI5nAVBJ2R3
+	 j7moHBepuIJxjcBlDAJ4idb/u0cdxGOQy5D92mTplm7PRTJPOzPJ+yGIdFOsFqLYzPw==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1793261814;
 	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
 	 Content-Type:Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=piBghiZYeWGYQnYfcj3/DPjYXKZYBNBwxEB3ZbQoJhE=;
-	b=nT4j5rqGr/RG5LmJS6jbA+VN6m1xRyljIkloUk8LekBTbI4ZOmscyTqpq+hEkTwM4wOz
-	 H/t9DcySXOzQ+mfqnxQSsltFvG+P7Nxrk0V7xDPMxRoSogmVAweFLtu27bRFa7pCFXttG
-	 3ilqAjL+DkMhA1U7CPsozJ9F33/jK0p0YfNE7qeZ5EikG5Zv5KKau7UN/AmKeYdd3xSi1
-	 sV/WaNJiyGTyrSKjgDbsu2tpO+izM0X32XHritkrKOTz6/Gp/d6kcP7UBRlo/3Aq/xpiF
-	 ib01E8n4mcpuXBaw5Nl6GSFxtBe9Kakxlf4akC33ms8QhF+5Jbz/7NX2tBVvMr+jsMQ==
+	bh=wWvGp+Ky49g3ikt/sTlPE2hQLwS22Xkn7D6lKMFHSGI=;
+	b=Me8rjwBuOSE7tz07snb6oombtLJgwd+/8ecXMth7vGDPEi2JtZUxwa2a+5V1UmJIz5Xz
+	 Gj3CR/+37blc0mvRCIvMZVkMIZensmliz+oCga4AYiUQu4KEeoTy7oPru9rbytfFZXToz
+	 0WM1u34Cl6bdEMupibr942zGFEgvAO6OgVVvF741Uo+j3NEX62ZewGMHNJISh9lt8rLiR
+	 E1VDjQkRcGqPDrT2DhwS/PeWkS1LoCJjrmV81RpvE6MSl5sR5JZk8YTpU+VlwfnUYAgGM
+	 w5s95GkEI8Pcz3N07Q9jNVPNSNpHwRUaH1REsKb2iE5QrQblw4IU06PzRqOcpa5Gu/Q==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZXRLyL13;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=XgsADFAd;
 	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2CC92606A31F;
-	Thu, 29 Oct 2026 08:16:54 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 007B7606A31D;
+	Thu, 29 Oct 2026 08:16:53 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZXRLyL13
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=XgsADFAd
 Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
 ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1793261814;
-	b=PBn3kLVu29230TlFgxRVpJOEdM+SEn+F7RQP6F1srgZKeW8fOyCWVGID114/elzhM7xY
-	 F8fum4Eudbsko5VVPyaMdalqPiVxsizX2wJ5rQff54FZU6CVzK6BH07orHKdwRV8H555z
-	 DgSAB6xquxjn220ORIG9YKsZ8T3Q8TahPH5AiU3AiT5wzuUAeoER5N18v7TIhXf13cdxZ
-	 nxpkTw0wzNp8JybocTmd85OkhI0r3jvxfoPbDJcMzF6hefH5lYpL0LjqM+6cakRBTJom6
-	 yc4zZ+dmzMmS1uAmk7WTKIEnm8UzibTQ2gM8JdhDeJjgO8ni3pxVaSiNlnRboKntw5A==
+	t=1793261813;
+	b=pJPzU1tQH3V01+Ld+YKule+R6z9PHe3HCFjXUMBgxapnyU1cIiagGFxg9LovTCZ93KJc
+	 ZtoH6yTnOEz0yFb6d7tF4XL5wkyHinnLdd/KworIStJOcWEidtsGxo4hRAQ4YXD5jXZGv
+	 qrDQtotYSnrbS3T5cy2NYk4oogpX4MhJKOKKkSx3Y9v0oNYTxdEUbWfyHzRiiJzUmr3Am
+	 famuznArVVp2TWpIBU/v/7RkLUh8ZRCsMdSOFyE5oJUf1mkRDV4oO2CmG69X+f5t0nkEs
+	 zjMAtDiKVln8jvw0iaSFb8SG34pc0x8D7A5WdSU3Zuab1FnuknQbG5UPjtgsWOjr5GQ==
 ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1793261814;
+	c=relaxed/relaxed; t=1793261813;
 	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
 	 Message-Id:References:In-Reply-To:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=piBghiZYeWGYQnYfcj3/DPjYXKZYBNBwxEB3ZbQoJhE=;
-	b=zyH9y6be2IH6VdtXRa4BZms5KUtYXt2iPRJFJQmNG3BmkDZ+n8PkmNNdVusLGb+EIOMU
-	 xHDZwh1Q8aAtZU1eJ330bMw2EiVMRroTtCX8bj6Xr6zXVMNFv/hYK201tMfbaTBcBxycU
-	 p1CCdjtK2edBLQ3goyMjQID3b0bUlVXmPQ2gN/Bv7ixxxdQtBPoMC3RaG430Z9qcEuY1e
-	 fBounI8fYjuYufmDm1skzQFwwVW9BcZRJWcuBITYVoJv0TPzrOwsK+i6xGL4kDhZAKt4m
-	 WK/ImL6WRm1VENy33rVPSY9YXbU4o+ASvkehulEaqIKhmtCEuQ9E9Irw10it4TC118w==
+	bh=wWvGp+Ky49g3ikt/sTlPE2hQLwS22Xkn7D6lKMFHSGI=;
+	b=xL+7fW7g7GDP7XCBDhzd/j+VYWZLxw/fp39ZYsy3ldiTTobmYOolul9uhXUPu+Ckkt2p
+	 jBR0zbEdhTRRvhtMTO68mi4zaZBD1uv4Z3QBdEHXLroFG9fzPyMUjaOSrYLHMoJYSVcLk
+	 +yMd1X6zrh5nH5Dzjx5C3atDzOnT5abBVrsJ13wgS/OMpsrDxWKXGTca44HbonT6nkiAU
+	 bp4UaVWrciCd8h6MS4zF9qht1sd+BwAAwvauxsgem+20tdCD3Fu3vdBmIpWqm6pJKzHfw
+	 RP7R+gU5CR+eP4uXQc9+KWULOE1hEwxeDNdCGPi1I/iqj1lL/58kR8/GSNCJZ1MFvLw==
 ARC-Authentication-Results: i=1; smtp.kernel.org; 
 	arc=none smtp.remote-ip=100.80.115.77
 Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id 0784F1F01828;
+	by smtp.kernel.org (Postfix) with ESMTPS id 06D911F01825;
 	Thu, 29 Oct 2026 08:16:53 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793261814;
-	bh=piBghiZYeWGYQnYfcj3/DPjYXKZYBNBwxEB3ZbQoJhE=;
+	s=k20260515; t=1793261813;
+	bh=wWvGp+Ky49g3ikt/sTlPE2hQLwS22Xkn7D6lKMFHSGI=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc:Reply-To;
-	b=ZXRLyL13GxbLyR9eD4bunGsgkQbr7rW6sF8STLyVz1QXDXPEpcYADdL/I+sCYfJGV
-	 iSRXPNJrvW17QXhH1YOa5F7M7WEZnPWEAxbLF2kTuyVPhWNsyRHd+1mxmdeNkGdBx9
-	 JpkOeS+Q7mrULCnu4YAKYjTVbPZkTrZHbwFJP6TbTt2kQ5MvHArb+DEjm2FT47+PdO
-	 JR8/Jnbjhj3xRRZNMxJICyuF/CHGOEG7T7ilFV2mXis6gt3bFRc3PjwgIUh6q5OWGy
-	 4o4RHtsEu1iEypKUrgc6PTj/YOLwy2SUDT58eywV9t/Ioy14c954xISSz19hrHFdIm
-	 C5BiKYUifEGbg==
+	b=XgsADFAd9PkJg41Qpv5xdv9zd9jdwOIFu0bwvmIuGWn29/K9GA1noLsEsGtjw4Vh8
+	 F9st7LHDNbljsVD0TiE5ekpEasLxU5K4/IYliQKMWfb/rnImxSijkqMayTnMTV0IYa
+	 xGPXoXE7onTiVx8L7192+GA0E/bmJFeNMtaxJbBLSITUJLDXH/1qSkPZRAMqZAMDx6
+	 ncpHFQQHGZ/1USt2VvtUTBTFMtscNb/K2ZW4/CuSjH9VEmO+6wovTVmu6s2mIyYV5K
+	 0RRkZR144gU7ZN6qCnVtwOxJ31EH3XiYILe4X8XsMn7c8dJIIVrO7WYUdS8GnQHflG
+	 KHlb/I3OL0iwQ==
 Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 6EF5745785;
+	by lkml.kernel.org (Postfix) with ESMTP id 7A73C45790;
 	Thu, 29 Oct 2026 08:16:52 +0000 (UTC)
 From: Mark Korenberg via B4 Relay <devnull+socketpair.gmail.com@kernel.org>
-Date: Thu, 29 Oct 2026 13:16:44 +0500
-Subject: [PATCH 1/2] btrfs: zoned: finish the zones of a relocated block
- group
+Date: Thu, 29 Oct 2026 13:16:45 +0500
+Subject: [PATCH 2/2] btrfs: zoned: don't treat a negative zone reservation
+ as free zones
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -84,7 +84,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261029-btrfs-zoned-active-zone-leak-v1-1-777dd01ff914@gmail.com>
+Message-Id: <20261029-btrfs-zoned-active-zone-leak-v1-2-777dd01ff914@gmail.com>
 References: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
 In-Reply-To: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
@@ -92,11 +92,11 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  stable@vger.kernel.org, Mark Korenberg <socketpair@gmail.com>
 X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1793261811; l=4344;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1793261811; l=2969;
  i=socketpair@gmail.com; s=20260603; h=from:subject:message-id;
- bh=zRjBI+rJe+s4Uyjpfd78jmh2lrY/Nq7+JPNK4RV1AgQ=;
- b=2nZhBQNgYMl+xskDi0bYJDWXNYH/OIBVapj4dT9o4si/8CQfk9iRtSQt9ILvnEtBaQ3BrlVhS
- XXymjKOZiBpBEdwtZNnuW6Udt46TIcgI78xex0XH+PmTN6lTxuiP2jV
+ bh=/DV6VhuvZpqJeMSGpyJDetY348SVMJHO3LESTAMCiLA=;
+ b=n0FwG6ZfMT+z5PqxaMtHNErkqGVg6tTpK2oqI0vXqG31LdBPqOVSRbJrYhblRrfNpT8EOyMA0
+ LrEDY492yyLBZK3TfLzTCc+QN51vpOFdbqMMWleVFll5pW0VKmiAgcn
 X-Developer-Key: i=socketpair@gmail.com; a=ed25519;
  pk=2iAMjWhs7kA9X8ccetT2YVX8dvniXua2okQogw3Don8=
 X-Endpoint-Received: by B4 Relay for socketpair@gmail.com/20260603 with
@@ -107,114 +107,77 @@ Content-Transfer-Encoding: 7bit
 
 From: Mark Korenberg <socketpair@gmail.com>
 
-btrfs_relocate_block_group() ignores -EAGAIN from btrfs_zone_finish().
-A metadata or system block group with tree blocks not written yet, or
-the data relocation block group, is then relocated and removed with its
-zone still active: it stays on zone_active_bgs and its share of
-reserved_active_zones is never given back. Repeated balances drive the
-reservation negative, which ends in -ENOSPC and lost data in writeback
-(see the next patch).
+reserved_active_zones goes negative when more metadata and system block
+groups are active than were reserved. btrfs_can_activate_zone() then
+reports a free active zone for data even when none is left, so the
+allocator neither finishes a zone nor waits for one. find_free_extent()
+fails with -ENOSPC on a device with plenty of space and cow_file_range()
+drops the dirty range; only the next fsync() or syncfs() reports it.
 
-Finish the zone in btrfs_relocate_chunk_finish() before removing the
-block group. It is read-only and empty by then, and relocate_block_group()
-has committed the transaction, so its tree blocks are written. Drop its
-data relocation role and finish it. Keep the chunk if that fails.
+A negative reservation holds nothing back. Treat it as zero for data
+block groups.
 
-Fixes: 7ae9bd18032e ("btrfs: zoned: finish relocating block group")
+Fixes: a7e1ac7bdc5a ("btrfs: zoned: reserve zones for an active metadata/system block group")
 Cc: stable@vger.kernel.org
 Signed-off-by: Mark Korenberg <socketpair@gmail.com>
 ---
- fs/btrfs/volumes.c |  3 +++
- fs/btrfs/zoned.c   | 36 ++++++++++++++++++++++++++++++++++++
- fs/btrfs/zoned.h   |  6 ++++++
- 3 files changed, 45 insertions(+)
+ fs/btrfs/zoned.c | 15 +++++++++++----
+ fs/btrfs/zoned.h |  5 ++++-
+ 2 files changed, 15 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d3e6a9b429dd..112ef1a53199 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3703,7 +3703,10 @@ static int btrfs_relocate_chunk_finish(struct btrfs_fs_info *fs_info,
- 
- 	btrfs_discard_cancel_work(&fs_info->discard_ctl, bg);
- 	length = bg->length;
-+	ret = btrfs_zone_finish_relocated(bg);
- 	btrfs_put_block_group(bg);
-+	if (ret)
-+		return ret;
- 
- 	/*
- 	 * On a zoned file system, discard the whole block group, this will
 diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 1cda88332284..ce8d96a48aa3 100644
+index ce8d96a48aa3..47aba2a63bb3 100644
 --- a/fs/btrfs/zoned.c
 +++ b/fs/btrfs/zoned.c
-@@ -2649,6 +2649,42 @@ int btrfs_zone_finish(struct btrfs_block_group *block_group)
- 	return do_zone_finish(block_group, false);
- }
+@@ -2444,12 +2444,13 @@ bool btrfs_zone_activate(struct btrfs_block_group *block_group)
+ 		if (zinfo->max_active_zones == 0)
+ 			continue;
  
-+/*
-+ * Finish the zones of a block group emptied by relocation, before removing it.
-+ *
-+ * btrfs_relocate_block_group() tries this before relocating, but gets -EAGAIN
-+ * while tree blocks allocated in the block group are not written yet. If the
-+ * block group is then removed with its zones still active, it stays on
-+ * fs_info->zone_active_bgs and, for metadata and system, its share of
-+ * reserved_active_zones is never given back. After a few balances the
-+ * reservation is negative and data writeback fails with -ENOSPC.
-+ *
-+ * Here the zones can be finished: the block group is read-only, so nothing is
-+ * allocated in it, and relocate_block_group() committed the transaction, so
-+ * its tree blocks are written.
-+ */
-+int btrfs_zone_finish_relocated(struct btrfs_block_group *block_group)
-+{
-+	int ret;
-+
-+	if (!btrfs_is_zoned(block_group->fs_info))
-+		return 0;
-+
-+	/*
-+	 * do_zone_finish() refuses the data relocation block group. This one is
-+	 * empty and gets no more relocated data, so drop that role.
-+	 */
-+	btrfs_clear_data_reloc_bg(block_group);
-+	spin_lock(&block_group->lock);
-+	clear_bit(BLOCK_GROUP_FLAG_ZONED_DATA_RELOC, &block_group->runtime_flags);
-+	spin_unlock(&block_group->lock);
-+
-+	ret = do_zone_finish(block_group, false);
-+	WARN_ON_ONCE(ret == -EAGAIN);
-+
-+	return ret;
-+}
-+
- bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
- {
- 	struct btrfs_fs_info *fs_info = fs_devices->fs_info;
+-		if (is_data)
+-			reserved = zinfo->reserved_active_zones;
+ 		/*
+ 		 * For the data block group, leave active zones for one
+-		 * metadata block group and one system block group.
++		 * metadata block group and one system block group. A negative
++		 * reservation holds nothing back, see btrfs_can_activate_zone().
+ 		 */
++		if (is_data)
++			reserved = max(zinfo->reserved_active_zones, 0);
+ 		if (atomic_read(&zinfo->active_zones_left) <= reserved) {
+ 			ret = false;
+ 			goto out_unlock;
+@@ -2712,8 +2713,14 @@ bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags)
+ 			break;
+ 		}
+ 
++		/*
++		 * A negative reservation holds nothing back. Do not count it
++		 * as free zones: the check below would pass with no active
++		 * zone left, and the caller would allocate a chunk it cannot
++		 * activate instead of finishing a zone, then fail with -ENOSPC.
++		 */
+ 		if (flags & BTRFS_BLOCK_GROUP_DATA)
+-			reserved = zinfo->reserved_active_zones;
++			reserved = max(zinfo->reserved_active_zones, 0);
+ 
+ 		switch (flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
+ 		case 0: /* single */
 diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index 8e21a836f858..700d6909ee3f 100644
+index 700d6909ee3f..aa6fa3a0b9a3 100644
 --- a/fs/btrfs/zoned.h
 +++ b/fs/btrfs/zoned.h
-@@ -82,6 +82,7 @@ int btrfs_sync_zone_write_pointer(struct btrfs_device *tgt_dev, u64 logical,
- 				  u64 physical_start, u64 physical_pos);
- bool btrfs_zone_activate(struct btrfs_block_group *block_group);
- int btrfs_zone_finish(struct btrfs_block_group *block_group);
-+int btrfs_zone_finish_relocated(struct btrfs_block_group *block_group);
- bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices, u64 flags);
- int btrfs_zone_finish_endio(struct btrfs_fs_info *fs_info, u64 logical,
- 			     u64 length);
-@@ -238,6 +239,11 @@ static inline int btrfs_zone_finish(struct btrfs_block_group *block_group)
- 	return 0;
- }
- 
-+static inline int btrfs_zone_finish_relocated(struct btrfs_block_group *block_group)
-+{
-+	return 0;
-+}
-+
- static inline bool btrfs_can_activate_zone(struct btrfs_fs_devices *fs_devices,
- 					   u64 flags)
- {
+@@ -38,7 +38,10 @@ struct btrfs_zoned_device_info {
+ 	u32 nr_zones;
+ 	unsigned int max_active_zones;
+ 	/*
+-	 * Reserved active zones for one metadata and one system block group.
++	 * Reserved active zones for one metadata and one system block group:
++	 * the reservation made at mount minus the metadata and system block
++	 * groups active now. It is negative when more of them are active than
++	 * were reserved, which does not mean that there are extra active zones.
+ 	 * It can vary per-device depending on the allocation status.
+ 	 */
+ 	int reserved_active_zones;
 
 -- 
 2.56.0

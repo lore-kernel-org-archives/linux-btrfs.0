@@ -1,84 +1,84 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793268316;
-	b=X00weob0+dx0TI4XoB6+/rUJVZen/S/TJqhNsmxWKH8TiFt72tMHxej3glSa1jpKxUf+
-	 TLkgK0BkRGo42LDV43Jaz5ycduSHQO6UttT6RvBujQLB0IovGrv5bFuCFWoWs7HCtstmP
-	 56JK7fhY7RsQyroGzafSgLSbkAcZEbKEfFhim+zdXAguYuuuQoyGiWIWjcpMxAlD1pW5J
-	 EBpNjKoh1TVMftCrbwJb8w9KRknMdwcWKN5mjzhUwuI8hfsV8taIsIIawCYlft8uTVAvq
-	 xuqHJ5k6hRmb0Gc13NsM/tAN2JBioxyJNRr7qGeFPADbagVOxWFjc/3oWZrtcfCcWSQ==
+	t=1793268319;
+	b=wtTrHyygOMWJ5OfSGEfNhZGhbFqZHNuZi4F12qNSTsNAv5a3BZyCJtNO/DgiRC1g6RRq
+	 CXN6lUhrUQpDbaIoiXWBEy9pnjAEF/r40Z9JCZe9oHsY9gvw25CvokDm69qg0a92D7LC/
+	 8KPU/GwxzcHIyUMHId2CsvOk9KM0kvYsFVBLgolbKowOGlHAAYk0bLxVXXVNxta5VCk1v
+	 8Cn/2c8AK5+3CzP4USC+ee43CQkDYOB3RGs0h/rRoH0CWK2JT5ApZhRZLqdjFVE3y4FTV
+	 vl7t3lTnwa4/3tHPwzPhkqJuhEpgDi0kCv0T/KfMiv3qGEShYENCbohJwI7nBbklfNg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793268316;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793268319;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
 	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
 	 X-Spamd-Result:X-Spam-Score;
-	bh=R5v+rxWvaXnx769LA4koUjV1KRWl3EkRVVNZaxHQPi8=;
-	b=oY2RJ0obrWpHLoPOwlftkcXo426auny5i5JtfZbGw/jKBWwhUjhy4/gSlo1/JZx7QaUP
-	 n8zBwZX1EFMHbFlB1mTSr/R8Cvmppw0o0AaCjDRrrE9K3yLlj0MslMqHEkD51AWlD5M1p
-	 2y1qpWNXdyyEbguEE7Xfd/cQNamvpeAKuk3s3mpx+aIt0MmtWsWeTNhxiZXKxzDXlHyT4
-	 sLI1ZyHYvQNF6bLd3ovR8Ovvinch+2/3SQJZnhhm4Shl7XEs5Ed7DYFCKf4Mx0JZeH4A/
-	 KU0FdvbtUUgThVCBOAXNJp7A2HHFXJ9KoQEj+kMgkYCdIiZ12J2j9tYaH637xDcv3fQ==
+	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
+	b=UrrFXLYCn1kDlL5SCnUGM1vKbMhJ43KXfU063QBR/8M48m8IUaRiQWb6mC96aYHoU597
+	 Qu0eqRFTuNN9DU/5JOHIr1oB/WcMblOcSLwjDRLyqe7/k1pt3OYx4SldO8wJq2kp6fQzT
+	 aiLMMpz97r+GILoI5/ShgaseZbyY0G6sFbRpoCQQ0CNVd9zdpYbwvAWxJH3PC7iqstEiv
+	 Zss4FoGZmmjz5BU5COXpjRmV5/rlNWDHEJSQde8BCXyjRxr9zET+WMt9byMwby3udDzkF
+	 kigp5ammlKJvZLXIwBddR7FdOnVRFufsxQD5F2IBkkPESLGIX/HxcApasJmtB8ilckw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dye6VuqJ;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dye6VuqJ;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="So/YxFz1";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="So/YxFz1";
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B1A63606A31D
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B1A63606A31D
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ED9FD606A320
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org ED9FD606A320
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dye6VuqJ;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dye6VuqJ
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=So/YxFz1;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=So/YxFz1
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 23E8A1F8A3
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:14 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 556D21F7B3
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793268314; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793268317; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=R5v+rxWvaXnx769LA4koUjV1KRWl3EkRVVNZaxHQPi8=;
-	b=dye6VuqJ9pLhXcy3AkQnaStE7cy1COQ6eV020lWNKul5wyW7VWsQ029Ttg/EQD2s5w4dNC
-	QT0PrOecFvdeHCdZazt+1/wbt3BvM7ujDf44xci3jo0WCM6tR8/qQAu5R4/x7fEd80PhG9
-	BtCMTgCMVosKLgvUZSX1TghxSTXTDuo=
+	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
+	b=So/YxFz1qWS+qJHWTQEicifnBsQc6fBAYLUHm4jTVRE6f8cCDIH4nG7YRRlzIQiwTkfZdZ
+	yUXZyQD05UEKJxhXrSG6cUAW3SWMm2pWLThlF2BIMywn6aa7i5nVeMqRTKj1lnLHnV9DOr
+	/GAzg74BMGpuwc65aizRGW7gkmcG2MY=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=dye6VuqJ
+	dkim=pass header.d=suse.com header.s=susede1 header.b="So/YxFz1"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793268314; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793268317; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=R5v+rxWvaXnx769LA4koUjV1KRWl3EkRVVNZaxHQPi8=;
-	b=dye6VuqJ9pLhXcy3AkQnaStE7cy1COQ6eV020lWNKul5wyW7VWsQ029Ttg/EQD2s5w4dNC
-	QT0PrOecFvdeHCdZazt+1/wbt3BvM7ujDf44xci3jo0WCM6tR8/qQAu5R4/x7fEd80PhG9
-	BtCMTgCMVosKLgvUZSX1TghxSTXTDuo=
+	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
+	b=So/YxFz1qWS+qJHWTQEicifnBsQc6fBAYLUHm4jTVRE6f8cCDIH4nG7YRRlzIQiwTkfZdZ
+	yUXZyQD05UEKJxhXrSG6cUAW3SWMm2pWLThlF2BIMywn6aa7i5nVeMqRTKj1lnLHnV9DOr
+	/GAzg74BMGpuwc65aizRGW7gkmcG2MY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 13B8413419
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:12 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 42E2D13419
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:15 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 380rJ1Ma42qwKgAAD6G6ig:T4
+	id 380rJ1Ma42qwKgAAD6G6ig:T6
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:12 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:15 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 3/5] btrfs-progs: sync btrfs_translate_remap() to fix a path leak
-Date: Thu, 29 Oct 2026 20:34:39 +1030
-Message-ID: <1b56638b02ca4780cc9a83ce753e600d87fa3762.1793268211.git.wqu@suse.com>
+Subject: [PATCH v2 5/5] btrfs-progs: fix several memory bugs in btrfs-corrupt-block
+Date: Thu, 29 Oct 2026 20:34:41 +1030
+Message-ID: <0986b72bdae74dd95b86bae519ef402ee3f2ef9f.1793268211.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1793268211.git.wqu@suse.com>
 References: <cover.1793268211.git.wqu@suse.com>
@@ -92,7 +92,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 23E8A1F8A3
+X-Rspamd-Queue-Id: 556D21F7B3
 X-Spam-Level: 
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Rspamd-Action: no action
@@ -100,8 +100,8 @@ X-Spam-Flag: NO
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
@@ -125,111 +125,170 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Score: -12.01
 
-In the current implementation, if btrfs_next_leaf() returned 1, the
-function returned without freeing the path.
+These involves several call sites:
 
-Fix it by syncing the code from kernel, which do a key search using
-(*logical, -1, -1), then moving to the previous slot, which should be
-safer than the current one.
+- BTRFS_METADATA_BLOCK_GENERATION branch of corrupt_metadata_block()
 
+- BTRFS_METADATA_BLOCK_SHIFT_ITEMS branch of corrupt_metadata_block()
+
+- if (chunk_rec) branch of main()
+
+The bugs are:
+
+- Use-after-free if write_data_to_disk() failed in
+  BTRFS_METADATA_BLOCK_GENERATION branch
+  Fix it by saving @eb->start and use that saved value for error
+  message.
+
+- Path leak in the successful path
+  Fix it by using BTRFS_PATH_AUTO_FREE() and remove all existing
+  btrfs_free_path().
+
+- Path held after btrfs_commit_transaction()
+  This is minor, but still release the path before
+  btrfs_commit_transaction() to follow the kernel behavior.
+
+- Missing error message and code if btrfs_commit_transaction failed
+  Just add the missing error message and save the error code from it.
+
+- Wrong value in the error message if btrfs_read_fs_root() failed
+  Fix it by printing root_key.objectid.
+
+- Missing error code if early failures happened in chunk_rec branch
+  Fix it by setting @ret to -ENOMEM or -ENOENT respectively.
+
+Behavior changes:
+
+- Abort the transaction if corrupt_item_nocow() failed in chunk_rec
+  branch
+  Previously we would still commit the transaction after a failed
+  corrupt_item_nocow(), which is meaningless for a failed operation.
+  Now we abort the transaction and exit through out_close, without
+  committing.
+
+Cleanup:
+
+- Remove the dead "eb = path->nodes[level]" assignment in SHIFT_ITEMS
+  branch
+  @eb is not used after that, and it was already freed earlier.
+
+Assisted-by: LLM (generate the commit message with human modification)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- kernel-shared/volumes.c | 55 ++++++++++-------------------------------
- 1 file changed, 13 insertions(+), 42 deletions(-)
+ btrfs-corrupt-block.c | 34 +++++++++++++++++++++++-----------
+ 1 file changed, 23 insertions(+), 11 deletions(-)
 
-diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
-index e2b6708ad872..fedcaa5f9216 100644
---- a/kernel-shared/volumes.c
-+++ b/kernel-shared/volumes.c
-@@ -2098,75 +2098,46 @@ static int btrfs_translate_remap(struct btrfs_fs_info *fs_info, u64 *logical, u6
- 	struct btrfs_key key, found_key;
- 	struct extent_buffer *leaf;
- 	struct btrfs_remap_item *remap;
--	struct btrfs_path *path;
-+	BTRFS_PATH_AUTO_FREE(path);
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 94815221a32d..0fc2c42e7ffa 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -910,6 +910,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
+ 		{
+ 		u64 orig = btrfs_header_generation(eb);
+ 		u64 bogus = generate_u64(orig);
++		const u64 start = eb->start;
  
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
+ 		btrfs_set_header_generation(eb, bogus);
+ 		csum_tree_block_size(eb, fs_info->csum_size, 0,
+@@ -919,7 +920,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
+ 		if (ret < 0) {
+ 			errno = -ret;
+ 			error("failed to write extent buffer at %llu: %m",
+-				eb->start);
++			      start);
+ 			return ret;
+ 		}
+ 		break;
+@@ -928,7 +929,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
+ 		{
+ 		struct btrfs_trans_handle *trans;
+ 		struct btrfs_root *root;
+-		struct btrfs_path *path;
++		BTRFS_PATH_AUTO_FREE(path);
+ 		struct btrfs_key key, root_key;
+ 		u64 root_objectid;
+ 		u8 level;
+@@ -947,7 +948,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
  
- 	key.objectid = *logical;
--	key.type = BTRFS_IDENTITY_REMAP_KEY;
--	key.offset = 0;
-+	key.type = (u8)-1;
-+	key.offset = (u64)-1;
+ 		root = btrfs_read_fs_root(fs_info, &root_key);
+ 		if (IS_ERR(root)) {
+-			error("couldn't find owner root %llu", key.objectid);
++			error("couldn't find owner root %llu", root_key.objectid);
+ 			return PTR_ERR(root);
+ 		}
  
- 	ret = btrfs_search_slot(NULL, fs_info->remap_root, &key, path, 0, 0);
--	if (ret < 0) {
--		btrfs_free_path(path);
-+	if (ret < 0)
- 		return ret;
--	}
+@@ -957,7 +958,6 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
  
- 	leaf = path->nodes[0];
-+	if (path->slots[0] == 0)
-+		return -ENOENT;
- 
--	if (path->slots[0] >= btrfs_header_nritems(leaf)) {
--		ret = btrfs_next_leaf(fs_info->remap_root, path);
--		if (ret < 0) {
+ 		trans = btrfs_start_transaction(root, 1);
+ 		if (IS_ERR(trans)) {
 -			btrfs_free_path(path);
--			return ret;
--		}
--
--		leaf = path->nodes[0];
--	}
-+	path->slots[0]--;
- 
- 	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
- 
--	if (found_key.objectid > *logical) {
--		if (path->slots[0] == 0) {
--			ret = btrfs_prev_leaf(fs_info->remap_root, path);
--			if (ret) {
--				if (ret == 1)
--					ret = -ENOENT;
--				return ret;
--			}
--
--			leaf = path->nodes[0];
--		} else {
--			path->slots[0]--;
--		}
--
--		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
--	}
--
--	if (found_key.type != BTRFS_REMAP_KEY && found_key.type != BTRFS_IDENTITY_REMAP_KEY) {
--		btrfs_free_path(path);
-+	if (found_key.type != BTRFS_REMAP_KEY &&
-+	    found_key.type != BTRFS_IDENTITY_REMAP_KEY) {
- 		return -ENOENT;
+ 			ret = PTR_ERR(trans);
+ 			errno = -ret;
+ 			error_msg(ERROR_MSG_START_TRANS, "%m");
+@@ -968,14 +968,17 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
+ 		ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 		if (ret < 0) {
+ 			error("error searching to node %d", ret);
+-			btrfs_free_path(path);
+ 			btrfs_abort_transaction(trans, ret);
+ 			return ret;
+ 		}
+-		eb = path->nodes[level];
+ 		shift_items(root, path->nodes[level]);
+ 		btrfs_mark_buffer_dirty(path->nodes[level]);
+-		btrfs_commit_transaction(trans, root);
++		btrfs_release_path(path);
++		ret = btrfs_commit_transaction(trans, root);
++		if (ret < 0) {
++			errno = -ret;
++			error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
++		}
+ 		break;
+ 		}
+ 	default:
+@@ -1502,7 +1505,7 @@ int main(int argc, char **argv)
  	}
+ 	if (chunk_rec) {
+ 		struct btrfs_trans_handle *trans;
+-		struct btrfs_path *path;
++		BTRFS_PATH_AUTO_FREE(path);
+ 		int del;
  
--	if (found_key.objectid > *logical || found_key.objectid + found_key.offset <= *logical) {
--		btrfs_free_path(path);
-+	if (found_key.objectid > *logical ||
-+	    found_key.objectid + found_key.offset <= *logical) {
- 		return -ENOENT;
+ 		if (logical == (u64)-1)
+@@ -1511,21 +1514,30 @@ int main(int argc, char **argv)
+ 		path = btrfs_alloc_path();
+ 		if (!path) {
+ 			error_mem(NULL);
++			ret = -ENOMEM;
+ 			goto out_close;
+ 		}
+ 
+ 		if (find_chunk_offset(root->fs_info->chunk_root, path,
+ 				      logical) != 0) {
+-			btrfs_free_path(path);
++			ret = -ENOENT;
+ 			goto out_close;
+ 		}
+ 		trans = btrfs_start_transaction(root, 1);
+ 		BUG_ON(IS_ERR(trans));
+ 		ret = corrupt_item_nocow(trans, root->fs_info->chunk_root,
+ 					 path, del);
+-		if (ret < 0)
++		btrfs_release_path(path);
++		if (ret < 0) {
+ 			error("failed to corrupt chunk record");
+-		btrfs_commit_transaction(trans, root);
++			btrfs_abort_transaction(trans, ret);
++			goto out_close;
++		}
++		ret = btrfs_commit_transaction(trans, root);
++		if (ret < 0) {
++			errno = -ret;
++			error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
++		}
+ 		goto out_close;
  	}
- 
- 	if (*logical + *length > found_key.objectid + found_key.offset)
- 		*length = found_key.objectid + found_key.offset - *logical;
- 
--	if (found_key.type == BTRFS_IDENTITY_REMAP_KEY) {
--		btrfs_free_path(path);
-+	if (found_key.type == BTRFS_IDENTITY_REMAP_KEY)
- 		return 0;
--	}
- 
- 	remap = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_remap_item);
--	*logical = *logical - found_key.objectid + btrfs_remap_address(leaf, remap);
--
--	btrfs_free_path(path);
-+	*logical += btrfs_remap_address(leaf, remap) - found_key.objectid;
- 
- 	return 0;
- }
+ 	if (chunk_tree) {
 -- 
 2.56.0
 

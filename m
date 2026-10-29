@@ -1,81 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793267201;
-	b=qi8hFiNvBg+CCOW7s+Dhw5TUwi9ouQy2vLmQA1eVgdJtJgvD/C8gwaWDCzIBjTpse12u
-	 q7CGzAg8/4g1zpiNEoH19jwugpqwI2xFsbL7th7/XuihKwb9hoSJtdCj5jakSFua+YR/c
-	 vCtYfO2AZ8jCPR06QKcobGJ2KSqASRqY0XfY/1VshzZjZ3DljANlN4Zmd7W8RoKQy92rH
-	 XTkTfyy8TY4bSlzxU5sQ2sIULIakAcCxk1/BvygYCFVdT2x5JH8d37smqxi9Jg8MqxzPf
-	 wS6JnNkBcaz9ymHdYkVFp7uPm/7DyQgaTTCUURMNeq5jg0ggfCrYxI+c7TcBeIbL3eA==
+	t=1793267203;
+	b=eDla2tW/nijAxelKtlcJyAClI9VXobenXrL3S+JbCkU6Fhaa90Qryd8fp944xgPvRsSl
+	 PXWGnTv+8xnxAq5Ml7BeUSghaR4fH3G9mcyGAxZFRNj9EoFEA5Fq/VlLHLhITEp9tao0m
+	 1xopTSJ+JBrPLhEYqn1uIJqm/OsCE/8L5uHYiv1Qr/D9qd0vStgpCGHcVPpPRWGP1BSsA
+	 z74TvXP68swvg0jLUktA2f+11envr/h+AIswEdADQz6xNgQg55kUro9HPecXNd+itoOJI
+	 P7JeyQJ6esKTVnSHX6CLCSEAm2xoodaTr+FX2cvhgla8ZcIlgqSHW1Wff9h7Qdd30ng==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793267201;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793267203;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
-	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=iVjiOj6sGitQ8h87jP5tPRnlg68XSiGs4R7B4Stduoc=;
-	b=pfvk8HTJ/fkw/lUYZSR/FyZYAXKivRWpO3l8kUrpVFtqZ/EZLd4ZOU3JwD4nQX3/S3pO
-	 q0Emk7MqrSlMVwABnx3TM8Zc2EBjqyxjg6Uj8WCHU92+jsIAwIef2SCmwCP52x4052R+i
-	 jFpXZiYSV6oS5GYcuj89ngqqKprW1A6I37Z8fWQNtVXSubiNMWdItqWx2meOM2jqnHqG9
-	 IQpg7f8inikjlzMPJ5S9CjinydCVqR7QKjMctoP9H60/Pvjf+zZlNjsmnQ6F5+k8RvQoh
-	 kDCSGnk8tNoNmg3b3qlFfXOJsqISU32Y00JAxx4/qtXcldn2lwIPMxQo7P/eTXiofrQ==
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
+	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
+	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
+	 X-Spamd-Result:X-Spam-Score;
+	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
+	b=Dei2KgeX1FWAt1qJn6DvSb9Suq3n2IXoYb+SwH1Zxa5k8+0c8w8DOlgEmRUXl1HwfG7U
+	 HlWOv4TPBwGJkfyLml/OrZ7HJZgJuK+EJneLlLlhdFGGEGSao+EaXeW+Z9gjIcVssVN74
+	 Z5juSR57/fK8etlHgwIozBKwCmO9VNkkYVwr0ul6JuWZPCZFCZ9WgYTZfqpiCnLkw3WXd
+	 7G4keuMQ91jIDEUKBBxy9y64ChABflhl8gwrX0Z0HDX6IUwZnIZ+jbgd3DrreKqP8hF9K
+	 DWCl9twys0qmp0eOO+cYYD4kf9pm6wGCcEEPMO1SNzrJElwhwQG/A/aXuxvGEnDPcJQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="ETX13Y/W";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="ETX13Y/W";
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HEEKa2dd;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HEEKa2dd;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12982606A31A
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 12982606A31A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9172B606A321
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9172B606A321
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ETX13Y/W;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ETX13Y/W
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HEEKa2dd;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HEEKa2dd
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 1F19F21F6D
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:39 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B3C4E1FB82
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793267199; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=iVjiOj6sGitQ8h87jP5tPRnlg68XSiGs4R7B4Stduoc=;
-	b=ETX13Y/WUQWei7tsE8jBqL/XFDb9GChJ041NlY8ZlZ3/pFGmz/wd91eYDu3XfTIixpiDVC
-	0ZUqupuO2YMXIG/uUsJauM9MzrIZs2jnOsk54e2A9VBzpBGm95cbEEvLH0crenu4OamjUC
-	xrcon1zeqoA7DiFxbxqUlEPDf1m7gGM=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b="ETX13Y/W"
+	t=1793267200; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
+	b=HEEKa2ddAlbcNOntxWaCe2Z+5fuhI631wYprMeJMdrogI33Fd8KymrQ8i7wuE1S+uYdUMi
+	Gjpl4NwJF4ux4E5hV5VbrlHqOyEKtGM1CDauSsfGm0ySPbiQioSYqjEm2etG9BSvfx7ItX
+	ezJEbKf0vhxyz1dNgCxuFe2YvMIgeYE=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=HEEKa2dd
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793267199; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=iVjiOj6sGitQ8h87jP5tPRnlg68XSiGs4R7B4Stduoc=;
-	b=ETX13Y/WUQWei7tsE8jBqL/XFDb9GChJ041NlY8ZlZ3/pFGmz/wd91eYDu3XfTIixpiDVC
-	0ZUqupuO2YMXIG/uUsJauM9MzrIZs2jnOsk54e2A9VBzpBGm95cbEEvLH0crenu4OamjUC
-	xrcon1zeqoA7DiFxbxqUlEPDf1m7gGM=
+	t=1793267200; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
+	b=HEEKa2ddAlbcNOntxWaCe2Z+5fuhI631wYprMeJMdrogI33Fd8KymrQ8i7wuE1S+uYdUMi
+	Gjpl4NwJF4ux4E5hV5VbrlHqOyEKtGM1CDauSsfGm0ySPbiQioSYqjEm2etG9BSvfx7ItX
+	ezJEbKf0vhxyz1dNgCxuFe2YvMIgeYE=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0036D13419
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:37 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 97EB213419
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id fpy8FP0V42o+FwAAD6G6ig
+	id fpy8FP0V42o+FwAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:37 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:39 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] btrfs-progs: btrfs path leak fix, part 1
-Date: Thu, 29 Oct 2026 20:16:10 +1030
-Message-ID: <cover.1793266694.git.wqu@suse.com>
+Subject: [PATCH 1/5] btrfs-progs: introduce compiler_attributes.h
+Date: Thu, 29 Oct 2026 20:16:11 +1030
+Message-ID: <5b483c92d995d1a07918aac47259cf63a9df5603.1793266694.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
+In-Reply-To: <cover.1793266694.git.wqu@suse.com>
+References: <cover.1793266694.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,6 +92,11 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: B3C4E1FB82
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -112,53 +123,132 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	MIME_TRACE(0.00)[0:+];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,llvm.org:url,gnu.org:url,suse.com:dkim,suse.com:email]
 X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 1F19F21F6D
 
-To avoid future LLM script kiddos, we need to fix path leaks.
+Cross-port a minimal include/compiler_attributes.h from the kernel's
+include/linux/compiler_attributes.h, and move the existing attribute
+definitions there:
 
-This is part 1, focusing on leaks on btrfs_alloc_path().
+- __must_check
+  Previously defined in kernel-lib/overflow.h, which is not a proper
+  place for a generic attribute. Anyone wanting __must_check would have
+  to include overflow.h just for it.
 
-The most important part is the second patch, which introduces
-BTRFS_PATH_AUTO_(FREE|RELEASE), so that we can finally get the same
-capability.
+- __printf
+- __maybe_unused
+  Previously defined in include/kerncompat.h.
 
-Unfortunately this will require the compiler support for the __cleanup__
-attribute. If not supported, configure will reject the build.
+The new header has no other includes so it can be pulled in by any
+header that only needs a compiler attribute. kerncompat.h includes it,
+so existing users are not affected.
 
-Then several fixes using BTRFS_PATH_AUTO_FREE().
-
-The last one has several other small fixes batched together, as they are
-all inside the same btrfs-corrupt-block.
-
-Part 2 will focus on the on-stack paths, which can still leak the ebs,
-and are the most common sites in btrfs-progs.
-
-Qu Wenruo (5):
-  btrfs-progs: introduce compiler_attributes.h
-  btrfs-progs: utilize __cleanup__ attribute for btrfs_path
-  btrfs-progs: sync btrfs_translate_remap() to fix a path leak
-  btrfs-progs: fix a path leak in alloc_reserved_tree_block()
-  btrfs-progs: fix several memory bugs in btrfs-corrupt-block
-
- btrfs-corrupt-block.c         | 34 ++++++++-----
- configure.ac                  | 15 ++++++
- include/compiler_attributes.h | 39 +++++++++++++++
- include/kerncompat.h          |  7 +--
- kernel-lib/overflow.h         |  8 +---
- kernel-shared/cleanup.h       | 89 +++++++++++++++++++++++++++++++++++
- kernel-shared/ctree.h         | 10 ++++
- kernel-shared/extent-tree.c   |  4 +-
- kernel-shared/volumes.c       | 55 +++++-----------------
- 9 files changed, 193 insertions(+), 68 deletions(-)
+Assisted-By: LLM (Split the compiler_attributes.h from the next commit)
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ include/compiler_attributes.h | 33 +++++++++++++++++++++++++++++++++
+ include/kerncompat.h          |  7 +------
+ kernel-lib/overflow.h         |  8 +-------
+ 3 files changed, 35 insertions(+), 13 deletions(-)
  create mode 100644 include/compiler_attributes.h
- create mode 100644 kernel-shared/cleanup.h
 
---
+diff --git a/include/compiler_attributes.h b/include/compiler_attributes.h
+new file mode 100644
+index 000000000000..e9ac1ac64cd8
+--- /dev/null
++++ b/include/compiler_attributes.h
+@@ -0,0 +1,33 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _COMPILER_ATTRIBUTES_H
++#define _COMPILER_ATTRIBUTES_H
++
++/*
++ * Copied from linux.git/include/linux/compiler_attributes.h, only contains the
++ * attributes btrfs-progs needs.
++ *
++ * This header must stay free of any other includes, so it can be pulled in by
++ * any header which only needs a compiler attribute.
++ */
++
++/*
++ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-format-function-attribute
++ * clang: https://clang.llvm.org/docs/AttributeReference.html#format
++ */
++#define __printf(a, b)			__attribute__((__format__(printf, a, b)))
++
++/*
++ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-warn_005funused_005fresult-function-attribute
++ * clang: https://clang.llvm.org/docs/AttributeReference.html#nodiscard-warn-unused-result
++ */
++#define __must_check			__attribute__((__warn_unused_result__))
++
++/*
++ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-unused-function-attribute
++ * clang: https://clang.llvm.org/docs/AttributeReference.html#maybe-unused-unused
++ */
++#ifndef __maybe_unused
++#define __maybe_unused			__attribute__((__unused__))
++#endif
++
++#endif
+diff --git a/include/kerncompat.h b/include/kerncompat.h
+index 0239b0ac807a..b8e9a6c9c04b 100644
+--- a/include/kerncompat.h
++++ b/include/kerncompat.h
+@@ -38,6 +38,7 @@
+ #include <stdbool.h>
+ #include <stdarg.h>
+ #include <features.h>
++#include "compiler_attributes.h"
+ 
+ #ifndef static_assert
+ #define static_assert(expr, str) _Static_assert(expr, str)
+@@ -58,10 +59,6 @@
+ 
+ #endif
+ 
+-#ifndef __maybe_unused
+-#define __maybe_unused __attribute__((__unused__))
+-#endif
+-
+ #ifndef BTRFS_DISABLE_BACKTRACE
+ #include <execinfo.h>
+ #endif
+@@ -776,8 +773,6 @@ struct lock_class_key {
+ #define __user
+ #define __pure
+ 
+-#define __printf(a, b)                  __attribute__((__format__(printf, a, b)))
+-
+ static inline bool sb_rdonly(struct super_block *sb)
+ {
+ 	return false;
+diff --git a/kernel-lib/overflow.h b/kernel-lib/overflow.h
+index b2a376ee13c4..d942b11924cc 100644
+--- a/kernel-lib/overflow.h
++++ b/kernel-lib/overflow.h
+@@ -5,6 +5,7 @@
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <stdint.h>
++#include "compiler_attributes.h"
+ 
+ /*
+  * We need to compute the minimum and maximum values representable in a given
+@@ -42,13 +43,6 @@
+ #define is_non_negative(a) ((a) > 0 || (a) == 0)
+ #define is_negative(a) (!(is_non_negative(a)))
+ 
+-/* Copied from linux.git/include/compiler_attributes.h */
+-/*
+- *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-warn_005funused_005fresult-function-attribute
+- * clang: https://clang.llvm.org/docs/AttributeReference.html#nodiscard-warn-unused-result
+- */
+-#define __must_check                    __attribute__((__warn_unused_result__))
+-
+ /*
+  * Allows for effectively applying __must_check to a macro so we can have
+  * both the type-agnostic benefits of the macros while also being able to
+-- 
 2.56.0
 

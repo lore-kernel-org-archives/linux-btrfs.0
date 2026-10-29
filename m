@@ -1,86 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793267209;
-	b=Q0geW7rdG3584TgthNKJEYzRUBMb/yEkxRIRXDKdu8qeAOgtahRNEpIjQMr9KvNgu4Kl
-	 cvoHO4wsd3uXOpTsXh4fTuldVtYJXt3nTRQPgdQZ1ILxkRsACl0VNlQeSNkEU2KrryxIY
-	 9Tu98pIqDTq1qS+ACNhLXXrd427p7WavfAyxuYymKQ2qBgoXhjvnVvykbiFQlBaR+rIOs
-	 g1FrshIl4FM+mLt6BIYKuZkBA0AdyqajSKLmLBrU2R/lNw2BU00CFA70tl5GmgZa81q2P
-	 XsLYpq9TnRwkEjSiR9jPTCgwcs2u4NJeIyIsIOZLZcGMRpbz2fX3ORj1BA+nyCjkp8A==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793267209;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
-	b=E/dAxk+mFbUiyd0ToYll3Zp/bQnzIEuLIJHcvmXvZ+w83LjvqXIfJOvwsJ9lDKO4DVAd
-	 c/eYTiabK6RzB6Yo4q5TgObUR6iu5K520BoRcoPKYz1tUbxS+iyDdBetWtB4lS+/fKg8S
-	 FGo5iyUW9X4Aq8irrgQHS+uaHCqyo3/2aHGrhf1ssQSFv1FPBIGVC5etgsj59eoLG+VWM
-	 /rOlUAMVGXieIVtqM31soH5sO0R1iMRnI4X67bbWOmaFGhh5D8snpieWh9Aw9rI8KJ3Rm
-	 3H7184pI4gQt3pyO1n89EzuipmsQUVBLxzGsVgDq05UsTmUsYuyaC7QiZ0VpLk/SB/g==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hgEfJNun;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hgEfJNun;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.177
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793268019;
+	b=dLxOo/Sd43rQhdY4GLe0ttNT4axkBzZdEXK/FlMq7edUbIqgmBR3YXDCoaHVs2/kmgmB
+	 kJKfXMc67ECU7LDoscPlp5sPThn9pufk4ADdz8ckqqnuODpyJUOsoYnGf4tV3ByDHD0tQ
+	 WHmgJ++4P/i90CsmYOY+nGpRr22uQiTuMDK2MvgWpb8yiLI0ad0TeaYjHpFNRA5/NZhw/
+	 3dTDwgEM/OFBb+jXe7xfzWOCcWBXgBImWdEX+LB9EJG9+C7FKL+sngfytWw2duOs0uK3n
+	 TqfdSp0j99+6CsIVGd1FwWomsysZpNWg5Us5UPdEAXGuBoDW9PiijMnCQHuUK0Embnw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793268019;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type;
+	bh=+KsF8vc4ULWHMDhPgj0bLTj8antp0LHTyec0w+asTec=;
+	b=LyDsyWYRbiG4DTg8a64IDhm8iIq6yJcBOdHqNN6ITjdNMxOXJe/DhuDaD0KPmcIpYZc4
+	 ad1yVd4Rjn40gYHfMpKcOcH9QR/ILxxJ7YxV4Ah4yh058eRnUcFifBlVIU242mcAKfeMB
+	 uQHzwzxVHUmauC63KFjw6Ms5XYKFTz6OTVLZC8130lh/12S3IPeT1955Co6HlZKVs9Td0
+	 Ip6iercFo+ztCxLm/AyAJmDgNhydCBPje4aoZ0IhU5NVOlFQlSAsMbTtmqO8SG3o4nRTQ
+	 +q5x1rTqamw6FX6VTlUds66GSLaHJ2Rtwlm/H7R0IbXmjmAKPDqA+UJg0TIIwX9jzKg==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ARIrWMoY;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.82.177
+Received: from mail-dy1-f177.google.com (mail-dy1-f177.google.com [74.125.82.177])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C0E83606A322
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:48 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C0E83606A322
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 585CC606A326
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:00:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 585CC606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hgEfJNun;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=hgEfJNun
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 3038C1FB0E
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:47 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793267207; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
-	b=hgEfJNunjeByMw8ui98IC2uUP6C3S25acIi3jnxF/3uky7pr8vu27415Fyo/YPEl48u+c7
-	LB9qlpXROLFFX0jYuUgqsjGUY1NaSTfOatRkvAATRym92cShgCV/IMuhiEFJQllBkgpbmI
-	tR7TWeopfRyWyKjOU/WWwL54RMWR6Ds=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793267207; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=DXDMPCAzaQnHTDUcWRuDgq5UQpR5zcO1MaafAdJM9Vo=;
-	b=hgEfJNunjeByMw8ui98IC2uUP6C3S25acIi3jnxF/3uky7pr8vu27415Fyo/YPEl48u+c7
-	LB9qlpXROLFFX0jYuUgqsjGUY1NaSTfOatRkvAATRym92cShgCV/IMuhiEFJQllBkgpbmI
-	tR7TWeopfRyWyKjOU/WWwL54RMWR6Ds=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1A32113419
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:45 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id fpy8FP0V42o+FwAAD6G6ig:T6
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 09:46:45 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] btrfs-progs: fix several memory bugs in btrfs-corrupt-block
-Date: Thu, 29 Oct 2026 20:16:15 +1030
-Message-ID: <a3391f04be61fc84bf38b07ba4452f898d186246.1793266694.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1793266694.git.wqu@suse.com>
-References: <cover.1793266694.git.wqu@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ARIrWMoY
+Received: by mail-dy1-f177.google.com with SMTP id 5a478bee46e88-36a315ed211so734113eec.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 03:00:19 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793268018; cv=none;
+        d=google.com; s=arc-20260327;
+        b=fGYXUhIOiVEzcUVfnhFnE6QlMwuomzn8w5fJAnF0qivzXyhc+u7LJWJ3ebxJyuCbQH
+         oqgcztpOqg3e90HhiLAe+IB37KeD4W3Ty26rJzRvd6m++azMtM8OZKB0IV16o+fM9fnh
+         8Vlu/Z0yCC6TXGXhe8rW/f72X8jDi4tus+4buDeKCe4oQnCh1rnQZTzBedZGF0VMieMS
+         IMKehGursrS5/xOI04MhGZmpCagWTcXPl1P5/ytvyBwF04ytFEqwF/VIf948pGX/c1kt
+         HIKnR3ZE7gTE70n09+sVDZL5xejHEC6L68iFH3JoOJA4vKljmT+8gnqaCwzgn4dZM+Ye
+         jBXA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=+KsF8vc4ULWHMDhPgj0bLTj8antp0LHTyec0w+asTec=;
+        fh=0WviLk7gJzgFiXe3fjZBELDprvDDs6gxCMeehoCvtTQ=;
+        b=NuZOZp0KRSB581T1slj9Oup+ZUzWP1O/HdcGanTnSVZ0ka5hG1fbPyUgY9EXp0+J+Q
+         TjUowUvHFzr+Rc1GdC7y46DHXzvyepuZtV5stD4zOZsUjNChS7jnnn7As10vlPH0XKIw
+         qya1wItE/MhKJ3emiBTwmInsNamLVMUE8o8PCTDREb1r+snCjjxbHhupaMchKaidiEq9
+         2v5zlr6V51NcRJGhYC9m+c8G/FlWQk3cT5HVytzn94MKUBDim65XO212KCR/RLGASDZs
+         9EqqSIye/01L6k20Q0o5P+vOpTLpvJpzCcFQoNzxcQKOmdDSHlN8snQb8CEOJdFvG6bd
+         n10w==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793268018; x=1793872818; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=+KsF8vc4ULWHMDhPgj0bLTj8antp0LHTyec0w+asTec=;
+        b=ARIrWMoYuq4mUlEtGnJEbH3JHWCFIB5kUS5V8EFCUAGJviCGuN2oyTz3r202vPu/Ei
+         5ex3nTKudegs0B0S9Oiwf7IC4nQzuVuSgZIfJJtZL/B1xz6LgTdnMHiGFOFAap9ett4l
+         rG94afJIjwx5oKli87BbJLnVLu6YA/y2uTjF7TGlTArcLB4+KQbwL6mcL0yEf+ebpNJ/
+         oI4JSlyw5lYiiFSJBWhK4uWv9YAKqpr3Xb0pY4JBqFPVtu/cIfOd7i5uoVr4IYRjz20O
+         Q+oO15QAmaGvb+H7YTL2BDoScdSLeW7jbtzo4vOKv5SC48Z9nAWErtEum8qbsVBhbfBY
+         c+Pw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793268018; x=1793872818;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=+KsF8vc4ULWHMDhPgj0bLTj8antp0LHTyec0w+asTec=;
+        b=iWgoucAdMxu65LOz4/9xB0vfMWQCdA8oiJiHYH5wfEiKP73tz2w9HXFrg/aftyJr0b
+         yKfWPxRR2hpjjYRGw3yv/byenbr58YNT4vgGdWyZb3xym/4wm3iK1qlR0gHGN1Id8By0
+         wV5KoTTXnxPhjbUtt9l46/J7T95lNLagAJpswWoo2Naa3Y8Z4mVpERD4twNXj4UVJXuk
+         cbGKsJjxg/PfGonUoaHAThwUu2ZuCNCoo+pAzeePfk3jz7QC0V6ILcp1o6nYvwZDZTfG
+         Ui2Ooa/vm4zmDaidwvK00GN8HGyihBe0gWkDyUTIyj2sfHQbd6mIK+Eme0xcN42X01ov
+         +SzQ==
+X-Forwarded-Encrypted: i=1; AKwUvBx6DR0wt2HtpRTgXoBn29CUtEdJj0Y0ZZWZpmnvGipoIaSiyIPaEwPDgE2z0DBVPJdGukXUckRdJkmb/Q==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJkVc7JiHb5Go204fzgL5GLeudtzqzYlpdxJRMTQ6d1w7a9r7z+
+	3D1PmASDLNaomnP5khNY/U/Cym/LE+zDKKeLDyIO3+ys8uaUiobe66+NqU1uoGQSeHuLkXiRbTn
+	JYwL3OWXm2lCgpeg0uV8MtREOFH9u80A=
+X-Gm-Gg: AYBFou1Cy+lKCDpQY/Ows8vbJOXs+tMtmorJJhdSCFC7yzSHcq3SboPuxtOEcafEN6i
+	q4qkQlg/02sVHY95kDnK7nJ5I1dWazJEbA08n7R+RNOKGM5BvS7/NNZ82ncVxeOluRjCl04t5sF
+	dL1KheVdWHcpWJ1/eLa1yfGs+ggqUWSTLWSswqKPd1jL5uBQFFciesOpF5wD8ryge23yW+tuBTl
+	wX7rghuLuyj+4fJj5gfXiWL+TcLjBrYcQ0e+CRTZoLgtHOkica5pNPY0EPpJYYhRmI0oslB0jh1
+	fIL+Gs+g7dLhrBTi1tpkHaRxjJwO6o4LrTrot4gjIAqE1gVlcnY9FMKyqoG/BAaQL3jB0DKpF6G
+	7wjY3ONYshZxqyTA/jlNFNHxnhICiJuX677ralJrqnVkdrnHpDHi3LlHjpFYghUPxWEcWxKdzZs
+	EyTAtxZufi8ADPVyZyvQvpjtdisM5A5cgkSyD/36xQ3g1+NQ==
+X-Received: by 2002:a05:7300:d58a:b0:35a:3b98:b428 with SMTP id
+ 5a478bee46e88-36a2ff7d91fmr3444661eec.12.1793268018117; Thu, 29 Oct 2026
+ 03:00:18 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,196 +104,52 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_TLS_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_EQ_ENVFROM(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
+References: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
+In-Reply-To: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
+From: =?UTF-8?B?0JzQsNGA0Log0JrQvtGA0LXQvdCx0LXRgNCz?= <socketpair@gmail.com>
+Date: Thu, 29 Oct 2026 15:00:05 +0500
+X-Gm-Features: AclHuK83BlPPV7_H23TeJ2xs5ky4kyB8aLO0AL_l-vZHvRN09V9scQgST6v9LKo
+Message-ID: <CAEmTpZHvmyPWMFztcG4MT4jszwjXYuwogJKrJgvx2vxESjhnKg@mail.gmail.com>
+Subject: Re: [PATCH 0/2] btrfs: zoned: fix silent data loss from leaked active
+ zone reservation
+To: socketpair@gmail.com
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+	Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Content-Type: text/plain; charset="UTF-8"
 
-These involves several call sites:
+Adding Johannes, as this overlaps with his recent zoned work.
 
-- BTRFS_METADATA_BLOCK_GENERATION branch of corrupt_metadata_block()
+A few notes on how this series relates to what is in btrfs for-next and
+on the list:
 
-- BTRFS_METADATA_BLOCK_SHIFT_ITEMS branch of corrupt_metadata_block()
+- The series is based on master, but it applies cleanly to btrfs
+  for-next as of today (c393445c12fc), only with line offsets.
 
-- if (chunk_rec) branch of main()
+- 0be761ecf1a9 ("btrfs: zoned: only change active zone counter on
+  successful (de)activation") in for-next does not cover the leak fixed
+  by patch 1: the block group removed by relocation gets its active bit
+  cleared by the zone reset in btrfs_relocate_chunk_finish(), but
+  reserved_active_zones is only given back in call_zone_finish(), which
+  never runs for it.
 
-The bugs are:
+- Patch 2 makes btrfs_zone_finish_one_bg() the normal path again when
+  buffered writeback runs out of active zones with a negative
+  reservation (cow_file_range() -> btrfs_reserve_extent() ->
+  find_free_extent() -> btrfs_zone_finish_one_bg()). That is the path
+  of the deadlock fixed by "btrfs: zoned: don't wait for ordered extents
+  in do_zone_finish()" (30c6d31da683 in for-next), so for stable patch 2
+  should go together with that one.
 
-- Use-after-free if write_data_to_disk() failed in
-  BTRFS_METADATA_BLOCK_GENERATION branch
-  Fix it by saving @eb->start and use that saved value for error
-  message.
+- Patch 1 and "[PATCH v6 21/25] btrfs: zoned: reuse block groups emptied
+  by reclaim as relocation target" both change
+  btrfs_relocate_chunk_finish(). The conflict is trivial, and the two
+  fit together: btrfs_zoned_can_reuse_bg() requires the block group not
+  to be active, which patch 1 makes sure of, so the
+  btrfs_zone_finish_relocated() call has to stay before the reuse check.
 
-- Path leak in the successful path
-  Fix it by using BTRFS_PATH_AUTO_FREE() and remove all existing
-  btrfs_free_path().
+I can resend the series on top of for-next, or on top of the generic/747
+series, if that makes it easier to take.
 
-- Path held after btrfs_commit_transaction()
-  This is minor, but still release the path before
-  btrfs_commit_transaction() to follow the kernel behavior.
-
-- Missing error message and code if btrfs_commit_transaction failed
-  Just add the missing error message and save the error code from it.
-
-- Wrong value in the error message if btrfs_read_fs_root() failed
-  Fix it by printing root_key.objectid.
-
-- Missing error code if early failures happened in chunk_rec branch
-  Fix it by setting @ret to -ENOMEM or -ENOENT respectively.
-
-Behavior changes:
-
-- Abort the transaction if corrupt_item_nocow() failed in chunk_rec
-  branch
-  Previously we would still commit the transaction after a failed
-  corrupt_item_nocow(), which is meaningless for a failed operation.
-  Now we abort the transaction and exit through out_close, without
-  committing.
-
-Cleanup:
-
-- Remove the dead "eb = path->nodes[level]" assignment in SHIFT_ITEMS
-  branch
-  @eb is not used after that, and it was already freed earlier.
-
-Assisted-by: LLM (generate the commit message with human modification)
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- btrfs-corrupt-block.c | 34 +++++++++++++++++++++++-----------
- 1 file changed, 23 insertions(+), 11 deletions(-)
-
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 94815221a32d..0fc2c42e7ffa 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -910,6 +910,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 		{
- 		u64 orig = btrfs_header_generation(eb);
- 		u64 bogus = generate_u64(orig);
-+		const u64 start = eb->start;
- 
- 		btrfs_set_header_generation(eb, bogus);
- 		csum_tree_block_size(eb, fs_info->csum_size, 0,
-@@ -919,7 +920,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 		if (ret < 0) {
- 			errno = -ret;
- 			error("failed to write extent buffer at %llu: %m",
--				eb->start);
-+			      start);
- 			return ret;
- 		}
- 		break;
-@@ -928,7 +929,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 		{
- 		struct btrfs_trans_handle *trans;
- 		struct btrfs_root *root;
--		struct btrfs_path *path;
-+		BTRFS_PATH_AUTO_FREE(path);
- 		struct btrfs_key key, root_key;
- 		u64 root_objectid;
- 		u8 level;
-@@ -947,7 +948,7 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 
- 		root = btrfs_read_fs_root(fs_info, &root_key);
- 		if (IS_ERR(root)) {
--			error("couldn't find owner root %llu", key.objectid);
-+			error("couldn't find owner root %llu", root_key.objectid);
- 			return PTR_ERR(root);
- 		}
- 
-@@ -957,7 +958,6 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 
- 		trans = btrfs_start_transaction(root, 1);
- 		if (IS_ERR(trans)) {
--			btrfs_free_path(path);
- 			ret = PTR_ERR(trans);
- 			errno = -ret;
- 			error_msg(ERROR_MSG_START_TRANS, "%m");
-@@ -968,14 +968,17 @@ static int corrupt_metadata_block(struct btrfs_fs_info *fs_info, u64 block,
- 		ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 		if (ret < 0) {
- 			error("error searching to node %d", ret);
--			btrfs_free_path(path);
- 			btrfs_abort_transaction(trans, ret);
- 			return ret;
- 		}
--		eb = path->nodes[level];
- 		shift_items(root, path->nodes[level]);
- 		btrfs_mark_buffer_dirty(path->nodes[level]);
--		btrfs_commit_transaction(trans, root);
-+		btrfs_release_path(path);
-+		ret = btrfs_commit_transaction(trans, root);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
-+		}
- 		break;
- 		}
- 	default:
-@@ -1502,7 +1505,7 @@ int main(int argc, char **argv)
- 	}
- 	if (chunk_rec) {
- 		struct btrfs_trans_handle *trans;
--		struct btrfs_path *path;
-+		BTRFS_PATH_AUTO_FREE(path);
- 		int del;
- 
- 		if (logical == (u64)-1)
-@@ -1511,21 +1514,30 @@ int main(int argc, char **argv)
- 		path = btrfs_alloc_path();
- 		if (!path) {
- 			error_mem(NULL);
-+			ret = -ENOMEM;
- 			goto out_close;
- 		}
- 
- 		if (find_chunk_offset(root->fs_info->chunk_root, path,
- 				      logical) != 0) {
--			btrfs_free_path(path);
-+			ret = -ENOENT;
- 			goto out_close;
- 		}
- 		trans = btrfs_start_transaction(root, 1);
- 		BUG_ON(IS_ERR(trans));
- 		ret = corrupt_item_nocow(trans, root->fs_info->chunk_root,
- 					 path, del);
--		if (ret < 0)
-+		btrfs_release_path(path);
-+		if (ret < 0) {
- 			error("failed to corrupt chunk record");
--		btrfs_commit_transaction(trans, root);
-+			btrfs_abort_transaction(trans, ret);
-+			goto out_close;
-+		}
-+		ret = btrfs_commit_transaction(trans, root);
-+		if (ret < 0) {
-+			errno = -ret;
-+			error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
-+		}
- 		goto out_close;
- 	}
- 	if (chunk_tree) {
--- 
-2.56.0
-
+Thanks,
+Mark

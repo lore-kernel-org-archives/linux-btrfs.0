@@ -1,80 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.224.50
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793261814;
-	b=aoZ9L3o2ZwzSk36+cIXwMXjGp80YVp90hTT3djVUOyW/NZ2sSfiNh5vNjjOeB7zRCJET
-	 rrYdyCJRyLSJ4YY6TmfRGCL0qSXQ81FALcsoOoUf0qN3x3ET9y1UGNrU5fnLo83eaoVf2
-	 AaemZ3f8/mXQ9J7ssfoyuTkGma7t71I0u13XMyJNDrRv5ng3Lfq5eMDpR85uZA/OXqGbb
-	 IPbgYG9ENVJdb03/nXuf2gkLvDeYssLXFkETyZ49+YYZXXnW59e7Cfcpf21sM7yS587UN
-	 o4cUSkebkjMSgslt66qSFRtRXnybAaxUOLeX/yASlGKA3MV9y4bqi84SnZ6Va5K8kGQ==
+	t=1793264229;
+	b=Ap2Oy4z5sEvOzGjUrRTe3SZIuq/mmVfE0QVITR+uvSFeIiEuM37KC4Ln7Lw6nlra9oPN
+	 4XimQFo/b9yqdVk5uf1QKsz6/UM/BeNDdPb6fOii3MltlNAIqTaCzl4AE/VALYgBD1hev
+	 pLtsYA7iONY3bUFgvaqVwr3O7fYXiV/BpdrRtOy1MvsgYBTEnGZc0U3LcZQ+4h55MdNiK
+	 UQhSL+0QjnSCnD40dFkwd/RkNC048vqW6VdAsS4YHQOF7tsOPrV5rtRE/8Zoyoi+uaDb+
+	 uti1HSYWw/Ak6iBISd2Bg4d+eylPhSP3uPC+3oXvltAiyMXgwH4irFz12DnP64JDOxw==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793261814;
-	h=Received:DKIM-Signature:Received:From:Subject:Date:Message-Id:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding:X-B4-Tracking:
-	 X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:
-	 X-Endpoint-Received:X-Original-From:Reply-To;
-	bh=DJPE/bZgmH1tQU2JT0g1HEnfFvzx8RaLlje+mahqmNM=;
-	b=eDUGBkONAZhjtphBcxNqOeAED0VnxhHYWYzwYz7Q3cACGPkOiWKnGGJ9d4VB44LKe7sq
-	 34+q/0bXU48XhVhGu3DWlANFja1UXfSHdMxM4t5nwbgkXkboSl9kde0ewyXDTS94+e1Fe
-	 09lCFscdZuQywFS8p16bLJPJEHxYCKLpSQvOKBNVSEbHMEtPKH3GOUAu6uhpXs5x6KQpz
-	 0MYSc5iDGDcUA6iRsF0XvmmVfrXWrJeSRPWxDKpDAvbdqCUjvEEClLTega+Yk+zOSNZmh
-	 fXlAmTXiJ8DlXsuNyzJVxu3YasX9sz7sAmeGp8COAEKHIR/c2+D+KHVJRwWkxZpP4uA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793264229;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=YEYkGOiLXKcBsMHHVyvIodqXJbKVYymQHbB/udibFPE=;
+	b=G/JzT2+MqohQCxhjFFfEM6WTInQaJdUMqspzvrLhdMurhQOhAD0QBGy2yOLuZzzCOzT5
+	 TV0vJai3NWkSd+al++AS4mHgN3q9Fy8HABVK31nnlJxjT5gZXVPArsu6v0u4r4xJmljb9
+	 oLyMHjnSt/TX2EGquZo49LMYxj32UofoSLeGxCjI4nlLHaCOTRIr+Ed3p+MRL7A6pxvf8
+	 EeFLJdWxiOejPiCXyWm0n3FflSLyrbY9GFEwLfJ4+TTtQsGYHRHExtxGVU71v1tBnhkeP
+	 tqvelDdNrbT/1RiVz1ujhvDj4eRc77vPAEsAUdCbcWFx0ks7OWHCjKT/fAgaxeeaJ9g==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=kfIhWwGv;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 008ED606A31E;
-	Thu, 29 Oct 2026 08:16:53 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=kfIhWwGv
-Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
-ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1793261813;
-	b=Mvuz9dmBMhxY5fr2etLYfDlVqRE/ivh8TaAku3mNFgDpNQnywVFENYIzTBsKV+vzCusM
-	 f8hMXVbi3aWfAcJ8x4YDuK0qhApB6qlbgTOJrZK3VW0JubO7V9+OkzvVqWEgjGfRaA3nY
-	 b9j8b+GmEN3LpoxPd238IsFlREOKlKxO3mDmhWRiYOmmrukNGDLOXe3HR3jNxsBud0ZBy
-	 maY/WHv+1JdgPpqF/fWnvwkgRCtMI0YNtsYh243/xrO9a2AC1wL8rrJjq0FABr1bJ8aUU
-	 8lM8jsDtQ2cFIN97SkZ3rOQKK5ur/VmDJwL+bksSx6saDDF824nNz4qJQjYZkjZcQLw==
-ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1793261813;
-	h=DKIM-Signature:Received:From:Subject:Date:Message-Id:MIME-Version:
-	 Content-Type:Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:
-	 Cc:X-Mailer:X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To;
-	bh=DJPE/bZgmH1tQU2JT0g1HEnfFvzx8RaLlje+mahqmNM=;
-	b=cV/YUjsHysrGT0TfV9mnhx6uVxAV3dux1hDaQDhAHIJG3hNVpOyiX8UNuZZ9kZIP57gZ
-	 MIpshlaoXpsbYJtVjbawqmTwL0/+8TxmyUUPYfLeT0xw5rHAdH1MxqACt5NAh8NsMb/Nv
-	 AJzvxcPiTDNduNQxaGLDI/mXTIFAbKOcirixAcbUXhtduZtuOhLKo1rTnl4UnxhXPGdpF
-	 0dZ8uuRdQE7PZzfwbq5LnzGRN1AfqjtJHzmmzHFPquD6A9c274/FnwajIS/T716j7wZHO
-	 J3YkbItLgUbhkNKSNWoSdzB32u0ySincbIeirfPOuSfvm7Wqw3X1pwWcZrQORm5pN7w==
-ARC-Authentication-Results: i=1; smtp.kernel.org; 
-	arc=none smtp.remote-ip=100.80.115.77
-Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zxeEC98O;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.224.50
+Received: from mail-yx1-f50.google.com (mail-yx1-f50.google.com [74.125.224.50])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id 079D21F01829;
-	Thu, 29 Oct 2026 08:16:53 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793261813;
-	bh=DJPE/bZgmH1tQU2JT0g1HEnfFvzx8RaLlje+mahqmNM=;
-	h=From:Subject:Date:To:Cc:Reply-To;
-	b=kfIhWwGvN5DHaOqmvvwI9OmPoH8DoivexHt+l56pzITCLdkWmZ7d/G15HanYUrC6N
-	 7pEozi7AXdqR0G1ENpImZ2NYn+IPrmc0RaI46dLVX1mtPD/LGoe3PiRrahLEXDo52J
-	 mZcVKvCEZL9sswlfEHKbEu3n4OO6bSESSq5fmB899qR0Xnc4R031j9sIqF3QwzkR+8
-	 TN2GVEuW8kwIz2U+WamkRGYE8Zxb8IadYgG8z+c0nUEnUd9xfoF/TnI0iytENYSw8a
-	 FMi3m7Hq8zTcYufKBBV/wnkk7DN6MFQ2GR9mWxHz8J/Zpd4lNtLnihWBXV2AY34dG7
-	 BVHHIJFmRX0ZA==
-Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 5EF124578C;
-	Thu, 29 Oct 2026 08:16:52 +0000 (UTC)
-From: Mark Korenberg via B4 Relay <devnull+socketpair.gmail.com@kernel.org>
-Subject: [PATCH 0/2] btrfs: zoned: fix silent data loss from leaked active
- zone reservation
-Date: Thu, 29 Oct 2026 13:16:43 +0500
-Message-Id: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB963606A31C
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 08:57:08 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EB963606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zxeEC98O
+Received: by mail-yx1-f50.google.com with SMTP id 956f58d0204a3-67b9bd530b7so50197d50.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 01:57:08 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793264228; cv=none;
+        d=google.com; s=arc-20260327;
+        b=iOXyXxxRYXzO/FC75ik6ntLSLEVsrRy0y5DIYeh04nq2pEPu9ZpuV4g5saakmi3cPw
+         rJPM8GL7bzV6EXuWx6b3fw379/e5gAcG1bLl3XgPzp6qUxKCXPBSnPCRkM+bGZvleXfN
+         9BpTESmNvNfh9AD/nus/A+cnEA4RdmMkLO2VGQPRyKTZ7ma5pU4xW9D6XABigLUetu26
+         /y3LsPhqGbGAA0Q3+g8mJbxp05mt1PCWmAcj0nSi+fIFQnknyWm1Go7yq0vTHWj0aBFC
+         GLdrOFWVi5EWLs/miz+Hk8fJBYvUCUEienvVi8MF1CiN4bAdyqNJX8p69Ehx2gVLvCHi
+         o1oA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=YEYkGOiLXKcBsMHHVyvIodqXJbKVYymQHbB/udibFPE=;
+        fh=oYvkEfRaxezu/e5wA44mlD08X6PT8fTh57772MQxWsQ=;
+        b=mp7owbmlQQQr7xV+/qDp4/YAats1d6uADEbPJkXQacp2L30nTtTH0iYqR9ReOeeFXv
+         GrQ+fxbfPeKr78jwiVwTEPLlx2I1efSUmcdibTBmo8IiC1VqWQlq9ZbO7HyjILkpHanT
+         oprcB3lpzRUi7BXbAXQ2UEbKPSCrxqG62vST2Qe6TFa+4WRIGeJ0bRSIxjrBsz3dK2Z8
+         IGx1JLrx1UMXhnsHnFmoaF+Pi8Kzh3YssnrDAEdYM6dymqAHos+tkbZSwmv+2CiuDXbt
+         lHcYlagpqR1vMSKp9oAWFKmP3x37VBzh3SNazowh0dhyxMV+wwW0aXJLqhMBHIIVXa2W
+         dVLg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793264228; x=1793869028; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=YEYkGOiLXKcBsMHHVyvIodqXJbKVYymQHbB/udibFPE=;
+        b=zxeEC98Oj4WpoX7QGt/z5YsgJg6CbDNf4qMkQ9/rF0REgVGR53j2mhJHHM97pKWpAB
+         AaaK6XcbbkFMAQc6XYT0Kt4wH8R5DY1npn2aceWlpQsraeczif1nCT3RPKgxdvprcwHe
+         Cyo6mMzXxO+9Y5cDKy2e66+cfYqXUlW+F7vFUY6WAduaoXwWurO1BTc2kBUU4Bv1j62W
+         WzahFWBT7JRIUIoCs+VZO5HIJeznNKqkQigdHtaxGpvTCy8UcjhNUMoA3g8bJPs+l2JY
+         iMGsBETftAKuShuwSnJSDAtRk/7ynrcHMb4VHwGjTSNL8iJHkvRHTsNygOMISZNMz+pr
+         7XMQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793264228; x=1793869028;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=YEYkGOiLXKcBsMHHVyvIodqXJbKVYymQHbB/udibFPE=;
+        b=zr+D/hB49VeK7DE3pBt8McxRbKTT+VelDWu0OaEVT5lzfZtqn0GqPaMyNcERZnekLd
+         dSkC78D1PFAAXkEkPp44+xbOhv5n9ggMo0O+QFT7/yDqgNfpksi5Ho2tJkEPCv4rggsE
+         oW+NqNjkcI7g7pKVsMjAuNsIS6GVmWXuFByDnIxKjt6kthRN8NqdV+9c02AH4lcoiu/U
+         J58mTJYlA/os3Vz+WPeHUFxQKErBRUNAWxD15DS46DptLuXrqya2GZ5WnE7krQ7SvCq6
+         p7bs0PO2ujTJLMBuj7Qhc4zIiKfsxUCXtgsBl8hMxZC+ox65chXA1vsYwrEw1WcKyOw/
+         ZI2g==
+X-Forwarded-Encrypted: i=1; AKwUvBz4rUhXNnTGttCjcpHj5D8cs6s/TeBujCfSBC4REZd0dU3BjBw4oDvjppZG0fu36qY9BOwbdvE2hSqx1A==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIaeK1pBtlz2ifYJ9rxqNH59GxzH6mikmnWgU9Mk8nTGf8/62Xn
+	To5LbThjnfRvevpsmBExXeBv9vhpVV65QyzXHgOIjUBFqN0CvHpvMy7j6F2vnZZtWDLpKukj1mg
+	2S2S6lPxMxnV4VbEJuQ7mX1YaOTVTsbQ=
+X-Gm-Gg: AYBFou2nX7NlvkcuBNHiMUvXHfI5rBuaxYVxe1eo3t6keujcV3qT/2b0cq412a9fOIF
+	ZUTy14ECJ/hCU1F4Q7CV77/f2yY+cYoQPPtNGFZG4VChwAHhHglo/ffDHs3uUNn90xS2JabgwuC
+	PIqZ9VaLB5TM/4OcJFweSzIpjwwm77bjykkiI7Qo5T5EsWxw6VXyXXiIB8sCzjXpv1JFfgUqx7l
+	PYTvN1cxbi82tw8qDprVrxgUalQjTacFVhBTjWrNm9AkAIneIZMEol1L3zHmUJzJ8+44AHJsmZy
+	enqx5a5059ZjShc0aSsbaTsrmzZTj9m6hng2vecQINbqkE5LSZmcg4JDubaOxD4FnOffsS4yPrL
+	thTWMk0BdGCMtSkbGImGAqG5A78TFEl0QeSus
+X-Received: by 2002:a05:690e:1a66:b0:679:a79c:95a4 with SMTP id
+ 956f58d0204a3-67a7bd15ffamr3128571d50.103.1793264227822; Thu, 29 Oct 2026
+ 01:57:07 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -84,203 +104,80 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/x3MQQ5AMBAAwK/Inm2iJYKviMO2XWxISSsixN81j
- nOZByIH4Qhd9kDgU6JsPkHlGdiZ/MQoLhl0oWtV6BbNEcaI9+bZIdlDTv6BK9OCxpQVkXZtoyy
- kYg88yvX3/fC+HxCOXHRuAAAA
-X-Change-ID: 20261029-btrfs-zoned-active-zone-leak-bb34aa2d981c
-To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
- Naohiro Aota <naohiro.aota@wdc.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- stable@vger.kernel.org, Mark Korenberg <socketpair@gmail.com>
-X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1793261811; l=8424;
- i=socketpair@gmail.com; s=20260603; h=from:subject:message-id;
- bh=wHYWPALtrSPUdIYEayA4D8xOo2QJYw+fdvMJ1u+NcPk=;
- b=zT6ML6VF3iW1aQzH+i3Hbsn3F/rQQch1fFdoc8VjdILIGnV7gvtihz/ri1Tej5eZYPBl0EfxZ
- LEiaz0lp1wzCkYaHx9zJwbkPndVd1OQgxQULn6mBBLRZqdBUn2tqVtF
-X-Developer-Key: i=socketpair@gmail.com; a=ed25519;
- pk=2iAMjWhs7kA9X8ccetT2YVX8dvniXua2okQogw3Don8=
-X-Endpoint-Received: by B4 Relay for socketpair@gmail.com/20260603 with
- auth_id=806
-X-Original-From: Mark Korenberg <socketpair@gmail.com>
-Reply-To: socketpair@gmail.com
+References: <20261028-b4-btrfs-fitrim-interruption-v1-0-bf5c53738b3a@gmail.com>
+ <20261028-b4-btrfs-fitrim-interruption-v1-2-bf5c53738b3a@gmail.com> <b00f8fc5-89f1-4483-8986-947392837a6b@gmx.com>
+In-Reply-To: <b00f8fc5-89f1-4483-8986-947392837a6b@gmx.com>
+From: Luca Stefani <luca.stefani.ge1@gmail.com>
+Date: Thu, 29 Oct 2026 09:56:55 +0100
+X-Gm-Features: AclHuK-Johsu-yxO4ADp4C3k1kpagtbBq9W5ex9Eh00g4fIknrHdSnalBZsHWbc
+Message-ID: <CAO0HQ0VfHczGkTb0OOxXf38Cnu3sOufi24652UR0AJ5a7wzoSw@mail.gmail.com>
+Subject: Re: [PATCH 2/2] btrfs: don't report failure when trim is interrupted
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+	Robbie Ko <robbieko@synology.com>, Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, Zhiwei Liang <zhiwei.liang@zliang.me>, 
+	Qu Wenruo <wqu@suse.com>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On zoned btrfs, buffered writeback can fail with -ENOSPC on a device with
-plenty of free space, and the data is lost without any error reaching the
-writer:
-
-  BTRFS error (device ublkb0): cow_file_range failed, root=5 inode=...
-    start=... len=16777216 cur_offset=... cur_alloc_size=0: -28
-  BTRFS error (device ublkb0): failed to run delalloc range, ...: -28
-
-cow_file_range() ends the writeback of the range without writing it and
-only sets an error on the mapping. write() and close() succeed, rsync and
-cp exit with 0, the first syncfs() returns -ENOSPC and the second one 0.
-The pages stay in the page cache, so reading the files back right away
-does not necessarily show it. In the original report a 3.7 GB git pack
-file copied with rsync lost 37 ranges of 16 MiB.
-
-It was seen on a 100 GiB zoned device (ublk, 16 MiB zones, 128 open
-zones, no active zone limit, single profiles, commit=300) on 7.2.11 while
-copying a kernel tree onto a filesystem that had been filled, emptied and
-balanced with -dusage=0 -musage=0 before. The code involved is the same
-in current master.
-
-Cause
------
-
-1. btrfs_relocate_block_group() finishes the zones of the block group
-   before relocating it and ignores -EAGAIN. For a metadata or system
-   block group with allocated but not yet written tree blocks
-   (alloc_offset > meta_write_pointer) and for the data relocation block
-   group, do_zone_finish() returns -EAGAIN. The block group is then
-   relocated and removed with its zones still active: it stays on
-   fs_info->zone_active_bgs, and reserved_active_zones is never given
-   back. Caught with bpftrace on the reporter's machine:
-
-     zone_finish failed ret=-11 bg 43419435008 flags 0x2
-       alloc_offset 10420224 meta_written 10403840 used 16384 reserved 16384
-       btrfs_relocate_block_group <- btrfs_relocate_chunk <- __btrfs_balance
-     remove bg 43419435008 type 0x2 <- btrfs_remove_chunk
-
-   reserved_active_zones went from 1 to 0 at that moment and stayed
-   there. Before a remount the same filesystem had four such block
-   groups (removed from the chunk tree, still listed as active in
-   mountstats with used, reserved and unusable all 0) and, read from the
-   kernel, max_active_zones 128, active_zones_left 117,
-   reserved_active_zones -3.
-
-2. reserved_active_zones is 3 (6 with DUP) minus the active metadata,
-   tree-log and system zones, so it can be negative, legitimately too:
-   it dropped by 3 for a few seconds during an rm -rf, independently of
-   the leak.
-   btrfs_can_activate_zone() checks active_zones_left >= 1 + reserved for
-   data, which is always true with a negative reservation. So when the
-   active zones run out, can_allocate_chunk_zoned() neither finishes a
-   block group nor makes the caller wait: a chunk is allocated, its zone
-   cannot be activated, and find_free_extent() returns -ENOSPC. On the
-   reporter's machine btrfs_can_activate_zone() returned true 45 times,
-   each followed by a failed allocation, and btrfs_zone_finish_one_bg()
-   was never called.
-
-Patch 1 finishes the zones again before the relocated block group is
-removed: the block group is read-only and empty by then, and the commit
-at the end of relocate_block_group() has written its tree blocks. With
-debug output in a test kernel, the first btrfs_zone_finish() got -EAGAIN
-27 times over 6 test runs, and all 1143 calls of the new
-btrfs_zone_finish_relocated() succeeded at once. Patch 2 treats a
-negative reservation as zero for data. Patch 1 has to come first: with
-patch 2 alone the leaked reservation leaves no active zone for a new
-system block group, which runs into the deadlock described at the end.
-
-Reproducer
-----------
-
-zoned null_blk, 16 MiB zones, 16 open zones, commit=300. Each forced
-metadata+system balance after new chunks were allocated leaves one block
-group behind; then several writers lose their data:
-
-  mount -t configfs none /sys/kernel/config
-  d=/sys/kernel/config/nullb/zdev; mkdir $d
-  echo 4096 > $d/blocksize; echo 1 > $d/memory_backed; echo 1 > $d/zoned
-  echo 16 > $d/zone_size; echo 8192 > $d/size; echo 16 > $d/zone_max_open
-  echo 1 > $d/power
-  mkfs.btrfs -f -O zoned -d single -m single /dev/zdev
-  mount -o commit=300 /dev/zdev /mnt
-  for r in 1 2 3 4 5 6; do
-          dd if=/dev/urandom of=/mnt/pre$r bs=1M count=64
-          btrfs balance start --force -m -s /mnt
-  done
-  for i in 1 2 3 4 5 6 7 8; do
-          dd if=/dev/urandom of=/tmp/src$i bs=1M count=512
-  done
-  for i in 1 2 3 4 5 6 7 8; do cp /tmp/src$i /mnt/data$i & done; wait
-  sync -f /mnt; sync -f /mnt
-  echo 3 > /proc/sys/vm/drop_caches
-  for i in 1 2 3 4 5 6 7 8; do cmp /tmp/src$i /mnt/data$i; done
-
-"Zombies" are active metadata/system block groups in mountstats with a
-write pointer but used, reserved and unusable all 0; the reservation is
-3 minus the active metadata and system block groups.
-
-                    zombies  reservation  cow_file_range  syncfs  files
-                                          failures                differ
-  master                  3           -2           29714  fail x2    8/8
-  patch 1 only            0            1               0  0, 0       0/8
-  patch 2 only     deadlock in balance (see below)
-  both                    0            1               0  0, 0       0/8
-
-Testing
--------
-
-virtme-ng VM, CONFIG_PROVE_LOCKING, hung task detector at 60 s, zoned
-null_blk with 16 MiB zones and commit=300, data checked on disk after
-dropping caches:
-
-- 8 x 512 MiB buffered writers, 16 and 128 open zones: no errors
-- 4 x 4000 small files, 16 open zones: no errors
-- 8 x 256 MiB O_DIRECT writers, 16 open zones: no errors
-- rsync of a 6 GB kernel tree with vm.dirty_bytes of 5 GB, 16 open
-  zones: no errors
-- filling the filesystem: dd still gets ENOSPC, no hang or retry loop
-- the reproducer's balance step on the same kind of ublk device as in
-  the original report (100 GiB, 16 MiB zones, 128 open zones), then
-  rsync of a kernel tree: master left 3 zombies
-  (reservation -2), logged 28 cow_file_range failures, the first
-  syncfs() returned -ENOSPC and the second 0, and the same 3.7 GB pack
-  file as in the original report differed on disk; patched: no zombies,
-  no errors, no differences
-- the reproducer above: see the table
-- 8 writers with --full-balance in a loop, 16 and 128 open zones, four
-  runs each on master and patched: no data loss on either; the issue
-  below aborts the transaction in 3 of 4 runs on both, and master also
-  deadlocked once
-
-Not fixed here
---------------
-
-These show up with balance while writing on master as well; I did not
-want to grow this series:
-
-- Recursive ro_block_group_mutex: btrfs_inc_block_group_ro() ->
-  reserve_chunk_space() -> btrfs_zoned_activate_one_bg(info, true) ->
-  btrfs_zone_finish_one_bg() -> do_zone_finish() ->
-  btrfs_inc_block_group_ro(), with chunk_mutex held, so writeback hangs
-  in btrfs_can_activate_zone(). lockdep reports "possible recursive
-  locking detected". Seen on master with 8 writers and --full-balance in
-  a loop, 16 open zones, and with patch 2 alone in the reproducer.
-
-- "error while writing out transaction: -EAGAIN" from
-  btrfs_check_meta_write_pointer() during the commit in
-  relocate_block_group(), which aborts the transaction and forces the
-  filesystem read-only, in the same balance-while-writing test.
-
-- call_zone_finish() returns before reserved_active_zones++ and
-  btrfs_dev_clear_active_zone() when REQ_OP_ZONE_FINISH fails, and
-  do_zone_finish() still takes the block group off the active list, so
-  an I/O error there leaks the reservation and the active zone.
-
-I used an AI assistant (Claude) for the investigation, the reproducer
-and drafting the patches and this mail; the result was reviewed and
-tested as described above.
-
----
-Mark Korenberg (2):
-      btrfs: zoned: finish the zones of a relocated block group
-      btrfs: zoned: don't treat a negative zone reservation as free zones
-
- fs/btrfs/volumes.c |  3 +++
- fs/btrfs/zoned.c   | 51 +++++++++++++++++++++++++++++++++++++++++++++++----
- fs/btrfs/zoned.h   | 11 ++++++++++-
- 3 files changed, 60 insertions(+), 5 deletions(-)
----
-base-commit: 65ba8f34ec886ec72b2c07ddc8cf3d815c32869d
-change-id: 20261029-btrfs-zoned-active-zone-leak-bb34aa2d981c
-
-Best regards,
--- 
-Mark Korenberg <socketpair@gmail.com>
-
-
+On Wed, 28 Oct 2026 at 22:07, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+>
+>
+>
+> =E5=9C=A8 2026/10/29 04:25, Luca Stefani via B4 Relay =E5=86=99=E9=81=93:
+> > From: Luca Stefani <luca.stefani.ge1@gmail.com>
+> >
+> > Treat cancellation as a successful partial trim as ext4 and XFS do.
+> >
+> > Reported-by: Zhiwei Liang <zhiwei.liang@zliang.me>
+> > Closes: https://lore.kernel.org/20261028-btrfs-fitrim-freezer-v1-1-0ad1=
+d58aa94d@zliang.me/
+>
+> In fact you should use Link tag here, for the original patch as a
+> report. Not Closes tag.
+I think that was my original intention, but I mixed up the patches.
+>
+> Otherwise looks good to me.
+>
+> I can change the tags at merge time, so you don't need to resend the
+> series, unless there are other reviews that requires code changes.
+Thanks! Will fix them up in case.
+>
+> Thanks,
+> Qu
+>
+> > Suggested-by: Qu Wenruo <wqu@suse.com>
+> > Signed-off-by: Luca Stefani <luca.stefani.ge1@gmail.com>
+> > ---
+> >   fs/btrfs/extent-tree.c | 5 ++---
+> >   1 file changed, 2 insertions(+), 3 deletions(-)
+> >
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> > index 242db255cf1c..90e581c29609 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -6926,7 +6926,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, =
+struct fstrim_range *range)
+> >                       bg_failed, ERR_PTR(bg_ret));
+> >
+> >       if (ret =3D=3D -ERESTARTSYS || ret =3D=3D -EINTR)
+> > -             return ret;
+> > +             goto out;
+> >
+> >       ret =3D btrfs_trim_free_extents(fs_info, &group_trimmed, &dev_fai=
+led, &dev_ret);
+> >       trimmed +=3D group_trimmed;
+> > @@ -6935,9 +6935,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info, =
+struct fstrim_range *range)
+> >               btrfs_warn(fs_info,
+> >                       "failed to trim %llu device(s), first error %pe",
+> >                       dev_failed, ERR_PTR(dev_ret));
+> > +out:
+> >       range->len =3D trimmed;
+> > -     if (ret =3D=3D -ERESTARTSYS || ret =3D=3D -EINTR)
+> > -             return ret;
+> >       if (bg_ret)
+> >               return bg_ret;
+> >       return dev_ret;
+> >
+>

@@ -1,90 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.50
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=37.230.196.243
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793283151;
-	b=IxpCjp+nVEiynKLMhhF6alSPq4F8HXvJkH52TgnHvrCSBb5BYGYde7prkas4YMxYShxN
-	 qThfvO46gUd3MgoaQisKy+DvyVCj0U5wpfwW6yGJwJ8SCVMGV6nZy2cTdfHnuBTPMMcNy
-	 uyUzBfG/T4u2L6rk99WFGg8aDHNkn1Igf8g6gkeKx60HF3r1w7BjzwnHGah+9GzhQXhsl
-	 qnuqhCYM4+qa2dqLkw0pjtyYkCRY88uySDj2ySlGNITOJIdxhQOhEsVbbLYpwnGqIwjUs
-	 u7MfWZF4qooGm0EdESXUGGvj8uPL8MJtx/qfcdTt0clSCvcpfj8k22leZk5PfuYtwOg==
+	t=1793286720;
+	b=YBN/NZ8J13jerzKLoz2tiCgnFdgZ66E6X+BOn8kIumb/wVlZnNOdinX2fySMaLlHBQ6g
+	 SUF8M9hNMeIrMo5WLVgMHjFTBE+msYnDQifnGamyfKCKzbMScSfKk2xou/svVpyNQv10E
+	 l+oVF7l62o8o84FZI/2sAayfAqOB411edPfIDf62d2y+4VZU6+IwDjvzcx5gt4M3ds0oj
+	 S+D897UeZ6Yz3myu2JdYrB4B/99fw06FzbOxbS0bickpdHB/2nTTOnJG5CbaQavBc+77s
+	 f3dtzgC/bfiaENQHjtONLYSbGXnxKSX0oKCBg8cmOKUnyEjD54kzhETe0Yyv8uDHNbA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793283151;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:MIME-Version:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=Z04WRROPPrp5uX+ZqPL+HyzsZieHk+OVtnfHzFqKFIY=;
-	b=As2jt+zuhRpy2wkxwQSdrosQAAxeubcw30HK9wVz8nnu4Dtl4JNydt1JStKS9b0H7lvK
-	 3bPv6VOcM5VBBBF/z59lJjzjgT4noIoJJIXI7lis6xBfQ70QAIN4Ce4LgzqeYk794A7ps
-	 kPp6fHhpV1dZdzrTPJZpE7XbaHmXuaUaMgHGk+b/zC71gp9CeGatERtvZoZd5/ePp5bef
-	 CnmqthlG8EqlpHP9WANqVfdFibEC+2N+pSyDcysBwhIQYXFPV5TUjO7lHW+UOlKIXy2ln
-	 Lo+qlgOrzn6ZPbAZOopoQL0H9K1XdWsxB12cipmnnFee1XB8QemkHfwYkqpgrerDBIQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793286720;
+	h=DMARC-Filter:DKIM-Signature:Received:Received:Received:From:To:Cc:
+	 Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-KSMG-AntiPhishing:X-KSMG-AntiSpam-Auth:
+	 X-KSMG-AntiSpam-Envelope-From:X-KSMG-AntiSpam-Info:
+	 X-KSMG-AntiSpam-Interceptor-Info:X-KSMG-AntiSpam-Lua-Profiles:
+	 X-KSMG-AntiSpam-Method:X-KSMG-AntiSpam-Rate:X-KSMG-AntiSpam-Status:
+	 X-KSMG-AntiSpam-Version:X-KSMG-AntiVirus:X-KSMG-AntiVirus-Status:
+	 X-KSMG-LinksScanning:X-KSMG-Message-Action:X-KSMG-Rule-ID;
+	bh=6OivFj7eK/2o7S42fglb8hJK44S7C9v5KM3KhCAq8U0=;
+	b=gZOb1azpnthM0xIeKvOrhGhGxIlMeysUIHoSYAFW7xlW6qWYfMe646OTV0omefNxDBAE
+	 Cpe3kJkpPkwNm51NBvSSU0qAvCaBDSSgCQ4aaHaZ1i/vc9rcL4HZtkBPecByuSlZ/EPUn
+	 8Uq4XG2I61FUJfgo2Rle8FulKOGf9vtzWXF1V5Ke1F8pQbYUGylaKQMXONKUPIMj7da44
+	 gc+/9rO/TVGF77SAPakkVZJLctFUbnYSQWJZnZhxtF5/Ch4Uit9LNN9xs6qhfzSogIdH9
+	 50wqlj9nHJ/p7hyflCsMxrex2HRudEB+WhUY0SfGLF6QS+7QOEVfZoNMUyENSzszEOw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=plMf+IvT;
-	arc=none smtp.remote-ip=74.125.82.50
-Received: from mail-dl1-f50.google.com (mail-dl1-f50.google.com [74.125.82.50])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=astralinux.ru;
+	spf=pass smtp.mailfrom=astralinux.ru;
+	dkim=pass header.d=astralinux.ru header.i=@astralinux.ru header.a=rsa-sha256 header.s=mail header.b=kjyUxfdf;
+	arc=none smtp.remote-ip=37.230.196.243
+Received: from mail-gw01.astralinux.ru (mail-gw01.astralinux.ru [37.230.196.243])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0F6A5606A31E
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 14:12:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0F6A5606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B0A1606A31A;
+	Thu, 29 Oct 2026 15:11:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4B0A1606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=astralinux.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=astralinux.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=plMf+IvT
-Received: by mail-dl1-f50.google.com with SMTP id a92af1059eb24-15ea896ddc8so3237576c88.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 07:12:30 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793283150; x=1793887950; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:message-id:date
-         :subject:cc:to:from:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=Z04WRROPPrp5uX+ZqPL+HyzsZieHk+OVtnfHzFqKFIY=;
-        b=plMf+IvTY7+LBN7OFHJ5S3/3UZK4x+bIrisZT5s/oWkJLkoDpW5BdnDYfJK8GYrxsT
-         epMyvwB5DN7XSRCpPNF3tKj+hvwn2y6GBqH5h6jTViOnUWJFfUHrtpF9wg0WMNbvrIHe
-         DoPbd98OQDC/en1E+VfU/L8u6HrYYV5kdhecIxDbxkcybx4qGAhtdEDOQHEGLBq/EUq1
-         vq8uRITaB3u7K3w71p0R++LP0nqVeRkxoJlZhpM1IIt3l4+YH8/mYjgaq2TLrMHcCAwa
-         ixHo546OzuEbKeWVnFnEdYrnEMNNVXbRYMuAAflW8FI+1Izp0CuSjFRsyxxqZgHVdiOU
-         ezlQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793283150; x=1793887950;
-        h=content-transfer-encoding:content-type:mime-version:message-id:date
-         :subject:cc:to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=Z04WRROPPrp5uX+ZqPL+HyzsZieHk+OVtnfHzFqKFIY=;
-        b=G+5GwLeYgYFz7oem0eYZatODwzAFA5INvcyC9fu4ZQgoCl6DFbPpQkzPaqi6xCr/f2
-         FThBBHbmiVuSeT3/yeubWlf0VGqqhR5AWdRN/ZlgY/zNVtrMZTJ0o/Zo9QU4O56+l9VU
-         epu4OhrfBGWfr4r8rRdnfHqr0wl7fP/pSDcDPm1zUyVI768giPP1JdXZE6zpdbWr+p8h
-         R7Vncwxb2iH57krN/g7AMGAjRSK9vFy/M4SSEMgOVsQxH0bMJawJMP7ZSLXQFIANZSsq
-         U2xGzWASvf+Awko6aw7j/XOxTzBWXmTC4F8i1Fk2nO2bMxUNeVmAGyCZeTQFey2Edm51
-         +5/Q==
-X-Forwarded-Encrypted: i=1; AKwUvBz6CyNUXUmTF6fuaY4K5DchumJjpL2isd6e0AjLWNWR2wPT4BW/apmyiS/gE5ZNJHzJV/G74kX0aqzZRA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIOCnJ3s/sKtLRk/IwqFrGb47D75+zcnacVT5mHfm39j0EuBsjH
-	Kqj+fXztXG4L45408CaujC7FzABtfwIbS7lTa5Z4NX6IozaL8colXmA1
-X-Gm-Gg: AYBFou0IGzsCfH2/bskXpcANtT2IDvy4pHuPtx6nX1ehnmn2rFDqwiKdC1R5uFkVHAL
-	v7m4faDiOnWSxYS61JCYB2HorwinBSo0WM5o027cJdsJE21NYvHZ0mv+C4h4LxDK0GxDiEZWDbJ
-	EFQ7wzRaIbmL+yj7Im7kfpyeEH/guPLUgh2YhoGbJimhxnFfnN+JM12kujfvjgXRA5p752L7DRT
-	2qb+tz0AJefxUpkMDJbQtRgt3YyZWdWXKW6CcBfUjb4YzfzJmn8LX9SJstl82Sm1tqv7cBHjwFt
-	JFUwzzD5n9dO/sfc44zmxrRzTvxHCz6tc2d4+AIwPaU+mJ5VB0/R8yBG+KZLaOeS0s8FMQOIDdo
-	ggCX/K6SmFVSAb7wQnROPzsiBulqv4xuQHS0VREwEdis9gHv1CZOYEyLMHcAB3ZlREdMn9XPx2M
-	lhknoRg8qpy7cFFoyX0osh1U0cUFivBWvVJfm3EK+mrKsTufl1VL+otGZqGdZ6sx62uAqMZ+wPF
-	aiMW1dbX8Tyo8b6xwckwspZWOeH4CTBwyGxFbJTmbcPZuRFLmyZzJHYPAjarVrUBOjlb6NxIl91
-	di3MLHtdwQfx+wnPta/3H0AbFvE9WBMwUzGylXCMuixGjqT70lGq+g==
-X-Received: by 2002:a05:7022:423:b0:137:5b9d:cf87 with SMTP id a92af1059eb24-1a6c2e5b801mr9762994c88.0.1793283149798;
-        Thu, 29 Oct 2026 07:12:29 -0700 (PDT)
-Received: from [127.0.1.1] (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1a75d76814bsm15197319c88.10.2026.10.29.07.12.26
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 29 Oct 2026 07:12:28 -0700 (PDT)
-From: Cheng Yongkang <teel4res@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: reject zero num_stripes in the system chunk array
-Date: Thu, 29 Oct 2026 07:12:20 -0700
-Message-ID: <179328314071.648427.12527832319954042748@gmail.com>
+	dkim=pass (2048-bit key, unprotected) header.d=astralinux.ru header.i=@astralinux.ru header.a=rsa-sha256 header.s=mail header.b=kjyUxfdf
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=astralinux.ru;
+	s=mail; t=1793286708;
+	bh=8Oepbe9O9yB6V1/MpLPmhshtyjQFBga0hDC5FctDDeI=;
+	h=From:To:Cc:Subject:Date:From;
+	b=kjyUxfdfrR0wq3hxAnOaHGgsa5WnkMO4Ko3UUBrKB3GkZ9ssZJ3Ae7eRD2vOw54vw
+	 nnszICRL9jLkk56uEquTGnPIc+HbSMzHvh0Q8SBarqjGaGNiCywhM7PXR0oSpBtkd5
+	 VGXi04CbPRzmVo9ExQZZN1+oI5DledTcv0506gTge3rzCWxghLnYGd4phd9D0IzO42
+	 /aIPghJ7/wep61G1QyMA8+vMqm/LD9dLU53iJiElxawmZzVTGkums6rIva+FpxLoD/
+	 a8MX3Opx0MdM/DwnIvSLuXZVdy28zQrmz7qRgr5sg9fERl/WoODI+YU3rDIFtuaiME
+	 MxtsXKb8yO3ZQ==
+Received: from gca-sc-a-srv-ksmg01.astralinux.ru (localhost [127.0.0.1])
+	by mail-gw01.astralinux.ru (Postfix) with ESMTP id 99B0A25C98;
+	Thu, 29 Oct 2026 18:11:48 +0300 (MSK)
+Received: from new-mail.astralinux.ru (unknown [10.205.207.13])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (P-256) server-digest SHA256)
+	(No client certificate requested)
+	by mail-gw01.astralinux.ru (Postfix) with ESMTPS;
+	Thu, 29 Oct 2026 18:11:47 +0300 (MSK)
+Received: from DESKTOP-D46TNHI (unknown [10.198.28.100])
+	by new-mail.astralinux.ru (Postfix) with ESMTPA id 4jFnkq2dccz1NyJ;
+	Thu, 29 Oct 2026 18:11:47 +0300 (MSK)
+From: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>
+To: stable@vger.kernel.org,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>,
+	David Sterba <dsterba@suse.com>,
+	Sasha Levin <sashal@kernel.org>,
+	Chris Mason <mason@kernel.org>,
+	David Lee <david.lee@trailofbits.com>,
+	Qu Wenruo <wqu@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	lvc-project@linuxtesting.org
+Subject: [PATCH 5.10/5.15] btrfs: lzo: reject inline extents without valid headers
+Date: Thu, 29 Oct 2026 18:10:26 +0300
+Message-ID: <20261029151028.780-1-mdmitrichenko@astralinux.ru>
+X-Mailer: git-send-email 2.54.0.windows.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -94,66 +85,109 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
+X-KSMG-AntiPhishing: NotDetected
+X-KSMG-AntiSpam-Auth: dkim=none
+X-KSMG-AntiSpam-Envelope-From: mdmitrichenko@astralinux.ru
+X-KSMG-AntiSpam-Info: LuaCore: 133 0.3.133 d508d579b02cdb6df47808421a9b9e12fc9fb75b, {Tracking_from_domain_doesnt_match_to}, 127.0.0.199:7.1.2;astralinux.ru:7.1.1;new-mail.astralinux.ru:7.1.1;d41d8cd98f00b204e9800998ecf8427e.com:7.1.1, FromAlignment: s
+X-KSMG-AntiSpam-Interceptor-Info: scan successful
+X-KSMG-AntiSpam-Lua-Profiles: 207109 [Oct 29 2026]
+X-KSMG-AntiSpam-Method: none
+X-KSMG-AntiSpam-Rate: 0
+X-KSMG-AntiSpam-Status: not_detected
+X-KSMG-AntiSpam-Version: 6.1.1.27
+X-KSMG-AntiVirus: Kaspersky Secure Mail Gateway, version 2.1.0.7854, bases: 2026/10/29 07:40:00 #28758333
+X-KSMG-AntiVirus-Status: NotDetected, skipped
+X-KSMG-LinksScanning: NotDetected
+X-KSMG-Message-Action: skipped
+X-KSMG-Rule-ID: 1
 
-validate_sys_chunk_array() reads the on-disk num_stripes and passes it to
-btrfs_chunk_item_size() to check that the chunk item fits in the system
-chunk array.  btrfs_chunk_item_size() has ASSERT(num_stripes), and the
-only num_stripes == 0 rejection is in btrfs_check_chunk_valid(), which is
-called later.  A crafted superblock with a BTRFS_CHUNK_ITEM_KEY entry
-whose btrfs_chunk has num_stripes == 0 therefore trips the assertion
-before the invalid chunk is rejected:
+From: David Lee <david.lee@trailofbits.com>
 
-  assertion failed: num_stripes, in fs/btrfs/volumes.h:714
-  kernel BUG at fs/btrfs/volumes.h:714!
-  RIP: 0010:btrfs_validate_super+0x3ce7/0x4210
+commit 0fa78ef637deb5dbe341582f88553a4bce496de0 upstream.
+
+[BUG]
+For a crafted btrfs image, the following KASAN can be triggered when
+reading an inline lzo compressed file extent:
+
+  BUG: KASAN: slab-out-of-bounds in lzo_decompress+0x57d/0x700
+  Read of size 4 at addr ffff888006f2e644 by task btrfs_lzo_inlin/77
+
   Call Trace:
-   open_ctree
-   btrfs_get_tree
-   vfs_get_tree
-   do_new_mount
+   <TASK>
+   dump_stack_lvl+0x5b/0x70
+   print_report+0xd1/0x610
+   kasan_report+0xe0/0x110
+   __asan_report_load_n_noabort+0x13/0x20
+   lzo_decompress+0x57d/0x700
+   btrfs_decompress+0x140/0x1c0
+   uncompress_inline+0x147/0x1b0
+   btrfs_get_extent+0xb23/0x10a0
+   btrfs_do_readpage.constprop.0+0x538/0x1ac0
+   btrfs_readahead+0x32f/0x5f0
+   read_pages+0x16f/0x850
+   page_cache_ra_unbounded+0x296/0x490
+   do_page_cache_ra+0xd9/0x130
+   page_cache_sync_ra+0x3ee/0x6f0
+   filemap_get_pages+0x306/0x15c0
+   filemap_read+0x329/0xd00
+   btrfs_file_read_iter+0x1f8/0x2b0
+   vfs_read+0x4ef/0x720
+   ksys_read+0xf8/0x1d0
+   __x64_sys_read+0x71/0xb0
+   x64_sys_call+0x1ab0/0x1b70
+   do_syscall_64+0x61/0x470
+   entry_SYSCALL_64_after_hwframe+0x4b/0x53
+   </TASK>
 
-Commit 2a9bb78cfd36 ("btrfs: validate system chunk array at
-btrfs_validate_super()") moved the validation out of
-btrfs_read_sys_array(), which rejected num_stripes == 0 explicitly.
-Reject zero stripes in validate_sys_chunk_array() before calling
-btrfs_chunk_item_size(), so the crafted superblock is rejected with
--EUCLEAN before the assertion is evaluated.  open_ctree() turns the
-validation failure into -EINVAL for the mount.
+[CAUSE]
+For an inline lzo compressed file extent, there should always be one lzo
+header, recording the total length of the compressed data, followed by
+one segment header, recording the compressed lzo payload.
 
-Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_validate_super()")
-Cc: stable@vger.kernel.org
-Assisted-by: LLM
-Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+But if a crafted inline lzo compressed file extent contains only an lzo
+header, without the segment header or payload, lzo_decompress() will
+still try to read the segment header, causing a read beyond the item
+boundary.
+
+Furthermore if the inline lzo compressed file extent is the first item
+of the leaf, it will be at the extent buffer boundary. The above
+out-of-boundary read will go beyond the extent buffer boundary,
+triggering the above KASAN report.
+
+[FIX]
+Validate the total length of the inlined lzo compressed file extent, to
+make sure there is at least one LZO header and one segment header, and a
+non-zero payload.
+
+Fixes: a6fa6fae40ec ("btrfs: Add lzo compression support")
+Assisted-by: Codex:gpt-5.5
+Signed-off-by: David Lee <david.lee@trailofbits.com>
+[ Rework the commit message to remove slop ]
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+[ mdmitrichenko: Update the existing srclen check, which returns
+  -EUCLEAN directly in this version of lzo_decompress(). ]
+Signed-off-by: Mikhail Dmitrichenko <mdmitrichenko@astralinux.ru>
 ---
- fs/btrfs/disk-io.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+Backport fix for CVE-2026-74723
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c628c50..920ca4b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2389,6 +2389,19 @@ static int validate_sys_chunk_array(const struct btrfs_fs_info *fs_info,
+ fs/btrfs/lzo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
+index aa9cd11f4b78..40647a5cab6b 100644
+--- a/fs/btrfs/lzo.c
++++ b/fs/btrfs/lzo.c
+@@ -432,7 +432,7 @@ int lzo_decompress(struct list_head *ws, unsigned char *data_in,
+ 	char *kaddr;
+ 	unsigned long bytes;
  
- 		chunk = (struct btrfs_chunk *)(sb->sys_chunk_array + cur);
- 		num_stripes = btrfs_stack_chunk_num_stripes(chunk);
-+		/*
-+		 * btrfs_chunk_item_size() cannot represent a chunk without
-+		 * stripes; such a chunk is also invalid in the system chunk
-+		 * array (system chunks are never remapped).  Check before
-+		 * btrfs_chunk_item_size() so a crafted super block is rejected
-+		 * with -EUCLEAN instead of tripping its ASSERT().
-+		 */
-+		if (unlikely(num_stripes == 0)) {
-+			btrfs_err(fs_info,
-+				  "invalid chunk num_stripes 0 in sys_array at offset %u",
-+				  cur);
-+			return -EUCLEAN;
-+		}
- 		if (unlikely(cur + btrfs_chunk_item_size(num_stripes) > sys_array_size))
- 			goto short_read;
- 		type = btrfs_stack_chunk_type(chunk);
+-	if (srclen < LZO_LEN || srclen > max_segment_len + LZO_LEN * 2)
++	if (srclen <= LZO_LEN * 2 || srclen > max_segment_len + LZO_LEN * 2)
+ 		return -EUCLEAN;
+ 
+ 	in_len = read_compress_length(data_in);
 -- 
-2.34.1
+2.43.0
 

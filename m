@@ -1,55 +1,82 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793296552;
-	b=KXb+MgntyUx7gXbCtsC3bvwCyt1qRJ3G1xvGLFUtfbX1hXqX4Rn3FK1QNruwXO8ifFs+
-	 oiJP4I2cw5zPYJ7wFIfJwulTYscRdZVnMVrVuPX8p7J/Ke62SncxXTXewY6kh+YX9OVis
-	 XP2DZLnsWFbQ2+SBMEg0aRbsV1hiXTLLKOz5I000II/020wTEx6vMuy3zD9k+Y0GwtN2A
-	 lUS8NCsG75dugAvy0P2NRVQgU1I7+1S/ZJ62nmdzjshgoB+uZM4FMcQwu0LjggSi9G1An
-	 Zi3/ACjFGqDS6MQ59Kjnl5PTTkXzB68HAq5FjBFLfNRyjPAA0m6Zs8P66OzB15DDTjg==
+	t=1793307108;
+	b=QWpy6xZFqE4Cwxr23Dqqrcpczk736jddba55eJGU6w029+oxwtNxqSxpGdK13tBcs+zB
+	 bI4vSGGs2AxcMX4NfwoGdUm80PfDYLhKaIi+g6EQCEMzR6RtCaI/NKcnTSqv7PCzwFCrr
+	 FZPvCv0Wy2Hm24Yg8fTfmbaUxTC2ddeZCeDzbxPm9p4sWjENkRO4F3Jye0KKf98E2C7aS
+	 BU8OhVj/p4f8E06dDPnWkRGi71DNSe7xZWpJudG+9MWLoEf/j18AHbYZQbAR8BTXkcmEB
+	 M7qKp6S8YN/UJzL1VP2U9P07YvnrOINiLlUc+SFSRRyZdJnRsrBON90LF3bWF5MuwmA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793296552;
-	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
-	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
-	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=UiXZ9BgIzQkn6EFH4P+iWCgrsRcbki8OlT8PLa/j/7E=;
-	b=lQ2sjbAZ+Nmr14alsGj1nM5KpdHs84Pc3nkRK96uynFKBBwdm82EzBYXOHeU39/yYTOO
-	 WCDzyjuhAk7OMb+cWeWirESA9zYuqXTKtuT8aeub7rmbSDYQkUjB291XG/+eTur1ui4hP
-	 Ad2tLYIkr+Y4l7ASKaIdiCaWARheuRsOUoaiMFsPCdV4ZN4+9S4BaOi1tynM389oDpOzc
-	 17iTuUPdnPzBrrKr4bYCZGLvLORx4YbsCMPb6ReDucSi58MID0ehfVtcsDp9OMndCHIzC
-	 rurT3D1H6b1Q8ZqJmCaG6zt8jnH5ce2lGl2dJSY8oWoqVruYRBRZEEyFnKxIIbnLtkg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793307108;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=RdeptIPG1aMF2zMuVlv65CiM+a455QAQAz2c9ztPVnw=;
+	b=tQkUfIJl+mdNKOaucFGUY9YXUDIYRcyaByh8UFal58IpjsnJLn0ZFAJlLPduIgj+9gAD
+	 hzcE1nOq1/P/S1Hv5fALS86umnnltzGbE4CQ/v8PjX/MQK1nkMCV1eLXrfpRw53G8+Bf9
+	 TSxDN6guRHuM4g1FzrEy8XkVS4CobJ7hprAFj04FISriP/xVAlDtfxOGPB6+3tz3wxmoh
+	 vouZhTB7zNloL2pez0KC6ckLbgGDqb1kDqzGTJyRSVacSsY6nbwmeuRxmnU2FPwQKaVNz
+	 gc2t7G+bX5rHzHeYUddh2p4hHtI7IaAFf1mEg7LtH+1rDdrJ293vI53EBbfjWKQex5A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=R5hhTu3S;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=og3qckoP;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QrS5na9y;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8A02B606A31D
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 17:55:42 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 85CE2606A322;
+	Thu, 29 Oct 2026 20:51:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 85CE2606A322
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=R5hhTu3S
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 360F11F031E5
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 17:55:42 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793296542;
-	bh=UiXZ9BgIzQkn6EFH4P+iWCgrsRcbki8OlT8PLa/j/7E=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=R5hhTu3SoE9opfct55crD7fQtBfueBPQGTuE0axnr8cWrs2Vu8io1eoKt6eUAYiPm
-	 +c8yqPwtJGPpCsajSwfTS7LsdcG6T9IE12bBkRlIWom3tRPUsQs+nIslW+MHgGvZz1
-	 4Z2KN0f9P6Ch4omAm/dJEqL8dL/Y1hV0EPuccLVdVZz5PCz3embGuzP7D3sV1ee8/P
-	 j83FuPU9GLY9VDYurvzf8/28SdLYhV69nhdpv5iQjycBRLLeCeJUGZFlcJeSk9OJ5v
-	 NRrSyJXJc1NrET0TTOWCgeZCDQDG4BdkocAR5+V6/cfiEoM1EnPMzywKpp+lhhFKIW
-	 Un4js9OGTHOhw==
-Received: by mail-ua1-f41.google.com with SMTP id a1e0cc1a2514c-9906a5410f5so927822241.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:55:42 -0700 (PDT)
-X-Forwarded-Encrypted: i=1; AKwUvBxgwvpy4o/mfTAvGXpz5Zzu9QwjcAAsK4koV1s09P9uTitF1sAPpIVj6ulju+wzCv62mgbsNqRPWnvprQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYL76/4m0wZb1jD10lHuPcumjuRQXesr2dwTplDyYW4xmqytZZZe
-	vlPCfWdqNTm3SQhH7iwN5Gc08TiVQ7ZjcwOdeZWqbbcl53rtfkLwoD3s+SvprBTaBozcYlLgwGK
-	wHWyPpRPmEJGkmULLVyt/V1A07cm1DBQ=
-X-Received: by 2002:a05:6102:370d:b0:7cb:cfcf:3d01 with SMTP id
- ada2fe7eead31-7d05432ac0amr1157160137.33.1793296541426; Thu, 29 Oct 2026
- 10:55:41 -0700 (PDT)
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=og3qckoP;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QrS5na9y
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 6CC2722275;
+	Thu, 29 Oct 2026 20:51:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793307105; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RdeptIPG1aMF2zMuVlv65CiM+a455QAQAz2c9ztPVnw=;
+	b=og3qckoPEUs84oWLaSyFrTl+bsGq7Qo6i8iwyAfjAIIrAq4Lx4rOPvls7stAZPdUL/AR4Y
+	kTu+NpvI/Z6MKmHCLhbsIUU1Au8KVr5UYYVvYuTxUcCv2WFnX8ridjetJlESPXiGvthlCg
+	AgmZfBmRJcrQb8Y+HulYqClbZzoHQEE=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793307104; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RdeptIPG1aMF2zMuVlv65CiM+a455QAQAz2c9ztPVnw=;
+	b=QrS5na9y7Zx9GPCDEbrPsJTjg3i939yEAWaCxqbeyOjnoV3CX8XxtZCDfMqeFVw/+RCI1Y
+	8qp49dgTTprajlA1FtsT+MM74v6d5ApB+xcRd1SSrn11Bxn8sPpiBsTEXhTK9zVrIDzkLu
+	G8DQwBV3CPuqPrgOfM9w25EuxX2+9mI=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5932513419;
+	Thu, 29 Oct 2026 20:51:42 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id CMGKKt2x42qmUgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 29 Oct 2026 20:51:42 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	linux-xfs@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org
+Cc: "Pankaj Raghav(Samsung)" <pankaj.raghav@linux.dev>
+Subject: [PATCH v4] iomap: only follow dio alignment requirement if specified
+Date: Fri, 30 Oct 2026 07:21:23 +1030
+Message-ID: <0e89c49b6f7804081f4041007b81ac620a153830.1793307063.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,108 +86,120 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <179328314071.648427.12527832319954042748@gmail.com>
-In-Reply-To: <179328314071.648427.12527832319954042748@gmail.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 29 Oct 2026 17:55:04 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H6tz-YXxtTk3MVm7cLAQh1coBAkcF7KkH+GUwZnznnFrQ@mail.gmail.com>
-X-Gm-Features: AclHuK86Gn4r3KoV1EZing1H0aYPBgdIG60MDZvYx2WshoVoFo2GdhtUwvldtTk
-Message-ID: <CAL3q7H6tz-YXxtTk3MVm7cLAQh1coBAkcF7KkH+GUwZnznnFrQ@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: reject zero num_stripes in the system chunk array
-To: Cheng Yongkang <teel4res@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.996];
+	MIME_GOOD(-0.10)[text/plain];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,linux.dev:email];
+	FROM_HAS_DN(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_DN_SOME(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
 
-On Thu, Oct 29, 2026 at 2:12=E2=80=AFPM Cheng Yongkang <teel4res@gmail.com>=
- wrote:
->
-> validate_sys_chunk_array() reads the on-disk num_stripes and passes it to
-> btrfs_chunk_item_size() to check that the chunk item fits in the system
-> chunk array.  btrfs_chunk_item_size() has ASSERT(num_stripes), and the
-> only num_stripes =3D=3D 0 rejection is in btrfs_check_chunk_valid(), whic=
-h is
-> called later.  A crafted superblock with a BTRFS_CHUNK_ITEM_KEY entry
-> whose btrfs_chunk has num_stripes =3D=3D 0 therefore trips the assertion
-> before the invalid chunk is rejected:
->
->   assertion failed: num_stripes, in fs/btrfs/volumes.h:714
->   kernel BUG at fs/btrfs/volumes.h:714!
->   RIP: 0010:btrfs_validate_super+0x3ce7/0x4210
->   Call Trace:
->    open_ctree
->    btrfs_get_tree
->    vfs_get_tree
->    do_new_mount
->
-> Commit 2a9bb78cfd36 ("btrfs: validate system chunk array at
-> btrfs_validate_super()") moved the validation out of
-> btrfs_read_sys_array(), which rejected num_stripes =3D=3D 0 explicitly.
-> Reject zero stripes in validate_sys_chunk_array() before calling
-> btrfs_chunk_item_size(), so the crafted superblock is rejected with
-> -EUCLEAN before the assertion is evaluated.  open_ctree() turns the
-> validation failure into -EINVAL for the mount.
->
-> Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_validat=
-e_super()")
-> Cc: stable@vger.kernel.org
-> Assisted-by: LLM
-> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
-> ---
->  fs/btrfs/disk-io.c | 13 +++++++++++++
->  1 file changed, 13 insertions(+)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index c628c50..920ca4b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2389,6 +2389,19 @@ static int validate_sys_chunk_array(const struct b=
-trfs_fs_info *fs_info,
->
->                 chunk =3D (struct btrfs_chunk *)(sb->sys_chunk_array + cu=
-r);
->                 num_stripes =3D btrfs_stack_chunk_num_stripes(chunk);
-> +               /*
-> +                * btrfs_chunk_item_size() cannot represent a chunk witho=
-ut
+After commit 4025185cf953 ("iomap: follow the alignment requirement for
+iomap_dio_hole_iter()"), generic/091 fails on both xfs and ext4.
 
-I find this puzzling, using the "represent" word since
-btrfs_chunk_item_size() does not represent anything, it just does a
-calculation.
+The reason is that ext4 and xfs (except COW write) do not require full
+block alignment for direct IO. They are totally fine reading a sub-block
+range.
 
-> +                * stripes; such a chunk is also invalid in the system ch=
-unk
-> +                * array (system chunks are never remapped).  Check befor=
-e
+That commit fails any direct read of sub-block holes/prealloc, even those
+filesystems can handle it without any problem.
 
-Also the "remapped" detail is also confusing and I can't grasp the
-intention or why it matters.
+Fix the regression by only follow the block alignment if the
+IOMAP_DIO_FSBLOCK_ALIGNED flag is set.
 
-> +                * btrfs_chunk_item_size() so a crafted super block is re=
-jected
-> +                * with -EUCLEAN instead of tripping its ASSERT().
+Fixes: 4025185cf953 ("iomap: follow the alignment requirement for iomap_dio_hole_iter()")
+Reviewed-by: Pankaj Raghav(Samsung) <pankaj.raghav@linux.dev>
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v4:
+- Use a shorter commit message to explain the problem.
 
-Something simpler and more clear for the whole comment:
+v3:
+- Drop CC: stable
+  The commit is only in the v7.4 release cycle, not affecting any stable
+  release.
 
-"We can not have 0 stripes, and passing 0 to btrfs_chunk_item_size()
-triggers an ASSERT(), so fail immediately if we have 0 stripes."
+- Add Reviewed-by tag from Pankaj
 
-Codewise it looks good, thanks.
+v2:
+- Update the comment of IOMAP_DIO_FSBLOCK_ALIGNED
+  To indicate that hole zeroing is also affected.
+---
+ fs/iomap/direct-io.c  | 26 ++++++++++++++++----------
+ include/linux/iomap.h |  3 ++-
+ 2 files changed, 18 insertions(+), 11 deletions(-)
 
-> +                */
-> +               if (unlikely(num_stripes =3D=3D 0)) {
-> +                       btrfs_err(fs_info,
-> +                                 "invalid chunk num_stripes 0 in sys_arr=
-ay at offset %u",
-> +                                 cur);
-> +                       return -EUCLEAN;
-> +               }
->                 if (unlikely(cur + btrfs_chunk_item_size(num_stripes) > s=
-ys_array_size))
->                         goto short_read;
->                 type =3D btrfs_stack_chunk_type(chunk);
-> --
-> 2.34.1
->
->
+diff --git a/fs/iomap/direct-io.c b/fs/iomap/direct-io.c
+index 45bb24934f3d..ad041ac3252a 100644
+--- a/fs/iomap/direct-io.c
++++ b/fs/iomap/direct-io.c
+@@ -590,18 +590,24 @@ static int iomap_dio_bio_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ static int iomap_dio_hole_iter(struct iomap_iter *iter, struct iomap_dio *dio)
+ {
+ 	loff_t copied = iov_iter_zero(iomap_length(iter), dio->submit.iter);
+-	unsigned int bs = i_blocksize(iter->inode);
+-	loff_t aligned_copied = round_down(copied, bs);
+ 
+-	/*
+-	 * If fs block size is larger than page size, page fault failure
+-	 * can cause @copied to be page aligned but not fs block aligned.
+-	 */
+-	iov_iter_revert(dio->submit.iter, copied - aligned_copied);
+-	dio->size += aligned_copied;
+-	if (!aligned_copied)
++	if (dio->flags & IOMAP_DIO_FSBLOCK_ALIGNED) {
++		loff_t aligned_copied = round_down(copied,
++						   i_blocksize(iter->inode));
++
++		/*
++		 * For fs passing IOMAP_DIO_FSBLOCK_ALIGNED flag, if fs block
++		 * size is larger than page size, page fault failure
++		 * can cause @copied to be page aligned but not fs block
++		 * aligned.
++		 */
++		iov_iter_revert(dio->submit.iter, copied - aligned_copied);
++		copied = aligned_copied;
++	}
++	dio->size += copied;
++	if (!copied)
+ 		return -EFAULT;
+-	return iomap_iter_advance(iter, aligned_copied);
++	return iomap_iter_advance(iter, copied);
+ }
+ 
+ static int iomap_dio_inline_iter(struct iomap_iter *iomi, struct iomap_dio *dio)
+diff --git a/include/linux/iomap.h b/include/linux/iomap.h
+index 59718f73c15a..5254430844b2 100644
+--- a/include/linux/iomap.h
++++ b/include/linux/iomap.h
+@@ -693,7 +693,8 @@ struct iomap_dio_ops {
+ #define IOMAP_DIO_PARTIAL		(1 << 2)
+ 
+ /*
+- * Ensure each bio is aligned to fs block size.
++ * Ensure every operation, including bio and hole zeroing, is aligned to fs
++ * block size.
+  *
+  * For filesystems which need to calculate/verify the checksum of each fs
+  * block. Otherwise they may not be able to handle unaligned bios.
+-- 
+2.56.0
+

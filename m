@@ -1,11 +1,11 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
 	t=1793268314;
-	b=aF7s7ykN8oJtvgtKuGzWVSnua+r9seojsZAjBhMkFtj+vYEtaflLUtQe7pTQvKMBCik5
-	 wnLUD9y6chbFMCK8tussKci7D1LrR2ev+h1GEyC547JwG2F2Qv5szWRUH/CNmiScc9Flh
-	 9Z30VbVQexiDEXVo9cUifOtBD7oRDvA1k3aLWa/wtt1fohahZ5pdBGJhvGMvus+Y7snDR
-	 9rVBTi2kjwu1NevTpH4pqai4RxuuJTbFdMQpj1thCuxtmdUugQqVCWOzme8CQcr5HZHBl
-	 YDvRysGGlBuTl2/MMUZUeHS0RDrY/rjMfD+8cp0u7lKBAUzLbVQzw2SXJnLwE5r7wqQ==
+	b=v4qIwp95w0JZq8TV+9h/kgIMH7SDyPLzA0Htg3lmywdkTAAI17mwFwNyzogOz+MZfwux
+	 jM8z+L8EXzHL8h+CziF3BdIjZRYnNO/kw6EMnU6RQprDwk9x0ZyvgrR0Ljzejm1UW9Jnf
+	 p7eCAXJ3Yc91ynhzgnilNXJUhDp8b5Gry/EliOlUSuQSARg6Pvwa39yQXfmWwD2J1BHrG
+	 MfxJg9+NKbOS0eglJE36zF3fWRtA5Z1M887Cr7ZJxqDRW0VPI9tMvvVcFee3+zWNxvEju
+	 MWau1f2x6vagk4kEEfJ4Lszu0eNtm1AtqPToQRAcZQSKMxjTKAq3Djd9/hKkMWybcOA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1793268314;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
@@ -13,72 +13,72 @@ ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
 	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
 	 X-Rspamd-Queue-Id;
-	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
-	b=QovI74hy6SDA8vdclTeJyPRmSKrccYlkrrbcXTId2Z4K+m6p8W1Dt7ThavSF0VXtASAM
-	 WD7a7A2uRLuptYaJNtnwg0CG9xqJtFO5PNcFLxvHuOuh30Ra08R5EWYv1t8NPwEe6eLkF
-	 b3kqsFCyiu8lRWYTQA1WNbNPb9xavCDTH4GHPBiGWwmxjJ9yP89N5jWyPZtND1nBfQtxb
-	 +ZpKoS3+seX8njfFD96ieNvIn2aj4xCRm2Q4TflLS9tMt+9ksksuRNfAXljvaGggzGNfi
-	 Tdu4LTqSdtrDGvoHHL1o4IhvkQcWhE/VwG7dTQpWqM4gXQyH3U1eKoxhI9KIeKBiONA==
+	bh=le9F/ocGS0LnQw35m83/fYtBGQ1AgfmOTZ+alX2hZ18=;
+	b=KN6Pzo9n+S0kyRbG5HXDUV3+z6H2HGKTuPAP2fj599Wn5Iw+4nS9hD4HjaQIv4knxlsl
+	 w9OuQTavLN4mrBQKkGGx8swTQX/UbDIfLb/QTe3sMU1YdQ/Xkg6sRM6mLv8LsG18ktZ0H
+	 LQzRHx14yBxUE/dFB/c7U9XnXB/0msoIPqqAf6i9DS4y7kyxvPdUQ+SG9YeqBSDrnXtZ9
+	 kdoMFiXWDkU89BuUYNv/UjdaRqNiCXXH9ywlwGCTbfrG3gRfn+d3boT8ArQezguGwYHxH
+	 NsenXQA0ON9KEIJJZVeufqLUZIVSXew5ids6k62JxSVWcz6RnXzCoZ7S0Iw7q+Jpp9w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="S+b/oRO6";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rKd0aNrI;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="VT20jv/5";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="VT20jv/5";
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B34AD606A31D
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B34AD606A31D
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34123606A325
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 34123606A325
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=S+b/oRO6;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rKd0aNrI
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=VT20jv/5;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=VT20jv/5
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EBBD71FB41
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:10 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 893881FBA1
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:12 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
 	t=1793268312; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
-	b=S+b/oRO6RMOl5kQqqVDwSVmluaq2t8rF28xwElbRGS4RgmLA8JrxBawjDPi9wqUw2nNzuo
-	jUKrFPh1GEn0FRxfSgtjULlbE7pypBgtUYtCfw5Sk9Tl1zbIb6jig6wRQtTo9zlSIKDmge
-	qLkiLzyTWeuyBIw/Gagg6HI9sqHgGFc=
+	bh=le9F/ocGS0LnQw35m83/fYtBGQ1AgfmOTZ+alX2hZ18=;
+	b=VT20jv/5dA17EfZ9e43bkVjB4I7xFFjikrAgMYjp55j2ycR9SVxECd24XGzj7sWPCeT1BO
+	/EOmJZ7S73OkBAcVz8cZ080DIBaq6nsPoxgpaCug58cwls6eTCuwvFZ+7R7cod9TY6ndfE
+	NvuhxjL1TwtvUVGp0FH2dWcah4EFq4I=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=rKd0aNrI
+	dkim=pass header.d=suse.com header.s=susede1 header.b="VT20jv/5"
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793268310; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793268312; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/xre4QXcv90hjCjSMhWAXhBY3Wjpc1Z+qv/LcmhpXbg=;
-	b=rKd0aNrIspjHZiYbMuuT/S+qRtz1cPitlWFNycMAoA3jPi2kquW64xCfseCVHJHUAtFo+b
-	3OBMl+xjnhiKuxMI34kKUeUoBYgDCxh9DRNZCph+D1CtpqLB/rxSz3iYxHkrg06uoFf2lh
-	mkSx1NPrFzlieZgXak4fnIm5j5hnrsA=
+	bh=le9F/ocGS0LnQw35m83/fYtBGQ1AgfmOTZ+alX2hZ18=;
+	b=VT20jv/5dA17EfZ9e43bkVjB4I7xFFjikrAgMYjp55j2ycR9SVxECd24XGzj7sWPCeT1BO
+	/EOmJZ7S73OkBAcVz8cZ080DIBaq6nsPoxgpaCug58cwls6eTCuwvFZ+7R7cod9TY6ndfE
+	NvuhxjL1TwtvUVGp0FH2dWcah4EFq4I=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D9C3913419
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:09 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 772BD1342D
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:11 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 380rJ1Ma42qwKgAAD6G6ig:T2
+	id 380rJ1Ma42qwKgAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:09 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 10:05:11 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 1/5] btrfs-progs: introduce compiler_attributes.h
-Date: Thu, 29 Oct 2026 20:34:37 +1030
-Message-ID: <5b483c92d995d1a07918aac47259cf63a9df5603.1793268211.git.wqu@suse.com>
+Subject: [PATCH v2 2/5] btrfs-progs: utilize __cleanup__ attribute for btrfs_path
+Date: Thu, 29 Oct 2026 20:34:38 +1030
+Message-ID: <4c321081adc7a7b962a126406b0ae51138e1414e.1793268211.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1793268211.git.wqu@suse.com>
 References: <cover.1793268211.git.wqu@suse.com>
@@ -95,8 +95,8 @@ Content-Transfer-Encoding: 8bit
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
@@ -111,7 +111,7 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,gnu.org:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,llvm.org:url];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[gnu.org:url,llvm.org:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:dkim];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	TO_DN_NONE(0.00)[];
@@ -123,131 +123,140 @@ X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: -12.01
 X-Spam-Level: 
-X-Rspamd-Queue-Id: EBBD71FB41
+X-Rspamd-Queue-Id: 893881FBA1
 
-Cross-port a minimal include/compiler_attributes.h from the kernel's
-include/linux/compiler_attributes.h, and move the existing attribute
-definitions there:
+The new header at kernel-shared/cleanup.h is cross-ported from the
+kernel's linux/cleanup.h.
 
-- __must_check
-  Previously defined in kernel-lib/overflow.h, which is not a proper
-  place for a generic attribute. Anyone wanting __must_check would have
-  to include overflow.h just for it.
+Since we rely on the newer __cleanup__ attribute, also update the
+configure tool to detect the compiler support.
+If no support, error out.
 
-- __printf
-- __maybe_unused
-  Previously defined in include/kerncompat.h.
+As we will rely on the __cleanup__ attribute to do auto cleanup. Ignoring
+such attribute will easily screw up future resource management.
 
-The new header has no other includes so it can be pulled in by any
-header that only needs a compiler attribute. kerncompat.h includes it,
-so existing users are not affected.
+With the new __free() macros, define BTRFS_PATH_AUTO_FREE() and
+BTRFS_PATH_AUTO_RELEASE(), so we can sync the code between progs and
+kernel.
 
-Assisted-By: LLM (Split the compiler_attributes.h from the next commit)
+Assisted-by: LLM (updating configure.ac to error out if no such support)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- include/compiler_attributes.h | 33 +++++++++++++++++++++++++++++++++
- include/kerncompat.h          |  7 +------
- kernel-lib/overflow.h         |  8 +-------
- 3 files changed, 35 insertions(+), 13 deletions(-)
- create mode 100644 include/compiler_attributes.h
+ configure.ac                  | 15 +++++++++++++++
+ include/compiler_attributes.h |  6 ++++++
+ kernel-shared/cleanup.h       | 31 +++++++++++++++++++++++++++++++
+ kernel-shared/ctree.h         | 10 ++++++++++
+ 4 files changed, 62 insertions(+)
+ create mode 100644 kernel-shared/cleanup.h
 
+diff --git a/configure.ac b/configure.ac
+index b12ca46814bf..07cd92df5947 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -67,6 +67,21 @@ AS_IF([test "x$target_cpu" = 'xx86_64'], [
+ AX_CHECK_COMPILE_FLAG([-std=gnu11], [],
+ 	[AC_MSG_ERROR([std=gnu11 compiler required])])
+ 
++dnl The __cleanup__ variable attribute is required by kernel-shared/cleanup.h
++AC_MSG_CHECKING([whether the compiler supports __attribute__((__cleanup__))])
++save_ac_c_werror_flag=$ac_c_werror_flag
++ac_c_werror_flag=yes
++AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
++static void free_int(int *p) { *p = 0; }
++]], [[
++	int x __attribute__((__cleanup__(free_int))) = 1;
++	(void)x;
++]])],
++	[AC_MSG_RESULT([yes])],
++	[AC_MSG_RESULT([no])
++	 AC_MSG_ERROR([compiler with __attribute__((__cleanup__)) support required])])
++ac_c_werror_flag=$save_ac_c_werror_flag
++
+ AC_SYS_LARGEFILE
+ 
+ AC_PROG_INSTALL
 diff --git a/include/compiler_attributes.h b/include/compiler_attributes.h
-new file mode 100644
-index 000000000000..e9ac1ac64cd8
---- /dev/null
+index e9ac1ac64cd8..41edbab9c55a 100644
+--- a/include/compiler_attributes.h
 +++ b/include/compiler_attributes.h
-@@ -0,0 +1,33 @@
+@@ -10,6 +10,12 @@
+  * any header which only needs a compiler attribute.
+  */
+ 
++/*
++ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Variable-Attributes.html#index-cleanup-variable-attribute
++ * clang: https://clang.llvm.org/docs/AttributeReference.html#cleanup
++ */
++#define __cleanup(func)			__attribute__((__cleanup__(func)))
++
+ /*
+  *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-format-function-attribute
+  * clang: https://clang.llvm.org/docs/AttributeReference.html#format
+diff --git a/kernel-shared/cleanup.h b/kernel-shared/cleanup.h
+new file mode 100644
+index 000000000000..44c495b8e4ec
+--- /dev/null
++++ b/kernel-shared/cleanup.h
+@@ -0,0 +1,31 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
-+#ifndef _COMPILER_ATTRIBUTES_H
-+#define _COMPILER_ATTRIBUTES_H
 +
 +/*
-+ * Copied from linux.git/include/linux/compiler_attributes.h, only contains the
-+ * attributes btrfs-progs needs.
++ * Cross-ported from kernel's include/linux/cleanup.h.
 + *
-+ * This header must stay free of any other includes, so it can be pulled in by
-+ * any header which only needs a compiler attribute.
++ * With unused macros like return_ptr() and no_free_ptr() removed, along with
++ * comments mentioning them.
 + */
++#ifndef _LINUX_CLEANUP_H
++#define _LINUX_CLEANUP_H
 +
-+/*
-+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-format-function-attribute
-+ * clang: https://clang.llvm.org/docs/AttributeReference.html#format
-+ */
-+#define __printf(a, b)			__attribute__((__format__(printf, a, b)))
-+
-+/*
-+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-warn_005funused_005fresult-function-attribute
-+ * clang: https://clang.llvm.org/docs/AttributeReference.html#nodiscard-warn-unused-result
-+ */
-+#define __must_check			__attribute__((__warn_unused_result__))
-+
-+/*
-+ *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-unused-function-attribute
-+ * clang: https://clang.llvm.org/docs/AttributeReference.html#maybe-unused-unused
-+ */
-+#ifndef __maybe_unused
-+#define __maybe_unused			__attribute__((__unused__))
-+#endif
-+
-+#endif
-diff --git a/include/kerncompat.h b/include/kerncompat.h
-index 0239b0ac807a..b8e9a6c9c04b 100644
---- a/include/kerncompat.h
-+++ b/include/kerncompat.h
-@@ -38,6 +38,7 @@
- #include <stdbool.h>
- #include <stdarg.h>
- #include <features.h>
++#include "kerncompat.h"
 +#include "compiler_attributes.h"
++
++/*
++ * DEFINE_FREE(name, type, free):
++ *	simple helper macro that defines the required wrapper for a __free()
++ *	based cleanup function. @free is an expression using '_T' to access the
++ *	variable. @free should typically include a NULL test before calling a
++ *	function.
++ *
++ * __free(name):
++ *	variable attribute to add a scoped based cleanup to the variable.
++ */
++
++#define DEFINE_FREE(_name, _type, _free) \
++	static __always_inline void __free_##_name(void *p) { _type _T = *(_type *)p; _free; }
++
++#define __free(_name)	__cleanup(__free_##_name)
++
++#endif
+diff --git a/kernel-shared/ctree.h b/kernel-shared/ctree.h
+index 93fd7f18049e..3a5f456df315 100644
+--- a/kernel-shared/ctree.h
++++ b/kernel-shared/ctree.h
+@@ -30,6 +30,7 @@
+ #include "kernel-shared/accessors.h"
+ #include "kernel-shared/extent-io-tree.h"
+ #include "kernel-shared/locking.h"
++#include "kernel-shared/cleanup.h"
+ #include "crypto/crc32c.h"
+ #include "common/extent-cache.h"
  
- #ifndef static_assert
- #define static_assert(expr, str) _Static_assert(expr, str)
-@@ -58,10 +59,6 @@
+@@ -1024,6 +1025,15 @@ void btrfs_release_path(struct btrfs_path *p);
+ void add_root_to_dirty_list(struct btrfs_root *root);
+ struct btrfs_path *btrfs_alloc_path(void);
+ void btrfs_free_path(struct btrfs_path *p);
++DEFINE_FREE(btrfs_free_path, struct btrfs_path *, btrfs_free_path(_T))
++DEFINE_FREE(btrfs_release_path, struct btrfs_path, btrfs_release_path(&_T))
++
++#define BTRFS_PATH_AUTO_FREE(path_name)					\
++	struct btrfs_path *path_name __free(btrfs_free_path) = NULL
++
++#define BTRFS_PATH_AUTO_RELEASE(path_name)				\
++	struct btrfs_path path_name __free(btrfs_release_path) = { 0 }
++
+ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		   struct btrfs_path *path, int slot, int nr);
  
- #endif
- 
--#ifndef __maybe_unused
--#define __maybe_unused __attribute__((__unused__))
--#endif
--
- #ifndef BTRFS_DISABLE_BACKTRACE
- #include <execinfo.h>
- #endif
-@@ -776,8 +773,6 @@ struct lock_class_key {
- #define __user
- #define __pure
- 
--#define __printf(a, b)                  __attribute__((__format__(printf, a, b)))
--
- static inline bool sb_rdonly(struct super_block *sb)
- {
- 	return false;
-diff --git a/kernel-lib/overflow.h b/kernel-lib/overflow.h
-index b2a376ee13c4..d942b11924cc 100644
---- a/kernel-lib/overflow.h
-+++ b/kernel-lib/overflow.h
-@@ -5,6 +5,7 @@
- #include <stdbool.h>
- #include <stddef.h>
- #include <stdint.h>
-+#include "compiler_attributes.h"
- 
- /*
-  * We need to compute the minimum and maximum values representable in a given
-@@ -42,13 +43,6 @@
- #define is_non_negative(a) ((a) > 0 || (a) == 0)
- #define is_negative(a) (!(is_non_negative(a)))
- 
--/* Copied from linux.git/include/compiler_attributes.h */
--/*
-- *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-warn_005funused_005fresult-function-attribute
-- * clang: https://clang.llvm.org/docs/AttributeReference.html#nodiscard-warn-unused-result
-- */
--#define __must_check                    __attribute__((__warn_unused_result__))
--
- /*
-  * Allows for effectively applying __must_check to a macro so we can have
-  * both the type-agnostic benefits of the macros while also being able to
 -- 
 2.56.0
 

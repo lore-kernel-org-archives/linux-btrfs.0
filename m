@@ -1,83 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793374587;
-	b=04nd7g4wxpPa842uy/IusXODsTB2blF4SkoCnslsdTXNhL4BT+aj4I8Du5Kk6rbSJ2xS
-	 TsC3DYPO/6h9iDOtUIIr7glXtu7Z2F8Sn95weN4wRhQwg3Z9PhIRH4UTs8Qs0v6uMYzWU
-	 jXmrDk73hGPnpamA+l9NWEonj2tncNbISICkOWaH+U8QqKGVlFldo89NP2YhN28b/lUyP
-	 8slpAMk8Fz8Y0/8bPFU/x5Jjg29hhbG5xWt6I0rCBhbeWBjV8AoPch8ri/RgBfZWha+MJ
-	 imsK2CWmADUn40bbPmtjGTB/G40AaDdGxIp1VPHnufrxuS2cfhaRbIAi3DyE6P9W96w==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793374587;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=sd5RL1XCNlo2sqTNOx3kwpxSRfkZd0uC81i/NNCK/dU=;
-	b=mPyk8tk5OmtRVPf2pLLXvXa9V6iW6nuPjvJvaHic+lbSfcKIaiVts6HyEO9k9dWc0Ire
-	 OSaG6sJfFtNiQYKtP4f8Z/LFyaKC8SseOjnB8rC0cQv3eerJnoiPe9ZAD6s2UlcMpiDdO
-	 +WqYTjvLXb+Hi5QsaoqnUnsR9JYwvSJA4f1qWQohj1nRyP26KMpmLGk4ZcBb3qvrvwUiq
-	 LjToWnkhRiJTRRjZBFTMSWmV+6Co+FHiLcFWCalfv9B91rtLBDGhgUW/lfSWUz18F8xg8
-	 XY6soRsUsv03ZXqG59J96aw9vHbKKRGKm5xXWW5siyJ08ebrl/Ov/0m2oV70yx7ELtA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.54
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793375326;
+	b=hhQ2gK3M492c5LMEDdQKOHlp2iycN2Qt2Fek8bgANUbQSAOM57Jp8UfGevcKBd+lL+WR
+	 sZPSqFED5JKrE30P6L3nVXBr78KiAFgSs8gO41beQcKgTimJOcrDJ7Ffw6hMA7xRbHTZL
+	 qKpf8syVS9HynKpGW1Fmxz4h+Bg8EEaWHZrsD/b8c5mr2J49682XjWlYgdDIAATtWo60b
+	 C618Q65IFCsBK5kOdD5QjICs+cssDknqkTNp/Sc14/RmhpX0DYyhs//f1Uzlg2bH5qaRs
+	 AGFxH2nmlbGdQqobbG4gWBIFV+r8Yk8sBA5xM1x8z6QqTrdtVn38v6C+2eiXEfwd9aw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793375326;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type;
+	bh=1SdZaLdPak2FKD5fnDB1khWRjdwvVonI2nIK2N8FF88=;
+	b=pWaAUrdgWIrwU05QupyvRxQf4aaftpY4J9RhLOLL5kEAZJbKKCAt+oiJZpt83ukYHAxy
+	 FeSw0op4AzjjcJRB8VWUs/6snBowWav/rY7C8dgSr5fIr054Qp9HYlpcT2o41JSoBPXhU
+	 hiV3bUGvSzuoQnhbliLrr0srPxIDQaWAqy+LSUs8Q91GGv5buzLfaEBPfiP1FLoAw33eq
+	 dhnOGNqzPEnfpKQrAMg6gHU0CpLAhDy9iPj4F3+g7wiRuuIwm6NLP0Hm2ZPmdUygEdM/e
+	 AzUZ6dlXW9fuB1rwgVUY5GjLEmUYHRQyI2mtkY0tx7GGCxwttCgcLZiteHI53j7IkXA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="GJnaf7C/";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=uCiLmze4;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=FoSgDxb1;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.54
+Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BEAEE606A31F;
-	Fri, 30 Oct 2026 15:36:26 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BEAEE606A31F
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6115E606A31A
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 15:48:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6115E606A31A
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=GJnaf7C/;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=uCiLmze4
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id E577E20152;
-	Fri, 30 Oct 2026 15:36:24 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793374585; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sd5RL1XCNlo2sqTNOx3kwpxSRfkZd0uC81i/NNCK/dU=;
-	b=GJnaf7C/59Bw/iGsZVvdlooRAc1wb7rQ4opA+jjUMVcio3fbDS9jp4mgBn/NDuGMSm+GT4
-	wIK5qzCoN5qsUAD/d/PjNYyVWJehvRUUX31zCMxZB5/ZP2+p0J+4brHoSXOp2hX4BC2h/H
-	sKXxpLAMieW1MX8J0nwvdMrnStd7Vs8=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793374584; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=sd5RL1XCNlo2sqTNOx3kwpxSRfkZd0uC81i/NNCK/dU=;
-	b=uCiLmze42TJIkHNiuFigvNYMrMOGTXfy9ENvW/xkpP2JN2n8tj1Df1KwtvYuOGaIUYl42J
-	BeR4LL2WWNLCN2kZJiGV6zkN9VePHq8+61SWcTes4n7GcEIiYwCWmDVCU6zNqQzyqeMvIH
-	bFqGmBDBVF8q1KjsUfJfztIKC7gdApc=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id AF64E13432;
-	Fri, 30 Oct 2026 15:36:24 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id PZ2HH3i55GrMXwAAD6G6ig
-	(envelope-from <neelx@suse.com>); Fri, 30 Oct 2026 15:36:24 +0000
-From: Daniel Vacek <neelx@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Daniel Vacek <neelx@suse.com>,
-	"Naulls, Peter" <PeterNaulls@eaton.com>,
-	linux-rt-devel@lists.linux.dev,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: fix a livelock in wait_for_commit() on PREEMPT_RT
-Date: Fri, 30 Oct 2026 16:36:17 +0100
-Message-ID: <20261030153617.329733-1-neelx@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=FoSgDxb1
+Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-48dfaa3fa12so1188450f8f.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:48:45 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793375324; cv=none;
+        d=google.com; s=arc-20260327;
+        b=cD34QIE6JmppUa6LYpVoExGWCWAa5KAAY6Exhc42UgD3vi10zpbaFM7bE3w2i3TRDS
+         kf//Buj34cdiIOrWe6L1vW/zD9pAbLnCBWFMfjqvRm/JOpkY+5jomAsXWmbXj57G4OsH
+         GUbcIYGjJzsdtWHwfTio9PjXpRLYVg/rTorIGTrinqNTWdkfCU8AOoCcBylUrVKGB4id
+         vIerLatlZFxa4Vy7uGffZwppCQf2vvrFdAJ04CgJgtVoyuxQPduAGkQiImHU6lWcBAuU
+         CQ3O2/48lU5EOutcZm6pRAEYSoEelvDLmxDwwFsCpazd7BU63Gpo8BVthJfuSkYRB27Y
+         1cPg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=1SdZaLdPak2FKD5fnDB1khWRjdwvVonI2nIK2N8FF88=;
+        fh=ZhLgSjzo6p7hA6f4VnzScapi00kTts8LttAtY+74eMQ=;
+        b=XbN6fImyEWuFrCnBzfXppV1DREx8vu6ur1eYiC7VsNiyXnc4v3RMOyg6e61MykC/ny
+         hxAXs145WqKR6QurWAHPP9ysA/axvGv+Dd2vNd/gBuwR/Y5ljWDosg340gESbGGjavZw
+         kqL7JHL3fsE1zGUcGl+6oWnb25g/sDjuXhJ6aOjTIpfQu5HrTQDIgcUakOmbLyELaLiu
+         /bmR/dDQk1r5d2CyLK0n2VSnGyW67qKDEuvW11Hq8FG/i817+Y/e/pKUk5VkNa5juDMe
+         i0gJlzpIDekLgO6IrCzcHi7MTQyOTBADA7f80SOcK3v2yK4QFtbqtvSNslgIQDZZAqEb
+         nLUA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1793375324; x=1793980124; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=1SdZaLdPak2FKD5fnDB1khWRjdwvVonI2nIK2N8FF88=;
+        b=FoSgDxb1/AUJvgrnmzZU/X9WmaTSJ8u0tEjdKqgvbA/fJSQ30+SG2wc5EhUAZBobus
+         4AV5gBO5+alZS3l4U/ePOH6UZl3V0weYgjPdi/1US5hjE/h25EZgEJhFB0cfAQOlWMOo
+         GxwdPdm88tyEA4NEDxI1546ZBMc5EjisbG8WazHLK72K5XgqN/9PyApULA9QmMf4kpuu
+         LC0LcrK+PY4yuzO8YaV3IeCyyivuyqme5f3KVsNCUTqPqJhdOHVUJGxAaJYiEFngh86N
+         MLMp+OyjDGIjAjmxwg9BVmvYs/WUZHUlAFzLGL2BXXlZoo30WE0EQbIlcJnyyQdo3APo
+         Tp3A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793375324; x=1793980124;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=1SdZaLdPak2FKD5fnDB1khWRjdwvVonI2nIK2N8FF88=;
+        b=LA0eK4lCfBmCk4D8h4bP63N5thi21xIY1JEIRFIB/FLs/A3mGRvVx2c5nOqO047s5q
+         +DbNxy13SVV2d4vf8Ld9Ipd/sdYwW6jCaKnY03b3OXxE9o9gsLQGh6GS7YXD5ZxFi7+y
+         tp4OEoY555yIDtS64M7C2qevwnqeYYF1HKvAzXSu/cOnjybiXeApga1nw+hMRk8sU2fY
+         NZA+dMYevoF3Qc2S2vzJjCuaPJu+D++eXFmuHsxvuvGMZuSgkREzNvibueyVzcczBK0a
+         dcu44VQzptK/hXjLoFFgpgF7Y2NXDR6V5sjuyWMBEDfXBL3BbgRqvIByESfW052Lyk6p
+         4Jvw==
+X-Forwarded-Encrypted: i=1; AKwUvBz8NbXKcPFuaT5FrzxIQl6tMt+zv4utkYgH+RjacYUf7Pwg/ahbf6XB50V6qNEdnyiOSss2TiLXY2GtXA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYJFTuD5hjJrGoEXA3fXKoQznQ2FF9kxV5/KGkStFoX9PJFbm+iF
+	T5DYPW+xEfwkNQODupTMxYNJShN4n8wokAwumtr+09fZ4lykCgI5UIuDO5tpVWAwSbT1sIdAf6R
+	D4UIuUMvGvP89YoesuoR1o6NXJWfrQB4M/q5ZwSSD9A==
+X-Gm-Gg: AYBFou3oj0bCrsd8X7ddN+y/50DHMjLMV9qwuIsAPcvJkFseDXMbbz4aZcXBQ3VOs42
+	JTCn6TPmSYvIKdXWt7ebVFJe2CrhXU16PDRn6L9nPm1m/1poEDSbB0MFRoUMfW2vBm/SY5iIb9L
+	MDoeb4joyt3hV7QxOr/tfybKDVxCgrQQtn7Wu52KPezyxNBOMfxCAWFG9JoNpNRmHzAoNBEpZcd
+	fifg8WyA5+ZR7xbJ2z8qqR9gZD4BM4DVXea2QdRlrZOTJSpkoJFzxBNwrRfOtIh5GFvqfAfffCO
+	oN1/Q4r+PhfCgLCVhNrC58mAIZKn7vZJNQKsYVUsJ5eu3BzdGw9cHo5RRs4SZT/WBd0QL1/rUeU
+	Nws+XpctEN+phfTle/TEqXvBfR9NIhL16FD6tIgwFHs6v/RlkzlelGOvO0Ybx4Mdkn+Fjl2G+ba
+	LQzddvcUsuUK9E2xDw1WqQTqPPBeDjjxb91A==
+X-Received: by 2002:a05:6000:40db:b0:48e:5d06:8b66 with SMTP id
+ ffacd0b85a97d-48e6e2dbbc5mr6990214f8f.19.1793375323759; Fri, 30 Oct 2026
+ 08:48:43 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -87,147 +104,53 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_FIVE(0.00)[5];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
+References: <PH0PR17MB4277167A37B20340B231443FBB922@PH0PR17MB4277.namprd17.prod.outlook.com>
+ <SJ0PR17MB4288FC2E7FFB577F5D6C6D9EBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
+ <SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com>
+ <CAPjX3Ff-zn2hda=deMvCGM1UMM6Zghh-ywabBMTqFUbzC69YEA@mail.gmail.com>
+ <PH0PR17MB427723A82BCB2A6FCD37B329BB662@PH0PR17MB4277.namprd17.prod.outlook.com>
+ <20261021155016.1isOptPI@linutronix.de> <PH0PR17MB4277D532F68355EEF5E4F8EDBB662@PH0PR17MB4277.namprd17.prod.outlook.com>
+In-Reply-To: <PH0PR17MB4277D532F68355EEF5E4F8EDBB662@PH0PR17MB4277.namprd17.prod.outlook.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Fri, 30 Oct 2026 16:48:32 +0100
+X-Gm-Features: AclHuK_-FcdAqoQLHCObxIK71YflbVTMDyBFVxGFqrn4PvFFk90oar9YPmFwNL4
+Message-ID: <CAPjX3FfYBZUsP681PUyf53QRssi8Ceq=tPV=bWNT2+_t8Jfqtw@mail.gmail.com>
+Subject: Re: Btrfs PREEMPT_RT transaction-waiter livelock: experimental
+ mitigation in kernel 6.6.78
+To: "Naulls, Peter" <PeterNaulls@eaton.com>
+Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>, 
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, 
+	"linux-rt-users@vger.kernel.org" <linux-rt-users@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
 
-Peter reported [1] that running multiple RR tasks doing sync()
-on fully preemptible kernel may starve other/normal sync() tasks
-due to fs_info::trans_lock turned into rt_mutex.
+On Wed, 21 Oct 2026 at 19:48, Naulls, Peter <PeterNaulls@eaton.com> wrote:
+>
+> From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+>
+> > That sounds plausible. I did ask if RT tasks are involved and I think
+> > the answer as no. With just SCHED_OTHER tasks it behaves as spinlock_t
+> > on !PREEMPT_RT (except for the preemption which should have no impact).
+>
+> Yes, we are not doing anything special RT wise apart from the kernel enablement.
+>
+> I put Daniel's patch into 6.6 and ran it 100000 times against a ramfs btrfs image
+> and then thousands more times against a flash backed btrfs mount and no problems.
+>
+> I'll await the final word from him on this before committing to it for our work.
 
-This is caused by RR tasks contending over the mutex with priority over
-other tasks, which in turn lack progress and they are no longer able to
-remove TRANS_STATE_COMPLETED transactions from the fs_info::trans_list.
+I posted a refined version for review. My testing was OK with that one.
 
-The offenders start looping in wait_for_commit() expecting the completed
-transactions to get off the trans_list but since they're bouncing the
-trans_lock the tasks with other/normal priority which are about to delist
-such transactions never get a chance to do so due to lower priority.
+https://lore.kernel.org/linux-btrfs/20261030153617.329733-1-neelx@suse.com/
 
-A simple reproducer can be found in the mentioned email thread [1].
+(Forgot to CC Sebastian, sorry. Though at least the linux-rt-users
+list is there for reference.)
 
-The situation can be resolved by boosting the priority of the starved
-tasks or dropping priority of the offenders. Thought this fix prevents
-the situation from happening in the first place. We simply delist the
-transactions before changing them to completed state. That breaks the
-loop condition.
+--nX
 
-[1] https://lore.kernel.org/linux-btrfs/SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com/
-
-Reported-by: Naulls, Peter <PeterNaulls@eaton.com>
-Fixes: 5fd76bf31ccfe ("btrfs: fix relocation crash due to premature return from btrfs_commit_transaction()")
-CC: stable@vger.kernel.org # 5.15+
-Tested-by: Naulls, Peter <PeterNaulls@eaton.com>
-Signed-off-by: Daniel Vacek <neelx@suse.com>
----
- fs/btrfs/disk-io.c     | 18 +++++++-----------
- fs/btrfs/transaction.c | 15 +++++----------
- 2 files changed, 12 insertions(+), 21 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c628c5081d92..6afcd6ca2a8a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4312,10 +4312,6 @@ static void warn_about_uncommitted_trans(struct btrfs_fs_info *fs_info)
- 			   trans->transid, dirty_bytes);
- 		btrfs_cleanup_one_transaction(trans);
- 
--		if (trans == fs_info->running_transaction)
--			fs_info->running_transaction = NULL;
--		list_del_init(&trans->list);
--
- 		btrfs_put_transaction(trans);
- 	}
- 	ASSERT(!found);
-@@ -4937,7 +4933,13 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans)
- 				     EXTENT_DIRTY);
- 	btrfs_destroy_pinned_extent(fs_info, &cur_trans->pinned_extents);
- 
--	cur_trans->state =TRANS_STATE_COMPLETED;
-+	spin_lock(&fs_info->trans_lock);
-+	if (cur_trans == fs_info->running_transaction)
-+		fs_info->running_transaction = NULL;
-+	list_del_init(&cur_trans->list);
-+	spin_unlock(&fs_info->trans_lock);
-+
-+	cur_trans->state = TRANS_STATE_COMPLETED;
- 	wake_up(&cur_trans->commit_wait);
- }
- 
-@@ -4973,12 +4975,6 @@ static int btrfs_cleanup_transaction(struct btrfs_fs_info *fs_info)
- 		}
- 		btrfs_cleanup_one_transaction(t);
- 
--		spin_lock(&fs_info->trans_lock);
--		if (t == fs_info->running_transaction)
--			fs_info->running_transaction = NULL;
--		list_del_init(&t->list);
--		spin_unlock(&fs_info->trans_lock);
--
- 		btrfs_put_transaction(t);
- 		spin_lock(&fs_info->trans_lock);
- 	}
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d265fac023e5..cd7dff5ba59b 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2124,12 +2124,7 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans, int err)
- 
- 	spin_unlock(&fs_info->trans_lock);
- 
--	btrfs_cleanup_one_transaction(trans->transaction);
--
--	spin_lock(&fs_info->trans_lock);
--	if (cur_trans == fs_info->running_transaction)
--		fs_info->running_transaction = NULL;
--	spin_unlock(&fs_info->trans_lock);
-+	btrfs_cleanup_one_transaction(cur_trans);
- 
- 	if (trans->type & TRANS_SB_INTWRITER_MASK)
- 		sb_end_intwrite(fs_info->sb);
-@@ -2641,6 +2636,10 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 		btrfs_clear_space_info_full(fs_info);
- 
- 	btrfs_set_last_trans_committed(fs_info, cur_trans->transid);
-+
-+	spin_lock(&fs_info->trans_lock);
-+	list_del_init(&cur_trans->list);
-+	spin_unlock(&fs_info->trans_lock);
- 	/*
- 	 * We needn't acquire the lock here because there is no other task
- 	 * which can change it.
-@@ -2650,10 +2649,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
- 	wake_up(&cur_trans->commit_wait);
- 	btrfs_trans_state_lockdep_release(fs_info, BTRFS_LOCKDEP_TRANS_COMPLETED);
- 
--	spin_lock(&fs_info->trans_lock);
--	list_del_init(&cur_trans->list);
--	spin_unlock(&fs_info->trans_lock);
--
- 	btrfs_put_transaction(cur_trans);
- 	btrfs_put_transaction(cur_trans);
- 
--- 
-2.53.0
-
+> As some background, it appears the bug was introduced in early 2022:
+>
+> https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=5fd76bf31ccfecc06e2e6b29f8c809e934085b99
+>
+> And is present in all kernels from 5.15 on.
+>
+>

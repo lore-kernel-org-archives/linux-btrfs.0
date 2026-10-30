@@ -1,87 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.222.170
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.160.173
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793371118;
-	b=a9p0T+mSUTTxrwM71fE0yIw9YX9HYJiAjLkXCrUHC0pWX2DOtAqqo4h2hHWwEvL3/Fgz
-	 Xg0We5bVIu7Z5V/6NoT0sKhcsykISYiuJygUeoczi1waXFyPhz47VNxVdH2lcEJ4foW7L
-	 hiDVS/y5Q5yQadXGAiqrPIZ6k3NsUaHc6XsxIv3NSdQUY8S23bhxfJW8qQGoXCkeVvFYM
-	 pitUZHXBUpTa9h8PoGjodj2gjMWeu39J/qWLJIYW/Eik6qwOAHuZgOt4MXbfVL4NJm5rD
-	 YSnFW59OKld1VQR+P6eKCdvDGmmrtlp01ItcNlQdZ73R8/r4tnWyYpqr+iTsRfIYvbg==
+	t=1793371120;
+	b=lVgXuLAaWfv/tfguFs8iCkfzPyNUNeNwJCndgYvyDHHMq67oqDR2k6nokYnAi9UYzVX5
+	 rQdqSmgHD7XTwsxsZSyJjWiycgSh8C+nGOEvzHUW7mdxYFjGudv6nTYMJCJGZGEK5yTjh
+	 nFk0gsfqotxyhVp6dXCVXcSsLt5fjfh7JvZjOEJEbiDvcNBCDiatTRa9uuOCBlei7oVCz
+	 j5De6GVzFBsd5XQJ+87cDhmsOrfLgtzTTQHD5pzCYeMsFbbdN61yJ3WDM98+JO22Cbl4q
+	 +4myH0owEYBF0oMcjzFmDsPh16RRRJOd3/vDxAKRISQn1QBMBniMxeiWop5w2NoUpSg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793371118;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793371120;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Date:Subject:
 	 MIME-Version:Content-Type:Content-Transfer-Encoding:Message-Id:
 	 References:In-Reply-To:To:Cc:X-Mailer:X-Developer-Signature:
 	 X-Developer-Key;
-	bh=YWVdVdDv8VwCrLHdSZsqFMcHtvb0punvOdbIhnhu5XE=;
-	b=mKoQuktKPuQPkj2+h/LyqfBg3gyFe18qUm13ZRYQLmnVZTRlVnWAPMyV2XR7iXbn1zRA
-	 MFECPGjTz3kcchqRHNGc2JD0cM7UWJQGkhseWLUSxuNtUOsZV9OtvJx88FEYp68GFVZQo
-	 qPAh4H6bivwXNERTs0/01UuZGZ5Fy81P73Zcdg6lyUShJZBsjD/n8LpRnym8b13XHzPJr
-	 ttHwQAFCqGFwVLGr09tKVnXmsiDtn1+Ys/+7U+05Lew8YP800RYvhP+aUyV/dBgBALP1n
-	 WF1/8XLgYpZAyHDcMaCDE4RVX+Fo86D/ClGV+2zOGB0uCWUqzZ7IxZDpTsKfU3+u/kw==
+	bh=WjjyRi4tupTzbJkDr3stKVd4gLMEfuLz9mMt/2TKXi4=;
+	b=l7BfbT8x8Y9ZoGdQORHfeG+TGRbR4RlFuAtoqGqAM0IwZGqsIZxGdLFTk3vgtkZ+DMW7
+	 vJE/JzAgpYn73cvlRaXYBlC26YznJEo26l16RozbCqeb5XbP7uCHeLeHBto7bTWw/4qdm
+	 Ss3BpkR58fZx4s2hABw2dSNdXSxrCp1EpJRr+gSxnCam5iSfoJA12WsPKjJNTkvtUynnD
+	 dS8o2LzatbU6pVI0g6LTcAR2w8/ORmcwIZxWOeOQVr9Qq/s1Op51gv9KJNuoR/p7wOaRT
+	 QW0Rf1H9WzY+e1L3adKwtk30NQfBQbrb5qLpy6UAYdNHY6GG6WSP91y6sx94qwF7gjg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=toxicpanda.com;
 	spf=pass smtp.mailfrom=toxicpanda.com;
-	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=T4ngUMls;
-	arc=none smtp.remote-ip=209.85.222.170
-Received: from mail-qk1-f170.google.com (mail-qk1-f170.google.com [209.85.222.170])
+	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b="Gvfih/jy";
+	arc=none smtp.remote-ip=209.85.160.173
+Received: from mail-qt1-f173.google.com (mail-qt1-f173.google.com [209.85.160.173])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E7C9F60A2602
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:38:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E7C9F60A2602
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BB2A860A2602
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:38:39 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BB2A860A2602
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=T4ngUMls
-Received: by mail-qk1-f170.google.com with SMTP id af79cd13be357-93efc0452b5so52792885a.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:38:37 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=Gvfih/jy
+Received: by mail-qt1-f173.google.com with SMTP id d75a77b69052e-53669f7b518so8157991cf.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:38:39 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda.com; s=google; t=1793371117; x=1793975917; darn=vger.kernel.org;
+        d=toxicpanda.com; s=google; t=1793371119; x=1793975919; darn=vger.kernel.org;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=YWVdVdDv8VwCrLHdSZsqFMcHtvb0punvOdbIhnhu5XE=;
-        b=T4ngUMlsgcJdtv3aDZVOcuI3J4DtwPPb5vGgEakgUqH8ErQNyQzHrNHb6mhn1DrpL1
-         Nj6nO93qyJtN9C0x1uBKJV0ESezHbjI0Z/sjtQYQ7/xHjXfsegSC0+TwgocuY7IxheWg
-         mYdJe0sYnbLZNl61itKMbLLDMBk4tS6hexZ5YZJbG9a26fkH6LeKlfT5F6Ga5aOPg8WT
-         WUetK+nneOZ5wuE2YcTxad7CGcCQK1S013Ik/ujcLf5PiKph4Ijlic2XBN2N0lNmac+A
-         E7vHHTl7ETDAQw4CdOOVWY1pUGLRn0puG5it2mT42DN6Rk23T+CSbgaUNmS2Xo9Kdask
-         jD3g==
+        bh=WjjyRi4tupTzbJkDr3stKVd4gLMEfuLz9mMt/2TKXi4=;
+        b=Gvfih/jydP+S2kc56d5DUagGJ/G3CgkYcA1FiGPEc4iFncpHFPwxKejcrsnta7v+km
+         eDihh5ttKHPs9ptBfcHkU7qInB263Vuj8HBcqobcBtDctbNE3ESAaDG/neroqr7614Fu
+         FGuz1KYMtJj2YpF40XieO4LT9SfEyYV+fhkSijCC/HoWZJk/cI7m4cFnnkF6u/g6jXyw
+         p0MCgX9b6IOGkwFdgAGMQ/LXRmyqDLLztJmchiXOZJJvP9rxt9h+I3NDF4WeTiUQNu3s
+         OhSKGoaHnKyfP8WEzyYDMdpZ0faVI/jfmJrOwmNE19iZQcTyHHwvxu8uUbfH/mAUBiQ4
+         V3XA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793371117; x=1793975917;
+        d=1e100.net; s=20260707; t=1793371119; x=1793975919;
         h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
          :content-type:mime-version:subject:date:from:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=YWVdVdDv8VwCrLHdSZsqFMcHtvb0punvOdbIhnhu5XE=;
-        b=hDS/vpJS4FTmpCIgvcnkalM5nyW61w9FDikq0R6q6O9KWL1Htuitv2Jv4e2po26Zgc
-         crSm+ZW0nf2z/dZr0KLi9Cfbs1yHR+6dGCBDd8yxfzyl1X/VCPy946qF8QhwKXpfVn9n
-         l9n1TpRM4LK8HzjJsp66SmfBDVyb2g1vqax32lIy8dQJNNuJG/QViNjC8RZiR/WUZOQ6
-         0Ummgza5DnnJZ/8JV/MAR3/PtFrMM1ud8ojoiA/2lTnSKpP20QS3JmYqyiVce5YaNRZ9
-         GHoOE4iWpm0cgs84vqjcV34E2ZSAqpQaDdLR2qKJFNtkQJg21H4MkJmc0QGffIEn07u/
-         Bvgg==
-X-Gm-Message-State: AFq9FYIxmB5yq+YNhEPJgiFunxfZ9CdZYoPXG1ki4NCjOUhdij/eqbXw
-	6+RY4QhibFKcuYFTah8kCruYxk8Z9CBNgTNTFkjlKBEyI4Sx/R+gRI4v1X0gQGtHFSA=
-X-Gm-Gg: AYBFou37XmvesPEIiMCEVRKgq3Jt/442WBoqsAY3GqfRJrJZK8PHRLpd8z+kni3M1lO
-	JweqN96VeTulciUlI7h/bNeinStT6bwUrVrwhBQuYBWjGnZWgoX2hXIE6Nkg2R+4NAClmT+o2Xy
-	ufh+/pJ9JQT6GUcUrPDGtfk9Q0zdzFM3hMzP5AJr6sq/WnD2AjzOfbDfCJ00npZEumlFlHGhjGr
-	PAlbmGWpzCSj7JXNcS+AeDZwn/HYAM7jpKk/ol+0GtUhB4fvGCq2XYqfWy/bRV3i0AbklA03kaG
-	RIGeNnro9MLqc/1FmP7+bG3uBc5g0ycfTl40mCV0nbAllH8lQ2OUMexQPfZ5wgmP+8bOtm5NcvY
-	szGd1WHsVCyt3AHdXF9xeQ819k3o9BLLtxDwmbZfpOSWC3UMFccxA8OgOeUZmxSni4bS4M8qRVF
-	1N4+S/ng5Y987J3VUxh0BDeDSxiW8hgXieLERV3HOj8TGMixi7Wd91gnjXFN/89u/ThGq8L8vWZ
-	7rNcQYP6rhR+oGt3kbPEytLzEYisgAVYoQ1NGrR2W62l0QDVpWMLk5QbCgNeMK6qstHFGCdeYTh
-	Spo2jwPnwotv1HOQasU/oZt11BVU6/D4sclTTzCfugxX
-X-Received: by 2002:a05:620a:31a6:b0:93a:9ef5:d370 with SMTP id af79cd13be357-94421541a71mr424179285a.1.1793371116843;
-        Fri, 30 Oct 2026 07:38:36 -0700 (PDT)
-Received: from toxicpanda.com ([153.61.196.254])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-94425ae7f53sm154725885a.41.2026.10.30.07.38.36
+        bh=WjjyRi4tupTzbJkDr3stKVd4gLMEfuLz9mMt/2TKXi4=;
+        b=QMYG9NsN9qlMiG3joobiVR8foqc6OWcdF6tK3pJxAhOAKtP9ulS5CUUK0J5H2Tkt4b
+         gq5wbOgS0Z5x9M/7RmWUkzV6F/Xkq5d0C5xgKWy/piIlDTv7iQBJ1UD+NsleIrSl3xIg
+         y88+mqowDM/q+zgPIueB35W6ZUzexlg04dn3hkEM0Y45wV+1LV/fqHNQf668CaKI2DlI
+         eB3yxrv2fEBeAAW0KiB0V9XrLNBuVRkte1jslo5MnjN79y/1X2h1Q0kNh9qsghC4lY1A
+         AM5fWkgXk9IVV/FRVG6Ma5IVpty22rp2moo9dKolr2Z4WhnOpqgtoYIqBqpY+771te30
+         mkTw==
+X-Gm-Message-State: AFq9FYJjAlbrL21fttnC+5vBF82yZglbmkHFVQfWxw8rdFEKKY3NzSV3
+	A+XRnGFTpjlMdZ07r74so0ZhTWH2fXMnaD9lZFAsW31SgEFFMFK/WJdOFe7kGd/IZh0=
+X-Gm-Gg: AYBFou3qgxAjxwNOCJel2ClbEvIZzPiEdEZfYjtJ62QlsLA2uRqpqhdoi+fsXO0sycv
+	ze+HDh6P8e1AtUME4wRYe2gVfw65t1iIAAHX6g0KACErL0Rr1nfLM3qSlWd1lKeu0wx+4BR2xPm
+	BYMP7VwRaSqVHndGajV4CVWv/8+X4KOer86KHTTqevCZcGOU7+AQcZOcjWW0NV93PSvSLY51aW9
+	tb6FqJQP/halxbY0TGhn5jGRgx+ZmckjgTI+6fJ+uzEYXzc4LRpcq0yZmNaN5z7oWmozThwyX5Y
+	1gMhLFvI2Z99LchHbJjt1IL+bOCoLkaSnHmHz13mJbNdGrdqsBBB/I5NKP0rP1BKes37expltfV
+	cXUECSovWOmUV/22dyrk86+NPnhmozx6Q/J9wWcMNvBpRbFJy69Z0prymKB0mJwLydCDLDOdh5p
+	uaDsYTkX7eoyzge4tlmRz2F5QapaeDa0qjQs/Ce26e/1u5Hk7q5g1TTykUy/PGQQDOOrxdGxsoY
+	ogtJCfgzjy7753U/iKqyRwF/PLy6hGNmJNs2lBKnNOLvnO6S8Wv+KO0IkI0wavLa3q9MCCXTkLG
+	t/l4y8HlZgMbjiQAJ6OHT+iHZUY6GHvDc4gEsmhW5NaT
+X-Received: by 2002:ac8:5dd1:0:b0:536:7cc1:4b6b with SMTP id d75a77b69052e-542b6d60c04mr37510031cf.27.1793371118632;
+        Fri, 30 Oct 2026 07:38:38 -0700 (PDT)
+Received: from toxicpanda.com ([153.61.196.255])
+        by smtp.gmail.com with ESMTPSA id d75a77b69052e-54311f775a2sm14756131cf.14.2026.10.30.07.38.37
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 30 Oct 2026 07:38:36 -0700 (PDT)
+        Fri, 30 Oct 2026 07:38:38 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
-Date: Fri, 30 Oct 2026 14:38:10 +0000
-Subject: [PATCH 4/5] btrfs: don't report success for a skipped log sync
+Date: Fri, 30 Oct 2026 14:38:11 +0000
+Subject: [PATCH 5/5] btrfs: don't trim the target of a device replace
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,7 +93,7 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-Message-Id: <20261030-b4-btrfs-data-integrity-v1-4-f4d4196731e6@toxicpanda.com>
+Message-Id: <20261030-b4-btrfs-data-integrity-v1-5-f4d4196731e6@toxicpanda.com>
 References: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
 In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
@@ -103,99 +103,68 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  stable@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
 X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=openssh-sha256; t=1793371105; l=3574;
+X-Developer-Signature: v=1; a=openssh-sha256; t=1793371105; l=2371;
  i=josef@toxicpanda.com; h=from:subject:message-id;
- bh=xvriq4k8yU1xTo1L0ni2NpLc5WPYJJotLDeDpDjcR/g=;
+ bh=ztZDF1ZqGxtS4T/4NOiKbH7gRDfFsw+EMU9xNlQqIGQ=;
  b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
  JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
- QEI3nd3pglE2BkFGIHKQm5gtuyKdRtKifCUo7jyNYl2tL6LWZjsL6Lt1LrCfpa3fz9yNGdSQsfI
- h1Yl7r5GC1QA=
+ QBjJtw2SeJqqjavV2wfqU2RgOh+bTq9opRfgFQHFXWauOl3PmQxQwkv8EuRgek+7TziAL7tAr7K
+ rPi98RgidgAg=
 X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
  fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
 
-When a commit of the log root tree gives up, because the transaction
-needs a full commit or writing the log failed, btrfs_sync_log() still
-advances log_transid_committed and hands the result to the contexts on
-the list. Unlike a successful commit it does not advance log_transid, so
-the log transaction it just retired is still the one new syncs join.
+FITRIM also discards the space of every device that is not allocated to a
+chunk. btrfs_trim_free_extents() goes over fs_devices->devices and, for
+each device that is writeable, discards the ranges that have neither
+CHUNK_ALLOCATED nor CHUNK_TRIMMED set in device->alloc_state.
 
-A sync that gets to the log root tree after that adds its context to
-the emptied list, sees log_transid_committed >= its log_transid and
-returns its log_ret, which is still 0:
+The target device of a running replace operation is on that list and it is
+writeable. But its alloc_state is empty. The allocated ranges of the
+source device are only copied to it by btrfs_set_target_alloc_state(),
+when the replace finishes. Until then the whole device looks unallocated,
+so an fstrim discards everything that was copied to it so far, and what is
+being written to it in parallel to the source device.
 
-  fsync A (subvol 1)           rename       fsync B (subvol 2)
+The replace finishes without any error and the source device is dropped.
+With a single device filesystem, 700M of data and fstrim called in a loop
+while the replace runs:
 
-                                            btrfs_need_log_full_commit()
-                                              -> false
-                               btrfs_set_log_full_commit()
-  btrfs_need_log_full_commit()
-    -> true
-  btrfs_remove_all_log_ctxs()
-  log_transid_committed = N
-  log_transid stays N
-                                            log_transid = N, log_ret = 0
-                                            log_transid_committed >= N
-                                            return 0
+  BTRFS info: dev_replace from /dev/vdb (devid 1) to /dev/vdc finished
+  BTRFS error: bad tree block start, mirror 1 want 30638080 have 0
+  BTRFS error: bad tree block start, mirror 2 want 30638080 have 0
+  BTRFS info: scrub: not finished on devid 1 with status: -5
 
-btrfs_sync_file() then ends the transaction without committing it, and a
-crash before A's transaction commit loses what B was told is durable.
-This was reproduced with delays added to btrfs_sync_log().
+Skip the target device. The flag is cleared with the device list mutex
+held, after the alloc_state was set up, and the trimming code holds that
+mutex while it works on a device.
 
-Fix by advancing log_transid when a commit of the log root tree gives
-up, so a later sync joins the next log transaction and either commits it
-or gives up itself. The check for an already committed log transaction
-can then no longer be true, so assert that it isn't, and still force a
-full commit if it is.
-
-Fixes: d1433debe7f4 ("Btrfs: just wait or commit our own log sub-transaction")
+Fixes: 499f377f49f0 ("btrfs: iterate over unused chunk space in FITRIM")
 CC: stable@vger.kernel.org
 Assisted-by: LLM
 Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
- fs/btrfs/tree-log.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1d9dfb63fc5a..b542b1d97989 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3437,11 +3437,20 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	if (log_root_tree->log_transid_committed >= root_log_ctx.log_transid) {
-+	/*
-+	 * A commit of the log root tree moves log_transid on even when it
-+	 * gives up, so the log transaction we just joined can't be done.
-+	 */
-+	if (unlikely(log_root_tree->log_transid_committed >=
-+		     root_log_ctx.log_transid)) {
-+		ASSERT(0, "log_transid_committed=%d log_transid=%d",
-+		       log_root_tree->log_transid_committed,
-+		       root_log_ctx.log_transid);
- 		blk_finish_plug(&plug);
- 		list_del_init(&root_log_ctx.list);
-+		btrfs_wait_tree_log_extents(log, mark);
- 		mutex_unlock(&log_root_tree->log_mutex);
--		ret = root_log_ctx.log_ret;
-+		ret = BTRFS_LOG_FORCE_COMMIT;
- 		trace_btrfs_sync_log_exit(trans, root, ctx, ret);
- 		goto out;
- 	}
-@@ -3575,6 +3584,13 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_lock(&log_root_tree->log_mutex);
- 	btrfs_remove_all_log_ctxs(log_root_tree, index2, ret);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9b0a5c6b96f3..22155507f905 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6641,6 +6641,14 @@ static int btrfs_trim_free_extents_throttle(struct btrfs_device *device,
+ 	if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) || !device->bdev)
+ 		return 0;
  
 +	/*
-+	 * If the commit gave up, log_transid still names the log transaction
-+	 * we are retiring. Move it on, so that nobody joins a log transaction
-+	 * whose result has already been handed out.
++	 * The target of a running device replace has nothing in its alloc_state
++	 * until the replace finishes, all of it would look unallocated and we
++	 * would discard what was already copied to it.
 +	 */
-+	if (log_root_tree->log_transid == root_log_ctx.log_transid)
-+		log_root_tree->log_transid++;
- 	log_root_tree->log_transid_committed++;
- 	log_root_tree->log_commit[index2] = false;
- 	mutex_unlock(&log_root_tree->log_mutex);
++	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
++		return 0;
++
+ 	/* Discard not supported = nothing to do. */
+ 	if (!bdev_max_discard_sectors(device->bdev))
+ 		return 0;
 
 -- 
 2.55.0

@@ -1,84 +1,84 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793333751;
-	b=g92XI8QQGQjaV52ZrS626IiliPOoPrfMlpxVqxKELAisxmhNNhuvj5qfBZVMsur2AkCa
-	 /14cpF22M8YyF7dTOg0fDTu/FEzHRd8Z7pkcDIyKgR2IfuZjz8stmJ3+4bpWJ02RaOcYU
-	 LZxEWJyxNVJNuI8N+Gl81QaDC+NCbMWNWFl0V6owhZjNbg+wpN6brA0iG0wlHehJIjNSw
-	 JTSx6xiZNhs2ozVAZwGPYSGtV+6Nmm63AW/B2oVic+bdgIXY6B85ZW+fnINNS8jwN+MKD
-	 C33SQO9lb2G1a2txog/LSTvF2LIiDgWOt0BzLKaQ8dtuc3KSEY1hy0OhER8AJN+nBbw==
+	t=1793333753;
+	b=Ld7vU1RFz/YQqPD4a/MPcLGgz4289HrubfaLw6hEx4udkIHsNz/cUIrHT4oo6WEQHXd4
+	 ORMopLgEnXgVHVCA4w37GJWlpaAm30OXLQJ7X8yjm0KeUYmUeKgUBetkMSuPP2RGRzP7V
+	 1k3ktJK2orGV6TLEFNMTHIG7qNuMnA1eogZ7XNNN0Jj5tNeeESm2SAI6Q5w+1dQdFXlKR
+	 zqgWnQwptqZ7JO5ewN55Hs2rvgqUdatAuZzpphxnCfC6+jb3b2/v5F9VwSiV1GkAxfHc9
+	 d+gWm/roKZBGBTnPFLteUm0sq21X8Dpeqn5FB2STixqEq7WUDCnPFdIpn0SG68rwENQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793333751;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793333753;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
 	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
 	 X-Rspamd-Queue-Id;
-	bh=iW8DRAWMrJhYrKd9MZwNOUXOkKMy7UOSEnBlsZDVPME=;
-	b=0eXkxWiPMQgOrmX4I6Gerb+HOp1j9RU7xCbx7Eb/pY+pNFHBvYotfB1Kg406rqDhqd4J
-	 bx6V50yFopXBbJe8vrPeXQPgUOBkLJMcObByQjXQkHdDdGAVtQnfkU1d1x9ngp9j/PMNW
-	 03B1/SzoqeHph4CcTYhRH1KAxq+Ggk6GAMQzDVsuJCqk79Uro3qggZrF2hERWtJ7u/WEz
-	 U4yRKOKRh9P3IdDOAaHkWCvNRFyjOq+s63uY5yjlIVGVule5uyRe+JVOy1f85DnOFyP4w
-	 /FAUEIvhHQDJYyONmS/qNf8GwjMSdII6XuKjwYKPlXLcLnJ3R7VVqZcdtNqQ6UyblMw==
+	bh=HqFXjNkKyxP/6weH775E2nOMP7LSJ12HzeAZYGgKpes=;
+	b=BJJKg108Qf/kG4HM6QkPgx9q22Kwc6tUgFOEh9DRdcVhyz4SN9m/tB5OoGoRExh4y5Zz
+	 4mecCR4jJWwz1fy0AU1oUeKBhmEpYT35MJ8J0RczsL5bNb3n5pZiYZOmZ/TOeBCQlHGXQ
+	 e80rh0LZ3dQcjBQbS/ks5a3TynaIglFwmefW8VXN9jen0wo2ghu517bx1ohWY3gR3fDCw
+	 yH9Pl1v5Qln+1nAaszrb2a5lJ3cTnexKy5FNv1e/lfol9KSfF5eJl7FHLwHLayEokQL4r
+	 H2eP8oColFlQOrWbt+SjRhr1Mb5rXiOweabQZTtlVWlXDndMutzKovdBgEEkmnp5ACg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=d0FmlGBh;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=GPjL+eKc;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NquvY5CB;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NquvY5CB;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CB00606A321
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7CB00606A321
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3DDA2606A31C
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3DDA2606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=d0FmlGBh;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=GPjL+eKc
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NquvY5CB;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NquvY5CB
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id EE3C7223FE
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:48 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 8E81B1FCFA
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:50 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333749; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793333750; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=iW8DRAWMrJhYrKd9MZwNOUXOkKMy7UOSEnBlsZDVPME=;
-	b=d0FmlGBhmnhKev7YMW2IuWhWPZ6aHujfIgf0xJY2GHEddOtHge1P3kO9h/29CHqx3PLUwe
-	TbnVABhdBrS42nhD9qbMANbc1itTrd7vgKuO/IS+pIszAhZoVes1EKjKBXrovhY9d/FFPm
-	Jue0B+iYZFAJKuRfgSuPZ7cjljTtjxE=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=GPjL+eKc
+	bh=HqFXjNkKyxP/6weH775E2nOMP7LSJ12HzeAZYGgKpes=;
+	b=NquvY5CBulNWPPqiJM4j0JigzK6x5qCs6HA1/kZ5nWdujY8qtZAX5E5y+aEYgOitUIYser
+	SDa03B2utR92RM3XtcyxUv3pqzOiaC1erhJidcoBB2j89ZRdnz25UjeZItTeKUWnaYnYep
+	F2Wopvfdnp1iD2i/+bo1oP8npRt+pfs=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=NquvY5CB
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333748; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793333750; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=iW8DRAWMrJhYrKd9MZwNOUXOkKMy7UOSEnBlsZDVPME=;
-	b=GPjL+eKcEmdYuPyfbt7wXMzWeQxkwYjMBNyGerV2yO1dKXE1OaJ6tBUaqIqNFWaQgkW5Y0
-	PVh0/0Zo0mY8b55Y9BmUwNbwB66qon3kcvtIm0sGYmcE+jYE8N/rrQ+v1Pi00qhNLD/EWt
-	68jGd0DsUSAXm39P5JHA4wF10qANtvI=
+	bh=HqFXjNkKyxP/6weH775E2nOMP7LSJ12HzeAZYGgKpes=;
+	b=NquvY5CBulNWPPqiJM4j0JigzK6x5qCs6HA1/kZ5nWdujY8qtZAX5E5y+aEYgOitUIYser
+	SDa03B2utR92RM3XtcyxUv3pqzOiaC1erhJidcoBB2j89ZRdnz25UjeZItTeKUWnaYnYep
+	F2Wopvfdnp1iD2i/+bo1oP8npRt+pfs=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id DAB4E13432
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:47 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7BAE413432
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:49 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0uAiEekZ5GrDGwAAD6G6ig:T7
+	id 0uAiEekZ5GrDGwAAD6G6ig:T8
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:47 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:49 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/12] btrfs-progs: check: use BTRFS_PATH_AUTO_RELEASE() for repair, qgroup-verify and mode-common
-Date: Fri, 30 Oct 2026 14:45:13 +1030
-Message-ID: <cb564a60920758b7c0a229ba99ed30864d301aa1.1793333606.git.wqu@suse.com>
+Subject: [PATCH 07/12] btrfs-progs: check: use BTRFS_PATH_AUTO_RELEASE() for lowmem mode
+Date: Fri, 30 Oct 2026 14:45:14 +1030
+Message-ID: <c91ea3918133804eb7483d4e84c6943cd5a03274.1793333606.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1793333606.git.wqu@suse.com>
 References: <cover.1793333606.git.wqu@suse.com>
@@ -95,386 +95,91 @@ Content-Transfer-Encoding: 8bit
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
 	R_MISSING_CHARSET(0.50)[];
 	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	ARC_NA(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:dkim]
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
 X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
 X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spam-Score: -12.01
 X-Spam-Level: 
-X-Rspamd-Queue-Id: EE3C7223FE
+X-Rspamd-Queue-Id: 8E81B1FCFA
 
-Convert all on-stack btrfs_path in check/repair.c, check/qgroup-verify.c
-and check/mode-common.c to BTRFS_PATH_AUTO_RELEASE(), and drop the
-btrfs_release_path() calls that only existed as function exit cleanup.
+Convert all on-stack btrfs_path in check/mode-lowmem.c to
+BTRFS_PATH_AUTO_RELEASE(), and drop the btrfs_release_path() calls that
+only existed as function exit cleanup.
 
-This also fixes the path leaks on error paths of:
+This also fixes the path leak on the search failure path of
+find_dir_index().
 
-- populate_used_from_extent_root()
-- get_num_devs_in_chunk_tree()
-
-Explicit releases which are not at function exit are kept.
+Explicit releases which are not at function exit are kept, including the
+ones in check_fs_first_inode() and check_dev_extent_item() which must
+happen before the repair routines modify the trees.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- check/mode-common.c   | 135 +++++++++++++++---------------------------
- check/qgroup-verify.c |  29 ++++-----
- check/repair.c        |   5 +-
- 3 files changed, 62 insertions(+), 107 deletions(-)
+ check/mode-lowmem.c | 202 +++++++++++++++-----------------------------
+ 1 file changed, 66 insertions(+), 136 deletions(-)
 
-diff --git a/check/mode-common.c b/check/mode-common.c
-index eb82bb99e827..7d829661eb3d 100644
---- a/check/mode-common.c
-+++ b/check/mode-common.c
-@@ -55,17 +55,15 @@ static int check_prealloc_data_ref(u64 disk_bytenr,
- 	u64 offset = btrfs_extent_data_ref_offset(eb, dref);
- 	struct btrfs_root *root;
+diff --git a/check/mode-lowmem.c b/check/mode-lowmem.c
+index e5c4c4ab39b7..7d0fad9c557f 100644
+--- a/check/mode-lowmem.c
++++ b/check/mode-lowmem.c
+@@ -284,7 +284,7 @@ static int modify_block_groups_cache(u64 flags, int cache)
+ {
+ 	struct btrfs_root *root = btrfs_block_group_root(gfs_info);
  	struct btrfs_key key;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
- 	int ret;
- 
- 	key.objectid = rootid;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 	key.offset = (u64)-1;
- 	root = btrfs_read_fs_root(gfs_info, &key);
--	if (IS_ERR(root)) {
--		ret = PTR_ERR(root);
--		goto out;
--	}
-+	if (IS_ERR(root))
-+		return PTR_ERR(root);
- 
- 	key.objectid = objectid;
- 	key.type = BTRFS_EXTENT_DATA_KEY;
-@@ -78,7 +76,7 @@ static int check_prealloc_data_ref(u64 disk_bytenr,
- 		ret = -ENOENT;
- 	}
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	while (true) {
- 		struct btrfs_file_extent_item *fi;
-@@ -87,7 +85,7 @@ static int check_prealloc_data_ref(u64 disk_bytenr,
- 		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
- 			ret = btrfs_next_leaf(root, &path);
- 			if (ret < 0)
--				goto out;
-+				return ret;
- 			if (ret > 0)
- 				break;
- 		}
-@@ -108,16 +106,12 @@ static int check_prealloc_data_ref(u64 disk_bytenr,
- 		    disk_bytenr)
- 			break;
- 
--		if (extent_type == BTRFS_FILE_EXTENT_REG) {
--			ret = 1;
--			goto out;
--		}
-+		if (extent_type == BTRFS_FILE_EXTENT_REG)
-+			return 1;
- next:
- 		path.slots[0]++;
- 	}
- 	ret = 0;
-- out:
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -193,7 +187,7 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- {
- 	struct btrfs_root *extent_root = btrfs_extent_root(gfs_info,
- 							   disk_bytenr);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
- 	struct btrfs_extent_item *ei;
-@@ -213,7 +207,7 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- 		ret = -ENOENT;
- 	}
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	/* First check all inline refs. */
- 	ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
-@@ -237,7 +231,7 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- 			ret = check_prealloc_data_ref(disk_bytenr,
- 						      dref, path.nodes[0]);
- 			if (ret != 0)
--				goto out;
-+				return ret;
- 		} else if (type == BTRFS_SHARED_DATA_REF_KEY) {
- 			u64 parent;
- 
-@@ -246,7 +240,7 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- 			ret = check_prealloc_shared_data_ref(parent,
- 							     disk_bytenr);
- 			if (ret != 0)
--				goto out;
-+				return ret;
- 		}
- 
- 		ptr += btrfs_extent_inline_ref_size(type);
-@@ -258,7 +252,7 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- 		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
- 			ret = btrfs_next_leaf(extent_root, &path);
- 			if (ret < 0)
--				goto out;
-+				return ret;
- 			if (ret > 0) {
- 				ret = 0;
- 				break;
-@@ -277,18 +271,16 @@ int check_prealloc_extent_written(u64 disk_bytenr, u64 num_bytes)
- 			ret = check_prealloc_data_ref(disk_bytenr,
- 						      dref, path.nodes[0]);
- 			if (ret != 0)
--				goto out;
-+				return ret;
- 		} else if (key.type == BTRFS_SHARED_DATA_REF_KEY) {
- 			ret = check_prealloc_shared_data_ref(key.offset,
- 							     disk_bytenr);
- 			if (ret != 0)
--				goto out;
-+				return ret;
- 		}
- 
- 		path.slots[0]++;
- 	}
--out:
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -305,7 +297,7 @@ int count_csum_range(u64 start, u64 len, u64 *found)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(gfs_info, start);
- 	struct btrfs_key key;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct extent_buffer *leaf;
- 	int ret;
- 	size_t size;
-@@ -364,7 +356,6 @@ int count_csum_range(u64 start, u64 len, u64 *found)
- 		path.slots[0]++;
- 	}
- out:
--	btrfs_release_path(&path);
- 	if (ret < 0)
- 		return ret;
- 	return 0;
-@@ -653,7 +644,7 @@ int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
- 			      u32 namelen)
- {
- 	struct btrfs_dir_item *di_item;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	int ret;
- 
- 	ret = btrfs_search_slot(trans, root, di_key, &path, 0, 1);
-@@ -661,13 +652,12 @@ int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
- 		error("key (%llu %u %llu) doesn't exist in root %llu",
- 			di_key->objectid, di_key->type, di_key->offset,
- 			root->root_key.objectid);
--		ret = -ENOENT;
--		goto out;
-+		return -ENOENT;
- 	}
+ 	struct btrfs_block_group *bg_cache;
+ 	struct btrfs_block_group_item *bi;
+ 	struct btrfs_block_group_item bg_item;
+@@ -300,7 +300,7 @@ static int modify_block_groups_cache(u64 flags, int cache)
  	if (ret < 0) {
- 		error("failed to search root %llu: %d",
- 			root->root_key.objectid, ret);
+ 		errno = -ret;
+ 		error("fail to search block groups due to %m");
 -		goto out;
 +		return ret;
  	}
- 
- 	di_item = btrfs_match_dir_item_name(root, &path, namebuf, namelen);
-@@ -679,15 +669,11 @@ int delete_corrupted_dir_item(struct btrfs_trans_handle *trans,
- 		error("no dir item named '%s' found with key (%llu %u %llu)",
- 			namebuf, di_key->objectid, di_key->type,
- 			di_key->offset);
--		ret = -ENOENT;
--		goto out;
-+		return -ENOENT;
- 	}
- 	ret = btrfs_delete_one_dir_name(trans, root, &path, di_item);
- 	if (ret < 0)
- 		error("failed to delete one dir name: %d", ret);
--
--out:
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -734,7 +720,7 @@ static int find_file_type_dir_index(struct btrfs_root *root, u64 ino, u64 dirid,
- 				    u64 index, const char *name, u32 name_len,
- 				    u32 *imode_ret)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	struct btrfs_key location;
- 	struct btrfs_dir_item *di;
-@@ -775,7 +761,6 @@ static int find_file_type_dir_index(struct btrfs_root *root, u64 ino, u64 dirid,
- 	found = true;
- 	*imode_ret = btrfs_type_to_imode(filetype);
- out:
--	btrfs_release_path(&path);
- 	if (!found && !ret)
- 		ret = -ENOENT;
- 	return ret;
-@@ -785,7 +770,7 @@ static int find_file_type_dir_item(struct btrfs_root *root, u64 ino, u64 dirid,
- 				   const char *name, u32 name_len,
- 				   u32 *imode_ret)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	struct btrfs_key location;
- 	struct btrfs_dir_item *di;
-@@ -837,7 +822,6 @@ static int find_file_type_dir_item(struct btrfs_root *root, u64 ino, u64 dirid,
- 		goto out;
- 	}
- out:
--	btrfs_release_path(&path);
- 	if (!found && !ret)
- 		ret = -ENOENT;
- 	return ret;
-@@ -1052,7 +1036,7 @@ int check_repair_free_space_inode(struct btrfs_path *path)
- 
- int recow_extent_buffer(struct btrfs_root *root, struct extent_buffer *eb)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key key;
- 	int ret;
-@@ -1085,7 +1069,6 @@ int recow_extent_buffer(struct btrfs_root *root, struct extent_buffer *eb)
- 
- 	ret = btrfs_search_slot(trans, root, &key, &path, 0, 1);
- 	btrfs_commit_transaction(trans, root);
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -1099,7 +1082,7 @@ int get_extent_item_generation(u64 bytenr, u64 *gen_ret)
- {
- 	struct btrfs_root *root = btrfs_extent_root(gfs_info, bytenr);
- 	struct btrfs_extent_item *ei;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
- 
-@@ -1112,12 +1095,12 @@ int get_extent_item_generation(u64 bytenr, u64 *gen_ret)
- 	if (ret == 0)
- 		ret = -EUCLEAN;
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	ret = btrfs_previous_extent_item(root, &path, bytenr);
- 	if (ret > 0)
- 		ret = -ENOENT;
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	ei = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_extent_item);
- 
-@@ -1142,8 +1125,6 @@ int get_extent_item_generation(u64 bytenr, u64 *gen_ret)
- 		 */
- 		ret = -ENOTSUP;
- 	}
--out:
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -1232,7 +1213,7 @@ static int fill_csum_tree_from_one_fs_root(struct btrfs_trans_handle *trans,
- 					   struct btrfs_root *cur_root)
- {
- 	struct btrfs_root *csum_root;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	struct extent_buffer *node;
- 	struct btrfs_file_extent_item *fi;
-@@ -1331,14 +1312,13 @@ next:
- 	}
- 
- out:
--	btrfs_release_path(&path);
- 	free(buf);
- 	return ret;
- }
- 
- static int fill_csum_tree_from_fs(struct btrfs_trans_handle *trans)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_root *tree_root = gfs_info->tree_root;
- 	struct btrfs_root *cur_root;
- 	struct extent_buffer *node;
-@@ -1351,18 +1331,16 @@ static int fill_csum_tree_from_fs(struct btrfs_trans_handle *trans)
- 	key.offset = 0;
- 	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
- 	if (ret < 0)
--		goto out;
--	if (ret > 0) {
--		ret = -ENOENT;
--		goto out;
--	}
-+		return ret;
-+	if (ret > 0)
-+		return -ENOENT;
  
  	while (1) {
- 		node = path.nodes[0];
+@@ -308,10 +308,8 @@ static int modify_block_groups_cache(u64 flags, int cache)
  		slot = path.slots[0];
- 		btrfs_item_key_to_cpu(node, &key, slot);
- 		if (key.objectid > BTRFS_LAST_FREE_OBJECTID)
+ 		btrfs_item_key_to_cpu(eb, &key, slot);
+ 		bg_cache = btrfs_lookup_block_group(gfs_info, key.objectid);
+-		if (!bg_cache) {
+-			ret = -ENOENT;
 -			goto out;
-+			return ret;
- 		if (key.type != BTRFS_ROOT_ITEM_KEY)
- 			goto next;
- 		if (!is_fstree(key.objectid))
-@@ -1373,23 +1351,18 @@ static int fill_csum_tree_from_fs(struct btrfs_trans_handle *trans)
- 		if (IS_ERR(cur_root) || !cur_root) {
- 			fprintf(stderr, "Fail to read fs/subvol tree: %lld\n",
- 				key.objectid);
--			goto out;
-+			return ret;
- 		}
- 		ret = fill_csum_tree_from_one_fs_root(trans, cur_root);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- next:
- 		ret = btrfs_next_item(tree_root, &path);
+-		}
++		if (!bg_cache)
++			return -ENOENT;
+ 
+ 		bi = btrfs_item_ptr(eb, slot, struct btrfs_block_group_item);
+ 		read_extent_buffer(eb, &bg_item, (unsigned long)bi,
+@@ -320,17 +318,11 @@ static int modify_block_groups_cache(u64 flags, int cache)
+ 			modify_block_group_cache(bg_cache, cache);
+ 
+ 		ret = btrfs_next_item(root, &path);
 -		if (ret > 0) {
 -			ret = 0;
 -			goto out;
@@ -488,299 +193,718 @@ index eb82bb99e827..7d829661eb3d 100644
 -
 -out:
 -	btrfs_release_path(&path);
- 	return ret;
+-	return ret;
  }
  
-@@ -1399,7 +1372,7 @@ static int remove_csum_for_file_extent(u64 ino, u64 offset, u64 rootid, void *ct
- 	struct btrfs_fs_info *fs_info = trans->fs_info;
- 	struct btrfs_file_extent_item *fi;
- 	struct btrfs_inode_item *ii;
--	struct btrfs_path path = {};
+ static int mark_block_groups_full(u64 flags)
+@@ -432,7 +424,7 @@ err:
+  */
+ static int is_chunk_almost_full(u64 start)
+ {
+-	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
  	struct btrfs_key key;
- 	struct btrfs_root *root;
- 	bool nocsum = false;
-@@ -1412,10 +1385,8 @@ static int remove_csum_for_file_extent(u64 ino, u64 offset, u64 rootid, void *ct
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 	key.offset = (u64)-1;
- 	root = btrfs_read_fs_root(fs_info, &key);
--	if (IS_ERR(root)) {
--		ret = PTR_ERR(root);
+ 	struct btrfs_root *root = btrfs_block_group_root(gfs_info);
+ 	struct btrfs_block_group_item *bi;
+@@ -452,22 +444,19 @@ static int is_chunk_almost_full(u64 start)
+ 	if (!ret)
+ 		ret = -EIO;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
+ 	ret = btrfs_previous_item(root, &path, start,
+ 				  BTRFS_BLOCK_GROUP_ITEM_KEY);
+ 	if (ret) {
+ 		error("failed to find block group %llu", start);
+-		ret = -ENOENT;
+-		goto out;
++		return -ENOENT;
+ 	}
+ 
+ 	eb = path.nodes[0];
+ 	slot = path.slots[0];
+ 	btrfs_item_key_to_cpu(eb, &key, slot);
+-	if (key.objectid != start) {
+-		ret = -ENOENT;
 -		goto out;
 -	}
-+	if (IS_ERR(root))
-+		return PTR_ERR(root);
++	if (key.objectid != start)
++		return -ENOENT;
  
- 	/* Check if the inode has NODATASUM flag */
- 	key.objectid = ino;
-@@ -1425,7 +1396,7 @@ static int remove_csum_for_file_extent(u64 ino, u64 offset, u64 rootid, void *ct
- 	if (ret > 0)
- 		ret = -ENOENT;
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	ii = btrfs_item_ptr(path.nodes[0], path.slots[0],
- 			    struct btrfs_inode_item);
-@@ -1442,24 +1413,24 @@ static int remove_csum_for_file_extent(u64 ino, u64 offset, u64 rootid, void *ct
- 	if (ret > 0)
- 		ret = -ENOENT;
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 	fi = btrfs_item_ptr(path.nodes[0], path.slots[0],
- 			    struct btrfs_file_extent_item);
- 	type = btrfs_file_extent_type(path.nodes[0], fi);
- 
- 	if (btrfs_file_extent_disk_bytenr(path.nodes[0], fi) == 0)
--		goto out;
-+		return ret;
- 
- 	/* Compressed extent should have csum, skip it */
- 	if (btrfs_file_extent_compression(path.nodes[0], fi) !=
- 	    BTRFS_COMPRESS_NONE)
--		goto out;
-+		return ret;
- 	/*
- 	 * We only want to delete the csum range if the inode has NODATASUM
- 	 * flag or it's a preallocated extent.
- 	 */
- 	if (!(nocsum || type == BTRFS_FILE_EXTENT_PREALLOC))
--		goto out;
-+		return ret;
- 
- 	/* If NODATASUM, we need to remove all csum for the extent */
- 	if (nocsum) {
-@@ -1475,8 +1446,6 @@ static int remove_csum_for_file_extent(u64 ino, u64 offset, u64 rootid, void *ct
- 	/* Now delete the csum for the preallocated or nodatasum range */
- 	root = btrfs_csum_root(fs_info, disk_bytenr);
- 	ret = btrfs_del_csums(trans, root, disk_bytenr, disk_len);
+ 	total = key.offset;
+ 	bi = btrfs_item_ptr(eb, slot, struct btrfs_block_group_item);
+@@ -485,8 +474,6 @@ static int is_chunk_almost_full(u64 start)
+ 		ret = 0;
+ 	else
+ 		ret = 1;
 -out:
 -	btrfs_release_path(&path);
  	return ret;
  }
  
-@@ -1484,7 +1453,7 @@ static int fill_csum_tree_from_extent(struct btrfs_trans_handle *trans,
- 				      struct btrfs_root *extent_root)
+@@ -638,7 +625,7 @@ static int repair_tree_block_ref(struct btrfs_root *root,
  {
- 	struct btrfs_root *csum_root;
+ 	struct btrfs_trans_handle *trans = NULL;
+ 	struct btrfs_root *extent_root;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
  	struct btrfs_extent_item *ei;
- 	struct extent_buffer *leaf;
- 	char *buf;
-@@ -1495,16 +1464,12 @@ static int fill_csum_tree_from_extent(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_EXTENT_ITEM_KEY;
- 	key.offset = 0;
- 	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
--	if (ret < 0) {
--		btrfs_release_path(&path);
-+	if (ret < 0)
- 		return ret;
--	}
- 
- 	buf = malloc(gfs_info->sectorsize);
--	if (!buf) {
--		btrfs_release_path(&path);
-+	if (!buf)
- 		return -ENOMEM;
--	}
- 
- 	while (1) {
- 		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
-@@ -1557,7 +1522,6 @@ static int fill_csum_tree_from_extent(struct btrfs_trans_handle *trans,
- 		path.slots[0]++;
- 	}
- 
+ 	struct btrfs_tree_block_info *bi;
+ 	struct btrfs_key key;
+@@ -763,7 +750,6 @@ static int repair_tree_block_ref(struct btrfs_root *root,
+ out:
+ 	if (trans)
+ 		btrfs_commit_transaction(trans, extent_root);
 -	btrfs_release_path(&path);
- 	free(buf);
- 	return ret;
- }
-@@ -1597,7 +1561,7 @@ int fill_csum_tree(struct btrfs_trans_handle *trans, bool search_fs_tree)
- static int get_num_devs_in_chunk_tree(struct btrfs_fs_info *fs_info)
+ 	if (ret) {
+ 		errno = -ret;
+ 		error(
+@@ -820,7 +806,7 @@ static int find_dir_index(struct btrfs_root *root, u64 dirid, u64 location_id,
+ 			  u64 *index_ret, char *namebuf, u32 name_len,
+ 			  u8 file_type)
  {
- 	struct btrfs_root *chunk_root = fs_info->chunk_root;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key = { 0 };
- 	int found_devs = 0;
- 	int ret;
-@@ -1630,7 +1594,6 @@ static int get_num_devs_in_chunk_tree(struct btrfs_fs_info *fs_info)
- 		}
- 		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 	struct extent_buffer *node;
+ 	struct btrfs_dir_item *di;
+ 	struct btrfs_key key;
+@@ -851,7 +837,7 @@ loop:
+ 	if (ret) {
+ 		ret = -ENOENT;
+ 		*index_ret = (64)-1;
+-		goto out;
++		return ret;
  	}
+ 	/* Check whether inode_id/filetype/name match */
+ 	node = path.nodes[0];
+@@ -882,17 +868,13 @@ loop:
+ 
+ 		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 		*index_ret = key.offset;
+-		ret = 0;
+-		goto out;
++		return 0;
+ next:
+ 		len += sizeof(*di) + data_len;
+ 		di = (struct btrfs_dir_item *)((char *)di + len);
+ 		cur += len;
+ 	}
+ 	goto loop;
+-
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -918,7 +900,7 @@ static int find_dir_item(struct btrfs_root *root, struct btrfs_key *key,
+ 			 struct btrfs_key *location_key, char *name,
+ 			 u32 namelen, u8 file_type)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct extent_buffer *node;
+ 	struct btrfs_dir_item *di;
+ 	struct btrfs_key location;
+@@ -945,7 +927,7 @@ static int find_dir_item(struct btrfs_root *root, struct btrfs_key *key,
+ 	if (ret) {
+ 		ret = key->type == BTRFS_DIR_ITEM_KEY ? DIR_ITEM_MISSING :
+ 			DIR_INDEX_MISSING;
+-		goto out;
++		return ret;
+ 	}
+ 
+ 	/* Check whether inode_id/filetype/name match */
+@@ -983,16 +965,13 @@ static int find_dir_item(struct btrfs_root *root, struct btrfs_key *key,
+ 		if (len != namelen || strncmp(namebuf, name, len))
+ 			goto next;
+ 
+-		ret = 0;
+-		goto out;
++		return 0;
+ next:
+ 		len += sizeof(*di) + data_len;
+ 		di = (struct btrfs_dir_item *)((char *)di + len);
+ 		cur += len;
+ 	}
+ 
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -1347,7 +1326,7 @@ static int find_inode_ref(struct btrfs_root *root, struct btrfs_key *key,
+ 			  char *name, int namelen, u64 *index_ret)
+ 
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_inode_ref *ref;
+ 	struct btrfs_inode_extref *extref;
+ 	struct extent_buffer *node;
+@@ -1408,8 +1387,7 @@ static int find_inode_ref(struct btrfs_root *root, struct btrfs_key *key,
+ 			goto next_ref;
+ 
+ 		*index_ret = ref_index;
+-		ret = 0;
+-		goto out;
++		return 0;
+ next_ref:
+ 		len = sizeof(*ref) + ref_namelen;
+ 		ref = (struct btrfs_inode_ref *)((char *)ref + len);
+@@ -1420,7 +1398,7 @@ extref:
+ 
+ 	/* Skip if not support EXTENDED_IREF feature */
+ 	if (!btrfs_fs_incompat(gfs_info, EXTENDED_IREF))
+-		goto out;
++		return ret;
+ 
+ 	btrfs_release_path(&path);
+ 
+@@ -1429,10 +1407,8 @@ extref:
+ 	key->offset = btrfs_extref_hash(dir_id, name, namelen);
+ 
+ 	ret = btrfs_search_slot(NULL, root, key, &path, 0, 0);
+-	if (ret) {
+-		ret = INODE_REF_MISSING;
+-		goto out;
+-	}
++	if (ret)
++		return INODE_REF_MISSING;
+ 
+ 	node = path.nodes[0];
+ 	slot = path.slots[0];
+@@ -1471,8 +1447,7 @@ extref:
+ 			goto next_extref;
+ 
+ 		*index_ret = ref_index;
+-		ret = 0;
+-		goto out;
++		return 0;
+ 
+ next_extref:
+ 		len = sizeof(*extref) + ref_namelen;
+@@ -1480,8 +1455,6 @@ next_extref:
+ 		cur += len;
+ 
+ 	}
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -1505,7 +1478,7 @@ static int repair_inode_item_missing(struct btrfs_root *root, u64 ino,
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_trans_handle *trans;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	int ret;
+ 
+ 	key.objectid = ino;
+@@ -1531,7 +1504,6 @@ out:
+ 	if (ret)
+ 		error("failed to repair root %llu INODE ITEM[%llu] missing",
+ 		      root->objectid, ino);
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -1570,7 +1542,7 @@ static int lowmem_delete_corrupted_dir_item(struct btrfs_root *root,
+ static int try_repair_imode(struct btrfs_root *root, u64 ino)
+ {
+ 	struct btrfs_inode_item *iitem;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	int ret;
+ 
+@@ -1582,7 +1554,7 @@ static int try_repair_imode(struct btrfs_root *root, u64 ino)
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
+ 	iitem = btrfs_item_ptr(path.nodes[0], path.slots[0],
+ 			       struct btrfs_inode_item);
+ 	if (!is_valid_imode(btrfs_inode_mode(path.nodes[0], iitem))) {
+@@ -1590,8 +1562,6 @@ static int try_repair_imode(struct btrfs_root *root, u64 ino)
+ 	} else {
+ 		ret = -ENOTTY;
+ 	}
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -2259,7 +2229,7 @@ static int __count_dir_isize(struct btrfs_root *root, u64 ino, int type,
+ 		u64 *size_ret)
+ {
+ 	struct btrfs_key key;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	u32 len;
+ 	struct btrfs_dir_item *di;
+ 	int ret;
+@@ -2274,10 +2244,8 @@ static int __count_dir_isize(struct btrfs_root *root, u64 ino, int type,
+ 	key.offset = (u64)-1;
+ 
+ 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+-	if (ret < 0) {
+-		ret = -EIO;
+-		goto out;
+-	}
++	if (ret < 0)
++		return -EIO;
+ 	/* If found, go to special case. */
+ 	if (ret == 0)
+ 		goto special_case;
+@@ -2285,10 +2253,8 @@ static int __count_dir_isize(struct btrfs_root *root, u64 ino, int type,
+ loop:
+ 	ret = btrfs_previous_item(root, &path, ino, type);
+ 
+-	if (ret) {
+-		ret = 0;
+-		goto out;
+-	}
++	if (ret)
++		return 0;
+ 
+ special_case:
+ 	di = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_dir_item);
+@@ -2307,10 +2273,6 @@ special_case:
+ 		cur += len;
+ 	}
+ 	goto loop;
+-
+-out:
+-	btrfs_release_path(&path);
+-	return ret;
+ }
+ 
+ static int count_dir_isize(struct btrfs_root *root, u64 ino, u64 *size)
+@@ -2588,7 +2550,7 @@ out:
+ 
+ static bool has_orphan_item(struct btrfs_root *root, u64 ino)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	int ret;
+ 
+@@ -3094,7 +3056,7 @@ static int check_tree_block_ref(struct btrfs_root *root,
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_root *extent_root;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_extent_item *ei;
+ 	struct btrfs_extent_inline_ref *iref;
+ 	struct extent_buffer *leaf;
+@@ -3283,7 +3245,6 @@ static int check_tree_block_ref(struct btrfs_root *root,
+ 	if (!found_ref)
+ 		err |= BACKREF_MISSING;
+ out:
+-	btrfs_release_path(&path);
+ 	if (nrefs && strict &&
+ 	    level < root_level && nrefs->full_backref[level + 1])
+ 		parent = nrefs->bytenr[level + 1];
+@@ -3313,7 +3274,7 @@ static int repair_extent_data_item(struct btrfs_root *root,
+ 	struct btrfs_key fi_key;
+ 	struct btrfs_key key;
+ 	struct btrfs_extent_item *ei;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_root *extent_root;
+ 	struct extent_buffer *eb;
+ 	u64 size;
+@@ -3353,7 +3314,7 @@ static int repair_extent_data_item(struct btrfs_root *root,
+ 		ret = delete_item(root, pathp);
+ 		if (!ret)
+ 			err = 0;
+-		goto out_no_release;
++		goto out;
+ 	}
+ 
+ 	/* now repair only adds backref */
+@@ -3427,8 +3388,6 @@ static int repair_extent_data_item(struct btrfs_root *root,
+ out:
+ 	if (trans)
+ 		btrfs_commit_transaction(trans, root);
+-	btrfs_release_path(&path);
+-out_no_release:
+ 	if (ret)
+ 		error("can't repair root %llu extent data item[%llu %llu]",
+ 		      root->objectid, disk_bytenr, num_bytes);
+@@ -3438,7 +3397,7 @@ out_no_release:
+ static int read_inode_item(struct btrfs_root *root,
+ 			   u64 ino, struct btrfs_inode_item *ret_ii)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key = {
+ 		.objectid = ino,
+ 		.type = BTRFS_INODE_ITEM_KEY,
+@@ -3450,13 +3409,11 @@ static int read_inode_item(struct btrfs_root *root,
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
+ 
+ 	read_extent_buffer(path.nodes[0], ret_ii,
+ 			   btrfs_item_ptr_offset(path.nodes[0], path.slots[0]),
+ 			   sizeof(*ret_ii));
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -3472,7 +3429,7 @@ static int check_extent_data_item(struct btrfs_root *root,
+ {
+ 	struct btrfs_file_extent_item *fi;
+ 	struct extent_buffer *eb = pathp->nodes[0];
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_root *extent_root;
+ 	struct btrfs_key fi_key;
+ 	struct btrfs_key dbref_key;
+@@ -3664,7 +3621,6 @@ static int check_extent_data_item(struct btrfs_root *root,
+ out:
+ 	if (!found_dbackref)
+ 		err |= BACKREF_MISSING;
+-	btrfs_release_path(&path);
+ 	if (err & BACKREF_MISSING) {
+ 		error(
+ 		"file extent[%llu %llu] root %llu owner %llu backref lost",
+@@ -3683,7 +3639,7 @@ static int check_block_group_item(struct extent_buffer *eb, int slot)
+ 	struct btrfs_root *chunk_root = gfs_info->chunk_root;
+ 	struct btrfs_block_group_item *bi;
+ 	struct btrfs_block_group_item bg_item;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key bg_key;
+ 	struct btrfs_key chunk_key;
+ 	struct btrfs_key extent_key;
+@@ -3789,8 +3745,6 @@ next:
+ 	}
+ 
+ out:
+-	btrfs_release_path(&path);
+-
+ 	total_used += used;
+ 
+ 	if (total != used) {
+@@ -3811,7 +3765,7 @@ static int query_tree_block_level(u64 bytenr)
+ {
+ 	struct btrfs_root *extent_root;
+ 	struct extent_buffer *eb;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct btrfs_extent_item *ei;
+ 	struct btrfs_tree_parent_check check = { 0 };
+@@ -3829,23 +3783,19 @@ static int query_tree_block_level(u64 bytenr)
+ 	extent_root = btrfs_extent_root(gfs_info, bytenr);
+ 	ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
+ 	if (ret < 0)
+-		goto release_out;
++		return ret;
+ 	ret = btrfs_previous_extent_item(extent_root, &path, bytenr);
+ 	if (ret < 0)
+-		goto release_out;
+-	if (ret > 0) {
+-		ret = -ENOENT;
+-		goto release_out;
+-	}
++		return ret;
++	if (ret > 0)
++		return -ENOENT;
+ 
+ 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 	ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
+ 			    struct btrfs_extent_item);
+ 	flags = btrfs_extent_flags(path.nodes[0], ei);
+-	if (!(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
+-		ret = -ENOENT;
+-		goto release_out;
+-	}
++	if (!(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
++		return -ENOENT;
+ 
+ 	/* Get transid for later read_tree_block() check */
+ 	transid = btrfs_extent_generation(path.nodes[0], ei);
+@@ -3874,10 +3824,6 @@ static int query_tree_block_level(u64 bytenr)
+ 	if (header_level != backref_level)
+ 		return -EIO;
+ 	return header_level;
+-
+-release_out:
+-	btrfs_release_path(&path);
+-	return ret;
+ }
+ 
+ /*
+@@ -3889,7 +3835,7 @@ static int check_tree_block_backref(u64 root_id, u64 bytenr, int level)
+ {
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct extent_buffer *eb;
+ 	struct extent_buffer *node;
+ 	struct btrfs_tree_parent_check check = {
+@@ -3943,7 +3889,7 @@ static int check_tree_block_backref(u64 root_id, u64 bytenr, int level)
+ 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+ 	if (ret < 0) {
+ 		err |= REFERENCER_MISSING;
+-		goto release_out;
++		goto out;
+ 	}
+ 
+ 	node = path.nodes[level];
+@@ -3962,8 +3908,6 @@ static int check_tree_block_backref(u64 root_id, u64 bytenr, int level)
+ 		err |= REFERENCER_MISMATCH;
+ 	}
+ 
+-release_out:
+-	btrfs_release_path(&path);
+ out:
+ 	if (err & REFERENCER_MISSING) {
+ 		if (level < 0)
+@@ -4063,7 +4007,7 @@ static int has_inline_shared_backref(u64 data_bytenr, u64 data_len, u64 parent)
+ 	struct btrfs_root *extent_root = btrfs_extent_root(gfs_info, data_bytenr);
+ 	struct btrfs_extent_inline_ref *iref;
+ 	struct btrfs_extent_item *ei;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+ 	unsigned long ptr;
+@@ -4131,7 +4075,6 @@ next:
+ 	}
+ 
+ out:
 -	btrfs_release_path(&path);
  	if (ret < 0)
  		return ret;
- 	return found_devs;
-@@ -1677,7 +1640,7 @@ int repair_subvol_orphan_item(struct btrfs_fs_info *fs_info, u64 rootid)
+ 	return found;
+@@ -4140,7 +4083,7 @@ out:
+ static int has_keyed_shared_backref(u64 data_bytenr, u64 parent)
  {
- 	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	int ret;
- 
- 	trans = btrfs_start_transaction(tree_root, 1);
-diff --git a/check/qgroup-verify.c b/check/qgroup-verify.c
-index 63902ffa6f5b..b58ef36669b2 100644
---- a/check/qgroup-verify.c
-+++ b/check/qgroup-verify.c
-@@ -993,7 +993,7 @@ static int load_quota_info(struct btrfs_fs_info *info)
- {
- 	int ret;
- 	struct btrfs_root *root = info->quota_root;
+ 	struct btrfs_root *extent_root = btrfs_extent_root(gfs_info, data_bytenr);
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
  	struct btrfs_key key;
+ 	int ret;
+ 
+@@ -4198,7 +4141,7 @@ static int check_extent_data_backref(u64 root_id, u64 objectid, u64 offset,
+ 	struct btrfs_root *root;
+ 	struct btrfs_root *extent_root;
+ 	struct btrfs_key key;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
  	struct extent_buffer *leaf;
- 
-@@ -1008,7 +1008,7 @@ static int load_quota_info(struct btrfs_fs_info *info)
- 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 	if (ret < 0) {
- 		error("couldn't search slot: %d", ret);
--		goto out;
-+		return ret;
- 	}
- 
- 	while (1) {
-@@ -1016,17 +1016,15 @@ static int load_quota_info(struct btrfs_fs_info *info)
- 
- 		ret = load_one_quota_leaf(leaf);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- 		ret = btrfs_next_leaf(root, &path);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- 		if (ret > 0) {
- 			ret = 0;
+ 	struct btrfs_file_extent_item *fi;
+ 	u32 found_count = 0;
+@@ -4299,7 +4242,6 @@ next:
  			break;
- 		}
  	}
--out:
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -1217,7 +1215,7 @@ static int scan_extents(struct btrfs_fs_info *info,
- 	int ret, i, nr, level;
- 	struct btrfs_root *root = btrfs_extent_root(info, start);
- 	struct btrfs_key key;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_disk_key disk_key;
- 	struct extent_buffer *leaf;
- 	u64 bytenr = 0, num_bytes = 0;
-@@ -1229,7 +1227,7 @@ static int scan_extents(struct btrfs_fs_info *info,
- 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 	if (ret < 0) {
- 		error("couldn't search slot: %d", ret);
--		goto out;
-+		return ret;
- 	}
- 	path.reada = READA_BACK;
- 
-@@ -1263,7 +1261,7 @@ static int scan_extents(struct btrfs_fs_info *info,
- 				ret = add_inline_refs(info, leaf, i, bytenr,
- 						      num_bytes, meta);
- 				if (ret)
--					goto out;
-+					return ret;
- 
- 				level = get_tree_block_level(&key, leaf, i);
- 				if (level) {
-@@ -1292,23 +1290,20 @@ static int scan_extents(struct btrfs_fs_info *info,
- 			ret = add_keyed_ref(info, &key, leaf, i, bytenr,
- 					    num_bytes);
- 			if (ret)
--				goto out;
-+				return ret;
- 		}
- 
- 		ret = btrfs_next_leaf(root, &path);
- 		if (ret != 0) {
- 			if (ret < 0) {
- 				error("next leaf failed: %d", ret);
--				goto out;
-+				return ret;
- 			}
- 			break;
- 		}
- 	}
- done:
- 	ret = 0;
--out:
--	btrfs_release_path(&path);
--
- 	return ret;
- }
- 
-@@ -1626,7 +1621,7 @@ static int repair_qgroup_info(struct btrfs_fs_info *info,
- 	int ret;
- 	struct btrfs_root *root = info->quota_root;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_qgroup_info_item *info_item;
- 	struct btrfs_key key;
- 
-@@ -1672,7 +1667,6 @@ static int repair_qgroup_info(struct btrfs_fs_info *info,
- 
  out:
- 	btrfs_commit_transaction(trans, root);
 -	btrfs_release_path(&path);
- 
- 	return ret;
- }
-@@ -1682,7 +1676,7 @@ static int repair_qgroup_status(struct btrfs_fs_info *info, bool silent)
- 	int ret;
- 	struct btrfs_root *root = info->quota_root;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	struct btrfs_qgroup_status_item *status_item;
- 	bool simple = btrfs_fs_incompat(info, SIMPLE_QUOTA);
-@@ -1721,7 +1715,6 @@ static int repair_qgroup_status(struct btrfs_fs_info *info, bool silent)
- 
- out:
- 	btrfs_commit_transaction(trans, root);
--	btrfs_release_path(&path);
- 
- 	return ret;
- }
-diff --git a/check/repair.c b/check/repair.c
-index 214b30301f78..4948416f66c4 100644
---- a/check/repair.c
-+++ b/check/repair.c
-@@ -224,7 +224,7 @@ static int populate_used_from_extent_root(struct btrfs_root *root,
+ 	if (found_count != count) {
+ 		error(
+ "extent[%llu, %llu] referencer count mismatch (root: %llu, owner: %llu, offset: %llu) wanted: %u, have: %u",
+@@ -4732,7 +4674,7 @@ static int check_dev_extent_item(struct extent_buffer *eb, int slot)
  {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct extent_buffer *leaf;
+ 	struct btrfs_root *chunk_root = gfs_info->chunk_root;
+ 	struct btrfs_dev_extent *ptr;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key chunk_key;
+ 	struct btrfs_key devext_key;
+ 	struct btrfs_chunk *chunk;
+@@ -4799,7 +4741,7 @@ static int check_dev_item(struct extent_buffer *eb, int slot,
+ {
+ 	struct btrfs_root *dev_root = gfs_info->dev_root;
+ 	struct btrfs_dev_item *dev_item;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
  	struct btrfs_key key;
- 	int slot;
- 	int ret;
-@@ -272,7 +272,6 @@ static int populate_used_from_extent_root(struct btrfs_root *root,
- 
- 		path.slots[0]++;
- 	}
--	btrfs_release_path(&path);
- 	return ret;
- }
- 
-@@ -414,7 +413,7 @@ int btrfs_remove_dev_extent(struct btrfs_fs_info *fs_info, u64 devid, u64 physic
- 		.type = BTRFS_DEV_EXTENT_KEY,
- 		.offset = physical,
- 	};
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_dev_extent *dext;
+ 	struct btrfs_dev_extent *ptr;
  	struct btrfs_device *dev;
- 	u64 length;
+@@ -4833,7 +4775,6 @@ static int check_dev_item(struct extent_buffer *eb, int slot,
+ 		btrfs_item_key_to_cpu(eb, &key, slot);
+ 		error("cannot find any related dev extent for dev[%llu, %u, %llu]",
+ 			key.objectid, key.type, key.offset);
+-		btrfs_release_path(&path);
+ 		return REFERENCER_MISSING;
+ 	}
+ 
+@@ -4867,7 +4808,6 @@ static int check_dev_item(struct extent_buffer *eb, int slot,
+ "dev extent devid %llu offset %llu len %llu overlap with previous dev extent end %llu",
+ 			      devid, physical_offset, physical_len,
+ 			      prev_dev_ext_end);
+-			btrfs_release_path(&path);
+ 			return ACCOUNTING_MISMATCH;
+ 		}
+ 		if (physical_offset + physical_len > total_bytes) {
+@@ -4875,7 +4815,6 @@ static int check_dev_item(struct extent_buffer *eb, int slot,
+ "dev extent devid %llu offset %llu len %llu is beyond device boundary %llu",
+ 			      devid, physical_offset, physical_len,
+ 			      total_bytes);
+-			btrfs_release_path(&path);
+ 			return ACCOUNTING_MISMATCH;
+ 		}
+ 		prev_devid = devid;
+@@ -4978,7 +4917,7 @@ out:
+ static int check_chunk_item(struct extent_buffer *eb, int slot)
+ {
+ 	struct btrfs_root *dev_root = gfs_info->dev_root;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key chunk_key;
+ 	struct btrfs_key devext_key;
+ 	struct btrfs_chunk *chunk;
+@@ -5005,7 +4944,7 @@ static int check_chunk_item(struct extent_buffer *eb, int slot)
+ 			error("chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN (%u)",
+ 				chunk_key.offset, length, BTRFS_STRIPE_LEN);
+ 			err |= BYTES_UNALIGNED;
+-			goto out;
++			return err;
+ 		}
+ 		warning("chunk[%llu %llu) is not fully aligned to BTRFS_STRIPE_LEN (%u)",
+ 			chunk_key.offset, length, BTRFS_STRIPE_LEN);
+@@ -5015,7 +4954,7 @@ static int check_chunk_item(struct extent_buffer *eb, int slot)
+ 		error("chunk[%llu %llu) is invalid", chunk_key.offset,
+ 			chunk_end);
+ 		err |= BYTES_UNALIGNED | UNKNOWN_TYPE;
+-		goto out;
++		return err;
+ 	}
+ 	type = btrfs_chunk_type(eb, chunk);
+ 
+@@ -5053,8 +4992,6 @@ not_match_dev:
+ 			chunk_key.objectid, chunk_end, i);
+ 		continue;
+ 	}
+-	btrfs_release_path(&path);
+-out:
+ 	return err;
+ }
+ 
+@@ -5427,7 +5364,7 @@ static int repair_fs_first_inode(struct btrfs_root *root, int err)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_key key;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	int filetype = BTRFS_FT_DIR;
+ 	int ret = 0;
+ 
+@@ -5473,7 +5410,6 @@ trans_fail:
+ out:
+ 	if (ret)
+ 		error("fail to repair first inode");
+-	btrfs_release_path(&path);
+ 	return err;
+ }
+ 
+@@ -5486,7 +5422,7 @@ out:
+  */
+ static int check_fs_first_inode(struct btrfs_root *root)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct btrfs_inode_item *ii;
+ 	u64 index;
+@@ -5557,7 +5493,7 @@ out:
+  */
+ static int check_btrfs_root(struct btrfs_root *root, int check_all)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct node_refs nrefs;
+ 	struct btrfs_root_item *root_item = &root->root_item;
+ 	u64 super_generation = btrfs_super_generation(gfs_info->super_copy);
+@@ -5628,7 +5564,7 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
+ 		path.lowest_level = level;
+ 		ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		ret = 0;
+ 	}
+ 
+@@ -5652,8 +5588,6 @@ static int check_btrfs_root(struct btrfs_root *root, int check_all)
+ 		}
+ 	}
+ 
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -5682,7 +5616,7 @@ static int check_fs_root(struct btrfs_root *root)
+ static int check_root_ref(struct btrfs_root *root, struct btrfs_key *ref_key,
+ 			  struct extent_buffer *node, int slot)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct btrfs_root_ref *ref;
+ 	struct btrfs_root_ref *backref;
+@@ -5726,7 +5660,7 @@ static int check_root_ref(struct btrfs_root *root, struct btrfs_key *ref_key,
+ 		      ref_key->type == BTRFS_ROOT_REF_KEY ?
+ 		      "ROOT_REF" : "ROOT_BACKREF",
+ 		      ref_key->objectid, ref_key->offset);
+-		goto out;
++		return err;
+ 	}
+ 
+ 	backref = btrfs_item_ptr(path.nodes[0], path.slots[0],
+@@ -5756,8 +5690,6 @@ static int check_root_ref(struct btrfs_root *root, struct btrfs_key *ref_key,
+ 		      "ROOT_REF" : "ROOT_BACKREF",
+ 		      ref_key->objectid, ref_key->offset);
+ 	}
+-out:
+-	btrfs_release_path(&path);
+ 	return err;
+ }
+ 
+@@ -5773,7 +5705,7 @@ int check_fs_roots_lowmem(void)
+ {
+ 	struct btrfs_root *tree_root = gfs_info->tree_root;
+ 	struct btrfs_root *cur_root = NULL;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct extent_buffer *node;
+ 	int slot;
+@@ -5869,7 +5801,6 @@ next:
+ 	}
+ 
+ out:
+-	btrfs_release_path(&path);
+ 	if (found_free_ino_cache)
+ 		pr_default("deprecated inode cache can be removed by 'btrfs rescue clear-ino-cache'\n");
+ 	return err;
+@@ -5880,7 +5811,7 @@ out:
+  */
+ int check_chunks_and_extents_lowmem(void)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key old_key;
+ 	struct btrfs_key key;
+ 	struct btrfs_root *root;
+@@ -5964,6 +5895,5 @@ out:
+ 			err &= ~(BG_ACCOUNTING_ERROR | SUPER_BYTES_USED_ERROR);
+ 	}
+ 
+-	btrfs_release_path(&path);
+ 	return err;
+ }
 -- 
 2.56.0
 

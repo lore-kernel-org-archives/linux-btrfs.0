@@ -1,99 +1,121 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.216.49
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793349249;
-	b=o4pZEZ8jsDsMg7/3Bh0eOjsBMYKGYQojaqMwbi+gD2bA3oEBof6ngI/H2a0mHjQXTWp4
-	 MKheIqEZiV0zQQwaI1hFOH+99c/ys84bQU3dIeswIK58G+fQdcoLHkR0xmnsgCuXmYtmV
-	 Ec1hYDDr+wdpeAMRHtrYUF6UOVki6Vtc7aPEAsSpSBOfBh4Lw87vay3pX4EcmRsgwUvLI
-	 1baYbLvGehqSgWFIUX0V7hzquaZDeDpq+Nn+BiM0jpDLLbgxC66dDGBvNvArpyH6UKqnp
-	 G33HRuBoBb9IGegDErzJumjRDd736UIPY0rbqQ6bG5qA+PCaK8CyaMN0QuSgLT565Kg==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793349249;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=ZdFlKAdQE4/ZTqkRXdV4kEJA5/zwRfRs5jP160wiz4Q=;
-	b=fZWjsokNNSpjmY/+xuPwKIJyOFJyBLiT7kH8zau8VMePDZojE0gHCb2k1iE6XvG1Ns1o
-	 xWUTUBguUZixXK/F6aTNtnYMqVsI4WziWQtofJFGEyeWwjB17Sx3hTT+R7+QhjsxIE5YW
-	 z8NSR1lw624eo4oMJQAWMZy1R5RSgnq+Cw5xSiPvd/U1IIBpw7wG97lgRYt2WfwHQgr+Q
-	 Dxr0Lxh0PJugk4yZgwRRP9jzLyeq9VQCMIqH28/vLBydvi0X5ffeAtutdaYvbb6d661cg
-	 F9KITBwn/LIkv0QiHR8cVYdc6n1pglNws6U/W6Vy9rW4QrugT2X1s2pywqBqiXmZEFQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ko77PEhy;
-	arc=none smtp.remote-ip=209.85.216.49
-Received: from mail-pj1-f49.google.com (mail-pj1-f49.google.com [209.85.216.49])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=68.232.143.124
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793356815;
+	b=Ka2OYihkqc8O0uFCkqbY7aKvydRxKnztYlCl5KgXBRUz4aJ4l0h89uiwgjf7iPzXBI6N
+	 +OA/R8gbh8XjPXn2yYKYOSr8mym2DZ3Apwess2C5a+ujejjn91ZV1D4DWjcxGkoKaspqO
+	 Z3986UfcxJnRiR3VJT9PLprNdOSytX0aleBoe9Wh7uTN4fKY3UIxFyM9mPD9VJA+Dk7KJ
+	 jMwpvTN5qlJAQ5k6aVL7ZCNc/N/8zO0TtRGKGIUKxeAH6EzQPHm6oI25UbEgRxCIAJsVo
+	 Q51TgCh5Z3HaX80SalW+EYUNVfIYx3EGrN5EIuLp37u7jo+tzjpAsA21oEg7XqdhlJg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793356815;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:Message-ID:
+	 Date:User-Agent:Subject:To:Cc:References:Content-Language:From:
+	 In-Reply-To:Content-Type:Content-Transfer-Encoding:X-ClientProxiedBy:
+	 MIME-Version:X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
+	 X-MS-Office365-Filtering-Correlation-Id:WDCIPOUTBOUND:
+	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
+	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
+	 X-Forefront-Antispam-Report:
+	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-MessageData-0:
+	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
+	 X-MS-Exchange-CrossTenant-Network-Message-Id:
+	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
+	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
+	 X-MS-Exchange-CrossTenant-FromEntityHeader:
+	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
+	 X-MS-Exchange-CrossTenant-UserPrincipalName:
+	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
+	bh=S/Idx9nPCv6NRuNcpqFrrNPQI/sPX8vWCrOexs7mTb4=;
+	b=vwduGgTsNhV6CN7+zE6Xhv/f49mZ+8VXLEkVepmQ5xtXPRAwIfai/fB3SCNSy2rZdYu7
+	 3O90itoGb6XLX2M8k1XDBbzAsKTyIaqHb33+RUL9W15VSf1w6T5LQrzlBHxLDHE3noZSQ
+	 oaytKkb5QCHEiMue27+bpBLG0fhrCCLtV7UooEVnkpRiDRcum3ji+yAVdyWDfhYnuhThS
+	 lc4w1BjMAs4dVRq2yoFaCOfbv/ZJOvyUepJ2oGVVp1rNKh+azVBJem8aDXLqGffAdoKxv
+	 uatjS2G2QnPlpG0DPZDqPWMUyZvaP67QHh3WRM8+sHiQktVw06NtaLay9K6Q7uvB+Ng==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=wdc.com;
+	spf=pass smtp.mailfrom=wdc.com;
+	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=a6YVJDZu;
+	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=IXyRoH+W;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=68.232.143.124
+Received: from esa2.hgst.iphmx.com (esa2.hgst.iphmx.com [68.232.143.124])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FA89606A323
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:34:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3FA89606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1D0A8606A31A;
+	Fri, 30 Oct 2026 10:40:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1D0A8606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ko77PEhy
-Received: by mail-pj1-f49.google.com with SMTP id 98e67ed59e1d1-3adf5f6833cso284770a91.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 01:34:08 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=a6YVJDZu;
+	dkim=pass (1024-bit key, unprotected) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=IXyRoH+W
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1793356822; x=1824892822;
+  h=message-id:date:subject:to:cc:references:from:
+   in-reply-to:content-transfer-encoding:mime-version;
+  bh=oYdW/Zr/6jzvg7ku2hgucyvWlbePkoBrfk9x7y8qhOM=;
+  b=a6YVJDZuju200XT5NIApZ1Z1OS8tz3hLYejoFhRn2p9uICY8MdOzMloS
+   /BUc/q/2uGCZCUmin3XsN6ADT989RIwcONZzaCrHRavPdT7Bl5GCf342X
+   nSRpc3X94whuq4RMz1Jv+bwiEoYHhcAFUBc9mbinbwROgxUn+uDqRX0+F
+   bvU9ByCG4odEP30RQ8A9F1MAgOlmDchFZSCBDe3SEO+XCn+YTOuBlk0Ed
+   Ganr9kyGVogtWcB9WMzbA6Be69DSIOJOUUSOz03qbA8T+oncUQfYRPCXB
+   mcrRXYQgQu7oTfvaZTX3cTvuHqukrc+GAlJWKacHBevXX94fFK4QZMWDg
+   Q==;
+X-CSE-ConnectionGUID: PJ993PfKQiOu+UVS8fp+/A==
+X-CSE-MsgGUID: fX7I1n3HRdesU9O1caBRGw==
+X-IronPort-AV: E=Sophos;i="6.27,186,1786982400"; 
+   d="scan'208";a="160372071"
+Received: from mail-westus2azon11010026.outbound.protection.outlook.com (HELO CO1PR03CU002.outbound.protection.outlook.com) ([52.101.46.26])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 30 Oct 2026 18:40:21 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=YrNYqYreyC3OVDdmLq65SZ8duZanKcfAPZPZ2GwKESlvMZAUiGX4KlDu1s/uKdwhy1gzFdkUtwCmcpX8um8rWSRKtlCrsjHpnK838R4+L62D//MJMGeKEaCNTAqDe1yZaLNdIUvjZW0/f4XIr2hDQAdKvncFpvK2e7AtNU8rmWeFIyCbuPoncqk+qeIwgddsUvbGRwYIi7Wzi1xXtc/TBvsK5LBPb3rUNHpfxEJu0dQUm60KQdlpz5SsXgVWnfDxC9SATX4QxzOtt2VBBXhSb9x3Z8eOjZ0wTMDOkpYIFOaYDavarganE9ui1o/yZ4D83/ygZysEFuPCPkhn37vBYw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=S/Idx9nPCv6NRuNcpqFrrNPQI/sPX8vWCrOexs7mTb4=;
+ b=nJxolVDSeI0vu+khCdFMTLnTlxO4EzbdN8qnYytMx3UCoqYoRrfePfh5zFFgAe+tB5G3eJgqFkdW3gKbeOt8R4Xf03cV2ecvzep33b+k7hgezw0C/PkMPvIZrDR/xeb51gdcdz2HZZ/QBvZYQ4Kkx7iLUD0ePQEcUZadFh/+ZHx0X4ajBNtYx8WQ0oSQ45mHzsXFCGKP3ht+mLS7e3gMobYimFMKHSe2yP98nbB68eiFVQLSQbPeYOsW9BG6NVkMYiUyOsc8wlvvckPnuLYGO0dKqV3b/RM3Z7ELNKjVeTdRVeVV3Z798CzavEuJlYjADhP98SltD0uUK9m5YqF5Ew==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793349247; x=1793954047; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=ZdFlKAdQE4/ZTqkRXdV4kEJA5/zwRfRs5jP160wiz4Q=;
-        b=ko77PEhyaeBjXEph+s3SfTjNPDyeiZtyTmCGpwv4s9ZGmkvtmMdrtAJwxibAwKih/7
-         kzwO+dgD/XDGMd8TxnbnRWhTxGYwQHCNTfoItE4dxVlz+iV7/DJeZ23oIgmO31GOPyEi
-         v1n3rL/n4upVFKsqgtF+lIUwKiJ48R8Y0gG2uY6Wo0PH9ynwQXkjMXtAtbS+n6HmDILp
-         8pgHA4CvDvJa31dmIzLHFdVgG9zoSKjfUZUAAAZ7YJIDw3aNT2hkhAe79UqwiqKNC+kt
-         oc3O4/DzFaseb6CeSW88qWJTW2JeZJA38+9HkJU8Bpj1/Zld3Ks5BoOK5I2758FM7hGx
-         xTwg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793349247; x=1793954047;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=ZdFlKAdQE4/ZTqkRXdV4kEJA5/zwRfRs5jP160wiz4Q=;
-        b=HiX/O5vWSRSjm+e+Coa0vZ4tn2pLAUlFz4UgvrvJEk7niaK1izv7pNVEAZ5myIuKMp
-         JHznrNb7mC+3T9tTvX1DWT2C5WVEkLiWdhyatubosyJ/yqylDeQMsjdqywRCNTZIwXlo
-         Yak/dBOX1tKtP72wjrU5E7CPd2d9LUj+PmHRv3WYCCpuaCFO14M7+BknO20ZYJJFLU+S
-         YmFyR4hccJpiyZ28GUZPv3DJzteg36QJ3r8icbqBZUGo5xrPN2+yE7Fj4P7+ZjNIJCIL
-         MXywL2vefs2tBkok4P+6legWuaW/FfBYA9WFSFaVxgo+q6agZ5FOjhyX5E5yUZmBTY+j
-         zzvw==
-X-Forwarded-Encrypted: i=1; AKwUvBwktAYoSgzDSd8Jwqt1pYrs9SWyCohI7e2pKAUamu/8Mes2/oermdxNQKMP59w0RD59Ip0Z+36/XsvkZw==@vger.kernel.org
-X-Gm-Message-State: AFq9FYJlLNe7SoyX7StZCi1JcMi+gQKD9ikWdflZACo66isv92mV2RgX
-	O4eTWFUX+RERg4pDRh2KdKLznek3t3Hzy0KoZqV0Y+GIKh4izrAb8PG/
-X-Gm-Gg: AYBFou1vOa8A7eztS7n756v3ZJolhkZ1UmHhZ6aq0JMvOIkeMscJe7pBTAgGQtNjF9T
-	Z622xCHn6bdMpUa+KF4ndvSV9IkUgZ3eruyWj3hGoB23ORX5WUyiKqbgtLHqeEntlw9LCrpcoGP
-	htY2LszQ8k5dXGYRLVoM5lzhPuvOOg/P3/tXUVJVkQm/61VtWM39e94YdNVOnYSm68dvJqgpCcV
-	l9CSh218Rt4L3ldLcDKL9/CYzOsWuvwhLgBF62+LfqwLVUKxRykF4VlvbpcNIHRk5X+/7b1U4gt
-	h1YK5W9mpz6U4k0jC610g6XGMqMvf/zqyjYKRu4LLZhgfLhuOJft2sTcyak5wqZbY8G/kuYfqo4
-	0TggoagqTn9IaUj9yRtjzj895jQjLJjvS5DW1+zy93PjZfWmNY7tjIhC9Ckjjy8Rb0skNVaNLmz
-	85d3oFR/VHVZdTyhXUUSE/H/1TltbkJ97tgjEPpt0j1/mwFI5miVepDlWhRzxwq716W1/TfQ62r
-	mXd9UbuMx80aLQsq7VET0/9Mf5+dTg0YQy/D8mN942AyguKAIorYVoMPJHjM0BihEGcEc7rc+Ps
-	P5B2rwoppc2l5LCLtzkjAhAIMbF9xpvkmUabTlJKHtg32OJ+ti1kXnB9OWYvj93PkE/4Kr+aXgM
-	IVoM3W8qQCnyxPrHvYwMv0OQY5WFl7eM9eS8/kXp3yHi+x2j3UPdYI39OOyl9pxF6olKEQOA11H
-	m4DZlgD85Dpfc8eQ==
-X-Received: by 2002:a17:90b:5111:b0:3ab:f38:2b43 with SMTP id 98e67ed59e1d1-3ae89772eaemr1169719a91.34.1793349247420;
-        Fri, 30 Oct 2026 01:34:07 -0700 (PDT)
-Received: from spider.bream-herring.ts.net ([103.6.151.236])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae6e8fb2fesm7596386a91.4.2026.10.30.01.34.05
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 30 Oct 2026 01:34:07 -0700 (PDT)
-From: Matthias Goergens <matthias.goergens@gmail.com>
-To: fstests@vger.kernel.org
-Cc: zlang@kernel.org,
-	fdmanana@kernel.org,
-	linux-xfs@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	djwong@kernel.org,
-	amir73il@gmail.com
-Subject: [PATCH v3] generic: test FIDEDUPERANGE result reporting with REPORT_PROGRESS
-Date: Fri, 30 Oct 2026 16:34:03 +0800
-Message-ID: <20261030083403.3041196-1-matthias.goergens@gmail.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20260817095017.948979-1-matthias.goergens@gmail.com>
-References: <20260817095017.948979-1-matthias.goergens@gmail.com>
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=S/Idx9nPCv6NRuNcpqFrrNPQI/sPX8vWCrOexs7mTb4=;
+ b=IXyRoH+WZBp1+QW6Ij4HAgP0zHId2O09UXfWMdJFNRA36j+J6957cJmsX5ESiGG+kGhMlVZ50i6Rpsbc/VJy7nGoOOJPLwj5w4UOp7gP+GinDJbEB8zxfTJCZXr9LTsre8pcRfPkbY8M6UjtosGu32EKUFcDiYBuBcRBYPXjluA=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by SA2PR04MB7610.namprd04.prod.outlook.com (2603:10b6:806:135::8) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.569.10; Fri, 30 Oct
+ 2026 10:40:11 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%4]) with mapi id 15.21.0546.021; Fri, 30 Oct 2026
+ 10:40:11 +0000
+Message-ID: <0feb0d5f-cb66-414d-8405-c3e57da41395@wdc.com>
+Date: Fri, 30 Oct 2026 11:40:06 +0100
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 0/2] btrfs: zoned: fix silent data loss from leaked active
+ zone reservation
+To: =?UTF-8?B?0JzQsNGA0Log0JrQvtGA0LXQvdCx0LXRgNCz?= <socketpair@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+ Naohiro Aota <naohiro.aota@wdc.com>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20261029-btrfs-zoned-active-zone-leak-v1-0-777dd01ff914@gmail.com>
+ <CAEmTpZHvmyPWMFztcG4MT4jszwjXYuwogJKrJgvx2vxESjhnKg@mail.gmail.com>
+Content-Language: en-US
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+In-Reply-To: <CAEmTpZHvmyPWMFztcG4MT4jszwjXYuwogJKrJgvx2vxESjhnKg@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: FR2P281CA0088.DEUP281.PROD.OUTLOOK.COM
+ (2603:10a6:d10:9b::13) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,435 +125,116 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|SA2PR04MB7610:EE_
+X-MS-Office365-Filtering-Correlation-Id: e4966cf0-8438-4728-c17b-08df36722c8a
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|19092799006|23010399003|10070799003|376014|366016|1800799024|22082099003|18002099003|56012099006|11063799006|4143699003|261026121527099003|261026140227099003|261028144727099003|10067099003|261022105027099003|261009223027099003;
+X-Microsoft-Antispam-Message-Info:
+	Qhfupn3ryH7uJF4EG+fVgmXUnvthY0lqpGSQ3p+Gxpo9tSF/2Jr7q+dL2GJVr5vP6XP3Z/7QK8NgsomT7bSp4tADLS28rPy/kAcfxNoC0zJGzHQs1sZ95U+xE6DiZ36OoMyYVznfFsNljJ/uzG9p1WtTAYdFdzaB0AFzWvCX5J3yfJPpf0FiJerRbDVSahhQASxIweGoMQzuCwXCaJfQJIpLvxGUM2ofpylbtB2uMiQMVZ1yDLbC5f8gAPyJ7xQPc16KAeWK1Zr6YihOz/uS3dXOatGO+ph6+Fn6nxC1WK4pzfrTAK0M3EZ+ZxrdtEKX1u1TbEu0iichhJWywAcfGo4lbxytLaB6TK2R2FwGT97moJOiwDtyem511amVdww1dLYyjuN/aJ8DkW8H7Xo+xBsoB5GoVkp0zvVq9epCLKWVxxtx4OJ3XUeZhYbdSKludhJb7wpETH4RsYEq0+E+9GhrnLX0VtuqbvMj6C/KfAF+ZIs28VGIgCYKtucNaVZm/2y0JmyJ+KWEzkIuQFxVfBXLX2Z1Kda+WJ7nLCFQ9rrSDJb2q19MFyUA6CuaJRtxcDsT1g97v0ie0bIh6jKu285iCKKoo9PaRsZcfGDzag1EKgY1/Vp8x4e9wNI6l9gyZFPH5VfIEi5TDTibIjrOaLDGmbsfqNp6xV1Xf4ghuTQ=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(19092799006)(23010399003)(10070799003)(376014)(366016)(1800799024)(22082099003)(18002099003)(56012099006)(11063799006)(4143699003)(261026121527099003)(261026140227099003)(261028144727099003)(10067099003)(261022105027099003)(261009223027099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?utf-8?B?VVBPNUplSXljZzVOZFlwc1ozTTFack9FbkFOM3Y4dWpKVndaSjBnTW1jdlNa?=
+ =?utf-8?B?YWFBWUdCNmUxNHA1VTJjMWNIMmJWbUZZaGxDb3ZkWTcySTV4ZCsvOGY5OFpv?=
+ =?utf-8?B?eVNsZmYyM283R2hwS2JlbFVnYVBnVTBoQ0VEWXRXM0ZIVW1IMWhMSW9aV2M2?=
+ =?utf-8?B?WVpnWm5wRHQwWkdLYk1wVUF5aUszMHJVNHhMU0N3SU5Xam9Dd3ZQMXhWeXN2?=
+ =?utf-8?B?NGlER2l6SGY0QW1kajRPci94czlWeEtDZFdKaDMvcjlzd2RDNkhTRWtzd0ZZ?=
+ =?utf-8?B?dDRoSW1veWMrdEc5S3RGckpJc1ZEVDJBOWRkWml3MnJnMTZaWTVMNmdUaUxB?=
+ =?utf-8?B?Qjd5RFFjRTZtMnZpYmJwclkrdXNnV0NyS01mdmZWRms5dkRLU2hsQVpTYVJR?=
+ =?utf-8?B?RjhqZ3RUWnErbitKZHBjT0RjVzZsT05qVndJei80ZFFoSGkxNENHajJiOVBt?=
+ =?utf-8?B?Nmg3Y3ZiM2ZYNFhvZ2pSUmMzTEk0T1RWc3BBUExwV2pvbytuME5Kb2lLV0Mr?=
+ =?utf-8?B?Tll2L1NXTlNjcGxRT2FMZVBvdHNKRHFWVjBMUm9tUXdMWVk4UVJ6SDVLZWFs?=
+ =?utf-8?B?NlZVOEZlZVdwL0NrenpLWmtjUndyZU1RZVlsRU94aXI0Zlo1eitaK3ptM1hP?=
+ =?utf-8?B?ZjhDL0pCcWFHVUJaV2lLeVh1R3poejVmYlVVRDFxMW5JVGlOUFY5V2ZnNVhn?=
+ =?utf-8?B?M3lYY0xVMmRHVld5bC9MZUhyUlU4Q1pnOGdoN3B1NjBYaGtCVnZibktRUXdW?=
+ =?utf-8?B?ZzAycTRoM1ZlTnFqSmJSTktoSzZsTHAxcXRZVEVhQ3VNKzJzTzBSVmw4Y1FH?=
+ =?utf-8?B?N1YzdGdZZ1UvdW8rRzlxczZhOGdiYi9ram1WL21ML3FDN2lOZ1Q0OGNqWjFQ?=
+ =?utf-8?B?N2RLSERWZ1JVT2x6VGM4N3VZSVlENks1T2RzSkdSL1lxUEs5Tko4cjhwMmNs?=
+ =?utf-8?B?QzFyR2ZZQ1NKVTF0LzVYSms5N2QvL0pWYnRTRkV4TnlFa0NzeGRaR1F0VnBE?=
+ =?utf-8?B?eTdvckgwK0RTZGFNTU5JUnhQci9GMUMzVUxRU094UEZ2Yi82SGpiWSt0cVdD?=
+ =?utf-8?B?S3JjQkcvaktXVThldG1lMGh1dGY0L3UrbXFpVlcveHZlUjJaTDBVR0g1MmR5?=
+ =?utf-8?B?TWkyK0tnS1JKR1BpZ2s3NUpNYm9uSDd6ZlUvU3dybUFLTER1MTVqNG9QMkZU?=
+ =?utf-8?B?b2kzRmZWZkxzYWZFeXlOS0V1R1Rra01BZ0dWeDJwbkM1dFhpNjNKSzUyM3Jy?=
+ =?utf-8?B?MEVIRzFzZUJHQ3BqakFWUVppYlRPU2pTSytta0VzcHhTejZpWTlXVVRUYkFy?=
+ =?utf-8?B?MU5EOENqOVRxcys5MUdTR2l5enhOdlBJL1FGM1lrSzQ0Uld6cllWazZLMFQ0?=
+ =?utf-8?B?Y21UZUh0SWYyVUFzWVR2c3UzNGpXOHozTkhDUE5XTDIwZFFjQWluQlcyUTJq?=
+ =?utf-8?B?TzA4U3NCbEtud3NkMFFKT29sdzFTejVYazFuR083aEFwaEZWdldwdFZlMXdP?=
+ =?utf-8?B?ZkVCamlmdlNvWDhocmRmSDJRbVZPUGcrWTlHQzZjbExkOFpLZU9OU1NYM2RH?=
+ =?utf-8?B?TTQvWHBqWW4xM29sYzBxL3Vxek0rVG1xdldsLzdOOGhvbmd3Z29pUTg1SmRa?=
+ =?utf-8?B?ckNnY3QvVllRZ3dqWCsvbXozREYyS3ZDcy81c0VOV1dLYjhnQ24yM3d2dmFn?=
+ =?utf-8?B?WmJ1RlRhRzlUZWliVGI3dm81aE9sOElGYUlKcmRtTFlLMmY0YUtmVDJzM3pv?=
+ =?utf-8?B?VGNKdkFrakdvMVl3SUtoMHN5blNIbWRzdlZqK2VtaS9MR0RJM0hHdFFCWUlS?=
+ =?utf-8?B?S2J6azlZVnR0Q1p6Wk9idkRWZFEwNjB3c0VUZVFhNHZOdC84UDlwQWU5ZkRp?=
+ =?utf-8?B?SE9tMWtoeUh3c3lyc3FoTVhhOUMxT0NXSlJHTmR5NnZFR0lwU0JFU1JDa3ZJ?=
+ =?utf-8?B?bDNRbGtzcU5PWGJVSVAzbmlDbUd0L2o5R2ZZRjd6UWlJL1ZIRllKUWdUMG5F?=
+ =?utf-8?B?b3VJSHNuTXlUSE02TStVLzAxK3ZFM3ZiRHU0bVVyQzRBbkdZcTBwT2x4TmVB?=
+ =?utf-8?B?NzZQY0ZKeHFoVitpSzh3M3NkRGd3SnRVTCtQcHhVUGJYMnBMVWM0WnRtdjBz?=
+ =?utf-8?B?Qy9FOEhqaEoyMHluejlzcXJSVGdrN2ZkN1VWYmxXak5iWDZzcEdzcUN6bkNQ?=
+ =?utf-8?B?V1lUd080TU1BbWU3VnVKQWkvQm1kSk5qeDhpak5NbEo1RUZsMWZubDRTaUVY?=
+ =?utf-8?B?bWtlcGtQV3AvOXMvdzZtS3ZERW9RV0JZVFJZRlFMaW1rRGFnU0ZjdmxuV004?=
+ =?utf-8?B?VGQ0dmM1cmNiOWFCL0RLVEFVbkdwYndKcU5FTjJJMUZNRUJjM3JYSnFyZ2Zn?=
+ =?utf-8?Q?usOTl2YJiwIirH3WBLWFC+a3viQzn+7KVrZzm0TMRaXUc?=
+X-MS-Exchange-AntiSpam-MessageData-1: Pp3Argr+q2u7gB5+qGO/BoPiXdsI6geSLBI=
+X-Exchange-RoutingPolicyChecked:
+	0JVM0tBlSxO5RPGaP53U0aeukWcV9bYFfQuxtw61f7D5qtBhIMFegIGSWfJSbdhVKvvqLBXBp8RJxk8QDnjn7QLwfmEal3UgaKxPEE3dknSlenb24iUevC57vLEBdDlF2/INV1CQkWJwu+F6IXJ/p8QK/trzjaCuETHS/RLRDMUjjlDryG8ptM6v9Q9xAfSlKIxE5/rIuc5t060wiXzcC+vdl5uExUSmu5necaeY3jNcVifJmFwIf7q8/oMFiqyA5FePrGsh2sPoMSaP3k46U0BrgLDr8O3Gvh+hlcdI0is2wu6QWYB/nK+1cowwlvlkJ7AQq9/zaMrkpQTahi2IRw==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	mQD660OIJShtXamMxUmMtB2C2ZXIQGYPANqoxGczlD6GWKO9tB17bConCYmjHFUgfdJhN09Cg0MTRw/OVgyWb9YJ1v0kO3yGZzjJIkC7T6+5BARkpxFJl7fNtExXoExNf6m8oL5cVlUsblra4WzrdinxZYotm4nvkqj7BvZH3fAkpUAdackYZdPqNvJPuTX6mLhQw+WNXbnc8oAJNrLuSOYN74UXZB792dGgP/Jd93i8AIhV8n3RmSwMMY1xkw/8xL3scyLfYm7gi8UbTxpeF/lquoU4jR6RmSovezpVUM7R6RM6YIbQ5vabE4GA2TQirs0/Dy1v018+mx9MR3aG5MyEM8h1JxRAjq2A+bhueUjwco73jHU34nPPUdU0z6TAl9X9fzlGOL1btd0dnvQb8IWLxNmMs4N5Xm6lZZcjWhEuSrHrT1chNutHFtW1FzJP952TvUN8t5p7EcRsKpvEbiKIbS8kPcuVQ5wYPBwLK7g7JYIqAccsXkX8FfYLIX3OAAvoFV4Zs8PyHFGm4mYUF/oJOp1ZmtNdx5cOCjkbAdDL4iV1IIg5xTHmKE9jdB8aYOLtUUpFWaMqaT9i4+Gi1CSOQVgePoI6u18QnSLgacjwzuhl/weypbGSZcOeVyMY
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: e4966cf0-8438-4728-c17b-08df36722c8a
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 30 Oct 2026 10:40:11.3866
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: yzOTDy4C5PruL8aTCxeulQikcW+/5LbhLE3TH1HDZOpEPd0vRQK4aTn2Q0UqNLZz8kqKnpIV7Gb19rohrel+2xBx/rGn2pLAZnT8cd0ujAo=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA2PR04MB7610
 
-Add a raw FIDEDUPERANGE helper that reports each destination's
-bytes_deduped and status, and a test for the new
-FILE_DEDUPE_RANGE_REPORT_PROGRESS flag: explicit zero-length success, a
-request shortened for an interior destination but not for one ending at
-EOF, a sub-block request that makes no progress, differing contents
-(status DIFFERS, zero bytes), a per-destination error, rejection of an
-unknown flag bit, and one unflagged case pinning the legacy reporting of
-the requested length.  The test is skipped on kernels that reject the
-flag.
+On 10/29/26 11:00 AM, Марк Коренберг wrote:
+> Adding Johannes, as this overlaps with his recent zoned work.
+Thanks, I won't be able to review these patches today and I'm off next 
+week. So please be patient, they're still on my todo list.
+> A few notes on how this series relates to what is in btrfs for-next and
+> on the list:
+>
+> - The series is based on master, but it applies cleanly to btrfs
+>    for-next as of today (c393445c12fc), only with line offsets.
+>
+> - 0be761ecf1a9 ("btrfs: zoned: only change active zone counter on
+>    successful (de)activation") in for-next does not cover the leak fixed
+>    by patch 1: the block group removed by relocation gets its active bit
+>    cleared by the zone reset in btrfs_relocate_chunk_finish(), but
+>    reserved_active_zones is only given back in call_zone_finish(), which
+>    never runs for it.
+>
+> - Patch 2 makes btrfs_zone_finish_one_bg() the normal path again when
+>    buffered writeback runs out of active zones with a negative
+>    reservation (cow_file_range() -> btrfs_reserve_extent() ->
+>    find_free_extent() -> btrfs_zone_finish_one_bg()). That is the path
+>    of the deadlock fixed by "btrfs: zoned: don't wait for ordered extents
+>    in do_zone_finish()" (30c6d31da683 in for-next), so for stable patch 2
+>    should go together with that one.
+>
+> - Patch 1 and "[PATCH v6 21/25] btrfs: zoned: reuse block groups emptied
+>    by reclaim as relocation target" both change
+>    btrfs_relocate_chunk_finish(). The conflict is trivial, and the two
+>    fit together: btrfs_zoned_can_reuse_bg() requires the block group not
+>    to be active, which patch 1 makes sure of, so the
+>    btrfs_zone_finish_relocated() call has to stay before the reuse check.
+>
+> I can resend the series on top of for-next, or on top of the generic/747
+> series, if that makes it easier to take.
 
-xfs_io retries shortened dedupe operations, so its output cannot verify
-one raw multi-destination ioctl or distinguish an explicit zero-length
-request from a nonzero request shortened to zero; hence the helper.
 
-Signed-off-by: Matthias Goergens <matthias.goergens@gmail.com>
----
-Christian Brauner applied the kernel series to vfs-7.5.misc on
-21 October.  Reference the flag commit in _wants_kernel_commit:
-847f74d6293b (vfs: add FILE_DEDUPE_RANGE_REPORT_PROGRESS flag to
-FIDEDUPERANGE).
-https://lore.kernel.org/all/20261021-rente-privat-mitfiebern-1b76f4650038@brauner/
+I think it'll take a bit longer to get the generic/747 series reviewed, 
+it's pretty huge and zoned mode isn't the highest review priority.
 
-v3:
-- reference the applied kernel flag commit
-- renumber 806 to 810: for-next already uses 806 for an xattr test
-- use _get_file_block_size instead of _get_block_size (Zorro, on v1)
-- the kernel side (v5) now has Reviewed-by from Amir and Darrick, the
-  acks Zorro asked to wait for; it reports bytes_deduped = 0 on DIFFERS
-  (the advance hint tested in v2 was dropped), so both DIFFERS cases
-  expect zero
-- new case: an unknown flag bit is rejected with EINVAL (helper -F)
-- new case: two small differing files ending at EOF report 0 bytes,
-  status DIFFERS
-- _notrun on kernels that reject the flag, rather than failing
-- .gitignore entry moved into alphabetical order
-
-Previously tested on 2 October as generic/806 under QEMU on v7.3-rc4
-with and without the v5 series, on btrfs, XFS (4k and 1k blocks) and
-ext4.  With the series generic/517 and
-generic/806 pass on btrfs and both XFS configurations; without it 806 is
-not run ("kernel does not support FILE_DEDUPE_RANGE_REPORT_PROGRESS")
-and 517 passes.  On ext4 both are not run (no dedupe).
-
-Validation refreshed on 30 October against fstests for-next d07dca72:
-helper builds with -Wall -Wextra -Werror -O2; bash -n passes.  The
-filesystem tests have not been rerun on that base.
-
- .gitignore            |   1 +
- src/Makefile          |   2 +-
- src/fideduperange.c   | 172 ++++++++++++++++++++++++++++++++++++++++++
- tests/generic/810     | 144 +++++++++++++++++++++++++++++++++++
- tests/generic/810.out |   9 +++
- 5 files changed, 327 insertions(+), 1 deletion(-)
- create mode 100644 src/fideduperange.c
- create mode 100755 tests/generic/810
- create mode 100644 tests/generic/810.out
-
-diff --git a/.gitignore b/.gitignore
-index cdcfa06..418ef7c 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -86,6 +86,7 @@ tags
- /src/fake-dump-rootino
- /src/fault
- /src/feature
-+/src/fideduperange
- /src/fiemap-tester
- /src/fill
- /src/fill2
-diff --git a/src/Makefile b/src/Makefile
-index eaf0621..774447e 100644
---- a/src/Makefile
-+++ b/src/Makefile
-@@ -25,7 +25,7 @@ TARGETS = dirstress fill fill2 getpagesize holes lstat64 \
- 
- LINUX_TARGETS = xfsctl bstat t_mtab getdevicesize preallo_rw_pattern_reader \
- 	preallo_rw_pattern_writer ftrunc trunc fs_perms testx looptest \
--	locktest unwritten_mmap bulkstat_unlink_test deduperace \
-+	locktest unwritten_mmap bulkstat_unlink_test deduperace fideduperange \
- 	bulkstat_unlink_test_modified t_dir_offset t_futimens t_immutable \
- 	stale_handle pwrite_mmap_blocked t_dir_offset2 seek_sanity_test \
- 	seek_copy_test t_readdir_1 t_readdir_2 fsync-tester nsexec cloner \
-diff --git a/src/fideduperange.c b/src/fideduperange.c
-new file mode 100644
-index 0000000..d8aef98
---- /dev/null
-+++ b/src/fideduperange.c
-@@ -0,0 +1,172 @@
-+// SPDX-License-Identifier: GPL-2.0-or-later
-+/*
-+ * Issue a raw FIDEDUPERANGE ioctl and report each destination's result.
-+ */
-+#include <errno.h>
-+#include <fcntl.h>
-+#include <getopt.h>
-+#include <inttypes.h>
-+#include <linux/fs.h>
-+#include <stdint.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+#include <sys/ioctl.h>
-+#include <unistd.h>
-+
-+/*
-+ * Local copies of the UAPI types: the system linux/fs.h may predate the
-+ * FILE_DEDUPE_RANGE_REPORT_PROGRESS flag.  The layout matches the kernel
-+ * UAPI.
-+ */
-+#ifndef FILE_DEDUPE_RANGE_REPORT_PROGRESS
-+#define FILE_DEDUPE_RANGE_REPORT_PROGRESS (1U << 0)
-+#endif
-+#define FILE_DEDUPE_RANGE_SAME		0
-+#define FILE_DEDUPE_RANGE_DIFFERS	1
-+
-+struct file_dedupe_range_info_local {
-+	__s64 dest_fd;
-+	__u64 dest_offset;
-+	__u64 bytes_deduped;
-+	__s32 status;
-+	__u32 reserved;
-+};
-+
-+struct file_dedupe_range_local {
-+	__u64 src_offset;
-+	__u64 src_length;
-+	__u16 dest_count;
-+	__u16 reserved1;
-+	__u32 flags;
-+	struct file_dedupe_range_info_local info[0];
-+};
-+
-+#ifndef FIDEDUPERANGE
-+#define FIDEDUPERANGE _IOWR(0x94, 54, struct file_dedupe_range_local)
-+#endif
-+
-+static __u32 range_flags;
-+
-+static void
-+usage(const char *progname)
-+{
-+	fprintf(stderr,
-+		"Usage: %s [-f] [-F flags] src src_offset length dest dest_offset "
-+		"[dest dest_offset ...]\n"
-+		"  -f: set FILE_DEDUPE_RANGE_REPORT_PROGRESS\n"
-+		"  -F: set the raw flags value (e.g. 0x2 for an unknown bit)\n",
-+		progname);
-+	exit(EXIT_FAILURE);
-+}
-+
-+static uint64_t
-+parse_u64(const char *arg, const char *name)
-+{
-+	char *end;
-+	unsigned long long value;
-+
-+	errno = 0;
-+	value = strtoull(arg, &end, 0);
-+	if (errno || end == arg || *end != '\0') {
-+		fprintf(stderr, "Invalid %s: %s\n", name, arg);
-+		exit(EXIT_FAILURE);
-+	}
-+
-+	return value;
-+}
-+
-+int
-+main(int argc, char **argv)
-+{
-+	struct file_dedupe_range_local *range;
-+	size_t range_size;
-+	unsigned int dest_count;
-+	unsigned int i;
-+	int src_fd;
-+	int ret;
-+	int c;
-+
-+	const char *progname = argv[0];
-+
-+	while ((c = getopt(argc, argv, "fF:")) != -1) {
-+		switch (c) {
-+		case 'f':
-+			range_flags |= FILE_DEDUPE_RANGE_REPORT_PROGRESS;
-+			break;
-+		case 'F':
-+			range_flags |= (__u32)parse_u64(optarg, "flags");
-+			break;
-+		default:
-+			usage(progname);
-+		}
-+	}
-+	argc -= optind;
-+	argv += optind;
-+
-+	if (argc < 5 || (argc - 3) % 2 != 0)
-+		usage(progname);
-+
-+	dest_count = (argc - 3) / 2;
-+	if (dest_count > UINT16_MAX) {
-+		fprintf(stderr, "Too many destinations: %u\n", dest_count);
-+		return EXIT_FAILURE;
-+	}
-+
-+	range_size = sizeof(*range) +
-+		dest_count * sizeof(struct file_dedupe_range_info_local);
-+	range = calloc(1, range_size);
-+	if (!range) {
-+		perror("calloc");
-+		return EXIT_FAILURE;
-+	}
-+
-+	src_fd = open(argv[0], O_RDONLY);
-+	if (src_fd < 0) {
-+		perror(argv[0]);
-+		free(range);
-+		return EXIT_FAILURE;
-+	}
-+
-+	range->src_offset = parse_u64(argv[1], "source offset");
-+	range->src_length = parse_u64(argv[2], "length");
-+	range->dest_count = dest_count;
-+	range->flags = range_flags;
-+
-+	for (i = 0; i < dest_count; i++) {
-+		const char *dest_path = argv[3 + i * 2];
-+
-+		range->info[i].dest_fd = open(dest_path, O_RDWR);
-+		if (range->info[i].dest_fd < 0) {
-+			perror(dest_path);
-+			ret = EXIT_FAILURE;
-+			goto close_destinations;
-+		}
-+		range->info[i].dest_offset =
-+			parse_u64(argv[4 + i * 2], "destination offset");
-+		/* Sentinels: the kernel must overwrite both output fields. */
-+		range->info[i].bytes_deduped = ~0ULL;
-+		range->info[i].status = INT32_MIN;
-+	}
-+
-+	if (ioctl(src_fd, FIDEDUPERANGE, range) < 0) {
-+		perror("FIDEDUPERANGE");
-+		ret = EXIT_FAILURE;
-+		goto close_destinations;
-+	}
-+
-+	for (i = 0; i < dest_count; i++)
-+		printf("destination %u: bytes=%" PRIu64 " status=%d\n", i,
-+		       (uint64_t)range->info[i].bytes_deduped,
-+		       range->info[i].status);
-+	ret = EXIT_SUCCESS;
-+
-+close_destinations:
-+	while (i > 0) {
-+		i--;
-+		close(range->info[i].dest_fd);
-+	}
-+	close(src_fd);
-+	free(range);
-+	return ret;
-+}
-diff --git a/tests/generic/810 b/tests/generic/810
-new file mode 100755
-index 0000000..2c09315
---- /dev/null
-+++ b/tests/generic/810
-@@ -0,0 +1,144 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Matthias Goergens. All Rights Reserved.
-+#
-+# FS QA Test No. 810
-+#
-+# Check FIDEDUPERANGE result reporting with FILE_DEDUPE_RANGE_REPORT_PROGRESS:
-+# bytes_deduped is the length actually deduplicated for zero-length,
-+# shortened and zero-progress requests, and zero for differing requests and
-+# errors; unknown flag bits are rejected; one unflagged case pins the legacy
-+# reporting.
-+#
-+. ./common/preamble
-+_begin_fstest auto quick dedupe clone
-+
-+. ./common/reflink
-+
-+_require_scratch_dedupe
-+_require_test_program "fideduperange"
-+
-+_wants_kernel_commit 847f74d6293b \
-+	"vfs: add FILE_DEDUPE_RANGE_REPORT_PROGRESS flag to FIDEDUPERANGE"
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+block_size=$(_get_file_block_size "$SCRATCH_MNT")
-+short_length=$((2 * block_size))
-+full_length=$((short_length + 100))
-+
-+src=$SCRATCH_MNT/src
-+src_short=$SCRATCH_MNT/src-short
-+src_diff=$SCRATCH_MNT/src-diff
-+dest_interior=$SCRATCH_MNT/dest-interior
-+dest_eof=$SCRATCH_MNT/dest-eof
-+dest_short_eof=$SCRATCH_MNT/dest-short-eof
-+dest_diff=$SCRATCH_MNT/dest-diff
-+
-+$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $full_length" "$src" \
-+	>>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 100" "$src_short" \
-+	>>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $((full_length + block_size))" \
-+	"$dest_interior" >>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 $full_length" "$dest_eof" \
-+	>>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x6b 0 100" "$dest_short_eof" \
-+	>>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $full_length" "$src_diff" \
-+	>>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x62 0 $full_length" "$dest_diff" \
-+	>>$seqres.full 2>&1
-+
-+# Kernels without the flag reject it with EINVAL before looking at any
-+# destination.
-+result=$($here/src/fideduperange -f "$src" 0 0 "$dest_interior" 0 2>&1)
-+echo "flag probe: $result" >>$seqres.full
-+if echo "$result" | grep -q "Invalid argument"; then
-+	_notrun "kernel does not support FILE_DEDUPE_RANGE_REPORT_PROGRESS"
-+fi
-+
-+check_results()
-+{
-+	local description="$1"
-+	local expected="$2"
-+	shift 2
-+	local result
-+	local ret
-+
-+	result=$($here/src/fideduperange "$@" 2>&1)
-+	ret=$?
-+	{
-+		echo "$description"
-+		echo "$result"
-+	} >>$seqres.full
-+
-+	if [ $ret -ne 0 ]; then
-+		_fail "$description: ioctl helper failed"
-+	fi
-+	if [ "$result" != "$expected" ]; then
-+		_fail "$description: unexpected ioctl result"
-+	fi
-+
-+	echo "$description"
-+}
-+
-+# With the flag, bytes_deduped is the length the filesystem reports as
-+# deduplicated on SAME, and zero on DIFFERS or an error.
-+
-+expected="destination 0: bytes=0 status=0"
-+check_results "zero length: 0 bytes, SAME" "$expected" \
-+	-f "$src" 0 0 "$dest_interior" 0
-+
-+expected="destination 0: bytes=$short_length status=0
-+destination 1: bytes=$full_length status=0"
-+check_results "mixed partial request: shortened, full" "$expected" \
-+	-f "$src" 0 "$full_length" "$dest_interior" 0 "$dest_eof" 0
-+
-+expected="destination 0: bytes=0 status=0
-+destination 1: bytes=100 status=0"
-+check_results "sub-block request: zero progress, full" "$expected" \
-+	-f "$src_short" 0 100 "$dest_interior" 0 "$dest_short_eof" 0
-+
-+expected="destination 0: bytes=0 status=1"
-+check_results "differing contents: DIFFERS, zero bytes" "$expected" \
-+	-f "$src_diff" 0 "$full_length" "$dest_diff" 0
-+
-+# Small differing files ending at EOF: still zero, not the request length.
-+
-+$XFS_IO_PROG -f -c "pwrite -S 0x41 0 512" "$SCRATCH_MNT/tiny-src" >>$seqres.full 2>&1
-+$XFS_IO_PROG -f -c "pwrite -S 0x42 0 512" "$SCRATCH_MNT/tiny-dst" >>$seqres.full 2>&1
-+
-+expected="destination 0: bytes=0 status=1"
-+check_results "small-file DIFFERS: zero bytes" "$expected" \
-+	-f "$SCRATCH_MNT/tiny-src" 0 512 "$SCRATCH_MNT/tiny-dst" 0
-+
-+# On a per-destination error, status carries the errno and bytes_deduped
-+# is zero (the huge offset fails VFS validation with EINVAL).
-+
-+expected="destination 0: bytes=0 status=-22"
-+check_results "error: bytes zero on EINVAL" "$expected" \
-+	-f "$src" 0 "$full_length" "$dest_interior" 9223372036854775807
-+
-+# An unknown flag bit is rejected before any destination is processed.
-+
-+result=$($here/src/fideduperange -F 0x2 "$src" 0 "$full_length" "$dest_interior" 0 2>&1)
-+echo "unknown flag bit: $result" >>$seqres.full
-+if echo "$result" | grep -q "Invalid argument"; then
-+	echo "unknown flag bit: EINVAL"
-+else
-+	_fail "unknown flag bit: expected EINVAL, got: $result"
-+fi
-+
-+# Without the flag, the legacy reporting is unchanged: the requested
-+# length is reported even when the VFS shortens the range.
-+
-+expected="destination 0: bytes=$full_length status=0
-+destination 1: bytes=$full_length status=0"
-+check_results "unflagged legacy reporting: full length" "$expected" \
-+	"$src" 0 "$full_length" "$dest_interior" 0 "$dest_eof" 0
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/810.out b/tests/generic/810.out
-new file mode 100644
-index 0000000..f88ac62
---- /dev/null
-+++ b/tests/generic/810.out
-@@ -0,0 +1,9 @@
-+QA output created by 810
-+zero length: 0 bytes, SAME
-+mixed partial request: shortened, full
-+sub-block request: zero progress, full
-+differing contents: DIFFERS, zero bytes
-+small-file DIFFERS: zero bytes
-+error: bytes zero on EINVAL
-+unknown flag bit: EINVAL
-+unflagged legacy reporting: full length
-
-base-commit: d07dca72d2455f4ba8c660ad4c008541ccccb707
--- 
-2.56.0
+Thanks for helping to improve zoned :)
 

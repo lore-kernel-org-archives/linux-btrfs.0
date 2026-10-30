@@ -1,88 +1,82 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793348043;
-	b=kIID0NZcCXDAgASKLS3uql+6bbKqAUo41lX4ZCPbUpqAuXX6rL76Sr9pK15XyENZKbmO
-	 f+sv5iQw3h3XSOj7Y1OsQYEpMz7L3HDcJ5khrjO8brEkmYPRTDVuLRgbibxKG+Fzl7L7N
-	 HgTzZjwYBJgD5jSXCCXaFCycTh94lA0UhFrveIv3CyHQyfGG9DPsq1ZOUawCnMI7EDf0y
-	 pL95nR/TOFBnNo08joyotEkNdIVmbZ+CBO8pklCsymSIU4rDxY3wDo3LDf/9MPY+KM53b
-	 rDj5SRm2N+6M0prGXByrm9xqfHcwmwrrFODtnPeq3zPnLR5gSlA8Cklyeq70LShu3wA==
+	t=1793348433;
+	b=udc4hP7NIRF/wV8aMTxxyZuZ0ytdTvW1x/BvL4+FjdER6AC8+rOeFfqZVehphHJ7P5lI
+	 EFcCBp6EcBT7IMg1nYJ3fEOUrOd7KTVvPqnG19Jxp7kY2lf70hWP9owHqwhHucgQlx+Zi
+	 fQNtaUDGBF7pgjNAp+AcaROd81vaWPQ4D3O1atGvSpllwc81VFyiM59GoGyE16RJloHvn
+	 LA3SBYf75uHELn1WAr4AZv+h+gzQJZeRaCIsCl3YZ7gwDVZH0A8iPoI2WtDNKPuJ2Yroj
+	 H2NFH4wUbDMQjAZEusBeNr7ps8NiXJJ9xPMEjxVmaYmgNPn2NzbohAzF/RzDc8oxzNw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793348043;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=DYxju/VQ5fD0CRDGztF+VRnW9V9jqdl2dwT7docZvOA=;
-	b=SNb2536Fe4UkeXA+CFQd20vgz0GieKUxmDJ4zVKNLJMNfQufistF0EOClvm9VSGR1zk4
-	 uzl5BU7N5cV2FtohCIc+99+FSOLrvFGJvUe1aiviiIoBuqxuep2WBRX6CjwAzbJWNjYO5
-	 yXygH8xa8inRXBcJiSxPkqeqk6fJFDgjGgHP1BbnyeQt7L2OJa3jKKDIUmxYaQ/Apz3Kl
-	 wswmEVMb+RYmZ7B5fv7lKcnQfNAyaCUDKvMLxnlTv5rJSmDSfZxhBgRA/484p4rJxesdt
-	 C+tX878em/nx76m48W0Rtb1fkn8ggdSWrLN65O1H2fjAsCmdg6yoNUMUTWoPItWCphQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793348433;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Type:Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:
+	 X-Spamd-Result:X-Spam-Score;
+	bh=S2cjQ2XCEZCxoOwFpYMR41B5e0rCfWYpVcHXQ8umHs0=;
+	b=UiMflsKQRrzYP8dJRH6WmRTIzc85bUgpi+X++ZwwIH2BDxzLoibCDYcPdvRTymzfQ33d
+	 pN8n3bF6mcuGdrq4BhL4HNTyRLikKSJPGopRU9hA+G6G70svYy2FsMFOtGruzQHN1wrbI
+	 TPdfJCBlrYEHB3ONaNu9CO5No7JoKpoUHq2qKamGF+E9e9264MiDcXm+s/HbXQYw6t5RR
+	 RhDk7xD7EPlBeSddtWpe6+MnuitmScWcqIo6yxY92RtRr3s1D4/YsEusH8HBdh9OsUjmr
+	 9TqBT1HIXi8UQGiILVyWkzb4eYU1nQa4n9y5eHWRYwyao7AdzryfmjdccxVltY55ysw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b="dMUM/AAE";
-	arc=none smtp.remote-ip=209.85.128.53
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=oiGgx2rJ;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=oiGgx2rJ;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 678A1606A31A
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:14:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 678A1606A31A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0A7D606A31A
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:20:32 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F0A7D606A31A
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=dMUM/AAE
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-4a1b07c3c5fso3294845e9.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 01:14:02 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793348041; x=1793952841; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=DYxju/VQ5fD0CRDGztF+VRnW9V9jqdl2dwT7docZvOA=;
-        b=dMUM/AAEb/zpU4hslhZubp+oeFpRsZWWA+mSn5j2dhZPTvkhf9/zQtnDh1fA47hb3R
-         rLsXHtoRRVqXUgVgDe9SNp5WzFjmOiE0sY+vWKKJ2CfIuQwp5jNZZ8chkRm+gEjYfscX
-         qcRmqSzUqckwsfbjYncUPRANG0/E+MMOHGzEwNJjto9tBgnwM8RVFwbJsNElY36Iph/P
-         Eyt6Jfud8Q/GXqn5R4igdw7sUciuVaq2E9rqo7HoOqr4bdI1d4CHVP9duXmhfIr98/fx
-         Q9nOV7xWBVkZFh8r6BMYZimRFM4Q+yyNA0IJj1Hv3CX1hYit9lhJvH/G8cozi9fzq5Hg
-         lsqg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793348041; x=1793952841;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=DYxju/VQ5fD0CRDGztF+VRnW9V9jqdl2dwT7docZvOA=;
-        b=BbancYYQQP3pvYinV0JEeu9eHTtIprBLGpYFuxxJep9QlVD4rJRXX6OQmTMAOZNEmG
-         WhEMSFZklcxtVJQrkVPrtzlsFJHqzKRaOXkWRVpnYUuLgkyVbwfXhEYHVGsTRc3ltzmc
-         Sp6I5XVMGqGCfX9oJ6YzrdniQ/tpmgV85S4zn8UE4j4oBgNc3NqlkQpHnvDmN4OuhhW9
-         ymOEc+u7LX+sAmN5Tk9EAA9FbSwGFjTbLnorIwA1wpPTFu/AViGs/7lfUA+Zoh/ht5Xa
-         ILrYE0AM2nQc9y+suE4uR21Ehk6xjZ1O+e4irNvA9aiEGsLN/MLtYPiH4ljZ+B0dxw3J
-         etqA==
-X-Forwarded-Encrypted: i=1; AKwUvBxdjRLyIHPlPuKXRTaRqjTFE4wVH/CiYRVke5TzvGe2zBaHJCo8/anrJ+PVpYeeH4aCnooAWjZayRyBTg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLA1yE24yyJELl+WESJWM57xKm2Bpt/AZMnAoEkwP2kq2c8zCPZ
-	qUaKmal9nt/rtLj3x5TTiKOngydUdXlV29ibYuQ3/0rO3UkItqmec3R/rOjJA6K0vvc=
-X-Gm-Gg: AYBFou3pb8ESX4U6SRnMrc0FtD/z3m5dXTjmCN1pj6E1LFsdayNc0RaI/0I9dTjdn3E
-	P7K700lfvGtqni3T/RicDU0k9Lo6z52hSqYFD/aMBqATiClsTwh8YGyr2FIZCube3f6EJ1AWdVG
-	8KYsZA7Exl8NkrNfvwXbUwfovHPAuqe/3FG3n2I8Sv+7WiQF/PcmyCjy5FP6G7SUd588kPYMfqN
-	PD5vX8xrLwybIoDyD5gelkhbISCjrmdAiYiF5+yUDY6ulE33vpo+60fgt6O2WB/r2hmV7cmuMGY
-	1l5BathaCo9HMTuJyDcEH7SapJCFfKGlCrXd6kZ6Rcd5W42/9WOL8Oyi7UDRw2om7CIvKUP0REj
-	nCPTROwzpjAxWIuGlg5KLwA6r8UlaGkjFViOd+nluyvFEfaLld/jhSHydk4pGXJDNogZjGo2GDc
-	iZxoOWO4hHmgQF5x0MNgEPqeDCPmgsaRYqzpdVAqwS0bRtO7HfVjv76WP3Lc9Yz0e24X5DkszUC
-	obFWBKEck0mdrDM9gDEmGrVljUrsbq7Ri9xrTVdHy1PdukbF3PtihsaYt6IpYgBwG0qNzaJCqeQ
-	+1YIrYQl2++rOjqniJV0iA==
-X-Received: by 2002:a05:600c:8b0a:b0:4a1:742e:3 with SMTP id 5b1f17b1804b1-4ac185bc4a1mr29476345e9.27.1793348041366;
-        Fri, 30 Oct 2026 01:14:01 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae6e9b1506sm7446568a91.15.2026.10.30.01.13.56
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 30 Oct 2026 01:14:00 -0700 (PDT)
-Message-ID: <d2ee0cc1-674e-4447-88da-d346122a43a4@suse.com>
-Date: Fri, 30 Oct 2026 18:43:54 +1030
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=oiGgx2rJ;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=oiGgx2rJ
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 29F5C1F74B
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:20:31 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793348431; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=S2cjQ2XCEZCxoOwFpYMR41B5e0rCfWYpVcHXQ8umHs0=;
+	b=oiGgx2rJ81Dmh4kcUGi75dho5GIIhRTnNo5JO802PN/zqN3mzQBYTZy3N4i3mSyM0eMcrH
+	kdy1GLzXAn2DGPtHPkdMAd6F+1/20UuxbGm1zl5W6YaNHMTIWrbbMmZkq0f03KqpRmSosp
+	BL5telEEhKf71c7SxbmColAi1NstG5g=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1793348431; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 content-transfer-encoding:content-transfer-encoding;
+	bh=S2cjQ2XCEZCxoOwFpYMR41B5e0rCfWYpVcHXQ8umHs0=;
+	b=oiGgx2rJ81Dmh4kcUGi75dho5GIIhRTnNo5JO802PN/zqN3mzQBYTZy3N4i3mSyM0eMcrH
+	kdy1GLzXAn2DGPtHPkdMAd6F+1/20UuxbGm1zl5W6YaNHMTIWrbbMmZkq0f03KqpRmSosp
+	BL5telEEhKf71c7SxbmColAi1NstG5g=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 1647513419
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:20:29 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id CqwMGk1T5GpOFgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:20:29 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs-progs: python-test: prevent unmount failure caused by forkserver
+Date: Fri, 30 Oct 2026 18:50:07 +1030
+Message-ID: <fea3dc1dc9564aa42e16df1d219e1cb132e8549b.1793348391.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,92 +86,110 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: reject zero num_stripes in the system chunk array
-To: Cheng Yongkang <teel4res@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <179328314071.648427.12527832319954042748@gmail.com>
- <6ad220fa-d6a0-4b4c-a313-a0cc052b8637@suse.com>
- <179334729054.2353588.12398743988940745859@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <179334729054.2353588.12398743988940745859@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spamd-Result: default: False [-12.30 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
+X-Spam-Score: -12.30
 
+[BUG]
+The python-selftests always fail for the following race tests after
+updating to the latest 3.14:
 
+  test_subvolume_iterator_race (tests.test_subvolume.TestSubvolume.test_subvolume_iterator_race) ... umount: /tmp/tmp29d00fl3: target is busy.
+  ERROR
 
-在 2026/10/30 18:31, Cheng Yongkang 写道:
-> Hi Qu,
-> 
-> Removing the ASSERT alone is not sufficient.  btrfs_chunk_item_size()
-> computes
-> 
->    sizeof(struct btrfs_chunk) +
->    sizeof(struct btrfs_stripe) * (num_stripes - 1)
-> 
-> With num_stripes == 0, the (num_stripes - 1) term underflows in the
-> unsigned multiplication and the function returns 16 bytes (48 - 32)
-> instead of a valid item size.  The system chunk array loop would then
-> advance by the wrong size before btrfs_check_chunk_valid() runs.
-> 
-> So either btrfs_chunk_item_size() has to handle num_stripes == 0 first
-> (for example, return sizeof(struct btrfs_chunk) and let
-> btrfs_check_chunk_valid() reject it), or the early check has to stay so
-> the size calculation is never reached with zero stripes.  I kept the
-> early check as the minimal fix; if you prefer centralizing the rejection
-> in the tree-checker, I can change btrfs_chunk_item_size() and drop the
-> check.
+  ======================================================================
+  ERROR: test_subvolume_iterator_race (tests.test_subvolume.TestSubvolume.test_subvolume_iterator_race)
+  ----------------------------------------------------------------------
+  Traceback (most recent call last):
+    File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/__init__.py", line 106, in tearDown
+      os.rmdir(mountpoint)
+      ~~~~~~~~^^^^^^^^^^^^
+  OSError: [Errno 16] Device or resource busy: '/tmp/tmp29d00fl3'
 
-Yes, drop the check and change btrfs_chunk_item_size() to handle zero 
-num_stripes is not hard at all, and it's still smaller than your 
-original fix:
+  ----------------------------------------------------------------------
+  Ran 1 test in 0.128s
 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d5fe5cba0c35..891bc2432870 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -711,9 +711,8 @@ static inline enum btrfs_map_op btrfs_op(const 
-struct bio *bio)
+  FAILED (errors=1)
 
-  static inline unsigned long btrfs_chunk_item_size(int num_stripes)
-  {
--       ASSERT(num_stripes);
--       return sizeof(struct btrfs_chunk) +
--               sizeof(struct btrfs_stripe) * (num_stripes - 1);
-+       return offsetof(struct btrfs_chunk, stripe) +
-+               sizeof(struct btrfs_stripe) * num_stripes;
-  }
+[CAUSE]
+Python 3.14 changed the multiprocessing on Linux, from the old 'fork' to
+the newer 'forkserver':
 
-  /*
+ From https://docs.python.org/3/whatsnew/3.14.html#multiprocessing
 
+ On Unix platforms other than macOS, ‘forkserver’ is now the default
+ start method (replacing ‘fork’).
 
-> 
-> Thanks,
-> Cheng Yongkang
+ From: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+
+ When the program starts and selects the forkserver start method, a
+ server process is spawned. From then on, whenever a new process is
+ needed, the parent process connects to the server and requests that it
+ fork a new process.
+
+However the problem is, for all those race tests, we enter the mount
+point, then fork new workers to do the race.
+And the forkserver is spawned from our cwd, so it stays in the mount
+point.
+
+This means the new fork server will always stay at the mount point,
+preventing us from unmounting the mount point with -EBUSY.
+
+[FIX]
+Revert back to the old 'fork' behavior, so that no forkserver is spawned
+at the mount point to prevent the unmount.
+
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+[CHANGELOG]
+v2:
+- Fix the subjective line
+  Which was using an old but failed solution due to the forkserver
+  using 'nobody' user by default.
+---
+ libbtrfsutil/python/tests/test_subvolume.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
+index 8119d2137942..7922bfe1946c 100644
+--- a/libbtrfsutil/python/tests/test_subvolume.py
++++ b/libbtrfsutil/python/tests/test_subvolume.py
+@@ -850,11 +850,12 @@ class TestSubvolume(BtrfsTestCase):
+     # Only the new API
+     def _test_subvolume_iterator_race(self):
+         procs = []
++        ctx = multiprocessing.get_context('fork')
+         fd = os.open('.', os.O_RDONLY | os.O_DIRECTORY)
+         try:
+             for i in range(10):
+                 procs.append(
+-                    multiprocessing.Process(
++                    ctx.Process(
+                         target=self._create_and_delete_subvolume,
+                         args=(i,),
+                         daemon=True,
+--
+2.56.0
 

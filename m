@@ -1,100 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.49
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793369507;
-	b=DntCo4nRbpd4z2iZxcuxJ1vOqsTIAaBXPrnWrzksYrgVfGJqAuKqgMF3+1m1m6El5z8O
-	 3uB+1G2b1CybwQdFNasP48n55CzNJGdZZgElUUkSnYL3eioQU9Jd9B/mMjtMqAHGgMZwp
-	 Ezh/zEoyQ49WmAJiofOxiKdHFzsVCX5SnG/K/6+FnnapCZ9KDnXbGt/vTE1AwDGkJEXei
-	 /I12zCWsUaA9Ma44YmL6ikrOiNUiMGKO/QeOFcbKvVKjnVeJbWnZxMHjYNprrR4J+jo8e
-	 uEQg4FyeJ6CLxscMP/bp+LxcCGf1YvajYB7KfQXp1zYR61Lk7I643hEe7FyQvGLV82g==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793369507;
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.222.169
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1793371110;
+	b=d4SpGvThLqwjZkPmtU90v8kI32X4IkEf7DQoYiX5nbH/EloewGvyztLHTo54i2/8bSIf
+	 +PcFMxKAdYhfD7/C0Q+re7Bp5MGHgN1Kilb8d4ucHyR+e4lk/PzNKPn7JLivbcSKXEoyw
+	 +nzX9GPmJY2A0IrFxKadDVG54i7GQvZXS8r9NuxXvnEmpG/D+Jp/5j1Ruc3Ip2QWGYojj
+	 kK0RTs1z0QthGC9LxJj+3zXcJZzUNJFLsA/mNDH2wrYdVd779p/oh7LZ55nY7hW5LmQcC
+	 AQ8Y9nbWrRjUB6ikJLmVhphgjtT9oG+UTTNmjnwMLURYcxnVfzabBoE7sMoJOLrtqhA==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793371110;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type;
-	bh=66LBFrIdvPN5I/Sp7uCyiL3h5+EwlBIU1Tk64BEBwyA=;
-	b=Qop3+tHMoItwMwHI9K++TqR5gXkdKCiJ8vHBbo0gbxXdgzjjDK+mScVvRuLoNjkT4IjD
-	 Lxf5Ty8OUjmS/fxWQjTegpz7WcqSrAfe1oPahHsl4PNXyOtldtMIhb4YmFr/UpBRxWqy/
-	 sJe7itMJU3mg4OdqAF4LW4W8ZcaGk9u7wGZCIIZIOrWb+fSvC5cJDR7Q9QcJlqLttu4JQ
-	 QBPksGmC6GtoYvfPemiNTosfYoJGRCMhlOd/LC5z9J+fLrxkozvapgm+SL+VMlm4Q9Vj1
-	 uEyU0KWekAHvod5lRb9wlPcN7nCXXhhTG4ABw87ucGy7V1a0DGWzAfLRHR5z9Gzy+7g==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=BuL1neDN;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.49
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Subject:Date:
+	 Message-Id:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:
+	 X-Developer-Key;
+	bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
+	b=OdrN0iDJCKKMTgeQ3bxmaB9y547g7CqgH2qtLjnfrtFAqNWuUMHzIzDjl/eoxcieZMZz
+	 48PBLko3zzGjMc71jduJk5uz36r9bqsEPKhEFGd1ntAoNdzUWe/3EPZMy9uFLvS78Rl2s
+	 1MUXjsC0hVB/zHYXOgHxm2wAJ1S8FPNm43O9K3H3rmntSu3silWaUPk6/p+pTFXQWDqzp
+	 s5wnhgAbx5mJb2XNUKYWFnsjbrkVxyzKFKHJoQsPkcrXZ9+Q3TcBOorIiXLaiBJJTMpzo
+	 8oz0Y3bDhe0mH3k0yeqGbvQX0Dv12Les+YbuqkWWbwpTEQv2gvEMBlLEhS7bcs/B2nQ==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=none header.from=toxicpanda.com;
+	spf=pass smtp.mailfrom=toxicpanda.com;
+	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=f4Oxqytp;
+	arc=none smtp.remote-ip=209.85.222.169
+Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1435B606A31C
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:11:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1435B606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3189606A322
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:38:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A3189606A322
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=BuL1neDN
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-48dfdd0678dso535691f8f.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:11:46 -0700 (PDT)
-ARC-Seal: i=1; a=rsa-sha256; t=1793369505; cv=none;
-        d=google.com; s=arc-20260327;
-        b=gH/aNhGPSSFEw//GjsUE+yZ16kSNkwFPfjneiqhFCdeI+FKldwIAyxBKYUmpJXaXhh
-         UYZCxqefXB8eMqPLJo2ywxgzgRouJ72F5NBW/JgBCqF6nU3ASbB5OWvk3wBYnbqYPh8U
-         hTV0lGQxW73CPous8guJKfsos3YYKY9Gt0W7ZGmO+HsGiazBB8qzScUMVxIqHMp+3fGC
-         by5pzvO8/dVYdQH1LrATxDz2jhJNV4GpcFmx63J9cDaiDhbgOEfTQx/z9Y0FgB3lJw5K
-         AppUTQVaxa6xKDw8/pOYPD7ezGn/soNw2/GZo0LBW5SSwD/JTpBu82aXsj8BM4sFH9W8
-         2DZQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=66LBFrIdvPN5I/Sp7uCyiL3h5+EwlBIU1Tk64BEBwyA=;
-        fh=ophR1e0Lsn9Y/8TTUwXdrKdEW/1dhK6AGj+1B7cV4H0=;
-        b=rHJD85oT+2mb7USR9PCYGeEK89EZnr6v2viZZSz/p1E7qAN+Y+aYuvErGzfEPSYXXk
-         Gm4IXDn0OWy/I4IT5wB/GD6oDOzucuSHbFF3y8kyNxcwLwf1y8CR8ZjJ5u2l2Fkw8UCR
-         IFlj9qkfq1cUoDuG62Sz/nY+SEXrCZadjBo0HgfWj5geG/D687hPLw5wjGx60v0pstjw
-         xIQaufvp6z5LaDKHYtadUzewGG0eKD+XfmZVakjSMmr+K60VZVGYZqmGkEsdLztklR9p
-         5ZPTOhaBpKzcyYiVFIKLN6t/gvWey4pBIlAELpKMVfhSHO+Ot5JwrHlib45125D62l3B
-         Jz4w==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=f4Oxqytp
+Received: by mail-qk1-f169.google.com with SMTP id af79cd13be357-93f3c89594cso49096585a.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:38:29 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793369505; x=1793974305; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=66LBFrIdvPN5I/Sp7uCyiL3h5+EwlBIU1Tk64BEBwyA=;
-        b=BuL1neDNGdWshafjIbCeK741DC/opGgdwzqcNKNID8jAu0tcoYnijbuv+IrBjue3IX
-         KqU8tnNgBxAJ72rLfaeWKz9HTni0q6xbO3BR0ID6rBESZGZeUVV95jGaHsz+nMzkzp9y
-         T+rFJkA/rRg64LKHvr3QF1c+DtPySdoDbiaPAAFhV5zk1Bq8pBCO3zZQkJ1xTM6DxDaL
-         QuebSWNHELM9gAAg2IkIibtK/q5HPLpcfbWzZeIgPcZQC2t50cFZMbtuuk4MFwqnSbO1
-         RxcbbiOS/dX4kA0DjWi9NmSHhhzUZwZyJy7fCpvcybDdG0MeEHi/v5zO+KMeloFoLPdn
-         2Zig==
+        d=toxicpanda.com; s=google; t=1793371108; x=1793975908; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
+        b=f4Oxqytp3QWZ8rkKm7Zakqilbipdp4cRSVRQyeZ7T/X+ekYhph4OPeKmzKK9hJADW7
+         Mk9LhZfE8Vk0i9cVnh0j0qE14D7+07VEfzkYULnm6heiFkQl8aYPsGi5PMpNAJedwGKs
+         I+EhFx8t61+b6IJQgrmOvGEigVJTlyTdl0XsFLDDq+hA8Ihf6kgq2mdch5nQkNRmI67x
+         WAGZKLneKwbs3xuXEJR2nSPOJ0pZcO415sO3O/z8jKYCc6eNh2MEZ8aH4CnUfgOb3Qwu
+         kKCgMEq9k0RlqD+5zX1zkIyYK6caNXNIw8N0t8xyjTHdLR9E8Af9uEHrKXRnPLrYrmB0
+         FP8g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793369505; x=1793974305;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+        d=1e100.net; s=20260707; t=1793371108; x=1793975908;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=66LBFrIdvPN5I/Sp7uCyiL3h5+EwlBIU1Tk64BEBwyA=;
-        b=q09ZkM1icQ6MkA76Z4/FUwIZS/s6ANRhJ1Q1Ax1l1fpEK4Qq0NkbrET/qYvGwch+LC
-         oUFr2u8XbbadbcFjmgNzELF23vVNOeUpC126HLsrW/HDA3PC21jxWL/0gA/CHZknFMkK
-         e8PmzBfR+kQRuZdxKJdsVXBIgM7R/CG3rLa1iHDCoyQXCjQURnMd55vaqiI5adeyrlpj
-         Qj8sf+uxxQilrWjc7rP22hp5nY9DnXvCWwnDMom1OKW7fmAtUUTOdV6HwHAwi9qXxSLU
-         aWs/HdSGIV+umvOuRO2b3B3FWs1m+EKDqnjHfOQ/rfGJ+PdbH64s0cf/91hcHQLvksdh
-         vyZw==
-X-Forwarded-Encrypted: i=1; AKwUvBwWwP6BPcldtpGOY08c0wLwHyDgBEWvdESnW3u8w6Ekcrj2j6lD5z+UL2LZKGgDUU621LR7uklbG9Matg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLxqSqty4pvvwEOwPRu9Hhu0ClDEcw7HOxMJF4US8OZe7eZ9BgO
-	gIJX9qXtqnHMHsskWDWCscJ8+1ro6kR7byeWpTKWuMCwskRy2mpuwNJ+sYW6YGEryr8rhwgTZ/3
-	zLevcBYkrf2kAC/O9AuBHCQLXI6DkV4da66BFTVCCZw==
-X-Gm-Gg: AYBFou0T/OzLuAOIEl/B1LvXZifMQwuGI55Yaxx5xxiQiyqIhqohF3SypX9G/llcYiq
-	Cov6pN2CE0VLqGARl1vt2EXGxDSN9x4JB1IZ4CTh8JXm7CtoBgtITPoDKH4pRCJl0945w3cum2N
-	QccTlPIUk5C5pr796i0JkD3lmsVE6malLWgaIXpn1Y9OCVNv+EGqHUeqok3UA337easdxRbflCn
-	E3pAm4ou7ofYv4FU25Gcz7qGb0PSvnrLzTpq7LL64RRgZPMH/juhGoQDQ4XCDvgF+sbmeQwqROO
-	KrSBR3cldrvH97QrCWDDJDRQKGyT7oBD0fpF2M/9Yp0SEMcynGS1/IwGOkLkJDOykh7JR0Q1s86
-	tTwGpsa/GH2vzuepanIxI4KhF9x92WzJqo4XJ792P6qc6SoXPt+rJGZBS5942NCEQKsNdEdZF+q
-	SWwJwyDywM8Yu/Pnw6fHhAVaMZCebu9WbfoUY=
-X-Received: by 2002:a5d:5d06:0:b0:48d:ff71:dd87 with SMTP id
- ffacd0b85a97d-48e6e303f29mr5929875f8f.17.1793369505232; Fri, 30 Oct 2026
- 07:11:45 -0700 (PDT)
+        bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
+        b=ZH9iU7l93nyx6fD4RUM84jEk5yYeSuwFTvW+juMOK+a8W5g48oK68kXnLyq7B42/u8
+         VnShL6m+LVxYGN+OJYQOWexYV3u3RMFZlU1IlMVduPBh6TGjtAuC0F/zI99N0A6AMMru
+         /YO+VidKf47sSq8d4jp6jfjY8e/L9vUgVAxrLQZxDB4aPLCy0K1NagUXLOO33C8S9nMS
+         mNHj454guaQW3/zPlo6LWT0jjbO8PHSvakBqbSey6jLcn5oszpJpKsFG4yBtGxT5R/Ht
+         fUP/7I8dm2CgTqu1w7aESJ64qn+DyaFazUveexJz3nWbCXwxJjf9x8zNMTYwZt+Y7egX
+         4JYw==
+X-Gm-Message-State: AFq9FYI0oT0snrih4Emn0cyDxY2hqIVmX3CHli4dARQGrlruv3yxVr2n
+	kxhH3gPi9KNFSfu4+vm+1bgh9BHDcchiu45/zx9NsgAE17LsIEPe4Um8rMnHUx2iazA=
+X-Gm-Gg: AYBFou3u6ZL158PiAo/CP8/etJxSn4wA3u8DFXy8qbMqzCIhRl8FdZYhgiD0MHSTByy
+	PQVKLZ1wEH0xCv/J+L8k3TaX6snymuaDYyUVZ8XJDyMLrX2i1QiOE4B0Z+6h4uFHgR6s9FPW59M
+	/rl37eIu1Mk1Dj2JEuOs7BupNOEB4/Zs8vKufOrW5pjM5a/EoVLGGTw38Y1Cn2FUf+lDLbPw2qn
+	ZuPmsIN0F3IZNr6+B9uG9tboCOnC5B1ASZqw7lBowVORvQid7B3K4TS40buDUU22aw5Pbv+pSkp
+	QKMPQJAotgcrDGkSRBrNEdmvnwY911hV+++V1XWDYpI337Y1NAGfFe9dtvqGsR2a/LNN1ckV2gd
+	w8q3juADjfDNLbEfcBDCwETtVnOPoOO1OoS42yg+gETbtpEJ+uNC44GHBdXNY7RM6U2yLnRlVxU
+	x8tI11lTnqdM6KlSyGVgZFGyaMZWvrYmrEFBwPXbyG/JYC71RM6gYaBNY/x4B/noltTZjOKZR18
+	cJDPZZkv8QR9Ybat01bclX8wwAztmCKWY+BQDAemiVvTKlg6PJ+zGAPh6K6+7dhzWwmSZpStB3q
+	6yd5R0tWw5hW0qBngSPUOQLmLaa92LaY0t9zy0BvgIsA
+X-Received: by 2002:a05:620a:8907:b0:939:6de6:9518 with SMTP id af79cd13be357-944216ed973mr439727385a.47.1793371108304;
+        Fri, 30 Oct 2026 07:38:28 -0700 (PDT)
+Received: from toxicpanda.com ([153.61.196.244])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-94425ac6bddsm155612385a.37.2026.10.30.07.38.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 30 Oct 2026 07:38:27 -0700 (PDT)
+From: Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH 0/5] btrfs: data integrity fixes
+Date: Fri, 30 Oct 2026 14:38:06 +0000
+Message-Id: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,101 +91,83 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261014023733.266854-1-18983559317@163.com>
-In-Reply-To: <20261014023733.266854-1-18983559317@163.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Fri, 30 Oct 2026 15:11:33 +0100
-X-Gm-Features: AclHuK9_U1sdsfah92JETnlIiZP0F7Q7mLVpYaOkJD3_p8ZASapxcKb1MBMHWaE
-Message-ID: <CAPjX3FdCZpJkj+QaCMObtTy0_W=uxXfZfatUHvOPdjN07v7KTQ@mail.gmail.com>
-Subject: Re: [PATCH v3] btrfs: wait for a grace period before freeing a new device
-To: Binbin Deng <18983559317@163.com>
-Cc: dsterba@suse.com, mason@kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Qu Wenruo <quwenruo.btrfs@gmx.com>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAM+r5GoC/yWMQQ6CMBBFr0Jm7YRSRKJXMS46MIUxppBpNRjC3
+ aW4fD//vRUiq3CEW7GC8keiTGGH6lRAN7owMEq/M1hjL5WxV6QzUlIfsXfJoYTEg0r6IlPb1NS
+ 0tTEedntW9rIc5fvjz/FNT+5SzuUHuchI6kI35uk1l0e49JNi4CXBtv0AMY9XBZ8AAAA=
+X-Change-ID: 20261029-b4-btrfs-data-integrity-eb753b57300f
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+ Naohiro Aota <naohiro.aota@wdc.com>, 
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>, 
+ Boris Burkov <boris@bur.io>, Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ stable@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=openssh-sha256; t=1793371105; l=2635;
+ i=josef@toxicpanda.com; h=from:subject:message-id;
+ bh=YMEJ1FGA0t74fOXTrNLI1MmSNUL5joiB2lJWMWavJzo=;
+ b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
+ JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
+ QB4FPscSuuXStZNYYoP94AQtart+lZVJkTi0PEYHBO5lthR/+x60yAWTI5WRWLxqncxocpaCo8K
+ 2txIaK+CpUgQ=
+X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
+ fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
 
-On Wed, 14 Oct 2026 at 04:37, Binbin Deng <18983559317@163.com> wrote:
-> KASAN reports a slab-use-after-free in btrfs_statfs() walking
-> fs_devices->devices. btrfs_init_new_device() publishes the new device
-> with list_add_rcu() and can fail afterwards, for example with -ENOSPC
-> in init_first_rw_device() when a user with CAP_SYS_ADMIN adds a device
-> that is too small to a seeding filesystem mounted read-only. The error
-> path removes the entry with list_del_rcu() and frees the object in
-> btrfs_free_device() without waiting for a grace period, while
-> btrfs_calc_avail_data_space() and btrfs_ioctl_fs_info() keep reading
-> the device list under rcu_read_lock().
->
-> BUG: KASAN: slab-use-after-free in btrfs_statfs+0x11af/0x14a0
-> Read of size 8 at addr ffff8880096be858 by task poc/252
-> Call Trace:
->  <TASK>
->  dump_stack_lvl+0x53/0x70
->  print_report+0xd0/0x630
->  ? __pfx__raw_spin_lock_irqsave+0x10/0x10
->  ? filename_lookup+0x1a9/0x540
->  ? btrfs_statfs+0x11af/0x14a0
->  kasan_report+0xce/0x100
->  ? btrfs_statfs+0x11af/0x14a0
->  btrfs_statfs+0x11af/0x14a0
->  statfs_by_dentry+0x117/0x1e0
->  user_statfs+0xac/0x130
->  ? __pfx_user_statfs+0x10/0x10
->  __do_sys_statfs+0x80/0xe0
->  ? __pfx___do_sys_statfs+0x10/0x10
->  do_syscall_64+0xf9/0x540
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
-> Allocated by task 256:
->  kasan_save_stack+0x33/0x60
->  kasan_save_track+0x14/0x30
->  __kasan_kmalloc+0x8f/0xa0
->  __kmalloc_cache_noprof+0x158/0x370
->  btrfs_alloc_device+0xad/0x3e0
->  btrfs_init_new_device+0x3e8/0x36e0
->  btrfs_ioctl+0x150d/0x6c20
->  __x64_sys_ioctl+0x134/0x1c0
->  do_syscall_64+0xf9/0x540
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
-> Freed by task 256:
->  kasan_save_stack+0x33/0x60
->  kasan_save_track+0x14/0x30
->  kasan_save_free_info+0x3b/0x60
->  __kasan_slab_free+0x43/0x70
->  kfree+0x121/0x380
->  btrfs_init_new_device+0x4a0/0x36e0
->  btrfs_ioctl+0x150d/0x6c20
->  __x64_sys_ioctl+0x134/0x1c0
->  do_syscall_64+0xf9/0x540
->  entry_SYSCALL_64_after_hwframe+0x77/0x7f
->
-> Fix by waiting for an RCU grace period after the device is removed
-> from the list and before it is freed.Place the synchronize_rcu() after
-> dropping the mutexes and before the `error_trans` label.
->
-> Fixes: 1f78160ce1b1 ("Btrfs: using rcu lock in the reader side of devices list")
-> Signed-off-by: Binbin Deng <18983559317@163.com>
-> Reviewed-by: Qu Wenruo<quwenruo.btrfs@gmx.com>
-> Reviewed-by: Daniel Vacek<neelx@suse.com>
+Hello,
 
-Pushed to for-next. Thanks
+I've been doing some model checking of our trickier paths with Claude's
+help, and these are the fixes for the bugs it turned up that actually
+lose data, or tell userspace that something is safe when it isn't.
+Every one of them was reproduced in a VM on an unpatched kernel and goes
+away with the fix, though the fsync and log sync ones needed a delay
+injected to hit the window.
 
---nX
+The worst one is the fstrim one.  If you run fstrim while a device
+replace is running we'll discard everything that has already been copied
+to the target device, because the target's alloc_state is empty until
+the replace finishes, so the whole device looks unallocated.  The
+replace then finishes happily, the source device goes away, and you're
+left with zeroes where your metadata used to be.  This has been around
+since FITRIM learned to trim unallocated space back in 4.3.
 
-> ---
->  fs/btrfs/volumes.c | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 85ea9c5d4536..2693dacd1da7 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3168,6 +3168,7 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
->         btrfs_update_per_profile_avail(fs_info);
->         mutex_unlock(&fs_info->chunk_mutex);
->         mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +       synchronize_rcu();
->  error_trans:
->         if (trans)
->                 btrfs_end_transaction(trans);
-> --
-> 2.43.0
+The split bio one is similarly nasty.  If the last piece of a split bio
+to complete is one of the split bios and it failed, we drop the error on
+the floor, and a buffered read returns success with whatever was sitting
+in the page.
+
+The rest are in our error handling.  A delalloc failure in the middle of
+a folio leaves blocks dirty that no longer have an ordered extent, a
+fast fsync after an error that happened before we submitted the bio can
+log extents that were never written (which log replay then happily puts
+in place of the data that was there before), and btrfs_sync_log() can
+return success for a log transaction that never got committed.
+
+I have a cleanup series for btrfs_sync_log coming, as I had to spend a
+lot of time grokking that fix, which is a good indication that the code
+is too complicated.
+
+They're all independent of each other and tagged for stable.  This is
+against for-next, and it also applies cleanly on top of Qu's
+extent-by-extent writeback series.  Thanks,
+
+Josef
+
+---
+Josef Bacik (5):
+      btrfs: don't drop the error of the last split bio
+      btrfs: clear dirty blocks after a delalloc failure
+      btrfs: make fsync wait after pre-submission errors
+      btrfs: don't report success for a skipped log sync
+      btrfs: don't trim the target of a device replace
+
+ fs/btrfs/bio.c          |  9 ++++---
+ fs/btrfs/extent-tree.c  |  8 +++++++
+ fs/btrfs/extent_io.c    | 10 ++++++++
+ fs/btrfs/ordered-data.c | 62 ++++++++++++++++++++++++-------------------------
+ fs/btrfs/tree-log.c     | 20 ++++++++++++++--
+ 5 files changed, 73 insertions(+), 36 deletions(-)
+---
+base-commit: 2789b2c034d7c0c8687355921a38c5ac41a565fa
+change-id: 20261029-b4-btrfs-data-integrity-eb753b57300f
+

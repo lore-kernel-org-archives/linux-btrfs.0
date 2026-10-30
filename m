@@ -1,86 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.44
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793333761;
-	b=Y5mVN7INSRI+Hfh/0jONLVI7SXiA7BnH1c1PgOLKof+qlNBXQ9rgEBaT7zrGyDF1EJiy
-	 EhJH/UyyeAaihADMv1RsT/HSOLOxG0L6+Ua+QdKdCuA3ce8Ymv9TpO7pX6ky4t7jZ9FBz
-	 FUuDmjXXiwMEj09cULPZF4CXfbKv+1jU579mW8GmZGSDXxw/SIS0LVNLHKRtBXp+5Mu/A
-	 sgKP2nDgSjjuN/hVldHeaAF2Da0EzfXQyaYV4ULfrEPRGBEjL2ht4i45BiY8uswfeXPU9
-	 W9o4yBUmmmN3HS5cYyDJInrWLQdOTyq7keQM+EUjn1vq9dabG/s64pg/fmytIKfyU8Q==
+	t=1793333983;
+	b=5pOv58Bu2p7xWPxqrePdw90Eosvt58Z2cz8QuPqJvsw4q9f8z7BRsGyEkITJqkekSzPT
+	 lmZVWOTbuPTCOe44bfX3lI0BBdmwCbtx8nGI9/ldlrW8QLi4bhooZQMi90EzigApnmSPR
+	 iYCxjczhrA2qyk5r5dMeKhGEedeLP6Az59yjryVpk/WN9zeasqebzJBJbKB8CYX9DJaUX
+	 owJziZ+iW8CVhf2VAXVzhzzfXZayuDVF7y7fMqae6AvdJDpOshQ47pYI+mUBOmrnh3Iay
+	 QOnyNz98XMPsM2ZdkBbrZT4fcSBzPf7dAIMQRLYMyThUoM7TqwoRVJnUYNu3Aoob4Tg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793333761;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=We8OKRdfXzD9Ch0dKQ+lJh+yqI7m5dtbXEnxvH19IC0=;
-	b=4MXksv2R/EnPnTtoHgGxPHeKmwnnL2weiKYVZJxRmfSCPgNpsigxEgnIo9QK/eREMAhv
-	 iX5IBFoYRrh24iFWi9DYQCWYq81Slf4Ks8nOLGQqEkdQvBfpSddtTCGotDO6XMgDz1J4P
-	 BYyOFwVjkhbYVRluK1niGM3lYc9vwM1E4kVrV+XWJkaPaLrs1/cVBtR5zVu5Oq7fUgP9N
-	 WCga4FqQQH1MSOJSD/jwvMVmzTW8Zqr9FGrAB2n1sGFb4gzsaNSYawQgt0T4j7xrQYbTP
-	 Hu1KeVT5o6/5gJDmS26oBXhV83IauTbibiFMUX3s1cqGRgOmmm5o6qpx121xeDsqtAQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793333983;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Message-ID:Date:
+	 MIME-Version:User-Agent:Subject:From:To:References:Content-Language:
+	 Autocrypt:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+	bh=PJfqzS64g/n7j0NgWDS1zHAqCKS3AV4yHCGUHEjO/js=;
+	b=DDDGTwWtxrVI+y42UR+AD513ygw2o9VJXXpc+4RAbKmwlPTBks+r/Kzlm7jZk4PSuH/3
+	 TZIpVnWILWDHJ6YF05uQ9iNgCKqm8TeE+lkp09+EtcuUxeeaFLbmhK8ARjX/RxxodWSoe
+	 gdIX4GWJ5sIJb5uCrm0Iievrop3jg2zFC5DVyHog3OW8EgWNNtOURUxXnKonw5G18fbzs
+	 36OXtg8mpp8djRw0i3Hp+WeSOqBst/jDetf69E+h4qxkJvhhso6lEUb4Raj58/iejkhzF
+	 h1zRWhv46YKOjRk3hUUpyvP0bBa8WOEOEMfPpiw2xi4kHAJgZBWycGOLvfp8CGuHg8A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Le4p7jRM;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="GK/qojVz";
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=FCCEGpIN;
+	arc=none smtp.remote-ip=209.85.218.44
+Received: from mail-ej1-f44.google.com (mail-ej1-f44.google.com [209.85.218.44])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2BA85606A31C
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:16:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2BA85606A31C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC56E606A31C
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:19:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EC56E606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Le4p7jRM;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=GK/qojVz
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 99CCF1FCFB
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333759; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=We8OKRdfXzD9Ch0dKQ+lJh+yqI7m5dtbXEnxvH19IC0=;
-	b=Le4p7jRMqQpyvXnTj+6aHZ3IYxABr/+l3o0d/mmEktGVSXHWFIjyIkbidfSiKJMxazojil
-	6pxbQ0+h6UuIZjuVCkMKxRJPkc6hA2O7dKc+oTsGYEQckgcZAc7OxuBXgibMrKCX5f1Ydh
-	BZ07WJZjIeIPHszV79xVh1NnX3NHQmA=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333758; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=We8OKRdfXzD9Ch0dKQ+lJh+yqI7m5dtbXEnxvH19IC0=;
-	b=GK/qojVzPbh4gg97i/PEp9p75GCmlGr1VN9Mjlbd/dK/aM9Y/+mktuQXZ3aTS6pgQjsI5B
-	vY6e0E16f2ty+FKgCjvxxFIqdtvVAxoltcPA1+37jpL0yPdxTeUHgtfaiIHVuDI5aeCzJQ
-	6aoC3DIlGIfflA6ZhVNv784zHiTm1eo=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 81E1413432
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:57 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0uAiEekZ5GrDGwAAD6G6ig:T13
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:57 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 12/12] btrfs-progs: check: return error if fill_csum_tree_from_fs() fails to read a root
-Date: Fri, 30 Oct 2026 14:45:19 +1030
-Message-ID: <18a6c0ecc34bb581e8f5d9143b754742196a279f.1793333606.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1793333606.git.wqu@suse.com>
-References: <cover.1793333606.git.wqu@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=FCCEGpIN
+Received: by mail-ej1-f44.google.com with SMTP id a640c23a62f3a-c49c32650adso26141366b.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2026 21:19:42 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1793333981; x=1793938781; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:to:from:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=PJfqzS64g/n7j0NgWDS1zHAqCKS3AV4yHCGUHEjO/js=;
+        b=FCCEGpINB4sVoT2/AS/O4CT/lpSFtd3NNO/jG8GNjjENHnf2jdFUEKPkFKJ02Et3Vi
+         W7AnfV9fesx8LIGsaS+iino+CUiF1biUyfRZo4xUmLk+0vDlnZMuQ2pRlKpfvpB7vDIF
+         XfvGxNa4zPF2xJ4P8co5MA+xjZkCF9Wg7Xjk3UBxZL2F8yGhmbQmwSEHDDQphFGf0Z3x
+         6L+pag0puNXrXHgb8woKKnX95+WeZSAm+UCwf70BPcRRZK1tfL+GtLtqZt1Yop7RJolS
+         4er67HG0ophUkShEndaeisuUVhuGVhEQnQ9bReQ2wg0VJ+zVFfZOFicRskVXq84meWUS
+         i2hg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793333981; x=1793938781;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
+         :content-language:references:to:from:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=PJfqzS64g/n7j0NgWDS1zHAqCKS3AV4yHCGUHEjO/js=;
+        b=xODI+4dAU8LICNZHbFRm7RjRf6sSiJhN+TNXZVr9CCfIZN/pOm+5X1Sp4603GvvpmV
+         CnTLPJg2d26X5eWg3iwE3tLDcqPIzibhJVC+3H/N8S6VEiA7PhSlgQiAbgdbWwDLr2sY
+         FxnitAWO0hLhABqoz2hVjLnmpXk6YaVyr4uHpYMg5sKkXtem+Q9O2uJA7pWXCbBHIBFu
+         JgZOeJY9l1oHji9xfCk6uri+aqVgP1I36HFxpZYB6/MuaEIKuWD7DFyYSX8XyHSzMVgd
+         nzc33YoE505C3iWQMwFjmsDCLs/0p9F4sOOmLwQ+srbKq+KviThPXnXAn020WU2d46iN
+         TXwA==
+X-Gm-Message-State: AFq9FYKtRWWMBLOgQtsuUHgUVbdcRQT0VemjX7zy0R9zb690qv6MPnSZ
+	ApbSutLGawFKHMP/7thoOldSO0aA/mUQIfdb3LSyL9OfxggYa1hV36HjfNFzOejJooDhaHhfarw
+	FZ58NAzY=
+X-Gm-Gg: AYBFou0g7vKhRmaBhhWid3QhzEEKxwrtZ/WvILt9GqCZzK5yoLEhI2ANUMHqR9cGteb
+	7AbXdpZ3qajk8rG1ZJu3ezqXmsJtrV8fNGkiUuoeyZlgU+yeO/4YIqVvfoFmf8LZyFd9BWacEhV
+	AATLfhRRz1rvsVbpjOyq24RuNoVPRPxL8vQzNRbbWejmpuPpRYT18UzUWNQX91zKfQFT3qvbA2k
+	Q+nQ2O9esi1F3xWvN6/EcpL7g+JZC6Lyss7R1H12Pk24oABdWRpy0kyE3nvaCr7tK0QRbQJo5YG
+	cDSZzEOIsN8Mexcwk+XQs4qgT6/eBp3CfEFTLQSSrEdsNL/ZGGOOTPs/cEMvCEfraIhve+pkk53
+	CWzGbUE5uqFdPSqPfLjcfyF9BNXzXn0iuwcPMc726H9ve2l1z+3zLbI12eJ/4X5M/AdiJTMlfIX
+	v1mv1wNUhsaYyuyTMbjQLco+YKoEMz5LgwFizQe/ANC917b+Vd4n6zhrOyz6ExUhIlS8ChwG///
+	+bAqVl6C1cfVRJBPeXUNV1oBsJOeTbHIkmRoLLqydssiFuKSD8Du6MTYg9FzudyThWew2tqr6MH
+	Nl/LkHHMEyqCrrTIYpD4EQ==
+X-Received: by 2002:a17:907:1b08:b0:c3f:a2f0:6cb with SMTP id a640c23a62f3a-c4ca7b1c408mr77673966b.18.1793333981306;
+        Thu, 29 Oct 2026 21:19:41 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8a9efb3d247sm213488b3a.40.2026.10.29.21.19.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Thu, 29 Oct 2026 21:19:40 -0700 (PDT)
+Message-ID: <fe13dd4e-ceee-41cd-b0b7-d47e7a0c5426@suse.com>
+Date: Fri, 30 Oct 2026 14:49:36 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,62 +92,148 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH 00/12] btrfs-progs: fix btrfs_path leak, part 2
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+References: <cover.1793333606.git.wqu@suse.com>
+Content-Language: en-US
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <cover.1793333606.git.wqu@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 
-If fill_csum_tree_from_fs() can not read a fs/subvolume tree, it prints an
-error message but returns @ret, which is 0 at that point.
 
-Thus the caller will consider the csum tree rebuild as successful, even if
-the csum items of that subvolume are not generated.
 
-Return the proper error instead.
+在 2026/10/30 14:45, Qu Wenruo 写道:
+> This is the part 2, focusing on the on-stack btrfs_path.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- check/mode-common.c | 6 ++++--
- 1 file changed, 4 insertions(+), 2 deletions(-)
+This obviously rely on the part 1.
 
-diff --git a/check/mode-common.c b/check/mode-common.c
-index 7d829661eb3d..cda682313f49 100644
---- a/check/mode-common.c
-+++ b/check/mode-common.c
-@@ -1348,8 +1348,10 @@ static int fill_csum_tree_from_fs(struct btrfs_trans_handle *trans)
- 		key.offset = (u64)-1;
- 
- 		cur_root = btrfs_read_fs_root(gfs_info, &key);
--		if (IS_ERR(cur_root) || !cur_root) {
--			fprintf(stderr, "Fail to read fs/subvol tree: %lld\n",
-+		if (IS_ERR(cur_root)) {
-+			ret = PTR_ERR(cur_root);
-+			errno = -ret;
-+			fprintf(stderr, "Fail to read fs/subvol tree %lld: %m\n",
- 				key.objectid);
- 			return ret;
- 		}
--- 
-2.56.0
+For the full patchset series, one can fetch it from the github PR:
+
+https://github.com/kdave/btrfs-progs/pull/1191
+
+> 
+> Unlike heap-allocated btrfs_path, which needs proper btrfs_free_path()
+> call, or the btrfs_path itself along with the held ebs will leak.
+> 
+> The on-stack one only leaks the held ebs, but still we should fix them.
+> 
+> Just by the amount of code, one should know this is largely generated by
+> LLM, although I spent more time drafting the plan and review the final
+> patch.
+> 
+> There are some extra notes other than just converting existing
+> "btrfs_path" on-stack declaration to BTRFS_PATH_AUTO_RELEASE:
+> 
+> - If a label is only for cleanup, remove the label when possible
+>    As a lot of call sites can directly return without jumping to the
+>    cleanup label.
+> 
+>    Also cleanup some "ret = x; return ret;" patterns.
+> 
+> - Keep dedicated btrfs_release_path() if needed
+>    As our C code is not fully aligning the path lifespan with the scope,
+>    we still need to manually release path halfway for certain call sites.
+> 
+>    E.g. before calling btrfs_commit_transaction(),
+>    btrfs_abort_transaction(), btrfs_search_slot(), close_ctree() or
+>    before lowmem mode modifying the tree.
+> 
+>    Releasing the path before btrfs_commit_transaction() is to follow the
+>    kernel convension. There are a lot of existing call sites breaking it,
+>    so here we do not intentionally fix them.
+> 
+>    This will require a dedicated change in the future.
+> 
+> - Reduce the lifespan of btrfs_path when possible
+>    E.g. the path is only utilized inside a loop or if () branch, declare
+>    path there.
+> 
+> This applies to patch 01~08, which are all straightforward conversion
+> with minor cleanups.
+> 
+> After that, the code review process exposed some other bugs in the
+> touched functions, which are all pretty simple and low severity ones.
+> Patch 09~12 are to fix those minor bugs.
+> 
+> Qu Wenruo (12):
+>    btrfs-progs: kernel-shared: use BTRFS_PATH_AUTO_RELEASE() for on-stack
+>      paths
+>    btrfs-progs: common, convert, image: use BTRFS_PATH_AUTO_RELEASE() for
+>      on-stack paths
+>    btrfs-progs: mkfs: use BTRFS_PATH_AUTO_RELEASE() for on-stack paths
+>    btrfs-progs: tune: use BTRFS_PATH_AUTO_RELEASE() for on-stack paths
+>    btrfs-progs: cmds: use BTRFS_PATH_AUTO_RELEASE() for on-stack paths
+>    btrfs-progs: check: use BTRFS_PATH_AUTO_RELEASE() for repair,
+>      qgroup-verify and mode-common
+>    btrfs-progs: check: use BTRFS_PATH_AUTO_RELEASE() for lowmem mode
+>    btrfs-progs: check: use BTRFS_PATH_AUTO_RELEASE() for original mode
+>    btrfs-progs: check: fix fixup_extent_flags() retry path
+>    btrfs-progs: fix missing transaction commit in
+>      truncate_free_ino_items()
+>    btrfs-progs: dump-tree: fix exit code and leak on open failure
+>    btrfs-progs: check: return error if fill_csum_tree_from_fs() fails to
+>      read a root
+> 
+>   check/main.c                     | 235 +++++++++++--------------------
+>   check/mode-common.c              | 141 +++++++------------
+>   check/mode-lowmem.c              | 202 +++++++++-----------------
+>   check/qgroup-verify.c            |  29 ++--
+>   check/repair.c                   |   5 +-
+>   cmds/device.c                    |  11 +-
+>   cmds/inspect-dump-tree.c         |  11 +-
+>   cmds/rescue-chunk-recover.c      |  43 ++----
+>   cmds/rescue-fix-data-checksum.c  |  10 +-
+>   cmds/rescue.c                    |   7 +-
+>   cmds/restore.c                   | 126 +++++++----------
+>   common/clear-cache.c             |  79 ++++-------
+>   common/root-tree-utils.c         |  10 +-
+>   convert/main.c                   |   9 +-
+>   convert/source-ext2.c            |   3 +-
+>   convert/source-fs.c              |   3 +-
+>   image/common.c                   |   2 +-
+>   image/image-create.c             |   2 +-
+>   image/image-restore.c            |  20 +--
+>   kernel-shared/extent-tree.c      |  62 +++-----
+>   kernel-shared/file.c             |   3 +-
+>   kernel-shared/free-space-cache.c |  24 ++--
+>   kernel-shared/inode.c            |   8 +-
+>   kernel-shared/print-tree.c       |   9 +-
+>   kernel-shared/volumes.c          |  15 +-
+>   mkfs/main.c                      |  42 ++----
+>   mkfs/rootdir.c                   |  36 ++---
+>   tests/btree-test.c               |   2 +-
+>   tune/change-csum.c               |  50 ++-----
+>   tune/change-uuid.c               |  38 ++---
+>   tune/convert-remap-tree.c        |  12 +-
+>   tune/quota.c                     |  19 ++-
+>   32 files changed, 447 insertions(+), 821 deletions(-)
+> 
+> --
+> 2.56.0
 

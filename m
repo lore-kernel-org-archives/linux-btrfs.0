@@ -1,86 +1,86 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.42
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793393871;
-	b=TNWKOl3awwSYZURSq8+JsNhbnvVeFPMftMsOoHCR8pvzKYy3gjtpVCEpV4JSjZaDWr8n
-	 0X1x99fkMj4SdWvI1LjagMKvdI7k7AFD9DmrIg7T32prsqyvPxLTvdUii7T5h5FJ0Gj5S
-	 OX4gX62rgwJ6O95Z4ZhvL8/fbsaao6opCCNqwh9A+wAsfzqYNXDyNdW1iAlouhdQpWDYu
-	 G23PSJwEhgyCDBavDIavicEDbVkLiImL2nhOFajAJzFDjfwOf8guWWJWkMbMc0uu7XmPH
-	 BPW7ZMRYEArIVq85uCq2pzD3rlzVRIdiy63MN+i5INf5D90b9AWIGS25Ca8udDQ/vpw==
+	t=1793394175;
+	b=JbzNmSojHi0s2pfuKk3gEGbWQ5W3hscwjqp+2SVd2/fPTdn1PfmJqiiK2nfKWFR1fx1G
+	 VW8wJbJcJsipILuJWA9SwpcKyOHf9Rc30dpaQIGWQsJiz9zRsuQhRlG0eonHpcBulC88b
+	 kdDeeiHnM6TRjn16o9nWZHRl7uuIGOI1ktyFusZQ4du8teYMhAaCrjc2SAHfDNJag6E7c
+	 wFDZivTHKQ4wHPcQXGBhc0CbwbxObGLSdN+q7Odve947XMIG70N8WaDoJh/Oz38HN2vEl
+	 WAcYCbXpON0rK9SwM5e1a9TAvcH4Kg1HhDHvozLUffEDAoVPQZ8aMNGyus8WyUMBjiA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793393871;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793394175;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Message-ID:Date:
 	 MIME-Version:User-Agent:Subject:To:Cc:References:Content-Language:
 	 From:Autocrypt:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	bh=h+46bkDry+sIUzzigKe4U0zYwNBSXXeQxCLzrMv+t7M=;
-	b=oFjPhfetLrsRsDxsAGysa0NjAGHwY5+Nb91NE7UBCGaTMbJ6/haXX3NcqBI2nc52AWSH
-	 BKulV99IbSzMpc9QceKuZeN62cb6E5W/o4xAX+uGi+cNzQF85bU+04wqFA9WDMYy9UE8i
-	 XChQk2k0g2QGQjGl1dXjIg/vRbqVWvRXZbyfInt3ToFG2QiKPS2u7LhX/sq8mXZhonYiW
-	 oRHIsF+axn/idcbs6s9A+ID3m9E47KmdSJ7F6ELpDi51Y0iEikD5n4MO8xclDwxFrLwal
-	 rQ+s/P7FDZnVIjGy79U2xiFMDUJhGSNoEpLFgNa9HpWefluArybjxO6mMVM6TFJRabQ==
+	bh=iHHhsndpKzFs7xmvr7h0NuvDfxvFUZq9HuUCucdH8zI=;
+	b=LRfaekrp7iDU5NUy4repLfarvHdTpJ4HLG4fhV8PVoaCl2ZJDmEGE+ZfY7SWix0VWPKk
+	 CAlw82lK2cowhs4DAn1NryzNH+FSH6EHTdBh4ztsdIFwDt86bR6uWspBsScUqYNpwcX0E
+	 3UzLAjGZy6hHsZOwFulcBr95sorkBXPz9BZ3jL0NE/C0CjtKEzaXWWTEj8cTXNH2zSQtE
+	 WtJvpA9mxCpX6r96CiZfHhMFcSIGAFTU+3d25Bmn4VnJsnsi6D277ETK2Rgqq8kcs7+Nc
+	 DMmGrqUnKDLMMiQtsBMZrJ7I3LKFFtqRkamXOs+YFLty74PWyMPO9TrXiLNNnZP9/hg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=GVCw6oRk;
-	arc=none smtp.remote-ip=209.85.128.53
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=HjnNo8kD;
+	arc=none smtp.remote-ip=209.85.128.42
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4F171606A31C
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 20:57:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4F171606A31C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E8EB2606A324
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 21:02:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E8EB2606A324
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=GVCw6oRk
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-4a4dc547987so6352185e9.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 13:57:50 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=HjnNo8kD
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-4a4dc547987so6370575e9.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:02:53 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793393869; x=1793998669; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1793394172; x=1793998972; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=h+46bkDry+sIUzzigKe4U0zYwNBSXXeQxCLzrMv+t7M=;
-        b=GVCw6oRkNd5STrpyXjA2GUJdkkqV53Xm4yIswuTyFQ9fa8g/P0T4pFIU0TuN/g3/hv
-         mSUhmEc/x0xIQP3fZqo8A5tQo3SJ6RNDfpt/U00ziYsn08LwXzLZ7BoK9v0d9LZ11m7I
-         GKzLeOtK7OzqSVS+BZzV0uN5Fg69xgmD8o5nAo7wojTNmk+f0g9SOyLbthFsNLtS8nDS
-         eVXPTIK0OnFWYgV6hG2bQp2tXaSF5BmNQyiuKeX+yPH54jF8z8eqPrIM94cBp7LhWltp
-         Qp6Fm82J/TCLsToIE8Gipgl3LtqkH5o7wWISZsBzGoMVcYFmevqeqcDdnm8HvnHwFl2+
-         XL6A==
+        bh=iHHhsndpKzFs7xmvr7h0NuvDfxvFUZq9HuUCucdH8zI=;
+        b=HjnNo8kDn6NYBnxQARp1eI3X++lbm8+9b/7DNp8FOuEQZNupDhfLjtn3TA3O09Nb6/
+         pTsMNmnvYWyj5kYN1t1mt/nHvHE2xM8c4d33t50bbKW1HFmPI4x4zx80Rf3hRZds3MII
+         2tNlufIEzOIvT94LcB/sETp5GMdThEITBwt5wBKFxv7lN06xiqWNrBtirZC0vItG2TmJ
+         KEvpLLv4LKgbV4OtBdPU6WuMZ1cgfzgWH+vT/vaGD2nAWmjefIfEpFakM2y8XIQM9gJm
+         O75lVwR1la86hYEmIVoZcYYRfeWGAhB0bLEClfKGufYdCwOJX08uh1SLrOdzscsQ8gMC
+         LjSA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793393869; x=1793998669;
+        d=1e100.net; s=20260707; t=1793394172; x=1793998972;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=h+46bkDry+sIUzzigKe4U0zYwNBSXXeQxCLzrMv+t7M=;
-        b=phIx5nbB1AvuLdtJPevKPFkqsA4hxyqGUp5l90hn/sSRxy872dpXkkuTcqB9IHXYp3
-         aG1Qn+JdHqeYma2C0JX4ATXHuxWAxQn0VZtE3i9ctCEYSmMJZCk9IItiOhx30vtuatbn
-         7VUaGaU1RIBFSRTRMI5+CmM0W6kTuviyMji9CST1iR1dOCcCRRMUaSJZUvgVIWjNAmC7
-         W6wECU0gQxbznPxqS/khM2asXo+RIrBn6xULfa9aPDZd5aMYYTwaWqg9fLByWiUmQu/y
-         JzV09GLwZwrsQxKsam1Gxj6LbIIQK2p1Y9vnxhLbiXad9vQdCg59ZBtpPCFsrc2YhcUY
-         C/Hw==
-X-Gm-Message-State: AFq9FYL2mA/nBKKlGYQPOtj7Bv0CEG46vui1nGNWKsHfDxsq9LwmgYL5
-	/cJLi0PHfrPc69NY4ryQ6Z1bMD/Q70h3TGa2KXiRYZYyucx0fxj+5Eu+sn/9xNLm+rg=
-X-Gm-Gg: AYBFou3w/J+/ypXWMT1Wmlo8kPJ+3uYScJoaLRT0J6AvLPSAb17wfK7LiPp+AIm6R6+
-	oD0S4VvHbK08HvktRmPANh0mkR1BRl0nkkfuEHMJPbgj6pAIUpPAeGzk+LxCmg90ApQvBIT45uQ
-	hLAErmUJBPTd3xoM0T85kYno4dZ2qT+hyxdEKsh6HOBhJKlx90U0hEvequnSU+kfWtJ69zeNWK5
-	1n5VYsRRtn5DxeYV1isnXAujnuJ96SlD3HLZUi2MxGST9/7/Q/pmB+JND/APOWTF97zO/hJO2Fk
-	k4lQpbakQfC5KKPyc6bu5AsV7Gy8AznGH4Jc+kNiyDCoXFydd0a7vZaIwO42U3Nr51+I1IlFzly
-	twoYMoYK54dSZRNs7vxGhIugckC4hW/9oIwGWjqz4qNZBOwVyjgfWWBL+kHV0tYkqlwkVanAFiL
-	HifpHvHj980PNpS9iTrnR//EnI0CelLOccxF8F1azJ4lEa7s4cnY+Fxsp6vtiOTZfjmk3N+Twwr
-	hfAzwI3QlNWA8q6/8iwOREwAjCn4bcoF4FYM3ZLYxAzxl3rYKqy+6gmcAhd7LTyfVWaG2lMvSrZ
-	J2gOd7Ru/AEO6qwZohMivPSkp2snigdLQyVvPsVX5l4=
-X-Received: by 2002:a05:600c:840e:b0:4a1:813f:2a60 with SMTP id 5b1f17b1804b1-4ac17d168b1mr84999465e9.11.1793393868759;
-        Fri, 30 Oct 2026 13:57:48 -0700 (PDT)
+        bh=iHHhsndpKzFs7xmvr7h0NuvDfxvFUZq9HuUCucdH8zI=;
+        b=OzmaDArK/DV5XpMEnr0IgJGm8sZyOHrlSgpAaKKtcdC0sQpcGPlRSaKSXffIDNf+Jx
+         7g2YNKvH2I1YErTOMmk1ZyivJeGrsjkj2en5pcZYujFHem3mbK1DY/gTatmkQT5RoxzN
+         YQZQIGgiewUj+Ct+QBWtKRD2O8rBW+drODrgzmGEbhHJysnG6HkC5LwjC1PUrx7OVQEE
+         +1t4P7ZQvY3cvx2s8nhl9sM5Qu0dac47TYYgcuh5jgAPXlINlV1LU059WtzelmZpVxHn
+         ME8G2alwOtk8BHzJuUWjVogQf9aUBI8ikepUb4kEO5tw697V7EnQW52s4buV95KFm84K
+         CIcQ==
+X-Gm-Message-State: AFq9FYKGFezVUwfI5neEpkl+5MUsy85dxWEZ2WP5eZszOuvIkEE18a9g
+	QjaaiV5hud8QgBx/2QxdMws6zFtLFE7emgBl2BaJvGSkj2P6CH7QkpkcHlXeqp3xz8U=
+X-Gm-Gg: AYBFou1Qk/nz15Ms0BYzsP/dns2WEMyv/hDh1Ght3h5jnCTD07dB6ogREbUg9ZLubg4
+	0hfuSkUsUAZQ/Y8nVQRnEpxhMoeAslvot5MxO/4g2vqdqO/APPp5ZRZyGNd/Oaj1Wdcv0Pt/9NP
+	UQCglF2NPt3opHpO088zRF6cUUShoKRCxI11EnD+5BGDybVjZaFahGbQJtdsyPLxsj22m0zyyys
+	VKf4NirSYDk5TOW02N3V+5KGoghkCw/ai5SJB68c3fjRKXF/zUKD4JFv1uh4B7Hm0dbNY7a1RFJ
+	o/v+tVZbLsMR5+yLbjrId9CEKAhYlYVHyumlj3Sow/M3qH/ofzLIfQobS3+WirF4zQJwxGfR41G
+	fut1gR7bGYng2mC58HkZyF3PE6yUZmZ5YnoOle27mP12KMmAzZfsnIJHGdhRLBW57X2deVlEnXO
+	h78cl9oMt9tzZrHgWpY9JBY41hTZnNPhFsZOXmoaHDgB2Iz2pdIKr8VsX5WKGvcpH5YLEDHJrp+
+	opeYk32/In7FKSjTqvLrJrRLHtSsnwMHlrxMgi5FiYWQsYF9K9uSHesZkNPf+fpOhdZ/R4IYyZh
+	QFTm60Yh+aPSd6+6kRXYuxegyoe5bS9apailNQpybl0=
+X-Received: by 2002:a05:600c:a012:b0:4a2:150f:1609 with SMTP id 5b1f17b1804b1-4ac17b2cdffmr74446405e9.8.1793394172354;
+        Fri, 30 Oct 2026 14:02:52 -0700 (PDT)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae6e8fb2c5sm9913650a91.3.2026.10.30.13.57.43
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3ae845429e6sm5275057a91.6.2026.10.30.14.02.47
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 30 Oct 2026 13:57:47 -0700 (PDT)
-Message-ID: <ff0a86d9-51e3-4001-b375-6bc8392cf139@suse.com>
-Date: Sat, 31 Oct 2026 07:27:40 +1030
+        Fri, 30 Oct 2026 14:02:51 -0700 (PDT)
+Message-ID: <09771899-6a3f-462f-bba6-9243415efefb@suse.com>
+Date: Sat, 31 Oct 2026 07:32:45 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,7 +91,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/5] btrfs: clear dirty blocks after a delalloc failure
+Subject: Re: [PATCH 5/5] btrfs: don't trim the target of a device replace
 To: Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>, Naohiro Aota <naohiro.aota@wdc.com>,
  Johannes Thumshirn <johannes.thumshirn@wdc.com>, Boris Burkov
@@ -99,7 +99,7 @@ To: Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
  stable@vger.kernel.org
 References: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
- <20261030-b4-btrfs-data-integrity-v1-2-f4d4196731e6@toxicpanda.com>
+ <20261030-b4-btrfs-data-integrity-v1-5-f4d4196731e6@toxicpanda.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -126,25 +126,40 @@ Autocrypt: addr=wqu@suse.com; keydata=
  0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
  os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
  UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-2-f4d4196731e6@toxicpanda.com>
+In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-5-f4d4196731e6@toxicpanda.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
 在 2026/10/31 01:08, Josef Bacik 写道:
-> If writepage_delalloc() runs the first delalloc ranges of a folio and
-> then btrfs_run_delalloc_range() fails, the blocks that already got an
-> ordered extent are finished with an error through
-> btrfs_mark_ordered_io_finished(), but their dirty bits are left set. The
-> next writeback then submits blocks whose ordered extent is gone, or is
-> about to be completed a second time.
+> FITRIM also discards the space of every device that is not allocated to a
+> chunk. btrfs_trim_free_extents() goes over fs_devices->devices and, for
+> each device that is writeable, discards the ranges that have neither
+> CHUNK_ALLOCATED nor CHUNK_TRIMMED set in device->alloc_state.
 > 
-> Fix by clearing the dirty bits and cycling the writeback state for those
-> blocks, as submit_write_sector() does for a block it fails to submit.
+> The target device of a running replace operation is on that list and it is
+> writeable. But its alloc_state is empty. The allocated ranges of the
+> source device are only copied to it by btrfs_set_target_alloc_state(),
+> when the replace finishes. Until then the whole device looks unallocated,
+> so an fstrim discards everything that was copied to it so far, and what is
+> being written to it in parallel to the source device.
 > 
-> Fixes: 72dad8e377af ("btrfs: fix double accounting race when btrfs_run_delalloc_range() failed")
-> CC: stable@vger.kernel.org # 6.14+
+> The replace finishes without any error and the source device is dropped.
+> With a single device filesystem, 700M of data and fstrim called in a loop
+> while the replace runs:
+> 
+>    BTRFS info: dev_replace from /dev/vdb (devid 1) to /dev/vdc finished
+>    BTRFS error: bad tree block start, mirror 1 want 30638080 have 0
+>    BTRFS error: bad tree block start, mirror 2 want 30638080 have 0
+>    BTRFS info: scrub: not finished on devid 1 with status: -5
+> 
+> Skip the target device. The flag is cleared with the device list mutex
+> held, after the alloc_state was set up, and the trimming code holds that
+> mutex while it works on a device.
+> 
+> Fixes: 499f377f49f0 ("btrfs: iterate over unused chunk space in FITRIM")
+> CC: stable@vger.kernel.org
 > Assisted-by: LLM
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
@@ -154,29 +169,27 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/extent_io.c | 10 ++++++++++
->   1 file changed, 10 insertions(+)
+>   fs/btrfs/extent-tree.c | 8 ++++++++
+>   1 file changed, 8 insertions(+)
 > 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 5ff630630490..3283835ccb5e 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -1746,6 +1746,16 @@ static noinline_for_stack int writepage_delalloc(struct btrfs_inode *inode,
->   			u64 start = page_start + (start_bit << fs_info->sectorsize_bits);
->   			u32 len = (end_bit - start_bit) << fs_info->sectorsize_bits;
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9b0a5c6b96f3..22155507f905 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -6641,6 +6641,14 @@ static int btrfs_trim_free_extents_throttle(struct btrfs_device *device,
+>   	if (!test_bit(BTRFS_DEV_STATE_WRITEABLE, &device->dev_state) || !device->bdev)
+>   		return 0;
 >   
-> +			/*
-> +			 * The blocks are not going to be submitted, so they
-> +			 * must not stay dirty. Otherwise they are written back
-> +			 * later without an ordered extent, or worse, with this
-> +			 * one if it is still around, and invalidating the folio
-> +			 * would account for them again.
-> +			 */
-> +			btrfs_folio_clear_dirty(fs_info, folio, start, len);
-> +			btrfs_folio_set_writeback(fs_info, folio, start, len);
-> +			btrfs_folio_clear_writeback(fs_info, folio, start, len);
->   			btrfs_mark_ordered_io_finished(inode, start, len, false);
->   		}
->   		return ret;
+> +	/*
+> +	 * The target of a running device replace has nothing in its alloc_state
+> +	 * until the replace finishes, all of it would look unallocated and we
+> +	 * would discard what was already copied to it.
+> +	 */
+> +	if (test_bit(BTRFS_DEV_STATE_REPLACE_TGT, &device->dev_state))
+> +		return 0;
+> +
+>   	/* Discard not supported = nothing to do. */
+>   	if (!bdev_max_discard_sectors(device->bdev))
+>   		return 0;
 > 
 

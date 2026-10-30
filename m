@@ -1,84 +1,84 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793333747;
-	b=cX1Ym7oaoDiIolbFtGoCkgszk7Rldm4z8IqIQmZtvli4qYuCA2tRK4qJpQUpabiuBHmw
-	 ft4H2ykInPKrnWteQc4rC11is5eTA5+Ti9qgHIIptsxaP2GH/5ZYrJfTtEg8yqtPFX8QJ
-	 6pM00Qs5SGwm3rnVud2JOnIyK/MnMI/bLf4sddpoLkBSQRfUS9Dg5csh1tTj+UlQS6IwS
-	 Y1i7Q7gC+SximWipq0Q4VTSMwCb57FJMFnidegB8diUyKFQfIz77Q0rQlnuwbb7TPsXLT
-	 rxDsJe3OI9v3mcZGpC0G1F2SPmfgD3BcqppkffngpjYswnEDA/WzSVnlNsZKixLRHyg==
+	t=1793333743;
+	b=5tZlBgSKMcgaCJYLBoi753jDuuEEU1nn3JfTYmBmCz6O/eFbE82ztkHTxB4SUlMF07Zu
+	 BsT/4bdwxvLaV6kK4jZNUlROcEvrkhzNWWd4eXxLmaOSFlfeGQdhVgOYBMTox5IqBa3DR
+	 xMAtpR8uT7e+8qJRVJoNcy5OUr9isRjLwIRbPjmtvk+dl14p84dk/5/6Othf8cuXpazBw
+	 0DJwZrl8DcVK4KAcv58oB+1Nv4ZwA65yXtL2f4EHuT481yCVckC9T/Z5X+/rpPmTEULB0
+	 U9lPz/yQnVtLgHXYcatlXL5NRvY8wP188Mh6r6DyiIOkg0tRysLancG1wx2Mj+djvXA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793333747;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793333743;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
 	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
 	 X-Spamd-Result:X-Spam-Score;
-	bh=g42BGvs7RYXF0enbHlGOpZ+UUz4CdDZYa/u+V0FW2AU=;
-	b=P7mPqCIejFWGmXBLxKn9zvZDnsAs09/j+ioNHxUKOq5dsb8JvMSXVvKPep9+0suXg4DS
-	 tfAcPSJlwWDIv81KedFr3XQV5FvtfFDdiJBg+xZSC7IQJ1F0gnAwxpaxAlADo+3y/sRA3
-	 pyIVMSwThpsR4V+PlYFW13lUsSf0YorQWenQDsSX+klmJwXlAHo0X1bAsLaXR5SPcHfnp
-	 xVfYgPxT6Mz5Qahatlmsy1HP8i1jls2+QEGas9QliKOlfYK834cIb6Edz/+oh+WRKjG0Q
-	 J+9S+uR1uyCV8t9dLi9cNOUQttbx4xm4/J/GZJgfusMlHyaPZmEfSAUcYBpPA1a6QDA==
+	bh=aIDKnInqOT0eq/ytZRA+LeIEaWccoL5gTt+rYVJJsmQ=;
+	b=Pl2conco9Wqnp5G+j5bBLfdmNgO0s8fN3Q2TN8TugnMDfdnP1c6W8fTtHnVo/9Ob4hFT
+	 u38SrOXuDQd2tmsKiglE5WUvHHARn9eoCTIQeKzYjQDxEUBNAmO0P/4V0VndfC+S7E4/o
+	 i3NXs2n1G32NO2JkxWpEviyAOg3lIOypelEjRjSFIe2CvKnFBYUSIDkVplDbJKytkrR85
+	 r8ZmIibeSeU9PXnNbI4NN9UKIqTDa5MxQ29WWc4Tcp8h4e5i/jAWSx+g6LRXVdmEydoDk
+	 mE1biO5sqz8XZoB9UFf3QZGe6gpZdJZL88kJo0HMMyoBEnjUECrGmsksPy2ikWnyn1g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=f+D2Eybf;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=f+D2Eybf;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UIlLDWb0;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UIlLDWb0;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FDCD606A323
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0FDCD606A323
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6E9AD606A31E
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6E9AD606A31E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=f+D2Eybf;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=f+D2Eybf
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UIlLDWb0;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UIlLDWb0
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 6D0541FCF9
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:45 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A18BD1FCFA
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333745; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793333740; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=g42BGvs7RYXF0enbHlGOpZ+UUz4CdDZYa/u+V0FW2AU=;
-	b=f+D2EybfRzg9cVC5ATEyHrrMhinZT/tFMKiZQes6Bk4ydciEhcHfJoNOfQX1UUiU4oCWho
-	FrwiwNo6qVdk+t1k/8mg+taJLw82RMCH8EsCdaHeFt9y7GTV/mo5DliARH26d+4x495QBn
-	DfzzzX/qssG1jpt4qkw/i9xhRbR9RLE=
+	bh=aIDKnInqOT0eq/ytZRA+LeIEaWccoL5gTt+rYVJJsmQ=;
+	b=UIlLDWb0csWQbyebeAzwChCH3uxOIgLCHKNgFNfpInbzmcrGQfjGXPoo0/niEJvo0T6Y+d
+	TpOgWEWvG4SsANq2wB2Xj+hdWUhAy+UzjYZJUxxgEri8xPwpkvNSlZQbU9CNPMM+i5upST
+	0QlrkZzvxwiK0zFAry4QJZ9jC8u41Zg=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=f+D2Eybf
+	dkim=pass header.d=suse.com header.s=susede1 header.b=UIlLDWb0
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793333745; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793333740; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=g42BGvs7RYXF0enbHlGOpZ+UUz4CdDZYa/u+V0FW2AU=;
-	b=f+D2EybfRzg9cVC5ATEyHrrMhinZT/tFMKiZQes6Bk4ydciEhcHfJoNOfQX1UUiU4oCWho
-	FrwiwNo6qVdk+t1k/8mg+taJLw82RMCH8EsCdaHeFt9y7GTV/mo5DliARH26d+4x495QBn
-	DfzzzX/qssG1jpt4qkw/i9xhRbR9RLE=
+	bh=aIDKnInqOT0eq/ytZRA+LeIEaWccoL5gTt+rYVJJsmQ=;
+	b=UIlLDWb0csWQbyebeAzwChCH3uxOIgLCHKNgFNfpInbzmcrGQfjGXPoo0/niEJvo0T6Y+d
+	TpOgWEWvG4SsANq2wB2Xj+hdWUhAy+UzjYZJUxxgEri8xPwpkvNSlZQbU9CNPMM+i5upST
+	0QlrkZzvxwiK0zFAry4QJZ9jC8u41Zg=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5978513432
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:44 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8518B13625
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 0uAiEekZ5GrDGwAAD6G6ig:T5
+	id 0uAiEekZ5GrDGwAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:44 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 04:15:39 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 04/12] btrfs-progs: tune: use BTRFS_PATH_AUTO_RELEASE() for on-stack paths
-Date: Fri, 30 Oct 2026 14:45:11 +1030
-Message-ID: <5af92f33db87f42aec2c3920166183eedc826d75.1793333606.git.wqu@suse.com>
+Subject: [PATCH 01/12] btrfs-progs: kernel-shared: use BTRFS_PATH_AUTO_RELEASE() for on-stack paths
+Date: Fri, 30 Oct 2026 14:45:08 +1030
+Message-ID: <bedf1acd0adb0d911bf8187b55031c6fc229dc98.1793333606.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1793333606.git.wqu@suse.com>
 References: <cover.1793333606.git.wqu@suse.com>
@@ -92,7 +92,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 6D0541FCF9
+X-Rspamd-Queue-Id: A18BD1FCFA
 X-Spam-Level: 
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Rspamd-Action: no action
@@ -116,7 +116,7 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	RCPT_COUNT_ONE(0.00)[1];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	TO_DN_NONE(0.00)[];
@@ -125,525 +125,489 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Score: -12.01
 
-Convert all on-stack btrfs_path in tune/ to BTRFS_PATH_AUTO_RELEASE(),
-and drop the btrfs_release_path() calls that only existed as function
-exit cleanup.
-
-Where the path is only used inside one loop (generate_new_data_csums_range(),
-delete_old_data_csums(), change_csum_objectids(),
-extend_block_group_items()), the variable is declared in the loop body,
-so the path is released as early as possible.
+Convert all on-stack btrfs_path in kernel-shared/ (and the btree-test
+tool) to BTRFS_PATH_AUTO_RELEASE(), and drop the btrfs_release_path()
+calls that only existed as function exit cleanup.
 
 This also fixes the path leaks on error paths of:
 
-- get_last_csum_bytenr()
-- generate_new_data_csums_range()
-- delete_old_data_csums()
-- change_meta_csums()
-- get_csum_items_range()
-- btrfs_change_csum_type() helpers (resume_csum_change())
-- extend_block_group_items()
-- remove_owner_refs()
-- enable_quota()
+- btrfs_stripe_tree_logical_to_physical()
+- check_dev_extent_beyond_bytenr()
+- get_last_converted_bg()
 
-Explicit releases which are not at function exit are kept.
+where btrfs_search_slot() failure returned without releasing the path.
+
+Explicit releases which are not at function exit (e.g. before
+re-searching with the same path) are kept.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- tune/change-csum.c        | 50 +++++++++++----------------------------
- tune/change-uuid.c        | 38 ++++++++++-------------------
- tune/convert-remap-tree.c | 12 ++++------
- tune/quota.c              | 19 +++++++--------
- 4 files changed, 39 insertions(+), 80 deletions(-)
+ kernel-shared/extent-tree.c      | 62 ++++++++++++--------------------
+ kernel-shared/file.c             |  3 +-
+ kernel-shared/free-space-cache.c | 24 ++++++-------
+ kernel-shared/inode.c            |  8 ++---
+ kernel-shared/print-tree.c       |  9 ++---
+ kernel-shared/volumes.c          | 15 +++-----
+ tests/btree-test.c               |  2 +-
+ 7 files changed, 45 insertions(+), 78 deletions(-)
 
-diff --git a/tune/change-csum.c b/tune/change-csum.c
-index 1efb6fd60758..1e01a983ea17 100644
---- a/tune/change-csum.c
-+++ b/tune/change-csum.c
-@@ -40,7 +40,7 @@ static int check_csum_change_requreiment(struct btrfs_fs_info *fs_info, u16 new_
+diff --git a/kernel-shared/extent-tree.c b/kernel-shared/extent-tree.c
+index bac44654eab8..b73fe8c63431 100644
+--- a/kernel-shared/extent-tree.c
++++ b/kernel-shared/extent-tree.c
+@@ -2782,7 +2782,7 @@ static int read_one_block_group(struct btrfs_fs_info *fs_info,
+ static int get_last_converted_bg(struct btrfs_fs_info *fs_info)
  {
- 	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_root *dev_root = fs_info->dev_root;
--	struct btrfs_path path = { 0 };
+ 	struct btrfs_root *bg_root = fs_info->block_group_root;
+-	struct btrfs_path path = {0};
 +	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
+ 	struct btrfs_key key = {0};
  	int ret;
  
-@@ -73,7 +73,6 @@ static int check_csum_change_requreiment(struct btrfs_fs_info *fs_info, u16 new_
- 	key.offset = 0;
- 	ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
- 	if (ret < 0) {
--		btrfs_release_path(&path);
- 		errno = -ret;
- 		error("failed to check the dev-replace status: %m");
- 		return ret;
-@@ -86,7 +85,6 @@ static int check_csum_change_requreiment(struct btrfs_fs_info *fs_info, u16 new_
- 		state = btrfs_dev_replace_replace_state(path.nodes[0], ptr);
- 		if (state == BTRFS_IOCTL_DEV_REPLACE_STATE_STARTED ||
- 		    state == BTRFS_IOCTL_DEV_REPLACE_STATE_SUSPENDED) {
--			btrfs_release_path(&path);
- 			error(
- 	"running/suspended dev-replace detected, please finish or cancel it");
- 			return -EINVAL;
-@@ -105,7 +103,7 @@ static int check_csum_change_requreiment(struct btrfs_fs_info *fs_info, u16 new_
- static int get_last_csum_bytenr(struct btrfs_fs_info *fs_info, u64 *result)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, 0);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
+@@ -2809,7 +2809,7 @@ static int get_last_converted_bg(struct btrfs_fs_info *fs_info)
  
-@@ -127,13 +125,11 @@ static int get_last_csum_bytenr(struct btrfs_fs_info *fs_info, u64 *result)
- 	 */
- 	if (ret > 0) {
- 		*result = 0;
--		btrfs_release_path(&path);
- 		return 0;
- 	}
- 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
- 	*result = key.offset + btrfs_item_size(path.nodes[0], path.slots[0]) /
- 			       fs_info->csum_size * fs_info->sectorsize;
--	btrfs_release_path(&path);
- 	return 0;
- }
+ 			btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 			fs_info->last_converted_bg_bytenr = key.objectid;
+-			goto out;
++			return ret;
+ 		}
+ 		btrfs_release_path(&path);
  
-@@ -239,7 +235,6 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 	const unsigned int nr_items = calc_csum_change_nr_items(fs_info, new_csum_type);
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, 0);
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path path = { 0 };
- 	struct btrfs_key key;
- 	void *csum_buffer;
- 	u64 converted_bytes = 0;
-@@ -266,6 +261,7 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 	}
+@@ -2820,21 +2820,20 @@ static int get_last_converted_bg(struct btrfs_fs_info *fs_info)
  
- 	while (cur < last_csum) {
-+		BTRFS_PATH_AUTO_RELEASE(path);
- 		u64 csum_start;
- 		u64 len;
- 		u32 item_size;
-@@ -282,13 +278,10 @@ static int generate_new_data_csums_range(struct btrfs_fs_info *fs_info, u64 star
- 			ret = btrfs_next_leaf(csum_root, &path);
- 			if (ret > 0) {
- 				ret = 0;
--				btrfs_release_path(&path);
- 				break;
- 			}
--			if (ret < 0) {
--				btrfs_release_path(&path);
-+			if (ret < 0)
- 				goto out;
--			}
+ 		ret = btrfs_search_slot(NULL, extent_root, &key, &path, 0, 0);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		ASSERT(ret > 0);
+ 		ret = btrfs_previous_item(extent_root, &path, 0, BTRFS_BLOCK_GROUP_ITEM_KEY);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 
+ 		/* No converted bg item in extent tree.*/
+ 		if (ret > 0) {
+-			ret = 0;
+ 			fs_info->last_converted_bg_bytenr = (u64)-1;
+-			goto out;
++			return 0;
  		}
  		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
- 		UASSERT(key.offset >= cur);
-@@ -333,7 +326,7 @@ static int generate_new_data_csums(struct btrfs_fs_info *fs_info, u16 new_csum_t
+ 		fs_info->last_converted_bg_bytenr = key.objectid;
+-		goto out;
++		return ret;
+ 	}
+ 	/* Load the first bg in bg tree, that would be our last converted bg. */
+ 	ret = btrfs_search_slot(NULL, bg_root, &key, &path, 0, 0);
+@@ -2847,14 +2846,11 @@ static int get_last_converted_bg(struct btrfs_fs_info *fs_info)
+ 	/* Empty bg tree, no converted bg item at all. */
+ 	if (btrfs_header_nritems(path.nodes[0]) == 0) {
+ 		fs_info->last_converted_bg_bytenr = (u64)-1;
+-		ret = 0;
+-		goto out;
++		return 0;
+ 	}
+ 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 	ASSERT(key.type == BTRFS_BLOCK_GROUP_ITEM_KEY);
+ 	fs_info->last_converted_bg_bytenr = key.objectid;
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+@@ -2870,7 +2866,7 @@ out:
+ static int read_old_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 					   struct btrfs_root *root)
  {
- 	struct btrfs_root *tree_root = fs_info->tree_root;
- 	struct btrfs_trans_handle *trans;
+-	struct btrfs_path path = {0};
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key = { 0 };
+ 	int ret;
+ 
+@@ -2878,18 +2874,15 @@ static int read_old_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 
+ 	while (true) {
+ 		ret = find_first_block_group(root, &path, &key, fs_info->last_converted_bg_bytenr);
+-		if (ret > 0) {
+-			ret = 0;
+-			goto out;
+-		}
+-		if (ret != 0) {
+-			goto out;
+-		}
++		if (ret > 0)
++			return 0;
++		if (ret < 0)
++			return ret;
+ 		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 
+ 		ret = read_one_block_group(fs_info, &path);
+ 		if (ret < 0 && ret != -ENOENT)
+-			goto out;
++			return ret;
+ 
+ 		if (key.offset == 0)
+ 			key.objectid++;
+@@ -2898,17 +2891,14 @@ static int read_old_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 		key.offset = 0;
+ 		btrfs_release_path(&path);
+ 	}
+-	ret = 0;
+-out:
+-	btrfs_release_path(&path);
+-	return ret;
++	return 0;
+ }
+ 
+ /* Helper to read all block groups items from specified root. */
+ static int read_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 					   struct btrfs_root *root)
+ {
+-	struct btrfs_path path = {0};
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key = {0};
+ 	int ret;
+ 
+@@ -2916,18 +2906,15 @@ static int read_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 
+ 	while (true) {
+ 		ret = find_first_block_group(root, &path, &key, (u64)-1);
+-		if (ret > 0) {
+-			ret = 0;
+-			goto out;
+-		}
+-		if (ret != 0) {
+-			goto out;
+-		}
++		if (ret > 0)
++			return 0;
++		if (ret < 0)
++			return ret;
+ 		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
+ 
+ 		ret = read_one_block_group(fs_info, &path);
+ 		if (ret < 0 && ret != -ENOENT)
+-			goto out;
++			return ret;
+ 
+ 		if (key.offset == 0)
+ 			key.objectid++;
+@@ -2936,10 +2923,7 @@ static int read_block_groups_from_root(struct btrfs_fs_info *fs_info,
+ 		key.offset = 0;
+ 		btrfs_release_path(&path);
+ 	}
+-	ret = 0;
+-out:
+-	btrfs_release_path(&path);
+-	return ret;
++	return 0;
+ }
+ 
+ static int read_converting_block_groups(struct btrfs_fs_info *fs_info)
+@@ -3472,7 +3456,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_fs_info *fs_info = trans->fs_info;
+ 	struct btrfs_block_group *block_group;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
+ 	int ret = 0;
+ 
+ 	block_group = btrfs_lookup_block_group(fs_info, bytenr);
+@@ -3893,7 +3877,7 @@ int btrfs_convert_one_bg(struct btrfs_trans_handle *trans, u64 bytenr)
+ 	struct btrfs_root *new_root = fs_info->block_group_root;
+ 	struct btrfs_root *old_root = btrfs_extent_root(fs_info, 0);
+ 	struct btrfs_block_group *bg;
+-	struct btrfs_path path = {0};
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	int ret;
+ 
+ 	ASSERT(new_root);
+diff --git a/kernel-shared/file.c b/kernel-shared/file.c
+index 546e161abfdb..7fe5ae3b7595 100644
+--- a/kernel-shared/file.c
++++ b/kernel-shared/file.c
+@@ -192,7 +192,7 @@ int btrfs_read_file(struct btrfs_root *root, u64 ino, u64 start, int len,
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
  	struct btrfs_key key;
- 	int ret;
- 
-@@ -376,7 +369,6 @@ static int delete_old_data_csums(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, 0);
- 	struct btrfs_trans_handle *trans = 0;
 -	struct btrfs_path path = { 0 };
- 	struct btrfs_key last_key;
- 	unsigned int deleted_leaves = 0;
- 	int ret;
-@@ -386,6 +378,7 @@ static int delete_old_data_csums(struct btrfs_fs_info *fs_info)
- 	last_key.offset = (u64)-1;
- 
- 	while (true) {
-+		BTRFS_PATH_AUTO_RELEASE(path);
- 		int start_slot;
- 		int nr;
- 
-@@ -444,10 +437,8 @@ static int delete_old_data_csums(struct btrfs_fs_info *fs_info)
- 			error("failed to delete items: %m");
- 			break;
- 		}
--		btrfs_release_path(&path);
- 		deleted_leaves++;
- 	}
--	btrfs_release_path(&path);
- 	if (ret < 0)
- 		btrfs_abort_transaction(trans, ret);
- 	ret = btrfs_commit_transaction(trans, csum_root);
-@@ -464,7 +455,6 @@ static int change_csum_objectids(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, 0);
- 	struct btrfs_trans_handle *trans = NULL;
--	struct btrfs_path path = { 0 };
- 	struct btrfs_key last_key;
- 	unsigned int changed_leaves = 0;
- 	u64 super_flags;
-@@ -475,6 +465,7 @@ static int change_csum_objectids(struct btrfs_fs_info *fs_info)
- 	last_key.offset = (u64)-1;
- 
- 	while (true) {
-+		BTRFS_PATH_AUTO_RELEASE(path);
- 		struct btrfs_key found_key;
- 		int nr;
- 
-@@ -527,10 +518,8 @@ static int change_csum_objectids(struct btrfs_fs_info *fs_info)
- 			path.slots[0] = i;
- 			btrfs_set_item_key_safe(fs_info, &path, &found_key);
- 		}
--		btrfs_release_path(&path);
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_inode_item *ii;
+ 	u64 isize;
+@@ -331,7 +331,6 @@ next:
+ 		read = min_t(u64, isize - start, len);
  	}
  out:
 -	btrfs_release_path(&path);
- 	if (ret < 0) {
- 		btrfs_abort_transaction(trans, ret);
- 		return ret;
-@@ -610,7 +599,7 @@ out:
- static int change_meta_csums(struct btrfs_fs_info *fs_info, u16 new_csum_type)
- {
- 	struct btrfs_root *extent_root = btrfs_extent_root(fs_info, 0);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	u64 super_flags;
- 	int ret;
-@@ -754,7 +743,7 @@ static int get_csum_items_range(struct btrfs_fs_info *fs_info,
- 				u32 *last_item_size)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, 0);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
- 
-@@ -773,17 +762,14 @@ static int get_csum_items_range(struct btrfs_fs_info *fs_info,
- 		if (ret < 0) {
- 			errno = -ret;
- 			error("failed to search csum tree: %m");
--			btrfs_release_path(&path);
- 			return ret;
- 		}
- 		/*
- 		 * There is no next leaf, meaning we didn't find any csum item
- 		 * with given objectid.
- 		 */
--		if (ret > 0) {
--			btrfs_release_path(&path);
-+		if (ret > 0)
- 			return ret;
--		}
- 	}
- 
- 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-@@ -808,16 +794,12 @@ static int get_csum_items_range(struct btrfs_fs_info *fs_info,
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to search csum tree: %m");
--		btrfs_release_path(&path);
- 		return ret;
- 	}
--	if (ret > 0) {
--		btrfs_release_path(&path);
-+	if (ret > 0)
- 		return 1;
--	}
- 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
- 	*last_item_size = btrfs_item_size(path.nodes[0], path.slots[0]);
--	btrfs_release_path(&path);
- 	*last_ret = key.offset;
- 	return 0;
- }
-@@ -834,7 +816,7 @@ static int determine_csum_type(struct btrfs_fs_info *fs_info, u64 logical,
- 			       u16 csum_type)
- {
- 	struct btrfs_root *csum_root = btrfs_csum_root(fs_info, logical);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	u16 csum_size = btrfs_csum_type_size(csum_type);
- 	u8 csum_expected[BTRFS_CSUM_SIZE];
-@@ -851,7 +833,6 @@ static int determine_csum_type(struct btrfs_fs_info *fs_info, u64 logical,
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to search csum tree: %m");
--		btrfs_release_path(&path);
- 		return ret;
- 	}
- 
-@@ -859,10 +840,8 @@ static int determine_csum_type(struct btrfs_fs_info *fs_info, u64 logical,
- 	 * The csum item size is smaller than expected csum size, no
- 	 * more need to check.
- 	 */
--	if (btrfs_item_size(path.nodes[0], path.slots[0]) < csum_size) {
--		btrfs_release_path(&path);
-+	if (btrfs_item_size(path.nodes[0], path.slots[0]) < csum_size)
- 		return 1;
--	}
- 	read_extent_buffer(path.nodes[0], csum_expected,
- 			   btrfs_item_ptr_offset(path.nodes[0], path.slots[0]),
- 			   csum_size);
-@@ -1009,7 +988,7 @@ static int resume_csum_change(struct btrfs_fs_info *fs_info, u16 new_csum_type)
- {
- 	const u64 super_flags = btrfs_super_flags(fs_info->super_copy);
- 	struct btrfs_root *tree_root = fs_info->tree_root;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
- 
-@@ -1039,7 +1018,6 @@ static int resume_csum_change(struct btrfs_fs_info *fs_info, u16 new_csum_type)
- 	if (ret < 0) {
- 		errno = -ret;
- 		error("failed to locate the csum change item: %m");
--		btrfs_release_path(&path);
- 		return ret;
- 	}
- 	btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-diff --git a/tune/change-uuid.c b/tune/change-uuid.c
-index c24cba7080bf..db63e446ac8f 100644
---- a/tune/change-uuid.c
-+++ b/tune/change-uuid.c
-@@ -84,7 +84,7 @@ static int change_buffer_header_uuid(struct extent_buffer *eb, uuid_t new_fsid)
- static int change_extent_tree_uuid(struct btrfs_fs_info *fs_info, uuid_t new_fsid)
- {
- 	struct btrfs_root *root = btrfs_extent_root(fs_info, 0);
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key = {0, 0, 0};
- 	int ret = 0;
- 
-@@ -94,7 +94,7 @@ static int change_extent_tree_uuid(struct btrfs_fs_info *fs_info, uuid_t new_fsi
- 	 */
- 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	while (1) {
- 		struct btrfs_extent_item *ei;
-@@ -117,29 +117,22 @@ static int change_extent_tree_uuid(struct btrfs_fs_info *fs_info, uuid_t new_fsi
- 		eb = read_tree_block(fs_info, bytenr, &check);
- 		if (IS_ERR(eb)) {
- 			error("failed to read tree block: %llu", bytenr);
--			ret = PTR_ERR(eb);
--			goto out;
-+			return PTR_ERR(eb);
- 		}
- 		ret = change_buffer_header_uuid(eb, new_fsid);
- 		free_extent_buffer(eb);
- 		if (ret < 0) {
- 			error("failed to change uuid of tree block: %llu",
- 				bytenr);
--			goto out;
-+			return ret;
- 		}
- next:
- 		ret = btrfs_next_item(root, &path);
- 		if (ret < 0)
--			goto out;
--		if (ret > 0) {
--			ret = 0;
--			goto out;
--		}
-+			return ret;
-+		if (ret > 0)
-+			return 0;
- 	}
--
--out:
--	btrfs_release_path(&path);
--	return ret;
- }
- 
- static int change_device_uuid(struct extent_buffer *eb, int slot,
-@@ -164,14 +157,14 @@ static int change_device_uuid(struct extent_buffer *eb, int slot,
- 
- static int change_chunk_tree_uuid(struct btrfs_root *root, uuid_t new_fsid)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key = {0, 0, 0};
- 	int ret = 0;
- 
- 	/* No transaction again */
- 	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
- 	if (ret < 0)
--		goto out;
-+		return ret;
- 
- 	while (1) {
- 		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-@@ -181,19 +174,14 @@ static int change_chunk_tree_uuid(struct btrfs_root *root, uuid_t new_fsid)
- 		ret = change_device_uuid(path.nodes[0], path.slots[0],
- 					 new_fsid);
- 		if (ret < 0)
--			goto out;
-+			return ret;
- next:
- 		ret = btrfs_next_item(root, &path);
- 		if (ret < 0)
--			goto out;
--		if (ret > 0) {
--			ret = 0;
--			goto out;
--		}
-+			return ret;
-+		if (ret > 0)
-+			return 0;
- 	}
--out:
--	btrfs_release_path(&path);
--	return ret;
- }
- 
- static int change_fsid_done(struct btrfs_fs_info *fs_info)
-diff --git a/tune/convert-remap-tree.c b/tune/convert-remap-tree.c
-index 21f1f4e2ffc5..6bc8f14fd7e7 100644
---- a/tune/convert-remap-tree.c
-+++ b/tune/convert-remap-tree.c
-@@ -98,7 +98,6 @@ static int create_remap_tree(struct btrfs_trans_handle *trans)
- static int extend_block_group_items(struct btrfs_trans_handle *trans)
+ 	if (!ret)
+ 		ret = read;
+ 	return ret;
+diff --git a/kernel-shared/free-space-cache.c b/kernel-shared/free-space-cache.c
+index d80fe5707eb5..bc511b442f23 100644
+--- a/kernel-shared/free-space-cache.c
++++ b/kernel-shared/free-space-cache.c
+@@ -917,7 +917,7 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
  {
  	struct btrfs_fs_info *fs_info = trans->fs_info;
--	struct btrfs_path path = { 0 };
- 	struct btrfs_key key = { 0 };
- 	struct extent_buffer *leaf;
- 	struct btrfs_block_group_item_v2 *bgi;
-@@ -106,6 +105,8 @@ static int extend_block_group_items(struct btrfs_trans_handle *trans)
- 	u32 size;
- 
- 	while (true) {
-+		BTRFS_PATH_AUTO_RELEASE(path);
-+
- 		ret = btrfs_search_slot(trans, fs_info->block_group_root, &key,
- 					&path, -1, 1);
- 		if (ret < 0)
-@@ -113,10 +114,8 @@ static int extend_block_group_items(struct btrfs_trans_handle *trans)
- 
- 		leaf = path.nodes[0];
- 
--		if (path.slots[0] >= btrfs_header_nritems(leaf)) {
--			btrfs_release_path(&path);
-+		if (path.slots[0] >= btrfs_header_nritems(leaf))
- 			break;
--		}
- 
- 		while (path.slots[0] < btrfs_header_nritems(leaf)) {
- 			btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
-@@ -143,8 +142,6 @@ static int extend_block_group_items(struct btrfs_trans_handle *trans)
- 
- 		key.objectid++;
- 		key.offset = 0;
--
--		btrfs_release_path(&path);
- 	}
- 
- 	return 0;
-@@ -154,7 +151,7 @@ int convert_to_remap_tree(struct btrfs_fs_info *fs_info)
- {
- 	struct btrfs_super_block *sb = fs_info->super_copy;
- 	struct btrfs_trans_handle *trans;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_key key;
- 	int ret;
- 
-@@ -166,7 +163,6 @@ int convert_to_remap_tree(struct btrfs_fs_info *fs_info)
- 		return ret;
- 
- 	if (!ret) {
--		btrfs_release_path(&path);
- 		error("cannot convert filesystem that has balance already in progress");
- 		return -EINVAL;
- 	}
-diff --git a/tune/quota.c b/tune/quota.c
-index 746c0ef0a258..a5f7fb40c73f 100644
---- a/tune/quota.c
-+++ b/tune/quota.c
-@@ -86,7 +86,7 @@ static int remove_owner_refs(struct btrfs_fs_info *fs_info)
- 	struct btrfs_root *extent_root;
- 	struct btrfs_key key;
- 	struct extent_buffer *leaf;
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	int slot;
- 	int ret;
- 
-@@ -170,7 +170,7 @@ static int create_qgroup(struct btrfs_fs_info *fs_info,
- 			 struct btrfs_trans_handle *trans,
- 			 u64 qgroupid)
- {
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct btrfs_root *quota_root = fs_info->quota_root;
- 	struct btrfs_key key;
- 	int ret;
-@@ -195,7 +195,6 @@ static int create_qgroup(struct btrfs_fs_info *fs_info,
- 	key.offset = qgroupid;
- 	ret = btrfs_insert_empty_item(trans, quota_root, &path, &key,
- 				      sizeof(struct btrfs_qgroup_limit_item));
--	btrfs_release_path(&path);
- 
- 	printf("created qgroup for %llu\n", qgroupid);
- 	return ret;
-@@ -209,7 +208,7 @@ static int create_qgroups(struct btrfs_fs_info *fs_info,
- 		.type = BTRFS_ROOT_REF_KEY,
- 		.offset = 0,
- 	};
--	struct btrfs_path path = { 0 };
-+	BTRFS_PATH_AUTO_RELEASE(path);
- 	struct extent_buffer *leaf;
- 	int slot;
  	struct btrfs_root *tree_root = fs_info->tree_root;
-@@ -218,11 +217,11 @@ static int create_qgroups(struct btrfs_fs_info *fs_info,
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct btrfs_disk_key location;
+ 	struct btrfs_free_space_header *sc_header;
+@@ -931,12 +931,10 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 	key.offset = bg->start;
  
- 	ret = create_qgroup(fs_info, trans, BTRFS_FS_TREE_OBJECTID);
- 	if (ret)
+ 	ret = btrfs_search_slot(trans, tree_root, &key, &path, -1, 1);
+-	if (ret > 0) {
+-		ret = 0;
+-		goto out;
+-	}
++	if (ret > 0)
++		return 0;
+ 	if (ret < 0)
 -		goto out;
 +		return ret;
  
- 	ret = btrfs_search_slot_for_read(tree_root, &key, &path, 1, 0);
- 	if (ret)
+ 	node = path.nodes[0];
+ 	slot = path.slots[0];
+@@ -949,7 +947,7 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 	if (ret < 0) {
+ 		error("failed to remove free space header for block group %llu: %d",
+ 		      bg->start, ret);
 -		goto out;
 +		return ret;
+ 	}
+ 	btrfs_release_path(&path);
  
+@@ -961,7 +959,7 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 	if (ret < 0) {
+ 		error("failed to locate free space cache extent for block group %llu: %d",
+ 		      bg->start, ret);
+-		goto out;
++		return ret;
+ 	}
  	while (1) {
- 		slot = path.slots[0];
-@@ -231,19 +230,17 @@ static int create_qgroups(struct btrfs_fs_info *fs_info,
- 		if (key.type == BTRFS_ROOT_REF_KEY) {
- 			ret = create_qgroup(fs_info, trans, key.offset);
- 			if (ret)
--				goto out;
-+				return ret;
- 		}
- 		ret = btrfs_next_item(tree_root, &path);
- 		if (ret < 0) {
- 			error("failed to advance to next item");
+ 		struct btrfs_file_extent_item *fi;
+@@ -978,7 +976,7 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 			error(
+ 	"failed to locate free space cache extent for block group %llu: %d",
+ 				bg->start, ret);
 -			goto out;
 +			return ret;
  		}
- 		if (ret)
- 			break;
+ 		node = path.nodes[0];
+ 		slot = path.slots[0];
+@@ -992,14 +990,14 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 		if (ret < 0) {
+ 			error("failed to remove backref for disk bytenr %llu: %d",
+ 			      disk_bytenr, ret);
+-			goto out;
++			return ret;
+ 		}
+ 		ret = btrfs_del_item(trans, tree_root, &path);
+ 		if (ret < 0) {
+ 			error(
+ 	"failed to remove free space extent data for ino %llu offset %llu: %d",
+ 			      ino, key.offset, ret);
+-			goto out;
++			return ret;
+ 		}
  	}
+ 	btrfs_release_path(&path);
+@@ -1016,7 +1014,7 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 		error(
+ 	"failed to locate free space cache inode %llu for block group %llu: %d",
+ 		      ino, bg->start, ret);
+-		goto out;
++		return ret;
+ 	}
+ 	ret = btrfs_del_item(trans, tree_root, &path);
+ 	if (ret < 0) {
+@@ -1024,7 +1022,5 @@ int btrfs_clear_free_space_cache(struct btrfs_trans_handle *trans,
+ 	"failed to delete free space cache inode %llu for block group %llu: %d",
+ 		      ino, bg->start, ret);
+ 	}
+-out:
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+diff --git a/kernel-shared/inode.c b/kernel-shared/inode.c
+index f77157a2df14..d75e6fa3dd98 100644
+--- a/kernel-shared/inode.c
++++ b/kernel-shared/inode.c
+@@ -162,7 +162,7 @@ out:
+ static int inherit_inode_flags(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root, u64 ino, u64 parent_ino)
+ {
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_key key;
+ 	struct btrfs_inode_item *iitem;
+ 	u64 parent_inode_flags;
+@@ -177,7 +177,7 @@ static int inherit_inode_flags(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
  
+ 	iitem = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_inode_item);
+ 	parent_inode_flags = btrfs_inode_flags(path.nodes[0], iitem);
+@@ -189,7 +189,7 @@ static int inherit_inode_flags(struct btrfs_trans_handle *trans,
+ 	if (ret > 0)
+ 		ret = -ENOENT;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
+ 	iitem = btrfs_item_ptr(path.nodes[0], path.slots[0], struct btrfs_inode_item);
+ 	child_inode_flags = btrfs_inode_flags(path.nodes[0], iitem);
+ 
+@@ -206,8 +206,6 @@ static int inherit_inode_flags(struct btrfs_trans_handle *trans,
+ 			child_inode_flags |= BTRFS_INODE_NODATASUM;
+ 	}
+ 	btrfs_set_inode_flags(path.nodes[0], iitem, child_inode_flags);
 -out:
 -	btrfs_release_path(&path);
  	return ret;
  }
  
-@@ -254,7 +251,7 @@ int enable_quota(struct btrfs_fs_info *fs_info, bool simple)
- 	int super_flags = btrfs_super_incompat_flags(sb);
- 	struct btrfs_qgroup_status_item *qsi;
- 	struct btrfs_root *quota_root;
+diff --git a/kernel-shared/print-tree.c b/kernel-shared/print-tree.c
+index 4b3ad093f278..832ce0678e71 100644
+--- a/kernel-shared/print-tree.c
++++ b/kernel-shared/print-tree.c
+@@ -1768,7 +1768,7 @@ static int next_sibling_tree_block(struct btrfs_fs_info *fs_info,
+ static void bfs_print_children(struct extent_buffer *root_eb, unsigned int mode)
+ {
+ 	struct btrfs_fs_info *fs_info = root_eb->fs_info;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	int root_level = btrfs_header_level(root_eb);
+ 	int cur_level;
+ 	int ret;
+@@ -1790,23 +1790,20 @@ static void bfs_print_children(struct extent_buffer *root_eb, unsigned int mode)
+ 		/* Use the leftmost tree block as a starting point */
+ 		ret = search_leftmost_tree_block(fs_info, &path, root_level);
+ 		if (ret < 0)
+-			goto out;
++			return;
+ 
+ 		/* Print all sibling tree blocks */
+ 		while (1) {
+ 			btrfs_print_tree(path.nodes[cur_level], mode);
+ 			ret = next_sibling_tree_block(fs_info, &path);
+ 			if (ret < 0)
+-				goto out;
++				return;
+ 			if (ret > 0) {
+ 				ret = 0;
+ 				break;
+ 			}
+ 		}
+ 	}
+-out:
+-	btrfs_release_path(&path);
+-	return;
+ }
+ 
+ static void dfs_print_children(struct extent_buffer *root_eb, unsigned int mode)
+diff --git a/kernel-shared/volumes.c b/kernel-shared/volumes.c
+index fedcaa5f9216..ed9b769b42fc 100644
+--- a/kernel-shared/volumes.c
++++ b/kernel-shared/volumes.c
+@@ -2033,7 +2033,7 @@ static int btrfs_stripe_tree_logical_to_physical(struct btrfs_fs_info *fs_info,
+ 						struct btrfs_bio_stripe *stripe)
+ {
+ 	struct btrfs_root *root = fs_info->stripe_root;
 -	struct btrfs_path path = { 0 };
 +	BTRFS_PATH_AUTO_RELEASE(path);
  	struct btrfs_key key;
- 	int flags;
- 	int ret;
+ 	struct extent_buffer *leaf;
+ 	int slot;
+@@ -2061,7 +2061,7 @@ static int btrfs_stripe_tree_logical_to_physical(struct btrfs_fs_info *fs_info,
+ 			if (ret == 0)
+ 				continue;
+ 			if (ret < 0)
+-				goto error;
++				return ret;
+ 			break;
+ 		}
+ 
+@@ -2080,15 +2080,12 @@ static int btrfs_stripe_tree_logical_to_physical(struct btrfs_fs_info *fs_info,
+ 			    btrfs_raid_stride_devid_nr(leaf, extent, i))
+ 				continue;
+ 			stripe->physical = btrfs_raid_stride_physical_nr(leaf, extent, i);
+-			btrfs_release_path(&path);
+ 			return 0;
+ 		}
+ next:
+ 		path.slots[0]++;
+ 	}
+ 
+-	btrfs_release_path(&path);
+-error:
+ 	return ret;
+ }
+ 
+@@ -3053,7 +3050,7 @@ static int check_dev_extent_beyond_bytenr(struct btrfs_fs_info *fs_info,
+ 					  u64 physical)
+ {
+ 	struct btrfs_root *root = fs_info->dev_root;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_dev_extent *dext;
+ 	struct btrfs_key key;
+ 	u64 dext_len;
+@@ -3088,7 +3085,6 @@ static int check_dev_extent_beyond_bytenr(struct btrfs_fs_info *fs_info,
+ 	last_dev_extent_end = dext_len + key.offset;
+ 
+ out:
+-	btrfs_release_path(&path);
+ 	if (ret < 0)
+ 		return ret;
+ 	if (last_dev_extent_end <= physical)
+@@ -3102,7 +3098,7 @@ static int reset_device_item_total_bytes(struct btrfs_fs_info *fs_info,
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_key key;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_root *chunk_root = fs_info->chunk_root;
+ 	struct btrfs_dev_item *di;
+ 	u64 old_bytes = device->total_bytes;
+@@ -3143,10 +3139,8 @@ static int reset_device_item_total_bytes(struct btrfs_fs_info *fs_info,
+ 	if (ret < 0) {
+ 		errno = -ret;
+ 		error_msg(ERROR_MSG_COMMIT_TRANS, "%m");
+-		btrfs_release_path(&path);
+ 		return ret;
+ 	}
+-	btrfs_release_path(&path);
+ 	printf("Fixed device size for devid %llu, old size: %llu new size: %llu\n",
+ 		device->devid, old_bytes, device->total_bytes);
+ 	return 1;
+@@ -3154,7 +3148,6 @@ static int reset_device_item_total_bytes(struct btrfs_fs_info *fs_info,
+ err:
+ 	/* We haven't modified anything, it's OK to commit current trans */
+ 	btrfs_commit_transaction(trans, chunk_root);
+-	btrfs_release_path(&path);
+ 	return ret;
+ }
+ 
+diff --git a/tests/btree-test.c b/tests/btree-test.c
+index ddb13472e2f1..7dbbc1685aeb 100644
+--- a/tests/btree-test.c
++++ b/tests/btree-test.c
+@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
+ 	int run_size = 300000;
+ 	int max_key =  100000000;
+ 	int tree_size = 2;
+-	struct btrfs_path path = { 0 };
++	BTRFS_PATH_AUTO_RELEASE(path);
+ 	struct btrfs_root *root;
+ 	struct btrfs_trans_handle *trans;
+ 
 -- 
 2.56.0
 

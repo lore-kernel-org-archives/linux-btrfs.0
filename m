@@ -1,82 +1,94 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.178
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793343483;
-	b=htBzTWYSSTYvYj0M946ATij3Ofo5/JW8APeNV+DHkpo3rluxXvIA/lMqOvF+xI4uvCCy
-	 3UVlk9Wlu8/ZDCDCrFCqh5vgwm3zZXb8NYBIf0Fms8aqD2nmG76nDMbcNL3uYScyWSWA6
-	 hTC+WKTVtPfLnNXgE4qgb60UMimj8WWQEcxhFWFZQsGdo3yr0XrcJtKRE10HusuzJ5L05
-	 VQ1sn4PyKnLyIlpKgKIL7mX1slimmLZ0HxyqFdDBco9ge65i/AlfVyIungraWnxKWZ2Dl
-	 x0es17CgDRosTHV7jga3IogesoolD+mgx55Y9OiM3cRk/e3vBlFFmu6dPZU/YBgKKGA==
+	t=1793347305;
+	b=RHypqOdmGXdzFOu1WTjCAjvbPMSheqrAeWDPlf0xfOmrQKE403H3+zkQnZbUGS/ctSRz
+	 qzQBURUgNk/UKs2o5FjnKwY2f+iN0cx300MhGPj5MO3H79ndaWutmp9lj1gevnmB9kgiO
+	 kECWVKQkHvnUpwavaXOk4jdWkO5994jo3zmgIWPPo4LKFewbMlQfRm0CX6tdF4Zdmi1zU
+	 A/VewnaT6A+9riMtj/85t3ZFlZB7p9PMk51DMJQ0nLwTO0PfnTGEjHD1JPHFCiqhtwTRz
+	 h16SwGiIGFJ6T3v9jLzWRnvjPb8WWkVGt8RtG83e2uSqFdNcUva+f3qv9foPVHJ9X8w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793343483;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Type:Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:
-	 X-Spamd-Result:X-Spam-Score;
-	bh=bEIGAgGWltLcsTCdbw8GmqHIB+OvlV/H33wPvO5E8ck=;
-	b=LDhs08vAjF9lmHTU1BNjX7cm1QQ91maIaFLDuwTh5Ck5gOyk1Rmqb5o4vF89bpeS2bCI
-	 GLWSWp590AqRuvj6vgsiWC+CrDjWiG8N6h/8GhmpXNm5huqperCJrnj4LrOwZhBcEjFBQ
-	 QaqE2kQ/h9DEqcW0NKbLDZI6/lIhzJUP/qH9WOp20NSWxlJ1Dp2lUMQI3W2iyxzltijOT
-	 fbuySU26wtZ5e5x5fCXLT+w8a50uZ1cdZ9Y9qugfFBIeyknnUji/KUSJW8Krge0njEtww
-	 SG0hbf4LSCIJ7EyT7Sv9PpEEKJpa02qa9onzgcKiZq9XYm6UxqvGD9lBIuwBCGE1HmQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793347305;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:In-Reply-To:References:MIME-Version:Content-Type:
+	 Content-Transfer-Encoding:Date:Message-ID;
+	bh=HiU9Iq5r3yO8oH6bAiojsX3njTbymprPTokhTTBOSLg=;
+	b=onTdJHaHPmUAnEME2R/JwOA4YjvbS1aAs4Lyva6M2IY/z/ShJZ91G806+gCZ/oArgBRO
+	 qKHb7oKyvL6ttdzjxO3h2/VadauYog2/hvnGtHCrWfoqz6YjqkdwiUvU9uxWRPk2Twj7s
+	 Vr/zT3zRAmzI3esarIvW09bcyazSeYWkDHGGzd4IobRUWSm+ccuJUpzHo6Ekb1vfQ4LwW
+	 vDgRYgF5crW61aRU1GECi+nEycs8G8J87rTgWzrdjnqMSxU+/frR0ErRra+okrv8nIry5
+	 MA2AP5nOX2ggigZNRaI+om9rkUWOd5/uhx+HdGW8fWcMdeF2cdROAU/1clFFseNoXhA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pwkS3opi;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pwkS3opi;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b="l7A40H/3";
+	arc=none smtp.remote-ip=74.125.82.178
+Received: from mail-dy1-f178.google.com (mail-dy1-f178.google.com [74.125.82.178])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 666A3606A31A
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 06:58:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 666A3606A31A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 145FF606A323
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 08:01:44 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 145FF606A323
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pwkS3opi;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pwkS3opi
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 90EA11F45E
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 06:58:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793343480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=bEIGAgGWltLcsTCdbw8GmqHIB+OvlV/H33wPvO5E8ck=;
-	b=pwkS3opiCeDOZn78XJhtIfoQEOcrA+uITde2EAI/Tmo/4AGfGJR3K/9SfvtEvdNa12Veze
-	aIJFXlTAoVpZkHJ5cyhdcRIMBCTJYNmTrEaaiSNdxZilzYS3WkMDM6yK+J3Xd1V0b54AB5
-	E2McCdihg/ZTm3AU1BWdJhOqykDUHSs=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793343480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding;
-	bh=bEIGAgGWltLcsTCdbw8GmqHIB+OvlV/H33wPvO5E8ck=;
-	b=pwkS3opiCeDOZn78XJhtIfoQEOcrA+uITde2EAI/Tmo/4AGfGJR3K/9SfvtEvdNa12Veze
-	aIJFXlTAoVpZkHJ5cyhdcRIMBCTJYNmTrEaaiSNdxZilzYS3WkMDM6yK+J3Xd1V0b54AB5
-	E2McCdihg/ZTm3AU1BWdJhOqykDUHSs=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 51FE613419
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 06:57:59 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id NZsNKPY/5Gp/QAAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 06:57:58 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: python-selftest: do not enter mount point for race tests
-Date: Fri, 30 Oct 2026 17:27:40 +1030
-Message-ID: <a05984017c4f9e0cb2a0a513c167c29c4f5dcbab.1793343443.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=l7A40H/3
+Received: by mail-dy1-f178.google.com with SMTP id 5a478bee46e88-353804b591eso710480eec.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 01:01:44 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793347304; x=1793952104; darn=vger.kernel.org;
+        h=message-id:date:content-transfer-encoding:content-type:mime-version
+         :references:in-reply-to:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=HiU9Iq5r3yO8oH6bAiojsX3njTbymprPTokhTTBOSLg=;
+        b=l7A40H/3mw4H8PJvOVyEBo+icUvOSFRiRii1OOeBadfhHqOm4hZr9z0JcggwX2eC1S
+         piuUTA5k7Qpu2WMjzqCdOGBP7+xSpKeME13i8ZfWsKi467a9r5IP8MYfJhfLiRmXy6Bn
+         lvqrNiC7+W4JPuk16QRc67Zg4veU8hWZVf8IvlcNhl6pnlHru46ThUa86vvcRcpqDciH
+         ZLALuf91pCVZzSbq4Svq8rRlzpkTJSr4cka5vh2uHahnP9iIyIdC5XGtJUTyB7m5ycWB
+         qfW1T8A8BCxLsvbfuAZixgKA5qP1mJ4wYJgh/TgcxQhSxlGlmdVXsQhuLoMn57YNsUCA
+         gFjg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793347304; x=1793952104;
+        h=message-id:date:content-transfer-encoding:content-type:mime-version
+         :references:in-reply-to:subject:cc:to:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=HiU9Iq5r3yO8oH6bAiojsX3njTbymprPTokhTTBOSLg=;
+        b=LuWLIek6JDiokoQPa4Gi8FgMJEafEqX5KIfXyZ5Pke3q0pPXqTmPU0uh/4QogFqh1i
+         nh8EKHxJgm2POlyuhjNE+7+Pkv2MyY/wJldqBoymfoZ8r/ekpLutB1aUUL7MaYkBq4Zz
+         oxXBui3WcTxiKAJcbN6BQXkYBhF8EP56F178lfBO4YR8cgbLOYRi2Ej9yWRLKdJMreo0
+         PNCkQvVpl7QL93GWx/pypf8dWYGiAZGi3ERK1qAY41It6Cf3V8ljzJEM2amGk+a3WhR8
+         isQkMR3G+738mpQkxLgUL7I5VbCeCM8Q0X19t5y5STFMgKr5/vzpFJlHsznOiDiJoaxj
+         2QGg==
+X-Forwarded-Encrypted: i=1; AKwUvBwBYnw/qhJD+z2kST4nkY/7tMVQr5Gc+8Zjc84kpkV6SN+ccfcP2tdB08kk7Mpb4Brm8WY70vBTsiSngA==@vger.kernel.org
+X-Gm-Message-State: AFq9FYL5LpOmUEMOagBNXODhAGROM7G72EIkaGbeH3A7VQpkw35QfM7s
+	nOv65LBuNgpEVClNKABiSvihzYlBWdL1ppouMicaME9y109OA6ib8ZDW
+X-Gm-Gg: AYBFou0xDrbc9tVBCZPswZsbClEgx2/1F5EatI5rBZ8AulxA+4mhCHjhiZwLH2Nk3g6
+	v3FmVxB5Sg4vCknAZk8g6JciU4BtT1lw/gqE2VA3r42YpuGWqU32Ulu3XXYN/NEWJOA1tcOVmMn
+	zCWgHll1pHgWN6bljxIHUmwaE0Apod1nb9+77znwGEMFxhqXnctQIRVpm+3DijBKgWLhFKbfcJ/
+	W2EMtGYtTUQAo0s8uz3fcXhVfOHuw283ppExxgp5rSqNjJ8c/5nKwoYGkBOGz+dfZoXbThsd+pB
+	YbDAlxiSiEVTvtwY/53ZPFzSxDzehmHQxRarCvjexvCoQgmHEOIctmLbgDNj8TOh12wd1BBD2l1
+	dD3wjeJoqDR73jMh69HsLeqtQlCJWyzy4A50S6ERLoji/uwaAbV0h9CVWyfogYIZ1mcCR26NZgd
+	VVCulYvZ13KQYhzEdi9SkI8TYYgUdCynp9NJ0sjqqT1w/NbTKocWs9zouuKBNRP7FnWesioV5M7
+	CDdj/bXigDOdIea/4AEABhoGZaPQucHOfYu/EQBBS07jFmGtXh6QZbrbkJ3ANY6TB0onp8bsism
+	Zz13d5OjMyVA0zx1MBUZO2wx2H1TZrsYxgqO12N2W/Jaloq9SGskvCg=
+X-Received: by 2002:a05:7301:e118:b0:36a:1cbc:108e with SMTP id 5a478bee46e88-36a423f84femr2568934eec.31.1793347304094;
+        Fri, 30 Oct 2026 01:01:44 -0700 (PDT)
+Received: from [127.0.1.1] (67.216.200.102.16clouds.com. [67.216.200.102])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36a42a98f65sm4883097eec.28.2026.10.30.01.01.41
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 30 Oct 2026 01:01:43 -0700 (PDT)
+From: Cheng Yongkang <teel4res@gmail.com>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: David Sterba <dsterba@suse.com>,
+    Chris Mason <mason@kernel.org>,
+    linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: reject zero num_stripes in the system chunk array
+In-Reply-To:
+ <CAL3q7H6tz-YXxtTk3MVm7cLAQh1coBAkcF7KkH+GUwZnznnFrQ@mail.gmail.com>
+References: <179328314071.648427.12527832319954042748@gmail.com>           
+ <CAL3q7H6tz-YXxtTk3MVm7cLAQh1coBAkcF7KkH+GUwZnznnFrQ@mail.gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -88,102 +100,13 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-12.30 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_TLS_ALL(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	TO_DN_NONE(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -12.30
+Date: Fri, 30 Oct 2026 01:01:37 -0700
+Message-ID: <179334729777.2353588.17578956930431099360@gmail.com>
 
-[BUG]
-The python-selftests always fail for the following race tests after
-updating to the latest 3.14:
+Hi Filipe,
 
-  test_subvolume_iterator_race (tests.test_subvolume.TestSubvolume.test_subvolume_iterator_race) ... umount: /tmp/tmp29d00fl3: target is busy.
-  ERROR
+Thanks for the review.  I'll simplify the comment as you suggested and
+drop the "represent"/"remapped" wording.
 
-  ======================================================================
-  ERROR: test_subvolume_iterator_race (tests.test_subvolume.TestSubvolume.test_subvolume_iterator_race)
-  ----------------------------------------------------------------------
-  Traceback (most recent call last):
-    File "/home/adam/btrfs-progs/libbtrfsutil/python/tests/__init__.py", line 106, in tearDown
-      os.rmdir(mountpoint)
-      ~~~~~~~~^^^^^^^^^^^^
-  OSError: [Errno 16] Device or resource busy: '/tmp/tmp29d00fl3'
-
-  ----------------------------------------------------------------------
-  Ran 1 test in 0.128s
-
-  FAILED (errors=1)
-
-[CAUSE]
-Python 3.14 changed the multiprocessing on Linux, from the old 'fork' to
-the newer 'forkserver':
-
- From https://docs.python.org/3/whatsnew/3.14.html#multiprocessing
-
- On Unix platforms other than macOS, ‘forkserver’ is now the default
- start method (replacing ‘fork’).
-
- From: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
-
- When the program starts and selects the forkserver start method, a
- server process is spawned. From then on, whenever a new process is
- needed, the parent process connects to the server and requests that it
- fork a new process.
-
-However the problem is, for all those race tests, we enter the mount
-point, then fork new workers to do the race.
-And the forkserver is spawned from our cwd, so it stays in the mount
-point.
-
-This means the new fork server will always stay at the mount point,
-preventing us from unmounting the mount point with -EBUSY.
-
-[FIX]
-Revert back to the old 'fork' behavior, so that no forkserver is spawned
-at the mount point to prevent the unmount.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- libbtrfsutil/python/tests/test_subvolume.py | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
-
-diff --git a/libbtrfsutil/python/tests/test_subvolume.py b/libbtrfsutil/python/tests/test_subvolume.py
-index 8119d2137942..7922bfe1946c 100644
---- a/libbtrfsutil/python/tests/test_subvolume.py
-+++ b/libbtrfsutil/python/tests/test_subvolume.py
-@@ -850,11 +850,12 @@ class TestSubvolume(BtrfsTestCase):
-     # Only the new API
-     def _test_subvolume_iterator_race(self):
-         procs = []
-+        ctx = multiprocessing.get_context('fork')
-         fd = os.open('.', os.O_RDONLY | os.O_DIRECTORY)
-         try:
-             for i in range(10):
-                 procs.append(
--                    multiprocessing.Process(
-+                    ctx.Process(
-                         target=self._create_and_delete_subvolume,
-                         args=(i,),
-                         daemon=True,
--- 
-2.56.0
-
+Thanks,
+Cheng Yongkang

@@ -1,87 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.222.169
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.172
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793371110;
-	b=d4SpGvThLqwjZkPmtU90v8kI32X4IkEf7DQoYiX5nbH/EloewGvyztLHTo54i2/8bSIf
-	 +PcFMxKAdYhfD7/C0Q+re7Bp5MGHgN1Kilb8d4ucHyR+e4lk/PzNKPn7JLivbcSKXEoyw
-	 +nzX9GPmJY2A0IrFxKadDVG54i7GQvZXS8r9NuxXvnEmpG/D+Jp/5j1Ruc3Ip2QWGYojj
-	 kK0RTs1z0QthGC9LxJj+3zXcJZzUNJFLsA/mNDH2wrYdVd779p/oh7LZ55nY7hW5LmQcC
-	 AQ8Y9nbWrRjUB6ikJLmVhphgjtT9oG+UTTNmjnwMLURYcxnVfzabBoE7sMoJOLrtqhA==
+	t=1793371112;
+	b=D2w5kyRqoomqOVzlzggbhxYcU5/W2AV9rgsF15v8QW07g05AlUWitcBgyQpKm8TiGAY+
+	 3ZS2tXz2DusdebRoknKiCczT8SDJGEgS/FzyDYI8n2qjsLBbEh8KQL7BlgBPIsix6E0BN
+	 FZjArT+UOyYdY277ELss7Ts20YGMtV/xmSkBI7n6iMLgPDhxZbx6RRH8Gi6JxrvaEj9DB
+	 wihGtVL0C8hblidzxAZc7ojAgEIhxgY2lFImqiUlkNe+15HzPR1I5hKXXqkkN+Qm2I1Yi
+	 o628oHnZoNU3gLcXlt0RTBGEvjv6kh+GEYSsFqACJuVmeyDiuTfrUuqYV3RxzYP4bbg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793371110;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793371112;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Subject:Date:
-	 Message-Id:MIME-Version:Content-Type:Content-Transfer-Encoding:
-	 X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Date:Subject:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding:Message-Id:
+	 References:In-Reply-To:To:Cc:X-Mailer:X-Developer-Signature:
 	 X-Developer-Key;
-	bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
-	b=OdrN0iDJCKKMTgeQ3bxmaB9y547g7CqgH2qtLjnfrtFAqNWuUMHzIzDjl/eoxcieZMZz
-	 48PBLko3zzGjMc71jduJk5uz36r9bqsEPKhEFGd1ntAoNdzUWe/3EPZMy9uFLvS78Rl2s
-	 1MUXjsC0hVB/zHYXOgHxm2wAJ1S8FPNm43O9K3H3rmntSu3silWaUPk6/p+pTFXQWDqzp
-	 s5wnhgAbx5mJb2XNUKYWFnsjbrkVxyzKFKHJoQsPkcrXZ9+Q3TcBOorIiXLaiBJJTMpzo
-	 8oz0Y3bDhe0mH3k0yeqGbvQX0Dv12Les+YbuqkWWbwpTEQv2gvEMBlLEhS7bcs/B2nQ==
+	bh=svrb2Ovlj0yJHbneNxyZJOFBp3J2HRz8F07mnxmRiT8=;
+	b=OLs2ERgjTppxRatAqxRrxZ6Ts59k36g0K3f2Z7A+S8R1ocbR4JM4eGlKh337cI/Js0f1
+	 vGEgjuRPmOeS51AKgpHkXgGxUD0UXjWnuIpwFFvmhAfx3ezmHSn+bYAFtC2cVTFp+1wVs
+	 MnZ3ITm2uJCZKOLYjSvgmqpPA0S4qPLtVLbuXiCkEGnjUUtL53dijZC7z5XWihT85ZRzT
+	 MHr2Q7SQifWpiva5u9/8UK9srwj05uLUNvASwN3jyJheMnGX34ZyV3dQUf/BZbDQ0e/oT
+	 UU/zXZ+mruKpkgrkcNv7kmAhYj/J1WXbTPacLPPi16MJUfmtagpUPh04PL7PJIC3jow==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=toxicpanda.com;
 	spf=pass smtp.mailfrom=toxicpanda.com;
-	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=f4Oxqytp;
-	arc=none smtp.remote-ip=209.85.222.169
-Received: from mail-qk1-f169.google.com (mail-qk1-f169.google.com [209.85.222.169])
+	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=hZb28tvK;
+	arc=none smtp.remote-ip=209.85.128.172
+Received: from mail-yw1-f172.google.com (mail-yw1-f172.google.com [209.85.128.172])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3189606A322
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:38:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A3189606A322
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 42DF7606A32D
+	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 14:38:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 42DF7606A32D
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=f4Oxqytp
-Received: by mail-qk1-f169.google.com with SMTP id af79cd13be357-93f3c89594cso49096585a.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:38:29 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=hZb28tvK
+Received: by mail-yw1-f172.google.com with SMTP id 00721157ae682-8b125371596so15397657b3.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 07:38:31 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda.com; s=google; t=1793371108; x=1793975908; darn=vger.kernel.org;
-        h=cc:to:content-transfer-encoding:content-type:mime-version
-         :message-id:date:subject:from:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
-        b=f4Oxqytp3QWZ8rkKm7Zakqilbipdp4cRSVRQyeZ7T/X+ekYhph4OPeKmzKK9hJADW7
-         Mk9LhZfE8Vk0i9cVnh0j0qE14D7+07VEfzkYULnm6heiFkQl8aYPsGi5PMpNAJedwGKs
-         I+EhFx8t61+b6IJQgrmOvGEigVJTlyTdl0XsFLDDq+hA8Ihf6kgq2mdch5nQkNRmI67x
-         WAGZKLneKwbs3xuXEJR2nSPOJ0pZcO415sO3O/z8jKYCc6eNh2MEZ8aH4CnUfgOb3Qwu
-         kKCgMEq9k0RlqD+5zX1zkIyYK6caNXNIw8N0t8xyjTHdLR9E8Af9uEHrKXRnPLrYrmB0
-         FP8g==
+        d=toxicpanda.com; s=google; t=1793371110; x=1793975910; darn=vger.kernel.org;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=svrb2Ovlj0yJHbneNxyZJOFBp3J2HRz8F07mnxmRiT8=;
+        b=hZb28tvKRR6cl9V93+0tJAYmeXLuyLl/xVRol1Gm1vofmx/hG6cAzBvpQnttdQ+0YR
+         itKhY/9gi7+7cVMP70or13FZrlnvxE+0Y/JsajNsJ9VDn9v26gw3JCH1D3CItG9/uBw6
+         RzfEKn51x0A8zUBy6oloYgfZddZ8Bddc6ZW/r9mRxjDsnx1yfzrae9hgRsbYrttIDm1u
+         2xJewnH3stPnIKtzhBM/4+8KlRFTiEWxjPCjsEl0p60WssOOzt5iIhgLtIHPLyv85vef
+         RY9+XY0YsfIGLfuQXP35CIghBDDzFshLG306sPe1VYSoxFzFvXCWCBdaan4FzHWR5/S3
+         LD1A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793371108; x=1793975908;
-        h=cc:to:content-transfer-encoding:content-type:mime-version
-         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Lw2XTa0UHLp5uC9FUZa5RGPGrr4tiBPXeAThucLJkgo=;
-        b=ZH9iU7l93nyx6fD4RUM84jEk5yYeSuwFTvW+juMOK+a8W5g48oK68kXnLyq7B42/u8
-         VnShL6m+LVxYGN+OJYQOWexYV3u3RMFZlU1IlMVduPBh6TGjtAuC0F/zI99N0A6AMMru
-         /YO+VidKf47sSq8d4jp6jfjY8e/L9vUgVAxrLQZxDB4aPLCy0K1NagUXLOO33C8S9nMS
-         mNHj454guaQW3/zPlo6LWT0jjbO8PHSvakBqbSey6jLcn5oszpJpKsFG4yBtGxT5R/Ht
-         fUP/7I8dm2CgTqu1w7aESJ64qn+DyaFazUveexJz3nWbCXwxJjf9x8zNMTYwZt+Y7egX
-         4JYw==
-X-Gm-Message-State: AFq9FYI0oT0snrih4Emn0cyDxY2hqIVmX3CHli4dARQGrlruv3yxVr2n
-	kxhH3gPi9KNFSfu4+vm+1bgh9BHDcchiu45/zx9NsgAE17LsIEPe4Um8rMnHUx2iazA=
-X-Gm-Gg: AYBFou3u6ZL158PiAo/CP8/etJxSn4wA3u8DFXy8qbMqzCIhRl8FdZYhgiD0MHSTByy
-	PQVKLZ1wEH0xCv/J+L8k3TaX6snymuaDYyUVZ8XJDyMLrX2i1QiOE4B0Z+6h4uFHgR6s9FPW59M
-	/rl37eIu1Mk1Dj2JEuOs7BupNOEB4/Zs8vKufOrW5pjM5a/EoVLGGTw38Y1Cn2FUf+lDLbPw2qn
-	ZuPmsIN0F3IZNr6+B9uG9tboCOnC5B1ASZqw7lBowVORvQid7B3K4TS40buDUU22aw5Pbv+pSkp
-	QKMPQJAotgcrDGkSRBrNEdmvnwY911hV+++V1XWDYpI337Y1NAGfFe9dtvqGsR2a/LNN1ckV2gd
-	w8q3juADjfDNLbEfcBDCwETtVnOPoOO1OoS42yg+gETbtpEJ+uNC44GHBdXNY7RM6U2yLnRlVxU
-	x8tI11lTnqdM6KlSyGVgZFGyaMZWvrYmrEFBwPXbyG/JYC71RM6gYaBNY/x4B/noltTZjOKZR18
-	cJDPZZkv8QR9Ybat01bclX8wwAztmCKWY+BQDAemiVvTKlg6PJ+zGAPh6K6+7dhzWwmSZpStB3q
-	6yd5R0tWw5hW0qBngSPUOQLmLaa92LaY0t9zy0BvgIsA
-X-Received: by 2002:a05:620a:8907:b0:939:6de6:9518 with SMTP id af79cd13be357-944216ed973mr439727385a.47.1793371108304;
-        Fri, 30 Oct 2026 07:38:28 -0700 (PDT)
-Received: from toxicpanda.com ([153.61.196.244])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-94425ac6bddsm155612385a.37.2026.10.30.07.38.27
+        d=1e100.net; s=20260707; t=1793371110; x=1793975910;
+        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
+         :content-type:mime-version:subject:date:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=svrb2Ovlj0yJHbneNxyZJOFBp3J2HRz8F07mnxmRiT8=;
+        b=KUJLo3U9/JpOGOTcwCScdLmZ3IKk7ZohuPyl83k9heWD028c6eTBNqVGcpfpC3sSC+
+         uMbw/sNlwRmUWjb1LVxKvRdgxLIWK+KBCDVKSSwv+6ZJQgTTrvGtYcuTkSKQ1e3zQYTw
+         INF8PhayJ3UZ7iY4VFZl5qWMvv0qF0Opy4TiKnNXZ9K6VCqoNQVMSoc0vsT51LAM9VOg
+         n/0lVEQL4hA23jdCrWUVma/WKRAwZwet/kXSMH0npgy3t4MLy75lb5LZb00W7/Sk8qgJ
+         x3IwzuEaejYqLxFA3i+O/KG/oeNWdNRhZ1KzOPuyaf0AdtZUofZoR8HooHXaFFRfjcvh
+         LdFQ==
+X-Gm-Message-State: AFq9FYIxZiE90Nc1rvPy4zU7lFzJ531W5tF/ZQ98WFGBFwdZ841lu9Tq
+	EEIotwIJiD6zzlGj2qU38uUtTnUENyzwScPzO7yWUrih5D6Zea2SFYBN73/QrEP+Ymw=
+X-Gm-Gg: AYBFou3aa73fadsD63KV1/S37xy94JgU/Q/DVYFPzVGrl09NXpu3Vs1TxC4QepdofNN
+	5XIM5nDwprFVf4HjPpv3jFYJ+KX16E8Zv1KXzftI1JMo3L8H0amAJUNBpL5kDSwGWFjsGpZpnKT
+	lBPasU8DnfFUPII9RS7SmUlKVyQNHY+dxGjNd/xktHmUmceLcQQs1m0TsyY7SRsfOX88PbVLhro
+	wliYqzS0XfJPVXSxQjaO+qaFaDIN1K7LPmp28g5RQTqLAtPilqFPqD5AW4SylGLTdOUOGUQmrYA
+	KqUdBj307PhJ2KUy7WAGZnk67FtqDj9IEBkVrGnmCBKQ3mStDkmm2zubokW0ujMg7Y4HWuZ/itK
+	R4napesSOMw7SqBYG18TR62oKMl2Fkm0pYR1lXYBfpwlbJVax7aXev5gJIRl5fd4O6U6xsAB0bF
+	bI/FFwpDD7+orZd2KkXcxdSzCvo5/APjVDr1LFHLPHP2sfQdAj+zCmcIzBm/SsIZARJKv29VkoA
+	XcZ3wCflEULlGJD0IPJDkNFO0Dj+wTaS8D3euNmpMuMoXIbw60HW6GEekSb0AYhhzgZUGMLCkMu
+	tYWF11zKmuFQw3cAb2R1ZRHs5+FXSvNycbo4m0E05/lW1w==
+X-Received: by 2002:a05:690c:f90:b0:8ab:3b98:5a30 with SMTP id 00721157ae682-8b1c68babdfmr41034207b3.33.1793371110218;
+        Fri, 30 Oct 2026 07:38:30 -0700 (PDT)
+Received: from toxicpanda.com ([153.61.196.247])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-8b2b71b1a86sm9302517b3.34.2026.10.30.07.38.29
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Fri, 30 Oct 2026 07:38:27 -0700 (PDT)
+        Fri, 30 Oct 2026 07:38:29 -0700 (PDT)
 From: Josef Bacik <josef@toxicpanda.com>
-Subject: [PATCH 0/5] btrfs: data integrity fixes
-Date: Fri, 30 Oct 2026 14:38:06 +0000
-Message-Id: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
+Date: Fri, 30 Oct 2026 14:38:07 +0000
+Subject: [PATCH 1/5] btrfs: don't drop the error of the last split bio
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,10 +93,9 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAM+r5GoC/yWMQQ6CMBBFr0Jm7YRSRKJXMS46MIUxppBpNRjC3
- aW4fD//vRUiq3CEW7GC8keiTGGH6lRAN7owMEq/M1hjL5WxV6QzUlIfsXfJoYTEg0r6IlPb1NS
- 0tTEedntW9rIc5fvjz/FNT+5SzuUHuchI6kI35uk1l0e49JNi4CXBtv0AMY9XBZ8AAAA=
-X-Change-ID: 20261029-b4-btrfs-data-integrity-eb753b57300f
+Message-Id: <20261030-b4-btrfs-data-integrity-v1-1-f4d4196731e6@toxicpanda.com>
+References: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
+In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
  Naohiro Aota <naohiro.aota@wdc.com>, 
  Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>, 
@@ -104,70 +103,86 @@ To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  stable@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
 X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=openssh-sha256; t=1793371105; l=2635;
+X-Developer-Signature: v=1; a=openssh-sha256; t=1793371105; l=3090;
  i=josef@toxicpanda.com; h=from:subject:message-id;
- bh=YMEJ1FGA0t74fOXTrNLI1MmSNUL5joiB2lJWMWavJzo=;
+ bh=5fTqv4D1XfwVMApfc8X7gztAHmSU+m4SW/zWWSbLN8Q=;
  b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
  JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
- QB4FPscSuuXStZNYYoP94AQtart+lZVJkTi0PEYHBO5lthR/+x60yAWTI5WRWLxqncxocpaCo8K
- 2txIaK+CpUgQ=
+ QKkbgXuIZdSjhxW2/O97ejXE0U43m+1JWTRbONQ3FEN6V+l+jKWXmMGwHngN3ZlBmbC16fXaXir
+ W9cFGc8sXTAE=
 X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
  fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
 
-Hello,
+When a btrfs_bio had to be split, btrfs_bio_end_io() saves the first error
+of any of its parts in the status field of the original btrfs_bio. The
+part that completes last is supposed to load it into bi_status of the
+original bio before calling the end_io handler, but that is only done if
+that last part was successful:
 
-I've been doing some model checking of our trickier paths with Claude's
-help, and these are the fixes for the bugs it turned up that actually
-lose data, or tell userspace that something is safe when it isn't.
-Every one of them was reproduced in a VM on an unpatched kernel and goes
-away with the fix, though the fsync and log sync ones needed a delay
-injected to hit the window.
+	if (atomic_dec_and_test(&bbio->pending_ios)) {
+		/* Load split bio's error which might be set above. */
+		if (status == BLK_STS_OK)
+			bbio->bio.bi_status = READ_ONCE(bbio->status);
 
-The worst one is the fstrim one.  If you run fstrim while a device
-replace is running we'll discard everything that has already been copied
-to the target device, because the target's alloc_state is empty until
-the replace finishes, so the whole device looks unallocated.  The
-replace then finishes happily, the source device goes away, and you're
-left with zeroes where your metadata used to be.  This has been around
-since FITRIM learned to trim unallocated space back in 4.3.
+If the last part failed, the assumption is that bi_status was set at the
+top of the function. That is true if the last part is what is left of the
+original bio. If it is a split bio, the assignment was done to the split
+bio, which was freed right after. If the original bio has completed before
+without an error, its bi_status is BLK_STS_OK and stays like that:
 
-The split bio one is similarly nasty.  If the last piece of a split bio
-to complete is one of the split bios and it failed, we drop the error on
-the floor, and a buffered read returns success with whatever was sitting
-in the page.
+  original bio (tail)                 split bio (head)
 
-The rest are in our error handling.  A delalloc failure in the middle of
-a folio leaves blocks dirty that no longer have an ordered extent, a
-fast fsync after an error that happened before we submitted the bio can
-log extents that were never written (which log replay then happily puts
-in place of the data that was there before), and btrfs_sync_log() can
-return success for a log transaction that never got committed.
+  btrfs_bio_end_io(orig, OK)
+    orig->bio.bi_status = OK
+    pending_ios 2 -> 1
+                                      btrfs_bio_end_io(split, IOERR)
+                                        split->bio.bi_status = IOERR
+                                        bio_put(split)
+                                        cmpxchg(&orig->status, OK, IOERR)
+                                        pending_ios 1 -> 0
+                                        orig->end_io(), bi_status is OK
 
-I have a cleanup series for btrfs_sync_log coming, as I had to spend a
-lot of time grokking that fix, which is a good indication that the code
-is too complicated.
+The end_io handler covers the whole range, so for a buffered read all the
+folios are marked uptodate, including the ones that were never filled, and
+read(2) returns their content instead of -EIO. For a write the ordered
+extent is completed as if all the data had reached the device.
 
-They're all independent of each other and tagged for stable.  This is
-against for-next, and it also applies cleanly on top of Qu's
-extent-by-extent writeback series.  Thanks,
+This can be reproduced with raid0 data on two devices, one of them slower
+than the other and with a bad block, by reading a file whose last stripe
+is on the fast device.
 
-Josef
+The saved status has the first error of all the parts, or BLK_STS_OK if
+there was none, so always use it.
 
+Fixes: d48e1dea3931 ("btrfs: fix error propagation of split bios")
+CC: stable@vger.kernel.org # 6.12+
+Assisted-by: LLM
+Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 ---
-Josef Bacik (5):
-      btrfs: don't drop the error of the last split bio
-      btrfs: clear dirty blocks after a delalloc failure
-      btrfs: make fsync wait after pre-submission errors
-      btrfs: don't report success for a skipped log sync
-      btrfs: don't trim the target of a device replace
+ fs/btrfs/bio.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
- fs/btrfs/bio.c          |  9 ++++---
- fs/btrfs/extent-tree.c  |  8 +++++++
- fs/btrfs/extent_io.c    | 10 ++++++++
- fs/btrfs/ordered-data.c | 62 ++++++++++++++++++++++++-------------------------
- fs/btrfs/tree-log.c     | 20 ++++++++++++++--
- 5 files changed, 73 insertions(+), 36 deletions(-)
----
-base-commit: 2789b2c034d7c0c8687355921a38c5ac41a565fa
-change-id: 20261029-b4-btrfs-data-integrity-eb753b57300f
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 2c6234f6182f..fc0b021cdefb 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -127,9 +127,12 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_status_t status)
+ 		cmpxchg(&bbio->status, BLK_STS_OK, status);
+ 
+ 	if (atomic_dec_and_test(&bbio->pending_ios)) {
+-		/* Load split bio's error which might be set above. */
+-		if (status == BLK_STS_OK)
+-			bbio->bio.bi_status = READ_ONCE(bbio->status);
++		/*
++		 * Load the first error, if any. It may come from a split bio,
++		 * including the one we were called for, in which case nothing
++		 * stored it in the original bio yet.
++		 */
++		bbio->bio.bi_status = READ_ONCE(bbio->status);
+ 
+ 		if (bbio_has_ordered_extent(bbio)) {
+ 			struct btrfs_ordered_extent *ordered = bbio->ordered;
+
+-- 
+2.55.0
 

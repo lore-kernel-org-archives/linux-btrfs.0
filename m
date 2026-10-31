@@ -1,54 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.167.198
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793453442;
-	b=YTgcE9OpT6gFINeanW7uCh6f7V7UqD8nJ1L96a1CXjCuOgHmbqYQinEDJl9bKTzlUd5T
-	 H+J4UpvRNsgcVtSApJjE72QxOKrXSJ80v4+uU3x1wjxGfpabLTyDvAGJdZPeZDXe5anlm
-	 kbkmUyJ+U6+3ihaDiV4tAyOVe/EqAAr/jF4uVZy8VsALfSEMuktekDGyyxzA1VuojCNPx
-	 D5Y57kvZMAyED2g8GBEiliFruK2r947fse/gWf1hVNv8P7QDEb7+Zk1SNiZeX3pD1W0Ry
-	 ls96VBBN2baqPLW0A8vGDFIapParuvWyaE7hpDONk3Ok9is5thjEuJWOztD1OpHAApA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793453442;
-	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:MIME-Version:X-Received:Date:In-Reply-To:
-	 X-Google-Appengine-App-Id:X-Google-Appengine-App-Id-Alias:Message-ID:
-	 Subject:From:To:Content-Type;
-	bh=8pfUsnr9tdOmGaNwEWjLs1OKNwnTF5JIb3eCI5kWqIg=;
-	b=UjI2Ghwcx9whxfzEYm7t1PVcXMp84U1RtQSe6cSg99AIi91DWRDDVdER/YjxYSaLk7CT
-	 +YPyB34wFyw0VyiknJ1RQvl7Ijmqs3LeRxbAecfxfCkTxLEATe9fug1t1GOiqnJL5PAPw
-	 mzxfIVReFaKMpV9/TzM8WbGDFH7cpBRaAsdBfpAHW6HiqD8aQqM+ImMXYu/nAyu25N53r
-	 XoUGJFjvI38c8eQxEyVfkc37IA6+BYEx0eQbXMN2kYpXijB54TQJhlxs0CtCyK5chWyag
-	 8qhIvLoR5FqkM4x3lkDK6gRXVp/fgzq6YWocKoTimqUfAv6Ifro3GAQF/tb236968PA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=fail header.from=syzkaller.appspotmail.com;
-	spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com;
-	arc=none smtp.remote-ip=209.85.167.198
-Received: from mail-oi1-f198.google.com (mail-oi1-f198.google.com [209.85.167.198])
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.50
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793456299;
+	b=p5mhQvWbdsHB4/pTDUWd1HrdhT7zoW/JJFZoHQMEJeYW0758UP4DZVV8opc2bZI6vJ0m
+	 jMwSRFd3+cgdDT/B7xUdW2cZrgmy1fsAggyt6BZbgWbyJnoXIelr2S1vZ2qkFopejSpch
+	 VIJ7/8SdEHDwvTPFyGL/Ail8a8oc8jfLdhEfIMheZNec6ZBzkvpJ9WXNuUIRrNrJ6J7ww
+	 DiT+N/qTl8mqnaeOMxagpiFpcLif/d7DflTdk1EcLRk/il8pcn1tz238cUQ34L3ZuR5GK
+	 az7cu9LYAKQtOw9TsDPJIbXBPUhHHTDANR/9rGC54Ay7GhSDhvtAgYpK5g061c81wIA==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793456299;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=Patvq8zmYKObsZg0m1UZqbH1b5GBfytCkWtSbWUod8M=;
+	b=a4WLFBlGdZVLzjTTP/AueKuFiMCuMdEP7QhjUmANY2ECXjwZHboE0YCJfcL8U9/6hmby
+	 5yO3GvwKY3gr47Eh9oxXI2TH/Z7kf1o/dmjKoSd4SW93c/1Gdkk3qsyrMx775q3swq18D
+	 /wHWAdc/qWimUX4TREg/OLLvunnWzeioYWBXh5Uwlx+Nx9eDusp5RGsUW5OdAjXxrt8/y
+	 ijfzqbqP3SX5EaJ+Pz78DBEHl4fGijwcQpncZDf8kstE747JCr3QzmcJbAAXC5BwrYzBC
+	 RP60Z1N36srMJ6sr+Luue+R1wtSpaFu0ljFUcnGpNYfJEv3fUqzZYMZEEhAkJxq1NWA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=oQSLLC1m;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.50
+Received: from mail-ed1-f50.google.com (mail-ed1-f50.google.com [209.85.208.50])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 448C5606A31D
-	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 13:30:42 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 448C5606A31D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f198.google.com with SMTP id 5614622812f47-4cbf700ddccso1404961b6e.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 06:30:42 -0700 (PDT)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CD304606A31A
+	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 14:18:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CD304606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=oQSLLC1m
+Received: by mail-ed1-f50.google.com with SMTP id 4fb4d7f45d1cf-6b1dae0febeso2251661a12.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 07:18:18 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793456297; cv=none;
+        d=google.com; s=arc-20260327;
+        b=TWeBJr2MCxh3FE0XOCxr1mjsOSHml3v1bu5Pbr7y7qCXYzIDOJVIhdqeDAR8nI8H5f
+         Aioziwj3uINz3RGkHlWbefFn9fS8UGzNWo9St04XxS19f5mUqYHDWFSDJP1zxo/a/eQz
+         lifaX9K9obXYMJhNGlJWE3MKMUDO8tT/1YQjEaiCOuktuBQ+PU+fASisYiaV6wyemqRv
+         FimpcfMxODkdAnaHCAx8yu7m/1h0GqCp2Gj1CtF6lUHQz6QXu30AI7Hhv0RjIG7nG2Qt
+         ffqBDMF5np1vuHO+LZvwlXXzVTx24gnM6n8ure1B7n3T4iWdLDWEY4XSvd/ktVdEJmYz
+         yabw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=Patvq8zmYKObsZg0m1UZqbH1b5GBfytCkWtSbWUod8M=;
+        fh=7ZM4WxuIi8uB2o0c0QBCzBlNBy7A4ad3xp4Ad79mMYo=;
+        b=AgYx+BVNZvaEdBrAB3/h2eBkY1wQFTp6BMZRj25QU1YjVYUSIExmXSrx16AsAhXgB8
+         N+M+E99ruBAcgNhKtN66RNO4eksMyUhH5eLzWOncC3e1WNY/X8DIjMQJdOn41GhU44nh
+         5syjlIToxvxBOUgF4Qby5V62/Umqy/wPzXbDD+CZCkySMt+jlo/gOIHZra8JttLvOk9i
+         eknCYzytVZ/J8ZWGvlOfvAY3liCfDDh2wrAbyQh4kpcEijDhCh5ih/KyN7wjW34fjtPZ
+         2Qj1AM/fOwgnn9gKMGmk3EtyGaXZGTzjpPc5cdM5qD6Pa+ys9QdEcwAppF97t06cCArs
+         S8Sg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793456297; x=1794061097; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=Patvq8zmYKObsZg0m1UZqbH1b5GBfytCkWtSbWUod8M=;
+        b=oQSLLC1mlwpZCk0ZZrL78sZBTbXMULvV3A5VNNAB+fjwScljqC/+c8krSIy+5QkCTU
+         9Aewd6oLipaVsncWBwbOzv9IQ35Sk7bSNgHjp0q9Wh0a2M5YtJgfdFZMc6J+S9HU2qBT
+         uw96KgDa0g49IduaTD9SDThtQLiSC3e2cy576lxjGXvJqx2nWlAIGE5JrjKqxNWqltIC
+         LeoPRHoC4Uw6ELdtd0segJT9DnVtvGhpAZ9uPZfReqwNibJQV+/ySK4LD1s+LQDGz9h0
+         4nHs5O8COquJdR38IVfmn3pvv/jXZZzJuRPfYpx/9C7z2hfBjbua015UnPZLfmLZJ2Xi
+         1BUw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793453441; x=1794058241;
-        h=content-type:to:from:subject:message-id:in-reply-to:date
-         :mime-version:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=8pfUsnr9tdOmGaNwEWjLs1OKNwnTF5JIb3eCI5kWqIg=;
-        b=lNU4o7Lgu3IKiqpP/VxC5HWYIMsP5SuIjld88OFYUaCYqTnGz0hEZDbI1Jm2Mki/qb
-         xOqiN5HrheY5uI8BRCAHcUl4bTyiSoK8KBDIrS8aSwx+B7GXG0Vjl1L+0TTAwmrMiXry
-         NYYn1GwuDhDcutPldl76ZxNB3TyM04RMEeSQS2MTMUJrJ+lUNu7pTPlIldHQKH/q2bOT
-         tdv8q62fTVnaSr7oSkUQyPXp1V4Ka6uRQ29aOPtGx4WfUNo/IgwAq3LADaPkZ4dkgw63
-         VL0edbwOw/85qVL70qQJgXmsdH1CR5Pb0MzOqGAaycjGizmjl3Jj0bidn0tqmEAEZ/Pt
-         EJAQ==
-X-Forwarded-Encrypted: i=1; AKwUvBzRunSCkCoOSddzUZMamFZE4NVJBY0FD25p1rmvi7KKWIsQ4VmKSdSu721PS7voZ08T0WBmcyeizw9QxA==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIbLp2dhLSJQslh/ZSoEJpHMqxdsjZDMek6i1FIV/9gaCR8zUb4
-	N3jEvR05aMabnhgHJaV+2Uk7Kk2U/WqQejxaiN1K5/fDIhslfXEiufHnAtqxEK78w/NDR569Au7
-	GyNuMyVDEz60eoJe+3HHlhRQ1ExLQ1EH/vxiSTLWu0Z8B8CCb2JBw4uhpZxk=
+        d=1e100.net; s=20260707; t=1793456297; x=1794061097;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=Patvq8zmYKObsZg0m1UZqbH1b5GBfytCkWtSbWUod8M=;
+        b=QGAIBI34LWy/3M+6tLKXEZbDee9GhLsuA7I4UHUgFUd2ovn4MPv7rocLMoAJ7wf66Z
+         xIaiZWwp3+N8PI/dCr3VGaYSgBZio4nsb0tGwXpZ8XrM5iL5l/IaTfKmAjfUPQjn28bA
+         zfwLi5bKRSTn2cXDPh9cExeQqyoEOU1Cw+e4eUCcE10JFiy8d91M+yJUvvIl20WurfTZ
+         Y3lfHBYG2otArbSUNLKhEAd47fWu3co9eb/kKaq9CcISzoCZlNIEUZ2knyWyh6VgUzi+
+         /SkIFZ1EFQhwWzTMowECRMt3v1dtf7+X0QVHHJAz+DUFHEE4PyVYMJud3Ag3B3ZF1ZGn
+         qQNw==
+X-Forwarded-Encrypted: i=1; AKwUvBx2VPHRCxmTaNhAxbGLgiElg8UPH4VevJfqqY8zxLyEWzJM1PAi3atvc2+n1QOLC4iY7OcpvXD9uQcabw==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLtkq1qR7nS+xDj4/C+hubZ1fV3JIRrReujxEEl9MvFmalp/Zy8
+	qxpON56kzmyzEUXFaoW+se4/x48+K7bYZeaTtDxAM8DQQAteJ39HtlRj5KebtqnckLMFAK+fuEu
+	/MkBPH/SPhyfFya/ei8t+mu4z/7ZDN40=
+X-Gm-Gg: AYBFou2QMUD89EQ7O9O10qHD6NUdkCRDgkHLZICqRDQHQuHuXKXGO4jytWQ+g5bsxSq
+	PnK9zt+AAaPl2eFQ7i5nY1z7CAnz5+8GWGyoj9c1iAi5mwH0XFSuIgZ2XKSkNNlGCHFFK6DL4dR
+	09VNtue0Ys6K+D/mgOHRRkX/E1cVs59iptaKr9qF3mLMxFIOvskg+5GvJW44WEEgWHuKzDRJi5N
+	hoEdCP4sKxrbQWqm/TeGa0rvisLiuJX+NXj24QK75nbdlXCh4zaILlyWvxUUYohQG+fKXzqqXQ5
+	zIwCrxsbB7udFLy889zdMKmRejj2+bwfYkGcwiYrnq0rBB1IEvvY1J24n7DCMr1aatneAlQ/Opm
+	P8Vi+Th2D94ZsEF4If9EUed7YIoB8tMmRueECd/k1u9vG0KH8Kc3KzlqIWbOXxuxI7RSiVg==
+X-Received: by 2002:a05:6402:50a:b0:6b4:5a0c:a7fe with SMTP id
+ 4fb4d7f45d1cf-6b4d4c72396mr3193898a12.28.1793456297060; Sat, 31 Oct 2026
+ 07:18:17 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,69 +104,84 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:192a:b0:504:5fe1:c8d4 with SMTP id
- 5614622812f47-5640de7456amr3804995b6e.59.1793453441120; Sat, 31 Oct 2026
- 06:30:41 -0700 (PDT)
-Date: Sat, 31 Oct 2026 06:30:41 -0700
-In-Reply-To: <6a791c94.01d0871a.3a0d52.009a.GAE@google.com>
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6ae5ed81.041e992e.a2316.0006.GAE@google.com>
-Subject: Re: [syzbot] [btrfs?] WARNING in __add_block_group_free_space
-From: syzbot <syzbot+6931616d57696102d8aa@syzkaller.appspotmail.com>
-To: clm@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
+References: <20261028134728.294127-1-koray.fra@gmail.com> <20261028134728.294127-2-koray.fra@gmail.com>
+ <auILs54TUcWXf3us@pedro-suse.tail5790ac.ts.net> <auMzpUIEmGCE_x_N@amir-ThinkPad-T480>
+In-Reply-To: <auMzpUIEmGCE_x_N@amir-ThinkPad-T480>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Sat, 31 Oct 2026 15:18:05 +0100
+X-Gm-Features: AclHuK_VupdwTnfkty2dMVhzMxaAc8BrZ6HJFAl7_OYvEEgnr1tOPYIrNbWdV30
+Message-ID: <CAOQ4uxiuy0VwZj+3M-zRqQ49WTpHZpiaQ+6MZ8z8WdLjyQM_zA@mail.gmail.com>
+Subject: Re: [RFC PATCH v2 1/2] vfs: add provenance time (ptime)
+To: koraynilay <koray.fra@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Christian Brauner <brauner@kernel.org>, Chris Mason <mason@kernel.org>, Jan Kara <jack@suse.cz>, 
+	"Darrick J . Wong" <djwong@kernel.org>, Sean Smith <defendthedisabled@gmail.com>, 
+	Andrey Albershteyn <aalbersh@kernel.org>, linux-btrfs@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	Pedro Falcato <pfalcato@suse.de>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-syzbot has found a reproducer for the following issue on:
+On Thu, Oct 29, 2026 at 12:53=E2=80=AFPM Amir Goldstein <amir73il@gmail.com=
+> wrote:
+>
+> On Wed, Oct 28, 2026 at 02:56:39PM +0000, Pedro Falcato wrote:
+> > On Wed, Oct 28, 2026 at 02:47:27PM +0100, koraynilay wrote:
+> > > Add provenance time (ptime), indicating the time when a file or
+> > > directory was created. This is user-settable via file_setattr() and
+> > > retrievable via statx(2) (using STATX_PTIME) or file_getattr().
+> > >
+> > > The semantics of when to preserve this new timestamp are the same as
+> > > mtime, the idea being that there is a correspondence like this:
+> > >
+> > > ctime <-> btime
+> > > mtime <-> ptime
+> > >
+> > > so every operation (copying, moving, ...) that currently preserves mt=
+ime
+> > > should also preserve ptime.
+> > >
+> > > Furthermore, in order to avoid the legacy FS_IOC_FSSETXATTR accepting
+> > > FS_XFLAG_PTIME, add an FS_FILE_ATTR_XFLAGS_MASK mask to support new
+> > > xflags, and use it in fileattr_to_file_attr()/file_attr_to_fileattr()=
+ to
+> > > allow ptime to be used with the file_setattr()/file_getattr() syscall=
+s.
+> >
+> > Random comment, but: could this be doable with xattrs instead? I'm not =
+sure
+> > where I would put the xattrs code (if in userspace exclusively, or if h=
+ooking
+> > the VFS up with this, or if doing it on the filesystem side), but it wo=
+uld
+> > surely be less disruptive than modifying a bunch of filesystems one-by-=
+one.
+> >
+> > This patch is quite simple, but changing btrfs, then ext4, xfs, etc is =
+a
+> > mess, and inevitably you can't get these timestamps until you upgrade y=
+our
+> > filesystems.
+> >
+>
+> I disagree.
+>
+> I think that creation time should be a first class property in
+> filesystems that support it.
+>
 
-HEAD commit:    36aad21d50d1 Merge tag 'ksmbd-for-7.4-rc1-part2' of git://..
-git tree:       git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-console output: https://syzkaller.appspot.com/x/log.txt?x=113b8959580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=94cb1a71158c9027
-dashboard link: https://syzkaller.appspot.com/bug?extid=6931616d57696102d8aa
-compiler:       Debian clang version 22.1.8 (1~deb13u4), Debian LLD 22.1.8
-C reproducer:   https://syzkaller.appspot.com/x/repro.c?x=147bccb1580000
+One of the reasons that I think this API is a good match for the Windows
+style creation time is that it was already discussed as an API for the
+Windows style DOS attributes [1].
 
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+6931616d57696102d8aa@syzkaller.appspotmail.com
+koraynilay,
 
-------------[ cut here ]------------
-btrfs_abort_should_print_stack(__error)
-WARNING: fs/btrfs/free-space-tree.c:1446 at __add_block_group_free_space+0x5a3/0x5b0 fs/btrfs/free-space-tree.c:1446, CPU#0: kworker/u4:7/185
-Modules linked in:
-CPU: 0 UID: 0 PID: 185 Comm: kworker/u4:7 Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
-Workqueue: events_unbound btrfs_async_reclaim_data_space
-RIP: 0010:__add_block_group_free_space+0x5a3/0x5b0 fs/btrfs/free-space-tree.c:1446
-Code: 07 38 c1 0f 8c ce fc ff ff 4c 89 f7 e8 66 3c f5 fd e9 c1 fc ff ff e8 cc 98 7c fd eb 10 e8 c5 98 7c fd eb 09 e8 be 98 7c fd 90 <0f> 0b 90 44 89 e1 f7 d9 e9 51 fe ff ff 90 90 90 90 90 90 90 90 90
-RSP: 0018:ffffc90001a7f578 EFLAGS: 00010293
-RAX: ffffffff844c8872 RBX: ffff888013790001 RCX: ffff888034dc0000
-RDX: 0000000000000000 RSI: ffffffff9081ef80 RDI: 00000000ffffffe4
-RBP: ffff888037aea758 R08: ffff888034dc0000 R09: 0000000000000003
-R10: 00000000fffffffb R11: 0000000000000000 R12: 00000000ffffffe4
-R13: ffff88801377d000 R14: ffff888037aea7b8 R15: 0000000000000000
-FS:  0000000000000000(0000) GS:ffff88808aa01000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007f4b3d8dd080 CR3: 0000000041dd5000 CR4: 0000000000352ef0
-Call Trace:
- <TASK>
- btrfs_add_block_group_free_space+0xd0/0x130 fs/btrfs/free-space-tree.c:1471
- btrfs_create_pending_block_groups+0xcc6/0x15e0 fs/btrfs/block-group.c:2942
- __btrfs_end_transaction+0x140/0x640 fs/btrfs/transaction.c:1119
- flush_space+0x3e9/0xde0 fs/btrfs/space-info.c:912
- do_async_reclaim_data_space+0x137/0x550 fs/btrfs/space-info.c:1455
- btrfs_async_reclaim_data_space+0x41/0x90 fs/btrfs/space-info.c:1519
- process_one_work kernel/workqueue.c:3495 [inline]
- process_scheduled_works+0xc3d/0x1630 kernel/workqueue.c:3578
- worker_thread+0xa47/0xfb0 kernel/workqueue.c:3659
- kthread+0x38b/0x480 kernel/kthread.c:436
- ret_from_fork+0x514/0xb70 arch/x86/kernel/process.c:158
- ret_from_fork_asm+0x1a/0x30 arch/x86/entry/entry_64.S:245
- </TASK>
+In your next posting, I suggest that you first demonstrate how the proposed
+API is used to facilitate filesystems that already support a user-settable
+creation time (smb, ntfs,vfat,exfat), before adding btrfs support.
 
+Thanks,
+Amir.
 
----
-If you want syzbot to run the reproducer, reply with:
-#syz test: git://repo/address.git branch-or-commit-hash
-If you attach or paste a git patch, syzbot will apply it before testing.
+[1] https://lore.kernel.org/linux-fsdevel/20241227121508.nofy6bho66pc5ry5@p=
+ali/

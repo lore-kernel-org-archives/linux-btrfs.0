@@ -1,64 +1,97 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793405408;
-	b=mP/7WYsGkdqgB26bRFAIvDJSny1HfsOlJHIpEUmD4A4kDCvw1+AvlNyiVjQY9UcdHwVz
-	 1N/DYxnJ7qSn4bDqPmAaCzOJjAkSoVS7jPANrYvyJXM45kToj5tDixRhsaJn9hnxYM35m
-	 DszTMm81vxWOlh6REi1udJfnHOrYPIUQEH/jO3aPdD6JhMC7nH/PTuqyWqoPce6ySwxH6
-	 TIA38Xllc6A7LgR+J1WyeUgCjX7nL5UjZ8xAc8xbRgIqnGbXYh5EzQ+Cfr8rtpugu6rX/
-	 41yVaJryVJITZT3fuV4dOQe8CV623QwUar2RCwccfy7bN9xSYd46tuzggjkF+uviQSA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793405408;
-	h=Received:DKIM-Signature:Received:Subject:From:In-Reply-To:References:
-	 X-PR-Tracked-List-Id:X-PR-Tracked-Message-Id:X-PR-Tracked-Remote:
-	 X-PR-Tracked-Commit-Id:X-PR-Merge-Tree:X-PR-Merge-Refname:
-	 X-PR-Merge-Commit-Id:Message-Id:Date:To:Cc;
-	bh=9dOo8f0mm9iy1zykchLuzHF6Nx8+3yNprn2jaHbfBqA=;
-	b=qAce6fN+LyjcilZDK0fM2GjNDNSjxkr4BX3Bw3T/nM9hrDV8jebtHjybztQZnGxyAe7q
-	 cBgHR+One0hb1hRdMjZam4IE/6ub9hh5V9tEyWAY3nFi+reUGMT9E8ivORkv7ujRXx/3t
-	 DN0YmZAJdOQq5Dg7Ii/gzhRKXrUH6ItAkVDXOd62P5quqvCrS90feTxk1GN6ED1OJl43N
-	 CvDXafSnN917DE8LDAAtVMRjJcV9a0IwePenFFeNLUCilYT7Hby/uxTGUQA5Sml4cn2DZ
-	 OJMpmuKBRf+5CiYuzn/qnx+2j4Pfwj15wfiVkxqDRB+1pLr7bQi4H4zPrNtuBb0VuKA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=mcFiRucI;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.47
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793427962;
+	b=FybZAHG6oUfw//KZTI0gLuw7AbN8lJ3WEjH1WG5XhmcltysqMzpwRVImUFfDNXVglXpo
+	 6b54oQiq5z/AK0p+jKuJmK56XEJcOJ2wU+p7l3GTrTg5YgcPqS90Mk+CfRrou4e3mTiy0
+	 kOQUvQUFP6cWChOjwxkt8yMvH73NHss6WfRVHQH/tBXaMJ0F6K1A8MHOKatDq3AKjM6mN
+	 vchAOK0r4Co+CFX+zz4BC0Au6TVezuwEAwM035wvux9e6NCNpaBzRCOAlDa6JO7+7D1tq
+	 0EzluEayxlcSsKsXH0MXPRwpTTHs6hs8ieBTWmATNqqal36SAXgSgYxLV6cH3oq5KZw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793427962;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:From:Date:
+	 X-Gm-Features:Message-ID:Subject:To:Content-Type;
+	bh=AYsdxtDJthB5ib0a7kKnP9nb3/+JQ3Un5A615Q9Q14Y=;
+	b=YsunmBhDEVt9IrUsXOg8DLv1KoIVcIJ/loaDw1OEKswOcuocK3CIy4sFZfrEnDkYZwEU
+	 FGebhnRrr7MEg75VIftcK3FPFms958hFLENMKmeoJE8hGlijWQZV8yNBD8VDiPwlkw5MQ
+	 dB6vgnXuntrZ1LKH/XcI8a4OCpddh8ufb1NMN3y7ske8UpMPUv/CV+tUO5KpzBdusAHHR
+	 SOY392uXLO5EQjpuUGtKRcGA7Dy3lyGN2tzp3ktWNDAlWeIqlY1UZf1NwF7P7nBP6MtHz
+	 RJH2xYVNhe/fQJk1NW0FydslCX8h6E+uSvNAecSjmkAKm1qKVGskZNBFv+TsWOBr3og==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=iGWJuMib;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.47
+Received: from mail-ej1-f47.google.com (mail-ej1-f47.google.com [209.85.218.47])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF815606A31E;
-	Sat, 31 Oct 2026 00:10:07 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0766C606A31A
+	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 06:26:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0766C606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=mcFiRucI
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8837D1F0093A;
-	Sat, 31 Oct 2026 00:10:07 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793405407;
-	bh=9dOo8f0mm9iy1zykchLuzHF6Nx8+3yNprn2jaHbfBqA=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc;
-	b=mcFiRucI8TySqH1olgcgVYbeD151DeNnotmVz1EVcPK5Xrh9rY4cld/vDj1Au0K+z
-	 7zNcqp4wlxsYFXyJU/Gk4ZluMkIgEoCr8mYGQqVOsqRs/L8v/wNhW9N26XtyfrVRPn
-	 23SwPS/Y/trSZNz4RZ8js6vsFRK5Cf6cE6zeQTCPPUoINHOE1SZQedEOZOvc96wnI7
-	 h1K8LYWz5TcHJ9NnwctKbMWdAXhuvGz1sjFU84kNqoWBIId33+Jlsp9WeSZOpfzDmy
-	 KIQmcjuH/FDpaLGtbPnfG8neqR+ShnWRtIB/E9IrtgPRgWiT21WGGRgi4GbURJ3wm0
-	 t/TzNsZti7iSw==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 7D3643800478;
-	Sat, 31 Oct 2026 00:10:07 +0000 (UTC)
-Subject: Re: [GIT PULL] fsverity fixes for v7.4-rc1
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <20261030202415.GA1967@quark>
-References: <20261030202415.GA1967@quark>
-X-PR-Tracked-List-Id: <linux-fsdevel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <20261030202415.GA1967@quark>
-X-PR-Tracked-Remote: https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
-X-PR-Tracked-Commit-Id: c349b233d6ab0fc3517401a1e2d36f5f90eb8c9b
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: 69eac8481741b1474eac7c459768c94bb94430e1
-Message-Id: <179340540592.1842115.685865378245125650.pr-tracker-bot@kernel.org>
-Date: Sat, 31 Oct 2026 00:10:05 +0000
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Linus Torvalds <torvalds@linux-foundation.org>, fsverity@lists.linux.dev, linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org, linux-security-module@vger.kernel.org, Theodore Ts'o <tytso@mit.edu>, Fan Wu <wufan@kernel.org>
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=iGWJuMib
+Received: by mail-ej1-f47.google.com with SMTP id a640c23a62f3a-c40e30c26a4so510980466b.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2026 23:26:01 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1793427960; cv=none;
+        d=google.com; s=arc-20260327;
+        b=kiIR6V7t1RaIZoiEaILvTG6TtX/j4StHRa3JnZ2YJYuFKhXgZdZ3/DippLJ8C1FyFA
+         0Qad9I8YvvZnTgEvJ4aH0VyhiJZ4fzUBx9dnwchMUIcoNdmpiJSSCuEXa7w8DmeoJZaY
+         YhmpROHgxJoxX/IdE7KT8G/3k055wNySVVed322TNH3mzniZ/BGxQP+1gAAAmUNxXJze
+         CBLHvZ3GyNAOXmeJE6eDkxVY6BzA3SmBpb2X77AlEg782/YiJn+HylkmEEhcLpMTeNoc
+         A0Vy+5L127E2a772pDdqyfzfywCsAkaCYD+nugzwPnftMakQ9S8JJnrAJrvEGQwuCDtD
+         foWw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=AYsdxtDJthB5ib0a7kKnP9nb3/+JQ3Un5A615Q9Q14Y=;
+        fh=IOI3BSFtc4S+mY5yRaEOyEQVEbaexZFmwOG7FNW1hpE=;
+        b=UTswAuThTCmHPnP1WEHgrVhoYJDUgNWmxZQLpeMWnUNoo82zK+qsZB0RxQ9Gqbu/Zm
+         nUP3Yb1sL8iQQ4ojZasozzBRayKBW9hP3PLmcYioXTZhe0oJ0z687MNK45DRwMK6dINU
+         gSMqWDQxtq/agq4YDUAXNvOSgkDVyTlxtRSKep+v6aAw17W+T+Jv9p1DOb6m0l9nQHA6
+         bplBTIPDb9Lkzv3Dy1WeX8ZAcoN4FLHjtO27pBZRAgJ2Sk0eWByzlEtDrKq7ccEW5nc3
+         rNUn0FVBfvOPsUVpIhB+dg57rNlz7jl4ojgHwlHE1j/opG1qRMYRuGobSf2Xg1iE9tk/
+         lp9A==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793427960; x=1794032760; darn=vger.kernel.org;
+        h=content-type:to:subject:message-id:date:from:mime-version:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=AYsdxtDJthB5ib0a7kKnP9nb3/+JQ3Un5A615Q9Q14Y=;
+        b=iGWJuMibJPBsN/o+YRMP11+Xq77MQbHi02aEi5VRKxs0vAc5x5TfuqV9J7XlmPwrBm
+         3k4WPoaV9joDIjAm4JNb4oQ4u7Kfdtc6lNPZBwOwHdAMMhSbOi/WcikM1IdKWP893dY9
+         a/W3H3MSUXe98ySFYjSAr6PS8ROqnvUAicCP3Vy4de4aBs40jUirNUPKs+kpI159jKfs
+         OljzmhTD3T2wY1ea5/vT4HtK/qnLo3rajzvWNneUc23C25zRP4JHII7iOt+BxWILTxAS
+         OAqA5l8NhR6khO8/nDGqJSpzvxHvQlgaXtqOk1k5qXevyW3jrwo3loaS5gxXp/vh3KpG
+         NHjQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793427960; x=1794032760;
+        h=content-type:to:subject:message-id:date:from:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=AYsdxtDJthB5ib0a7kKnP9nb3/+JQ3Un5A615Q9Q14Y=;
+        b=MXzZmKswOMlhryS7AEoKZ1e7FpllxQb/FdC0ecCEBjUTRgnkoZZWWM62rB1kMxPTz1
+         Ec2x01/lAQk1/QHRoKaukTub0AKzl0LZHUJEiMlppME+Ahx+gQ7/Y6XE2MfGGnwIt05Q
+         FK9ofot5IJxhhnnZSWNyG8IlEKBD8ekRTVXHXVv+Cd75flOCAh6RQZ0Yt3YDxeoMdUI1
+         mCWJcO6dESX59dsLOrOCdfd9DdfO0hde+s8cMCHbMhR1CjVq0VdOT4PExeIv2u7kbgTS
+         +FkbdDhFjmU8X6VyKqCF++JMmbXU4Fu32J/zgnvvriRzq+NYRmMMjDoyGl+/JluGHSNb
+         QEcg==
+X-Gm-Message-State: AFq9FYKIMXVCOPP7oC2cBfawMBAeEdlgG5sRGl/oFXwXEjCGbdSvQQGe
+	KnXXGVl2B6kShmlVBt09z0jgU+eAEkWtjsfXXNAU3IiyanzsTe/35dcSfGLrjpNCIswnf9gnLlr
+	RN5/rRa3rjFBNLtJNOn2rxlRS2WsYAEQUa7e2
+X-Gm-Gg: AYBFou2S6XtBQ79cKDJwr6pq5gDEpX0MU/dAVZHVHT8VsizcryWBmePO/20j/Jk7Ai9
+	RdjLIUwgOOkIX5G9GsUOkiTSauHxPy11SNEhs2MXxlzMIIkoTAFlbkpzsSMwNGUZjwemY4+rzh4
+	/2tUyp0IJ3ZS+YsCaEX3AnxvkWUfFzz13hYLC22f2WkXyty2xifpMK7sB16uYaPAhi2nuuPNgNw
+	x+xMrZbfp9tQelLM/luYWQpjT3YKX+bcoHU9H9cJ3hJxGw7OMeRXKfamMYxT9wW5kisEkvDO1kH
+	2VC9kTkH3xatdrWjOAA6xo45/Zt2ceJt9NGD8qxsCRNKZEafYt7hGReSH6o0B6CxeAgZxIFG2vl
+	S+ZIlGlFUuHGyHfWE5HY6pjSGo0NB0vpxiuyK/8bX69um6R/0jhh5Jbi9zdglOqN+4WN2Hmsm+P
+	akvT6pGyctMa1rOJJCfMk1yvkYJJuGPywP16EsCPBqCtArwXRBCiZDT1kzLUVvcwSvY6vRGfnG5
+	/NTjngJKAabFVxFSYP2PGf1ZPHdn+N+CkvGCw==
+X-Received: by 2002:a17:906:eec1:b0:c31:5918:86d1 with SMTP id
+ a640c23a62f3a-c4ca7a6a5c2mr394332166b.10.1793427960018; Fri, 30 Oct 2026
+ 23:26:00 -0700 (PDT)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -67,16 +100,104 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
+MIME-Version: 1.0
+From: Aaron Bohenick <bohenick@gmail.com>
+Date: Sat, 31 Oct 2026 02:25:22 -0400
+X-Gm-Features: AclHuK_nuye2XzuL2OD0T_7DvnHrSU8rxmW8bqAIU2XhUqxMkteGHsEOHxBqtwQ
+Message-ID: <CAAhqjAK5mOJrgZqG-ZrgKt12Dm4AFJeapiFbBNpRv+qUns_d-A@mail.gmail.com>
+Subject: Parent transid failures in extent/dev/free-space trees after lost
+ writes; open_ctree -5, restore works - advice before repair?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-The pull request you sent on Fri, 30 Oct 2026 13:24:15 -0700:
+Hi,
 
-> https://git.kernel.org/pub/scm/fs/fsverity/linux.git tags/fsverity-for-linus
+I have a single-device Btrfs volume (25.45 TiB, 15.19 TiB used) that no
+longer mounts after a series of unclean shutdowns. btrfs restore can read
+almost everything, and file data verifies against torrent piece hashes, so
+the damage looks confined to metadata. I would like advice on whether the
+filesystem can be repaired before anything is written to it.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/69eac8481741b1474eac7c459768c94bb94430e1
+Setup
+-----
+- TerraMaster F4-424 Pro (TOS 7.0.1341), kernel 6.12.63+
+- 4 x 14 TB HDD, md RAID6 (4/4, resync completed clean, no bitmap)
+  -> LVM vg0/lv0 -> Btrfs. Profiles: data single, metadata DUP, system DUP
+- Until the incident, lv0 had a dm-cache (lvmcache) on an NVMe in
+  writethrough mode. The NVMe's array was last updated ~7 hours before the
+  boot failures; after an OS reinstall the cache was no longer attached.
+  NVMe SMART is clean.
+- Features: compat_ro 0x7 (free space tree), incompat 0x361, no
+  block-group-tree
+- btrfs-progs 5.16.2 (vendor) and 7.1 (static release binary)
 
-Thank you!
+Superblock: generation 918517. All four backup roots are gens
+918514-918517; all point to dev root 17014757720064 gen 917953.
 
--- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+Kernel mount (plain ro, ro,rescue=usebackuproot, ro,rescue=all)
+------------------------------------------------------------------
+parent transid verify failed on logical 26935296 mirror 1 wanted
+917953 found 910413
+parent transid verify failed on logical 13608045117440 mirror 1 wanted
+918517 found 879195
+parent transid verify failed on logical 13608045117440 mirror 2 wanted
+918517 found 879195
+parent transid verify failed on logical 15797806039040 mirror 1 wanted
+917945 found 917909
+parent transid verify failed on logical 15797806039040 mirror 2 wanted
+917945 found 917909
+failed to verify dev extents against chunks: -5 (plain ro)
+failed to init dev_stats: -5 (rescue=all)
+open_ctree failed: -5
+
+15797806039040 is the DEV_STATS item's block in the dev tree.
+
+btrfs check --readonly (7.1, also with -b)
+------------------------------------------
+parent transid verify failed on 12777307766784 wanted 918507 found 610497
+parent transid verify failed on 12777308094464 wanted 918507 found 608008
+parent transid verify failed on 12777309929472 wanted 918507 found 917901
+ERROR: child eb corrupted: parent bytenr=13608033124352 item=939 parent level=1
+       child bytenr=12777309929472 child level=1
+ERROR: failed to read block groups: Input/output error
+ERROR: cannot open file system
+
+What works
+----------
+- btrfs restore -i reads 11 of 13 subvolumes (~208,000 files). Two
+  subvolume roots are bad: 258 (child eb corrupted) and 260 ("root [260 0]
+  level 0 does not match 2"). A raw scan found intact level-2 roots for
+  both at gens 918513-918517, but their children are stale too.
+- Some fs tree roots are stale in mirror 1 but good in mirror 2, which is
+  why restore succeeds where dump-tree -t shows the wrong block.
+- I restored sample files from 2023 through the day of the incident and
+  verified 5,687/5,687 torrent pieces, so data extents look intact.
+
+What I tried (on a dm-snapshot overlay only; origin is blockdev --setro)
+-------------------------------------------------------------------------
+- btrfs check --repair --init-extent-tree (7.1): "Creating a new extent
+  tree", then repeated "unable to find ref byte nr ... parent 0 root 10"
+  (free space tree blocks) and one for root 1, then "failed to commit
+  transaction: Read-only file system" (transaction aborted).
+- btrfs rescue clear-space-cache v2: fails to open (failed to read block
+  groups).
+(Progs was run in a private mount namespace exposing only the overlay, to
+avoid it selecting the origin with the duplicate fsid.)
+
+Questions
+---------
+1. Is there a sequence that can get past the stale extent tree / free
+   space tree / dev tree blocks, e.g. dropping the free space tree root and
+   the DEV_STATS item before --init-extent-tree, or rebuilding the dev tree
+   from the chunk tree? I can test anything on the overlay first.
+2. Does the pattern (blocks hundreds of thousands of generations stale in
+   both DUP copies, plus mirror-1-only staleness elsewhere) point to lost
+   writes below Btrfs, e.g. the dm-cache being detached?
+3. If repair is not realistic, is btrfs restore the right way to copy out
+   ~15 TiB, or is there a better option?
+
+I can provide full dump-super -f output, dump-tree of the chunk/root/dev
+trees, the restore logs, or try a btrfs-image if that is useful.
+
+Thanks,
+Aaron

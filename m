@@ -1,89 +1,94 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.46
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.53
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793515927;
-	b=JPTOqhNohIKFbk2rtjxE3A7thfoa7pjwVgjWv2heL935h7wL4lF5mYiiypTLIg1tfDEd
-	 fdrE0FIdqX2TJbZln3ko6X5NYkSlRsSM546mjrNAy1wWtFzG1aL6OAgfLki0WCi53kCkr
-	 28g/y7O7cfItTD6JfAft3tqZp33++KZ19Lv8uereJeoG//rizvWrl2VXnNBEiGdhrTlzO
-	 vU86EuJ40J7Mlvgx7KBwlQ7W7FIf1l5EcMNasL36dRhxsktfIz54Uw/H0930Q4xGA+nZ3
-	 z0z4FNPP6u5hHYEcR9EYX8IQtWr7Pmap5T/QSdTgkklgjFGk1MIInDy/nO/uiQ4zdzg==
+	t=1793517293;
+	b=lBwbfwiRzWfAPXoGlaCH52XH0q7VGER1eB1h5OwuTDju/31ZKA/rzhFtRpNeOnyGhGwh
+	 8rsZGOO6sWfad77ou1zZi2IlFxf0P0BaAqnHm0FZt+UagLe7c285AbCXaCV3KWFJnE7YT
+	 9F7SWAoutCG8pVjin2eq25cUX+axsr6a+W/Tiujg/n6YdKt2QPCCVZiAPvMy7ssuKpYbl
+	 zcuYAimTvT6lD1Nwdt0dVy1Hv74385nZgdEQzHJNBfNt1g4ChOoeTUEOJ/lWKKBIHV1nU
+	 wZ7zuy3M3TpOYWGZ/fOVPiVt56DsKQqomajcJEmoIEFlik5vB28euyMmzFPNr7vRmuw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793515927;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793517293;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
-	b=HYWFD115aOTuwbfTd5H3OSaUdRSrf99R2OBCXK55VkIVi/1qpotFLCatXKhviw5Rt85m
-	 C3dn5OCABtA8dT+uprQxXvM8Mnu+VdK7IfhK6fVbawkH2KeR3I0wmLN/r3OGVnsZt25tW
-	 Lk1yMqZYnmOZREZLwJjs67Y97v3ocaytzLwNltNtGi4jnSZEKasmImqm75LH+EWu5OpSj
-	 iJGinv/Qj+E8FXeNJmxluPxjjOlhXHt6pMEP0iOtl1XPGVXYAR517/uHF9EVro4TQk8WI
-	 2J/scrdrQClleBS/NSLzZf05cvFSHD3Zl51jnmAjnVGqTwC0TZZI1arcDHru12KYTiw==
+	bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
+	b=WFzTOdI+73GJkYzG+ArYEuilFhNmPIFxLvQAhe0/U7rbmfG+vuN0ueXbnZcr7DIU4Y4k
+	 qAmh4a54PI2aFiP8p6TYneO9081SYJKNzGZLZ+evgprfIWA7vuhqAExCjNxqUI+FZpyV0
+	 bNFHbAjrQMLWfW3UBJQSLYKQykLOP/mneTVqbLwjk1i7i8yWPEwKna1AqsqTEV9BUuyQ0
+	 2Vf3Yi4KL9MR4dWgZpyUm644Wy8vtVLibgp+NF7nQjEsslliaStb9bu9DL9GQhEf3Prpi
+	 GtCL5s2TSbdNJY/31/attNdx3JaRfuP1LdaPQyAcix7TerzKRrAUQfBcvKiKX9j8F0w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Xsqj3+XU;
-	arc=none smtp.remote-ip=209.85.128.46
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zCK6ZVLc;
+	arc=none smtp.remote-ip=74.125.82.53
+Received: from mail-dl1-f53.google.com (mail-dl1-f53.google.com [74.125.82.53])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2AB40606A324
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 06:52:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2AB40606A324
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91F1F606A324
+	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 07:14:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 91F1F606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Xsqj3+XU
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a208d93758so21359015e9.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 23:52:05 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zCK6ZVLc
+Received: by mail-dl1-f53.google.com with SMTP id a92af1059eb24-15dd124bbe7so1975211c88.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 00:14:52 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793515924; x=1794120724; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
-        b=Xsqj3+XU3mQZSjjf07wQPdY/nmNLohqUNEGClT80Km4NVcC0DJ9ziP4b+NhVBFUURH
-         xMpKsdKp8aA/ZhcXRuqyrX1kErYa90Zz980aUDriWDi7zh/8kXpFqTyMrvSo7xbyOcxA
-         3CpjbrNeUS4DNaMBuP86gG+Kfl2qh6rhEID9C/LL1bpu+gHWWbnOAIpyxg6cTbViaxVJ
-         FxagSd8MeNMXKezwdbV4/7NNZ8gybxv5sXXjtY788OEV0Qy0ExtbNlgU/XOL1QUt4rE6
-         S0QiWK0v9GmENMwapszTSxvxOTsxpvPETcvQREDmzg+r0iEHWPIXaLWjvS7cpwXw90JP
-         rn3Q==
+        d=gmail.com; s=20260707; t=1793517292; x=1794122092; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
+        b=zCK6ZVLcD2RVVaUGjof5FMJeAPYSBuqRExRpEv+YsiVBt5YL0uVzAcFm1siDT2UAuX
+         U9DeI4VlWnSS1YHwr/reN87PTHmFd5nzPtJh4MT1U+AIaVlnaKvH+kBr4V425LXe/LT/
+         2/UQXH+6Qp6+1ZY7Grc8SglkFyhc8mFjA+coTGhTMy4A+M2lScY8p4C4r5TBLMMno2kz
+         +K3bje89mIlAOyJSYCYR4AHtYqGyG40UYhQmO3hKxui/D8KzI4o5J/hy8G43lwmKZebN
+         x3WsVMNph2MSV+DrRtlWmNdRN57ZJiS76HzCodu9OSUY+poMjBDC5FbHG0qsR7DJrqLQ
+         +xCA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793515924; x=1794120724;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20260707; t=1793517292; x=1794122092;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
-        b=OGj3KI4ZUxunu7aQ2KSjtdZiQDL3eSu6DvAkUjFi9wSTf9nJql9/AAv6g6dJuPOVSg
-         m3Ub3Uge8ZOjrWA8w/I+vLdS/gB7lSSxx24koWYg5BHLDXEr1b+tV3zvs/BJYvIltN2J
-         AaqK6+SUDHKeUdIVS+FcC8AAO5s0iQvBJbsXRT9Ka5Fqmr/mJahachjsu82NjEf7GSIL
-         h4Gj5VEYiDHsA3jQ7HbdX+FAvg+Zsp0wPbp0pzmdAGA14XiEQ3MYQqU8Q7pzGy67Wfh2
-         J4Dt8T6VZYVtU2ouXw80zlYJfwoVlb77WrkX7j60g63ln0F+4f9+SBiLAiZzb78taJXT
-         K3jA==
-X-Forwarded-Encrypted: i=1; AKwUvBxfz0M1Gah+WCYfOmmy3A6eAMagNxY9ofWfhXBWsgAoHHTXLI18qqAhiVHxQGNmO7cgixi0ZlP9Rjpdpg==@vger.kernel.org
-X-Gm-Message-State: AFq9FYIUAyI1H2w5oFEURSafx4RNGs6LJDl52sont2iMg/s7a/3PFxW4
-	cw3Bp6UdW+MEXQMb66rHygslzEfn/C1RWRdBMPP/79Ta92gKT8b0m6VmJxa2dw9PAKsGlVaIgMk
-	qLcf0C0w=
-X-Gm-Gg: AYBFou2qQKb+tQGnixE0brjZ+VP6sk8MMYx49Jh48+vKZxlGXAZohKx1vF9FwqohF0H
-	il93WLJBA6tXG9W72TAii8olk1LXfmTNvv+bJ+aKjbJPSKQMQcn8nNPbofwAgUHzAVQpZjlwV0X
-	v8JlJx2xyvlySD47AT2S+lJuFsguEin+1sMpuaS4Kg1bDbUgaCdqkYyN2eh3bKucXl+RiMdF8tm
-	VyxmggSmpQBcLcdZsP/k7NEpAaseu2DnL8V+37AFXYCew57TC+i1dzAdoY1RCa5xsuToxjwUjw0
-	MzitH677z4FHqpbEcCyTPqbnJ4Nj2w/2CH4oozqbZkJZtRa8mpfDowCW5luilk0vmNrorDfRbH+
-	YMktm/ELALwLIrWmy6i5tSHfJAeGMCONaxgsuEEJRri1owK/yCC0lB/GEX0BDiSjcD3J9NqPsH/
-	2pM45T+/WwT5gCLgoxl4B/gR/9Wh7ThFVEIleQV5X/8jcbvokf+jMGhT+IKuVn7rN8azIIWebsm
-	lj16I+8WCsfrTWJIkcjzXbzJzXYAekkJWdJqRh0x3N0Da+NeojvfBKqHqRBO3mSjLk2P0LlkqAK
-	4xnIYvnNb8xaKLob771IO8s5RVB/MXKxO8fxUvlw2A==
-X-Received: by 2002:a05:600c:1d29:b0:4a5:5fb9:5d35 with SMTP id 5b1f17b1804b1-4ac187a7678mr161246385e9.21.1793515924452;
-        Sat, 31 Oct 2026 23:52:04 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac13ef1a16sm19922956c88.1.2026.10.31.23.52.00
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sat, 31 Oct 2026 23:52:03 -0700 (PDT)
-Message-ID: <a92d223b-55fa-493e-821a-e5acc8afee08@suse.com>
-Date: Sun, 1 Nov 2026 17:21:58 +1030
+        bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
+        b=1+wx+SpTpXNlGDmlR1Q/Pi6DGYP2C0CmtDBA+7cIhPT8uhDbotrt7PxAPuo5L65DMr
+         vabp66RuD6VPKVLKbAwaHOE6eszUal1TZB6xaiYJr8yOEy2eKIPDtIOZRhP4o11qFZF0
+         02RY8DEUpJlUcREU3rZ5EG0CpM2rrkVfXira3chJno8nSO47a3zE772gjqW/m2OcGg3t
+         GtEhSvKV8PEYnjO1w3J9WSRw4iE30UyDyA7z/DR4eRlyMTemZ+y60fzmMK0S6NQ7iwjO
+         hFlr+uDAyB7FWeC/1LCpYy9ea70LMqBoqYSRj1Sg/K+QGk9EMbn+wYo15qD1DitOS3+v
+         WYEg==
+X-Forwarded-Encrypted: i=1; AKwUvByf7p7oybxvl+aN+DdZhSSsUUfWLfgE0vnnV3vSNPzxKkGRQEcw9+xjlOrf8R92D+bgAI4Rx1CVQCX4nQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLFZT0fUIQdsXtC6rCYUkM2uCK98YxNtjM/E6KlknNwb/9eqUvz
+	u0vnm6BQE2pH3wAgalIkMat681C14Y7xmZn8gEnIsYOghStC0EGbAJKm
+X-Gm-Gg: AYBFou1tAWHY8AKfuSzjbmgK4t5VlQLSLIc0ToGmAEa8F8SuhrHw/pduuEebucdhflR
+	7Mkg5ZLTB5VSPiQRY5SCUcHvKDGE/1j5JpxtDX1EcZJ2EGtVT0U/qlBDF0CLb1MMZTvMcDsswzj
+	ZJ26FjidhIJkJy5VZGkYfOrCv8I5zm+w9UQwnv2MeC4NeQv/F0oDEA/ZuRPx5Vn7uh1kM8SyCQ7
+	zk5g041z+iMFLjSjAJoXwI1KIVtktaFmFlGkwOr/P+TrscU1HU4uIZ6cNlR47jOIHGZFxhyiXp6
+	xNdYic/ltNUEltnALFHN/UIniGTSOGcsJSQnLsCGtCmpajGiNY5/0ycJ+MHK9q4TINcpfyyjSR5
+	GHNz4I/6Qloq2x/dRt2/hXbLsKpJsFFo1S62zrQnKI8Fh7/ZkayWJl3CDXUswO4R1J29rI75koC
+	SOE2GS52PEakV7U44SiokMByPWHv6CTwpBPavPi2NmMb1vojijjsWl/360i1QiUyuX9b9OX3yB3
+	kSMGtb4STatMITRQ9q4X3VZw2RKy8+s29Yjitm0pfIbX7U4DQTRRapNH/tm1HvdQUbfVPkfePPp
+	brUFA9rynH1aK7RwFPQ3BH/XnmJF2LhgAhfyFy/5WRpcCpUJdzwKtVwXJeKRQu/7iP31
+X-Received: by 2002:a05:7022:f116:b0:187:7514:47f4 with SMTP id a92af1059eb24-1ac5d1cec2amr8941445c88.46.1793517291435;
+        Sun, 01 Nov 2026 00:14:51 -0700 (PDT)
+Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac193b8179sm25123406c88.11.2026.11.01.00.14.48
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 01 Nov 2026 00:14:50 -0700 (PDT)
+From: Cheng Yongkang <teel4res@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Qu Wenruo <wqu@suse.com>,
+	Filipe Manana <fdmanana@kernel.org>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Cheng Yongkang <teel4res@gmail.com>
+Subject: [PATCH v2] btrfs: handle zero num_stripes in btrfs_chunk_item_size()
+Date: Sun,  1 Nov 2026 00:14:44 -0700
+Message-Id: <20261101071444.1853699-1-teel4res@gmail.com>
+X-Mailer: git-send-email 2.34.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,150 +98,67 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: reject refs=0 subvolume without DEAD in
- SUBVOL_SYNC_WAIT
-To: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
- stable@vger.kernel.org
-References: <20261101062539.1744605-1-teel4res@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261101062539.1744605-1-teel4res@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+validate_sys_chunk_array() calls btrfs_chunk_item_size() with the
+on-disk num_stripes before btrfs_check_chunk_valid() has checked the
+chunk. With CONFIG_BTRFS_ASSERT=y, a zero-stripe system chunk trips
+ASSERT(num_stripes) instead of being rejected:
 
+  assertion failed: num_stripes, in fs/btrfs/volumes.h:714
+  kernel BUG at fs/btrfs/volumes.h:714!
+  RIP: 0010:btrfs_validate_super+0x3ce7/0x4210
+  Call Trace:
+   open_ctree
+   btrfs_get_tree
+   vfs_get_tree
+   do_new_mount
 
-在 2026/11/1 16:55, Cheng Yongkang 写道:
-> btrfs_ioctl_subvol_sync() assumes that a cached root with zero
-> references has BTRFS_ROOT_SUBVOL_DEAD set, and asserts that before
-> waiting for the cleaner. Two states break the assumption:
-> 
-> - A corrupt ROOT_ITEM with zero references and a matching orphan item,
->    on a writable filesystem.
-> - A failed subvolume deletion. btrfs_delete_subvolume() zeroes the
->    root references, aborts the transaction, which forces the filesystem
->    read-only, and then clears DEAD again. No on-disk metadata is
->    corrupted in this case.
-> 
-> With CONFIG_BTRFS_ASSERT=y, both reach a BUG().
-> 
-> Before waiting for a deleted subvolume, return -EROFS if the
-> filesystem is read-only, since the cleaner does not drop dead roots
-> then. The check runs on every iteration, so it also stops a waiter
-> when the filesystem becomes read-only during the wait. Subvolume
-> deletion holds subvol_sem for writing across the abort and the DEAD
-> rollback, and each iteration takes it for reading before inspecting
-> the root, so the read-only state and the cleared flag are seen
-> together. On a writable filesystem, report a zero-reference root
-> without DEAD and return -EUCLEAN instead of asserting.
-> 
-> Subvolumes that were not deleted or do not exist still return -EEXIST
-> and -ENOENT, also on a read-only filesystem.
-> 
-> Tested on btrfs for-next with CONFIG_BTRFS_ASSERT=y. A deletion made
-> to fail by fault injection after the references are cleared hits the
-> assertion in SUBVOL_SYNC_WAIT without this change and gets -EROFS with
-> it. A waiter on a deleted subvolume now returns -EROFS when the
-> filesystem is remounted read-only, instead of waiting until it is
-> signalled.
-> 
-> Fixes: 6c83d153ed86 ("btrfs: add new ioctl to wait for cleaned subvolumes")
-> Cc: stable@vger.kernel.org
-> Suggested-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
-> Link: https://lore.kernel.org/linux-btrfs/dd97efe9-91ec-495b-b698-acff1447421c@gmx.com/
-> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
-> ---
-> Changes in v2:
-> - Return -EROFS on a read-only filesystem before waiting for a deleted
->    subvolume (Qu).
-> - Use unlikely() for the inconsistent-root check (Qu).
-> - Describe the failed-delete case separately from corrupt metadata.
-> - Add the Fixes tag and Cc stable.
-> 
-> v1: https://lore.kernel.org/linux-btrfs/20261025180258.349175-1-teel4res@gmail.com/
-> 
-> Testing notes (btrfs for-next d1dca33127ef, KASAN):
-> - The fault-injection case reached the cleared-references state in 2
->    of 4 attempts on each kernel. The other attempts aborted earlier, and
->    both kernels returned -EEXIST.
-> - FOR_ONE, FOR_QUEUED, COUNT and PEEK return the same results with and
->    without this change for live, missing and deleted subvolumes, on
->    writable and read-only mounts.
-> - The -EUCLEAN branch was not exercised. A crafted image with a
->    zero-reference root and no DEAD flag hits the assertion without this
->    change, but remounting that image read-write stalls in a transaction
->    commit with or without this change, before the filesystem becomes
->    writable.
-> 
->   fs/btrfs/ioctl.c | 10 ++++++++--
->   1 file changed, 8 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 9857d6a9d456..5a1f2edfd831 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -5166,8 +5166,14 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
->   			return -ENOENT;
->   
->   		wait_for_deletion = true;
-> -		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD, "root_flags=0x%llx",
-> -		       root_flags);
-> +		if (unlikely(test_bit(BTRFS_FS_STATE_RO, &fs_info->fs_state)))
-> +			return -EROFS;
+Drop the assertion and compute the size as the chunk header plus
+num_stripes stripes. The size is unchanged for num_stripes > 0, and a
+zero-stripe chunk now reaches btrfs_check_chunk_valid(), which rejects
+it, so the mount fails with -EINVAL.
 
-I'm not suggesting such an ad-hoc check, but some more comprehensive 
-checks, like mnt_want_write_file().
-As this one won't handle aborted transaction.
+Tested on btrfs for-next d1dca33127ef with CONFIG_BTRFS_ASSERT=y and
+KASAN, using a crafted image whose system chunk array contains a
+zero-stripe chunk: without this change, mounting it hits the assertion
+above; with it, both read-only and read-write mounts fail with EINVAL
+("invalid chunk num_stripes, have 0"). Mounting, writing, reading back
+and unmounting a normal filesystem, and btrfs check on it, still pass.
 
-But it's not a good idea using that mnt_want_write_file() either, as 
-that will block pm suspension/hibernation, especially considering the 
-wait will only be handled by cleaner thread.
+Suggested-by: Qu Wenruo <wqu@suse.com>
+Link: https://lore.kernel.org/linux-btrfs/d2ee0cc1-674e-4447-88da-d346122a43a4@suse.com/
+Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_validate_super()")
+Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+---
+Changes in v2:
+- Fix btrfs_chunk_item_size() as Qu suggested and drop the early
+  zero-stripe check from disk-io.c, along with the comment Filipe
+  reviewed.
 
-The default timeout for waking up cleaner is 30s, which is definitely 
-not suitable for such calls.
+v1: https://lore.kernel.org/linux-btrfs/179328314071.648427.12527832319954042748@gmail.com/
 
+ fs/btrfs/volumes.h | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-If you are not sure what to do with the RW check and cleaner behavior, 
-just don't put an adhoc solution into the update.
-At least it won't be any worse.
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index d5fe5cba0..891bc2432 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -711,9 +711,8 @@ static inline enum btrfs_map_op btrfs_op(const struct bio *bio)
+ 
+ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ {
+-	ASSERT(num_stripes);
+-	return sizeof(struct btrfs_chunk) +
+-		sizeof(struct btrfs_stripe) * (num_stripes - 1);
++	return offsetof(struct btrfs_chunk, stripe) +
++		sizeof(struct btrfs_stripe) * num_stripes;
+ }
+ 
+ /*
 
-
-> +		if (unlikely(!(root_flags & BTRFS_ROOT_SUBVOL_DEAD))) {
-> +			btrfs_err(fs_info,
-> +				  "subvol %llu has refs 0 without DEAD flag",
-> +				  args.subvolid);
-> +			return -EUCLEAN;
-> +		}
->   		sched_ret = schedule_timeout_interruptible(HZ);
->   		/* Early wake up or error. */
->   		if (sched_ret != 0)
-> 
-> base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
+base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
+-- 
+2.34.1
 

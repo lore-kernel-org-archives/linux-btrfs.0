@@ -1,94 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.46
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793517293;
-	b=lBwbfwiRzWfAPXoGlaCH52XH0q7VGER1eB1h5OwuTDju/31ZKA/rzhFtRpNeOnyGhGwh
-	 8rsZGOO6sWfad77ou1zZi2IlFxf0P0BaAqnHm0FZt+UagLe7c285AbCXaCV3KWFJnE7YT
-	 9F7SWAoutCG8pVjin2eq25cUX+axsr6a+W/Tiujg/n6YdKt2QPCCVZiAPvMy7ssuKpYbl
-	 zcuYAimTvT6lD1Nwdt0dVy1Hv74385nZgdEQzHJNBfNt1g4ChOoeTUEOJ/lWKKBIHV1nU
-	 wZ7zuy3M3TpOYWGZ/fOVPiVt56DsKQqomajcJEmoIEFlik5vB28euyMmzFPNr7vRmuw==
+	t=1793517374;
+	b=fqcNq8Os1y3o169jENQ7RT2l8PtWvcVNIyFczHdvnSP3Fp9Tjy9+Y+7cd+j3sLeGiCGn
+	 eDdJZK4mwIRyaE8sGhPYd82oIHkayiFIfham3jd2cYjP8Zt/buYBxtObsc1QQoE8oenBK
+	 WVOotq92o7AS1EUXviNgMOoVSCKlKD8/ibx5h2XM28JtTDQ3pQUjWKBtIiR3ED7UiLPpq
+	 /ywwfwkyqI73AyBWvX9t8HL80osQsTMGfn7hfwG4cpue5gtJURoI99dQ5zWAwzvDp5OMx
+	 0O7Z8gRrKERW+blOkWT2hEdYJWMxID/jjvd8HMxhlv2RqADzIxE2/HvnOv/kTNzLg5g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793517293;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793517374;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
-	b=WFzTOdI+73GJkYzG+ArYEuilFhNmPIFxLvQAhe0/U7rbmfG+vuN0ueXbnZcr7DIU4Y4k
-	 qAmh4a54PI2aFiP8p6TYneO9081SYJKNzGZLZ+evgprfIWA7vuhqAExCjNxqUI+FZpyV0
-	 bNFHbAjrQMLWfW3UBJQSLYKQykLOP/mneTVqbLwjk1i7i8yWPEwKna1AqsqTEV9BUuyQ0
-	 2Vf3Yi4KL9MR4dWgZpyUm644Wy8vtVLibgp+NF7nQjEsslliaStb9bu9DL9GQhEf3Prpi
-	 GtCL5s2TSbdNJY/31/attNdx3JaRfuP1LdaPQyAcix7TerzKRrAUQfBcvKiKX9j8F0w==
+	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Type:Content-Transfer-Encoding;
+	bh=xjWYg1n4YKzfxG8UfUkLCh9i6lhXerNEUBT8wvZMd9w=;
+	b=iuOUhsiAn6WS6UGMLQAcYv+mMViVvBn2XbGpe3r1etxn61TgK0nslTkUcyIOl4eHmrtt
+	 AB3qedAkNNiyoXIN/Z4ZgyayFPfeZkVthg7LUR7sz20/MWhA1ecRLkSdLwkXrfmK8HWCO
+	 g6aqQT3lFeiuVkyrNSXbxWlHbo9wSpFsaiUfFgwNvVqyENk/tNZe6m9C/XXRp2ABaZrIB
+	 bOyzQ8gH4ZK0nfCnORldvtTTyxr404h84JDVHT6x5wLrEp5UqLphfbPmShrxwjWpbz/8d
+	 nOaVJCFmMSwiJ1f4JTD5htByht680btOpsCq0SGLzPSavRvoY2S0BlvZ5drraKPLtjw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zCK6ZVLc;
-	arc=none smtp.remote-ip=74.125.82.53
-Received: from mail-dl1-f53.google.com (mail-dl1-f53.google.com [74.125.82.53])
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ZOe5vS3I;
+	arc=none smtp.remote-ip=74.125.82.46
+Received: from mail-dl1-f46.google.com (mail-dl1-f46.google.com [74.125.82.46])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 91F1F606A324
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 07:14:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 91F1F606A324
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 62555606A326
+	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 07:16:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 62555606A326
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=zCK6ZVLc
-Received: by mail-dl1-f53.google.com with SMTP id a92af1059eb24-15dd124bbe7so1975211c88.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 00:14:52 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=ZOe5vS3I
+Received: by mail-dl1-f46.google.com with SMTP id a92af1059eb24-15ea896ddc8so3503923c88.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 00:16:14 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793517292; x=1794122092; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
-        b=zCK6ZVLcD2RVVaUGjof5FMJeAPYSBuqRExRpEv+YsiVBt5YL0uVzAcFm1siDT2UAuX
-         U9DeI4VlWnSS1YHwr/reN87PTHmFd5nzPtJh4MT1U+AIaVlnaKvH+kBr4V425LXe/LT/
-         2/UQXH+6Qp6+1ZY7Grc8SglkFyhc8mFjA+coTGhTMy4A+M2lScY8p4C4r5TBLMMno2kz
-         +K3bje89mIlAOyJSYCYR4AHtYqGyG40UYhQmO3hKxui/D8KzI4o5J/hy8G43lwmKZebN
-         x3WsVMNph2MSV+DrRtlWmNdRN57ZJiS76HzCodu9OSUY+poMjBDC5FbHG0qsR7DJrqLQ
-         +xCA==
+        d=gmail.com; s=20260707; t=1793517373; x=1794122173; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:date:subject:cc:to:from:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=xjWYg1n4YKzfxG8UfUkLCh9i6lhXerNEUBT8wvZMd9w=;
+        b=ZOe5vS3ISMdrhLgDpU/zp1i9KcXmr3D9SrI84jkP0vt/ytPubliSrLdOck/fcukufg
+         2PUJKPhFtuKEukhICewninU3btU+c4JZS3aS9KP+RLkqCKyKi82tLpwwJsx//oCDXvh0
+         ydib1+w9CvBDBpmHhsxjohRqCyZuJToLisyzIA8nlhTnccu8QvKSlSa9JuOx5s/HyLbT
+         ycxtWq9WZXZJ8E62EQXgZqTnrbB1drTTqs8V3bdZIfHb0odBKFfqPCfKNtzgv/gQCYvE
+         uGsHb/XGOswLssr1or5m4E/a/h9lDnDhg1Zv7X362kX1w2qcvXhOxskC1cFIGrXkZhQc
+         F3CQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793517292; x=1794122092;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=Yk9QxCaKNnBQ8oh8luvc3kRXvhxo2lpzgt6RtHaF6AU=;
-        b=1+wx+SpTpXNlGDmlR1Q/Pi6DGYP2C0CmtDBA+7cIhPT8uhDbotrt7PxAPuo5L65DMr
-         vabp66RuD6VPKVLKbAwaHOE6eszUal1TZB6xaiYJr8yOEy2eKIPDtIOZRhP4o11qFZF0
-         02RY8DEUpJlUcREU3rZ5EG0CpM2rrkVfXira3chJno8nSO47a3zE772gjqW/m2OcGg3t
-         GtEhSvKV8PEYnjO1w3J9WSRw4iE30UyDyA7z/DR4eRlyMTemZ+y60fzmMK0S6NQ7iwjO
-         hFlr+uDAyB7FWeC/1LCpYy9ea70LMqBoqYSRj1Sg/K+QGk9EMbn+wYo15qD1DitOS3+v
-         WYEg==
-X-Forwarded-Encrypted: i=1; AKwUvByf7p7oybxvl+aN+DdZhSSsUUfWLfgE0vnnV3vSNPzxKkGRQEcw9+xjlOrf8R92D+bgAI4Rx1CVQCX4nQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYLFZT0fUIQdsXtC6rCYUkM2uCK98YxNtjM/E6KlknNwb/9eqUvz
-	u0vnm6BQE2pH3wAgalIkMat681C14Y7xmZn8gEnIsYOghStC0EGbAJKm
-X-Gm-Gg: AYBFou1tAWHY8AKfuSzjbmgK4t5VlQLSLIc0ToGmAEa8F8SuhrHw/pduuEebucdhflR
-	7Mkg5ZLTB5VSPiQRY5SCUcHvKDGE/1j5JpxtDX1EcZJ2EGtVT0U/qlBDF0CLb1MMZTvMcDsswzj
-	ZJ26FjidhIJkJy5VZGkYfOrCv8I5zm+w9UQwnv2MeC4NeQv/F0oDEA/ZuRPx5Vn7uh1kM8SyCQ7
-	zk5g041z+iMFLjSjAJoXwI1KIVtktaFmFlGkwOr/P+TrscU1HU4uIZ6cNlR47jOIHGZFxhyiXp6
-	xNdYic/ltNUEltnALFHN/UIniGTSOGcsJSQnLsCGtCmpajGiNY5/0ycJ+MHK9q4TINcpfyyjSR5
-	GHNz4I/6Qloq2x/dRt2/hXbLsKpJsFFo1S62zrQnKI8Fh7/ZkayWJl3CDXUswO4R1J29rI75koC
-	SOE2GS52PEakV7U44SiokMByPWHv6CTwpBPavPi2NmMb1vojijjsWl/360i1QiUyuX9b9OX3yB3
-	kSMGtb4STatMITRQ9q4X3VZw2RKy8+s29Yjitm0pfIbX7U4DQTRRapNH/tm1HvdQUbfVPkfePPp
-	brUFA9rynH1aK7RwFPQ3BH/XnmJF2LhgAhfyFy/5WRpcCpUJdzwKtVwXJeKRQu/7iP31
-X-Received: by 2002:a05:7022:f116:b0:187:7514:47f4 with SMTP id a92af1059eb24-1ac5d1cec2amr8941445c88.46.1793517291435;
-        Sun, 01 Nov 2026 00:14:51 -0700 (PDT)
+        d=1e100.net; s=20260707; t=1793517373; x=1794122173;
+        h=content-transfer-encoding:content-type:mime-version:references
+         :in-reply-to:message-id:date:subject:cc:to:from:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=xjWYg1n4YKzfxG8UfUkLCh9i6lhXerNEUBT8wvZMd9w=;
+        b=m+/v4/1JCvIjUioL1be4AyZ/jaxB4QFwO/+BAKmYh7tEqMeAZJlWizOWL93res6pVR
+         WiixZwnCIll4Q9VyWnTBbxF+OkqZiTBXJoWgY4riW+gsuc9bDp/RmAZOO5XtX5/QWcYS
+         pqflp13/Ml9vm/NcsOOQceJI1QcbzLieEdTJHQ7hVV2fzU/JTGZv9HWEg2pXEJXNwinX
+         Jmz+v8ABJlx2VIKk29XnSzrJhpL8MnslCcEnPABf+Xtr+YFklS26UuxPVJSN0puLlfwS
+         KwecAftAoIymfNoevHCEra3+Ob5zGY0CMObSJYnaj6xCXCWGXJVYvH1Pst0pwuTdLTJw
+         PgBA==
+X-Forwarded-Encrypted: i=1; AKwUvByjV9QIWWNbiw+TY6vS8fx7gA1foC9ehT0HM00NPfLLxfuXIfT7+TuSkLmKt+lX88ZvvT/NtzSVefnExg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYLT+FK4QLOuCXhBYiDjWsr8QuYDsGLiZG1e9/OtdoDsJmC85MwL
+	btT0bOW9tmpsjqloH8hDRpaWDbVZyRA383nU/TkTsW32Nq4dTn6ScZOUNFzm5amc
+X-Gm-Gg: AYBFou0XRlehab6Dunukpxt2MVvdCjf1toFBDUpZiQD1kl2fduZE73jtaJjrHz6AaS+
+	ZxZpGDfkw7NjsTGrKyLz8RT9IV+X08DnB9gey4tUKEovSJGbJeiNVYsoFXSgLR6544Zef0xvdpo
+	adSk6WKMVLbyT+0vAbHKPxdJV/XMZMP3IvbDExWPZyn8yzmZtGZyUiykkr7liXO2WCCTR9HePEq
+	6VqoagdU+GoSTl9Pc7Dpyg7h87Xzr63JI6lZb1mVURo6r1mof4+8ZX4GTtSHMeEOm/wKSX3VGN8
+	bg218hMHyT6ZjKTF7fH4tb4mYnoqot/zKJ/stOslJXT8H+XZiZ/Kq01kodgNq5jdRuJYAtHzB/9
+	CO8g/PkwsemuEuKWmDpu9PGf+3EyBTMvTlM6+XYyrlQNNCq2Jbi0bTBLDgKcZWP1/ZYIR8MJI3n
+	EJr8GfTSkxXJxUgZZdc9AwpxQMgKPY9kEEFUHD3xczayq8LLII0qDgJqlQsjaXxIW4lBX0Hfy2c
+	mtTsaLxlsw44983AmWJfrLxdpe+8PMy63qEuSjbQxBaZfFED04WOyPbxCjamRs58J2RID9mDvWx
+	Zeabt4262WXMCd5YfKuBpqcQzUdQVFXpytc/c3t9OtbRZyUX4bC1N3AX8LdPaSsQpZcx
+X-Received: by 2002:a05:701b:2401:b0:167:4198:2cb3 with SMTP id a92af1059eb24-1ac5ae38bb7mr10000684c88.18.1793517373179;
+        Sun, 01 Nov 2026 00:16:13 -0700 (PDT)
 Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac193b8179sm25123406c88.11.2026.11.01.00.14.48
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac1b0a628bsm23197930c88.22.2026.11.01.00.16.10
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 01 Nov 2026 00:14:50 -0700 (PDT)
+        Sun, 01 Nov 2026 00:16:12 -0700 (PDT)
 From: Cheng Yongkang <teel4res@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
-	Qu Wenruo <wqu@suse.com>,
+To: Qu Wenruo <wqu@suse.com>
+Cc: Cheng Yongkang <teel4res@gmail.com>,
+	David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
 	Filipe Manana <fdmanana@kernel.org>,
 	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Cheng Yongkang <teel4res@gmail.com>
-Subject: [PATCH v2] btrfs: handle zero num_stripes in btrfs_chunk_item_size()
-Date: Sun,  1 Nov 2026 00:14:44 -0700
-Message-Id: <20261101071444.1853699-1-teel4res@gmail.com>
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: reject zero num_stripes in the system chunk array
+Date: Sun,  1 Nov 2026 00:16:06 -0700
+Message-Id: <20261101071606.1854874-1-teel4res@gmail.com>
 X-Mailer: git-send-email 2.34.1
+In-Reply-To: <d2ee0cc1-674e-4447-88da-d346122a43a4@suse.com>
+References: <179328314071.648427.12527832319954042748@gmail.com> <6ad220fa-d6a0-4b4c-a313-a0cc052b8637@suse.com> <179334729054.2353588.12398743988940745859@gmail.com> <d2ee0cc1-674e-4447-88da-d346122a43a4@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -98,67 +102,19 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-validate_sys_chunk_array() calls btrfs_chunk_item_size() with the
-on-disk num_stripes before btrfs_check_chunk_valid() has checked the
-chunk. With CONFIG_BTRFS_ASSERT=y, a zero-stripe system chunk trips
-ASSERT(num_stripes) instead of being rejected:
+Hi Qu,
 
-  assertion failed: num_stripes, in fs/btrfs/volumes.h:714
-  kernel BUG at fs/btrfs/volumes.h:714!
-  RIP: 0010:btrfs_validate_super+0x3ce7/0x4210
-  Call Trace:
-   open_ctree
-   btrfs_get_tree
-   vfs_get_tree
-   do_new_mount
+Thanks, I've sent v2 with your change:
+https://lore.kernel.org/linux-btrfs/20261101071444.1853699-1-teel4res@gmail.com/
 
-Drop the assertion and compute the size as the chunk header plus
-num_stripes stripes. The size is unchanged for num_stripes > 0, and a
-zero-stripe chunk now reaches btrfs_check_chunk_valid(), which rejects
-it, so the mount fails with -EINVAL.
+I also need to correct my earlier reply: with the assertion disabled,
+the old expression gives 48 bytes for zero stripes, not 16, and
+btrfs_check_chunk_valid() runs before the loop advances over the
+chunk. So removing the assertion is enough, as you said. Sorry for the
+confusion.
 
-Tested on btrfs for-next d1dca33127ef with CONFIG_BTRFS_ASSERT=y and
-KASAN, using a crafted image whose system chunk array contains a
-zero-stripe chunk: without this change, mounting it hits the assertion
-above; with it, both read-only and read-write mounts fail with EINVAL
-("invalid chunk num_stripes, have 0"). Mounting, writing, reading back
-and unmounting a normal filesystem, and btrfs check on it, still pass.
-
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Link: https://lore.kernel.org/linux-btrfs/d2ee0cc1-674e-4447-88da-d346122a43a4@suse.com/
-Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_validate_super()")
-Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
----
-Changes in v2:
-- Fix btrfs_chunk_item_size() as Qu suggested and drop the early
-  zero-stripe check from disk-io.c, along with the comment Filipe
-  reviewed.
-
-v1: https://lore.kernel.org/linux-btrfs/179328314071.648427.12527832319954042748@gmail.com/
-
- fs/btrfs/volumes.h | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d5fe5cba0..891bc2432 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -711,9 +711,8 @@ static inline enum btrfs_map_op btrfs_op(const struct bio *bio)
- 
- static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- {
--	ASSERT(num_stripes);
--	return sizeof(struct btrfs_chunk) +
--		sizeof(struct btrfs_stripe) * (num_stripes - 1);
-+	return offsetof(struct btrfs_chunk, stripe) +
-+		sizeof(struct btrfs_stripe) * num_stripes;
- }
- 
- /*
-
-base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
--- 
-2.34.1
-
+Thanks,
+Cheng Yongkang

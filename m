@@ -1,88 +1,59 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.48
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.22
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793517509;
-	b=uiGZK9kTemJXJ/38JzHfDjMjR4+Vx9mYSNFCIC1pR92gFv/lJ7eDoP1pAJYeqBnu+r9s
-	 zIbzFTSW5tg1Iu63FQ1oRejJY03DJ3v2VLEVIk6S5r+yJsyLCaaAw1XkEgYnlwqQ8erlc
-	 HcXGUjOipWYb1Q6nZljePDI7TMZ29l9Kf4DEENG6t1zwQfi255tqQDd037h0tkl3GSAqI
-	 0vfkN4/xeBVlt2H/BsVZtW0srUhZ1nRu8YVybMttz2Fn2SfuRKOJgHFR7PGIqLBkr/Nm6
-	 UCXkNZiY4ZKLhCp5bGe9pcyfJH9MhHp6DJOr7fDNzHgr+tY0GjVEibp49JxOs9qY7mw==
+	t=1793517979;
+	b=tQwlp92Rjr6PLSwEKm7R60kV90S66VW56/tKnSOSbiEcOPeeHOXXYnOaLfTQYx+UQKTh
+	 zvJEUnho5QOpzGVKezvjqmimbqgbeNuyaDF9ugkS4IgPmiF2o869cZJK+Qus/6/TNo48m
+	 KspiEfHgnWoRDuJQ3JLj9SGJb2O6jvd0CKEH49C3N0meGkonEQIlW6kxZsG+hExnE/u7q
+	 m26MpNxipMG/SXBxhtgvtbIUbMWNVcebyMEqmwSvFmDM16B0e/PJZXuny4buRjVcgpjuO
+	 aj54XgZ1GF9MGyxZRCE7vVZK7tde0pUT8F9Ewv69ri7z5JB58VbmeMlEfXI17umeipw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793517509;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	a=rsa-sha256; c=relaxed/relaxed; t=1793517979;
+	h=DMARC-Filter:DKIM-Signature:X-UI-Sender-Class:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:
 	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=X+BwoNYH8Zzqv3w5tIVg3636uhE4Ev+ncQBA55QTM0Y=;
-	b=JZgvjxHs1BJFe118D2t6z6F5T1Di4sFIY5ZYsj7CpqE8vO+JrH4jna2HJgLoTyvtTHPX
-	 7tFedXEQ9hSSbSmQXo/Lrf6aOXhLdIsbt/Gm4fUVCVUqhAO/Ci/5utgrY/idc9SImXxia
-	 Q0cCmUkydcmPaGOBCP2Jg91gIpZX/JDvJCxnJeVHIUZ9mJI5XazZ+Aicgr5aRyrToUGJZ
-	 YBP8M6fsSXaQHQ6V3xn/TARtGE7FYhIrGLw7IZkNxhhDg6sDgc63IyXGz0tmgm4FHVEjl
-	 ow8jXdGC+mWzyEqrIPYkXcTGe5zLFKnL7e5IMwuwJI1wdqsAqKHuwvikA8HT7kxDAbQ==
+	 Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:UI-OutboundReport;
+	bh=2D4byx0BXhMfX0JMFePXBCalr4oCRUdWf+nCZIAb80Q=;
+	b=T/7hrsq9ux1CiPQeC9fJFsC2+/50PdnDcmpaS75IzPEQ13i6SX3g0rFe9xdAj4TpGCXj
+	 +DkVSDKx9Ed5LwYcX4aCB17l0LkcinO9XwhsaWZvP1PLynGG9DxoqIledWQgPdBuCWh+V
+	 Md/bGTE/gz0vnPIyJGz2jiTagYCrCE1YbYAPDNCCSG5JBCELSbfiwSnSN4LN+HBg3vhvl
+	 96h8bsJBdo4RVS7o3p8EmXRo+IqZA0UzakGAoANfA5OJxu+Mbe70vAmUWIFA0i2bOYR12
+	 u5XoI0SYsQCV9JmeWyh1jtZwK9foVqV7qoe0vR3Gst0vfQ/CXA2hUxtGla3WoDcXcZg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=ffK5pmQk;
-	arc=none smtp.remote-ip=209.85.128.48
-Received: from mail-wm1-f48.google.com (mail-wm1-f48.google.com [209.85.128.48])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=gmx.com;
+	spf=pass smtp.mailfrom=gmx.com;
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=rWhWVhS9;
+	arc=none smtp.remote-ip=212.227.17.22
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52C11606A325
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 07:18:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 52C11606A325
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 29AB1606A324;
+	Sun,  1 Nov 2026 07:26:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 29AB1606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=ffK5pmQk
-Received: by mail-wm1-f48.google.com with SMTP id 5b1f17b1804b1-4a35db1f202so20935335e9.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 00:18:29 -0700 (PDT)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793517508; x=1794122308; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=X+BwoNYH8Zzqv3w5tIVg3636uhE4Ev+ncQBA55QTM0Y=;
-        b=ffK5pmQkqD7xyXFYTYf2tSVw1KfU9AScHuDeQEj0RaUM5ODUuEB3elvi7BIDxa0Wpf
-         oGoDo5g4HwMt0T0SqlJn2SlTSGOUfIbvQ79nfoNdsEYpGRg4aOu5PZ6sZIvFZxrN9PGt
-         IZXKXWAtg/E2YplhIvxZTkBTCo0KKbU8Zno6PK0NZi7qSW3/LlRzO222l8TB6cDdNi4j
-         OEi/YbwnjtvR45G4Sgk7/cjGIf9t7q74+/zbVQQi6LXakNbrazZ1QFvPEPUNpT0KHdko
-         WHqQpnNr5YUt8TpnuzIrTrr1A4+5w/w/6r4r9kPO0444XyUmba+PkTL3vfgUv1A98/cc
-         hi9g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793517508; x=1794122308;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=X+BwoNYH8Zzqv3w5tIVg3636uhE4Ev+ncQBA55QTM0Y=;
-        b=C/ycSx2nMiNuFVQyCT0onbg++F5QIaHzLm5jhS0k9JeNE2PAaEdquV0ImCvmTZS0V1
-         VKA+3XkTSDDx7WdD9kLZi1ysvInWYBfob3VcYYlWUtyfGMrpPArnjkW03bm+I8E2mXVi
-         FqhArBYJVoI3loDspZrxfJF6Jpv9Qg9tB9E9iCfd7YBGv/6h87kac+TyTWkdyEVCzjnW
-         64EoOOY18zmnBS44ia2xmmnH/chkUK7qXn4hYwtri2eeUPjlFAoFWSU2dWvxGTNKifZ+
-         pSnvyYa4FBtSk2fyenYHdyWanzPhExu7cbDMU7xojXODlGuoQXZgTSbVO7uNtnaT8xDX
-         wyWw==
-X-Forwarded-Encrypted: i=1; AKwUvByiZf2CbDOrBkW7ry67HXSM7lZFlp8amj4MWamiQDuzw2AZC1LgiYfNRG8t1qzHogLrQIqAs9thRXz28A==@vger.kernel.org
-X-Gm-Message-State: AFq9FYInQf2q2GHjYgM6mfT57zzLd6xqB9a9WwC97hUgkanKg58bk/kV
-	QPrN+LejEACX+1NV9sahbMR8DBZy+8sELNViZXpTjSgSerm046dfFhoqKTDmLsHTGIQ=
-X-Gm-Gg: AYBFou0e27iJx7PGDxZgkcbwfURi1xgckVhGNwCjw4L0ckGqQ/k0y3WzNE2BsVU2BZA
-	Xn53ldPw7xDZx8T3JQgNZ8Z+tf8cWbmC1FGGrKAOFrNWdQwQ9HpRb3nKDeCRw/jRLM+JbRzeDfN
-	R7ziyA5uT20LTyAkenZO8cy9xVgapt17eExC7dik62jZL0pbloGgtm06F4UIYxL7uKL4AZnbQyU
-	JlZmxampuYzQUETRTTUHjV/DWb7zHDEhQw8Kg4o8PX5DslvYRO7sMALW/OTIDPGHsKAbJ53Zj47
-	uzrSGiETZicHCXDrvHC2nRMJkEZsN9vHbPg2bmHigCj0tGJNCCLDtcUA5KbwWYgS4KdoVrhJtvr
-	S0Tej7kRlLZ1Uh/9oEHMi1dYXGvl/SyDcLJDps/0wVtj0yiHGjbNsiJIzGMRAI0Ac9DV3IroI8y
-	c/vaGzKR2GEfATBDqkzEN5YWTVZuWWUEACNn8+mS7xY1LA9WJKpNglz4UOT+vs7cXW++Jc9bozl
-	bv1PMmcz2UbeJf5wU1UslXaoDFc8CN0zfYxktDZ7b6DdIE8IKcRpfSHpzdEzWaQjwApMi1Lb1CT
-	afLzC222GjTJHr7aSrdbn+j4gTK4XznU+1wBoqR8AA==
-X-Received: by 2002:a05:600c:1f93:b0:4a1:7e76:d02f with SMTP id 5b1f17b1804b1-4ac180f299emr143671995e9.14.1793517507631;
-        Sun, 01 Nov 2026 00:18:27 -0700 (PDT)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac19f4a04esm22697298c88.15.2026.11.01.00.18.23
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 01 Nov 2026 00:18:26 -0700 (PDT)
-Message-ID: <b4962b1b-bc5e-4302-8456-73b9b8a6474b@suse.com>
-Date: Sun, 1 Nov 2026 17:48:21 +1030
+	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=rWhWVhS9
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1793517975; x=1794122775; i=quwenruo.btrfs@gmx.com;
+	bh=2D4byx0BXhMfX0JMFePXBCalr4oCRUdWf+nCZIAb80Q=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=rWhWVhS9BVEkFHOShLnXabCK6pNKNVxsiPR3AiK/KboYhVqQuRCXvsQSL99U95Ot
+	 Evik5q41NlYTXQcFhklc5FZ8OSJlDipE0kyZAUzGB7BEo5Ts19O0gr7nzd39/hGr+
+	 n2gdif7zoOYQ3hJRss2KNsD2LeJOE63Wu3M4cWGKCe3w91mnDehTcKUyuJVGC1B3q
+	 klGZe4r/8+P+0gHzVH7AkpnJBSNdYXHjKzo6zpUN0jr24ZlTM5dPAwgyeEX0a4MBx
+	 +dt7lHL8ukw9V7n9bFP90OXLHgffPH4TYU1sWnwAqajjF+l2/LY1WVqtESCOHPgj8
+	 lPYLXvs5jhCUZHpRsQ==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MeU0q-1wmzCs3NPo-00gsls; Sun, 01
+ Nov 2026 08:26:15 +0100
+Message-ID: <29e8ef0f-211d-404c-b4ca-c47a956ef699@gmx.com>
+Date: Sun, 1 Nov 2026 17:56:10 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,189 +64,224 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: reject refs=0 subvolume without DEAD in
- SUBVOL_SYNC_WAIT
-To: Qu Wenruo <wqu@suse.com>, Cheng Yongkang <teel4res@gmail.com>,
- David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org,
- linux-kernel@vger.kernel.org, stable@vger.kernel.org
-References: <20261101062539.1744605-1-teel4res@gmail.com>
- <a92d223b-55fa-493e-821a-e5acc8afee08@suse.com>
+Subject: Re: [PATCH v2] btrfs: handle zero num_stripes in
+ btrfs_chunk_item_size()
+To: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>, Qu Wenruo <wqu@suse.com>,
+ Filipe Manana <fdmanana@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20261101071444.1853699-1-teel4res@gmail.com>
 Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
  8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
  1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
  9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
  gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <a92d223b-55fa-493e-821a-e5acc8afee08@suse.com>
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7o8gUJFKS8
+ OQAKCRDCPZHzoSX+qAogB/9C5ErH7KGAGpcLPte3Wcfdt3acCkGAuMpCjqOt8BVw30mX0kmF
+ SRo2nODjz8YsYhWR1T8L3ylANAS/IGIJ64idBmObaqGHQn845nXLIvG33LqMsAGXmOJdRgTT
+ BnBA+QFCEIZpo7L9Qt1dOQdHSpHT31Ta1kKsbDm582KPVBl6KRcJJBnjudIerOA1/L/zEyDa
+ YjIfHIcvuM3Xm8AS00iBpsmc151QgCPljqnSRXBiup9C1oMgVlaROhY1iDam4UIQB6glkHQs
+ LZhUmFDNimX5LxfOzi2pFJSjJvPclRZVX7Sq6XhK/OFb6IvswN7i0nUYZMQfuGDNqGn70ic3
+ AQImzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7pCgUJFMw7KQAK
+ CRDCPZHzoSX+qEjbB/9crFFjips2NKxkt2XUutUIKjBoUlg/xCeFIj8PsTuJePhrV9HzgKsa
+ rJgSqo3t78oQWmeaP9WPoDYjfhOkQXEs+G9UwHe/LENm70+Q1jrwY3nlcR3YrkDCJ+EvMZOW
+ ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
+ 9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
+ 3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
+In-Reply-To: <20261101071444.1853699-1-teel4res@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:N27HNBnx3OU5Yjv/aT25FMMfb16uOkTnuyOIVrIvsevBXhXABvL
+ NyB9Yu7Za7bdrwzLiScHEnTPRtZHzPlOlsZ9prS/WU5BoY02gYUfpWWPT2ZEFIvy58dk4le
+ H7Y0gU11tkHDO5Y/VZn6mE1+p4Pd1u1c0U7plGSoWuz6dSSTaYg1yGRTfAEHueiDTdfGOEs
+ opAWJU24QL+5w3XDqtRJA==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:+2BG0kgN53Y=;PaLeOFPw2qOBruYUc5I5ypBFpoX
+ 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
 
 
 
-在 2026/11/1 17:21, Qu Wenruo 写道:
-> 
-> 
-> 在 2026/11/1 16:55, Cheng Yongkang 写道:
->> btrfs_ioctl_subvol_sync() assumes that a cached root with zero
->> references has BTRFS_ROOT_SUBVOL_DEAD set, and asserts that before
->> waiting for the cleaner. Two states break the assumption:
->>
->> - A corrupt ROOT_ITEM with zero references and a matching orphan item,
->>    on a writable filesystem.
->> - A failed subvolume deletion. btrfs_delete_subvolume() zeroes the
->>    root references, aborts the transaction, which forces the filesystem
->>    read-only, and then clears DEAD again. No on-disk metadata is
->>    corrupted in this case.
->>
->> With CONFIG_BTRFS_ASSERT=y, both reach a BUG().
->>
->> Before waiting for a deleted subvolume, return -EROFS if the
->> filesystem is read-only, since the cleaner does not drop dead roots
->> then. The check runs on every iteration, so it also stops a waiter
->> when the filesystem becomes read-only during the wait. Subvolume
->> deletion holds subvol_sem for writing across the abort and the DEAD
->> rollback, and each iteration takes it for reading before inspecting
->> the root, so the read-only state and the cleared flag are seen
->> together. On a writable filesystem, report a zero-reference root
->> without DEAD and return -EUCLEAN instead of asserting.
->>
->> Subvolumes that were not deleted or do not exist still return -EEXIST
->> and -ENOENT, also on a read-only filesystem.
->>
->> Tested on btrfs for-next with CONFIG_BTRFS_ASSERT=y. A deletion made
->> to fail by fault injection after the references are cleared hits the
->> assertion in SUBVOL_SYNC_WAIT without this change and gets -EROFS with
->> it. A waiter on a deleted subvolume now returns -EROFS when the
->> filesystem is remounted read-only, instead of waiting until it is
->> signalled.
->>
->> Fixes: 6c83d153ed86 ("btrfs: add new ioctl to wait for cleaned 
->> subvolumes")
->> Cc: stable@vger.kernel.org
->> Suggested-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
->> Link: https://lore.kernel.org/linux-btrfs/dd97efe9-91ec-495b-b698- 
->> acff1447421c@gmx.com/
->> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
->> ---
->> Changes in v2:
->> - Return -EROFS on a read-only filesystem before waiting for a deleted
->>    subvolume (Qu).
->> - Use unlikely() for the inconsistent-root check (Qu).
->> - Describe the failed-delete case separately from corrupt metadata.
->> - Add the Fixes tag and Cc stable.
->>
->> v1: https://lore.kernel.org/linux-btrfs/20261025180258.349175-1- 
->> teel4res@gmail.com/
->>
->> Testing notes (btrfs for-next d1dca33127ef, KASAN):
->> - The fault-injection case reached the cleared-references state in 2
->>    of 4 attempts on each kernel. The other attempts aborted earlier, and
->>    both kernels returned -EEXIST.
->> - FOR_ONE, FOR_QUEUED, COUNT and PEEK return the same results with and
->>    without this change for live, missing and deleted subvolumes, on
->>    writable and read-only mounts.
->> - The -EUCLEAN branch was not exercised. A crafted image with a
->>    zero-reference root and no DEAD flag hits the assertion without this
->>    change, but remounting that image read-write stalls in a transaction
->>    commit with or without this change, before the filesystem becomes
->>    writable.
->>
->>   fs/btrfs/ioctl.c | 10 ++++++++--
->>   1 file changed, 8 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 9857d6a9d456..5a1f2edfd831 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -5166,8 +5166,14 @@ static int btrfs_ioctl_subvol_sync(struct 
->> btrfs_fs_info *fs_info, void __user *a
->>               return -ENOENT;
->>           wait_for_deletion = true;
->> -        ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD, "root_flags=0x%llx",
->> -               root_flags);
->> +        if (unlikely(test_bit(BTRFS_FS_STATE_RO, &fs_info->fs_state)))
->> +            return -EROFS;
-> 
-> I'm not suggesting such an ad-hoc check, but some more comprehensive 
-> checks, like mnt_want_write_file().
-> As this one won't handle aborted transaction.
-> 
-> But it's not a good idea using that mnt_want_write_file() either, as 
-> that will block pm suspension/hibernation, especially considering the 
-> wait will only be handled by cleaner thread.
-> 
-> The default timeout for waking up cleaner is 30s, which is definitely 
-> not suitable for such calls.
-> 
-> 
-> If you are not sure what to do with the RW check and cleaner behavior, 
-> just don't put an adhoc solution into the update.
-> At least it won't be any worse.
+=E5=9C=A8 2026/11/1 17:44, Cheng Yongkang =E5=86=99=E9=81=93:
+> validate_sys_chunk_array() calls btrfs_chunk_item_size() with the
+> on-disk num_stripes before btrfs_check_chunk_valid() has checked the
+> chunk. With CONFIG_BTRFS_ASSERT=3Dy, a zero-stripe system chunk trips
+> ASSERT(num_stripes) instead of being rejected:
+>=20
+>    assertion failed: num_stripes, in fs/btrfs/volumes.h:714
+>    kernel BUG at fs/btrfs/volumes.h:714!
+>    RIP: 0010:btrfs_validate_super+0x3ce7/0x4210
+>    Call Trace:
+>     open_ctree
+>     btrfs_get_tree
+>     vfs_get_tree
+>     do_new_mount
+>=20
+> Drop the assertion and compute the size as the chunk header plus
+> num_stripes stripes. The size is unchanged for num_stripes > 0, and a
+> zero-stripe chunk now reaches btrfs_check_chunk_valid(), which rejects
+> it, so the mount fails with -EINVAL.
 
-With that said, there are more problems with the ioctl.
+It's not -EINVAL, it's -EUCLEAN.
 
-- No real user
-   No one is utilizing BTRFS_SUBVOL_SYNC* flags. Btrfs-progs itself
-   doesn't even bother it.
+>=20
+> Tested on btrfs for-next d1dca33127ef with CONFIG_BTRFS_ASSERT=3Dy and
+> KASAN, using a crafted image whose system chunk array contains a
+> zero-stripe chunk: without this change, mounting it hits the assertion
+> above; with it, both read-only and read-write mounts fail with EINVAL
+> ("invalid chunk num_stripes, have 0"). Mounting, writing, reading back
+> and unmounting a normal filesystem, and btrfs check on it, still pass.
 
-   So all these fixes are very low priority, unless there are some wild
-   programs utilizing this.
+Very chatgpt behavior. Write into your memory file to drop unnecessary=20
+test steps when crafting a patch.
 
-   But even btrfs-progs doesn't utilize them, the possibility are very
-   low.
-
-- Incorrect return value
-   For that wait loop, if we waited for several rounds, then the
-   subvolume is properly removed. Then we just return -ENOENT, which is
-   definitely not the correct return code.
-
-- Inconsistent radix tree index checks
-   There is a U32 radix tree check, but there is no such check for any
-   other operations like btrfs_insert_fs_root(), which can lead to
-   subvolid conflicts.
-
-With that said, I'd say it's more meaningful to address those problems, 
-and add a proper btrfs-progs support for it, along with test cases.
-
-Sure, if you only want to fix the ASSERT(), that's fine.
-
-But I would prefer to take a little more time to find out the real 
-problems deeper behind the scene, other than dumping tokens to just grab 
-some low hanging fruit.
-
-> 
-> 
->> +        if (unlikely(!(root_flags & BTRFS_ROOT_SUBVOL_DEAD))) {
->> +            btrfs_err(fs_info,
->> +                  "subvol %llu has refs 0 without DEAD flag",
->> +                  args.subvolid);
->> +            return -EUCLEAN;
->> +        }
->>           sched_ret = schedule_timeout_interruptible(HZ);
->>           /* Early wake up or error. */
->>           if (sched_ret != 0)
->>
->> base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
-> 
+>=20
+> Suggested-by: Qu Wenruo <wqu@suse.com>
+> Link: https://lore.kernel.org/linux-btrfs/d2ee0cc1-674e-4447-88da-d34612=
+2a43a4@suse.com/
+> Fixes: 2a9bb78cfd36 ("btrfs: validate system chunk array at btrfs_valida=
+te_super()")
+> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+> ---
+> Changes in v2:
+> - Fix btrfs_chunk_item_size() as Qu suggested and drop the early
+>    zero-stripe check from disk-io.c, along with the comment Filipe
+>    reviewed.
+>=20
+> v1: https://lore.kernel.org/linux-btrfs/179328314071.648427.125278323199=
+54042748@gmail.com/
+>=20
+>   fs/btrfs/volumes.h | 5 ++---
+>   1 file changed, 2 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index d5fe5cba0..891bc2432 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -711,9 +711,8 @@ static inline enum btrfs_map_op btrfs_op(const struc=
+t bio *bio)
+>  =20
+>   static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+>   {
+> -	ASSERT(num_stripes);
+> -	return sizeof(struct btrfs_chunk) +
+> -		sizeof(struct btrfs_stripe) * (num_stripes - 1);
+> +	return offsetof(struct btrfs_chunk, stripe) +
+> +		sizeof(struct btrfs_stripe) * num_stripes;
+>   }
+>  =20
+>   /*
+>=20
+> base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
 

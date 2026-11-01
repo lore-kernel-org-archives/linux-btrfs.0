@@ -1,97 +1,89 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.172
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.46
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793514528;
-	b=Ckc/VzLe7x4zwBUz4VKFYt2fyX8ejeLMKwZ15j8LthtnOf7gdsoY0rWP1UArBf4L6G/T
-	 /sFt2wMx4QrfxDGtWfdbn7y8c6ckTa1g8p6zlicdVDoauicMvvzVo1sxL6EynCaIML5/N
-	 4JOdhpwo1vn89TS4sxmwYNBoWYsmXu+qXQzpNwGwhn6/mQbgzvX24OQQFMvPx11Dnon9T
-	 PiEkN6xxHXxiCG0zWbTTNWp4baWc0HqJuW6H71ANJaAKKrdLto5+8VEfvPlmHP3ngZn1I
-	 UUBTJQsFxn2h7xdOfzNX0vogL4LxR9P/Z4wupGSKUVDCiK77hI0g0YAIZFM9clO6qag==
+	t=1793515927;
+	b=JPTOqhNohIKFbk2rtjxE3A7thfoa7pjwVgjWv2heL935h7wL4lF5mYiiypTLIg1tfDEd
+	 fdrE0FIdqX2TJbZln3ko6X5NYkSlRsSM546mjrNAy1wWtFzG1aL6OAgfLki0WCi53kCkr
+	 28g/y7O7cfItTD6JfAft3tqZp33++KZ19Lv8uereJeoG//rizvWrl2VXnNBEiGdhrTlzO
+	 vU86EuJ40J7Mlvgx7KBwlQ7W7FIf1l5EcMNasL36dRhxsktfIz54Uw/H0930Q4xGA+nZ3
+	 z0z4FNPP6u5hHYEcR9EYX8IQtWr7Pmap5T/QSdTgkklgjFGk1MIInDy/nO/uiQ4zdzg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793514528;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793515927;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding;
-	bh=cryEu9tHgT27PfW4SdIWtKNvZjOxn3pb1ryVgxYgaKE=;
-	b=TAjMsDFwkmGlqpV0kO9OaMLKkgF06XpZKwdYpQCmmTMXm0dgcGoF/7KYxqNQ7CvV98Dz
-	 qJvIAmPa8YqRlTOETVFh7Rhl9PjYe843L4PsMolxk0x8VR79fclZF7IKZi7g/vrrkEvO9
-	 IkRNB27LcCSwksSlJxbeY10XxoxNFoTzd4nNLwEkLF4Or69svV0kV6C/9KQhv9ivyGIwy
-	 b8Km/v3057nmW9xFm38fNb2ZCcN+M5H5xR3WYKb+lDNaREUegwSsEHstaxNR/FBTFd/Mg
-	 C4yN1sMrUycuAPz+5fg8DEzBlBhHRvqR9BSSY/t0bDuf5AZbkhZYyo7DuuzPWqmlbHg==
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
+	b=HYWFD115aOTuwbfTd5H3OSaUdRSrf99R2OBCXK55VkIVi/1qpotFLCatXKhviw5Rt85m
+	 C3dn5OCABtA8dT+uprQxXvM8Mnu+VdK7IfhK6fVbawkH2KeR3I0wmLN/r3OGVnsZt25tW
+	 Lk1yMqZYnmOZREZLwJjs67Y97v3ocaytzLwNltNtGi4jnSZEKasmImqm75LH+EWu5OpSj
+	 iJGinv/Qj+E8FXeNJmxluPxjjOlhXHt6pMEP0iOtl1XPGVXYAR517/uHF9EVro4TQk8WI
+	 2J/scrdrQClleBS/NSLzZf05cvFSHD3Zl51jnmAjnVGqTwC0TZZI1arcDHru12KYTiw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=L0lwaixZ;
-	arc=none smtp.remote-ip=74.125.82.172
-Received: from mail-dy1-f172.google.com (mail-dy1-f172.google.com [74.125.82.172])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Xsqj3+XU;
+	arc=none smtp.remote-ip=209.85.128.46
+Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A5966606A324
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 06:28:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A5966606A324
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2AB40606A324
+	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 06:52:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2AB40606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=L0lwaixZ
-Received: by mail-dy1-f172.google.com with SMTP id 5a478bee46e88-33bf40b0c8bso356600eec.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 23:28:47 -0700 (PDT)
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Xsqj3+XU
+Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a208d93758so21359015e9.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2026 23:52:05 -0700 (PDT)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1793514527; x=1794119327; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:date:subject:cc:to:from:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=cryEu9tHgT27PfW4SdIWtKNvZjOxn3pb1ryVgxYgaKE=;
-        b=L0lwaixZiwm0CDnMcBAYO+o0aukysflgoVSzeVmDuozuKypw72PdUZKRKdFe1f0I8t
-         CGD5zF0o6Xqju+zKLAerHCfnNxqBgFzFbbVl7neBfDc8RFXcz2xPH/8mbUw2LnNjbN2q
-         Z752voQkvJF3SLcua+YJKnJkIy4AXguJ9vhKeTTBtZsAiqQVmUv9MOSzigGlvfpQmpt/
-         ZmYd14IoazLSrpRfjnxUILGLYs83Y1jX+lFzEz0j//S0qz+zeQfP84aWl/W+7IgXOD/1
-         dKsm9vyCmHTXdP7VObXzNx4WYQUJ6jww/b/7TQLBuoMwfBu6RIBZa4dGfVKc12V7O8xL
-         bqZA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793514527; x=1794119327;
-        h=content-transfer-encoding:content-type:mime-version:references
-         :in-reply-to:message-id:date:subject:cc:to:from:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=suse.com; s=google; t=1793515924; x=1794120724; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=cryEu9tHgT27PfW4SdIWtKNvZjOxn3pb1ryVgxYgaKE=;
-        b=BRN6Hp2W6OXhilANGAxbonYnpzcorm5EGi6hOJaUPgtp3eekIrnGVqd07cVSz2Q4K6
-         turjaYpsnvDg6N18+S/oqgHGhDOxs1bboJ30Jy80hh0Taz+JP29/PzlE+lCYqqGq5YwV
-         XKmHhYfnbC4eHZy4NoncMNPtc1HNggV2HjfFFWV8LXPU+Q0xM2Tk/AK15RUTxlNffLw4
-         Sy4zz71twE+tfS+72JaeaVcbdUKIrhSJgjiT6XHT+w5V7gB9+qkG9hf6USV7vcYNn2AT
-         hOaP/CGhzEGI0oYLQD0RZuyMLF+sp0yDhPplKFZMbY5jA/qMwqoXFXIl7ohpHNb0c8gp
-         xfqA==
-X-Forwarded-Encrypted: i=1; AKwUvBwzO6JlRnb4yexEEyEuUek4OBTyUlR9NbqZL7qcsSnbXSOZdPKgxosUVJWebtORgKy1HK6diw9ecJhoeg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9B1fbzP9183tJl54zi6N8R65fi9l/OuQmRnW4EimR5z/Y3dDmg
-	Mtn2Ml75GqspynMKK+mcoZIPyIbYqWY0ahgOAS/gPHOz6pFbMfZZDmzx
-X-Gm-Gg: AYBFou1v4zQC3wBIuIl9hVF0/+Ja/Nvi5yr3i5Sv7ShFGhPvibHJnIg9E1vukyxhOQj
-	dInlr9EoJeMnF+Lt2Y5+lR9xz3MndM/AzYa2nGv7LfoyeGlXyCdHgEsWHKFo8e6Zde+T/bOvJkB
-	LpyeHGEtYvhWdat1LZthEBO2B1oeE5A1NCaA11HZDV58g9V6RuB5iA/Gw1ege+CKyZYDfuVS26Z
-	uvGaIHdL4xdVguoE2beb8a5V6NlS3JRCfHnXIpurgHO/128rEBqhVQQN4vMLm8hyfJZzu8KAxhs
-	XfyJsE5jYYUHUYGU8cPtKD3gSKAkniah84+oP/4onrK6MXHyRcQmY6Ypo5MOHqXrpW2AzmBIvrE
-	xaaGKobU0fI+WvwGpjp62ZBnEseytZvZu/NEEPb2jPw7vbdwdVdAowkCyB75Tgc68Xz2KGQS+AA
-	72ZT3zdl7fqaIGLrq7B9m+8/p+hgpBPTv1ZOitxa2bH24Rqqu7gACiDX0JhbSirMRFfUhUpKDum
-	S9OuDzH8YAO6ujT5fjjbZlqndZOl7+iuFLZtCur6LNlNLV1/PvIwBg29RJ4kW2RlRqtakP2B1As
-	mgxEPzvPvKxsr7g3EQKSRl/cBJC4SIEaQiNAJ00pfxEz32YoaUCzO1Nw7T8nSUE9hJXG
-X-Received: by 2002:a05:693c:41c2:20b0:36a:5042:85b1 with SMTP id 5a478bee46e88-36a50428d57mr7272857eec.2.1793514526725;
-        Sat, 31 Oct 2026 23:28:46 -0700 (PDT)
-Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36a42952e1csm25828235eec.20.2026.10.31.23.28.43
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 31 Oct 2026 23:28:45 -0700 (PDT)
-From: Cheng Yongkang <teel4res@gmail.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Cheng Yongkang <teel4res@gmail.com>,
-	David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: reject refs=0 subvolume without DEAD in SUBVOL_SYNC_WAIT
-Date: Sat, 31 Oct 2026 23:28:39 -0700
-Message-Id: <20261101062839.1747239-1-teel4res@gmail.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <dd97efe9-91ec-495b-b698-acff1447421c@gmx.com>
-References: <20261025180258.349175-1-teel4res@gmail.com> <dd97efe9-91ec-495b-b698-acff1447421c@gmx.com>
+        bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
+        b=Xsqj3+XU3mQZSjjf07wQPdY/nmNLohqUNEGClT80Km4NVcC0DJ9ziP4b+NhVBFUURH
+         xMpKsdKp8aA/ZhcXRuqyrX1kErYa90Zz980aUDriWDi7zh/8kXpFqTyMrvSo7xbyOcxA
+         3CpjbrNeUS4DNaMBuP86gG+Kfl2qh6rhEID9C/LL1bpu+gHWWbnOAIpyxg6cTbViaxVJ
+         FxagSd8MeNMXKezwdbV4/7NNZ8gybxv5sXXjtY788OEV0Qy0ExtbNlgU/XOL1QUt4rE6
+         S0QiWK0v9GmENMwapszTSxvxOTsxpvPETcvQREDmzg+r0iEHWPIXaLWjvS7cpwXw90JP
+         rn3Q==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793515924; x=1794120724;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=iUeaN24ubqK+XseRTkWoI3CKdK3A8caVIym6MWDEuks=;
+        b=OGj3KI4ZUxunu7aQ2KSjtdZiQDL3eSu6DvAkUjFi9wSTf9nJql9/AAv6g6dJuPOVSg
+         m3Ub3Uge8ZOjrWA8w/I+vLdS/gB7lSSxx24koWYg5BHLDXEr1b+tV3zvs/BJYvIltN2J
+         AaqK6+SUDHKeUdIVS+FcC8AAO5s0iQvBJbsXRT9Ka5Fqmr/mJahachjsu82NjEf7GSIL
+         h4Gj5VEYiDHsA3jQ7HbdX+FAvg+Zsp0wPbp0pzmdAGA14XiEQ3MYQqU8Q7pzGy67Wfh2
+         J4Dt8T6VZYVtU2ouXw80zlYJfwoVlb77WrkX7j60g63ln0F+4f9+SBiLAiZzb78taJXT
+         K3jA==
+X-Forwarded-Encrypted: i=1; AKwUvBxfz0M1Gah+WCYfOmmy3A6eAMagNxY9ofWfhXBWsgAoHHTXLI18qqAhiVHxQGNmO7cgixi0ZlP9Rjpdpg==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIUAyI1H2w5oFEURSafx4RNGs6LJDl52sont2iMg/s7a/3PFxW4
+	cw3Bp6UdW+MEXQMb66rHygslzEfn/C1RWRdBMPP/79Ta92gKT8b0m6VmJxa2dw9PAKsGlVaIgMk
+	qLcf0C0w=
+X-Gm-Gg: AYBFou2qQKb+tQGnixE0brjZ+VP6sk8MMYx49Jh48+vKZxlGXAZohKx1vF9FwqohF0H
+	il93WLJBA6tXG9W72TAii8olk1LXfmTNvv+bJ+aKjbJPSKQMQcn8nNPbofwAgUHzAVQpZjlwV0X
+	v8JlJx2xyvlySD47AT2S+lJuFsguEin+1sMpuaS4Kg1bDbUgaCdqkYyN2eh3bKucXl+RiMdF8tm
+	VyxmggSmpQBcLcdZsP/k7NEpAaseu2DnL8V+37AFXYCew57TC+i1dzAdoY1RCa5xsuToxjwUjw0
+	MzitH677z4FHqpbEcCyTPqbnJ4Nj2w/2CH4oozqbZkJZtRa8mpfDowCW5luilk0vmNrorDfRbH+
+	YMktm/ELALwLIrWmy6i5tSHfJAeGMCONaxgsuEEJRri1owK/yCC0lB/GEX0BDiSjcD3J9NqPsH/
+	2pM45T+/WwT5gCLgoxl4B/gR/9Wh7ThFVEIleQV5X/8jcbvokf+jMGhT+IKuVn7rN8azIIWebsm
+	lj16I+8WCsfrTWJIkcjzXbzJzXYAekkJWdJqRh0x3N0Da+NeojvfBKqHqRBO3mSjLk2P0LlkqAK
+	4xnIYvnNb8xaKLob771IO8s5RVB/MXKxO8fxUvlw2A==
+X-Received: by 2002:a05:600c:1d29:b0:4a5:5fb9:5d35 with SMTP id 5b1f17b1804b1-4ac187a7678mr161246385e9.21.1793515924452;
+        Sat, 31 Oct 2026 23:52:04 -0700 (PDT)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac13ef1a16sm19922956c88.1.2026.10.31.23.52.00
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sat, 31 Oct 2026 23:52:03 -0700 (PDT)
+Message-ID: <a92d223b-55fa-493e-821a-e5acc8afee08@suse.com>
+Date: Sun, 1 Nov 2026 17:21:58 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -101,20 +93,150 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: reject refs=0 subvolume without DEAD in
+ SUBVOL_SYNC_WAIT
+To: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ stable@vger.kernel.org
+References: <20261101062539.1744605-1-teel4res@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <20261101062539.1744605-1-teel4res@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-Hi Qu,
 
-Thanks for pointing out the failed-delete path. v2 is here:
-https://lore.kernel.org/linux-btrfs/20261101062539.1744605-1-teel4res@gmail.com/
 
-Before waiting for a deleted subvolume, it now returns -EROFS if the
-filesystem is read-only. The check runs on every iteration, so it also
-covers a filesystem that becomes read-only during the wait. On a
-writable filesystem, a zero-reference root without DEAD returns
--EUCLEAN, with unlikely(). Subvolumes that were not deleted or do not
-exist still return -EEXIST and -ENOENT.
+在 2026/11/1 16:55, Cheng Yongkang 写道:
+> btrfs_ioctl_subvol_sync() assumes that a cached root with zero
+> references has BTRFS_ROOT_SUBVOL_DEAD set, and asserts that before
+> waiting for the cleaner. Two states break the assumption:
+> 
+> - A corrupt ROOT_ITEM with zero references and a matching orphan item,
+>    on a writable filesystem.
+> - A failed subvolume deletion. btrfs_delete_subvolume() zeroes the
+>    root references, aborts the transaction, which forces the filesystem
+>    read-only, and then clears DEAD again. No on-disk metadata is
+>    corrupted in this case.
+> 
+> With CONFIG_BTRFS_ASSERT=y, both reach a BUG().
+> 
+> Before waiting for a deleted subvolume, return -EROFS if the
+> filesystem is read-only, since the cleaner does not drop dead roots
+> then. The check runs on every iteration, so it also stops a waiter
+> when the filesystem becomes read-only during the wait. Subvolume
+> deletion holds subvol_sem for writing across the abort and the DEAD
+> rollback, and each iteration takes it for reading before inspecting
+> the root, so the read-only state and the cleared flag are seen
+> together. On a writable filesystem, report a zero-reference root
+> without DEAD and return -EUCLEAN instead of asserting.
+> 
+> Subvolumes that were not deleted or do not exist still return -EEXIST
+> and -ENOENT, also on a read-only filesystem.
+> 
+> Tested on btrfs for-next with CONFIG_BTRFS_ASSERT=y. A deletion made
+> to fail by fault injection after the references are cleared hits the
+> assertion in SUBVOL_SYNC_WAIT without this change and gets -EROFS with
+> it. A waiter on a deleted subvolume now returns -EROFS when the
+> filesystem is remounted read-only, instead of waiting until it is
+> signalled.
+> 
+> Fixes: 6c83d153ed86 ("btrfs: add new ioctl to wait for cleaned subvolumes")
+> Cc: stable@vger.kernel.org
+> Suggested-by: Qu Wenruo <quwenruo.btrfs@gmx.com>
+> Link: https://lore.kernel.org/linux-btrfs/dd97efe9-91ec-495b-b698-acff1447421c@gmx.com/
+> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+> ---
+> Changes in v2:
+> - Return -EROFS on a read-only filesystem before waiting for a deleted
+>    subvolume (Qu).
+> - Use unlikely() for the inconsistent-root check (Qu).
+> - Describe the failed-delete case separately from corrupt metadata.
+> - Add the Fixes tag and Cc stable.
+> 
+> v1: https://lore.kernel.org/linux-btrfs/20261025180258.349175-1-teel4res@gmail.com/
+> 
+> Testing notes (btrfs for-next d1dca33127ef, KASAN):
+> - The fault-injection case reached the cleared-references state in 2
+>    of 4 attempts on each kernel. The other attempts aborted earlier, and
+>    both kernels returned -EEXIST.
+> - FOR_ONE, FOR_QUEUED, COUNT and PEEK return the same results with and
+>    without this change for live, missing and deleted subvolumes, on
+>    writable and read-only mounts.
+> - The -EUCLEAN branch was not exercised. A crafted image with a
+>    zero-reference root and no DEAD flag hits the assertion without this
+>    change, but remounting that image read-write stalls in a transaction
+>    commit with or without this change, before the filesystem becomes
+>    writable.
+> 
+>   fs/btrfs/ioctl.c | 10 ++++++++--
+>   1 file changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 9857d6a9d456..5a1f2edfd831 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -5166,8 +5166,14 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
+>   			return -ENOENT;
+>   
+>   		wait_for_deletion = true;
+> -		ASSERT(root_flags & BTRFS_ROOT_SUBVOL_DEAD, "root_flags=0x%llx",
+> -		       root_flags);
+> +		if (unlikely(test_bit(BTRFS_FS_STATE_RO, &fs_info->fs_state)))
+> +			return -EROFS;
 
-Thanks,
-Cheng Yongkang
+I'm not suggesting such an ad-hoc check, but some more comprehensive 
+checks, like mnt_want_write_file().
+As this one won't handle aborted transaction.
+
+But it's not a good idea using that mnt_want_write_file() either, as 
+that will block pm suspension/hibernation, especially considering the 
+wait will only be handled by cleaner thread.
+
+The default timeout for waking up cleaner is 30s, which is definitely 
+not suitable for such calls.
+
+
+If you are not sure what to do with the RW check and cleaner behavior, 
+just don't put an adhoc solution into the update.
+At least it won't be any worse.
+
+
+> +		if (unlikely(!(root_flags & BTRFS_ROOT_SUBVOL_DEAD))) {
+> +			btrfs_err(fs_info,
+> +				  "subvol %llu has refs 0 without DEAD flag",
+> +				  args.subvolid);
+> +			return -EUCLEAN;
+> +		}
+>   		sched_ret = schedule_timeout_interruptible(HZ);
+>   		/* Early wake up or error. */
+>   		if (sched_ret != 0)
+> 
+> base-commit: d1dca33127efacd86ac550aa86352f8ea9f29a5a
+

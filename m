@@ -1,107 +1,59 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=170.10.129.124
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.20
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793560223;
-	b=NG/qaTt4IX6L/QP3YjgXQ2v+71OAAH6Ouo+GI9rll8TsDXy3xaCCcLGqw0BfQXanrOc0
-	 LUUpDtrmMvLrTl40pFDZn6Awx+jGC8LM+pDBP7fj3JKwgSQ2lMWVEcmeoVv/c7BXnWHY9
-	 Jo6OQEzqN1kBwDQTDiftjxt/NuEfTAhI136hJmcSYijpukC3v5ebULuSpVs/bScgBOj77
-	 6rwVDrdlTe0lRFTGzmnEA4ONG2oU15IG3yp7I5XQz6wMXQS5tjusknFRTJRiRzqNzUtrE
-	 iXiVzb0ypAbjzaCuQ1peY5+6vEVDg3vs14dBrpwxhhTZJ1tTSX2jpCF5yttF31SJJzg==
+	t=1793565504;
+	b=q0JkeMOD8hbTTapktTk76Jt1s6HKAeb6dY08600bfu5tbRg1s6DqBp+s5AY/bso5zSX9
+	 Bj0UpDOuBuzXlxYNlQYeo1GJl94RjXmgvviW7w0sAdf8sOqIzY7YhBT34Xau18sGbEPN7
+	 IhDNtjFgjPO+By2ZQ58J5BsdtvmjNHgsdQyrwYjtmi7pDe1zLsV53IucSi2gurrkZOBIB
+	 YsvNkczTwu+DKc8ZVKwup8e/+LEj2zLyTRc6hs6Ko0u2htcSP8bxsaXCP+CCFWxNCC1a0
+	 jFrjtPibyaMcX6fKmDlSTccbZlD/NX/mLGKqqAnY3C8kvRmry6zj5cXIgMhaXUgCWHw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793560223;
-	h=DMARC-Filter:DKIM-Signature:Received:X-MC-Unique:
-	 X-Mimecast-MFC-AGG-ID:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 X-Received:Received:Message-ID:Date:MIME-Version:User-Agent:Subject:
-	 To:Cc:References:Content-Language:From:Organization:In-Reply-To:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=PyZs0AyYwTcyO/qGQurFs7U023N9VNDaniciBF4CFOA=;
-	b=ky5rKiXnsMPc2F12cHdy2oo5s//qBKMwSysvFdDnKGIrHaLB2VpOJKVkZuVZLZe+5j3F
-	 osKSSar9G+V9WEMjiZvy4JOaKuTwNonf9WvAnwBbYCYOSjbBWhIZ0EeWb48uktaSxL3E1
-	 dEN+2FzI4Wr/DO6L7u01Kf+RuXwfoI63fRfAROJ2PNYv/c0sOyLgMtRs6ucOaozlX2rTa
-	 NHwHt0LfMNpB9DiT/qPxSK6UwBAeLkixTWlfKYC/4+0LbrpftQO+2mmwlJ/CX1BJODrfO
-	 b3U6OAf5DM+C9JyCN+sexB6EA4SBKzK/YbQ37ss6XJJx9EBBjVJeEyu3PS2uvELw5/w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793565504;
+	h=DMARC-Filter:DKIM-Signature:X-UI-Sender-Class:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:UI-OutboundReport;
+	bh=r70pO0BkM9XhlbQWoZA1F+WBsNpHNx2sIfdjIEnRg7c=;
+	b=IY2N/6luTwYoZsumNd+tlb1N1qBelHmnJ8Qb/Cud2OSMy3UQKzeRa9RrkHNzptrCn230
+	 70T5g6xV2mK3RD6tuOkZmUdwZfcWQmOn+bjjX+mc9m6aFjAPCgB1VTHqxyx5SSISnFbpj
+	 1nk5Ohh2pZ1mD4MYZjflkv0384wKKp6qLYCHaqBcTqGanGIt/4PBRD3Kg+z4QRNK8Bziz
+	 Ln7/cR30GTEjBMFH/qKwJX75NyFKbhsof6R4zxOd6TWhpJZoQCBtoiTdrVDNz9GdF66iy
+	 rArfgmLKN96DXaHdQXJoYlHyuK7pV+9tZ0OhDWqjeHEP39EF4bX4Nv3DBIO96YLfDBg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=redhat.com;
-	spf=pass smtp.mailfrom=redhat.com;
-	dkim=pass header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=mimecast20190719 header.b=b+DSCSNq;
-	dkim=pass header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=google header.b="rFe/FtUs";
-	arc=none smtp.remote-ip=170.10.129.124
-Received: from us-smtp-delivery-124.mimecast.com (us-smtp-delivery-124.mimecast.com [170.10.129.124])
+	dmarc=pass header.from=gmx.com;
+	spf=pass smtp.mailfrom=gmx.com;
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=tmeRMPP0;
+	arc=none smtp.remote-ip=212.227.17.20
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0CA9A606A326
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 19:10:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0CA9A606A326
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=redhat.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=redhat.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 118B8606A325;
+	Sun,  1 Nov 2026 20:38:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 118B8606A325
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=mimecast20190719 header.b=b+DSCSNq;
-	dkim=pass (2048-bit key, unprotected) header.d=redhat.com header.i=@redhat.com header.a=rsa-sha256 header.s=google header.b=rFe/FtUs
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=redhat.com;
-	s=mimecast20190719; t=1793560222;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=PyZs0AyYwTcyO/qGQurFs7U023N9VNDaniciBF4CFOA=;
-	b=b+DSCSNq2KnJ2vs+CIVy49S0YvzeVivHsCo6YSk3k059YZzQavqdCGpPscuzI7RhTrlRRG
-	NhlzPY6bse+c5BXAYISZ5pyPtVOlMD3n2ogGGtbt0Qg5zpzODYx2Sv6oIMVsZh5xwmYJmf
-	Kmj8i8I6Az/TMJa23tS66zAqTEzkl0I=
-Received: from mail-wr1-f71.google.com (mail-wr1-f71.google.com
- [209.85.221.71]) by relay.mimecast.com with ESMTP with STARTTLS
- (version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384) id
- us-mta-397-tYghoh5NNVaSABqTzFTkaw-1; Sun, 01 Nov 2026 14:10:20 -0500
-X-MC-Unique: tYghoh5NNVaSABqTzFTkaw-1
-X-Mimecast-MFC-AGG-ID: tYghoh5NNVaSABqTzFTkaw_1793560220
-Received: by mail-wr1-f71.google.com with SMTP id ffacd0b85a97d-48e011829easo1561984f8f.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 11:10:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=redhat.com; s=google; t=1793560219; x=1794165019; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:organization
-         :from:content-language:references:cc:to:subject:user-agent
-         :mime-version:date:message-id:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=PyZs0AyYwTcyO/qGQurFs7U023N9VNDaniciBF4CFOA=;
-        b=rFe/FtUsYnZHlu5Ro7Slieer2sMPTQcLn5iegwbi1jkUrKVHRzmuvLXWmEtR76JZ8V
-         M0Kaa1iuTIr2YrFGjVkRiuKsW1mQIHFQkEoIOALYo9ZR/qsfW6KufAZFTPCrJiSJHtKz
-         EENu95J/FICEP5t5NG8b+8uAWoVyN0Taxw/witfyzyPhmdTfIbppiNJfs1qwlnasGqHc
-         GIvyzxqn8ogKPcw96eB1W5lj0OL0s0FhOEWG4wINF7qNfBKX22sDqRlYCjFeIy1Kn2fS
-         svnymRmHWwvONzP8RrCT71i+lsBNwQDYZE5RB+EPvUTy+0KLvhFFQ/3f/dM2NlI9tpjY
-         OalA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793560219; x=1794165019;
-        h=content-transfer-encoding:content-type:in-reply-to:organization
-         :from:content-language:references:cc:to:subject:user-agent
-         :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=PyZs0AyYwTcyO/qGQurFs7U023N9VNDaniciBF4CFOA=;
-        b=plB/Vy9lk6SY44NrfHk0/bL85DYRwtYVGGy3NbQ4Mlpi/9B5Ik9rhviq0w24R5DzXf
-         RiY02vZjT4xDCbPM4e9zNKojGjbxiz7msnRwUfRh8SYNWdqj2sXho7JdWAzbqm3pyYGr
-         OcEfKDnLa+jYFMh21gFEUbXzeLZHpNeV0vwzx79XRcKmmv8rOW17ZG+oN3SyaEFsT6i3
-         9rCWV96ozQb0cKq+684nGK4d/yJQaEyfrQbZvXNrVM4o0oO+uP8APeIXqcSHdg/vNd8F
-         qHq3ON7xAAc4hZeT6j2RNSWdmg61kfz5F0DHfZS2s9hr0nZyAH9fqb3scLrPs+3nMsW0
-         XW+w==
-X-Forwarded-Encrypted: i=1; AKwUvBy4MIwR6svK5aVHSgFBUCB60NeoaR9ZsXRkwbY+Yg1s8N7Bpi7c8PkihLYh0cC64UxYYbYJF0fQyTO8bA==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+ao8Kp92nOMVsMlgCrKBPtnF0lwHW6ZoZ6kaC8Inh+R+CEo1If
-	aI+XxzXAhoKJ0KqoTbH2GTsqaoKOH+5d6ZD/gQdq5lxhUu8/U+Kp3rGg2lEoIIagYgXOOz/rxyw
-	YzaE3DlvLM2D3yX/tgeovMtQyU4V/6oi+VOZIejXV6UVYrCn5qvNiMN1XdDB/1rPz
-X-Gm-Gg: AYBFou3xk+6CHZI3Mmq+cpgDTEbi8BvnwCKtXcrvWhAucNKlUL+n217cY1YVQWBCMDy
-	g7JT36Gew69rXLHqqw3fRM36yduHex0Ps6LmVJLGsLTOXhLiJ8p05TrQBa/Jc/HZ+TgUL6FZL8Y
-	Ku93zOJ+Spoeaxg681iOQCC60wJIdRgRHcZEHxk79FmsFKtR3Y7BzxCmD8AhDAKVTo923Kt8YoC
-	LCK0IRy+0vNhk1c2IeTwG2bBeoKPo4mfTJhK/B9z0aA0WZ3/2kjqczuQDJ7TEbgext9NTskHomO
-	aTdp9meebPCJrqtPD7uhY2SVNvD6sYlOxsyvw/zzhMW2lggbe1soFceunO/dmQPpUcMrlRJNTyD
-	NkJ9AgkWNIfJ3cqOYw/jV/bNDugbkvWvupxbKw7bk1MfgVZz3Rw==
-X-Received: by 2002:a05:6000:2dc3:b0:48e:68da:1c5c with SMTP id ffacd0b85a97d-48e6e2f83aamr17988526f8f.16.1793560219392;
-        Sun, 01 Nov 2026 11:10:19 -0800 (PST)
-X-Received: by 2002:a05:6000:2dc3:b0:48e:68da:1c5c with SMTP id ffacd0b85a97d-48e6e2f83aamr17988473f8f.16.1793560218780;
-        Sun, 01 Nov 2026 11:10:18 -0800 (PST)
-Received: from [192.168.0.99] ([212.20.115.16])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-48e71ba24f6sm16037130f8f.51.2026.11.01.11.10.18
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 01 Nov 2026 11:10:18 -0800 (PST)
-Message-ID: <2179facd-fe1e-42eb-8416-38d534e8b0dc@redhat.com>
-Date: Sun, 1 Nov 2026 20:10:17 +0100
+	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=tmeRMPP0
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1793565489; x=1794170289; i=quwenruo.btrfs@gmx.com;
+	bh=r70pO0BkM9XhlbQWoZA1F+WBsNpHNx2sIfdjIEnRg7c=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=tmeRMPP01BN3hKnapF7zchI1296Z8GlwoLaoLnl6dJXmy8W2w9XHyDLN+yCKbkPO
+	 2tGyfweMTrXy3hnTDHvUcJH8NbLYlrzjzUvKj47G3GJ4BYo9/GuVjOfjctYWfPOIc
+	 e1sD1SPTanx7/1i86POZTSYNlbXOPO821vhWlnUZ6fVDsV4IIxY+Wt5XxJWeOvWCk
+	 PJifKEAf+BzoFIPAK3DNM96xRZnz8CY50SPKzfL3o97EIL4hVz/lrBR3Pd/HI17Qq
+	 yjWdupxF0W9/PTBhZ17tVKTd9XHA+0xbYdhCgGQBWu40LYDOETPKpzCA55bSxhm95
+	 TCXsO4Y9IuyGQ+wtKg==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MnJhU-1weLvo1sea-00pe4h; Sun, 01
+ Nov 2026 21:38:09 +0100
+Message-ID: <d9990870-188d-49b5-badf-9e7ae9a273ed@gmx.com>
+Date: Mon, 2 Nov 2026 07:08:01 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -112,211 +64,233 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: Parent transid failures in extent/dev/free-space trees after lost
- writes; open_ctree -5, restore works - advice before repair?
-To: Aaron Bohenick <bohenick@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: dm-devel@lists.linux.dev
-References: <CAAhqjAK5mOJrgZqG-ZrgKt12Dm4AFJeapiFbBNpRv+qUns_d-A@mail.gmail.com>
- <CAAhqjALj6mq=wx43sshav-uOxei2nXeMu4nfmQmu_az7Nbig=g@mail.gmail.com>
-Content-Language: en-US, cs-CZ
-From: Zdenek Kabelac <zkabelac@redhat.com>
-Organization: RedHat
-In-Reply-To: <CAAhqjALj6mq=wx43sshav-uOxei2nXeMu4nfmQmu_az7Nbig=g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: fix bio counter and bioc leak when async
+ checksumming fails
+To: mt4022@columbia.edu, David Sterba <dsterba@suse.com>,
+ Chris Mason <mason@kernel.org>
+Cc: Qu Wenruo <wqu@suse.com>, Christoph Hellwig <hch@lst.de>,
+ Josef Bacik <josef@toxicpanda.com>,
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ tz2294@columbia.edu, stable@vger.kernel.org
+References: <20261101-btrfs-async-csum-leak-v1-1-feafe7ae61e9@columbia.edu>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7o8gUJFKS8
+ OQAKCRDCPZHzoSX+qAogB/9C5ErH7KGAGpcLPte3Wcfdt3acCkGAuMpCjqOt8BVw30mX0kmF
+ SRo2nODjz8YsYhWR1T8L3ylANAS/IGIJ64idBmObaqGHQn845nXLIvG33LqMsAGXmOJdRgTT
+ BnBA+QFCEIZpo7L9Qt1dOQdHSpHT31Ta1kKsbDm582KPVBl6KRcJJBnjudIerOA1/L/zEyDa
+ YjIfHIcvuM3Xm8AS00iBpsmc151QgCPljqnSRXBiup9C1oMgVlaROhY1iDam4UIQB6glkHQs
+ LZhUmFDNimX5LxfOzi2pFJSjJvPclRZVX7Sq6XhK/OFb6IvswN7i0nUYZMQfuGDNqGn70ic3
+ AQImzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7pCgUJFMw7KQAK
+ CRDCPZHzoSX+qEjbB/9crFFjips2NKxkt2XUutUIKjBoUlg/xCeFIj8PsTuJePhrV9HzgKsa
+ rJgSqo3t78oQWmeaP9WPoDYjfhOkQXEs+G9UwHe/LENm70+Q1jrwY3nlcR3YrkDCJ+EvMZOW
+ ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
+ 9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
+ 3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
+In-Reply-To: <20261101-btrfs-async-csum-leak-v1-1-feafe7ae61e9@columbia.edu>
 Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:Bkq4pLrxfw92HInb7a5U6Vxl/QcOL4Lz0eTr9pslXBdblcoJsM3
+ smXDOgkRVqR1rI63xJiemzcfiJyKSfOtGCxYRZAzQqGnXXEYq6l1W4AzzYWoaJFTER4rDpc
+ Ga3S9y6WWXx3BYogb26bRvr8s9qDkHI9ASa4+aMSK6ETyG4Uvw4Iqqnghe+OLzqP8wVxKWa
+ Qrp75/C0B4ryC+bFuhmLw==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:63PMI0Z8+UM=;9gWxktmSJFlV6U4aORO+8OkkH70
+ 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
+ DJdy7
 
-Dne 01. 11. 26 v 18:50 Aaron Bohenick napsal(a):
-> Hi,
-> 
-> Follow-up to my report below, with new findings that change the
-> question. Cc'ing dm-devel because this now looks like a dm-cache
-> (lvmcache) issue underneath Btrfs. Everything below was read-only; the
-> origin LV and the cache SSD are both blockdev --setro and nothing has
-> been written to either. The NAS vendor's (TerraMaster) support is also
-> involved.
-> 
-> Short version: the detached cache SSD holds the current, checksum-valid
-> copy of every Btrfs metadata block that is stale on the origin, but the
-> cache metadata marks every cached block clean (0 dirty), so a forced
-> uncache dropped them.
-> 
-> How the cache was detached
-> --------------------------
-> LVM metadata history on the origin PV (vg0 on md RAID6), times EDT:
-> - seqno 23, 2026-10-29 21:31:53: "lvconvert --uncache -y --force vg0/lv0"
-> - seqno 24, 2026-10-29 21:31:55: "vgreduce vg0 --removemissing"
-> The cache PV (an md RAID1 on one NVMe) was not assembled after a vendor
-> OS update/restart, and the vendor OS forced the uncache. Cache mode in
-> the LVM metadata: writethrough.
-> 
-> Cache metadata (cache_check passes on an image of the cmeta LV)
-> ---------------------------------------------------------------
-> block_size=2048 sectors (1 MiB), nr_cache_blocks=953640, policy=smq,
-> hint_width=4; 953634 mappings, 0 dirty.
-> 
-> Damaged Btrfs blocks: origin copy vs cached copy
-> ------------------------------------------------
-> 64 KiB nodes read from the origin LV and from the cdata area on the SSD
-> (cache block N at cdata + N MiB). crc32c and bytenr checked for every
-> copy. Format gen/owner; both DUP copies agree unless noted.
-> 
-> logical wanted origin cached
-> 26935296 917953 910413/3 (copy0) 917953/3
-> 13608045117440 918517 879195/7 918517/8
-> 15797806039040 917945 917909/2 917945/4 (dev tree)
-> 12777307766784 918507 610497/258 918507/2 (extent tree)
-> 12777308094464 918507 608008/258 918507/2 (extent tree)
-> 12777309929472 918507 917901/7 lvl 1 918507/2 lvl 0
-> 13607943929856 918513 604537/260 918513/258
-> 13608042430464 918517 610816/258 918517/260 lvl 2 (subvol root)
-> 
-> Every cached copy has a valid checksum and exactly the generation Btrfs
-> expects. The origin copies are valid but much older blocks from other
-> trees. All 20 damaged copies (10 blocks x DUP) are inside cached origin
-> blocks, while overall only 51.4% of metadata blocks (23181/45056) and
-> 5.8% of data blocks were cached. The cache also holds blocks from the
-> final transaction (918517), so it was in use until the end.
-> 
-> So for some hot metadata blocks, writes stopped reaching the origin
-> (some since around generation 604537, weeks to months earlier) while
-> reads were served from the cache, and the cache never considered those
-> blocks dirty.
-> 
-> Questions
-> ---------
-> 1. For dm-cache: is there a known way a writethrough cache can end up
->     with cached blocks that are newer than the origin but marked clean?
->     (Kernel 6.12.63+ on a TerraMaster F4-424 Pro, TOS 7.0.1341.)
-> 2. Safest recovery: re-create the cache mapping by hand (origin lv0,
->     cmeta, cdata, block size 2048, smq) over dm-snapshot overlays and
->     test a read-only Btrfs mount; or copy the cached metadata blocks onto
->     the origin after testing on an overlay? Anything to watch for, e.g.
->     policy hints, or LVM auto-cleaning the outdated cache PV's metadata
->     if its md/GPT labels are restored (they are currently erased, so LVM
->     cannot see it)?
-> 3. For Btrfs: if the cached versions are put back, is a full
->     btrfs check --readonly plus scrub enough to trust the filesystem, or
->     should I still plan to copy everything off and recreate it?
-> 
-> I can provide the cache_dump, the comparison script and output, the
-> LVM metadata text from both PVs and the 97 MiB cmeta/LVM image.
-> 
 
 
-Hi Aaron,
+=E5=9C=A8 2026/11/2 05:09, Mani Tofigh via B4 Relay =E5=86=99=E9=81=93:
+> From: Mani Tofigh <mt4022@columbia.edu>
+>=20
+> A single failed checksum allocation can make a later device replace
+> hang forever.  btrfs_submit_chunk() takes a dev-replace bio counter
+> reference and a bioc before it hands a write to the checksum worker.
+> If the checksum fails there (eg its allocation fails),
+> run_one_async_done() ends the bio but drops neither.  The counter then
+> never gets back to zero and the next replace waits for it:
+>=20
+>    [    8.369171] BTRFS info (device ram0): dev_replace from /dev/ram0 (=
+devid 1) to /dev/ram1 finished
+>    [   41.534247] INFO: task btrfscsum:80 blocked for more than 20 secon=
+ds.
+>    [   41.534391]  btrfs_rm_dev_replace_blocked+0x135/0x180
+>    [   41.534463]  btrfs_dev_replace_finishing+0xefe/0x13b0
+>=20
+> Put the bioc and drop the counter in that error branch as the
+> synchronous error path does.  Also put the bioc on the synchronous
+> path, which only drops the counter.  With the fix, the replace
+> finishes.
+>=20
+> This bug was identified and confirmed with the help of fault-injection
+> testing on a deterministic hypervisor currently under development.  The
+> C reproducer below however hits it within about 35s.
+>=20
+> Fixes: f8a53bb58ec7 ("btrfs: handle checksum generation in the storage l=
+ayer")
+> Cc: stable@vger.kernel.org # 6.6+
+> Signed-off-by: Mani Tofigh <mt4022@columbia.edu>
 
-On Q1: I do not know of a kernel release that fixed this, because I cannot
-find a dm-cache writethrough bug with this shape. The only dm-cache
-coherency fixes after 6.12 are the passthrough-mode series from Ming-Hung
-Tsai (Feb 2026, v7.1, no Cc: stable, so not in 6.12.63), and they have the
-opposite signature: passthrough maps writes to the origin and invalidates
-the cache entry, so those bugs make the cache return stale data while the
-origin stays correct. Your data has the cache correct and the origin
-stale.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-The writethrough path does not obviously allow your state either. A write
-that hits a clean block goes to origin and cache in parallel with
-bio_chain(), so the bio does not complete until both are done and an
-origin error propagates. A dirty block is cleared only after a successful
-copy to the origin. A write miss goes to the origin and is not cached. A
-clean mapped block should therefore always match the origin. That leaves
-two candidates: the origin lost an acknowledged write below dm, or the
-table was not actually writethrough while it ran. The second is easy to
-rule out from /etc/lvm/archive if the NAS still has it.
+Although it's not that common to hit this path.
 
-Related, and important for reading your dump: the dirty bitset is written
-by sync_metadata(), and the clean-shutdown flag is only set if all the
-metadata writes in that pass succeeded. On load, if that flag is clear,
-the kernel ignores the bitset and marks every mapping dirty
-(__load_mapping(): "bool dirty = true; if (cmd->clean_when_opened) dirty
-= ..."). So "0 dirty" means nothing unless the metadata was cleanly shut
-down. If it was not, the kernel considered all 953634 blocks dirty.
+On EXPERIMENTAL builds you are already running with async csum=20
+generation, other than the offload path.
 
-On Q2: use the offline tools; no dm-cache target and no LVM. Work only on
-a copy (you already have the 97 MiB cmeta image):
+Otherwise on most x86_64, the default CRC32 is considered fast, so is=20
+xxhash on all archs, and they will not go through the offload mode.
 
-   dd if=<cmeta> of=cmeta.img bs=1M
-   cache_check cmeta.img
-   cache_check --clear-needs-check-flag cmeta.img     # copy only
-   cache_writeback --metadata-device cmeta.img \
-       --fast-device <cdata> --origin-device <origin snapshot> \
-       --no-metadata-update --list-failed-blocks
+So I'm wondering what's your setup? Are you running SHA256 algo for=20
+checksum? I can add it to the commit message during merge.
 
-cache_writeback writes only dirty blocks and cannot run on a live cache.
-If the metadata was not cleanly shut down it should treat every mapping as
-dirty and write the whole cache back, about 930 GiB; that makes the origin
-an exact copy of the cache state, and blocks that were already identical
-are a no-op. If it writes nothing, the metadata was clean; then select the
-blocks yourself:
-
-   cache_dump cmeta.img > cache.xml
-   # <mapping cache_block="N" origin_block="M" dirty="false"/>
-   # set dirty="true" on the blocks you want, then:
-   cache_restore -i cache.xml -o cmeta-fixed.img
-   cache_writeback ... --metadata-device cmeta-fixed.img
-
-Write to a snapshot of the origin so the real one stays untouched, and
-size the COW for up to 930 GiB. cdata is only read, so it needs no copy.
-Do not re-activate the cache target: activation commits to cmeta and, on
-an unclean metadata, starts writing back on its own schedule.
-
-On Q3: no, btrfs check --readonly plus scrub is not sufficient. Your
-damage is "valid checksum, stale content", which checksums cannot detect:
-scrub compares data against metadata checksums, and those match the stale
-block. Only generation/transid and tree-structure checks catch it, and
-only for blocks that are visited. Plan to copy out and recreate, or keep a
-full pre-repair image and diff against it later.
-
-Also, "all 20 damaged copies are in cached blocks, while only 51.4% of
-metadata blocks were cached" is a selection effect: you found the damage
-by comparing origin against cdata, so only cached blocks can show it, and
-hot tree roots are exactly what a cache holds.
-
-What would settle it, in order of value:
-
-1. Kernel log from the last healthy boot through the failed boots:
-    journalctl -k -b -1 and -b, /var/log/kern.log, /var/log/messages.
-    Look for "md/raid", "md0", "resync", "recovery", "faulty", "removed",
-    "re-added", "md: marking", "I/O error", "blk_update_request"; and for
-    "dm_cache" / "device-mapper: cache": "switching cache to read-only
-    mode", "switching cache to fail mode", "metadata operation ...
-    failed". md logs loudly, dm-cache is silent on the healthy path, so
-    absence of cache errors proves nothing.
-
-2. md facts: mdadm --detail, mdadm --examine on every member (event
-    counts), chunk size, and which serial sits in which slot. If one
-    member has a lower event count or appears in a kick/re-add, stop there.
-
-3. /etc/lvm/archive and /etc/lvm/backup from the NAS: the only reliable
-    way to see whether the cache mode was ever changed to writeback, and
-    when the cache PV last received a metadata update.
-
-4. pvck --dump metadata on the cache PV: its VG seqno versus the origin
-    PV's seqno tells you when LVM last wrote that PV, independently of the
-    metadata text you already have.
-
-5. cache_dump and cache_check output, and whether the cmeta superblock
-    clean-shutdown flag is set.
-
-6. uname -a, /proc/version, and the TOS kernel source or patch set. A
-    vendor 6.12.63 with out-of-tree patches is the one gap I cannot reason
-    about from upstream.
-
-7. The physical-offset test, which needs only the images you already have:
-    compute the RAID6 chunk-to-member mapping (mdadm --detail gives the
-    chunk size and layout) for the 10 stale 64 KiB blocks. If they land on
-    one member, or on one contiguous region of it, that is md, not
-    dm-cache.
-
-If the pre-reinstall logs are gone, say so early: then the md history is
-unrecoverable and the block-offset test plus the LVM archive are what is
-left.
-
-Keep the cache PV invisible to LVM throughout (device filter, do not
-import the VG): a stray pvcreate, vgreduce or lvconvert --repair can
-rewrite exactly the metadata you are depending on.
-
-Thanks,
-
-Zdenek
+> ---
+> Reproducer: https://github.com/manitofigh/files/blob/main/linux-repros/b=
+trfscsum.c
+> ---
+>   fs/btrfs/bio.c | 3 +++
+>   1 file changed, 3 insertions(+)
+>=20
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 2c6234f6182f..a508f4abd3a3 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -624,6 +624,8 @@ static void run_one_async_done(struct btrfs_work *wo=
+rk, bool do_free)
+>  =20
+>   	/* If an error occurred we just want to clean up the bio and move on.=
+ */
+>   	if (bio->bi_status) {
+> +		btrfs_put_bioc(async->bioc);
+> +		btrfs_bio_counter_dec(async->bbio->inode->root->fs_info);
+>   		btrfs_bio_end_io(async->bbio, bio->bi_status);
+>   		return;
+>   	}
+> @@ -822,6 +824,7 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbi=
+o, int mirror_num)
+>   	return map_length =3D=3D length;
+>  =20
+>   fail:
+> +	btrfs_put_bioc(bioc);
+>   	btrfs_bio_counter_dec(fs_info);
+>   	/*
+>   	 * We have split the original bbio, now we have to end both the curre=
+nt
+>=20
+> ---
+> base-commit: 5e6c45aaaf93343c7f8a1cde9797080238af5c1b
+> change-id: 20261030-btrfs-async-csum-leak-1772df5f0c32
+>=20
+> Best regards,
+> --
+> Mani Tofigh <mt4022@columbia.edu>
 

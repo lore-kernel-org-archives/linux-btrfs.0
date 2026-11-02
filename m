@@ -1,81 +1,114 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=148.163.139.74
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793576300;
-	b=AdOEOtfZpIu0AoNnDVs9ZZfiIAdBK3vc/2M98cFXIrq6U+K0rjVIok9/Olzxo00bggTL
-	 Dwuwz70n7YjY4oSu6amRW4E9xGFIMM1YgVbel2JnFt5X8FoUzwWeTX7BD37VQQe3G3aD0
-	 WOlSUcZwDj9zphugAXgv+xjWUF6ehGnIryVDlnx2kslEKJXJiqIUClASjnSSPULYY5hNb
-	 aihdEciNq+Zd/OQVQ9pp9I4doq1A4XmK/RC2jh6ehEUTbd8wDLzX7XihZYgEkt1tKVC9c
-	 DN9mIIe6f7YRWodMF3rQ5CZfKG4m9+O/JIqlDwxJLIwrbvtt6uz/I3m82eUCMofz63g==
+	t=1793584776;
+	b=oGvL6j1L1VRzS0WxYMFYMNlODkBhXtrLuX+jy+i68BYk2qL/l6UVqQ49mmnvFD0c3rnQ
+	 F2IZrw4RtE1IXlPkjpS/OI/nHRom63oISa4qyXr3vDZME/DdDI3juKY9gHSL04NQO/rB0
+	 0ace57BURlB7CV2nj6N+aQl416ZNLwk75FrBThjiSJpKc4fYqpM3JYoMIwX32BtJOA8kW
+	 s7P4OzndFFZYTZAA8g9BjfElZuivFFByUKMuszaZAnyQYQqYYWUV23ZvjEQ02hFNHJsex
+	 YHPU4YlDdyboBKXdb5c1GrGOy0vRs+9A7OSHjQuW8fVaW8/n9vwCdcqUFcGX3MaXM9Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793576300;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
-	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=Wp4UORYummyOswYmseA0xsqwxnGwLck2vDNRmvH/7yU=;
-	b=NwY5Bxak88Vq+Z9HS9sfAnNUFoTU8tqhLqA6pptX4B5hizZ4y8hf2H8Lf+I2Vr+8JRtQ
-	 OEYka4pkq74gQTokqe+KftA1VWVYVdD7hopxP/epy5W4cHlqO/CElPkJpIXBluPn9objW
-	 qB+HhLggS9inaPo4LdcG7+6sdx58ZF+Srx8mYGO0I+IoONUQ8n/onROFSg1xnY18BujhC
-	 EpgBTrqjhAYrTUJmoCFN0SLA5U+DGwrqrVn75kha3Hp7N9wt26MmVHyDoSp+GMZfhf+yJ
-	 xOQMwOowrwB2+F2czAepYYiNASBPBYpDt9zylaRA5BZnGKj6M24Gn26Vh+Zfkn/RtLQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793584776;
+	h=DMARC-Filter:Received:DKIM-Signature:Received:Received:
+	 DKIM-Signature:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:X-Received:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:X-Proofpoint-GUID:X-Proofpoint-ORIG-GUID:
+	 X-Authority-Analysis:X-Proofpoint-Spam-Info:
+	 X-Proofpoint-Spam-Details-Enc:X-Proofpoint-Virus-Version:
+	 X-Proofpoint-Spam-Details;
+	bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
+	b=fplBZjoxENQX7o81foU4J7lS+9zFI1ySKSW6FvG7/69tUcfMUfVQbiY9qEjp6wDrB5mh
+	 17X/dVTS8B210yexPIytdtPjrPML4J6WubCXKtDOIovwkWQZyfFfFct2HNkR5YBbRNuV1
+	 doI1uHcrg8idQ7SW9bny0+H+gplYBu9YwSK2xFLJUVka0fU83s2iq36yr3oRdDvV/sO50
+	 Dg/2sT+02f0jXM4yiZVBEjRf/os4qc9R1fXAZ68CYhGAf396R4AsXpbnnhBl9s2uHgsN/
+	 QRcCDgFhN9vuVsQwjnrrUqK9va4qN+ZGXz6Oc9coq7CAvSlmDCyol+YGcdkuGnTMndw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PEIGZEWf;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PEIGZEWf;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dmarc=pass header.from=columbia.edu;
+	spf=pass smtp.mailfrom=columbia.edu;
+	dkim=pass header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=pps01 header.b=Mz6kD96k;
+	dkim=pass header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=lionmail header.b=TNNLVyBO;
+	arc=none smtp.remote-ip=148.163.139.74
+Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EFC04606A32F
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 23:38:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EFC04606A32F
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D1C5606A329
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 01:59:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D1C5606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PEIGZEWf;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PEIGZEWf
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 15F921F895
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 23:38:18 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793576298; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Wp4UORYummyOswYmseA0xsqwxnGwLck2vDNRmvH/7yU=;
-	b=PEIGZEWfmmnSMuIhMA7ZTaReHQuug7v1Mr6sQ998kt4hK+XrOVF5+iE4vcvwNx4tOpnn+r
-	fq9Ns/vxjGuARZ7zbdCEXpV43jokkLh5+hOz8prmUFFeDTN789AIpIw+yo1UWyGd4RcBtF
-	fBN/gFz01g0wZt7D0LUWQc84QJtl9a0=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=PEIGZEWf
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793576298; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Wp4UORYummyOswYmseA0xsqwxnGwLck2vDNRmvH/7yU=;
-	b=PEIGZEWfmmnSMuIhMA7ZTaReHQuug7v1Mr6sQ998kt4hK+XrOVF5+iE4vcvwNx4tOpnn+r
-	fq9Ns/vxjGuARZ7zbdCEXpV43jokkLh5+hOz8prmUFFeDTN789AIpIw+yo1UWyGd4RcBtF
-	fBN/gFz01g0wZt7D0LUWQc84QJtl9a0=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id EE70B134B3
-	for <linux-btrfs@vger.kernel.org>; Sun,  1 Nov 2026 23:38:16 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id yt6iE2jN52qPFgAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 23:38:16 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: tree-checker: unify the chunk and block group flags check
-Date: Mon,  2 Nov 2026 10:07:50 +1030
-Message-ID: <fa9fb5834fadc6e11c3f1bc451acf6f03a1065b5.1793576255.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=pps01 header.b=Mz6kD96k;
+	dkim=pass (2048-bit key, unprotected) header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=lionmail header.b=TNNLVyBO
+Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
+	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6A1DShSY2915523
+	for <linux-btrfs@vger.kernel.org>; Sun, 1 Nov 2026 20:59:29 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
+	cc:content-transfer-encoding:content-type:date:from:in-reply-to
+	:message-id:mime-version:references:subject:to; s=pps01; bh=TOa8
+	1AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=; b=Mz6kD96kVplItFSo8ra0
+	2qdsM4Hk13j55ItZQHvGa91+l2LcpZpC6YSnV19GSCxGIYVbivLeQu+eSwmmdV/m
+	snscUURbS+gNrPOnuJkxuAuonUERyq6VhndtrXQRj1VnhF5KSN9TIJyJ3MdULojq
+	4e4qeB42BTz7FPZcCLZzdAg6g4Z50XZNvULk2re7VwZEygPY1ORu7A5IcpOk+WB+
+	KXEW5sB1MF7feBUYvmO+Kltpt5OyL5TDuZEO4UpzOWJsVxGCaIq/8jFulqpD6Dkt
+	4PAkKHadGxT+FGV4R8AVup96qqXZvuGFIGbOcRYU4AzVW9V5NOusxyYt3vJSmlE3
+	Dg==
+Received: from mail-qk1-f199.google.com (mail-qk1-f199.google.com [209.85.222.199])
+	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4hnwtt4qcd-1
+	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 20:59:29 -0500 (EST)
+Received: by mail-qk1-f199.google.com with SMTP id af79cd13be357-93f568dee56so111917485a.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 17:59:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=columbia.edu; s=lionmail; t=1793584769; x=1794189569; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
+        b=TNNLVyBOfQ4HYc2qWQV5Hs9a2k/mgCM+owx4CTV9+yAcIo0sMFPrECssRDjF+5Q1YW
+         MFvEbJDOuYswJePR7P1VPKibo/wvi4sBpm96erRUvOl0VK95Qm5Q7A+zXpnE3Y4NLa7d
+         k84ImLnqrB3PhoYPrxAgIvGu8bxPAFrwYf8VTyKIWT2u1HkQoomkoYR6o6Wm9k1gx2Xp
+         139w8p/Tm4oKPa/9JuqRQ9KjJRNILTSM9ZaZEQ5ZY0/lzEoIqLLWu30xzdIQO3L50Svn
+         t5312P+x8lcdGhJ/ZxZkHwq1Kp851yWBHo2vDxWuRCV09snirwLbUplZcPX6hsBWHGGw
+         u9Hw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793584769; x=1794189569;
+        h=content-transfer-encoding:content-type:in-reply-to:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
+        b=TJaoNc9Wn8F+nuAScsC7vT1zqKxb9oN4C+kdubEgfDOvr7BEsAK3bOlh6G++d4vAsM
+         qSIq+br9IiLQNmty2j62N1KN2gYArwTwVDWZE8vG5KJd5nohrE/LtLiRfE+m6vv/6BLJ
+         Gl5iGYYL45lxx54El8lErDKCxP6sa9FfPfskj4QfOhiuzktAH7dqnmnKAak8MamrDMff
+         oS3FpkgFotHjNVYzEMNOJnpW6ygg8wps7ppI6Y5TFsb0sqHhsVgWwaPJrZt1AVbAWaor
+         gujyG6yg8yt1WVr1OyZgDXS1ATADPIVN5yt3xXaxMmfplz9D5znYr4rp4Ztz/+wousgC
+         z8Tw==
+X-Forwarded-Encrypted: i=1; AKwUvBw+XYzYSI/2MucxzarAmXoQgpRXdE6mu9UO93wBTzVHYinN8WkqTKEEs4UPy8N5NJON050zaSB+RIqebQ==@vger.kernel.org
+X-Gm-Message-State: AFq9FYKA7HV5Me98ljX5jI9Lfyp5n7vNKFtLOFFPenjXExbt+Cp0iLUc
+	UUiK1841TwiVj351lv/+VmcfmllTzwwjKsvR95/tTv9CHjwUDPkYn0fu/YqHRBj+AWMZy6gaCTv
+	GOXA3ffmeLUW1FaTYvBnB69HDKK65aCk7I74ju3Qf2FZAJhp86ncA9nZXP/My
+X-Gm-Gg: AYBFou3bQ4wGzQ77hmVGwLQOA1L/NMlLSwsEUmLO9LK1x9JrLOl8ziIZ+4Um4+1TQBQ
+	b7L0/25D38r96F0JjtNcuDoUPB6HBeXS9PZ4xYdy2Gm7hSgOpVuFKEe+DErt+lB7nxPw8d1NBCm
+	Al4b8+Ftm7teKe4pz/ZUI//KPemnrUDlfDDqCkVORzplW8cvkEMM7THKdkl1acjfiZKzdHOwO6Q
+	7EMENkjw/aX29fTw1V3b2b4tzcQMtA4srv3r0gAP3AX1PhtBuLePWi3fi76WULiQuR48J1E5Diy
+	QelgIZ6ecQMZg5JPavC1CPGwOUhqULN8fcVtxmluEGBlJQgL688YnpZwUId5JDsBTXrfMujbKcb
+	94Ypx0wXr2iFjgXcU5nXoR+EeBBd12LCdAWKb8HBfN4N5UBJmwY4B9WYjIcoZn5fOTKryDkFlYc
+	qYZ1U3ajAbmWFDTagGvj424eX6/Txi9vI4NffTmoRM4UVrrbwdvFa4m9+x6jtTWJ9FNSGqYNq+s
+	/8MqVTTALb+318oajRfX+RM91rhgr7ImH2DFsastFZCFytU07mGEAq2+tSSCp8SNjO084g224ea
+	/liGR5WIaTaKWz7W7mZ848ftMmSWJjuhwg==
+X-Received: by 2002:a05:620a:2996:b0:93c:c405:3215 with SMTP id af79cd13be357-944216970b3mr1557091985a.44.1793584768854;
+        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
+X-Received: by 2002:a05:620a:2996:b0:93c:c405:3215 with SMTP id af79cd13be357-944216970b3mr1557091085a.44.1793584768559;
+        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
+Received: from [192.168.1.179] (pool-98-113-200-94.nycmny.fios.verizon.net. [98.113.200.94])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-94425ac6bddsm715383785a.37.2026.11.01.17.59.27
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
+Message-ID: <1b21a602-aeb1-4e76-9f12-87761d89de86@columbia.edu>
+Date: Sun, 1 Nov 2026 20:59:27 -0500
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -85,278 +118,64 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: fix bio counter and bioc leak when async
+ checksumming fails
+To: Qu Wenruo <wqu@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
+Cc: Christoph Hellwig <hch@lst.de>, Josef Bacik <josef@toxicpanda.com>,
+        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        tz2294@columbia.edu, stable@vger.kernel.org
+References: <20261101-btrfs-async-csum-leak-v1-1-feafe7ae61e9@columbia.edu>
+ <d9990870-188d-49b5-badf-9e7ae9a273ed@gmx.com>
+ <3d3cedc7-a148-40ef-ac22-9aa89d0920f6@suse.com>
+Content-Language: en-US
+From: Mani Tofigh <mt4022@columbia.edu>
+In-Reply-To: <3d3cedc7-a148-40ef-ac22-9aa89d0920f6@suse.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-12.01 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:dkim]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 15F921F895
+X-Proofpoint-GUID: j-XCg4yojVD0y6AoXDBAgmS91uACJeie
+X-Proofpoint-ORIG-GUID: j-XCg4yojVD0y6AoXDBAgmS91uACJeie
+X-Authority-Analysis: v=2.4 cv=RsRQvymK c=1 sm=1 tr=0 ts=6ae7ee81 cx=c_pps
+ a=HLyN3IcIa5EE8TELMZ618Q==:117 a=xAVkXJFauo6zK1gNGjfgTg==:17
+ a=IkcTkHD0fZMA:10 a=zJRp6_cAMcgA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
+ a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
+ a=6ma1GsHSQ2guFgE4MT8A:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
+ a=bTQJ7kPSJx9SKPbeHEYW:22
+X-Proofpoint-Spam-Info: AW1haW4tMjYxMTAyMDAwNyBTYWx0ZWRfX/ERMx7QRWbta
+ rw87Gw4zTipMbCATmlXsDGUXctyY9sVnmtFCw+xgdnVO1biHslunMay+SBv2gpKDN7uPfXmY7f6
+ Do7xXuFZVPVBDrI/Nc6kRj3j43YndTCSjn7Eu6uB7Vvf09rjk45S
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMTAyMDAwNyBTYWx0ZWRfX8tVJj5suZYac
+ wZnHfXnarNG8V9JGMOX3rWmIVk09n0umLmrHY7kR/NE3kQ5LPriEB7c6CAWdxHYZzq1CEXsRIaU
+ 3o+uj8cUqzNlZ1fiU4D0IB1IDkLpie3jTUpJIvCMPfWigg9hMYFznidIZNB40HWE40xaWgd+6cq
+ 4onfO/N81VT7KwxrXU3Ec4h/UeZVqXp5GOL7nMCUf2xbvf/FVQ3G9P7YsUsqDqtYi20YGN7Ls47
+ flFep0F4Ymi0e9IvYOGm6yVPwgDOuhxiOZPcxEydJO50gKhEvaMNCa5ASUS0fKzTBIlG6xsijiO
+ 9cLco78fvsysymZy+tsjusD9WGVp66w7kXft+TZw4+7t8QdB48VthpGhcohjKQJlHBuYMvCms3s
+ AiEXbr6yTC6wmS6i+aA+fVWo7oDZtpw4ubFOb0QGi2E5EBZgYX6NP654lt5UVzFmVwi8MYVNjr3
+ JpMH0RUSCm1QOM/Gs4w==
+X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11953
+ signatures=596817
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ bulkscore=10 suspectscore=0 lowpriorityscore=10 impostorscore=10 adultscore=0
+ phishscore=0 clxscore=1011 spamscore=0 priorityscore=1501 malwarescore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2610300000 definitions=main-2611020007
 
-The btrfs_chunk::type and btrfs_block_group_item::flags are using the
-same value, thus their checks should match each other.
+On 11/1/26 3:53 PM, Qu Wenruo wrote:
+> 在 2026/11/2 07:08, Qu Wenruo 写道:
+>> So I'm wondering what's your setup? Are you running SHA256 algo for 
+>> checksum? I can add it to the commit message during merge.
 
-Unify the check into a common helper, is_chunk_type_valid(), which takes
-the chunk type and super block incompat flags to do validation.
 
-The reason we need a dedicated @incompat_flags is because the validation
-can be called before fully setting up the fs_info, so we can not rely on
-the btrfs_fs_incompat() helper.
+Yep, it's a sha256 filesystem on a non-EXPERIMENTAL build, with
+failslab failing the checksum allocation in the worker.
 
-Furthermore, due to the very different error message helpers utilized by
-chunk and block group items, we will not be able to give a comprehensive
-reason on why the chunk_type is incorrect.
+> And Sashiko exposed an existing problem, even with this patch applied, 
+> the error handling of btrfs_split_bio() is not going to release the bioc.
 
-Now there will only be a generic error message for invalid chunk_type.
+Good catch, I'll put the bioc there too and send a v2 with the sha256
+setup mentioned in the commit message.
 
-Although end users can no longer easily de-code the error message, with
-the help of LLM I believe they should still get what is going wrong
-eventually.
-
-Meanwhile we get less duplicated code and less error messages to bother,
-I'd still call it a win.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog:
-v2:
-- Rebase to the correct branch
-  Previously it's on an incorrect branch and failed Sashiko checks.
----
- fs/btrfs/tree-checker.c | 155 ++++++++++++++--------------------------
- 1 file changed, 54 insertions(+), 101 deletions(-)
-
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index 61ea8f42c9f2..92c254b32f04 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -746,15 +746,58 @@ static void block_group_err(const struct extent_buffer *eb, int slot,
- 	va_end(args);
- }
- 
-+/*
-+ * The common btrfs_chunk::type and btrfs_block_group_item::flags validation.
-+ *
-+ * Unfortunately due to the error message helper differences, we will not output
-+ * the detailed reasons for the invalid type.
-+ *
-+ * Furthermore, at the chunk validation time, the fs is not fully initialized,
-+ * we have to pass a incompat_flags for extra validation.
-+ */
-+static bool is_chunk_type_valid(u64 type, u64 incompat_flags)
-+{
-+	const bool remapped = (type & BTRFS_BLOCK_GROUP_REMAPPED);
-+	const bool support_remap = incompat_flags & BTRFS_FEATURE_INCOMPAT_REMAP_TREE;
-+	const bool support_mixed = incompat_flags & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
-+	const bool is_mixed = (type & BTRFS_BLOCK_GROUP_TYPE_MASK) ==
-+			      (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA);
-+
-+	if (unlikely(type & ~BTRFS_BLOCK_GROUP_VALID))
-+		return false;
-+	if (unlikely(!support_remap && (remapped ||
-+					(type & BTRFS_BLOCK_GROUP_METADATA_REMAP))))
-+		return false;
-+
-+	/* Invalid REMAPPED flag for remap tree or system chunks. */
-+	if (unlikely(remapped && (type & (BTRFS_BLOCK_GROUP_METADATA_REMAP |
-+					  BTRFS_BLOCK_GROUP_SYSTEM))))
-+		return false;
-+
-+	if (unlikely(!support_mixed && is_mixed))
-+		return false;
-+
-+	/* One and only one TYPE bit must be set, or mixed. */
-+	if (unlikely(!has_single_bit_set(type & BTRFS_BLOCK_GROUP_TYPE_MASK) &&
-+		     !is_mixed))
-+		return false;
-+
-+	/* One and only one PROFILE bit must be set, or SINGLE (no bit set). */
-+	if (unlikely(!has_single_bit_set(type & BTRFS_BLOCK_GROUP_PROFILE_MASK) &&
-+		     (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) != 0))
-+		return false;
-+	return true;
-+}
-+
- static int check_block_group_item(struct extent_buffer *leaf,
- 				  struct btrfs_key *key, int slot)
- {
- 	struct btrfs_fs_info *fs_info = leaf->fs_info;
- 	struct btrfs_block_group_item bgi;
- 	u32 item_size = btrfs_item_size(leaf, slot);
-+	const u64 incompat = btrfs_super_incompat_flags(fs_info->super_copy);
- 	u64 chunk_objectid;
- 	u64 flags;
--	u64 type;
- 	size_t exp_size;
- 
- 	/*
-@@ -813,49 +856,10 @@ static int check_block_group_item(struct extent_buffer *leaf,
- 	}
- 
- 	flags = btrfs_stack_block_group_flags(&bgi);
--	if (unlikely(hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) > 1)) {
-+	if (unlikely(!is_chunk_type_valid(flags, incompat))) {
- 		block_group_err(leaf, slot,
--"invalid profile flags, have 0x%llx (%lu bits set) expect no more than 1 bit set",
--			flags & BTRFS_BLOCK_GROUP_PROFILE_MASK,
--			hweight64(flags & BTRFS_BLOCK_GROUP_PROFILE_MASK));
--		return -EUCLEAN;
--	}
--
--	if (unlikely(flags & BTRFS_BLOCK_GROUP_METADATA_REMAP &&
--		     !btrfs_fs_incompat(fs_info, REMAP_TREE))) {
--		block_group_err(leaf, slot,
--"invalid flags, have 0x%llx (METADATA_REMAP flag set) but no remap-tree incompat flag",
--				flags);
--		return -EUCLEAN;
--	}
--
--	type = flags & BTRFS_BLOCK_GROUP_TYPE_MASK;
--	if (unlikely(type != BTRFS_BLOCK_GROUP_DATA &&
--		     type != BTRFS_BLOCK_GROUP_METADATA &&
--		     type != BTRFS_BLOCK_GROUP_SYSTEM &&
--		     type != BTRFS_BLOCK_GROUP_METADATA_REMAP &&
--		     type != (BTRFS_BLOCK_GROUP_METADATA |
--			      BTRFS_BLOCK_GROUP_DATA))) {
--		block_group_err(leaf, slot,
--"invalid type, have 0x%llx (%lu bits set) expect either 0x%llx, 0x%llx, 0x%llx, 0x%llx or 0x%llx",
--			type, hweight64(type),
--			BTRFS_BLOCK_GROUP_DATA, BTRFS_BLOCK_GROUP_METADATA,
--			BTRFS_BLOCK_GROUP_SYSTEM, BTRFS_BLOCK_GROUP_METADATA_REMAP,
--			BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_DATA);
--		return -EUCLEAN;
--	}
--
--	if (unlikely(!btrfs_fs_incompat(fs_info, REMAP_TREE) &&
--		     type == BTRFS_BLOCK_GROUP_METADATA_REMAP)) {
--		block_group_err(leaf, slot,
--		"invalid type, METADATA_REMAP set but REMAP_TREE incompat flag not set");
--		return -EUCLEAN;
--	}
--
--	if (unlikely(!btrfs_fs_incompat(fs_info, REMAP_TREE) &&
--		     flags & BTRFS_BLOCK_GROUP_REMAPPED)) {
--		block_group_err(leaf, slot,
--		"invalid flags, REMAPPED set but REMAP_TREE incompat flag not set");
-+		"invalid block group flags 0x%llx with super incompat features 0x%llx",
-+				flags, incompat);
- 		return -EUCLEAN;
- 	}
- 
-@@ -976,9 +980,8 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
- 	u16 num_stripes;
- 	u16 sub_stripes;
- 	u64 type;
--	u64 features;
-+	const u64 features = btrfs_super_incompat_flags(fs_info->super_copy);
- 	u32 chunk_sector_size;
--	bool mixed = false;
- 	bool remapped;
- 	int raid_index;
- 	int nparity;
-@@ -1004,6 +1007,12 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
- 	nparity = btrfs_raid_array[raid_index].nparity;
- 	remapped = (type & BTRFS_BLOCK_GROUP_REMAPPED);
- 
-+	if (unlikely(!is_chunk_type_valid(type, features))) {
-+		chunk_err(fs_info, leaf, chunk, logical,
-+			  "invalid chunk type 0x%llx with incompat features 0x%llx",
-+			  type, features);
-+		return -EUCLEAN;
-+	}
- 	if (unlikely(!remapped && !num_stripes)) {
- 		chunk_err(fs_info, leaf, chunk, logical,
- 			  "invalid chunk num_stripes, have %u", num_stripes);
-@@ -1077,62 +1086,6 @@ int btrfs_check_chunk_valid(const struct btrfs_fs_info *fs_info,
- 			  length, SZ_256G);
- 		return -EUCLEAN;
- 	}
--	if (unlikely(type & ~BTRFS_BLOCK_GROUP_VALID)) {
--		chunk_err(fs_info, leaf, chunk, logical,
--			  "unrecognized chunk type: 0x%llx",
--			  type & ~BTRFS_BLOCK_GROUP_VALID);
--		return -EUCLEAN;
--	}
--
--	if (unlikely(!has_single_bit_set(type & BTRFS_BLOCK_GROUP_PROFILE_MASK) &&
--		     (type & BTRFS_BLOCK_GROUP_PROFILE_MASK) != 0)) {
--		chunk_err(fs_info, leaf, chunk, logical,
--		"invalid chunk profile flag: 0x%llx, expect 0 or 1 bit set",
--			  type & BTRFS_BLOCK_GROUP_PROFILE_MASK);
--		return -EUCLEAN;
--	}
--	if (unlikely((type & BTRFS_BLOCK_GROUP_TYPE_MASK) == 0)) {
--		chunk_err(fs_info, leaf, chunk, logical,
--	"missing chunk type flag, have 0x%llx one bit must be set in 0x%llx",
--			  type, BTRFS_BLOCK_GROUP_TYPE_MASK);
--		return -EUCLEAN;
--	}
--
--	if (unlikely((type & BTRFS_BLOCK_GROUP_SYSTEM) &&
--		     (type & (BTRFS_BLOCK_GROUP_METADATA |
--			      BTRFS_BLOCK_GROUP_DATA)))) {
--		chunk_err(fs_info, leaf, chunk, logical,
--			  "system chunk with data or metadata type: 0x%llx",
--			  type);
--		return -EUCLEAN;
--	}
--
--	features = btrfs_super_incompat_flags(fs_info->super_copy);
--	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
--		mixed = true;
--
--	if (!mixed) {
--		if (unlikely((type & BTRFS_BLOCK_GROUP_METADATA) &&
--			     (type & BTRFS_BLOCK_GROUP_DATA))) {
--			chunk_err(fs_info, leaf, chunk, logical,
--			"mixed chunk type in non-mixed mode: 0x%llx", type);
--			return -EUCLEAN;
--		}
--	}
--
--	if (unlikely((type & BTRFS_BLOCK_GROUP_METADATA_REMAP) &&
--		     !(features & BTRFS_FEATURE_INCOMPAT_REMAP_TREE))) {
--		chunk_err(fs_info, leaf, chunk, logical,
--		"METADATA_REMAP chunk type without REMAP_TREE incompat bit");
--		return -EUCLEAN;
--	}
--
--	if (unlikely(remapped &&
--		     !(features & BTRFS_FEATURE_INCOMPAT_REMAP_TREE))) {
--		chunk_err(fs_info, leaf, chunk, logical,
--		"REMAPPED chunk flag without REMAP_TREE incompat bit");
--		return -EUCLEAN;
--	}
- 
- 	if (unlikely(!remapped &&
- 		     !valid_stripe_count(type & BTRFS_BLOCK_GROUP_PROFILE_MASK,
--- 
-2.56.0
-
+Thanks for the review!
+Mani

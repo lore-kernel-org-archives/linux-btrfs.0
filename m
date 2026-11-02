@@ -1,83 +1,83 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793611745;
-	b=uqW6Z6arGRPx8wpcp8y+N8mmC1Z27or7ghiky2vR1qBI2JSCcGAqs9mcycrvQhWGBqCN
-	 yIQSbbj2XIiQfoA00GdtxTDMdjSUE1DcGwgEIANvhi65LxMFdZMAD7YVvupXqqHR2DtTK
-	 4QD32VHPzVEIS2HGfr7A2s9O8QGKykTKl0YlPPEC4ZPkfX9UqpPYXJKbHqXOsXNxkmJ05
-	 T2rxc+ZqkeyWuX4DcOvpYaxtGVToAw0NzPQFdjRu3WFkgRtGBTjMGxd5tq5TE6fwGUaJf
-	 Kq4HYcfsKzm9gIOWT2KguQ49L9zEiPjhwRQx6v4WQgm9+W3wVoTlhlU+BlRbBtcAZPw==
+	t=1793611747;
+	b=pyFIqphD/7F2MOn/9s0MmM9tcEWfhDLI9MNp7iVc8xSXKhccvpBiKPzvawUfPfLfz5NU
+	 HmaWZ7S998zS7U4IW9/in1WVnk7lV57S7tAks6cmf5BD5tfER8dLD0sLvlyGZ5IRPsxBI
+	 sdCu5Gc/NCgT6thEtTWapsyCjm5bnhiaPn1zAJlgoqqHm8DJUJ2uhNISQT7h2YHXFaDr3
+	 8WgmYXh+I241Bn3CmGVCIvXt4dCPprBNNYPjlb2jOvPs/mwxORHFpH6B50Q1U+KRm4Knt
+	 wo5jRi1rkAeEfdShoBJp3zcAMwrEWphqyaZmYipwi2tHxMk46NAn+dJq/ENnO8KFJ3w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793611745;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793611747;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
 	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=Ez4Yw1igq+J6xr+i8x6xZZKQORECah3FdMzPbVIeFqM=;
-	b=K72xMVKMhdEMsYKzRBl0m3Ci5MRU2NBJmOTQXWccmHxcA9vgVd8fcV8RJaVfq2DE6hVr
-	 65CbyAms//YdHQXdr1QKgcgBTa7EYdLHIc5xflOTDn3xW7sPXk74hoHhXUohmyrAfdA2R
-	 DXo6QOmFcTEpzEERSlO38ApBYen7sV9nXSZZ8pw6Ia60pJI8iXdRO6vuAO59GwUnDDyNA
-	 ln9Pt+VA7YeiYZlSKW7G/9cTFgQmUofUgr4VCwYEyUSvDXrQQKtLfCOq/EPB+BCntXXHG
-	 RmWrX4eNDn3kRbj/qFS+Trle7mba/56GtmzP3Fp/dWmDIjqRWGgPG2IOXhYMu1k4JYg==
+	bh=pw/5Eb8ZyQd2kgCIP1ROd/JRYV1jbti3jSr4RnQxzxM=;
+	b=ZOh277qnQRcCQIgxizs2SsbqWoyB9kmB1eBz8jFkjmHQaBVUIN0pPQgfSG/uxLRw6zgp
+	 Aqlcy5ZbRTWxTHOS/kgeeDpgsfTU+V0zSzpoVLx0RM5yKvVxhLMdetSc66oPJcawmd00E
+	 sN6gk4OzWDR2ZLS/doYHc67wevEQerMMXJTsrzdXZT2rrftiJS9Sqxe56RwoE1QOS1wmJ
+	 0oJEsyk5I7sUlK/wvi1aiILgzCW7wLDzx1AOHuL5WTe0KGF8FyHicVR9cjeT8zOHcVjSs
+	 cNAKWRnp1M/uHH8uBfa9Nzp3ictq3v7hvn2OhVIG6aX3o3OmifDN4pL7A7S3+V9XRdg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=JvyIwhfS;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=JvyIwhfS;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PY5VM7uH;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PY5VM7uH;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58B23606A330
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 58B23606A330
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCA8F606A334
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DCA8F606A334
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=JvyIwhfS;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=JvyIwhfS
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PY5VM7uH;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=PY5VM7uH
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id ACFCB1F7CD
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:03 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 44FF71FBDE
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793611743; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793611745; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Ez4Yw1igq+J6xr+i8x6xZZKQORECah3FdMzPbVIeFqM=;
-	b=JvyIwhfSrxRKVGe+2VOh1oViO78wtpmP8BBZgj8WYU1RdyvtndvBDianZjjGzKB1Ql0hKu
-	oRAwDKMNAx72yAF6MhRdNJjYOxVthSG+YLSvIfvtdcyM+jucti8pR2hPQqHaQK36cbYn/y
-	tFzXuTqjNDvI9uUKdcY2wOPKTq7EJkc=
+	bh=pw/5Eb8ZyQd2kgCIP1ROd/JRYV1jbti3jSr4RnQxzxM=;
+	b=PY5VM7uHWPHiBYtbtQd05yRD4MMovS31+a1GACIyhjXcXET2e4B1JNmcTV+NtXoVBl6FuJ
+	qgxPh1vRTEpeAmmtYoyd4570wFR37dBzkm9rSS3T7xDcSoNb0jcnqh+sXWz2gkQvQ5+zCf
+	GuQgEGd6KIi8LMs4BnyVwyBPyUl+ksM=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793611743; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793611745; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=Ez4Yw1igq+J6xr+i8x6xZZKQORECah3FdMzPbVIeFqM=;
-	b=JvyIwhfSrxRKVGe+2VOh1oViO78wtpmP8BBZgj8WYU1RdyvtndvBDianZjjGzKB1Ql0hKu
-	oRAwDKMNAx72yAF6MhRdNJjYOxVthSG+YLSvIfvtdcyM+jucti8pR2hPQqHaQK36cbYn/y
-	tFzXuTqjNDvI9uUKdcY2wOPKTq7EJkc=
+	bh=pw/5Eb8ZyQd2kgCIP1ROd/JRYV1jbti3jSr4RnQxzxM=;
+	b=PY5VM7uHWPHiBYtbtQd05yRD4MMovS31+a1GACIyhjXcXET2e4B1JNmcTV+NtXoVBl6FuJ
+	qgxPh1vRTEpeAmmtYoyd4570wFR37dBzkm9rSS3T7xDcSoNb0jcnqh+sXWz2gkQvQ5+zCf
+	GuQgEGd6KIi8LMs4BnyVwyBPyUl+ksM=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 89C84134B3
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:02 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2D5C6134B3
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 09:29:03 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id R7qPENxX6GprcgAAD6G6ig:T2
+	id R7qPENxX6GprcgAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 09:29:02 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 09:29:03 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: do not insert the data reloc tree into fs_roots_radix
-Date: Mon,  2 Nov 2026 19:58:37 +1030
-Message-ID: <737ab44fb9a8821281422f2bcdd6493c79b8853f.1793611601.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs: reject subvolume ids that do not fit into unsigned long
+Date: Mon,  2 Nov 2026 19:58:38 +1030
+Message-ID: <33be0954dbdf0c1abe580d422ad6bbfa6025b191.1793611601.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1793611601.git.wqu@suse.com>
 References: <cover.1793611601.git.wqu@suse.com>
@@ -105,7 +105,7 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -116,131 +116,117 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Score: -11.80
 
-The reasons not to do so are:
+fs_roots_radix is indexed by unsigned long, so on 32-bit systems the
+subvolume id is silently truncated to 32 bits, e.g:
 
-- There is already a global pointer fs_info->data_reloc_root
-  And data reloc tree itself has TRACK_DIRTY flag set, thus its treated
-  as a COW-only root, not a SHAREABLE root, unlike regular subvolume
-  trees.
+  Subvolume 257 (0x101) and subvolume 4294967553 (0x100000101) will have
+  the same index (0x101) on 32-bit systems.
 
-- 32-bit conflicts
-  For 32-bit systems, radix tree index is always truncated to 32 bits.
+Although this should be very rare, as btrfs can reuse deleted
+subvolume ids, and there are other limits like anon_dev preventing us
+from so many subvolumes.
 
-  This means a subvolume with id 0xfffffff7, will conflict with the
-  truncated data reloc tree id (0xfffffffffffffff7 -> 0xfffffff7).
+But it's still better to address such problems, since 32 bit systems are
+still widely supported by the kernel.
 
-  This will prevent btrfs from reading or creating such subvolume.
-  Thankfully this should be very rare, as the subvolume id is reusable,
-  and it's very hard to keep so many subvolumes before hitting other
-  limits (e.g. anon_dev limits).
+Address such rare problem by:
 
-So change the code to not insert data reloc tree into fs_roots_radix:
+- Add btrfs_check_subvolid() to btrfs_insert_fs_root()
+  So that all subvolumes inserted into the fs radix tree are ensured to
+  be no larger than ULONG_MAX.
 
-- Load the tree with a dedicated helper
-  The new helper, read_data_reloc_root() will call
-  btrfs_read_tree_root(), with refs check, then call
-  btrfs_init_fs_root().
+  If there is a high subvolumeid, it will show an error message.
 
-  It skips the fs_roots_radix tree insert completely.
+- Do not search the radix tree if subvolid is is too larger
+  It's possible to pass reloc tree into btrfs_lookup_fs_root() through
+  backref walk.
 
-- Grab data_reloc_tree as a global root
+  And it can be very common during qgroup operations. So we don't want
+  to flood the dmesg with error messages.
+  Just silently reject such search silently, and searching tree reloc
+  tree inside btrfs_lookup_fs_root() will return nothing anyway.
 
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 51 ++++++++++++++++++++++++++++++++++++++--------
- 1 file changed, 42 insertions(+), 9 deletions(-)
+ fs/btrfs/disk-io.c | 13 +++++++++++++
+ fs/btrfs/disk-io.h | 19 +++++++++++++++++++
+ fs/btrfs/ioctl.c   |  2 +-
+ 3 files changed, 33 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 6afcd6ca2a8a..c47ac4eff28d 100644
+index c47ac4eff28d..ed7ccda6da80 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1169,6 +1169,8 @@ static struct btrfs_root *btrfs_get_global_root(struct btrfs_fs_info *fs_info,
- 		return btrfs_grab_root(fs_info->stripe_root);
- 	case BTRFS_REMAP_TREE_OBJECTID:
- 		return btrfs_grab_root(fs_info->remap_root);
-+	case BTRFS_DATA_RELOC_TREE_OBJECTID:
-+		return btrfs_grab_root(fs_info->data_reloc_root);
- 	default:
- 		return NULL;
- 	}
-@@ -1304,8 +1306,13 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
- 	 *
- 	 * This is namely for free-space-tree and quota tree, which can change
- 	 * at runtime and should only be grabbed from fs_info.
-+	 *
-+	 * The data reloc tree is also such a tree.  It is loaded at mount time
-+	 * by read_data_reloc_root() and never inserted into the radix tree, as
-+	 * its objectid is truncated to the radix tree index on 32-bit systems
-+	 * and can conflict with a real subvolume.
- 	 */
--	if (!btrfs_is_fstree(objectid) && objectid != BTRFS_DATA_RELOC_TREE_OBJECTID)
-+	if (!btrfs_is_fstree(objectid))
- 		return ERR_PTR(-ENOENT);
- again:
- 	root = btrfs_lookup_fs_root(fs_info, objectid);
-@@ -1409,6 +1416,39 @@ struct btrfs_root *btrfs_get_new_fs_root(struct btrfs_fs_info *fs_info,
- 	return btrfs_get_root_ref(fs_info, objectid, anon_dev, true);
+@@ -1129,6 +1129,15 @@ static struct btrfs_root *btrfs_lookup_fs_root(struct btrfs_fs_info *fs_info,
+ {
+ 	struct btrfs_root *root;
+ 
++#if BITS_PER_LONG == 32
++	/*
++	 * Roots with ids above ULONG_MAX are never inserted into the radix
++	 * tree, and a truncated index may hit an unrelated root.
++	 */
++	if (root_id > ULONG_MAX)
++		return NULL;
++#endif
++
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+ 	root = radix_tree_lookup(&fs_info->fs_roots_radix,
+ 				 (unsigned long)root_id);
+@@ -1181,6 +1190,10 @@ int btrfs_insert_fs_root(struct btrfs_fs_info *fs_info,
+ {
+ 	int ret;
+ 
++	ret = btrfs_check_subvolid(fs_info, btrfs_root_id(root));
++	if (ret)
++		return ret;
++
+ 	ret = radix_tree_preload(GFP_NOFS);
+ 	if (ret)
+ 		return ret;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index d721e58a69f3..2f0f7bbdfbae 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -105,6 +105,25 @@ static inline struct btrfs_root *btrfs_grab_root(struct btrfs_root *root)
+ 	return NULL;
  }
  
-+/* Read and initialize the data reloc tree. */
-+static struct btrfs_root *read_data_reloc_root(struct btrfs_fs_info *fs_info)
++/*
++ * fs_roots_radix is indexed by unsigned long, so on 32-bit systems a subvolume
++ * id above ULONG_MAX is truncated, and can conflict with other subvolumes.
++ * Such subvolumes are not supported.
++ */
++static inline int btrfs_check_subvolid(const struct btrfs_fs_info *fs_info,
++				       u64 subvolid)
 +{
-+	struct btrfs_key key = {
-+		.objectid = BTRFS_DATA_RELOC_TREE_OBJECTID,
-+		.type = BTRFS_ROOT_ITEM_KEY,
-+		.offset = (u64)-1,
-+	};
-+	struct btrfs_root *root;
-+	int ret;
-+
-+	root = btrfs_read_tree_root(fs_info->tree_root, &key);
-+	if (IS_ERR(root))
-+		return root;
-+
-+	if (btrfs_root_refs(&root->root_item) == 0) {
-+		ret = -ENOENT;
-+		goto fail;
++#if BITS_PER_LONG == 32
++	if (unlikely(subvolid > ULONG_MAX)) {
++		btrfs_err_rl(fs_info,
++	"subvolume id %llu is too large for 32-bit systems, max supported id is %lu",
++			     subvolid, ULONG_MAX);
++		return -EOVERFLOW;
 +	}
-+
-+	/*
-+	 * This tree can share blocks with some other fs tree during
-+	 * relocation and we need a proper setup by btrfs_init_fs_root().
-+	 */
-+	ret = btrfs_init_fs_root(root, 0);
-+	if (ret)
-+		goto fail;
-+	return root;
-+fail:
-+	btrfs_put_root(root);
-+	return ERR_PTR(ret);
++#endif
++	return 0;
 +}
 +
- /*
-  * Return a root for the given objectid.
-  *
-@@ -2275,12 +2315,7 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info)
- 				   PTR_ERR(root));
- 		}
- 	} else {
--		/*
--		 * This tree can share blocks with some other fs tree during
--		 * relocation and we need a proper setup by btrfs_get_fs_root().
--		 */
--		root = btrfs_get_fs_root(tree_root->fs_info,
--					 BTRFS_DATA_RELOC_TREE_OBJECTID, true);
-+		root = read_data_reloc_root(fs_info);
- 		if (IS_ERR(root)) {
- 			if (!btrfs_test_opt(fs_info, IGNOREBADROOTS)) {
- 				location.objectid = BTRFS_DATA_RELOC_TREE_OBJECTID;
-@@ -3815,8 +3850,6 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	btrfs_put_block_group_cache(fs_info);
+ void btrfs_put_root(struct btrfs_root *root);
+ void btrfs_mark_buffer_dirty(struct btrfs_trans_handle *trans,
+ 			     struct extent_buffer *buf);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 215e3220df7f..a7948e2a056c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5126,7 +5126,7 @@ static int btrfs_ioctl_subvol_sync(struct btrfs_fs_info *fs_info, void __user *a
+ 	}
  
- fail_tree_roots:
--	if (fs_info->data_reloc_root)
--		btrfs_drop_and_free_fs_root(fs_info, fs_info->data_reloc_root);
- 	free_root_pointers(fs_info, true);
- 	invalidate_and_check_btree_folios(fs_info);
+ 	/* 32bit limitation: fs_roots_radix key is not wide enough. */
+-	if (sizeof(unsigned long) != sizeof(u64) && args.subvolid > U32_MAX)
++	if (btrfs_check_subvolid(fs_info, args.subvolid))
+ 		return -EOVERFLOW;
  
+ 	while (1) {
 -- 
 2.56.0
 

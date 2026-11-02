@@ -1,114 +1,47 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=148.163.139.74
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=174.142.148.226
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793584776;
-	b=oGvL6j1L1VRzS0WxYMFYMNlODkBhXtrLuX+jy+i68BYk2qL/l6UVqQ49mmnvFD0c3rnQ
-	 F2IZrw4RtE1IXlPkjpS/OI/nHRom63oISa4qyXr3vDZME/DdDI3juKY9gHSL04NQO/rB0
-	 0ace57BURlB7CV2nj6N+aQl416ZNLwk75FrBThjiSJpKc4fYqpM3JYoMIwX32BtJOA8kW
-	 s7P4OzndFFZYTZAA8g9BjfElZuivFFByUKMuszaZAnyQYQqYYWUV23ZvjEQ02hFNHJsex
-	 YHPU4YlDdyboBKXdb5c1GrGOy0vRs+9A7OSHjQuW8fVaW8/n9vwCdcqUFcGX3MaXM9Q==
+	t=1793587061;
+	b=0rLZBEjZM7zanGqfEkLbxHBI7GubEr/EvBth3NvAw07/HioDYFCwmizOgs3CwbREUyL4
+	 b7DMNuYATmxmPYpsfF4Jd05gOVN17fMksQ0oBx5jNF9u7pjyFpZklHK/N/NFdaZqz8j42
+	 fthftlainehij9UaZGf8Gvrodu6PyWm7RjZGDp/LUmld2zw+ANVIED1BLaMbbBdnViCtW
+	 lnxoSinL3xZdfZgtgvK0+TLtnOC4/mMl+pxT3huhnNwuVqivJX2aWVI91Fn6EvWeGBpHc
+	 S1xOaxHr5tBXte2z7YLlDX5AF22ZqqGIeaNM2cKEO2lvcIHVRhp7tcFeaiqlkLsrXpg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793584776;
-	h=DMARC-Filter:Received:DKIM-Signature:Received:Received:
-	 DKIM-Signature:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:X-Received:Received:Message-ID:
-	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:X-Proofpoint-GUID:X-Proofpoint-ORIG-GUID:
-	 X-Authority-Analysis:X-Proofpoint-Spam-Info:
-	 X-Proofpoint-Spam-Details-Enc:X-Proofpoint-Virus-Version:
-	 X-Proofpoint-Spam-Details;
-	bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
-	b=fplBZjoxENQX7o81foU4J7lS+9zFI1ySKSW6FvG7/69tUcfMUfVQbiY9qEjp6wDrB5mh
-	 17X/dVTS8B210yexPIytdtPjrPML4J6WubCXKtDOIovwkWQZyfFfFct2HNkR5YBbRNuV1
-	 doI1uHcrg8idQ7SW9bny0+H+gplYBu9YwSK2xFLJUVka0fU83s2iq36yr3oRdDvV/sO50
-	 Dg/2sT+02f0jXM4yiZVBEjRf/os4qc9R1fXAZ68CYhGAf396R4AsXpbnnhBl9s2uHgsN/
-	 QRcCDgFhN9vuVsQwjnrrUqK9va4qN+ZGXz6Oc9coq7CAvSlmDCyol+YGcdkuGnTMndw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793587061;
+	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
+	 MIME-Version:Content-Type:Content-Disposition:
+	 Content-Transfer-Encoding:In-Reply-To;
+	bh=yKtn0THsh/EqjwUTNUjdpUBT5vowFP8psRWqGxPIf/Q=;
+	b=behDgNXJC0DrHKC88UBqEO1PXzCS8GJ7nzkn7q9+74UksB0x4sibotX+57ibxmfu4b0Z
+	 0Gy7EmbSgu+MUhoTTwU0ejzE4TxS92jrm7kF6TyUpe2wNcH9m4gZkivftIEmGocNFEvbh
+	 aYsk1G+AJHHyEkGDT1UHTrFkKZugzbKsCM+iPLMWNJirpvwQ9XyvBPfz2+7dJSMnhkXzn
+	 T2vj73kEMRpLkMdeZgZPoK0cEWnDtsn8L+/C25uE8wmpG3xmK7dN3IoQkYn419I6O6CUt
+	 n7EVZHUNEZGTJ5gr+tz6kKhNmBaCP/gOHhiC6xektwWJHHKvXxK8ucVJQ/sRSYkWgQw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=columbia.edu;
-	spf=pass smtp.mailfrom=columbia.edu;
-	dkim=pass header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=pps01 header.b=Mz6kD96k;
-	dkim=pass header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=lionmail header.b=TNNLVyBO;
-	arc=none smtp.remote-ip=148.163.139.74
-Received: from mx0b-00364e01.pphosted.com (mx0b-00364e01.pphosted.com [148.163.139.74])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D1C5606A329
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 01:59:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D1C5606A329
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=columbia.edu
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=pps01 header.b=Mz6kD96k;
-	dkim=pass (2048-bit key, unprotected) header.d=columbia.edu header.i=@columbia.edu header.a=rsa-sha256 header.s=lionmail header.b=TNNLVyBO
-Received: from pps.filterd (m0167077.ppops.net [127.0.0.1])
-	by mx0b-00364e01.pphosted.com (8.18.1.11/8.18.1.11) with ESMTP id 6A1DShSY2915523
-	for <linux-btrfs@vger.kernel.org>; Sun, 1 Nov 2026 20:59:29 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=columbia.edu; h=
-	cc:content-transfer-encoding:content-type:date:from:in-reply-to
-	:message-id:mime-version:references:subject:to; s=pps01; bh=TOa8
-	1AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=; b=Mz6kD96kVplItFSo8ra0
-	2qdsM4Hk13j55ItZQHvGa91+l2LcpZpC6YSnV19GSCxGIYVbivLeQu+eSwmmdV/m
-	snscUURbS+gNrPOnuJkxuAuonUERyq6VhndtrXQRj1VnhF5KSN9TIJyJ3MdULojq
-	4e4qeB42BTz7FPZcCLZzdAg6g4Z50XZNvULk2re7VwZEygPY1ORu7A5IcpOk+WB+
-	KXEW5sB1MF7feBUYvmO+Kltpt5OyL5TDuZEO4UpzOWJsVxGCaIq/8jFulqpD6Dkt
-	4PAkKHadGxT+FGV4R8AVup96qqXZvuGFIGbOcRYU4AzVW9V5NOusxyYt3vJSmlE3
-	Dg==
-Received: from mail-qk1-f199.google.com (mail-qk1-f199.google.com [209.85.222.199])
-	by mx0b-00364e01.pphosted.com (PPS) with ESMTPS id 4hnwtt4qcd-1
-	(version=TLSv1.3 cipher=TLS_AES_128_GCM_SHA256 bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 20:59:29 -0500 (EST)
-Received: by mail-qk1-f199.google.com with SMTP id af79cd13be357-93f568dee56so111917485a.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2026 17:59:29 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=columbia.edu; s=lionmail; t=1793584769; x=1794189569; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
-        b=TNNLVyBOfQ4HYc2qWQV5Hs9a2k/mgCM+owx4CTV9+yAcIo0sMFPrECssRDjF+5Q1YW
-         MFvEbJDOuYswJePR7P1VPKibo/wvi4sBpm96erRUvOl0VK95Qm5Q7A+zXpnE3Y4NLa7d
-         k84ImLnqrB3PhoYPrxAgIvGu8bxPAFrwYf8VTyKIWT2u1HkQoomkoYR6o6Wm9k1gx2Xp
-         139w8p/Tm4oKPa/9JuqRQ9KjJRNILTSM9ZaZEQ5ZY0/lzEoIqLLWu30xzdIQO3L50Svn
-         t5312P+x8lcdGhJ/ZxZkHwq1Kp851yWBHo2vDxWuRCV09snirwLbUplZcPX6hsBWHGGw
-         u9Hw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793584769; x=1794189569;
-        h=content-transfer-encoding:content-type:in-reply-to:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=TOa81AMcZ39FVPpdKUi4a+jsK34E7NL5Bi1fu+zvPwA=;
-        b=TJaoNc9Wn8F+nuAScsC7vT1zqKxb9oN4C+kdubEgfDOvr7BEsAK3bOlh6G++d4vAsM
-         qSIq+br9IiLQNmty2j62N1KN2gYArwTwVDWZE8vG5KJd5nohrE/LtLiRfE+m6vv/6BLJ
-         Gl5iGYYL45lxx54El8lErDKCxP6sa9FfPfskj4QfOhiuzktAH7dqnmnKAak8MamrDMff
-         oS3FpkgFotHjNVYzEMNOJnpW6ygg8wps7ppI6Y5TFsb0sqHhsVgWwaPJrZt1AVbAWaor
-         gujyG6yg8yt1WVr1OyZgDXS1ATADPIVN5yt3xXaxMmfplz9D5znYr4rp4Ztz/+wousgC
-         z8Tw==
-X-Forwarded-Encrypted: i=1; AKwUvBw+XYzYSI/2MucxzarAmXoQgpRXdE6mu9UO93wBTzVHYinN8WkqTKEEs4UPy8N5NJON050zaSB+RIqebQ==@vger.kernel.org
-X-Gm-Message-State: AFq9FYKA7HV5Me98ljX5jI9Lfyp5n7vNKFtLOFFPenjXExbt+Cp0iLUc
-	UUiK1841TwiVj351lv/+VmcfmllTzwwjKsvR95/tTv9CHjwUDPkYn0fu/YqHRBj+AWMZy6gaCTv
-	GOXA3ffmeLUW1FaTYvBnB69HDKK65aCk7I74ju3Qf2FZAJhp86ncA9nZXP/My
-X-Gm-Gg: AYBFou3bQ4wGzQ77hmVGwLQOA1L/NMlLSwsEUmLO9LK1x9JrLOl8ziIZ+4Um4+1TQBQ
-	b7L0/25D38r96F0JjtNcuDoUPB6HBeXS9PZ4xYdy2Gm7hSgOpVuFKEe+DErt+lB7nxPw8d1NBCm
-	Al4b8+Ftm7teKe4pz/ZUI//KPemnrUDlfDDqCkVORzplW8cvkEMM7THKdkl1acjfiZKzdHOwO6Q
-	7EMENkjw/aX29fTw1V3b2b4tzcQMtA4srv3r0gAP3AX1PhtBuLePWi3fi76WULiQuR48J1E5Diy
-	QelgIZ6ecQMZg5JPavC1CPGwOUhqULN8fcVtxmluEGBlJQgL688YnpZwUId5JDsBTXrfMujbKcb
-	94Ypx0wXr2iFjgXcU5nXoR+EeBBd12LCdAWKb8HBfN4N5UBJmwY4B9WYjIcoZn5fOTKryDkFlYc
-	qYZ1U3ajAbmWFDTagGvj424eX6/Txi9vI4NffTmoRM4UVrrbwdvFa4m9+x6jtTWJ9FNSGqYNq+s
-	/8MqVTTALb+318oajRfX+RM91rhgr7ImH2DFsastFZCFytU07mGEAq2+tSSCp8SNjO084g224ea
-	/liGR5WIaTaKWz7W7mZ848ftMmSWJjuhwg==
-X-Received: by 2002:a05:620a:2996:b0:93c:c405:3215 with SMTP id af79cd13be357-944216970b3mr1557091985a.44.1793584768854;
-        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
-X-Received: by 2002:a05:620a:2996:b0:93c:c405:3215 with SMTP id af79cd13be357-944216970b3mr1557091085a.44.1793584768559;
-        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
-Received: from [192.168.1.179] (pool-98-113-200-94.nycmny.fios.verizon.net. [98.113.200.94])
-        by smtp.gmail.com with ESMTPSA id af79cd13be357-94425ac6bddsm715383785a.37.2026.11.01.17.59.27
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Sun, 01 Nov 2026 17:59:28 -0800 (PST)
-Message-ID: <1b21a602-aeb1-4e76-9f12-87761d89de86@columbia.edu>
-Date: Sun, 1 Nov 2026 20:59:27 -0500
+	dmarc=none header.from=umail.furryterror.org;
+	spf=pass smtp.mailfrom=drax.hungrycats.org;
+	arc=none smtp.remote-ip=174.142.148.226
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 25FC5606A324;
+	Mon,  2 Nov 2026 02:37:39 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 25FC5606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+	id 1F4CB1C91D64; Sun, 01 Nov 2026 21:37:33 -0500 (EST)
+Date: Sun, 1 Nov 2026 21:37:33 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Qu Wenruo <wqu@suse.com>, Boris Burkov <boris@bur.io>,
+	Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Subject: Re: [PATCH 1/5] btrfs: don't drop the error of the last split bio
+Message-ID: <auf3bY9j9y6Fsuho@hungrycats.org>
+References: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
+ <20261030-b4-btrfs-data-integrity-v1-1-f4d4196731e6@toxicpanda.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -118,64 +51,111 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix bio counter and bioc leak when async
- checksumming fails
-To: Qu Wenruo <wqu@suse.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
-Cc: Christoph Hellwig <hch@lst.de>, Josef Bacik <josef@toxicpanda.com>,
-        Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        tz2294@columbia.edu, stable@vger.kernel.org
-References: <20261101-btrfs-async-csum-leak-v1-1-feafe7ae61e9@columbia.edu>
- <d9990870-188d-49b5-badf-9e7ae9a273ed@gmx.com>
- <3d3cedc7-a148-40ef-ac22-9aa89d0920f6@suse.com>
-Content-Language: en-US
-From: Mani Tofigh <mt4022@columbia.edu>
-In-Reply-To: <3d3cedc7-a148-40ef-ac22-9aa89d0920f6@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
-X-Proofpoint-GUID: j-XCg4yojVD0y6AoXDBAgmS91uACJeie
-X-Proofpoint-ORIG-GUID: j-XCg4yojVD0y6AoXDBAgmS91uACJeie
-X-Authority-Analysis: v=2.4 cv=RsRQvymK c=1 sm=1 tr=0 ts=6ae7ee81 cx=c_pps
- a=HLyN3IcIa5EE8TELMZ618Q==:117 a=xAVkXJFauo6zK1gNGjfgTg==:17
- a=IkcTkHD0fZMA:10 a=zJRp6_cAMcgA:10 a=x7bEGLp0ZPQA:10 a=A0y_DWxS2BwA:10
- a=VkNPw1HP01LnGYTKEx00:22 a=Da8U98TiO7q1upZEImrf:22 a=QOCMdifcju39GKoXhKua:22
- a=6ma1GsHSQ2guFgE4MT8A:9 a=3ZKOabzyN94A:10 a=QEXdDO2ut3YA:10
- a=bTQJ7kPSJx9SKPbeHEYW:22
-X-Proofpoint-Spam-Info: AW1haW4tMjYxMTAyMDAwNyBTYWx0ZWRfX/ERMx7QRWbta
- rw87Gw4zTipMbCATmlXsDGUXctyY9sVnmtFCw+xgdnVO1biHslunMay+SBv2gpKDN7uPfXmY7f6
- Do7xXuFZVPVBDrI/Nc6kRj3j43YndTCSjn7Eu6uB7Vvf09rjk45S
-X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYxMTAyMDAwNyBTYWx0ZWRfX8tVJj5suZYac
- wZnHfXnarNG8V9JGMOX3rWmIVk09n0umLmrHY7kR/NE3kQ5LPriEB7c6CAWdxHYZzq1CEXsRIaU
- 3o+uj8cUqzNlZ1fiU4D0IB1IDkLpie3jTUpJIvCMPfWigg9hMYFznidIZNB40HWE40xaWgd+6cq
- 4onfO/N81VT7KwxrXU3Ec4h/UeZVqXp5GOL7nMCUf2xbvf/FVQ3G9P7YsUsqDqtYi20YGN7Ls47
- flFep0F4Ymi0e9IvYOGm6yVPwgDOuhxiOZPcxEydJO50gKhEvaMNCa5ASUS0fKzTBIlG6xsijiO
- 9cLco78fvsysymZy+tsjusD9WGVp66w7kXft+TZw4+7t8QdB48VthpGhcohjKQJlHBuYMvCms3s
- AiEXbr6yTC6wmS6i+aA+fVWo7oDZtpw4ubFOb0QGi2E5EBZgYX6NP654lt5UVzFmVwi8MYVNjr3
- JpMH0RUSCm1QOM/Gs4w==
-X-Proofpoint-Virus-Version: vendor=nai engine=6900 definitions=11953
- signatures=596817
-X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- bulkscore=10 suspectscore=0 lowpriorityscore=10 impostorscore=10 adultscore=0
- phishscore=0 clxscore=1011 spamscore=0 priorityscore=1501 malwarescore=0
- classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
- reason=mlx scancount=1 engine=8.22.0-2610300000 definitions=main-2611020007
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-1-f4d4196731e6@toxicpanda.com>
 
-On 11/1/26 3:53 PM, Qu Wenruo wrote:
-> 在 2026/11/2 07:08, Qu Wenruo 写道:
->> So I'm wondering what's your setup? Are you running SHA256 algo for 
->> checksum? I can add it to the commit message during merge.
+On Fri, Oct 30, 2026 at 02:38:07PM +0000, Josef Bacik wrote:
+> When a btrfs_bio had to be split, btrfs_bio_end_io() saves the first error
+> of any of its parts in the status field of the original btrfs_bio. The
+> part that completes last is supposed to load it into bi_status of the
+> original bio before calling the end_io handler, but that is only done if
+> that last part was successful:
+>=20
+> 	if (atomic_dec_and_test(&bbio->pending_ios)) {
+> 		/* Load split bio's error which might be set above. */
+> 		if (status =3D=3D BLK_STS_OK)
+> 			bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+>=20
+> If the last part failed, the assumption is that bi_status was set at the
+> top of the function. That is true if the last part is what is left of the
+> original bio. If it is a split bio, the assignment was done to the split
+> bio, which was freed right after. If the original bio has completed before
+> without an error, its bi_status is BLK_STS_OK and stays like that:
+>=20
+>   original bio (tail)                 split bio (head)
+>=20
+>   btrfs_bio_end_io(orig, OK)
+>     orig->bio.bi_status =3D OK
+>     pending_ios 2 -> 1
+>                                       btrfs_bio_end_io(split, IOERR)
+>                                         split->bio.bi_status =3D IOERR
+>                                         bio_put(split)
+>                                         cmpxchg(&orig->status, OK, IOERR)
+>                                         pending_ios 1 -> 0
+>                                         orig->end_io(), bi_status is OK
+>=20
+> The end_io handler covers the whole range, so for a buffered read all the
+> folios are marked uptodate, including the ones that were never filled, and
+> read(2) returns their content instead of -EIO. For a write the ordered
+> extent is completed as if all the data had reached the device.
+>=20
+> This can be reproduced with raid0 data on two devices, one of them slower
+> than the other and with a bad block, by reading a file whose last stripe
+> is on the fast device.
 
+I've been running an identical patch because the same bug causes
+undetected data corruption on raid56.
 
-Yep, it's a sha256 filesystem on a non-EXPERIMENTAL build, with
-failslab failing the checksum allocation in the worker.
+A read that fails csum verification completes only after read repair has
+tried every mirror.  This takes far longer than the healthy splits of the
+same bio, so the failing split completes last almost every time.
 
-> And Sashiko exposed an existing problem, even with this patch applied, 
-> the error handling of btrfs_split_bio() is not going to release the bioc.
+On a degraded raid56 read, the result is corruption that is not reported
+to userspace.  raid56 reads are split at stripe boundaries, so any read
+that crosses a boundary can return a sector that failed its csum check
+to userspace as zeros, with no error.  The csum failure is logged in
+dmesg because the device stats are updated (so the corruption is not
+strictly silent), but the read succeeds.  A 4K read of the same sector
+is not split, and correctly returns EIO.
 
-Good catch, I'll put the bioc there too and send a v2 with the sha256
-setup mentioned in the commit message.
+The data in that sector is unrecoverable either way.  The change only
+affects what userspace is told when it reads the data, i.e. EIO instead
+of a read that returns junk while claiming success.
 
-Thanks for the review!
-Mani
+Reproducer: on a raid5 filesystem, corrupt one stripe row's parity,
+leaving the data intact, then withhold one data member of that row and
+mount degraded.  Reconstructing the missing column then yields wrong
+bytes for that column.  Every other column still works.  Reads of 64K or
+more over that range return zeros and succeed, while 4K reads return EIO.
+
+Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+
+> The saved status has the first error of all the parts, or BLK_STS_OK if
+> there was none, so always use it.
+>=20
+> Fixes: d48e1dea3931 ("btrfs: fix error propagation of split bios")
+> CC: stable@vger.kernel.org # 6.12+
+> Assisted-by: LLM
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+> ---
+>  fs/btrfs/bio.c | 9 ++++++---
+>  1 file changed, 6 insertions(+), 3 deletions(-)
+>=20
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 2c6234f6182f..fc0b021cdefb 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -127,9 +127,12 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_st=
+atus_t status)
+>  		cmpxchg(&bbio->status, BLK_STS_OK, status);
+> =20
+>  	if (atomic_dec_and_test(&bbio->pending_ios)) {
+> -		/* Load split bio's error which might be set above. */
+> -		if (status =3D=3D BLK_STS_OK)
+> -			bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+> +		/*
+> +		 * Load the first error, if any. It may come from a split bio,
+> +		 * including the one we were called for, in which case nothing
+> +		 * stored it in the original bio yet.
+> +		 */
+> +		bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+> =20
+>  		if (bbio_has_ordered_extent(bbio)) {
+>  			struct btrfs_ordered_extent *ordered =3D bbio->ordered;
+>=20
+> --=20
+> 2.55.0
+>=20
+>=20

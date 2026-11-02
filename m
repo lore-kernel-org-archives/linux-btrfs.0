@@ -1,81 +1,94 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.44
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793658338;
-	b=pUilYBnFMDeCu/ngJ06/YTZOO94t/2GSUghx2nry2Xf+vsf3+/QdzXvxUTszcJxFjw5o
-	 JblH19TGHnEdXr6s/B7npqRGEn0wUmk1PH0wKuaR7+OpB3ECwJUDweUOzTbVH861W/GUf
-	 BVndatvxwjQSZJNdZ9lJqUc5xlbEs1IoI05K0TbNGB3EObPpjpG6iRjRqyKqPHDeGgavG
-	 D+65T+qaab3bJq9r8yMXBO4SSx1d/88RWxnwn0GIvOtg9F5Wc+gHV9wOOLkTslxGM8KYT
-	 MWupdERU8hHd81thwmET+Ju2TL8XzIyxcxKoRD47t9pDPBRoF50XMJlZy6B5mmS9RMw==
+	t=1793662290;
+	b=uvwa9HqGBtnR5jDAY3shM5A+UI7Z85FdmiO2cmi/q3bQWIFqYxitQDZOTrwuLY9hviqS
+	 3AYVuSs+tsMZyUVEh+eiPN7QpSCXvfI93mWd+nWt2ODc1VogLBfbx7MUMOwOxnbG6h5wX
+	 9cKylO/lQdQi7RV5Ipr02kaQK/8uppxslbdlldfq2GmGcnC+jL50m9q80VxsFPgcqGkb3
+	 QF9vitfTJN+e65m6xYknLoHGc4CF4b0qj4e49JvlCxHkEoxCSmR9gFWewUaKUy3Al5FHS
+	 uFE5H0cEvS2c5o3DPp48tjE0QRqUwvJILzyHoEhEX99G2jmRbBVR1HHSX+DyctluQLA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793658338;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
-	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
-	b=S+RbO7l6Se+cPR3GXc67tyRXRTYyr2oMUiHKVEoJvefqkupMujJLm30QhNOqz+Pa73rF
-	 dVW69PYTCpXKOO1cc/DOmRHRGe8WWsmREOMBYCzV4/MOEyndv8P+LqwiPHRrPJbulF4OR
-	 b2V8RwgYvM0Kkf+uJvmXi3PEAhEnMU7FSI3bnAufKr8mdQu0Whqt4aikSj9DOdlBV7YRy
-	 l4331FpciCV6jzg7gEZpmn6frbiczg4nlb94734vqWjDv7BmbCjDx1692Grh6WzwIWKIL
-	 wYXgoNhCronwGGdJ3PUmdHHwUqMxJI1Lvrj+7ZS6K48ksrs4eVLXWG191ScmMmVN3JQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793662290;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=OoWUKvavyBp7l0yEFdfI809FcCGWR9loHYOW+zBH4zE=;
+	b=Mdc8URorGQi/n5r0mCHTVtEmcSc1mbCDjxKs/tKqZQvlY2FAagnqvyZok1ERrJEYqoX7
+	 YCR853AlJxv1C6Tj9CXW7DC2Qwg5Op7Ec5rY2q0cZpFGF6h/QMINiNdgHDSdNpBwawQS7
+	 t46JRrA+PDwa+aJkhXZx6wafc157fwEog7pat26XH9ottoPz0I+yYUe+3nrr3D3O21+kB
+	 HsSp/PqIpv/2XbzUdpkvbCb56R+JDHQR6UgGx2yZAuy+/WOuyZ+x1wxwtC46TeY/43pTP
+	 yJ9RQWSN/lKAxqvq5hiC+sxYbo5PvrFbC2aHFFn9KNzUpjNAmxKNtN67w2BRp7AETUA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=asu.edu;
+	spf=pass smtp.mailfrom=asu.edu;
+	dkim=pass header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=eXbDDDaq;
+	arc=none smtp.remote-ip=74.125.82.44
+Received: from mail-dl1-f44.google.com (mail-dl1-f44.google.com [74.125.82.44])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 882B1606A324
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 882B1606A324
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D4D4606A329
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 23:31:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7D4D4606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 782071F82A
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:35 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793658335; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
-	b=Cef+dBa0yp9yzBsSlcAqH76/LfpqnTAPzgN++McAvm2xOvL+NZi4fpW+D8Ikg1DxPb4tjt
-	Cswrj27UGZRS+sJcPPMUf5JMeut/6nPY3bX81WEBLzY1b6r8mnAeRqAmoLi1TJl2B84gfW
-	9G6SeKfaXZLW0j1+M291jcxRfWtkBL8=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=Cef+dBa0
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793658335; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
-	b=Cef+dBa0yp9yzBsSlcAqH76/LfpqnTAPzgN++McAvm2xOvL+NZi4fpW+D8Ikg1DxPb4tjt
-	Cswrj27UGZRS+sJcPPMUf5JMeut/6nPY3bX81WEBLzY1b6r8mnAeRqAmoLi1TJl2B84gfW
-	9G6SeKfaXZLW0j1+M291jcxRfWtkBL8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5F148134B3
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:34 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 7rihLN0N6Wr8JwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 22:25:34 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs-progs: enhance device preparation for discard=ignore cases
-Date: Tue,  3 Nov 2026 08:55:15 +1030
-Message-ID: <40f08ffabe8de460c6da4c6c67b2e5767f436908.1793658275.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=eXbDDDaq
+Received: by mail-dl1-f44.google.com with SMTP id a92af1059eb24-1ae18eb9ad0so3529073c88.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 15:31:29 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=asu.edu; s=google; t=1793662288; x=1794267088; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=OoWUKvavyBp7l0yEFdfI809FcCGWR9loHYOW+zBH4zE=;
+        b=eXbDDDaqOn7p2D9K2i5RdUvuZtVV4rFbqujBe0ac7+apVn/zGAPsyZ3IIg0yADPnuz
+         x3wvEdq+ELIWFEyk25Lsr4EwoCT6Ks3YkQ2Y/x1teCRbRyNziupOGnC5GhNyMqDQPwkT
+         APa4xQUzsbH6VdYOeXS+Zm06Lv8d4YgC+sD3EdAME2MrNBsMgnu5S2fJf2nsmGC7tOYh
+         wntG2pZ8Oz8R1okbS8eaU+0wkdsshorwEi7cI/hw8kLz5zCwqYay7sEkvE/0LluEDaPr
+         1rJcRtIs0RefrMpzzG0zdcxi9tH38FAP8SI5Dvn8hwj+MRiwxGruyJh0wC5zyN4Hm4Qs
+         HWYQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793662288; x=1794267088;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=OoWUKvavyBp7l0yEFdfI809FcCGWR9loHYOW+zBH4zE=;
+        b=vt5dUzKdSJVF8fVovZW3MeV3RM13Y/AI1qMv7iTv1g/fkIhmh4SrNsSkv2O7OF4gsG
+         dhlE47FzsgR91Nc2I9tSBO4UjBk4s+Vl61dCV6gg0WR7TrTop68VyiTkRH7i0vtvUIbM
+         IpzzJFz3FpDH/oEaXc5qc8oWxeWydc/4xtpVTgY6s5FHnOojGlQW+34KWD00IGV2ZTAb
+         TwPT3jyQG1zGiWJN3W3Y/ZopRJenhOr9dIlHlAOzO/9lq2stl202jaMb8PoGMMDkxFO6
+         2slpBCN6OiostO2RIKaGTCRGnKv5sDHo4fEmEWCV9jHCu/BuoiMtMEv7nuQg5Evbq4tc
+         rr4g==
+X-Forwarded-Encrypted: i=1; AKwUvBzc3zp6hq9cAMddPCe8YOxt/BbkPYdJ6sJLNzjEm2oORdeO5IDeZM5x/7hL3+GkYjKQSzu01Ei7fYZDuw==@vger.kernel.org
+X-Gm-Message-State: AFq9FYIIOv+KzPJ5XbBN98FExZxe+DHAsEi4PFr6Vx6ONkpnNC7Wla5N
+	/hDdGBKaor4neQaO5A9OxyQh0t2CW29zB0K8x3V1xAfHaAIGeyrJqAyWM07HXne/mg==
+X-Gm-Gg: AYBFou2PGl9Nrx9SasOIK9tF2Yh7DtmY4qaHpwHTgfzWL3YTs760HP2O95in4Ab3EVe
+	TrDktShj/iTxtCK425b7SrgjanMCHSCzISgmmFb565cpv+a9135cSZmf4Z0tmbkaS5gzkTMAALv
+	MThtKvOKeYc6L3KJ/6q73m8UvMJ5LdsQ+Y3+O9VpPgag+t4ExDW8jepgsVGgJzGdtNA1mC3ZIte
+	SWvri/Ghm3eGgMsSTEz3wRFYDT1tdWX5WxSXQqqkWAanVPckGTHxJJqZbOnKjYmd9nk/7OhINjk
+	LUgn2AEuTAv/z9Iy+xa+iWBWQoOrrKbUkOagfQ6o90CJt6C3hASWFyZDZnXFS+pBeZ6JyVs1Y1m
+	bcMU8cDgzoQQuL1SZR474zGycTNgdd/xHprcZsXNoJDNVu0MzNmr11eoJpkp2UHe7lJMxaiRXD5
+	1fE3EDUxyQ2iCkyRmZg/9KYZONG98gIKpXPMT2WeccWaHhcXG5q0IB5I4KSn4PhSKiRNO9+7FJ8
+	hJzo5ChsALkf+oAjqqFHUk63fCysSNSmL9Ol9EbFSGARrAnptg0RItp1vhgF8Pyj7rvQmMNAKLU
+	yOKhrr0Eg2yhujRUbJTA6wseJ+xkis4EPNSJ
+X-Received: by 2002:a05:701b:240f:b0:151:2e62:fe6e with SMTP id a92af1059eb24-1ac5e322fc2mr13871385c88.19.1793662288465;
+        Mon, 02 Nov 2026 15:31:28 -0800 (PST)
+Received: from localhost.localdomain ([206.206.222.26])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1ac1845817csm36527415c88.5.2026.11.02.15.31.27
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 02 Nov 2026 15:31:28 -0800 (PST)
+From: Siddharth Mishra <smish149@asu.edu>
+To: David Sterba <dsterba@suse.com>
+Cc: Qu Wenruo <wqu@suse.com>,
+	Chris Mason <mason@kernel.org>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Siddharth Mishra <brightprogrammer@asu.edu>,
+	stable@vger.kernel.org
+Subject: [PATCH] btrfs: do not check support for an invalid sectorsize
+Date: Mon,  2 Nov 2026 16:30:41 -0700
+Message-ID: <20261102233041.310900-1-smish149@asu.edu>
+X-Mailer: git-send-email 2.54.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,176 +99,75 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 782071F82A
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-12.01 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -12.01
+
+From: Siddharth Mishra <brightprogrammer@asu.edu>
 
 [BUG]
-For qemu/KVM guests where the storage has 'discard=ignore' set,
-mkfs.btrfs won't properly wipe out any existing super blocks from other
-filesystems:
+Mounting an image whose super block has an invalid sectorsize (for
+example 4097) on a kernel with CONFIG_BTRFS_ASSERT=y triggers a BUG:
 
-  # mkfs.ext4 -F /dev/vdc
-  # mkfs.btrfs -f /dev/vdc
-  # wipefs  /dev/vdc
-  DEVICE OFFSET  TYPE  UUID                                 LABEL
-  vdc    0x438   ext4  19b84ba1-e783-406d-a2f0-269aca433892
-  vdc    0x10040 btrfs 8ab186d0-9f11-4132-a815-5397b99fcd1f
-
-Note that the ext4 super block is still there.
+  BTRFS error (device loop0): invalid sectorsize 4097
+  assertion failed: is_power_of_2(blocksize) &&
+  blocksize >= BTRFS_MIN_BLOCKSIZE && blocksize <= BTRFS_MAX_BLOCKSIZE,
+  in fs/btrfs/fs.c:137
+  kernel BUG at fs/btrfs/fs.c:137!
+  Oops: invalid opcode: 0000 [#1] SMP KASAN NOPTI
+  RIP: 0010:btrfs_supported_blocksize.cold (fs/btrfs/fs.c:137)
+  Call Trace:
+   btrfs_validate_super (fs/btrfs/disk-io.c:2525)
+   open_ctree (fs/btrfs/disk-io.c:3507)
+   btrfs_get_tree.cold (fs/btrfs/super.c:2133)
+   vfs_get_tree (fs/super.c:1943)
+   fc_mount (fs/namespace.c:1282)
+   path_mount (fs/namespace.c:4337)
+   __x64_sys_mount (fs/namespace.c:4542)
 
 [CAUSE]
-With 'discard=ignore' setting, the discard operation is accepted but no
-data will be wiped out.
-
-Furthermore, mkfs.btrfs do the zero write before discard, but that zero
-write itself is buffered write, and discard will drop any page cache of
-the block device, so such zero write never reaches the storage.
+btrfs_validate_super() rejects the sectorsize because it is not a power
+of 2, but it does not stop there: it goes on to report all invalid
+fields.  The next check passes the same sectorsize to
+btrfs_supported_blocksize(), which requires a validated value and
+asserts it since commit d728f2e5f8a0 ("btrfs: simplify support block
+size check").
 
 [FIX]
-Fix the problem and hardening the data wipe out by:
+Only check whether a sectorsize is supported after it passed the
+validity check.  An invalid sectorsize is still rejected with -EINVAL,
+and the misleading second message "sectorsize 4097 not yet supported"
+is no longer printed.
 
-- Re-order the device preparation
-  Instead of zero-write then discard, change it to discard then
-  zero-write.
+This bug was found by fuzzing. The cause was analysed and the fix was
+written with the help of an AI tool. Tested on btrfs for-next
+(d6f76ca0a70d) and on v7.4-rc1, with KASAN and CONFIG_BTRFS_ASSERT=y:
+without the fix, mounting the image hits the BUG above; with the fix,
+the mount fails with -EINVAL and only "invalid sectorsize 4097" is
+printed.
+A crafted image (22 KiB, xz) and a C reproducer are available on request.
 
-  So even if discard did nothing, the zero writes won't be discarded.
-
-- Use BLKZEROOUT ioctl when possible
-  This ioctl will ensure the content is zeroed out.
-  If the device supports WRITE_ZEROS and can do it cheaply, this will
-  not take up extra space.
-
-  Although this ioctl is only supported on block device.
-  So the zero-buffered write is still needed as a fallback
-
-- Sync after the zero writes
-  Although the zero writes are already after discard, be extra safe to
-  make sure the zeros reach the storage.
-
-Issue: #1198
-Signed-off-by: Qu Wenruo <wqu@suse.com>
+Fixes: d728f2e5f8a0 ("btrfs: simplify support block size check")
+Cc: stable@vger.kernel.org # 6.18+
+Signed-off-by: Siddharth Mishra <brightprogrammer@asu.edu>
 ---
-Changelog:
-v2:
-- Fix the return value if fsync() failed
-  fsync() always return -1, but populates errno.
----
- common/device-utils.c | 36 ++++++++++++++++++++++++++++++++----
- 1 file changed, 32 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/common/device-utils.c b/common/device-utils.c
-index 6c81183887d3..31364bd7a2f3 100644
---- a/common/device-utils.c
-+++ b/common/device-utils.c
-@@ -48,6 +48,10 @@
- #define BLKDISCARD	_IO(0x12,119)
- #endif
-
-+#ifndef BLKZEROOUT
-+#define BLKZEROOUT	_IO(0x12,127)
-+#endif
-+
- /*
-  * Discard the given range in one go
-  */
-@@ -127,6 +131,15 @@ int device_zero_blocks(int fd, off_t start, size_t len, bool direct)
-
- #define ZERO_DEV_BYTES SZ_2M
-
-+static int device_zeroout_range(int fd, u64 start, u64 len)
-+{
-+	u64 range[2] = { start, len };
-+
-+	if (ioctl(fd, BLKZEROOUT, &range) < 0)
-+		return -errno;
-+	return 0;
-+}
-+
- /*
-  * Zero blocks in the range from start but not after the given device size.
-  * (On SPARC the disk labels are preserved too.)
-@@ -135,6 +148,7 @@ static int zero_dev_clamped(int fd, struct btrfs_zoned_device_info *zinfo,
- 			    off_t start, ssize_t len, u64 dev_size)
- {
- 	off_t end = max(start, start + len);
-+	int ret;
-
- #ifdef __sparc__
- 	/* Don't overwrite the disk labels on SPARC. */
-@@ -148,7 +162,17 @@ static int zero_dev_clamped(int fd, struct btrfs_zoned_device_info *zinfo,
- 	if (zinfo && zinfo->model == ZONED_HOST_MANAGED)
- 		return zero_zone_blocks(fd, zinfo, start, end - start);
-
--	return device_zero_blocks(fd, start, end - start, false);
-+	if (!device_zeroout_range(fd, start, end - start))
-+		return 0;
-+
-+	ret = device_zero_blocks(fd, start, end - start, false);
-+	if (ret < 0)
-+		return ret;
-+
-+	ret = fsync(fd);
-+	if (ret < 0)
-+		return -errno;
-+	return 0;
- }
-
- /*
-@@ -279,6 +303,13 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
- 		}
- 	}
-
-+	/*
-+	 * Discard drops the page cache and may not zero the data (e.g. QEMU
-+	 * discard=ignore), so it must come before zeroing.
-+	 */
-+	if (!(opflags & PREP_DEVICE_ZONED) && (opflags & PREP_DEVICE_DISCARD))
-+		prepare_discard_device(file, fd, byte_count, opflags);
-+
- 	ret = zero_dev_clamped(fd, zinfo, 0, ZERO_DEV_BYTES, byte_count);
- 	for (i = 0 ; !ret && i < BTRFS_SUPER_MIRROR_MAX; i++)
- 		ret = zero_dev_clamped(fd, zinfo, btrfs_sb_offset(i),
-@@ -293,9 +324,6 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
- 		goto err;
- 	}
-
--	if (!(opflags & PREP_DEVICE_ZONED) && (opflags & PREP_DEVICE_DISCARD))
--		prepare_discard_device(file, fd, byte_count, opflags);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 8e8fb942d..b348591f8 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2520,9 +2520,7 @@ int btrfs_validate_super(const struct btrfs_fs_info *fs_info,
+ 		     sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE)) {
+ 		btrfs_err(fs_info, "invalid sectorsize %u", sectorsize);
+ 		ret = -EINVAL;
+-	}
 -
- 	ret = btrfs_wipe_existing_sb(fd, zinfo);
- 	if (ret < 0) {
- 		error("cannot wipe superblocks on %s", file);
---
-2.56.0
+-	if (unlikely(!btrfs_supported_blocksize(sectorsize))) {
++	} else if (unlikely(!btrfs_supported_blocksize(sectorsize))) {
+ 		btrfs_err(fs_info,
+ 			"sectorsize %u not yet supported for page size %lu",
+ 			sectorsize, PAGE_SIZE);
+
+base-commit: d6f76ca0a70d0c814731394a625ff0dc1feb390e
+-- 
+2.54.0
 

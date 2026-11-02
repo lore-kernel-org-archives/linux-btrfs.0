@@ -1,80 +1,80 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793657574;
-	b=GD5A8ONJXckc+jy/LGzgIkpbUhg/C78ZJXY8AmLe3iYlQPKxSVQ//iMsYIu3b7dozkeK
-	 8aPMxCoUL3+JUkNHf4NlrPqVQaUh6iHS3GnRb3QZPpcHGWlsThy4n6pIp+IxuDY1EvMOt
-	 E6CqeWG070Qb91LiWfPqGGXz0Wyu0r/5WJwjbqbt3KetGvuY7D0yi4NL7fMlG+T26TZVX
-	 jrs6qp6UYHimyS+Y6FhNWanhOicpeX/LLRnTjGefOwYbkUC1pLISHMtX3iFSiVj3Ztm87
-	 SxN3+dm7gyKmZokAFYYzuaAI8Es76OcrNtU4BuPELWZsN2boo9N8O/twLBc7uAOpKlg==
+	t=1793658338;
+	b=pUilYBnFMDeCu/ngJ06/YTZOO94t/2GSUghx2nry2Xf+vsf3+/QdzXvxUTszcJxFjw5o
+	 JblH19TGHnEdXr6s/B7npqRGEn0wUmk1PH0wKuaR7+OpB3ECwJUDweUOzTbVH861W/GUf
+	 BVndatvxwjQSZJNdZ9lJqUc5xlbEs1IoI05K0TbNGB3EObPpjpG6iRjRqyKqPHDeGgavG
+	 D+65T+qaab3bJq9r8yMXBO4SSx1d/88RWxnwn0GIvOtg9F5Wc+gHV9wOOLkTslxGM8KYT
+	 MWupdERU8hHd81thwmET+Ju2TL8XzIyxcxKoRD47t9pDPBRoF50XMJlZy6B5mmS9RMw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793657574;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793658338;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
-	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=JJ0opSjZDV8Hf4dkFg1VL/xPtz7LmHXBVJYmDVdg89s=;
-	b=4Osz5PelTE4b1KZBNLymRfugiRDoSSYkS6puUIAbLRcQOdj3aVOS22N7R/ETZvRfasvT
-	 dcsemyO+igtXiAv6ptaIN6aw/fC+KJg8qy2qhlKh1e0uqJeR0gJqht1EHsxgpwfgd7Brq
-	 +YgPglNMCBBADu/JIWvmm1/gfpfoLdBbHhn/05sRP9Vf4U0/eONLb9d94ev6+SUd6pk5Q
-	 xUTev5Xg+yO1renLPR3sY5la66OyvjrZfNII3Dqt49Wf6FyLHYk1+aA4QaYCfG3c1L0qm
-	 WcsZCKbAdG0ci3TBhJ6qUFawH9v0qZIuDXxs0cbCrmRw9O92J1edfJSRrfOFFIViHhA==
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
+	b=S+RbO7l6Se+cPR3GXc67tyRXRTYyr2oMUiHKVEoJvefqkupMujJLm30QhNOqz+Pa73rF
+	 dVW69PYTCpXKOO1cc/DOmRHRGe8WWsmREOMBYCzV4/MOEyndv8P+LqwiPHRrPJbulF4OR
+	 b2V8RwgYvM0Kkf+uJvmXi3PEAhEnMU7FSI3bnAufKr8mdQu0Whqt4aikSj9DOdlBV7YRy
+	 l4331FpciCV6jzg7gEZpmn6frbiczg4nlb94734vqWjDv7BmbCjDx1692Grh6WzwIWKIL
+	 wYXgoNhCronwGGdJ3PUmdHHwUqMxJI1Lvrj+7ZS6K48ksrs4eVLXWG191ScmMmVN3JQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=K6msXA+k;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jba2ynSE;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C4383606A326
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:12:53 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C4383606A326
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 882B1606A324
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 882B1606A324
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=K6msXA+k;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jba2ynSE
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Cef+dBa0
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EFE0C1FAA7
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:12:51 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 782071F82A
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:35 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793657572; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793658335; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=JJ0opSjZDV8Hf4dkFg1VL/xPtz7LmHXBVJYmDVdg89s=;
-	b=K6msXA+kNe7XHLatWYxDjFX2NPAphlNntJFeNz25eBr7LKkIgmePbIdSccoygmUICgzxOt
-	jTd01gqtpgNJprhD2bZBrt9JNNKQILXjdPtgjI+L+1nbv5pqtr5UURPZDdK12Wjev6++a9
-	JrX9CAbxkXx1EwYZmY1Zf4gMHxUnTLg=
+	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
+	b=Cef+dBa0yp9yzBsSlcAqH76/LfpqnTAPzgN++McAvm2xOvL+NZi4fpW+D8Ikg1DxPb4tjt
+	Cswrj27UGZRS+sJcPPMUf5JMeut/6nPY3bX81WEBLzY1b6r8mnAeRqAmoLi1TJl2B84gfW
+	9G6SeKfaXZLW0j1+M291jcxRfWtkBL8=
 Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=jba2ynSE
+	dkim=pass header.d=suse.com header.s=susede1 header.b=Cef+dBa0
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793657571; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1793658335; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=JJ0opSjZDV8Hf4dkFg1VL/xPtz7LmHXBVJYmDVdg89s=;
-	b=jba2ynSEBO1xDFFDSBNYlhrwmyK7IDs/IR0hHMWLiFHgXHDxKx/xKYFHiIf3/tZ618Yf7g
-	22q1A69RXfExfZVJdYuoY2e1RVOsMF1n95uapul+J6nmFM9U7whn45fDNdMutBREf6gKbW
-	lvOVZxmU+ovojSiu1gzPGgQve8mztyY=
+	bh=/ZeEpCN5gbtt1cD2CXbSoucaWGLKFm5/lzUmKUBr+io=;
+	b=Cef+dBa0yp9yzBsSlcAqH76/LfpqnTAPzgN++McAvm2xOvL+NZi4fpW+D8Ikg1DxPb4tjt
+	Cswrj27UGZRS+sJcPPMUf5JMeut/6nPY3bX81WEBLzY1b6r8mnAeRqAmoLi1TJl2B84gfW
+	9G6SeKfaXZLW0j1+M291jcxRfWtkBL8=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CE9DB134B3
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:12:50 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5F148134B3
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 22:25:34 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id m6PgC+IK6WrZGwAAD6G6ig
+	id 7rihLN0N6Wr8JwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 22:12:50 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 22:25:34 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: enhance device preparation for discard=ignore cases
-Date: Tue,  3 Nov 2026 08:42:28 +1030
-Message-ID: <4b3dbca327d5a9a832e9fc0fb4ea332888574e6b.1793657525.git.wqu@suse.com>
+Subject: [PATCH v2] btrfs-progs: enhance device preparation for discard=ignore cases
+Date: Tue,  3 Nov 2026 08:55:15 +1030
+Message-ID: <40f08ffabe8de460c6da4c6c67b2e5767f436908.1793658275.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -86,6 +86,11 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: 782071F82A
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -112,13 +117,8 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+];
 	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:dkim]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
 X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: EFE0C1FAA7
 
 [BUG]
 For qemu/KVM guests where the storage has 'discard=ignore' set,
@@ -166,17 +166,22 @@ Fix the problem and hardening the data wipe out by:
 Issue: #1198
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/device-utils.c | 32 ++++++++++++++++++++++++++++----
- 1 file changed, 28 insertions(+), 4 deletions(-)
+Changelog:
+v2:
+- Fix the return value if fsync() failed
+  fsync() always return -1, but populates errno.
+---
+ common/device-utils.c | 36 ++++++++++++++++++++++++++++++++----
+ 1 file changed, 32 insertions(+), 4 deletions(-)
 
 diff --git a/common/device-utils.c b/common/device-utils.c
-index 6c81183887d3..10fbeef7107f 100644
+index 6c81183887d3..31364bd7a2f3 100644
 --- a/common/device-utils.c
 +++ b/common/device-utils.c
 @@ -48,6 +48,10 @@
  #define BLKDISCARD	_IO(0x12,119)
  #endif
- 
+
 +#ifndef BLKZEROOUT
 +#define BLKZEROOUT	_IO(0x12,127)
 +#endif
@@ -185,9 +190,9 @@ index 6c81183887d3..10fbeef7107f 100644
   * Discard the given range in one go
   */
 @@ -127,6 +131,15 @@ int device_zero_blocks(int fd, off_t start, size_t len, bool direct)
- 
+
  #define ZERO_DEV_BYTES SZ_2M
- 
+
 +static int device_zeroout_range(int fd, u64 start, u64 len)
 +{
 +	u64 range[2] = { start, len };
@@ -205,13 +210,13 @@ index 6c81183887d3..10fbeef7107f 100644
  {
  	off_t end = max(start, start + len);
 +	int ret;
- 
+
  #ifdef __sparc__
  	/* Don't overwrite the disk labels on SPARC. */
-@@ -148,7 +162,13 @@ static int zero_dev_clamped(int fd, struct btrfs_zoned_device_info *zinfo,
+@@ -148,7 +162,17 @@ static int zero_dev_clamped(int fd, struct btrfs_zoned_device_info *zinfo,
  	if (zinfo && zinfo->model == ZONED_HOST_MANAGED)
  		return zero_zone_blocks(fd, zinfo, start, end - start);
- 
+
 -	return device_zero_blocks(fd, start, end - start, false);
 +	if (!device_zeroout_range(fd, start, end - start))
 +		return 0;
@@ -219,14 +224,18 @@ index 6c81183887d3..10fbeef7107f 100644
 +	ret = device_zero_blocks(fd, start, end - start, false);
 +	if (ret < 0)
 +		return ret;
-+	return fsync(fd);
++
++	ret = fsync(fd);
++	if (ret < 0)
++		return -errno;
++	return 0;
  }
- 
+
  /*
-@@ -279,6 +299,13 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
+@@ -279,6 +303,13 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
  		}
  	}
- 
+
 +	/*
 +	 * Discard drops the page cache and may not zero the data (e.g. QEMU
 +	 * discard=ignore), so it must come before zeroing.
@@ -237,16 +246,16 @@ index 6c81183887d3..10fbeef7107f 100644
  	ret = zero_dev_clamped(fd, zinfo, 0, ZERO_DEV_BYTES, byte_count);
  	for (i = 0 ; !ret && i < BTRFS_SUPER_MIRROR_MAX; i++)
  		ret = zero_dev_clamped(fd, zinfo, btrfs_sb_offset(i),
-@@ -293,9 +320,6 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
+@@ -293,9 +324,6 @@ int btrfs_prepare_device(int fd, const char *file, u64 *byte_count_ret,
  		goto err;
  	}
- 
+
 -	if (!(opflags & PREP_DEVICE_ZONED) && (opflags & PREP_DEVICE_DISCARD))
 -		prepare_discard_device(file, fd, byte_count, opflags);
 -
  	ret = btrfs_wipe_existing_sb(fd, zinfo);
  	if (ret < 0) {
  		error("cannot wipe superblocks on %s", file);
--- 
+--
 2.56.0
 

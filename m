@@ -1,67 +1,55 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=193.142.43.55
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793634780;
-	b=PAfN5Ihn36zSODYqeaYnDB25CRL3kPqCzW1VySiHp6A9nJkwyCpUN1KSESB8Oow2FGbL
-	 +KcoY3vJ9OHS5bqHBxJAqidza+avRfy3iFpFHKRteiAECNbX792zxBQmUL7TWdAXvkNiK
-	 rdYt4fudwgGXfYGSXz1xX1nx7rSo4kPMT8UVLv/b9ac1PNK7lI/3+8dFzCA13uHioYz1i
-	 P3LwBCSKC3dnvT7LKr7AB+quBuNfFqZrxEhFuVirZ/wMEw1ac2fEJdQWYB12kLcr8ohLX
-	 vwS3C4bJ0X7K95hy9AsbPHRYRVqD4RjcVy88Vzp96c89UDdUTOEdEGn0tk0aR7poPEg==
+	t=1793635339;
+	b=p5Q2C4JscMAn6r6FrWLCbcvVuo4yxlIZgwT+4zbWPADCqVvoFIc3l+KdshgJ7b26B4dF
+	 0JrGv6/Co3TbJfxDGjmsxLMS9d1+YuQ+rU9IRiApHbrFfesjDiL79I/uG0Wcr1Zcwaxcm
+	 DJIPkw5+bPV4PRaIuehkVL3muvo4vDVk6zbKYa/M6Wn+MJ9JE4Q6F0zEKET8WYS2X2ehs
+	 httjusNELNI1znX7XQPuYWAMOpNo/6XDBa+5zJBhXkGMFbFgev9wzz7DGpeRe5xEYTO5I
+	 ixNL5M4W1rCcxwcYlOILr7+SPYStvPmf3RzSqrePnAWx/F4NPeysG5qF/4S+sWUGuAA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793634780;
-	h=DMARC-Filter:Date:DKIM-Signature:DKIM-Signature:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To;
-	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
-	b=kYsVG+2J2KjcM6Rc4v2SqM353CRKX+OHUcInZnYM1FonR91Aj04VYGce3soJG/Vuxx0s
-	 W/nOKw8InyWEyfAEkcsByV+3mOqQNs4YAoMok977vMkS79/3Bp8JB4c7M7JRDAFlPPAtV
-	 RMTckR5OslBD0KwcsJacVGMHGOfPCN37CfaAm0V0hlGKppqTX6aELVVQ4PPHKJI3kz3DR
-	 zf43X73aZc/bckzl4KEv2b7V78bu8YTSMYVodRadrFVrqueBGbh15GshEWa4Fe8LrrXFR
-	 dn1bgD0CbFceXt/XUKUSKKei4RQqwFrMRuTleqjNZ8cXZSRKy74gDyuVCPjRrANjoHQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793635339;
+	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=my3Gy4VhBcCnxn3lpGePp3/MUKijhn1RD2kN7QnV5ow=;
+	b=NOM582adoo50uFyoza6RtbcnczFx9W4/rjaZ8Zgxy0pmg+QIvmoQqioF3CmrnmRIWaIG
+	 PE1z36BM/9Dko8zCLiy1f7aOUI18FegFE8nj8dhoOR7/e6sbPy+SrPX0xu4NlFh5ofgXK
+	 Q0TAgadOELRxQRMVxG3jAoHS8zOKfkON0YbO4u/gTSx1HF0nw44BXFCnTgju5GodmSLhZ
+	 KN01dMe6027VUuXAxaPUGGHkRq9I2WdprqnWoN6nBR7qV1JEk3qj5q1ARl3cniEjPTNou
+	 RsDJ0D/15sBaFwsme0gdz3Nt6DlOIVFKUufNk89Xx70OrT+DrsC9nNgCCvaLbQCBMmQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=linutronix.de;
-	spf=pass smtp.mailfrom=linutronix.de;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=sLffMh0B;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=V0mwhSgj;
-	arc=none smtp.remote-ip=193.142.43.55
-Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DJ5U5Pab;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 854CB606A584;
-	Mon,  2 Nov 2026 15:52:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 854CB606A584
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C30D606A598
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 16:02:19 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=sLffMh0B;
-	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=V0mwhSgj
-Date: Mon, 2 Nov 2026 16:52:54 +0100
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020; t=1793634775;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
-	b=sLffMh0BUO9IemDLOjs2NyYeRf3SeBlmqDJBrgKsW9IQjwZZzCRZjTNz+JFi1uOQHs2JhO
-	t8n6uXSvMZ+oEa0OKraydUhCf2hvFsnlGcy+2gCaZkxXoQH7BC/UNVde3v/fdHWtYlLMib
-	gJBvkn3kY3U27G2+1txgjxx7eRmqCtaCxNEWIag/w8whkmGPX2eAZh1rAYRE439rC+UaRO
-	GkTaHit3rbRpqs4EVS/9T6+DmLTFeJfnN1I5oBLDp0yGwEoos5HnY0QDDQ/CyQBDXE/zKJ
-	eoU0Or7EzryAhwfrG4NmQLyehXZlkYaOSK2bZ1pLynT5JDjAgec2uKFbXgUKAg==
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
-	s=2020e; t=1793634775;
-	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
-	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
-	b=V0mwhSgjH0D0MmkE+M1GdYLYtfHRZlsuGY/SEpKYqSfuqBsTdtcz9evLm985JJo9IRPPEE
-	eLtdPYemoOCgQ6DQ==
-From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-To: Daniel Vacek <neelx@suse.com>
-Cc: linux-btrfs@vger.kernel.org, "Naulls, Peter" <PeterNaulls@eaton.com>,
-	linux-rt-devel@lists.linux.dev, stable@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix a livelock in wait_for_commit() on PREEMPT_RT
-Message-ID: <20261102155254.XxBU8-kd@linutronix.de>
-References: <20261030153617.329733-1-neelx@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DJ5U5Pab
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 29CAB1F00A1D
+	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2026 16:02:19 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1793635339;
+	bh=my3Gy4VhBcCnxn3lpGePp3/MUKijhn1RD2kN7QnV5ow=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=DJ5U5PabOmA/ey/5VjSH6gWp7xcsN6kcQEujnrwH8+5TEy/9vQyT+8QkLM/rdd8+4
+	 /9Feok7QwkpV+5tHZ3qaBHqaleIelJ+CJVi9Llm9JosTvkF2T5N6JWsRqkb5YPBk5G
+	 egTyxaSZ3B4YcHsINFY9oxatYAUBFFP+UZgN9LwGQMw3qqBKyCaZW9uAjmb8igLIIj
+	 b/5z7rAJeWMccktDeDU0dHO3oAYBc48vE5+b/6WYPnL92ynFGemx/G/txA8UiJG/bd
+	 mNLD8YCSC95hMpOBhCVE1Zk6FVAB5a80/J2tuLR1sPIu4LhBJ8kyNVwb1FSDkSR5Uw
+	 +ZBQv5SmG0j4Q==
+Received: by mail-vk1-f181.google.com with SMTP id 71dfb90a1353d-5e948e56af3so1019391e0c.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 08:02:19 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AKwUvByy4AcvAQwnmpBSwLJPl/NBDfzG97RrljxgatSKbjG5w+qNIzmNLHaRVHZHuz5aX+rXd8FEo5lTGn63Nw==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+j/cTVjH3eu7BHr6081oU46Xtyw6GwERxEU60WQrt3jEnRat+6
+	ioyFbIG+21CQg0qjfX0j5pJjCpabfWjgT0rYHjQmPS1onROFXAKifdOFIRSVEBEMHO1/6pGnxWv
+	p1+bcQ1+CXhLfpbsu6FJ3C5TZwwBtyuo=
+X-Received: by 2002:a05:6122:9006:b0:5e9:5e79:ab3 with SMTP id
+ 71dfb90a1353d-5ec689b817amr4907502e0c.21.1793635338188; Mon, 02 Nov 2026
+ 08:02:18 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -71,49 +59,109 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20261030153617.329733-1-neelx@suse.com>
+References: <20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com>
+ <20261030-b4-btrfs-data-integrity-v1-1-f4d4196731e6@toxicpanda.com>
+In-Reply-To: <20261030-b4-btrfs-data-integrity-v1-1-f4d4196731e6@toxicpanda.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 2 Nov 2026 16:01:42 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6VYYcfH+WHVZW482_6f2EPoyPFE-_qbyPfcS580LhPhQ@mail.gmail.com>
+X-Gm-Features: AclHuK_KPgnKhXM8k7V-XuqKmmKo6NZT17VCZXB4CaNbVG-gg0vK1J3OI0FLct8
+Message-ID: <CAL3q7H6VYYcfH+WHVZW482_6f2EPoyPFE-_qbyPfcS580LhPhQ@mail.gmail.com>
+Subject: Re: [PATCH 1/5] btrfs: don't drop the error of the last split bio
+To: Josef Bacik <josef@toxicpanda.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+	Naohiro Aota <naohiro.aota@wdc.com>, Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
+	Qu Wenruo <wqu@suse.com>, Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 2026-10-30 16:36:17 [+0100], Daniel Vacek wrote:
-> Peter reported [1] that running multiple RR tasks doing sync()
-> on fully preemptible kernel may starve other/normal sync() tasks
-> due to fs_info::trans_lock turned into rt_mutex.
+On Fri, Oct 30, 2026 at 2:38=E2=80=AFPM Josef Bacik <josef@toxicpanda.com> =
+wrote:
+>
+> When a btrfs_bio had to be split, btrfs_bio_end_io() saves the first erro=
+r
+> of any of its parts in the status field of the original btrfs_bio. The
+> part that completes last is supposed to load it into bi_status of the
+> original bio before calling the end_io handler, but that is only done if
+> that last part was successful:
+>
+>         if (atomic_dec_and_test(&bbio->pending_ios)) {
+>                 /* Load split bio's error which might be set above. */
+>                 if (status =3D=3D BLK_STS_OK)
+>                         bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+>
+> If the last part failed, the assumption is that bi_status was set at the
+> top of the function. That is true if the last part is what is left of the
+> original bio. If it is a split bio, the assignment was done to the split
+> bio, which was freed right after. If the original bio has completed befor=
+e
+> without an error, its bi_status is BLK_STS_OK and stays like that:
+>
+>   original bio (tail)                 split bio (head)
+>
+>   btrfs_bio_end_io(orig, OK)
+>     orig->bio.bi_status =3D OK
+>     pending_ios 2 -> 1
+>                                       btrfs_bio_end_io(split, IOERR)
+>                                         split->bio.bi_status =3D IOERR
+>                                         bio_put(split)
+>                                         cmpxchg(&orig->status, OK, IOERR)
+>                                         pending_ios 1 -> 0
+>                                         orig->end_io(), bi_status is OK
+>
+> The end_io handler covers the whole range, so for a buffered read all the
+> folios are marked uptodate, including the ones that were never filled, an=
+d
+> read(2) returns their content instead of -EIO. For a write the ordered
+> extent is completed as if all the data had reached the device.
+>
+> This can be reproduced with raid0 data on two devices, one of them slower
+> than the other and with a bad block, by reading a file whose last stripe
+> is on the fast device.
+>
+> The saved status has the first error of all the parts, or BLK_STS_OK if
+> there was none, so always use it.
+>
+> Fixes: d48e1dea3931 ("btrfs: fix error propagation of split bios")
+> CC: stable@vger.kernel.org # 6.12+
+> Assisted-by: LLM
+> Signed-off-by: Josef Bacik <josef@toxicpanda.com>
 
-I don't want to nitpick here but 
-/fully preemptible/PREEMPT_RT 
-/RR/SCHED_FIFO or maybe better /RR/real-time priority
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-> This is caused by RR tasks contending over the mutex with priority over
-> other tasks, which in turn lack progress and they are no longer able to
-> remove TRANS_STATE_COMPLETED transactions from the fs_info::trans_list.
+Looks good, thanks.
 
-Yes, the important detail is that rt_mutex gives the lock to the task
-with the highest priority even if it comes last and the long waiting
-SCHED_OTHER will remain waiting. In contrast to raw_spinlock_t (the
-spinlock_t on !PREEMPT_RT) will rotate over every waiter.
-
-> The offenders start looping in wait_for_commit() expecting the completed
-> transactions to get off the trans_list but since they're bouncing the
-> trans_lock the tasks with other/normal priority which are about to delist
-> such transactions never get a chance to do so due to lower priority.
-> 
-> A simple reproducer can be found in the mentioned email thread [1].
-> 
-> The situation can be resolved by boosting the priority of the starved
-> tasks or dropping priority of the offenders. Thought this fix prevents
-> the situation from happening in the first place. We simply delist the
-> transactions before changing them to completed state. That breaks the
-> loop condition.
-> 
-> [1] https://lore.kernel.org/linux-btrfs/SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com/
-> 
-> Reported-by: Naulls, Peter <PeterNaulls@eaton.com>
-> Fixes: 5fd76bf31ccfe ("btrfs: fix relocation crash due to premature return from btrfs_commit_transaction()")
-> CC: stable@vger.kernel.org # 5.15+
-> Tested-by: Naulls, Peter <PeterNaulls@eaton.com>
-> Signed-off-by: Daniel Vacek <neelx@suse.com>
-
-Thank you for looking into this.
-
-Sebastian
+> ---
+>  fs/btrfs/bio.c | 9 ++++++---
+>  1 file changed, 6 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+> index 2c6234f6182f..fc0b021cdefb 100644
+> --- a/fs/btrfs/bio.c
+> +++ b/fs/btrfs/bio.c
+> @@ -127,9 +127,12 @@ void btrfs_bio_end_io(struct btrfs_bio *bbio, blk_st=
+atus_t status)
+>                 cmpxchg(&bbio->status, BLK_STS_OK, status);
+>
+>         if (atomic_dec_and_test(&bbio->pending_ios)) {
+> -               /* Load split bio's error which might be set above. */
+> -               if (status =3D=3D BLK_STS_OK)
+> -                       bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+> +               /*
+> +                * Load the first error, if any. It may come from a split=
+ bio,
+> +                * including the one we were called for, in which case no=
+thing
+> +                * stored it in the original bio yet.
+> +                */
+> +               bbio->bio.bi_status =3D READ_ONCE(bbio->status);
+>
+>                 if (bbio_has_ordered_extent(bbio)) {
+>                         struct btrfs_ordered_extent *ordered =3D bbio->or=
+dered;
+>
+> --
+> 2.55.0
+>
+>

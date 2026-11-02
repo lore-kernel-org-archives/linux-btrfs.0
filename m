@@ -1,71 +1,67 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=193.142.43.55
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793633929;
-	b=3IEv5/59GwfcTgAfrYhqfNkBu7beRnl4SS3eA8JRBfAOJNS8Hib8gXvTD3fwuo5EdCY5
-	 CNKykuzQhsctC3+mHpbO4gkTTOkCTnQMBZJdHg/qNblqxSsXflcJLIlzYg03gSPTEm+UK
-	 XnEKhWfU5/cTOxUqciCLq5XlEymiq4yLzQJPNY38vKs+QTay6yPbPl1zOP6ivzWxoCrzc
-	 6ZGTQsXGS6rKWfKeU73kJ8VCnvQdAmMsZrbJTK6Ke5cYX29cxpEBC0k8R+8NOwych15jY
-	 2EMu4ff/fSH3XR7ZWrng23OLltu45o+Wt1x+mOxclH9gzgUEnibDIOLkzcoVB7BLkTw==
+	t=1793634780;
+	b=PAfN5Ihn36zSODYqeaYnDB25CRL3kPqCzW1VySiHp6A9nJkwyCpUN1KSESB8Oow2FGbL
+	 +KcoY3vJ9OHS5bqHBxJAqidza+avRfy3iFpFHKRteiAECNbX792zxBQmUL7TWdAXvkNiK
+	 rdYt4fudwgGXfYGSXz1xX1nx7rSo4kPMT8UVLv/b9ac1PNK7lI/3+8dFzCA13uHioYz1i
+	 P3LwBCSKC3dnvT7LKr7AB+quBuNfFqZrxEhFuVirZ/wMEw1ac2fEJdQWYB12kLcr8ohLX
+	 vwS3C4bJ0X7K95hy9AsbPHRYRVqD4RjcVy88Vzp96c89UDdUTOEdEGn0tk0aR7poPEg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793633929;
-	h=Received:DKIM-Signature:Received:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To:User-Agent;
-	bh=VJqjaO5K9E/B76JPrTD775/RWHSZm7cCk23GyJS2CyE=;
-	b=SyCgX0KNuPQDmEv3PLtEeyttaZ1AISU/7IVp02upYHxMy/c9lrNb7SOZcDPmH73AXN1/
-	 UpQ2IyDGlQShvVHyVNohQ3EvgNoHdLOnnIMzIkORwGbsGlHFDT59piyJAWeaA7q08LH9/
-	 /L9cQQvbT8WYcuuCdvrZMNKahMWhdsddeyVENcFvFlYP76EB+cUPuVxHErHpMc8t4Ee6+
-	 pXqO5SJGXWDRjQlX/pF/gafHsPQd0ay6VQrUs861vXRpU0C6EIWg66gzaw/mZ7SV71Tti
-	 DE7YQ9VHkJU/dw7klQMUaNSQWQXGJx4Shf66DBuU/6XynCf8CO7CxG4I5GgodeK+YUw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793634780;
+	h=DMARC-Filter:Date:DKIM-Signature:DKIM-Signature:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To;
+	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
+	b=kYsVG+2J2KjcM6Rc4v2SqM353CRKX+OHUcInZnYM1FonR91Aj04VYGce3soJG/Vuxx0s
+	 W/nOKw8InyWEyfAEkcsByV+3mOqQNs4YAoMok977vMkS79/3Bp8JB4c7M7JRDAFlPPAtV
+	 RMTckR5OslBD0KwcsJacVGMHGOfPCN37CfaAm0V0hlGKppqTX6aELVVQ4PPHKJI3kz3DR
+	 zf43X73aZc/bckzl4KEv2b7V78bu8YTSMYVodRadrFVrqueBGbh15GshEWa4Fe8LrrXFR
+	 dn1bgD0CbFceXt/XUKUSKKei4RQqwFrMRuTleqjNZ8cXZSRKy74gDyuVCPjRrANjoHQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=BmkYZwb7;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=linutronix.de;
+	spf=pass smtp.mailfrom=linutronix.de;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=sLffMh0B;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=V0mwhSgj;
+	arc=none smtp.remote-ip=193.142.43.55
+Received: from galois.linutronix.de (Galois.linutronix.de [193.142.43.55])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3E556606B1C8;
-	Mon,  2 Nov 2026 15:38:49 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 854CB606A584;
+	Mon,  2 Nov 2026 15:52:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 854CB606A584
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linutronix.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linutronix.de
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=BmkYZwb7
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8BFF41F00A17;
-	Mon,  2 Nov 2026 15:38:48 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793633928;
-	bh=VJqjaO5K9E/B76JPrTD775/RWHSZm7cCk23GyJS2CyE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=BmkYZwb7Hs5zwPysZ5Kbl9fP9AMmO7IR2bykQ5NA7X3z6kB06OVeJj5nemJnHncK9
-	 ZPjbEB8hAlAkehkrzV7bHpiWjMzp8GBRWMtNSZVKxUvfhHwy/NXma4fb7tQIAlbwCq
-	 KLAc65lW9AYc2FnhJl7eFFm6Ez0/0/gfiQmjMba9umO8Erv9V426ETgi7Ou/5/IoWu
-	 oVcPMRJCNjLzy8fjFkuQiXZStL8cXxzNrdwawemQkMte9/6qoy3URP7oZyc5Z+90gP
-	 ANSFbWhluWAKjuPtvrcVp+jSpjnzpAO5XYzO2r1Wx7GWuuLuzwbbb6gGOMG/PaRDpV
-	 cnQCu2MUVw8jw==
-Received: by pali.im (Postfix)
-	id A2841A13; Mon,  2 Nov 2026 16:38:45 +0100 (CET)
-Date: Mon, 2 Nov 2026 16:38:45 +0100
-From: Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>
-To: Amir Goldstein <amir73il@gmail.com>
-Cc: koraynilay <koray.fra@gmail.com>, David Sterba <dsterba@suse.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>,
-	Namjae Jeon <linkinjeon@kernel.org>,
-	Sungjong Seo <sj1557.seo@samsung.com>,
-	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-	Chris Mason <mason@kernel.org>, Jan Kara <jack@suse.cz>,
-	Yuezhang Mo <yuezhang.mo@sony.com>, Chuck Lever <cel@kernel.org>,
-	"Darrick J . Wong" <djwong@kernel.org>,
-	Sean Smith <defendthedisabled@gmail.com>,
-	Andrey Albershteyn <aalbersh@kernel.org>,
-	Pedro Falcato <pfalcato@suse.de>, linux-btrfs@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	exfat@lists.linux.dev, ntfs3@lists.linux.dev,
-	linux-api@vger.kernel.org
-Subject: Re: [RFC PATCH v3 3/5] ntfs3: make crtime user-settable using ptime
-Message-ID: <20261102153845.d67wlorqcbe3c2w7@pali>
-References: <20261101015551.786044-1-koray.fra@gmail.com>
- <20261101015551.786044-4-koray.fra@gmail.com>
- <20261102142452.d6jkitgdeuquy23i@pali>
- <CAOQ4uxhQ3uhq6s+4deEJAQV5iy8QZoucojR58_dUNYrnjt_yvA@mail.gmail.com>
+	dkim=pass (2048-bit key, unprotected) header.d=linutronix.de header.i=@linutronix.de header.a=rsa-sha256 header.s=2020 header.b=sLffMh0B;
+	dkim=pass header.d=linutronix.de header.i=@linutronix.de header.a=ed25519-sha256 header.s=2020e header.b=V0mwhSgj
+Date: Mon, 2 Nov 2026 16:52:54 +0100
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020; t=1793634775;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
+	b=sLffMh0BUO9IemDLOjs2NyYeRf3SeBlmqDJBrgKsW9IQjwZZzCRZjTNz+JFi1uOQHs2JhO
+	t8n6uXSvMZ+oEa0OKraydUhCf2hvFsnlGcy+2gCaZkxXoQH7BC/UNVde3v/fdHWtYlLMib
+	gJBvkn3kY3U27G2+1txgjxx7eRmqCtaCxNEWIag/w8whkmGPX2eAZh1rAYRE439rC+UaRO
+	GkTaHit3rbRpqs4EVS/9T6+DmLTFeJfnN1I5oBLDp0yGwEoos5HnY0QDDQ/CyQBDXE/zKJ
+	eoU0Or7EzryAhwfrG4NmQLyehXZlkYaOSK2bZ1pLynT5JDjAgec2uKFbXgUKAg==
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=linutronix.de;
+	s=2020e; t=1793634775;
+	h=from:from:reply-to:subject:subject:date:date:message-id:message-id:
+	 to:to:cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=qJ9CDNyfi0b8bi4oc+B3vwfFf2lhdQn7U7nevKnjIhk=;
+	b=V0mwhSgjH0D0MmkE+M1GdYLYtfHRZlsuGY/SEpKYqSfuqBsTdtcz9evLm985JJo9IRPPEE
+	eLtdPYemoOCgQ6DQ==
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+To: Daniel Vacek <neelx@suse.com>
+Cc: linux-btrfs@vger.kernel.org, "Naulls, Peter" <PeterNaulls@eaton.com>,
+	linux-rt-devel@lists.linux.dev, stable@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix a livelock in wait_for_commit() on PREEMPT_RT
+Message-ID: <20261102155254.XxBU8-kd@linutronix.de>
+References: <20261030153617.329733-1-neelx@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -77,94 +73,47 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAOQ4uxhQ3uhq6s+4deEJAQV5iy8QZoucojR58_dUNYrnjt_yvA@mail.gmail.com>
-User-Agent: NeoMutt/20180716
+In-Reply-To: <20261030153617.329733-1-neelx@suse.com>
 
-On Monday 02 November 2026 16:09:41 Amir Goldstein wrote:
-> On Mon, Nov 2, 2026 at 3:24 PM Pali Rohár <pali@kernel.org> wrote:
-> >
-> > On Sunday 01 November 2026 02:55:49 koraynilay wrote:
-> > > @@ -154,6 +158,11 @@ int ntfs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
-> > >       if (flags & FS_APPEND_FL)
-> > >               new_fl |= S_APPEND;
-> > >
-> > > +     if (fa->fsx_xflags & FS_XFLAG_PTIME) {
-> > > +             ni->i_crtime.tv_sec = fa->fsx_ptime.tv_sec;
-> > > +             ni->i_crtime.tv_nsec = fa->fsx_ptime.tv_nsec;
-> > > +     }
-> > > +
-> > >       inode_set_flags(inode, new_fl, S_IMMUTABLE | S_APPEND);
-> > >
-> > >       /* Save nodump flag to return in ntfs_getattr. */
-> > > @@ -275,8 +284,9 @@ int ntfs_getattr(const struct mnt_idmap *idmap, const struct path *path,
-> > >       if (unlikely(is_bad_ni(ni)))
-> > >               return -EINVAL;
-> > >
-> > > -     stat->result_mask |= STATX_BTIME;
-> > > +     stat->result_mask |= (STATX_BTIME | STATX_PTIME);
-> > >       stat->btime = ni->i_crtime;
-> > > +     stat->ptime = ni->i_crtime;
-> >
-> > For me this patch looks dangerous. Somehow I would expect that the
-> > "btime" will never change for existing inode.
-> >
-> > But because the ptime is mapped to i_crtime and ptime is settable from
-> > userspace, with this patch it is directly possible to change btime.
-> >
-> >
-> >
-> > I was thinking more about it... Is not this just misunderstanding of how
-> > the security model around the times is working on different systems?
-> > Because on NTFS there is stored just one field which says when the file
-> > was created. There are not two fields like "time set by user and time
-> > set by system".
-> >
-> > Windows security model allows anybody with WRITE_ATTRIBUTES access to
-> > change that create time. Linux security model does not allow to change it.
-> >
-> > NTFS in this view is just a filesystem like any other (ext4, btrfs, ...).
-> > In my opinion if the ext4 or btrfs filesystem is correctly implemented
-> > on Windows systems, then Windows security model should handle it in the
-> > same way like for NTFS or exFAT. So if something grants WRITE_ATTRIBUTES
-> > access, then Windows should allow to change also btime on ext4 or btrfs.
-> >
-> >
-> >
-> > On the other hand, I understand the use case to have two creation times.
-> > One time which would never be changed and could be used for any kind of
-> > atomic / synchronization by userspace application logic (this btime).
-> > And another time for human which can be changed at any time to any value
-> > which user wants (this ptime).
-> >
-> > In any case, I would suggest that filesystem driver would not report to
-> > userspace unsupported values and would not try to invent other values
-> > and lying about them.
+On 2026-10-30 16:36:17 [+0100], Daniel Vacek wrote:
+> Peter reported [1] that running multiple RR tasks doing sync()
+> on fully preemptible kernel may starve other/normal sync() tasks
+> due to fs_info::trans_lock turned into rt_mutex.
+
+I don't want to nitpick here but 
+/fully preemptible/PREEMPT_RT 
+/RR/SCHED_FIFO or maybe better /RR/real-time priority
+
+> This is caused by RR tasks contending over the mutex with priority over
+> other tasks, which in turn lack progress and they are no longer able to
+> remove TRANS_STATE_COMPLETED transactions from the fs_info::trans_list.
+
+Yes, the important detail is that rt_mutex gives the lock to the task
+with the highest priority even if it comes last and the long waiting
+SCHED_OTHER will remain waiting. In contrast to raw_spinlock_t (the
+spinlock_t on !PREEMPT_RT) will rotate over every waiter.
+
+> The offenders start looping in wait_for_commit() expecting the completed
+> transactions to get off the trans_list but since they're bouncing the
+> trans_lock the tasks with other/normal priority which are about to delist
+> such transactions never get a chance to do so due to lower priority.
 > 
-> But all those fs with mutable creation time already report it with STATX_BTIME
-> so what can we do about this?
-
-Well, what I wanted above to point out is that the "mutability" of
-creation time is not feature of filesystem, but in my opinion rather
-property of the security model on the running operating system.
-
-Maybe better question is: how ext4 btimes differs from the ntfs btime?
-In my opinion there is no much difference, both of them has meaning
-"time when was the file created".
-
-> If userspace requests both STATX_BTIME|STATX_PTIME in mask arg,
-> those fs could technically return only STATX_PTIME and it should not regress
-> existing programs.
+> A simple reproducer can be found in the mentioned email thread [1].
 > 
-> But this is still a bit surprising behavior is it not?
+> The situation can be resolved by boosting the priority of the starved
+> tasks or dropping priority of the offenders. Thought this fix prevents
+> the situation from happening in the first place. We simply delist the
+> transactions before changing them to completed state. That breaks the
+> loop condition.
 > 
-> Thanks,
-> Amir.
+> [1] https://lore.kernel.org/linux-btrfs/SJ0PR17MB4288C46458DCE2C015839D0FBB9E2@SJ0PR17MB4288.namprd17.prod.outlook.com/
+> 
+> Reported-by: Naulls, Peter <PeterNaulls@eaton.com>
+> Fixes: 5fd76bf31ccfe ("btrfs: fix relocation crash due to premature return from btrfs_commit_transaction()")
+> CC: stable@vger.kernel.org # 5.15+
+> Tested-by: Naulls, Peter <PeterNaulls@eaton.com>
+> Signed-off-by: Daniel Vacek <neelx@suse.com>
 
-I'm not sure what to do with it.
+Thank you for looking into this.
 
-If we allow to change btime of ntfs then for consistency we should also
-allow to change btime of ext4.
-
-Maybe another idea... define new capability which would allow to change
-btime (on any filesystem)? This would at least make the consistency.
+Sebastian

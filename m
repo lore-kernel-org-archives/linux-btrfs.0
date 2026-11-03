@@ -1,79 +1,78 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793736202;
-	b=lZKAMXUsFwwWrBp2MmSnlrDuuO/fxD0H9WdXeBTwq6xI+r+DyUxNU7afvCw+b6RG1DIk
-	 P1IH0leyKO1Rau8tYcZWSDdm4fjbCJ7gEkTRL8VcQVpKEznKalM/I64N0LPVfi4ePPGX/
-	 gCletmjnYX4KMyE4kuW1/TY1CMqsO+b8L7cyZapZeI++9YPKq//WbUU4NNiS5Q7Zd71pV
-	 nzd+DAmkYlKrW5kgksPb1Kihc2xwGCJ3BGFZZIZ3P/cqc1SHmiJ8KCBRFnz+S3fter3S7
-	 Q4xQK1mb7u8Pg3y73Pdri16AP0KEhmREnGi8tAo7JXEfaPCikVJFMPjF1eqkn0iwrUg==
+	t=1793737799;
+	b=RLwhPv8o7w/KH7EwWF7zjBhUr/+mWPNSyi55dR8dOg7SoIrMkHhhxYlIxV2gg2ky8Tsl
+	 Qpc+w2PiU5GMhmcfl0KeQfuD9mA1H2sDZlMUXYhJKseC3E2x7Oz0Rm+CBQnnliiZg2/fr
+	 DQOKh8/pQH/30N5OAOYi95Tq8cKi5JTDPcQBmrBynMvmO/dJtJTotM1XVTvN7O+H0NIzj
+	 LsKL3SMr/H/Xlt1h9+u/CSMm4XxCsvMhyCQqs1qJjLNSZVvCiTMuEWDsSREz5eikXonaY
+	 0L+mpZkFKJEuG6bF7Em9900RNZqMgMd3ykRStxTEvAwH0Uf5whqzktOXI2fc81YfjtA==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793736202;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793737799;
 	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
 	 Content-Type:Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=GIMs1YJrQR1ugDS+TrlJFUtffoilOTXQSJKU4AwMCqM=;
-	b=eLXwEAjV9YxWMAHwggOOn3dcX6CnCisFcThh4IA4bJIhe/p26CzwCzXyWDvq3eKYeKlN
-	 Z6KSIB50xETucjxW64J5LLCZtKOhF8fpuYa2W5pBXuNSoxMcJY/r7Ewd4WZ/uL/7kA9Ql
-	 ZWIziQzRW5GbezKQEUPS/vsxCIppkRNx2WPt8+VMnJpYlEBxGkAfJf12yOI+kw47uYCUA
-	 rYXaGIkjazEQ0b0rkk9c/yivWAe/B5hQcC33w7ydGZE405HnT7ogIpQdeBzH152nrNbOc
-	 fAWqFu3CQh4+eepieiPNW2FjDx04CbUoYtt3GHCe8U2f9dMtCPrE9Inw+9YjYglJ92Q==
+	bh=KzAzJwf4FOBHlJwjUBwevYc6S6EZCFURslleh0SnJ+E=;
+	b=hBtCEACBKQ9+8QN2seKz90nt/cUICSCMPKVouTrXF6atahvvvsjBjuMYBqzongtfnh0N
+	 cQ+n2uxwQFJCbNrj9v9MMoudExll86xhIKXtGgGG3v+w0nUvjIPsyCr1Jj7NJCAyyMC9g
+	 jWGsjEirdu54E7ytNp10TWTUry5npU0z8giCtfrHKb9QUsfavG0Bit7Ba+4wxzZhN1ovt
+	 2gxKRn5Heyq1oHlGbKaLyEe6ErBmvdGbG3BpAtNZfHlyVKqKFx+ZHM6GE+1AhNSwmi+A0
+	 INwz3ACSaPvubd+QswT9CT4tonATqgYqG4go6uhNs1uv+Ed7gua4Z1uwrGjCTpddEtA==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WUS9abmS;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=IFlsyWJM;
 	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 891D5606A31B;
-	Tue,  3 Nov 2026 20:03:22 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 546B4606A31B;
+	Tue,  3 Nov 2026 20:29:59 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WUS9abmS
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=IFlsyWJM
 Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
 ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1793736202;
-	b=UefImCJBzoN+WQU+VYuHKZAy5AtI8ZJDIrVnjxERCFD1Os0oh3jyAZtO0tvx8pSgv1RX
-	 S4K+o5DC1QEDL0Ts2Op067N0pQjBkq1WBCFILzmDn88X7/GCYiOeYc5Yzh40so3RNTs7u
-	 lHUABKHEpMjsGaqPjdSc6eL8TGio8/oa1h+svxMh7in3tqLQQWL484pDYRpZ4e9/p+9U9
-	 6PPgVPD0BcWAQRdtdWq6y9+Bh+wyVphGk5IgUOkLlIJdvEtSax6bdsk0h+blUZPjhIELG
-	 0bQtefzb7AIDwHGmG9LoSzXr79ygZy7elqOdkoixSdobkSHnVteH4uNe+jmUTDyKcZQ==
+	t=1793737798;
+	b=CpIe3XHt4EV8zfF+uGSxXIDW1nEF94IDagL6MGvFdHqOaaqEVMRcfVdbTpI+icqQFQaG
+	 +KdRIZcZeefBHNmKrwA1/drb1ii87kEs5otUMhAAK5c66XaL8USIyQFHJqskNRB30rwea
+	 WwhVAacjDrvRpebVlTNM6FsrJTLRdp39UWfAI+QknV1RVvT2917PpIO0sU6NMDj/n7rRv
+	 lHBrzUFpoiTqi6FdsWWQeBX6rCFnndJRKtBkswbMYbVdYVX1d/JL5dBJv2z1t+zujVpDx
+	 y/ziyA9OWwt5Od8Aw93Um0c3CbNwBjGGA360oB8vb9fhOBLTlf4z3FXOTKIrzynGglQ==
 ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1793736202;
+	c=relaxed/relaxed; t=1793737798;
 	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
 	 Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
 	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
 	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=GIMs1YJrQR1ugDS+TrlJFUtffoilOTXQSJKU4AwMCqM=;
-	b=mckztlEjhc62Zj9BxKd/SvurwqMGIzo3Oi07PxktWHrdJyKh9muFugKNzyPz6Ofz4gff
-	 WHNx+z3ewNH6xyNRCX+gT8xJQeHZg1UXn+s7n8ZWms1SZqAhy9+XD8HNGhkPUATqSlfMw
-	 PKufFIl0BPCS3bSTtpNl/t4xVB5iBEJf8fXl+WMx06orltuh4u/Dng98zNUyyU41m2n9r
-	 G2KBFOg/g0+FiIB1s0FBMIMMvAR++JIkaq/oCXkHP9D+6UnieG7+igoN33OqUUtXcb5ST
-	 GLkevxGAur484H8RD1LsXCeCdFpcAkj8QIDvGxVIeDuVACrGQaXrYdWQlnslJsVXEOQ==
+	bh=KzAzJwf4FOBHlJwjUBwevYc6S6EZCFURslleh0SnJ+E=;
+	b=dqirJe2hTYE3cv2GZ7ad4jjw3F6BoK4ePfr0bieH6Bh4raaX/4FwW4jdai5MNW4qxRnN
+	 PhWhcpJLfTpQ5zkbMHM7CqZGDuHJC28mH/U4YP5yedletrvfNFXe9tsMoScrUWLnrpkJd
+	 PPvZUMAOJdNz3dK67jXeWHCA0MUW7bdE+dS732b9DA3v4EYaiHW0DiTSoEryPUUbAKeeN
+	 fkClWObsXYoIqUCyUdOptHmdm+CigHrWW1MPCX8BB1upNfzR5Bg6Q3Ufasijn7R5xw2gO
+	 DJj69nGva732VXWy4VpBVvIwxutjPZGQbTopZ+gURvPzWhCEG3asDwPytBT4rvoGpyg==
 ARC-Authentication-Results: i=1; smtp.kernel.org; 
 	arc=none smtp.remote-ip=100.80.115.77
 Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id D27F71F000C1;
-	Tue,  3 Nov 2026 20:03:21 +0000 (UTC)
+	by smtp.kernel.org (Postfix) with ESMTPS id 5D67F1F000C1;
+	Tue,  3 Nov 2026 20:29:58 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793736202;
-	bh=GIMs1YJrQR1ugDS+TrlJFUtffoilOTXQSJKU4AwMCqM=;
+	s=k20260515; t=1793737798;
+	bh=KzAzJwf4FOBHlJwjUBwevYc6S6EZCFURslleh0SnJ+E=;
 	h=From:Date:Subject:To:Cc:Reply-To;
-	b=WUS9abmS/zkyjFkjfse8JT6//dm5rb3MhXWsN743vApIAqQQHbE6Iv/Ziv0uNmGXr
-	 1Yi4qtzqL5V11Ri/GUUqNQrpGkH7ZDomscZc/l/6Dmj4HqohoV9iGw7vYKjHEg9qaZ
-	 oGL43jmldfl+kcAz7Uwy8vn641usc7+Br6CDvYh1fkLMzqDhn4SsKfs37Bs1WsUXZy
-	 94n86tT0y9w7OjoGBE9KDlf1H29rc/QOT8zBDBgeE1SCY5BpByY6jBqFiX/MTy/vg1
-	 V7IhZOzBv3hlL0ap0J1RWIq4viJPjevU4/Px7A/eKj56LrYbi2K7eE8aU3A3FqJ79d
-	 Gf552NWp3UuoA==
+	b=IFlsyWJMyUFbzxLJ5neXheCx1IFNvnS+gGAi8/Ny6htCngUnPr3Ry/6AC+pxPpiYR
+	 lqA0wEJBLulog7hZRVknbQpFlNKMx+6QBQ3awbqUqXamu5kpUGGX7ZzfQcUBADaoFq
+	 Ew33/M4wEK/XSRmVm4jano9D07p1iOFHHFYDDleBBgOBnHbnGFHLLA8EqoEcQsAze5
+	 F9PhBR5g/07quePaTpR6+jsf/v/sIrBeu72jGZsSqKKBCdXeBf6ulYCLagIV6cbVft
+	 1pLk3Isv9cndac1I8pDT6tf86YeHXPQrqEoPEq1/5CQCkULnxqZ95S7/OVXd+APV3R
+	 Nj5zcGSPZ5Qzw==
 Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 6453E46ADB;
-	Tue,  3 Nov 2026 20:03:21 +0000 (UTC)
-From: Mani Tofigh via B4 Relay <devnull+mt4022.columbia.edu@kernel.org>
-Date: Tue, 03 Nov 2026 15:03:21 -0500
-Subject: [PATCH v2] btrfs: fix bio counter and bioc leak when async
- checksumming fails
+	by lkml.kernel.org (Postfix) with ESMTP id E1EBD46B01;
+	Tue,  3 Nov 2026 20:29:57 +0000 (UTC)
+From: Peter Lamberg via B4 Relay <devnull+kernel.pelam.fi@kernel.org>
+Date: Tue, 03 Nov 2026 22:29:43 +0200
+Subject: [PATCH] btrfs: keep drop_progress when resuming snapshot deletion
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -84,113 +83,120 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261103-btrfs-async-csum-leak-v2-1-30872bec9613@columbia.edu>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/3WNyw6CMBBFf4XM2jGdEiG68j8Mi1KmUuVhOpRIC
- P8uj7XLk9x7zgzCwbPALZkh8OjF990K+pSArU33ZPTVyqCVzkilCsshOEEjU2fRSmyxYfNGynN
- duYtTNtWwfj+Bnf/u3kdxsMTyxXbYZNui9jL0YdrDI227o0GK/jRGQkLHxnFuOCO+3m3fxLb05
- sxVhGJZlh+5AekZzwAAAA==
-X-Change-ID: 20261030-btrfs-async-csum-leak-1772df5f0c32
-To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
-Cc: Qu Wenruo <wqu@suse.com>, Christoph Hellwig <hch@lst.de>, 
- Josef Bacik <josef@toxicpanda.com>, 
- Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
- John Garry <john.garry@linux.dev>, linux-btrfs@vger.kernel.org, 
- linux-kernel@vger.kernel.org, tz2294@columbia.edu, stable@vger.kernel.org, 
- Mani Tofigh <mt4022@columbia.edu>
-X-Mailer: b4 0.16.0
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1793736201; l=3251;
- i=mt4022@columbia.edu; s=20261026; h=from:subject:message-id;
- bh=sZ15wckZNBlDyiOLVC9bEfAohvO3ectUWRrLDyA5+Jo=;
- b=SvIUTYUzswOF461t+ia+Mvr4QdkS5dDCzWFzYtYqa6vm3Ju6Yv/w1en7R2C3eCAZtWSAW9u2L
- ifiK38ND2fWA1pfSmFN8mySC2RaANi85jqbizdLWXKaJspdrg/xVBZx
-X-Developer-Key: i=mt4022@columbia.edu; a=ed25519;
- pk=gljCMQDuxyKPmd5y37CRpEJGSPXDV1MyAnHBhCgXl0I=
-X-Endpoint-Received: by B4 Relay for mt4022@columbia.edu/20261026 with
- auth_id=1322
-X-Original-From: Mani Tofigh <mt4022@columbia.edu>
-Reply-To: mt4022@columbia.edu
+Message-Id: <20261103-drop-progress-v1-1-16e345565109@pelam.fi>
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/yXMQQ5AMBBA0avIrDVpSxBXEQtlMBbazCAScXfF8
+ i3+v0CQCQXq5ALGg4T8GmHSBPq5WydUNESD1bYwRmdqYB9UYD8xiqhurFxpcquz0kFsAuNI5/d
+ r2t+yuwX77Z3AfT8ePSggcQAAAA==
+X-Change-ID: 20261103-drop-progress-af8b7142037b
+To: linux-btrfs@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, josef@toxicpanda.com, dsterba@suse.com, 
+ fdmanana@suse.com, mason@kernel.org
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1793737797; l=3991;
+ i=kernel@pelam.fi; s=20261103; h=from:subject:message-id;
+ bh=+0hMPVJNrK3nqWmVIXPLZTc0fOhJ6F352/cjiqMYRHc=;
+ b=vFBm9fFlMCurRCtUXizufaul/ytO7E0YikFCAQNrIGucv93R4TOKbJryHovwmYukTt2LeuomY
+ Y9MaFlBnphwBEsdsV3o1mTkHerUmzCTlrppVB+Xtq3BlYl0moU0CLHr
+X-Developer-Key: i=kernel@pelam.fi; a=ed25519;
+ pk=qpD/xh/xwDGEMdfQk/5prChHF0mXHXDTrs35FxiJgrk=
+X-Endpoint-Received: by B4 Relay for kernel@pelam.fi/20261103 with
+ auth_id=1398
+X-Original-From: Peter Lamberg <kernel@pelam.fi>
+Reply-To: kernel@pelam.fi
 Content-Transfer-Encoding: 7bit
 
-From: Mani Tofigh <mt4022@columbia.edu>
+From: Peter Lamberg <kernel@pelam.fi>
 
-A single failed checksum allocation can make a later device replace
-hang forever.  btrfs_submit_chunk() takes a dev-replace bio counter
-reference and a bioc before it hands a write to the checksum worker.
-If the checksum fails there (e.g., its allocation fails),
-run_one_async_done() ends the bio but drops neither.  The counter then
-never gets back to zero and the next replace waits for it:
+When btrfs_drop_snapshot() resumes a partially dropped subvolume, it
+copies the saved resume key from the root item into wc->update_progress
+only. wc is kzalloc'ed, so wc->drop_progress and wc->drop_level stay
+zero. The main loop writes both back into the root item on every
+iteration, and wc->drop_progress is only updated once this run drops a
+reference itself (DROP_REFERENCE stage).
 
-  [    8.369171] BTRFS info (device ram0): dev_replace from /dev/ram0 (devid 1) to /dev/ram1 finished
-  [   41.534247] INFO: task btrfscsum:80 blocked for more than 20 seconds.
-  [   41.534391]  btrfs_rm_dev_replace_blocked+0x135/0x180
-  [   41.534463]  btrfs_dev_replace_finishing+0xefe/0x13b0
+If the child at the resume slot is shared and the walk is still in
+UPDATE_BACKREF when a checkpoint happens (an unmount or commit before
+the first drop), the root item gets drop_progress (0 0 0) and
+drop_level 0 while the root item still exists. The next mount then
+restarts the drop from the left edge of the tree. Children that the
+earlier run already finished now have refs == 1, held by the surviving
+snapshot only, so the restarted walk treats them as exclusively owned
+and tries to free the dropped tree's reference again:
 
-The worker is only used when CONFIG_BTRFS_EXPERIMENTAL is off and the
-checksum isn't a fast one, e.g., sha256.  We hit it on a sha256
-filesystem.
+  unable to find ref byte nr ... parent 0 root N owner L offset 0
+  BTRFS: error ... in __btrfs_free_extent: errno=-117 Filesystem corrupted
 
-We put the bioc and drop the counter in that error branch.  We also
-put the bioc on the synchronous error path and on the btrfs_split_bio()
-error path, which both only drop the counter.  With the fix, the
-replace doesn't hang anymore.
+and the transaction aborts.
 
-This bug was identified and confirmed with the help of fault-injection
-testing on a deterministic hypervisor currently under development.  The
-C reproducer below however hits it within about 35s.
+Before the commit below, the root item's drop_progress was left alone
+while in UPDATE_BACKREF. Restore that behaviour by seeding
+wc->drop_progress and wc->drop_level from the root item on resume, so a
+checkpoint before the first drop rewrites the same resume point instead
+of zeroing it.
 
-Fixes: f8a53bb58ec7 ("btrfs: handle checksum generation in the storage layer")
-Fixes: c7c97ceff98c ("btrfs: handle bio_split() errors")
-Cc: stable@vger.kernel.org # 6.6+
-Reviewed-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Mani Tofigh <mt4022@columbia.edu>
+Fixes: aea6f028d01d ("btrfs: save drop_progress if we drop refs at all")
+Cc: stable@vger.kernel.org # 5.1+
+Assisted-by: LLM
+Signed-off-by: Peter Lamberg <kernel@pelam.fi>
 ---
-Changes in v2:
-- Also put the bioc on the btrfs_split_bio() error path (Qu)
-- Mention the sha256 / non-EXPERIMENTAL setup in the commit message (Qu)
-- Add Reviewed-by from Qu
-- Link to v1: https://patch.msgid.link/20261101-btrfs-async-csum-leak-v1-1-feafe7ae61e9@columbia.edu
+Test notes (not for the commit log):
 
-Reproducer: https://github.com/manitofigh/files/blob/main/linux-repros/btrfscsum.c
+Reproducer: subvolume S1 with a level-3 tree, read-only snapshot S2,
+delete S1, unmount after the first root child is dropped, mount and
+unmount right away, then let the drop finish. fstests test sent
+separately (btrfs/355).
+
+Reproducers and logs: https://pelam.fi/btrfs-drop-progress/
+
+Tested on Ubuntu 26.10, kernel 7.3.0-9-generic (v7.3-rc6 based), with
+btrfs.ko rebuilt from the matching Ubuntu source, 3 runs per module of
+the same sequence on a loop image with dm-delay plus btrfs check
+--readonly:
+
+  module              drop key zeroed  abort  btrfs check  snapshot S2
+  stock               3/3              3/3    errors 3/3   EIO 3/3
+  built, unpatched    3/3              3/3    errors 3/3   EIO 3/3
+  built, patched      0/3              0/3    clean 3/3    intact 3/3
+
+Unpatched and patched were built from the same tree with the same
+toolchain. With the patch the drop key kept the resume point over 20
+mount/unmount cycles and the following mount finished the drop.
+
+fstests -g quick (btrfs): 765 of 766 pass with and without the patch;
+generic/574 (fs-verity, 1K block size) fails in both runs, unrelated
+to this change.
+
+btrfs/355 (no dm-delay, checks the drop key after each resume): fails
+3/3 on stock and 3/3 unpatched, passes 3/3 with the patch, ~15 s per
+run; same result with the devices on tmpfs.
+
+The patch applies to v7.0.14 through v7.4-rc1; v7.4-rc1 still has the
+unpatched resume code. Upstream tags were built (v7.3.1, W=1 clean on
+extent-tree.o) but not run.
 ---
- fs/btrfs/bio.c | 4 ++++
- 1 file changed, 4 insertions(+)
 
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 2c6234f6182f..2e12a6d7e16f 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -624,6 +624,8 @@ static void run_one_async_done(struct btrfs_work *work, bool do_free)
+---
+ fs/btrfs/extent-tree.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9b0a5c6b96f3..41a8b25c6e0f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6333,9 +6333,12 @@ int btrfs_drop_snapshot(struct btrfs_root *root, bool update_ref, bool for_reloc
+ 		btrfs_disk_key_to_cpu(&key, &root_item->drop_progress);
+ 		memcpy(&wc->update_progress, &key,
+ 		       sizeof(wc->update_progress));
++		/* keep the resume point until this run drops something itself */
++		memcpy(&wc->drop_progress, &key, sizeof(wc->drop_progress));
  
- 	/* If an error occurred we just want to clean up the bio and move on. */
- 	if (bio->bi_status) {
-+		btrfs_put_bioc(async->bioc);
-+		btrfs_bio_counter_dec(async->bbio->inode->root->fs_info);
- 		btrfs_bio_end_io(async->bbio, bio->bi_status);
- 		return;
- 	}
-@@ -762,6 +764,7 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 		split = btrfs_split_bio(fs_info, bbio, map_length);
- 		if (IS_ERR(split)) {
- 			status = errno_to_blk_status(PTR_ERR(split));
-+			btrfs_put_bioc(bioc);
- 			btrfs_bio_counter_dec(fs_info);
- 			goto end_bbio;
- 		}
-@@ -822,6 +825,7 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 	return map_length == length;
- 
- fail:
-+	btrfs_put_bioc(bioc);
- 	btrfs_bio_counter_dec(fs_info);
- 	/*
- 	 * We have split the original bbio, now we have to end both the current
+ 		level = btrfs_root_drop_level(root_item);
+ 		BUG_ON(level == 0);
++		wc->drop_level = level;
+ 		path->lowest_level = level;
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		path->lowest_level = 0;
 
----
-base-commit: 6255426d70f2755968bb5436ae7b43dae742ac38
-change-id: 20261030-btrfs-async-csum-leak-1772df5f0c32
 
-Best regards,
---  
-Mani Tofigh <mt4022@columbia.edu>
 
 

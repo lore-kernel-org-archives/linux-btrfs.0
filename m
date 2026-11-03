@@ -1,87 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.176
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793718352;
-	b=148TxvSCakNUVgMNdgFj9B+vusgDwOH9JRN6XqdL15KT42YZl8EB2Gp0sn4ZOCvuhPDm
-	 mbRfYUQs8FXakz2meQysavmARd7cDKd3MzX3pj7WMhU9wLHv7elFEQd/Y2hHE6BYtA29B
-	 jqJ6F5dwA5eeItwM+yeNp/4Zyo8j7V6pMdGLlZt+wPuskXwjsSg80ZuYYz1Z1cysTAmz8
-	 w8BV/iaChLBzgy5iK9VkOODBvHoCJ49diVpHEboAlO+WBRwB2GfP1BYThXmKozRKJR+Cv
-	 uXzpA1MmhWiWcfHbEAZOhhzvaVpgYJB5sCW2kXxM+HPl3reysGtYzRkh46DelQjQxsA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793718352;
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.52
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793718639;
+	b=F2ELaMnvqDLde1m0vcVY3ajCPrMEgm6FGmNIF0OJwHqUPXfEX6L/d5FvSGCOqYhI0qLw
+	 ETYbI67Fm1y9dxoolTLq4xewPHma06h8Cy1GF7k/DLbqDOsvNKcDyA0K24KKHE6jSBNmo
+	 4FOgM6I1wiVyDdAbWEeUHmWpEtj4ZRrdjj2LKUu18QC1kmhn2EyBX8dl2rcf5xE/ZVeGv
+	 2YGYq9cUpjP17rqHrohuVtbic8ry9A8vVxN/WmpV2Hco4b0FuFtt6qwtlP36c1AtPXEl/
+	 dnMgpO2wRM4vw8oZfgjftS+QEzdYbMk8drZuJSxfcE+job1B1rdaMi7w0tYFOQ4Kh0w==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793718639;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Date:Subject:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding:Message-Id:
-	 References:In-Reply-To:To:Cc:X-Mailer:X-Developer-Signature:
-	 X-Developer-Key;
-	bh=lAa/3aJjQPYp1qwn90DpoaP/PT6OS4IOMITQs9V5xd0=;
-	b=ok4FOsxKoyl+dpYHIFSV0hSMX2DImnXM1KZGSi/fGn2CC16hTFeZNoSsuMRCre2eP014
-	 E0lzQKOWnZf1rciG5t0WMD027xJgfllhooxFbw8EiRln/1vYbX8W8I99klTdWZt1HliYx
-	 wiNRMISbf7r9AVEPybV8yNgd+8QcU+jB8TN5FFJM+4zeh/h9CrHi+0Vp0YBHG2UPDKYNQ
-	 oDMPB8g/mG0XJ2wNZfo5/BerzzLwxPb3YyXyEJH3Bo/w0+QSaTBZXH8cCiEw8SldTBvEv
-	 2dLlvasb7NnVkYeB4DVP6BazlddR3YVCA3hApXBLNLpfqybaqo/BEw/XGq6iZSWocdg==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=toxicpanda.com;
-	spf=pass smtp.mailfrom=toxicpanda.com;
-	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=NBNXcPHR;
-	arc=none smtp.remote-ip=209.85.221.176
-Received: from mail-vk1-f176.google.com (mail-vk1-f176.google.com [209.85.221.176])
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=7sE4JPqE1qSE0dDJji3oRyNIsowmIbXefj05D9f9GTA=;
+	b=WMNJstbl9285a7+OLEoppPpootiNCb15Ju3DnppGR5oubvR+4cCJuHpk6g2iqbonwqyZ
+	 1EE5RjADmwnaIlFiJxFzcShdy8ls+NSNZPE9GAFLfgkj49n9eO+CXbIVFkP4ncNNkEp/9
+	 +MeSCKqEoK6EXXmo2Sq/Pr6bIuaeykooVyIUHUdQz4BOtt45t1CTVTRT9fKbiN9OHa07E
+	 +8G8FzmCC96kTUPTriZA10zVK8vMDq1PsBlKqT14/wT+eByGrBfO5jPnmbVe9j945fT1F
+	 M9Y/nuluXyRMhZZz6N6PMHn2ovt9empFRVOdbF3FIRoxfHx5Sj4Y5+gVgFcTe4eP22w==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=IODVJv7c;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.52
+Received: from mail-ed1-f52.google.com (mail-ed1-f52.google.com [209.85.208.52])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DC903606D81C
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 15:05:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DC903606D81C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E55AB606BA39
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 15:10:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E55AB606BA39
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=NBNXcPHR
-Received: by mail-vk1-f176.google.com with SMTP id 71dfb90a1353d-5eaf169fe3dso1121456e0c.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2026 07:05:51 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=IODVJv7c
+Received: by mail-ed1-f52.google.com with SMTP id 4fb4d7f45d1cf-6a642495d81so6503223a12.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2026 07:10:37 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1793718636; cv=none;
+        d=google.com; s=arc-20260327;
+        b=MBq6irER3ldKc3h4I1bFLpc7+orA1hv+09H02Cd3hTz1KdTgRuT8qO+C56oEUCdRKD
+         KVisfkA35V0f1QgoEioaTzBBEn57zo2O7YweqY29M4dJHJ6xQoYDWFNbpQvT2QmKVNAB
+         fjfY6B16XRnNLPxDMXwbIj1lCt2l2B3NQmeRHcNY47VDrYmI4Tb41c/Qf+9PwtEo9G6J
+         GpzXLj+JsHS1isHTlIQIhobc2h0Y0YZAHjiaA6NSdFXlKZCXKiBnjpF3F5ECPmf+3w91
+         AdyPnEsP8jY9L3grxEmNnVMxqYrbc6EOghlBLSgfoiKbDpaMJNSIQsx7jQn9EiNsfysS
+         PLqw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=7sE4JPqE1qSE0dDJji3oRyNIsowmIbXefj05D9f9GTA=;
+        fh=VHU2VOJhbacnmWd/PAyqASosU4yur60m/s6dwR0L2Wo=;
+        b=eKNSPZrMXFzZYd3wMiWyeNBkK2EdvPzF/zuNsW7PKDST97qaz3bbQO30lXZVU+sOg/
+         ftGQAI60fTzMWxNgk8GNYv0AHjPBB3bfV742YlqilXpG+fzqQzhwZ+Qnjbmkc3m3fxBS
+         47Fu3G3ZmDIk+7UKgib0R4MdY4r3su3ZZQcoqAMOhImBulImSqJwbBuIT0ISbRlifcuT
+         ms9eHaPOMl6DyzhZiBB/qByJHJM+tOpsTdk5oXc/NxYd65cOq39s75d8xETUrO2mGC5F
+         JM6k76H9VWoymusqJDUDHDAJaWqpxHbAvPvkMvdhXblEO7iO/kjWw2el1GnHr1DDJKzn
+         xPWQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=toxicpanda.com; s=google; t=1793718351; x=1794323151; darn=vger.kernel.org;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=lAa/3aJjQPYp1qwn90DpoaP/PT6OS4IOMITQs9V5xd0=;
-        b=NBNXcPHRVhfotKqrLNY+IG8lG5uIbvofkj0aI9bAqJCBAHo/LGAftaMqZeCpS66ecz
-         gcFdDkkekpZb0uHt5rVYeuZvVJnDh3LYzf/O9UZAe/VinE3LvbwTodsOQOgIp01ityQQ
-         PyX/HAB+BH6NsqogkcGiT96k8BCovOJbsXCRovxXl5B1yLiZ/GlWzSaL15faBygv6sU+
-         In4p9RwatKeYLmgPY+5BWeZ19dykPmN190m0xPgwlgisWD1v3Fh2D1xO7bR3mhU/TD73
-         bKdkDrSL18p12J0TbUUuprXMRiJ3hn4mt7c/30eORkiCzgbdKdJN6wfpQidKLB5iYFgP
-         6CTw==
+        d=gmail.com; s=20260707; t=1793718636; x=1794323436; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=7sE4JPqE1qSE0dDJji3oRyNIsowmIbXefj05D9f9GTA=;
+        b=IODVJv7cdAiH0zI7EYwsSnOisU2I29QacRI48d3GrxZ/4ahTqZYjCqm3KezEodiSwY
+         KCcB17frnQVJPSU30oNUQVd+nMk5pNZUdHRRHtexBAcVEnGW6qI/hr5KBmZoGKU9n1AA
+         nX7CBFPWo7OCb7jC//Cb3RWTM+8h/yqeY6CfYOZwkZSo8jHXe8sSpor73NKW/nDvJZT9
+         /jUg0RghHQEpHFi9UISuH2cBTU+qDXMt5uUjVJ4bcvsnUCsR9swJZWPjdvTg2aLnef7R
+         K+UYBntvwOMC75a1sODBxaY3kTz0ODpxjGJ5O/lhjvZS7WbSzPyZEfQDeWHRhswBRXSP
+         fOtg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793718351; x=1794323151;
-        h=cc:to:in-reply-to:references:message-id:content-transfer-encoding
-         :content-type:mime-version:subject:date:from:x-gm-gg
+        d=1e100.net; s=20260707; t=1793718636; x=1794323436;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=lAa/3aJjQPYp1qwn90DpoaP/PT6OS4IOMITQs9V5xd0=;
-        b=UVwU3GMFD0FW8ucbnLtyndSJ64DAQCKWTTy2ZAX0FZBRTacDt0rGaCHPG/isBjfUNl
-         FMDrhAHnCAsrNqV7mfQSXncA/dfomub6da7VX9RgRv7IXLuES1yhkDKASQHXHKENhIyR
-         Zejv6S5b0Ko+fyj7/Wq/bUd2igc3z1UUJXyKPH4DL9gp2KMDw8EPbZZum1GY38rQmvAk
-         xdibZqZ95rH/fgqNhdcTqw0hay0kKl0Ngyy0rMeZ+FVyFqoVlr/kBrh06pfH6297zxsw
-         8YGg2JmNAz2sL80fGDzUnwSEieN8bpr6Xr9OQ7DfaLa2/EFGV7zcJcagRA8GjB34TAVS
-         vKoQ==
-X-Gm-Message-State: APuU4Z+SbpF/jn/4hAEGeSXoEqt5YMexDBk/nMNT4oyrlNCB3yhcsMvO
-	tluoJgoagmC/tIEUkEFp24MOe/AAQux5Jl49SL5MX126IZG4pan4GwUqhRFt2BU1kAs=
-X-Gm-Gg: AYBFou1z0iQ1KGfDRApTr1Er8KCl7kAam+JLUI/PiBGWBx5qOW1eh0sEsIganjm+MBg
-	Gi0/VoUVex9ELDX3aDZMqeQ6G/u6KxIjXqGrbkSZNT4GUtrQmE7qI6bORWmCuuNQ03UYfAqLYmK
-	RDykNviSJ/yJ+9bxQMJ3HT4wjCqBYN4uf86v0cuUqz70Ixyr34zwnR+UHfT3ZvQGIdNOtvhW72a
-	m2qvhLQuuTXGhv/dJSE2B2rYsOGQXdH553aHghKkgyK7s4KqG4JoMRUjGDyxxiuJigoGO+mhk94
-	Y1kR+tBdA/w55QUFUfUkLMqy2VFX+6pMOdxzXjc2oT3IovQMf6wftVa53psL9rbIyQm4P5BljwC
-	foEOChpuOldUCRxBlF9oNaaTJgHTEb0BHswLYbbtis+z1e0ZtHmreBLMisfTbLii4ErytaDFpNE
-	p9tj7rJP5Apv6J+fmMMFznVQrTjCCUuGgX+7/oZ+NDpxk8nyLV1zZPovXRvpDAOjK9/L+iDKZZE
-	nR8j/nI+fQ1LLAr8ryKYru0BA/ZhOUgBrOSzhM+9x2eML2Omq6k7VfWZLwhbjjWZRUHkyeHMF8n
-	4K1TfMB8RZDmXY5XUDPRAnJQ3lvgUYV05pyD3w+IIKZ+
-X-Received: by 2002:a05:6122:4b8d:b0:5ea:e905:2039 with SMTP id 71dfb90a1353d-5ec6894e113mr5697560e0c.13.1793718350840;
-        Tue, 03 Nov 2026 07:05:50 -0800 (PST)
-Received: from toxicpanda.com ([153.61.196.255])
-        by smtp.gmail.com with ESMTPSA id a1e0cc1a2514c-992ee437d86sm15203204241.8.2026.11.03.07.05.48
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 03 Nov 2026 07:05:49 -0800 (PST)
-From: Josef Bacik <josef@toxicpanda.com>
-Date: Tue, 03 Nov 2026 15:05:19 +0000
-Subject: [PATCH v2 4/5] btrfs: don't report success for a skipped log sync
+        bh=7sE4JPqE1qSE0dDJji3oRyNIsowmIbXefj05D9f9GTA=;
+        b=Ekehjoaxyf5viIXWYAINFLHmSYdZo/IPBmkQucithBMwF5xhTMAQ4hqL0pExRPB4Qi
+         FPf3/H+Jebxqs398Af34oet7PNXWK1TLXz8PX+NDRPYy0a91n1Ga8xVEBXbD/0Nuj1vw
+         /vkTF6GVhJV57CckMHwPnwndEtjXBw2miVAfnVMzFRy8EG/2f0EobG+FkiNTotef53p8
+         Yy3bVaT6oPUQObpOiML68QgHG7a+3ghvHvQ38jXl08X3bszNQsH7uwsc58+lvG8RMIyN
+         wNvNGwDyJk0u45KgEgKOlV/stqlcvJJ2J9hfJlttxKCa6HK/j3saBYpbZBX5E24Ein8C
+         LvGg==
+X-Forwarded-Encrypted: i=1; AKwUvBxqH6LItY6Zot9t/ZWdrayevlHyea9pJo+cVJfg67SE7Ft7P0T2RtK3eeyvctAY2qyr2f2vbf2/weeYWg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8L5ZYZg+SOYf44Pj1gwFlKlVmNS+/lirAD+StLFHl2yGwJI/xs
+	My9Fz+3wYBC2KQ/+NESO0BEiSpqrU8Vyu8eUbddyeiI1KV5QjeleYZfGIcYNNViWzeMPsD+Nr5e
+	uvChoygcx7V6atNl+lAKgd8Iak515Ds4=
+X-Gm-Gg: AYBFou3LhGFSaZzm0rM70ffp3PcsU/DWyphJl0RCRn0gtaFta5KqM0Fm1TErtYhuE+z
+	XlXLveJfPypo9LxZPjDNUdbUyY3TTEbh3D4OzOG7g2zOgR7xwh8HFh9ZFaF2uc9WXCz1YFyumUK
+	jDx09ugDtv4YizD6HwLdjSCZPsLVwrUdS0wZOEix41SGhe4hrlAz+uACJvnZw3iyg5ooQIFT1vR
+	EJEdA9+whMOEfJkIPmnHvIYqeWraWX4G0TOpToUhHy7DVSG7iGGpCOl8NSVVZEIdVFKaJMpB6nS
+	cPvcCmuFzq/KWR0GEWUNRO+QoXLPDnVVANV8g4NQO/vzgnDH6Ub27E64legnXO51ClnM3JdbUop
+	ZrQHnpY9Ju0Ozqhc1rzRnRVSlD2xK3IGT/cgLq0P5S7U04AzU5FHeTtCTSEJYZIybW9Li8w==
+X-Received: by 2002:a05:6402:1576:b0:6b4:2807:94db with SMTP id
+ 4fb4d7f45d1cf-6b4d63b89b4mr7276457a12.41.1793718635985; Tue, 03 Nov 2026
+ 07:10:35 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,112 +104,226 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20261103-b4-btrfs-data-integrity-v2-4-577dc2690061@toxicpanda.com>
-References: <20261103-b4-btrfs-data-integrity-v2-0-577dc2690061@toxicpanda.com>
-In-Reply-To: <20261103-b4-btrfs-data-integrity-v2-0-577dc2690061@toxicpanda.com>
-To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
- Naohiro Aota <naohiro.aota@wdc.com>, 
- Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>, 
- Boris Burkov <boris@bur.io>, Filipe Manana <fdmanana@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
- stable@vger.kernel.org, Josef Bacik <josef@toxicpanda.com>
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=openssh-sha256; t=1793718330; l=3593;
- i=josef@toxicpanda.com; h=from:subject:message-id;
- bh=pb3ZJaSZEuGE2EuaruC+9DgUr6NKGbLn9bdI+79i/3E=;
- b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
- JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
- QNP/iVXQVI4rBjCBBM7l+LEfTdcSroeAQzE1wE6QOTOIxSy311mqKEM+XrtSpfK/0Fm3jHKzS1A
- M5tAKULnvzQY=
-X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
- fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
+References: <20261101015551.786044-1-koray.fra@gmail.com> <20261101015551.786044-4-koray.fra@gmail.com>
+ <20261102142452.d6jkitgdeuquy23i@pali> <CAOQ4uxhQ3uhq6s+4deEJAQV5iy8QZoucojR58_dUNYrnjt_yvA@mail.gmail.com>
+ <20261102153845.d67wlorqcbe3c2w7@pali> <DD1A08F1-8F47-4612-A807-AEA39461AF9B@dilger.ca>
+ <CAOQ4uxh8EDX5HzFFKWv10-mHYVcSC1zXN+BS2qCm5cTMq=GOCA@mail.gmail.com> <20261103094906.n55n5dhrpct5ykmw@pali>
+In-Reply-To: <20261103094906.n55n5dhrpct5ykmw@pali>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Tue, 3 Nov 2026 16:10:24 +0100
+X-Gm-Features: AclHuK-nvjo0FA1uWKxpxW2jM-UILx8XEkVUZkdQkJAo4Tb9oLsdcVumIEFmEyo
+Message-ID: <CAOQ4uxizEdR-MauSMOTfVcdxnuSMkrEuPth3nm3MsZuhcN5vjA@mail.gmail.com>
+Subject: Re: [RFC PATCH v3 3/5] ntfs3: make crtime user-settable using ptime
+To: =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>
+Cc: Andreas Dilger <adilger@dilger.ca>, koraynilay <koray.fra@gmail.com>, 
+	David Sterba <dsterba@suse.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Christian Brauner <brauner@kernel.org>, Namjae Jeon <linkinjeon@kernel.org>, 
+	Sungjong Seo <sj1557.seo@samsung.com>, 
+	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>, Chris Mason <mason@kernel.org>, 
+	Jan Kara <jack@suse.cz>, Yuezhang Mo <yuezhang.mo@sony.com>, Chuck Lever <cel@kernel.org>, 
+	"Darrick J . Wong" <djwong@kernel.org>, Sean Smith <defendthedisabled@gmail.com>, 
+	Andrey Albershteyn <aalbersh@kernel.org>, Pedro Falcato <pfalcato@suse.de>, linux-btrfs@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	exfat@lists.linux.dev, ntfs3@lists.linux.dev, linux-api@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-When a commit of the log root tree gives up, because the transaction
-needs a full commit or writing the log failed, btrfs_sync_log() still
-advances log_transid_committed and hands the result to the contexts on
-the list. Unlike a successful commit it does not advance log_transid, so
-the log transaction it just retired is still the one new syncs join.
+On Tue, Nov 3, 2026 at 10:49=E2=80=AFAM Pali Roh=C3=A1r <pali@kernel.org> w=
+rote:
+>
+> On Tuesday 03 November 2026 09:23:32 Amir Goldstein wrote:
+> > On Tue, Nov 3, 2026 at 2:19=E2=80=AFAM Andreas Dilger <adilger@dilger.c=
+a> wrote:
+> > >
+> > > On Nov 2, 2026, at 09:38, Pali Roh=C3=A1r <pali@kernel.org> wrote:
+> > > >
+> > > > On Monday 02 November 2026 16:09:41 Amir Goldstein wrote:
+> > > >> On Mon, Nov 2, 2026 at 3:24=E2=80=AFPM Pali Roh=C3=A1r <pali@kerne=
+l.org> wrote:
+> > > >>>
+> > > >>> On Sunday 01 November 2026 02:55:49 koraynilay wrote:
+> > > >>>> @@ -154,6 +158,11 @@ int ntfs_fileattr_set(const struct mnt_idma=
+p *idmap, struct dentry *dentry,
+> > > >>>>      if (flags & FS_APPEND_FL)
+> > > >>>>              new_fl |=3D S_APPEND;
+> > > >>>>
+> > > >>>> +     if (fa->fsx_xflags & FS_XFLAG_PTIME) {
+> > > >>>> +             ni->i_crtime.tv_sec =3D fa->fsx_ptime.tv_sec;
+> > > >>>> +             ni->i_crtime.tv_nsec =3D fa->fsx_ptime.tv_nsec;
+> > > >>>> +     }
+> > > >>>> +
+> > > >>>>      inode_set_flags(inode, new_fl, S_IMMUTABLE | S_APPEND);
+> > > >>>>
+> > > >>>>      /* Save nodump flag to return in ntfs_getattr. */
+> > > >>>> @@ -275,8 +284,9 @@ int ntfs_getattr(const struct mnt_idmap *idm=
+ap, const struct path *path,
+> > > >>>>      if (unlikely(is_bad_ni(ni)))
+> > > >>>>              return -EINVAL;
+> > > >>>>
+> > > >>>> -     stat->result_mask |=3D STATX_BTIME;
+> > > >>>> +     stat->result_mask |=3D (STATX_BTIME | STATX_PTIME);
+> > > >>>>      stat->btime =3D ni->i_crtime;
+> > > >>>> +     stat->ptime =3D ni->i_crtime;
+> > > >>>
+> > > >>> For me this patch looks dangerous. Somehow I would expect that th=
+e
+> > > >>> "btime" will never change for existing inode.
+> > > >>>
+> > > >>> But because the ptime is mapped to i_crtime and ptime is settable=
+ from
+> > > >>> userspace, with this patch it is directly possible to change btim=
+e.
+> > > >>>
+> > > >>>
+> > > >>>
+> > > >>> I was thinking more about it... Is not this just misunderstanding=
+ of how
+> > > >>> the security model around the times is working on different syste=
+ms?
+> > > >>> Because on NTFS there is stored just one field which says when th=
+e file
+> > > >>> was created. There are not two fields like "time set by user and =
+time
+> > > >>> set by system".
+> > > >>>
+> > > >>> Windows security model allows anybody with WRITE_ATTRIBUTES acces=
+s to
+> > > >>> change that create time. Linux security model does not allow to c=
+hange it.
+> > > >>>
+> > > >>> NTFS in this view is just a filesystem like any other (ext4, btrf=
+s, ...).
+> > > >>> In my opinion if the ext4 or btrfs filesystem is correctly implem=
+ented
+> > > >>> on Windows systems, then Windows security model should handle it =
+in the
+> > > >>> same way like for NTFS or exFAT. So if something grants WRITE_ATT=
+RIBUTES
+> > > >>> access, then Windows should allow to change also btime on ext4 or=
+ btrfs.
+> > > >>>
+> > > >>>
+> > > >>>
+> > > >>> On the other hand, I understand the use case to have two creation=
+ times.
+> > > >>> One time which would never be changed and could be used for any k=
+ind of
+> > > >>> atomic / synchronization by userspace application logic (this bti=
+me).
+> > > >>> And another time for human which can be changed at any time to an=
+y value
+> > > >>> which user wants (this ptime).
+> > > >>>
+> > > >>> In any case, I would suggest that filesystem driver would not rep=
+ort to
+> > > >>> userspace unsupported values and would not try to invent other va=
+lues
+> > > >>> and lying about them.
+> > > >>
+> > > >> But all those fs with mutable creation time already report it with=
+ STATX_BTIME
+> > > >> so what can we do about this?
+> > > >
+> > > > Well, what I wanted above to point out is that the "mutability" of
+> > > > creation time is not feature of filesystem, but in my opinion rathe=
+r
+> > > > property of the security model on the running operating system.
+> > > >
+> > > > Maybe better question is: how ext4 btimes differs from the ntfs bti=
+me?
+> > > > In my opinion there is no much difference, both of them has meaning
+> > > > "time when was the file created".
+> > > >
+> > > >> If userspace requests both STATX_BTIME|STATX_PTIME in mask arg,
+> > > >> those fs could technically return only STATX_PTIME and it should n=
+ot regress
+> > > >> existing programs.
+> > > >>
+> > > >> But this is still a bit surprising behavior is it not?
+> > > >>
+> > > >> Thanks,
+> > > >> Amir.
+> > > >
+> > > > I'm not sure what to do with it.
+> > > >
+> > > > If we allow to change btime of ntfs then for consistency we should =
+also
+> > > > allow to change btime of ext4.
+> > > >
+> > > > Maybe another idea... define new capability which would allow to ch=
+ange
+> > > > btime (on any filesystem)? This would at least make the consistency=
+.
+> >
+> > Pali, I think this is a very bad idea.
+>
+> Ok, if the point is that ext4 btime must stay immutable then it is a bad =
+idea.
+>
+> > This has nothing to do with capabilities.
+> > The Windows and MacOS filesystems have allowed setting their
+> > "creation time" forever
+>
+> FreeBSD for some fs allow it too (see below).
+>
+> > and for all the other Linux filesystems that had
+> > "birth time" it was immutable, so let's not mix filesystem features
+> > with capabilities.
+>
+> I think that it is important to first define behavior and invariants of
+> these "btime" and "ptime" kernel properties.
+>
+> If we want to be consistent then there are two possible options:
+>
+> 1. If we choose that the STATX_BTIME is immutable then no kernel fs
+>    driver should allow to change.
+>
+> 2. If we choose that the "NTFS create time" is reported via STATX_BTIME
+>    then STATX_BTIME is not immutable at all.
+>
+> These two options cannot be chosen together because option 1 would
+> implie that the modifiable "NTFS create time" cannot be reported over
+> STATX_BTIME.
+>
+> We are have currently STATX_BTIME immutable and "NTFS create time"
+> reported via STATX_BTIME.
+>
+> If we want to stay _consistent_ across fs drivers then adding API for
+> changing "NTFS create time" would break one of those two things.
+>
+> In my opinion we should stay consistent across filesystem drivers and
+> provide unified behavior of APIs independently of used filesystem.
+> Otherwise userspace applications would have to write fs specific code
+> for doing their use cases (and we can stay with fs-specific xattrs, no
+> need to create unified APIs).
+>
+> Does it make sense? Or it is still a bad idea to think about it in this w=
+ay?
+>
 
-A sync that gets to the log root tree after that adds its context to
-the emptied list, sees log_transid_committed >= its log_transid and
-returns its log_ret, which is still 0:
+My "bad idea" comment was only referring to capability.
 
-  fsync A (subvol 1)           rename       fsync B (subvol 2)
+w.r.t the STATX_BTIME ambiguity there is another option we may want to
+consider: Don't publish STATX_PTIME via statx() at all.
 
-                                            btrfs_need_log_full_commit()
-                                              -> false
-                               btrfs_set_log_full_commit()
-  btrfs_need_log_full_commit()
-    -> true
-  btrfs_remove_all_log_ctxs()
-  log_transid_committed = N
-  log_transid stays N
-                                            log_transid = N, log_ret = 0
-                                            log_transid_committed >= N
-                                            return 0
+One of the reasons that developers have pointed to fileattr as the right AP=
+I
+to host the creation time as well as the DOS attributes is that it has a hi=
+story
+of carrying filesystem specific attributes.
 
-btrfs_sync_file() then ends the transaction without committing it, and a
-crash before A's transaction commit loses what B was told is durable.
-This was reproduced with delays added to btrfs_sync_log().
+Not every attribute available in lsattr is also available in statx().
+If projid is not available in statx() then the settable creation time
+doesn't need to be in statx() either.
 
-Fix by advancing log_transid when a commit of the log root tree gives
-up, so a later sync joins the next log transaction and either commits it
-or gives up itself. The check for an already committed log transaction
-can then no longer be true, so warn on debug builds if it is, and force
-a full commit.
+The file_[sg]etattr() syscalls provides a symmetric API to set/get it.
 
-Fixes: d1433debe7f4 ("Btrfs: just wait or commit our own log sub-transaction")
-CC: stable@vger.kernel.org
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Josef Bacik <josef@toxicpanda.com>
----
- fs/btrfs/tree-log.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
+The same could be true to HIDDEN/ARCHIVE/SYSTEM flags if those
+are added to fileattr.
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1d9dfb63fc5a..3de7757d168d 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3437,11 +3437,20 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	if (log_root_tree->log_transid_committed >= root_log_ctx.log_transid) {
-+	/*
-+	 * A commit of the log root tree moves log_transid on even when it
-+	 * gives up, so the log transaction we just joined can't be done.
-+	 */
-+	if (unlikely(log_root_tree->log_transid_committed >=
-+		     root_log_ctx.log_transid)) {
-+		DEBUG_WARN("log_transid_committed=%d log_transid=%d",
-+			   log_root_tree->log_transid_committed,
-+			   root_log_ctx.log_transid);
- 		blk_finish_plug(&plug);
- 		list_del_init(&root_log_ctx.list);
-+		btrfs_wait_tree_log_extents(log, mark);
- 		mutex_unlock(&log_root_tree->log_mutex);
--		ret = root_log_ctx.log_ret;
-+		ret = BTRFS_LOG_FORCE_COMMIT;
- 		trace_btrfs_sync_log_exit(trans, root, ctx, ret);
- 		goto out;
- 	}
-@@ -3575,6 +3584,13 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	mutex_lock(&log_root_tree->log_mutex);
- 	btrfs_remove_all_log_ctxs(log_root_tree, index2, ret);
- 
-+	/*
-+	 * If the commit gave up, log_transid still names the log transaction
-+	 * we are retiring. Move it on, so that nobody joins a log transaction
-+	 * whose result has already been handed out.
-+	 */
-+	if (log_root_tree->log_transid == root_log_ctx.log_transid)
-+		log_root_tree->log_transid++;
- 	log_root_tree->log_transid_committed++;
- 	log_root_tree->log_commit[index2] = false;
- 	mutex_unlock(&log_root_tree->log_mutex);
+Do we need to stop publishing NTFS creation time in STATX_BTIME?
+I think it's too late for that and nobody is going to gain anything
+from doing that.
 
--- 
-2.55.0
-
+Thanks,
+Amir.

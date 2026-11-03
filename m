@@ -1,79 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793738379;
-	b=AfNqAvXj1jzberYUxa4Qb/2Ay0MHOvOEswwAUESnwuz49S0P10Ms6ahiUzJpjiQP4mjC
-	 mGdl/Mdp9pR5rfMIRcSqANnt/MYv5arcGQxB2OX1/QDmVX+h+ukHGihojXZA3MZ4sm4xL
-	 B+urD+x4KkXh0zAd5GZ7CGvfTcfwUnb61mcNJnjXWYxX5BRANPcwJxDpHjZg0TFfJ9iTf
-	 gsXB0ubHqVYDrbE8sGUVA/oLtRYRLR+XaelATd2PIQnmdbFHUkfTLIXkdanUo270sSMm9
-	 rb0i0XvKtlQLEHyIoxew3wPgxePnxrqk6TCYpwjja9Kr/H/x7YR1xGV+9Hf3R2AIsVg==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793738379;
-	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
-	 Content-Type:Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=XBYEto4s3YC8PjNdOx2QhYF/Zwijh+0ZFjolktp8CrU=;
-	b=IXoR5lWBC1Br/nVQT3/sVqHQOeN/45iIeR1agbdrNBqDnzGJgHH/oYNShlE8vS7tItFE
-	 1jaECUtC2a7n5k5zTZlkziemKlzAVeITLigxwlrtjtmvFHs3YRP6qCqGtTWqDKMU0cUBl
-	 s0WCZVoPp4ePRYuAM7q5v3HvD4cYKh6jjehNwOzHQRxyINDTxJbfZ8BUXqXVP72qdB5wY
-	 YnToNDfyOutgMAgXeMm429sTZRU+nJ3wDK8QM8lv88o1uEB9yHdWcmyyWg7Z8oTpWm8mE
-	 5wCMG+ZUu8N7PcF69LfqAvFxliyy5WZBz0UrDv8YdGEwOU25iuVd+o7WinLEhftKhHw==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=GAVbPa+q;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 12ACA606A31B;
-	Tue,  3 Nov 2026 20:39:38 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=GAVbPa+q
-Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
-ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1793738378;
-	b=NRIRMKXY03r2l10B3j3q0Z26L4IcCbDKbd4akMmwisWlJaUqZSvQh5E9wizevk2w+ww7
-	 G00FiSe53cbwpWR87tqzIGZHpebJE17NJ+t4bnX0/hnjGvfJYTyOTE+Onhvk5qO/6bTqK
-	 fwYAAvWavsW8HdolbThXYPY+PmdqymycDu7cBzfgN9kx4dUf6lx4Hy8GCyQsD1zFasOMZ
-	 dcllMO765y2dDauBYJdYhOfgL3ogRYJnyOy7JI+pv4tqSCY4pnN9AbdeAxjEauzktKXYv
-	 C1f1rUT2tBIQvyzs+4D5fr2Su6iO61mbL5j3Ckhy1CRJaXqtjgpgLdm98kY+4w000fA==
-ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1793738378;
-	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
-	 Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=XBYEto4s3YC8PjNdOx2QhYF/Zwijh+0ZFjolktp8CrU=;
-	b=Aly1foccHDoUEh93k2lD7ked4nPdDSfHWljAMurOtQuPQYq1wt46xKZsnQ2ryov3UPhF
-	 737mo6II+N8h3h8IYbct7Rta+vLXe0WI5VFVsn7Nzipszdhl0PEHPFMG0eONyMdpyIQgw
-	 Zz+oSjgNcNNfTW8RPB0yyk1ymBS3+ZKHS/Iu7xI69S7SKWZEH3EAUuaj/ZtBuE9ierhm1
-	 Z7ezWe/pxISJAltfIFFJFu+NyG0WQLp58BE7yiyVnvKkOc2B/Y4vtpo6hhMQ9MMVQqFW8
-	 pLPzp/cL7qmswdahiv+Pc0BqPOIkHALWtFyNNpY9KWpptJNMbIXR5m8Bn9D1IGdy0bw==
-ARC-Authentication-Results: i=1; smtp.kernel.org; 
-	arc=none smtp.remote-ip=100.80.115.77
-Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.42
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1793738532;
+	b=DY2mxMUnTOtLGqNwf0WMaXqqtXB3ht+yeThUeBmel6oD1D8H0ytFg2Sx+gQ/fYpg8whp
+	 /oHUsY5Js9h08GSo4Vimsr9GPi+DmrVrKCa6b/mdtLa4cOC/8iZhz9y/FkgVgHcgswMax
+	 BHJx6dC9GKVqppvXcn1aoDYtnIyvVWUk9/ha2S/aWAi+ZIwjO6ZBtX4HM/unoRdsmBQnp
+	 v/JUKz2ENzyYJrcDR8s4s+9Ir5MMmr3fTnZp5WHgCR0OM9X9wPCYa8DE5RRFHlbSiL6TO
+	 LcJgtgV1ftqmNfITYUi6yDRWsbEwJ2U+1CgK3gOAI5+Ilps1XAJfyA8uixI9eWjJfCw==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793738532;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=7GFg9CMcw+k0GNRHnnRj1fRvrw9rtu6syCMCTKPIOQs=;
+	b=kuOR6CFGNsBFPqbSsbZxCjBtF6E6IO9e8nrCCitwRKXl74h6BbpkF+1Yg41XkcWjjErL
+	 36d+rOALOwxvMEUDdDRVzjYz3/edmvRhFFFHujGo/rJhdujKPrCbqEnHvLMvqyKekFdJM
+	 oGUIxVAIKlHGxLBnwHnyjn4Ui8QlkaHaueUtDMdmCihBQlDDeUf2Oa+J3iAKzMa3IFk3c
+	 cAnNU8Ve018etlxs1T655K6pH+UzaX83zO33OfB93C+xUkRqKWFtAwfPwHTp0f844c8Vr
+	 qIvWkH5LR6oA3Le73CJvBZbfFHKTc1udQUDtkmpcVOwLMyRxAPN6cTlI9v+wahcauvg==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=PoHy6DNo;
+	arc=none smtp.remote-ip=209.85.128.42
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id E670E1F00919;
-	Tue,  3 Nov 2026 20:39:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793738378;
-	bh=XBYEto4s3YC8PjNdOx2QhYF/Zwijh+0ZFjolktp8CrU=;
-	h=From:Date:Subject:To:Cc:Reply-To;
-	b=GAVbPa+qTyUhiaOxWp487eb5/LV+GBwRDrqxPh1nn6z5j+hZ65darC0De0Eg2kwSx
-	 +MQtseHvhCJIpVWUlWNO3kSefXrgqWCczLnaegzNwg88Vn8+yA/QJeTrfZWDgz0Zq1
-	 mTIFJsObzFRu0EaOqLXpuweVK6i5IANiOXsJZT6mmQVNQwQtKw1w/mCbByVOgjmjg1
-	 yNRC+am3pmjUCTbbjHCaUrM41C7PkotmZ4o8uQWuVw4cP5UbXprU6gy3Wi0vjWSZuC
-	 otnO+meFGD+9mUNd/cUYWSkDwqYstYWGbnTjyfO9bUfAauo6oGRAxL8Hm7wfkusNUp
-	 rhwT+3tLFK5Ag==
-Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id 6258F46AFD;
-	Tue,  3 Nov 2026 20:39:37 +0000 (UTC)
-From: Peter Lamberg via B4 Relay <devnull+kernel.pelam.fi@kernel.org>
-Date: Tue, 03 Nov 2026 22:39:32 +0200
-Subject: [PATCH] btrfs: test that a resumed snapshot deletion keeps its
- drop progress
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B93ED606A31B
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 20:42:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B93ED606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=PoHy6DNo
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-4a549cd7fd2so11429915e9.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2026 12:42:11 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1793738530; x=1794343330; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=7GFg9CMcw+k0GNRHnnRj1fRvrw9rtu6syCMCTKPIOQs=;
+        b=PoHy6DNoBte1rC7hueSWVzXOSVVwzlRD0SOvaZQUUvtDEu1lmT8D2ms8uUZkT5xgub
+         c/RarLNibSs/ROu3hgfzV02lIl2cTN4cv5K0oLMg4uBDaDwEnSCtjcua6DetpBEEZ0sr
+         NoWfIdNAwg0G2oXOiwRhdkPNw3+6TVHdxvcztYKjpGL7ZwynDZ2HnyNJjqhJ0UAAffU5
+         XAaYQJeYiJ+PAX86eDSTBvH9w2DdBI1/OiuAuWVEs711ZdI1s5UnEimxcZtEKhwSvsXc
+         QcLHKp9NZeSNY6jC5dDbRFzZdNifdklLx4/cUIhfND/miS6liL1nEYVQRlxNUTlFluiN
+         /86g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793738530; x=1794343330;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=7GFg9CMcw+k0GNRHnnRj1fRvrw9rtu6syCMCTKPIOQs=;
+        b=hXohE0VX6E/ziUECAwtNnEKi98XstclNDP6WAocEAESycmWc429RgOv5466mNJYZQz
+         /cM44v+Ius8n1jqhQIN9+Pst+7o+5MtWt9YFc4vFscIaPi7b2rGg2NA7PQzc1g3FylOQ
+         VJJF7JPkuew3y2BToBBlJy1x5iLk6j092YzaOVEB8i8P+oVbBS2B0MadvoGLQUiAHyey
+         pxEVXHfegqRimqLh6vijKpk5G7fNkkdSteDjywnUOlxwIJerawJNc93YGeumxt35XBbF
+         /ffwCHW6qJjZXWLOfXIK1gDpt/fsG2PycWULjKPjDCjpZKw2qb1bZTiNaDoJh3xvnQSd
+         VA8w==
+X-Forwarded-Encrypted: i=1; AKwUvByB3IgVoyNpSETtR5cqonqqF3unPUKJSUoZXkD6fsExB709vLV0aUzySAzgbEtdaRZrTCbgPQ3Qfu1ftQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/D0Ww3vNmsai7tNmjSk3Y6fDeA15arb62cQOE1iVPF5Q4MDo2n
+	5Qi/PHBDEOLlEq4qfjlpCO/tA/mN0A6ZQ6POWrAV8twoTzwMvBh6c331XiHXUrvHIl/ESKm0/u6
+	jpyElqMA=
+X-Gm-Gg: AYBFou3TQJXiH543Br0Fk4yMhgCnSVqYiUWf2g7miuZpiuurtoHo0S8YZn/Tf8N3saj
+	B2I08nkCcFTlHNn9UB0YcXmdud776hNJzAipW2lFYU9XgkatND5XFCxZWiUnOG/su0VvnXQHGmL
+	bG+E6Oo/+UxhbjffjcEfWopbp+93h/VuKhRDmVwvkx9I655WYy57a72GNsZcZX5K6zYXBEMcLeb
+	w4FDPRbxZXEYC24Nse6MtCB+pCI20wmDTh+P04VgAmUpLcFe3HTUE/mLZ1Rkh7NR1b+PUmDTYZ5
+	+dybQYLHimTbpyQa1n+XV0cGFKkPBpPrdvgrASMoHZGVdepaVDczO8FSxWMBsrCL8FlLjmdCwvi
+	rCmbQWGw/ETfZakf9LhS7aDoHiz4NO1Yd+9BrJJ29pHP1HQYIfPsSWITG82KnHrfCqnZMgcZ235
+	ECDC1B84M9oUbrLPVSYEddGEPZSU/mhv7W/GSxP0IRauL1UIjZbjfI3r+QFz4/L/uhXb4X4KtXE
+	wXXGY9rNqD/PHJYh37waxvhjrnwbxWUp/a8bT7UiuPU37WNx3el49HZ8A8b0Cf1sA0fkMbcaiH5
+	S5Bx2y0ajuG/ZI2Exm3N
+X-Received: by 2002:a05:600d:849a:10b0:4a1:dbdf:6d31 with SMTP id 5b1f17b1804b1-4aa8b717bb4mr327050945e9.19.1793738530038;
+        Tue, 03 Nov 2026 12:42:10 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36ca38d36besm859710eec.11.2026.11.03.12.42.07
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Tue, 03 Nov 2026 12:42:08 -0800 (PST)
+Message-ID: <5843fbc8-95e6-4703-92db-5cd1df13ae9d@suse.com>
+Date: Wed, 4 Nov 2026 07:12:05 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -83,241 +92,77 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261103-btrfs-355-v1-1-fb0a30b4983b@pelam.fi>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/yXMQQ5AMBBA0avIrDXpKCKuIhZtDcYC6SAScXfF8
- iU//wKhwCRQJxcEOlh4mSMwTcCPdh5IcRcNmc5KRG2U20IvyhSFQo/GWbI6rzzEfg3U8/m9mva
- 37G4iv70DuO8HglLW+20AAAA=
-X-Change-ID: 20261103-btrfs-355-1c13baea048c
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, asj@kernel.org, fdmanana@suse.com
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1793738376; l=7537;
- i=kernel@pelam.fi; s=20261103; h=from:subject:message-id;
- bh=vPs9slwRx0isQyVtBajLr+Y9W7onpaaZGuikppHgV+Y=;
- b=bvXxMmhlz5VyEKlugJi9fkHlbas74ZjjEkRhzEZWmAo9ZWrRZmFlELwkyrvEaTIhG87VPwkn9
- E6JqAyZLyDaDerRENUC+KKueC1PEDQ3G/vEwIuD6W+i2634zAp8xY+F
-X-Developer-Key: i=kernel@pelam.fi; a=ed25519;
- pk=qpD/xh/xwDGEMdfQk/5prChHF0mXHXDTrs35FxiJgrk=
-X-Endpoint-Received: by B4 Relay for kernel@pelam.fi/20261103 with
- auth_id=1398
-X-Original-From: Peter Lamberg <kernel@pelam.fi>
-Reply-To: kernel@pelam.fi
-Content-Transfer-Encoding: 7bit
-
-From: Peter Lamberg <kernel@pelam.fi>
-
-When a partially dropped subvolume is resumed, btrfs_drop_snapshot()
-can write drop_progress (0 0 0) back to the root item if a commit or
-unmount happens before the resumed run drops its first reference. The
-next run then restarts from the first slot and tries to free blocks
-still shared with a snapshot again, and the transaction aborts with
-"unable to find ref byte nr". See the kernel fix:
-
-  "btrfs: keep drop_progress when resuming snapshot deletion"
-
-The test builds a subvolume S1 with a level 3 tree (nodesize 4096,
-30000 files with one 3000 byte xattr each), takes a read-only snapshot
-S2 and deletes S1. It unmounts once a root child has been dropped, then
-does five quick mount/unmount cycles and checks that the drop key never
-goes back to zero. Finally it lets the deletion finish and checks that
-S2's content is unchanged and S1's root item is gone.
-
-Without the fix the test fails on the first resume; with it the test
-passes. It takes about 15 seconds on loop devices on a SATA SSD.
-
-Assisted-by: LLM
-Signed-off-by: Peter Lamberg <kernel@pelam.fi>
----
-Kernel fix, sent to linux-btrfs:
-https://lore.kernel.org/linux-btrfs/20261103-drop-progress-v1-1-16e345565109@pelam.fi/
-
-Reproducers and logs: https://pelam.fi/btrfs-drop-progress/
-
-btrfs/355 fails 3/3 on the stock Ubuntu 7.3.0-9-generic btrfs.ko and 3/3
-on a module built from the same source without the fix; it passes 3/3
-with the fix. About 15 s on a SATA SSD, 11-13 s with the devices on
-tmpfs. It _notrun's if the tree stays too shallow or the window is
-missed.
-
-_fixed_by_kernel_commit has a placeholder hash until the fix is merged;
-I'll send a v2 with the real one. The test number may need adjusting if
-355 gets taken first.
----
-
----
- tests/btrfs/355     | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/355.out |   2 +
- 2 files changed, 155 insertions(+)
-
-diff --git a/tests/btrfs/355 b/tests/btrfs/355
-new file mode 100755
-index 00000000..40e41c00
---- /dev/null
-+++ b/tests/btrfs/355
-@@ -0,0 +1,153 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Peter Lamberg
-+#
-+# FS QA Test 355
-+#
-+# Test that a resumed snapshot deletion keeps its saved drop progress.
-+#
-+# If the drop progress is reset to zero on resume (a commit or unmount before
-+# the resumed run drops its first reference), the next run restarts from the
-+# first slot and tries to free blocks still shared with a snapshot again: the
-+# transaction aborts with "unable to find ref byte nr".
-+#
-+. ./common/preamble
-+_begin_fstest auto quick snapshot subvol
-+
-+. ./common/attr
-+. ./common/filter
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: keep drop_progress when resuming snapshot deletion"
-+
-+_require_scratch
-+_require_attrs user
-+_require_btrfs_command inspect-internal dump-tree
-+_require_btrfs_command inspect-internal rootid
-+_require_command "$TIMEOUT_PROG" timeout
-+
-+# One big user xattr per file gives roughly one 4K leaf per file. A level 2
-+# node covers at most ~14600 leaves, so 30000 files make a level 3 tree with a
-+# few root children of several thousand leaves each.
-+# The resumed drop has to walk a whole such child before it drops anything,
-+# which is the window the second unmount must land in.
-+nfiles=30000
-+per_dir=1000
-+pad=$(printf '%3000s' '' | tr ' ' x)
-+
-+drop_caches()
-+{
-+	sync
-+	echo 3 > /proc/sys/vm/drop_caches
-+}
-+
-+# Print the S1 root item's "drop_progress objectid" and "drop_level", or
-+# "ABSENT" if the root item is gone (deletion finished).
-+drop_state()
-+{
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t root $SCRATCH_DEV \
-+		2>/dev/null | $AWK_PROG -v want=$s1_id '
-+		/item [0-9]+ key \(/ {
-+			split($0, a, "("); split(a[2], b, " "); cur = b[1]; next
-+		}
-+		cur == want && /drop_progress key/ {
-+			match($0, /key \([0-9]+/); obj = substr($0, RSTART + 5, RLENGTH - 5)
-+			match($0, /drop_level [0-9]+/); lvl = substr($0, RSTART + 11, RLENGTH - 11)
-+			print obj, lvl; found = 1
-+		}
-+		END { if (!found) print "ABSENT" }'
-+}
-+
-+root_level()
-+{
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t root $SCRATCH_DEV \
-+		2>/dev/null | $AWK_PROG -v want=$s1_id '
-+		/item [0-9]+ key \(/ {
-+			split($0, a, "("); split(a[2], b, " "); cur = b[1]; next
-+		}
-+		cur == want && /^[[:space:]]*level [0-9]+ generation_v2/ {
-+			match($0, /level [0-9]+/); print substr($0, RSTART + 6, RLENGTH - 6); exit
-+		}'
-+}
-+
-+s2_digest()
-+{
-+	$GETFATTR_PROG --absolute-names -R -d -m user.pad $SCRATCH_MNT/S2 2>&1 | \
-+		_filter_scratch | md5sum | cut -d' ' -f1
-+}
-+
-+_scratch_mkfs -n 4096 >> $seqres.full 2>&1 || \
-+	_notrun "mkfs with nodesize 4096 failed"
-+_scratch_mount
-+
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/S1 >> $seqres.full
-+for ((d = 0; d < nfiles / per_dir; d++)); do
-+	dir=$SCRATCH_MNT/S1/d$d
-+	mkdir $dir
-+	(cd $dir && seq -f "f%04.0f" 0 $((per_dir - 1)) | xargs touch &&
-+	 seq -f "f%04.0f" 0 $((per_dir - 1)) | \
-+		xargs $SETFATTR_PROG -n user.pad -v "$pad") || \
-+		_fail "populating S1 failed"
-+done
-+s1_id=$($BTRFS_UTIL_PROG inspect-internal rootid $SCRATCH_MNT/S1)
-+
-+# S2 shares every block of S1, S1 owns them.
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/S1 $SCRATCH_MNT/S2 \
-+	>> $seqres.full
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+digest_before=$(s2_digest)
-+level=$(root_level)
-+echo "S1 id $s1_id root level $level files $nfiles" >> $seqres.full
-+[ -n "$level" ] && [ $level -ge 3 ] || \
-+	_notrun "S1 tree too shallow (level $level)"
-+
-+$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/S1 >> $seqres.full
-+drop_caches
-+
-+# First drop run: unmount once at least one root child has been dropped, so
-+# the saved drop progress is non-zero and at the root level.
-+for ((i = 0; i < 600; i++)); do
-+	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+	read -r obj lvl < <(drop_state)
-+	[ "$obj" = ABSENT ] && \
-+		_notrun "subvolume deletion finished before it was interrupted"
-+	[ "$obj" != 0 ] && [ "$lvl" = "$level" ] && break
-+	# dump-tree reads through the block device page cache, which goes
-+	# stale while the fs is mounted
-+	drop_caches
-+	sleep 0.1
-+done
-+[ "$obj" != 0 ] || _notrun "subvolume deletion made no progress"
-+_scratch_unmount
-+echo "first run interrupted at drop key ($obj) level $lvl" >> $seqres.full
-+
-+# Resumed runs, each interrupted right away. The saved progress must never go
-+# back to zero.
-+for ((i = 0; i < 5; i++)); do
-+	drop_caches
-+	_scratch_mount
-+	_scratch_unmount
-+	read -r obj lvl < <(drop_state)
-+	echo "resume $i: drop key ($obj) level $lvl" >> $seqres.full
-+	[ "$obj" = ABSENT ] && break
-+	if [ "$obj" = 0 ]; then
-+		echo "drop progress of the deleted subvolume reset to zero on resume"
-+		break
-+	fi
-+done
-+
-+# Let the deletion finish. With a reset drop progress this tries to free blocks
-+# still used by S2 again and the transaction aborts.
-+_scratch_mount
-+$TIMEOUT_PROG 600 $BTRFS_UTIL_PROG subvolume sync $SCRATCH_MNT \
-+	>> $seqres.full 2>&1
-+drop_caches
-+digest_after=$(s2_digest)
-+[ "$digest_before" = "$digest_after" ] || \
-+	echo "S2 content changed after deleting S1"
-+_scratch_unmount
-+[ "$(drop_state)" = ABSENT ] || echo "S1 deletion did not finish"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/355.out b/tests/btrfs/355.out
-new file mode 100644
-index 00000000..4e4c5e98
---- /dev/null
-+++ b/tests/btrfs/355.out
-@@ -0,0 +1,2 @@
-+QA output created by 355
-+Silence is golden
+User-Agent: Mozilla Thunderbird
+Subject: Re: bitflip in extent tree questions
+To: Chris Murphy <lists@colorremedies.com>,
+ Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <fa0ffb25-3c1d-46ce-8cc6-bdc1e2d86c2c@app.fastmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <fa0ffb25-3c1d-46ce-8cc6-bdc1e2d86c2c@app.fastmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
 
 
+在 2026/11/4 03:38, Chris Murphy 写道:
+> User reports transient Btrfs corruption.
+[...]
+> 
+> The questions:
+> 
+> 1. In 3/8 checking extents, do the 1st and 3rd lines tell us that the metadata profile is DUP?
+
+Nope, it's just how the extent item cross-check works.
+ From the backref item in the extent tree, and from the file extent in 
+the fs tree.
+
+> 2. Why does the kernel not report a checksum mismatch? What does this tell us about the nature of the bitflip?
+
+Bitflip happened in the RAM hardware. Btrfs calculate the csum when 
+committing, so it has no way to know if the RAM is reliable or not.
+
+> 3. Is this almost certainly logic board memory induced or is it possible it's a drive cache induced? Seems the lack of a checksum error tells us the checksum was computed after the bitflip? Therefore not drive DRAM?
+
+I believe it's the system DRAM.
+
+A memtest is always recommended for DDR4.
+DDR5 has some extra checks, although not as good as full ECC, it should 
+still reduce the chance.
+
+ > 4. Is it safe to run --repair?
+
+Yes. I believe so.
+
+> 
+> What else?
+> 
+> Thanks!
+> 
+> --
+> Chris Murphy
 

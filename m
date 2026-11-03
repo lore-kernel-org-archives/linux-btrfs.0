@@ -1,98 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.161.50
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793665027;
-	b=dEyYerpcLLZP2WaCW5cWtIxJh+FNK7LTprM+zLQ/lyWtQVnmP33mdUGVhVX2ClkTSYz2
-	 dMXqPmbFipcMds6K6ijKhgnC6mWF25ThbZQdLfwqe+dB6WA2H0l+gPsBVdefqLzBVykjf
-	 Xa2SvLfcWF4Upp5tZ/AXw48xxNDWIJjNu+eLh5tHWfmcTSMSWCm/r+k+jUHMSWLuzGjSc
-	 zMBNCHSY6hl5BF48agt3mZZHCblmUpTR+Af4VhczeI3T/nOjJKgoqijEObbeggHUzuv73
-	 7+LuqT/op4CB3zrWCbFnWRxTN76+hZqtdJNd+xD2JdgcK+V/H1npcz/fXBDy5YjhuXw==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793665027;
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.215.176
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1793668770;
+	b=gbRx4kY6IAIF/hdsUf3ch/thXtnYLd2KwaGsib/CqDhhinBsBrjmlpoNz8BLvJA9S6qU
+	 gV0YL7xVjiAdbcrXzGB7ybxMm/79Fxq32mannfEr9q9I8y5xyaCdb1aDocnuSztRTpCnB
+	 ZY6PoV63UkCzzFZrSHWu3d32tEZm9F7cOINTLS7kf46+Xe+6/xqGDiaEB0ssMx0VHJkax
+	 Vm6DYqJX12Yek5PKJJrPkQPRVsG3yVHRy4Rwznp0pkdhOQIulueZ8+bDH34ajsmLf+N4h
+	 yIvhoN15LOKXLp0QJJvcTsSLRWTpCE4Xia5BfEWkTJuJLFCFioWKdh6zKIbc3DmVVlA==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793668770;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
-	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type;
-	bh=y/w61r0Q0N5FeoZRAlF2wxKpZ02g+pV8TJgHPugsmLA=;
-	b=f9gfR/wgXLArf0GB7HZhVxiOEy/xKAGX2vC5KMREGJmQ2z0aoEUdL9HBp8Uvbv+sn5+f
-	 D/3mpGKrF6Y/HZbLf1JTQcIepeGrLCnZFhnsp8bn6Uixt35ftbIodAxIQc961hIfQl0xw
-	 Txqwpm8Q0dwJpTyURKxDu7+6KYRG8M1jheey/t721vZqlmDKJwGEj+jY4Z6PL1y/PEn77
-	 IPOg7ljO+UUBOlFqDAtCXLjBy0FmQaLOJIKJBBoorFJBXsHumAjqBNND6xyG4VKCXvS7g
-	 HlbzQSGik8rwD7tXGCwnRpa8I18mvxO18HX92MScWpiwPH0D9GTrI+UGvPOGHoC3yBw==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=asu.edu;
-	spf=pass smtp.mailfrom=asu.edu;
-	dkim=pass header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=TIghWWsc;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.161.50
-Received: from mail-oo1-f50.google.com (mail-oo1-f50.google.com [209.85.161.50])
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Content-Type:Mime-Version:Subject:From:In-Reply-To:Date:Cc:
+	 Content-Transfer-Encoding:Message-Id:References:To:X-Mailer;
+	bh=OzeCAPmNW+SHsrPHyP2lgHfACb376kvzXRAy4aBxIGI=;
+	b=U4aiQUgXH31r2U02L2nAiK69YhJggJytHfkcZoF08FMOhguTYKOa+WDdT3M8FkTUTIn2
+	 7SRpxn9eOi3GRU1pKSzV2NPt2Xd5icpMX93i8jeGx2lM83M3LJ9aHvL0pUkN76A97dIgH
+	 MXQZN62ljQFvLAC5S+bD27baN3jhSJL02psinSRcdKY+vBhoLTQsRivEbYKNqi4wUZTdR
+	 r0GqSwp220Idmv1rP38oSK8dlvto5IRYgflOL3c8/tOzGz7K8A1+dhs/cBiXkV2Y+DprA
+	 ocYrYmBmUUtkoV2hcMExGMwafe9v6ktqqBsyidBRUtGj8zGX52DdRvqB2tghX7ac08g==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=none header.from=dilger.ca;
+	spf=pass smtp.mailfrom=dilger.ca;
+	dkim=pass header.d=dilger-ca.20260707.gappssmtp.com header.i=@dilger-ca.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=WLyuuwnE;
+	arc=none smtp.remote-ip=209.85.215.176
+Received: from mail-pg1-f176.google.com (mail-pg1-f176.google.com [209.85.215.176])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99908606A324
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 00:17:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 99908606A324
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BDB83606A326
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 01:19:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BDB83606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=dilger.ca
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=dilger.ca
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=TIghWWsc
-Received: by mail-oo1-f50.google.com with SMTP id 006d021491bc7-6fe4372c5f3so2462080eaf.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 16:17:06 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1793665025; cv=none;
-        d=google.com; s=arc-20260327;
-        b=ZtW4/84NSGfQ7/ZldkFLQRQ4Ih3BFXLWUPQe7wvku90uLuTGg0Rm9EhtBee0EhKooV
-         MAqzsakQ0nMJKlZHtMc1ORidcZG/Z5ifaNC5EPHemssP0NQtensHBeeBgZmwqdY+FftQ
-         SKA2VJ/exFUb0InCTub7Xh03iArdLfJUnyDNfGxYz6CoudXmXd5JL6vSHQneRip040oE
-         cznC8u/NcStgri+YAOB71V3X0LYktRfx9nb8NrUzT7qiUMu8kmFyjp/ydmRmflFROYv/
-         CvD3EcNyFMKG3yesqgtdITHeGk1yIrIaRW4kTAzTWuRpZOAMxC841/RnIuK6s2niCUFQ
-         s2Rw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=y/w61r0Q0N5FeoZRAlF2wxKpZ02g+pV8TJgHPugsmLA=;
-        fh=gccavu6KskZuhdxKZGGZqKbRpE8AZv+Jw1v9OVMw784=;
-        b=qeUA5pMtYU1tQxKlCHS/uaphD8csftI6vhrvsuFCdbM8UdqizOl4UnaxLy+dSGBIo0
-         4+/ytOGxjogTjPCe1Qxy1BHg0MSgRPttqKv1eFN24ZNllhbRpRv/droAc/bZJJrs/F3B
-         Rf5y6T0M7U827P0fNWs403Q4TPi4ckv6VJt8lyYIzzSWNiSIIXCQDUYNr4oODcQ4dpPx
-         zxELJvByRLVEzeJAxPnJqNc3RtNeleowJFU4LgHmD14cTIDi28tZhcFiJu2rdWieg1dt
-         +GGrBkffRD9w5lAyiCwN1vFKKVrP/ufuZ4TBQaOCf3Q8TQ4XjQao+Q5sPOgtVTZT6xMy
-         3TZg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key, unprotected) header.d=dilger-ca.20260707.gappssmtp.com header.i=@dilger-ca.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=WLyuuwnE
+Received: by mail-pg1-f176.google.com with SMTP id 41be03b00d2f7-cdab9e9761cso2099312a12.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2026 17:19:24 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=asu.edu; s=google; t=1793665025; x=1794269825; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=y/w61r0Q0N5FeoZRAlF2wxKpZ02g+pV8TJgHPugsmLA=;
-        b=TIghWWscJji7hC2wmRZ+zJhUwU/XVC/8lmV+uhcdFzU+SfSxiiBtj9IMXKZaSe81of
-         DvQrA0+TfdqoYlUTnUIzRl9dGUQBXYS/OXKvsanHk8XG+YQSLfyeHEgKDpOKjDY3zYSB
-         6xusLUkYc71Wi2qN+YQJEA5/sNF+bYc1uWvIv1FYTjzZgCtjTGTqdVUOv3jZzi8NrQR3
-         OG5YeU1prgdtUmh9nehUYAcQe5xsTQADL4zDoBMynORGFfwS48/bxIR1ynBAlu7J58bq
-         PVgMnz6TOyobHV1mPXwvf1dQIQH9ekMJwatWINhw+5EosgH26JJaFOWyfUVWG7rRi16U
-         rXBQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793665025; x=1794269825;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+        d=dilger-ca.20260707.gappssmtp.com; s=20260707; t=1793668764; x=1794273564; darn=vger.kernel.org;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:content-type:from:to:cc
          :subject:date:message-id:reply-to:content-type;
-        bh=y/w61r0Q0N5FeoZRAlF2wxKpZ02g+pV8TJgHPugsmLA=;
-        b=EsjbY5p5qzxKJPyJ1Fn0eOWy9A8G1Tv06B/TiEkJm524h3O9K3dEL+YZrp2WX1lNFE
-         2FU5v0IgZ5871YRZiPSIW2k+0i51yWI5f2bkrtwpqtYUYQH69/5+yNhQUIuN1L3/faF0
-         FPAwHfNEXqNzDf1NAXCABHu1uOW8mhV1Aqx+ecc5Lb1y7+jLJ2kUM/+mIN4Ka9cnzecT
-         HInOLkiNkZBq3uEO08x16Q48B1uI7fs4WXpT2VJHCQqLjF1MIaGb1gvCtal4C0+H42sF
-         jTmFdOtg2lrO52YX+VkWZr1voFRvQAM8XHMDJ+AhSPx/0+S3aH3lAYFYKlFXsL0sYBa5
-         3/OA==
-X-Gm-Message-State: AFq9FYISjNn6knMZc143yLgcmwMo9dsytrxezabrdLtj5XxOPUmOkhSz
-	CXIdI1lhJlj9cg7DychHX/YpWNuxcpRXyPglKwYjPgkvLOoLsbPu4LocqC5uPt1QFbhQpaFJn6p
-	4/9VCwEY9H1JeluDitF4g65Ync8IUhfiP3ZLEUq6xtHGK/vXfpDfDV2/Dohs=
-X-Gm-Gg: AYBFou1KL1CFlw5v+1s1xu3bAl0nUa7pXo5wZ8Q3uMxvGjGYimgG3SLi2BRK4WWeCRP
-	UIs9qUdAxaKYfNiHg1CBCa7N4x5BZQmYi6RO6aV+tUh8a3yZtQ0dNbxfYWhhSysPXmSdbcUAKhM
-	lK3hHO33U6ZN5i/oDra6AAFkYXTiFCjPbeYUPbnasmnO/7syqF/XFUfZCo92Nu+XNRqAASrePHs
-	FKY2xeLXLCkBm9okB4+7/lU2Dv0iN9qFgggJxfgFk0ZFp9fI96gNGqofIgGfG8wRHra6FSg3jK2
-	v1GWNgZsMWCygEQviEjcbnXgX2N/2pnmTTDtSaGRTQXIz/NlGHt1J/LKglUa8dLB8ak+vBlECMm
-	hA8uIMXZ74cUuLP/b4BJQypTRjO/WBTHYuBAg7w==
-X-Received: by 2002:a05:6808:f13:b0:4f4:813c:6a21 with SMTP id
- 5614622812f47-5640dcb87admr7653299b6e.20.1793665025508; Mon, 02 Nov 2026
- 16:17:05 -0800 (PST)
+        bh=OzeCAPmNW+SHsrPHyP2lgHfACb376kvzXRAy4aBxIGI=;
+        b=WLyuuwnEhkbAyv28mwDIKyWMkPW+CaP9ZTshNGZcTqE1nhqBVxUmsjtyy4mQbGWbt4
+         rlNZCrwEFtGxid83cj4tDMvLM05p2Z02rPI6Us/tthLuA9ws6uylnx+0Ls8EVjIDXfzd
+         ePpjDOYPpKHWSBgnzeIo2DZuZxCNnRfcp5iDjXAijLYj3gQvO8Lwnq0kBbQZJv4+lbrf
+         HzfDUzQO+pBVTgxZp0qUPUIr/ceYzNPPL5Ug5vEKueEig1bCyp0zqaq1j+GSD0oTwg+9
+         /FFnjHTlruZ36DI3TIdFUyyWrXxPvb20pWegZcfg6zqdNBBPdZ+cMs2vAbkUyVFlhsvu
+         QTXQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793668764; x=1794273564;
+        h=to:references:message-id:content-transfer-encoding:cc:date
+         :in-reply-to:from:subject:mime-version:content-type:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=OzeCAPmNW+SHsrPHyP2lgHfACb376kvzXRAy4aBxIGI=;
+        b=UkRYhVnbWBQ5Wu7lO3J94+pptAMu0FqX1r5SLnKZTZO62SFa2PPwEpH4aHuCPKGFrU
+         sO+gi/81V4E9JS74x8PBpZF06eVQuZGLQ1gVRil9QOj+bt/3SrPJptTIynpYv7VTFWds
+         gWWC0zO0SBVGGemCzmQPhx1MStJu5yZRRzZhx1qZX7qs1Y2ZgSZSVNIU1FFvWyA3mKbf
+         AxS/MykNgn0coJ+z9CZ0Ij5S8gp8Wi90MyfY8B7NMgHJVau95TWHN9zYMuO9LpbtVkQV
+         pSzK+RsSjHKSXbPOQGQTnZowcClsw/mwrb1k0tcDQm+r5OcyT7S1X39x5Ax987qUWNtx
+         IIAg==
+X-Forwarded-Encrypted: i=1; AKwUvBwPiBg1Dsrn6X6XjMHIK8jEFAoiTjkc+cisgKowXewZG5OAXJ04UNqopq6Z99cLWcg9szj5WWWHSH7bdA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/vvHR4t+cR9LTi6YmykCerODVBTfKDW13H9KFSc8bnsPoNETyS
+	Lb6vr4bMG7dP9BrIR0+wnLFTGW8b+L1Jic5b44q15aElS8XwXuUlyBj1JSA47FFfuz4=
+X-Gm-Gg: AYBFou3vPewOe0ql6VS1MWuqbz03cRjWxrn5psopNzP5Z+WKSD6mEMps3LQNgr/LUCS
+	Zi9mG3QKOez0+wmbnHF9y0tY6+/zrhKthYEZlhpmrcrJzDMmTSB4NsHAHrbDsEhyftJKjXhYj1A
+	GvyT/DPHTxCAzuXDs8aGX7RzsjaQBvjN2Qsa3yxgIis6gIhsygrnej7C9gOEOOqG+VxT+OjlQfc
+	ziKsjROskrH7HOmX/MwwD8exMqRFR8Dz8nXfIBlgeXedpBhyjtiKHmuaWHzCx2Ve0eULkI4uJ5b
+	h62JHCIrfbJTrBY8mK9MmHChN/YI7Hch2h1mP4OHjbKG/EeXsqHS0lKp9TjR7C4uLAco1xqq0hF
+	xITmQeFh4XmHDpYjQznPD7lYmYm07qr0e/IJ4QcqU1QADNRcgT8Wq3NZ4q3wtQhCa4qqReOkCZJ
+	klyoQa6ctmRRqc7lb9cLBo4jfyuWrA30Imr6F6vn49tRGh5vfq4u5prPJq7jQw/qeB8t4HtHUYA
+	uQW2DkTr0oBiGmusns4lUWsWHHh0Hrfe6TKp+HIZGNawAmN/DETGxZtjODuKD9vH+cx/2jGkzpc
+	jDILJ8nklHuDGShDfhdpTQ3Qhu1fDZzVHBnlm993kuI8b6wzPKXWhrzXSQvgCX3FhE3YvGdpwsG
+	LDZxYZDm2nGGR2+Q2FmV8tTZXFDFIag==
+X-Received: by 2002:a17:90b:1188:b0:3ad:b7d1:8631 with SMTP id 98e67ed59e1d1-3ae897eb75bmr7031480a91.17.1793668764007;
+        Mon, 02 Nov 2026 17:19:24 -0800 (PST)
+Received: from smtpclient.apple (S01068c763f81ca4b.cg.shawcable.net. [24.64.171.237])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b07c71c253sm1446998a91.16.2026.11.02.17.19.22
+        (version=TLS1_2 cipher=ECDHE-ECDSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 02 Nov 2026 17:19:23 -0800 (PST)
+Content-Type: text/plain;
+	charset=utf-8
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -101,30 +90,179 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-References: <7350d541824422978116bfb536d2c7bc68cbb826.1793664043.git.wqu@suse.com>
-In-Reply-To: <7350d541824422978116bfb536d2c7bc68cbb826.1793664043.git.wqu@suse.com>
-From: Siddharth Mishra <smish149@asu.edu>
-Date: Mon, 2 Nov 2026 17:16:54 -0700
-X-Gm-Features: AclHuK9qCr3dDvc04IEheNLz55h9Od5dJ1GmkGysQ5vvyTen6KlKg6UeLolR6wU
-Message-ID: <CAKpDGtmO8v3Ny1vKDhU_4oUATTaL8pE5CqWusy-Xt65OttAqdw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: return error immediately for btrfs_validate_super()
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0 (Mac OS X Mail 16.0 \(3864.700.51.1.3\))
+Subject: Re: [RFC PATCH v3 3/5] ntfs3: make crtime user-settable using ptime
+From: Andreas Dilger <adilger@dilger.ca>
+In-Reply-To: <20261102153845.d67wlorqcbe3c2w7@pali>
+Date: Mon, 2 Nov 2026 19:19:11 -0600
+Cc: Amir Goldstein <amir73il@gmail.com>,
+ koraynilay <koray.fra@gmail.com>,
+ David Sterba <dsterba@suse.com>,
+ Alexander Viro <viro@zeniv.linux.org.uk>,
+ Christian Brauner <brauner@kernel.org>,
+ Namjae Jeon <linkinjeon@kernel.org>,
+ Sungjong Seo <sj1557.seo@samsung.com>,
+ Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
+ Chris Mason <mason@kernel.org>,
+ Jan Kara <jack@suse.cz>,
+ Yuezhang Mo <yuezhang.mo@sony.com>,
+ Chuck Lever <cel@kernel.org>,
+ "Darrick J . Wong" <djwong@kernel.org>,
+ Sean Smith <defendthedisabled@gmail.com>,
+ Andrey Albershteyn <aalbersh@kernel.org>,
+ Pedro Falcato <pfalcato@suse.de>,
+ linux-btrfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org,
+ linux-kernel@vger.kernel.org,
+ exfat@lists.linux.dev,
+ ntfs3@lists.linux.dev,
+ linux-api@vger.kernel.org
+Content-Transfer-Encoding: quoted-printable
+Message-Id: <DD1A08F1-8F47-4612-A807-AEA39461AF9B@dilger.ca>
+References: <20261101015551.786044-1-koray.fra@gmail.com>
+ <20261101015551.786044-4-koray.fra@gmail.com>
+ <20261102142452.d6jkitgdeuquy23i@pali>
+ <CAOQ4uxhQ3uhq6s+4deEJAQV5iy8QZoucojR58_dUNYrnjt_yvA@mail.gmail.com>
+ <20261102153845.d67wlorqcbe3c2w7@pali>
+To: =?utf-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>
+X-Mailer: Apple Mail (2.3864.700.51.1.3)
 
-On Tue, Nov 3, 2026 Qu Wenruo <wqu@suse.com> wrote:
-> The function btrfs_validate_super() doesn't follow the common
-> tree-checker behavior, that will immediately return the first error when
-> something corrupted/unsupported is hit.
+On Nov 2, 2026, at 09:38, Pali Roh=C3=A1r <pali@kernel.org> wrote:
+>=20
+> On Monday 02 November 2026 16:09:41 Amir Goldstein wrote:
+>> On Mon, Nov 2, 2026 at 3:24=E2=80=AFPM Pali Roh=C3=A1r =
+<pali@kernel.org> wrote:
+>>>=20
+>>> On Sunday 01 November 2026 02:55:49 koraynilay wrote:
+>>>> @@ -154,6 +158,11 @@ int ntfs_fileattr_set(const struct mnt_idmap =
+*idmap, struct dentry *dentry,
+>>>>      if (flags & FS_APPEND_FL)
+>>>>              new_fl |=3D S_APPEND;
+>>>>=20
+>>>> +     if (fa->fsx_xflags & FS_XFLAG_PTIME) {
+>>>> +             ni->i_crtime.tv_sec =3D fa->fsx_ptime.tv_sec;
+>>>> +             ni->i_crtime.tv_nsec =3D fa->fsx_ptime.tv_nsec;
+>>>> +     }
+>>>> +
+>>>>      inode_set_flags(inode, new_fl, S_IMMUTABLE | S_APPEND);
+>>>>=20
+>>>>      /* Save nodump flag to return in ntfs_getattr. */
+>>>> @@ -275,8 +284,9 @@ int ntfs_getattr(const struct mnt_idmap *idmap, =
+const struct path *path,
+>>>>      if (unlikely(is_bad_ni(ni)))
+>>>>              return -EINVAL;
+>>>>=20
+>>>> -     stat->result_mask |=3D STATX_BTIME;
+>>>> +     stat->result_mask |=3D (STATX_BTIME | STATX_PTIME);
+>>>>      stat->btime =3D ni->i_crtime;
+>>>> +     stat->ptime =3D ni->i_crtime;
+>>>=20
+>>> For me this patch looks dangerous. Somehow I would expect that the
+>>> "btime" will never change for existing inode.
+>>>=20
+>>> But because the ptime is mapped to i_crtime and ptime is settable =
+from
+>>> userspace, with this patch it is directly possible to change btime.
+>>>=20
+>>>=20
+>>>=20
+>>> I was thinking more about it... Is not this just misunderstanding of =
+how
+>>> the security model around the times is working on different systems?
+>>> Because on NTFS there is stored just one field which says when the =
+file
+>>> was created. There are not two fields like "time set by user and =
+time
+>>> set by system".
+>>>=20
+>>> Windows security model allows anybody with WRITE_ATTRIBUTES access =
+to
+>>> change that create time. Linux security model does not allow to =
+change it.
+>>>=20
+>>> NTFS in this view is just a filesystem like any other (ext4, btrfs, =
+...).
+>>> In my opinion if the ext4 or btrfs filesystem is correctly =
+implemented
+>>> on Windows systems, then Windows security model should handle it in =
+the
+>>> same way like for NTFS or exFAT. So if something grants =
+WRITE_ATTRIBUTES
+>>> access, then Windows should allow to change also btime on ext4 or =
+btrfs.
+>>>=20
+>>>=20
+>>>=20
+>>> On the other hand, I understand the use case to have two creation =
+times.
+>>> One time which would never be changed and could be used for any kind =
+of
+>>> atomic / synchronization by userspace application logic (this =
+btime).
+>>> And another time for human which can be changed at any time to any =
+value
+>>> which user wants (this ptime).
+>>>=20
+>>> In any case, I would suggest that filesystem driver would not report =
+to
+>>> userspace unsupported values and would not try to invent other =
+values
+>>> and lying about them.
+>>=20
+>> But all those fs with mutable creation time already report it with =
+STATX_BTIME
+>> so what can we do about this?
+>=20
+> Well, what I wanted above to point out is that the "mutability" of
+> creation time is not feature of filesystem, but in my opinion rather
+> property of the security model on the running operating system.
+>=20
+> Maybe better question is: how ext4 btimes differs from the ntfs btime?
+> In my opinion there is no much difference, both of them has meaning
+> "time when was the file created".
+>=20
+>> If userspace requests both STATX_BTIME|STATX_PTIME in mask arg,
+>> those fs could technically return only STATX_PTIME and it should not =
+regress
+>> existing programs.
+>>=20
+>> But this is still a bit surprising behavior is it not?
+>>=20
+>> Thanks,
+>> Amir.
+>=20
+> I'm not sure what to do with it.
+>=20
+> If we allow to change btime of ntfs then for consistency we should =
+also
+> allow to change btime of ext4.
+>=20
+> Maybe another idea... define new capability which would allow to =
+change
+> btime (on any filesystem)? This would at least make the consistency.
 
-Thanks for taking this over, I won't send a v2 then.
+I think the ext4 and xfs maintainers have repeatedly said that =
+btime/crtime
+attribute should not be modified by users.  There was a long discussion =
+on
+this from Ted as well, and the reality is that "creation" time is not =
+worth
+the bits that it is written on, since it is not preserved by any tools, =
+has
+a "vague" meaning (is it when the *file* was created, when the *content* =
+was
+created, do edits update it, is it preserved across filesystems, =
+archives,
+etc.) and adding it into the filesystem is misplaced effort.
 
-Tested on btrfs for-next (d6f76ca0a70d) with KASAN and
-CONFIG_BTRFS_ASSERT=y: the image with sectorsize 4097 no longer hits the
-BUG, the mount fails with -EINVAL and only "invalid sectorsize 4097" is
-printed. A clean image still mounts and unmounts normally.
+Storing it as an xattr has some reasonable chance of being preserved =
+across
+tar/cp/filesystems, and doesn't introduce a herculean effort of changing
+all of the system calls and on-disk formats for every filesystem.
 
-Tested-by: Siddharth Mishra <smish149@asu.edu>
+Cheers, Andreas
 
-Siddharth Mishra
+
+
+
+

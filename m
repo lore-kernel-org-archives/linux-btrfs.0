@@ -1,111 +1,93 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=202.12.124.155
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793730860;
-	b=yNmJ71Vx//dT5NPChfZILAKvoud/n8BymBrUHi15lZ4kt0lq3BA/etJ0oohyVBWnDLfz
-	 0LYsIvhm8ZsTR1VoJuERzjrLlXAEtsWn2YsluWM8dfja6eQe81IBdclj5JYgDm4C/ljKc
-	 bbxZmqS+la+/r4epDVa59vnUtt2E+XgNxG0B8AdkU409nB7DCcylTyhjfzGYmxhmv0b3Z
-	 iQSh08Pqx53phWcn7gDHLGmzmV4FXpDsiOWpVDIWrHapjip/8m2jnxyS1SJi5oIMc/MBr
-	 /+erFysfMnWTcFqIXzPLcDigRb3P7e6KePul+ThBjrFca0qS88v9e78pEUJkv1qzBdQ==
+	t=1793735267;
+	b=usK/xxdL26hNZ1AQXhVME1MMOEA32S/Gg9kta7nqtz88v5b7MREXmltdTzG0nD+966tO
+	 HDx/p+c+QHxQiji8q7DXivIfIBNI0a4lTdQlAilEOU5VviZoDTP1/tg7o5sJPFlLLxPaz
+	 G/QOQUb+Z3V/Npd2J9klmOO/7bn3p7x3N+jNv7Tqq8vsZmqNT512BgcBrMDqD9/Qxz3WX
+	 i3UVxjGR9IKUH8D2OeMutsVg3l73gY2OhqMi8XfhK8aO3lFkRWt18zm5pce6MCtU4QqWN
+	 /pKzalKi3FZNlhuYqYW+ryrixTcGX9/k3P3ySCUUvob7K9ezADQU5EHYYcq9bhuJdqQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793730860;
-	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
-	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
-	 X-ME-Sender:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:Received:X-Mailer:
-	 MIME-Version:X-ThreadId:Date:From:To:Message-Id:In-Reply-To:
-	 References:Subject:Content-Type:Content-Transfer-Encoding;
-	bh=B/cmcTDQRcOAXfNbk9K/zMx+8NKYEanXMLNS9TD/wko=;
-	b=N14envGPbcETurGDXco62qA+7ZhGkdPCx0dj8Y/H54pn1cs16iqRl9owyjxiHwkD0jYJ
-	 2yr40brWSEzNy2qb05BBenWaVUcT+hYl2FIMXTJMiot9Dq6+iUx+5f4xnnagTOuE3TP76
-	 nqJKPa0x/sCiGdmlDGIMf03XMgB176HQsx6iydQPUlVPLxGKM0qCnXgdBm5eiueg0ZRHT
-	 RzACvSuPzLAFuVQk3uB1BH1v/11s88eUF5Zl1Qg/tyHZSE14SNsIhupjxtEA4XIMmYC78
-	 T3d/LDu6ZMD3Gy3F+I9LG3Bkyfxbq6dbA17ych7G++3ppB6ESTrOly76dVGnALtM48g==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793735267;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=lwXO2pWBwZVoIcWPUyFVU4SxkexRrdvPa4wf3Lt54a8=;
+	b=oR/Re4otQvUGrNDDPlY0HA37JDO/CeWMyDTWnnS0oDyqQKN42EXgjYLeOAXhNUf9QB8n
+	 uIYC1vKMBUkSAiNVqhyerms5QEkxv6JZ0M47fAdu4zyIPfxvZGXWdYQJKcm8MsDNXDmOc
+	 /8jgtndUv/bO14f4YpC2vtZ1+eHx1MKK4ADswd2iD++Ac76rQq/WbJ0mw7CWDW6ng8lxW
+	 uRe0TeSqoQ41oG4J3f+KeZTh0iik8nmup+cJT22k2OPBrlsZ9hn7jfwLryEaUE2zReQb+
+	 IKR15uRw87xXHD5P+i+8jmif8C2nXHmBiJ3wxPGal39l+Qy1B9x4JHrvmcTUDPc65sA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=colorremedies.com;
-	spf=pass smtp.mailfrom=colorremedies.com;
-	dkim=pass header.d=colorremedies.com header.i=@colorremedies.com header.a=rsa-sha256 header.s=fm3 header.b=MC0n8GAS;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=w08nnpQd;
-	arc=none smtp.remote-ip=202.12.124.155
-Received: from fhigh-b4-smtp.messagingengine.com (fhigh-b4-smtp.messagingengine.com [202.12.124.155])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=dbLvWv0J;
+	arc=none smtp.remote-ip=209.85.128.54
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 10E55606A329
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 18:34:14 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 10E55606A329
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=colorremedies.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=colorremedies.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 11EE9606A326
+	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 19:47:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 11EE9606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=colorremedies.com header.i=@colorremedies.com header.a=rsa-sha256 header.s=fm3 header.b=MC0n8GAS;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=w08nnpQd
-Received: from phl-compute-01.internal (phl-compute-01.internal [10.202.2.41])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 2AF8E7A007F
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Nov 2026 13:34:14 -0500 (EST)
-Received: from phl-imap-01 ([10.202.2.91])
-  by phl-compute-01.internal (MEProxy); Tue, 03 Nov 2026 13:34:14 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	colorremedies.com; h=cc:content-transfer-encoding:content-type
-	:content-type:date:date:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to; s=fm3; t=1793730854; x=1793817254; bh=B/cmcTDQRcOAXfNbk9K/z
-	Mx+8NKYEanXMLNS9TD/wko=; b=MC0n8GASxyR/SkS7CtelRJXGn8E3Lawoh87Vv
-	KfHap+InZ/n5Wz4dOMFm36GbsoWJ4k5Vq1kMma4ycU6932rWQgyADT2IozD/q1Ok
-	fYjZDmOwPB4EKhKrMSjPxbbUgVy6WYTuDPIQJtnqegs/6yHj3994X4FAreePwa2E
-	1Qx59LiL5/p4sv7hEnDztuhXIZ4DTiNj8YkBE4lVjFOtpv5VZVd8d5ZVMWsY1saM
-	24vtaAQjBhP95V1vb8BCoBim8qBgrXFhYYb9+2NQS2fbDaFY5TVhsYOsghMCUaZa
-	jX51JPaFkSrozZtbNN6wTnIudnlKdMGZlAwYT5EIckoMINemg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:content-transfer-encoding:content-type
-	:content-type:date:date:feedback-id:feedback-id:from:from
-	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to:x-me-proxy:x-me-sender
-	:x-me-sender:x-sasl-enc; s=fm3; t=1793730854; x=1793817254; bh=B
-	/cmcTDQRcOAXfNbk9K/zMx+8NKYEanXMLNS9TD/wko=; b=w08nnpQd3yRGhdsFh
-	HQWffn9t6uFRk2ftiElSlH1h9OPz/lDrYtW4FV1S2OJoScCbSN0M9ZL1zvtD6KyF
-	0YxvDwAR0gHVJFR9y7qA2ehlXyaVUMFtRF01Y4qo7I0fnTa1IAFPZx3nZbtFERMM
-	3mc6g4KiyoIel5pzDBBPrkH7pyLMeZQ89iIE0/8NvOYm/U/e3StW+X+6pGQ2pN+x
-	wwbW8iFKAj0ntR4eG4sOwWT/Q2EWoV80xEpbKYWac9i/W/KXnksVIK/rL5P8hcYM
-	xbJoz25ODlYCy+vm5pgncZtAAEABdbj+GvtWhINEyqD71mCUSTr3auTfWxu4fheY
-	R7VCw==
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-08;
-	repo=github.com/dkim2wg/interop; date=2026-10-28; sw=lmtpprox;
-	action=sign d=colorremedies.com a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1793730854; d=colorremedies.com;
-	mf=PGxpc3RzQGNvbG9ycmVtZWRpZXMuY29tPg==;
-	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm3:rsa-sha256:fTWJmIqGzvG7CNzg8B114NmQKOaK0nfyTRdjkNkzkwOs4dF
-	Rsf50lVqNfA0v42BJ7VMn44z/SvkaUXmBAYa9StBRhchiEzRoMMw/MYxrFRqhXMi
-	sMHmITdrm4futuyOwGcr+C8WetZtNkQAgqBoSBkvvgv6d5QiVFODTrXNAdKVvtPw
-	PMDf31NveOGrubMWy5baDng8tN9gHP6RpZf2ikgi7UhxtbX9to4Kvj/z+hFR04GP
-	ZbIL9P/XsujBXG+7T4q0S8+yW/vCPQxC4as1OjDbg+mL9UdF31Q/fNMOI6QIlt5Z
-	qhO66TxAgW6/aJKj7j+lc/BgmJKqcjxE2hWPQ/g==;
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-08;
-	repo=github.com/dkim2wg/interop; date=2026-10-28; sw=lmtpprox;
-	action=mi-m=1; hc=11;
-	hn=content-transfer-encoding,content-type,date,feedback-id,from,
-	in-reply-to,message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:2a5+2nCS77pi+PZvywgCgOoClZVlP/Vd6R39gsX1ocA=:fHE6asmHKEqJoQ/5e3VGbeY3h6+ERWC8nJ5jd7ZYynI=;
-X-ME-Sender: <xms:JSnqakDe86B8PeLLEC5LOexPiNgMOUKpR0oQBlz6v6ZcASV97_xjnw>
-    <xme:JSnqahX1EeCowrJA3IQUHNsW4tJcFQRVxWomGm0XxmocgovnFB_44KhFJkThkywsU
-    BhmP2qJ1Kt3QZX3XZ_v9mniiqgqXb5QtCHLhsOdMigHbxSkyrJh8L85>
-X-ME-Proxy-Cause: dmFkZTGdbS9X5xvCL1DBFQFQDEWO2fdJkXP9UN87M4K5oBGCxfXlowAhiDTHcr/dV9Oc74
-    GpWsUD94mQIBRLxsinfucssRLl5zr9AmP6eCylcLV9tEH0GxbEksnhBNU+wphQa/Fzen3G
-    W3c21V+WTwJIX7JAQG6263abFKmRc571782M+Nz4PIczq1vzRqQhsSQHx/kQfJaJzIlXG2
-    yIr+llCRyGcJJ4T6P8yoO+7nBtwp5zCOmVutWQMSwbQxt7WOO/atiqvnQz7Dm3/xTmqD2L
-    hAQ0V1fgKo4j1/Qe4FlIg1kvMeaf//zd6VLD80g+j/b+sSKMr2QHoph3Qse32qQZ4PJ8co
-    hg3GGTQ6pU+ubV6nWbeJd9YnwPUj2The5sdegBFKFLKmQr8ay5S90bA0MuYrKE+DWMjxOZ
-    thI1A/WH8bvslR8WXigKNj66VCElfTTEYD75hT91ecBIGyNewbFoZUH0osiRZyagn4L3cH
-    e9PLOqbgdD/mkxbBm8HAdG9YgjZSKhvh+vXHTfiIsr6ajmkKSeYsC1zkfU71QkY1s8S33j
-    7TWTCwpjafBbUpFBK1f45GhwF1c3XfSKqHyxFry61cvCFYE74qXkdKd9qu+KAsLHE0R4Ep
-    mBSHkX1Kn0yLToOjuaGjqRubqgRSG6Z7jT1SronJjgowJzY4cOrfxWoB0wdg
-X-ME-Proxy: <xmx:JSnqahSRzwYA_3NImwEAcDo7ndVE7qll0qT6Z9AQKYaPquMnTzvgXQ>
-    <xmx:JSnqaqs-nuGezxz8c65shLdz3gK0QvNRJqAoLoPucD74ApmTqnpafg>
-    <xmx:JSnqajtGd-22Q4p6jkwCc3oWbOuZzH7Ccu8IzMy3x-5Gq6tY5AZwNg>
-    <xmx:JSnqagzW8O6SMSx8CN_AmBISHKYoHWSJFhQUrisf1Xd0uJjN6_5Ypw>
-    <xmx:JinqajmAc5VMWuzxguK0bt8yHj4romA6gCMS7rM-4zPv3gOXv9q1YcBt>
-Feedback-ID: i06494636:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id C33B218C0067; Tue,  3 Nov 2026 13:34:13 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=dbLvWv0J
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4a140e7405dso45943205e9.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2026 11:47:46 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793735265; x=1794340065; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=lwXO2pWBwZVoIcWPUyFVU4SxkexRrdvPa4wf3Lt54a8=;
+        b=dbLvWv0Jsor1CLTOFzLesSWl+Xl0S4KoZ3tWas/6ci8jvkLo2XPD2wN7BJenj2iEaB
+         YSgNYyrQdQW/rW/KUBh7Hd7gZ+gWjIr3LFPnQxDkvZjOrEVPQRw+X3KNuaPsET2cvZUF
+         WnMv69r935Yb8BjSkusnjm2EGoudI21lph4zHecOLDZ7vzq6eusTvxT96aQL8raL65E+
+         E+Unk0HNVU45ilfOBsixkkn1mbvvFmeh0GczjCUcx0jpWCtPVi7397cIFZBxZV75HLP7
+         eKGy6Iq+D3kyy/WZRwY/p6teSE32hbY5DAAa+ML1iCXDjybawHeghbW0cV10HGf+rm+2
+         Fa5A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793735265; x=1794340065;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=lwXO2pWBwZVoIcWPUyFVU4SxkexRrdvPa4wf3Lt54a8=;
+        b=jAAv75RF2n6CmvSXz9Wbt4NnhVSm/DXEyKSSK4UCfD3q0I5MzE/+E45ki9ELXxKtKI
+         zc0aWrmxD7rkybv2sng5/Ug1lKCy9plZmyufG8EuaiMQ42/fTtNGq3WtauQ32dah4pnx
+         hz0dQMbrzKDO9N//7eeYQj4uJ6GjJqS2QNzwLdhQf+es+SmMHLAodwlUKD/S4k+aO1os
+         C6hwAxzTvyDEaM0OO0zgd/fqBNRWvsSlklIbKfrHkGnbzDLp+D6s32VhF1l5TQuTiqW4
+         OD6Ymz11C5TJ/NF/mNcrCm3GtqCVhWYYz7NmiNdgVWXLVUY7YcsF2zkiCX/W0qUbJRE/
+         ujnQ==
+X-Forwarded-Encrypted: i=1; AKwUvBzno8VnJvxV0mIPef9QLBSfDMKjPpdr2LX5vE4ujyWGy2q0B4RByBzg5/UtaTFOxMJsdjKw6Nkg/3XT8w==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9LtWk2TPHa2luGm6k2RcmBVWI1Oxigs23h5LzdlHaER7unzgHi
+	KtvyZbakj2kSbOBsgnamrbofVq1fZqoeLIhjfe4Yw5iOGKeKLlpkw6YR
+X-Gm-Gg: AYBFou0p79QusS22MCWYxVwsxymxAEkKmeOTPWi1PV0wMRtHMfzmZcWzP/fWIb6iOXJ
+	oaW8qA67QMScPZo/FSLsBQvqRtks8jmAMdK2vtI9i8OxeuVnFL2QEGFBb65th7y8A00eTgo5Uv4
+	ZHQOn4yZl6ZvKBSfwTXQiYY6xLXhFQhAje5lnj6oang2Rzg2/7DdelbCq4jXffzLO9P88MEfrT/
+	JBWx2269gbJSQNc0N8eEELfnUTzVDJ4gEFlYv/w7G5G5+Jy2J2k71zFgi5+QJKFnZR5Z2f558nt
+	vPNHFvDixHNmEdztEJFw+EpkmwF6v9PJ/kNTfMWy5eLtpCn9gmVitp3NAzfIQP8upMTrNOkxkYn
+	6pyQ8R7HyTMh2pOusyMzCNh4WjeQjsGDeywHkiyEQC3XSGBIWMd0+7WN3un3h8wVLepulWKEbV1
+	c2xNNFstlg8EZ/sBlJsUSasoGCAfx8p44ml4LqJ0mNIDiO5MMIqRZCFdj52+oP3Qt+7/OGIFFS4
+	ANU08FZwtlDHoFAcqHj+uAY2wA79G3Zh8ul0tFjWwjRUX4BQKkyHmCnenRxpqnDwFdQLovCxmB5
+	RPNm2w7r/5mjAewJ7B8OrR+o
+X-Received: by 2002:a05:600c:4715:b0:4a3:598e:e7a8 with SMTP id 5b1f17b1804b1-4ac150b28bamr330926945e9.4.1793735265118;
+        Tue, 03 Nov 2026 11:47:45 -0800 (PST)
+Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4b2a879f401sm76832035e9.5.2026.11.03.11.47.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 03 Nov 2026 11:47:44 -0800 (PST)
+From: koraynilay <koray.fra@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Qu Wenruo <wqu@suse.com>,
+	Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
+	linux-btrfs@vger.kernel.org,
+	koraynilay <koray.fra@gmail.com>
+Subject: [PATCH v6 RESEND 0/6] btrfs: add per-inode compression levels in xattrs
+Date: Tue,  3 Nov 2026 20:47:28 +0100
+Message-ID: <20261103194734.598182-1-koray.fra@gmail.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -115,70 +97,129 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-ThreadId: A0TrnmbjStBo
-Date: Tue, 03 Nov 2026 13:33:53 -0500
-From: "Chris Murphy" <lists@colorremedies.com>
-To: "Btrfs BTRFS" <linux-btrfs@vger.kernel.org>
-Message-Id: <b045ed55-18bd-48d0-9dc4-2756c61039d6@app.fastmail.com>
-In-Reply-To: <fa0ffb25-3c1d-46ce-8cc6-bdc1e2d86c2c@app.fastmail.com>
-References: <fa0ffb25-3c1d-46ce-8cc6-bdc1e2d86c2c@app.fastmail.com>
-Subject: Re: bitflip in extent tree questions
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: 8bit
 
-4. Is it safe to run --repair? 
+Add per-inode compression levels using
+btrfs property set /path/to/file compression "algo:level", using the
+same syntax as the compress mount option.
+If set on folders, all new children will inherit the setting, while
+already existing children will be unaffected.
 
-I'm uncertain if btrfs check repair has the ability to safely fix this type of error.
+This patch series also fixes a small bug: before, when setting
+btrfs.compression, it would keep the mount option level, even if the
+algo was different (!!), so with e.g. compress=zstd:15 and
+btrfs.compression=zlib the data gets compressed at zlib:9 (because it
+would still get clamped at the right range).
+After this patch series, if the user doesn't specify a level (e.g.
+"zstd") btrfs inherits the level from the mount option, while if instead
+the user specifies a level it will use that (e.g. "zstd:0" would use the
+default for the algorithm, and "zstd:10" would of course use level 10).
 
-Chris Murphy
+I also want to thank Zygo for helping me by explaining stuff and for
+noticing this bug.
 
-On Tue, Nov 3, 2026, at 12:08 PM, Chris Murphy wrote:
-> User reports transient Btrfs corruption.
->
-> $ sudo btrfs check --readonly /dev/nvme0n1p3
-> Opening filesystem to check...
-> Checking filesystem on /dev/nvme0n1p3
-> UUID: 73b0efc1-1bbf-44a9-b61c-f4b8936608ae
-> [1/8] checking log skipped (none written)
-> [2/8] checking root items
-> [3/8] checking extents
-> data extent[3068469248, 4096] referencer count mismatch (root 257 owner 
-> 3844574 offset 382279680) wanted 0 have 1
-> data extent[3068469248, 4096] bytenr mimsmatch, extent item bytenr 
-> 3068469248 file item bytenr 0
-> data extent[3068469248, 4096] referencer count mismatch (root 257 owner 
-> 3844574 offset 382541824) wanted 1 have 0
-> backpointer mismatch on [3068469248 4096]
-> ERROR: errors found in extent allocation tree or chunk allocation
-> [4/8] checking free space tree
-> [5/8] checking fs roots
-> [6/8] checking only csums items (without verifying data)
-> [7/8] checking root refs
-> [8/8] checking quota groups skipped (not enabled on this FS)
-> found 851404390400 bytes used, error(s) found
-> total csum bytes: 828557228
-> total tree bytes: 2640494592
-> total fs tree bytes: 1551499264
-> total extent tree bytes: 167936000
-> btree space waste bytes: 398250390
-> file data blocks allocated: 10191907336192
->  referenced 895043592192
->
-> Clear bitflip:
-> 382279680 = 16C92000 = 10110110010010010000000000000
->
-> 382541824 = 16CD2000 = 10110110011010010000000000000
->
-> The questions:
->
-> 1. In 3/8 checking extents, do the 1st and 3rd lines tell us that the 
-> metadata profile is DUP?
-> 2. Why does the kernel not report a checksum mismatch? What does this 
-> tell us about the nature of the bitflip?
-> 3. Is this almost certainly logic board memory induced or is it 
-> possible it's a drive cache induced? Seems the lack of a checksum error 
-> tells us the checksum was computed after the bitflip? Therefore not 
-> drive DRAM?
+Now, there is the question of having a fix for the bug as a separate
+patch to be backported or not, and there are 3 possibilities for that
+(original email listing them[1]):
 
+- Option 1:
+  don't have a specific patch to be backported, keep the current
+  behaviour on older kernels.
+
+  This is the option I personally prefer[2].
+  
+  Pros:
+  * documentation[3] can be made clear about this behaviour, telling users
+    that kernels < 7.X will "support" cross-algo level specification,
+    while >= 7.X won't and will only inherit the level if the algorithm is
+    the same
+  * won't break any existing use-case
+  
+  Cons:
+  * new users on older kernels will encounter this bug
+
+- Option 2:
+  have a specific patch to be backported that keeps the current behaviour,
+  but only if the compress= algo is the same as the btrfs.compression one,
+  if they aren't, use the default for the btrfs.compression algo (e.g.
+  compress=zstd:15 and btrfs.compression=zlib would compress at zlib:3
+  instead of clamp(zlib, 15) = 9).
+  
+  Pros:
+  * fixes the cross-algo bug without breaking setups that rely on level
+    inheritance in a way that makes sense
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * may break some weird use-cases, but no one should really expect the
+    level to be inherited if the algorithm is different
+  
+- Option 3:
+  have a specific patch to be backported that fixes the behaviour
+  entirely, using the default level in all btrfs.compression cases, since
+  levels wouldn't be supported.
+  Equivalent of setting algo:0 after this patch series gets applied.
+  
+  Pros:
+  * very simple code fix, 2 lines of compress_level = 0, while option 2
+    would need an additional if to check the compress type against the
+    fs_info one
+  
+  Cons:
+  * documentation has to mention that the behaviour might be the bugged
+    one or this one, depending on if the kernel has this bugfix patch
+  * breaks all use-cases relying on level inheritance from the mount
+    option to the xattr
+
+Changes in v4:
+* remove the single patch for the bug, as per [2]
+* reduce code duplication by putting the level parsing logic after the
+  algorithm type logic, using a level_pos variable to indicate the
+  position of the ':' instead of having the same exact code for each
+  algo.
+* add btrfs_compress_typelevel2str() helper
+* fix btrfs.compression not being preserved when *any* chattr operation
+  gets executed
+
+Changes in v5:
+* this is exactly the same patch series as v4, but with merge conflicts
+  caused by Commit e8a0095c7df170 ("btrfs: preserve the compression
+  property when other inode flags change") fixed
+
+Changes in v6:
+* switch from kmemdup_nul() to a stack-based buffer to avoid a possible
+  deadlock spotted by sashiko[4], and because it's cleaner, so also move
+  the BTRFS_COMPRESS_PROP_MAX_LEN definition to patch 2/6 instead of
+  later in the series
+
+[1]: https://lore.kernel.org/linux-btrfs/DKJZQAFIRW7H.3KE8DKWO5E3TV@gmail.com
+[2]: https://lore.kernel.org/linux-btrfs/DKLRY9Q5SEI3.VUDASVYPW9MY@gmail.com
+[3]: https://github.com/kdave/btrfs-progs/pull/1152
+[4]: https://sashiko.dev/#/patchset/20260907200518.428277-1-koray.fra%40gmail.com?part=3
+
+koraynilay (6):
+  btrfs: export btrfs_match_compress_type(), move it to compression.h
+  btrfs: also validate compression levels in
+    btrfs_compress_is_valid_type()
+  btrfs: add per-inode compression levels in xattrs
+  btrfs: support inheritance for per-inode compression levels
+  btrfs: add btrfs_compress_typelevel2str() helper
+  btrfs: preserve btrfs.compression when setting inode flags
+
+ fs/btrfs/btrfs_inode.h |  1 +
+ fs/btrfs/compression.c | 55 ++++++++++++++++++++++++++++++++++---
+ fs/btrfs/compression.h |  5 +++-
+ fs/btrfs/inode.c       | 10 +++++++
+ fs/btrfs/ioctl.c       | 27 ++++++++++---------
+ fs/btrfs/props.c       | 61 ++++++++++++++++++++++++++++++------------
+ fs/btrfs/props.h       |  9 +++++++
+ fs/btrfs/super.c       |  8 ------
+ 8 files changed, 134 insertions(+), 42 deletions(-)
+
+
+base-commit: 6255426d70f2755968bb5436ae7b43dae742ac38
+prerequisite-patch-id: dc4e24d82d513b8e80e171875a73d397d7ec0762
 -- 
-Chris Murphy
+2.56.0
+

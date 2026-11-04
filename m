@@ -1,79 +1,59 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1793824552;
-	b=IxULAaDxc+6xJQoVtwYoryqGTQIGGYLUMurwksgmDGNYTcOtjD8uf7s2jpoWqsV9cSMK
-	 bwigBxYbj0d5uHGJCwsPGQdLMsI+lOnToZxBbgWegLE1CfLcHRTdzLv1R1dtt6DmZE1xN
-	 13Enq8ULRLNAHqwcKt6qNzFHHu0GiyWTSX93Mh8rTRbml+7Bo19MRnbe0SIU9aT9vwpZS
-	 rrDh3mChPTAqIubKI+nO1JhZDtuyeHqMvHRSGwKj/qVDkuYRMDiVJzHBWoT8iLtKMNyhi
-	 1Y7gvZeolhL/LYLQV6zkkxX8QLywqvJd64/rFZyV7KFV5mpE+ojqvCcNk1J9uSr9UPQ==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793824552;
-	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
-	 Content-Type:Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=A/AJg4SnNtS2w7UA+hbHnttGFwPXEg73kchtHP3yZKQ=;
-	b=KzJKbLZSAwYOL1W3NDaEiDB/c2ojoD0I3jlqPQM7EddIARU6L5AFZtfQOMIwGoSEnM3H
-	 LCCz/P8s0MOybuDvp4AdOKAy+PcEr7y2VFw4YQ2zsOvUtwMcK92GWdpYT5+TAdlstGmbz
-	 aP7SG+g5Qc8vN4TFZkmgbIZFff5WIBIFp7gXYIQW0t3i7gSW8HQf0ssq3sixOOwlICVSJ
-	 rO7d8gA0BeJWnlGvzC2x3N4xKuQxOflyXNTWLRM369Nyito0zt6ba2kZOzReMIngGfMz+
-	 GCUpV0ZjO2q3+g7gINfOtz1JjrvsfOrwBcU33NKaXST6u6ZBzT0lf4ErtVad9MVnH6g==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=SsH68vez;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.22
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1793826186;
+	b=ytkMIWuLMTWiFPlrWXE0lw8DrMjXKB7K11nxDGvHsl8fvvn3KhQH35KdxxEphkeKAIqB
+	 +/htuiqk8u7vRgfvwHP1KYdg7quYCGwOUVXgFbym1+q3Lz0go6qbdx7sAFP/S7xEeVbzg
+	 noAODkLLeZZV/VnEBEwOTAH9SI+/5pxmgoV5i7FCWlP23WMsWNypMykyMOWnYTEEgUybR
+	 CNzlVSIuMJrDmG3dqlhbWoqPHem/QCksd210Lh4M6L+xIe8VDpGyIwurDiKqLJKRx7TkD
+	 NsGwSXB94ue/Ftg0rjIDFR/DUrXhWwJR3kKKUi9V2rs+nCURJG053XbPi+TWznerAkw==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793826186;
+	h=DMARC-Filter:DKIM-Signature:X-UI-Sender-Class:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:UI-OutboundReport;
+	bh=Ikq6ub2aY4RfE6ktfqOQbsu2yE9thKRVpJhcNzAS6Fo=;
+	b=iqC8o/uPlUB7hTRnzGsBp7Egq/nMGvivu+tCaz1NWFfq1Fj7MfV32KHUcA3ED0CqqyDN
+	 O9bQQ6I1RKUnplgAxwlA6PGokyTH9+jbQRlOCDvnF6XQrEiE+NYU+aKJN6h+uWDKRvOi+
+	 azGTEfLYBmbwmjcw1ircBAgZX6q7gcLeAeMNXc8RLbBW39qPuJcdxcjhTx4D9OxfbjWZT
+	 viNL6J1vlh4tZL5vvYfcvA4EeE9YckgyYqFB0TP+NTCSykwxiRa+J5Rnq6gDSz/jLjaIB
+	 s94LMrnkVGhLI3O+wryCYARZG/wIYZh2Ha4EAR/aqFxSJuWy80JXPIYEpTzMdR5bWUw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmx.com;
+	spf=pass smtp.mailfrom=gmx.com;
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=NllFUL8l;
+	arc=none smtp.remote-ip=212.227.17.22
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF3096074FB6;
-	Wed,  4 Nov 2026 20:35:51 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 34129606E2DF;
+	Wed,  4 Nov 2026 21:03:04 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 34129606E2DF
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=SsH68vez
-Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
-ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
-	t=1793824551;
-	b=oIwxMJXHPqEt/SuYYWKX6vrR8Rke8q8w9suuiPDzodzun3p7mVvmnfWNQ3HP9N/tFj6H
-	 0xq2mf0g/aakDtEo+5Bkzi/57rvmptMR1a6x+FDqVUrnBylqaR8uF2QYDakvQ+q1e4xH4
-	 fHMtbbFZHqo2d1iIoXvd2LJF2wdAqMS3k2Z1pTb4ug63yCeYSvHN60BQWTLUhuXcfmwqu
-	 KIA/tNZ7Ut0xc1jNIH6MXXPbwrMmVWjqm03EohBrutoPSVFoFxvSw+Z8ksDx+1G1HpvIu
-	 XkebyxPIjKBgG9nGU4SYixNkYXaLBFyJw6PwrrOS9NeOnt9eIY93XgztPvmEd3q1XUw==
-ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
-	c=relaxed/relaxed; t=1793824551;
-	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
-	 Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
-	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
-	 X-Original-From:Reply-To:Content-Transfer-Encoding;
-	bh=A/AJg4SnNtS2w7UA+hbHnttGFwPXEg73kchtHP3yZKQ=;
-	b=18OLYjp+co+bp1PgvxfXuTK/Uea1NCdZpzhN/280uf0yfJHdIETeCyjRoyCY32XkA96y
-	 Z7jYkxc+iV20wUjVb2JS2/HmM2lLh41H4wPkHw8WmNGRdKR81oMBc5OpzftKl5+qjUbkS
-	 RSBFdg1pP66tHz8oVIv4fUcNEpD62JA2l6FpVqPLIi3UmTNB0kh3vTHRo5akpEbGODSY3
-	 86q4bPaaeXG/3NUdStvRJAjgbe8YLXVZ3TtL8k17Xvcxk/4efSq4ya8zj/xsAJkgJa7hc
-	 y9nAZlNC/1lsTtj/4uQceFigi2o66BAfzmZNH6rwkMIg5VAQ7m/a0jXOliVJVZUndMw==
-ARC-Authentication-Results: i=1; smtp.kernel.org; 
-	arc=none smtp.remote-ip=100.80.115.77
-Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.kernel.org (Postfix) with ESMTPS id 994BC1F000C1;
-	Wed,  4 Nov 2026 20:35:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793824551;
-	bh=A/AJg4SnNtS2w7UA+hbHnttGFwPXEg73kchtHP3yZKQ=;
-	h=From:Date:Subject:To:Cc:Reply-To;
-	b=SsH68vezKIra3rxghkZI1D18iWzcd9Bh/95o7cXLkqvnAo+tIoXzriKtweOGGT8hB
-	 tijei0ZxMU/MPYXMaYZUBYGRwbL2ICa5qDgTvLGuV//VLRlAWU58Bvu9F0iUQ3AxQo
-	 qIMryXTifxMQz3q4KynB+JL+j+w1mO6ZEzAbUyB83JoC3hpgBvlUH4vpAqCx7CeGmC
-	 +13xk+LS89d2ysCMLk4w692HH+kmPF0cGRxt8xjQ3Pqx0QL7vhVNNsb3kyiIokzJA9
-	 cBp2URVHF3T98JTPZi7uukIa6cJeCuvS6iloQvbwgXhyEceHAZrNwo5RXreI5ZzPHA
-	 5xP4ylvJ1YcKw==
-Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
-	by lkml.kernel.org (Postfix) with ESMTP id F14D246F83;
-	Wed,  4 Nov 2026 20:35:49 +0000 (UTC)
-From: Peter Lamberg via B4 Relay <devnull+kernel.pelam.fi@kernel.org>
-Date: Wed, 04 Nov 2026 22:35:39 +0200
-Subject: [PATCH v2] btrfs: test that a resumed snapshot deletion keeps its
- drop progress
+	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=NllFUL8l
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
+	s=s31663417; t=1793826166; x=1794430966; i=quwenruo.btrfs@gmx.com;
+	bh=Ikq6ub2aY4RfE6ktfqOQbsu2yE9thKRVpJhcNzAS6Fo=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	 References:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:cc:content-transfer-encoding:
+	 content-type:date:from:message-id:mime-version:reply-to:subject:
+	 to;
+	b=NllFUL8lyzdFWmxty6LJ4GFLsIsDW8QGs62yXG91OpHAbkl3bW656WIphTwElfcz
+	 aFk4KYYa5mhF4gJwwjnBT2I5wIlTHe93yldKzOX6ABjwwmwyAktoDQCJRRLiELfhy
+	 Quy4CxCHYuHG4F0mbQrF1Kw3aiVjHRoj9ZY0y37okhctKLoeQO+aWcVppeVAP0HZE
+	 LEpHyjzyYF/5iKIiCaTDD610TULVYCznVGNXRTnVlr0QBrpUM/dITRTDv9GsAg0Wv
+	 IOwMwpWppJVM3C2QgTbO95H233RK7jJp0VpUUepXbrD/Wa97ga9D5sYJdZ+w9a4hh
+	 LFsX1fjlABinacZxWA==
+X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1N8GMq-1wTSlS0r8i-013rV3; Wed, 04
+ Nov 2026 22:02:46 +0100
+Message-ID: <4b5a5bcc-6a85-418d-974e-de6ee0565459@gmx.com>
+Date: Thu, 5 Nov 2026 07:32:41 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -83,242 +63,215 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Message-Id: <20261104-btrfs-355-v2-1-4b1ec6c23c44@pelam.fi>
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/22NQQ6CMBAAv0L2bE23BYOe/Ifh0NatrFEg3Uo0h
- L8LePU4yWRmAqHEJHAqJkg0snDfLWB2BYTWdTdSfF0YjDYHRG2VzymKslWlMKD1jpwu6wCLPyS
- K/N5al+bH8vJ3CnkNrEbLkvv02WYjrt6/7ogKVfTaWe3LY239eaCHe+4jQzPP8xds7wHnswAAA
- A==
-X-Change-ID: 20261103-btrfs-355-1c13baea048c
-To: fstests@vger.kernel.org
-Cc: quwenruo.btrfs@gmx.com, linux-btrfs@vger.kernel.org, fdmanana@suse.com, 
- asj@kernel.org
-X-Mailer: b4 0.15.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1793824549; l=8417;
- i=kernel@pelam.fi; s=20261103; h=from:subject:message-id;
- bh=6BolEpS0wnHLee4MIs6gKR0KwTGwm8SS4vQl94fYdOI=;
- b=LLGsVq9hcRprx0LQub2L/fxTg1BUZx6NQ0As0bCaeFiBrOFLATCy6sefhoWVZaFu2fj/g9BZz
- 2zIRSEP7wcsDdB2ZTy28ghUzlwBe+7sZOam51H9BaOsvyJRSRMjdT9e
-X-Developer-Key: i=kernel@pelam.fi; a=ed25519;
- pk=qpD/xh/xwDGEMdfQk/5prChHF0mXHXDTrs35FxiJgrk=
-X-Endpoint-Received: by B4 Relay for kernel@pelam.fi/20261103 with
- auth_id=1398
-X-Original-From: Peter Lamberg <kernel@pelam.fi>
-Reply-To: kernel@pelam.fi
-Content-Transfer-Encoding: 7bit
-
-From: Peter Lamberg <kernel@pelam.fi>
-
-When a partially dropped subvolume is resumed, btrfs_drop_snapshot()
-can write drop_progress (0 0 0) back to the root item if a commit or
-unmount happens before the resumed run drops its first reference. The
-next run then restarts from the first slot and tries to free blocks
-still shared with a snapshot again, and the transaction aborts with
-"unable to find ref byte nr". See the kernel fix:
-
-  "btrfs: keep drop_progress when resuming snapshot deletion"
-
-The test builds a subvolume S1 with a level 3 tree (nodesize 4096,
-30000 files with a 2000 byte inline extent each), takes a read-only
-snapshot S2 and deletes S1. It unmounts once a root child has been
-dropped, then does five quick mount/unmount cycles and checks that the
-drop key never goes back to zero. Finally it lets the deletion finish
-and, after a mount cycle, checks that S2's content is unchanged and
-S1's root item is gone.
-
-Without the fix the test fails on the first resume; with it the test
-passes. It takes about 12 seconds on loop devices on a SATA SSD.
-
-Assisted-by: LLM
-Signed-off-by: Peter Lamberg <kernel@pelam.fi>
----
-Kernel fix, sent to linux-btrfs:
-https://lore.kernel.org/linux-btrfs/20261103-drop-progress-v1-1-16e345565109@pelam.fi/
-
-Reproducers and logs: https://pelam.fi/btrfs-drop-progress/
-
-v2 fails 3/3 on the stock Ubuntu 7.3.0-9-generic btrfs.ko and 3/3 on a
-module built from the same source without the fix; it passes 3/3 with
-the fix, 12-13 s on loop devices on a SATA SSD. Same 3/3 results with
-the devices on tmpfs, 10-11 s. Also run with MKFS_OPTIONS="-s 4096":
-fails without the fix, passes with it. It _notrun's if the tree stays
-too shallow or the window is missed.
-
-Without the fix the transaction aborts during the final deletion.
-btrfs subvolume sync then returns because the fs went read-only
-(btrfs-progs 7.1 here; the read-only check is in progs since 6.6.3).
-
-_fixed_by_kernel_commit has a placeholder hash until the fix is merged.
-The test number may need adjusting if 355 gets taken first.
----
-Changes in v2, following Qu Wenruo's review:
-- Add _require_btrfs_support_sectorsize 4096 and mkfs -s 4096.
-- Fill S1 with 2000 byte inline extents instead of 3000 byte xattrs;
-  drop _require_attrs. Still a level 3 tree with 30000 files (about
-  31200 leaves), created with a plain shell loop.
-- Read S1's root item with grep and sed instead of awk.
-- Compare S2 before and after with md5sum instead of getfattr.
-- drop_caches: keep only the one in the poll loop. Without it dump-tree
-  read a stale root item while mounted (the loop saw drop key 6072, the
-  key on disk after the unmount was 20592). Before the final md5sum a
-  mount cycle replaces it, so S2 is read from disk.
-- Wait for the deletion with filesystem sync + subvolume sync instead of
-  timeout 600; drop _require_command timeout.
-
-Other changes:
-- _require_btrfs_inline_extents_creation; S1's id from _btrfs_get_subvolid
-  instead of inspect-internal rootid.
-- _notrun, not a silent pass, if the first run is not interrupted at the
-  root level or the deletion finished before the first resume.
-
-- Link to v1: https://lore.kernel.org/fstests/20261103-btrfs-355-v1-1-fb0a30b4983b@pelam.fi/
----
- tests/btrfs/355     | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/355.out |   2 +
- 2 files changed, 129 insertions(+)
-
-diff --git a/tests/btrfs/355 b/tests/btrfs/355
-new file mode 100755
-index 00000000..7a272660
---- /dev/null
-+++ b/tests/btrfs/355
-@@ -0,0 +1,127 @@
-+#! /bin/bash
-+# SPDX-License-Identifier: GPL-2.0
-+# Copyright (c) 2026 Peter Lamberg
-+#
-+# FS QA Test 355
-+#
-+# Test that a resumed snapshot deletion keeps its saved drop progress.
-+#
-+# If the drop progress is reset to zero on resume (a commit or unmount before
-+# the resumed run drops its first reference), the next run restarts from the
-+# first slot and tries to free blocks still shared with a snapshot again: the
-+# transaction aborts with "unable to find ref byte nr".
-+#
-+. ./common/preamble
-+_begin_fstest auto quick snapshot subvol
-+
-+_fixed_by_kernel_commit xxxxxxxxxxxx \
-+	"btrfs: keep drop_progress when resuming snapshot deletion"
-+
-+_require_scratch
-+_require_btrfs_support_sectorsize 4096
-+_require_btrfs_inline_extents_creation
-+_require_btrfs_command inspect-internal dump-tree
-+
-+# A 2000 byte inline extent per file gives about one 4K leaf per file, and a
-+# 4K node holds up to 121 pointers. 30000 files give ~31200 leaves under ~268
-+# level 1 nodes: a level 3 tree whose root has 3 children of 62, 120 and 86
-+# pointers. Level 3 needs more than 121 level 1 nodes, i.e. ~14000 files.
-+# The resumed drop has to walk a whole root child before it drops anything,
-+# which is the window the second unmount must land in.
-+nfiles=30000
-+data=$(printf '%2000s' '')
-+
-+# Print S1's root item from the root tree, nothing once it is gone.
-+s1_root_item()
-+{
-+	$BTRFS_UTIL_PROG inspect-internal dump-tree -t root $SCRATCH_DEV \
-+		2>> $seqres.full | \
-+		grep -A 4 "key ($s1_id ROOT_ITEM 0)"
-+}
-+
-+# Print "<drop_progress objectid> <drop_level>" of S1, nothing once it is gone.
-+drop_state()
-+{
-+	s1_root_item | \
-+		sed -n 's/.*drop_progress key (\([0-9]*\) .* drop_level \([0-9]*\)$/\1 \2/p'
-+}
-+
-+s2_digest()
-+{
-+	(cd $SCRATCH_MNT/S2 && find . -type f | sort | xargs md5sum | md5sum)
-+}
-+
-+_scratch_mkfs -n 4096 -s 4096 >> $seqres.full 2>&1 || \
-+	_notrun "mkfs with nodesize 4096 failed"
-+_scratch_mount -o max_inline=2048,compress=none
-+
-+$BTRFS_UTIL_PROG subvolume create $SCRATCH_MNT/S1 >> $seqres.full
-+for ((i = 0; i < nfiles; i++)); do
-+	echo -n "$data" > $SCRATCH_MNT/S1/f$i
-+done
-+s1_id=$(_btrfs_get_subvolid $SCRATCH_MNT S1)
-+
-+# S2 shares every block of S1, S1 owns them.
-+$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT/S1 $SCRATCH_MNT/S2 \
-+	>> $seqres.full
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+digest_before=$(s2_digest)
-+level=$(s1_root_item | sed -n 's/^\s*level \([0-9]*\) generation_v2.*/\1/p')
-+echo "S1 id $s1_id root level $level files $nfiles" >> $seqres.full
-+[ -n "$level" ] && [ $level -ge 3 ] || \
-+	_notrun "S1 tree too shallow (level $level)"
-+
-+$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/S1 >> $seqres.full
-+
-+# First drop run: unmount once at least one root child has been dropped, so
-+# the saved drop progress is non-zero and at the root level.
-+for ((i = 0; i < 600; i++)); do
-+	# dump-tree reads the device through its page cache, which goes stale
-+	# while the fs is mounted
-+	echo 3 > /proc/sys/vm/drop_caches
-+	$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT
-+	read -r obj lvl < <(drop_state)
-+	[ -z "$obj" ] && \
-+		_notrun "subvolume deletion finished before it was interrupted"
-+	[ "$obj" != 0 ] && [ "$lvl" = "$level" ] && break
-+	sleep 0.1
-+done
-+[ "$obj" != 0 ] && [ "$lvl" = "$level" ] || \
-+	_notrun "subvolume deletion did not progress to the root level"
-+_scratch_unmount
-+echo "first run interrupted at drop key ($obj) level $lvl" >> $seqres.full
-+
-+# Resumed runs, each interrupted right away. The saved progress must never go
-+# back to zero.
-+for ((i = 0; i < 5; i++)); do
-+	_scratch_mount
-+	_scratch_unmount
-+	read -r obj lvl < <(drop_state)
-+	echo "resume $i: drop key ($obj) level $lvl" >> $seqres.full
-+	if [ -z "$obj" ]; then
-+		[ $i = 0 ] && \
-+			_notrun "S1 deletion finished before it was resumed"
-+		break
-+	fi
-+	if [ "$obj" = 0 ]; then
-+		echo "drop progress of the deleted subvolume reset to zero on resume"
-+		break
-+	fi
-+done
-+
-+# Let the deletion finish. With a reset drop progress this tries to free blocks
-+# still used by S2 again and the transaction aborts.
-+_scratch_mount
-+$BTRFS_UTIL_PROG filesystem sync $SCRATCH_MNT	# wakes the cleaner
-+$BTRFS_UTIL_PROG subvolume sync $SCRATCH_MNT >> $seqres.full
-+# Read S2 back from disk, not from the page cache filled by digest_before.
-+_scratch_cycle_mount
-+digest_after=$(s2_digest)
-+[ "$digest_before" = "$digest_after" ] || \
-+	echo "S2 content changed after deleting S1"
-+_scratch_unmount
-+[ -z "$(drop_state)" ] || echo "S1 deletion did not finish"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/355.out b/tests/btrfs/355.out
-new file mode 100644
-index 00000000..4e4c5e98
---- /dev/null
-+++ b/tests/btrfs/355.out
-@@ -0,0 +1,2 @@
-+QA output created by 355
-+Silence is golden
+User-Agent: Mozilla Thunderbird
+Subject: Re: btrfs: bug report: reflink racing with async compression forces
+ read-only
+To: Breno Leitao <leitao@debian.org>, linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+ Qu Wenruo <wqu@suse.com>, linux-kernel@vger.kernel.org, boris@bur.io,
+ jlayton@kernel.org, linux-arm-kernel@lists.infradead.org
+References: <ause7k_HjzUWT3D-@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
+ BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7o8gUJFKS8
+ OQAKCRDCPZHzoSX+qAogB/9C5ErH7KGAGpcLPte3Wcfdt3acCkGAuMpCjqOt8BVw30mX0kmF
+ SRo2nODjz8YsYhWR1T8L3ylANAS/IGIJ64idBmObaqGHQn845nXLIvG33LqMsAGXmOJdRgTT
+ BnBA+QFCEIZpo7L9Qt1dOQdHSpHT31Ta1kKsbDm582KPVBl6KRcJJBnjudIerOA1/L/zEyDa
+ YjIfHIcvuM3Xm8AS00iBpsmc151QgCPljqnSRXBiup9C1oMgVlaROhY1iDam4UIQB6glkHQs
+ LZhUmFDNimX5LxfOzi2pFJSjJvPclRZVX7Sq6XhK/OFb6IvswN7i0nUYZMQfuGDNqGn70ic3
+ AQImzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
+ CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
+ /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
+ GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
+ q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
+ ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7pCgUJFMw7KQAK
+ CRDCPZHzoSX+qEjbB/9crFFjips2NKxkt2XUutUIKjBoUlg/xCeFIj8PsTuJePhrV9HzgKsa
+ rJgSqo3t78oQWmeaP9WPoDYjfhOkQXEs+G9UwHe/LENm70+Q1jrwY3nlcR3YrkDCJ+EvMZOW
+ ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
+ 9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
+ 3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
+In-Reply-To: <ause7k_HjzUWT3D-@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+X-Provags-ID: V03:K1:N15VY5cbYzoU5m2RrsMMHq0sJOTG5HyI+Wq3+WGOVPtML1eN/k+
+ PGWt2s0EODMWVmonwZSXIe5ftNc1jLyt1ZpiACslYOJfupF8BjsqcAzb30wUgSHnlRXwF7u
+ RfSQtf8rFSrNWmsA/woHgEbWg9hI8gfhsohqeHPiIUg5lvutqaV1HrfNoo7xHyuPtaVIqUL
+ xWJnqK4bkcMQhTyNmuLVQ==
+X-Spam-Flag: NO
+UI-OutboundReport: notjunk:1;M01:P0:0OpbHwP3Qd8=;Qt2srkV0dAW6ZMpqNjD29hHAe3e
+ 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
+ 28pSvz
 
 
 
+=E5=9C=A8 2026/11/4 22:40, Breno Leitao =E5=86=99=E9=81=93:
+> Hi,
+>=20
+> We are seeing btrfs go read-only on arm64 production hosts (64K pages,
+> 4K blocks, compress-force=3Dzstd:3), on 6.16-based kernels and up, still
+> being reproduced in linux-next as of today:
+>=20
+>    BTRFS warning (device nvme0n1p2): no extent map found for inode ...
+>    when unpinning extent range [20480, 24576), generation ...
+>    BTRFS: error (device nvme0n1p2 state A) in btrfs_finish_one_ordered:3=
+200:
+>    errno=3D-2 No such entry
+>    BTRFS info (device nvme0n1p2 state EA): forced readonly
+>=20
+> A quick bissection seems to point to commit 1d2fbb7f1f9e ("btrfs: allow
+> compression even if the range is not page aligned")
+>=20
+> I've able to come up with a reproducer that hits the issue within
+> seconds with 64K pages:
+>=20
+> 	https://github.com/leitao/btrfs-reflink-async-compress
+
+Thanks for the report.
+
+>=20
+> My robot identified this as the root cause, but I am not smart enough to
+> understand:
+>=20
+> A reflink into a range that is still being compressed does not wait
+> for it:
+>=20
+> 1. Another part of the same folio starts writeback first, which clears
+>     the folio's dirty tag.
+
+This shouldn't happen, as btrfs has per-block dirty tracking, thus the=20
+PAGECACHE_TAG_DIRTY should only be cleared when the last dirty block got=
+=20
+its dirty flag cleared.
+
+It looks like some part of code doesn't properly handling the folio=20
+PAGECACHE_TAG* in a per-block way.
+
+Thankfully you have a reproducer, it should greatly speedup the fix.
+
+And thank you again for doing a proper bug report, instead of creating=20
+LLM slop without understanding it.
+A lot of guys should really adapt your style of bug reporting.
+
+Thanks,
+Qu
+> 2. The second filemap_fdatawrite_range() in btrfs_fdatawrite_range()
+>     finds folios by that tag, so btrfs_wait_ordered_range() returns
+>     before the async extent has an ordered extent.
+> 3. btrfs_clone() drops or splits the extent map pinned for that extent,
+>     and the transaction aborts when it completes. If the clone wins the
+>     race instead, the compressed write lands after it and the cloned dat=
+a
+>     is silently lost.
+>=20
+> Thanks,
+> --breno
 

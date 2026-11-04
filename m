@@ -1,81 +1,101 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793776277;
-	b=WZvf/umtb9/HvTeu0YGSaM8SF07E7SJP5ytdNmChDwblxazRn3vN130bQhpcgAR1aYr2
-	 jY+s9LOQZ/yVNcI+1dQXrDxg95Oe1kTiQzO3c/iDQ/biXgiiZbDaFUIRVWmt6hB+uQTjU
-	 oXdMNNjdmbey3iv3a6os2ACB8fR1/U5cOTvXjXa/bjlj5XDbTOx7nZgZ1avETVf0lTrFx
-	 RhEuUIg1hHyAFViQR7Ovn/qiiitrZV+r9J22gzVdK4Spdv3MM3chcvUnDNYEz1mYj9mcT
-	 zlgm4YdZF9bW16wauw49O5YPVamomrmG/m3tCZ297jkTAHJhMEMhWOM3DVd+bBCQACw==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793776277;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
-	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=z4FYX9MESJyKh2ZLRALRMZWR1o+SIg95Guf77ANqBTI=;
-	b=a2B8lQc+Cd5WVOGAOuCO9QNtAQnANXNbkR0oyNxew1guhJKKm4JmtMkQCjLmBClqQweV
-	 W+6bS6dx+FpDhZBxapYdBh9jQcqRdvTY240Jrh8gwbkFXPVKLLoiFgkpam+LdEMcAopBt
-	 /HtY46b1ngqWQTgFK6sr5DLer6bahyPsLSM6TesVXQHGxM6hqO/5j2EjSH+BA960afZ54
-	 XOWu3jsk+35RThJv8H/29mATlwaYjW3FhZmMyPXpruQEF6ASl1njpSFggAZsvsDBhVzvT
-	 RlL7o+IV+QxIels5/7E4HUXfCaRcgE+ShFavDo/ApgKLiJt/Ej0ARt4bSCmPN1z4y0Q==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.47
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793778682;
+	b=Y82uc1cYveGfm1UlCkv6VtN52j3n4e41KdnFCUgOqT3BGU3DJW+aHrHuNp55cvNF3p4b
+	 k8sxJlV+zNjyPc13rm1liZeyL8843T9H8DlIqPjwBAU1Cw3SFH46XgBDWd1EpfMP4aakS
+	 IgGYs0aRzCAaCHrl1gse3toGkyae3n0kwV2EcMcb0dovn+nbz7Ke5unBC/LLPXF3uQdOO
+	 Dg7fw/whQQmv7eSZ+oL1Px2Bl1IR7GECBIbPJ6rZUSV8GW1mbjwHcUBul5AgaPjL+SDX5
+	 LqaxGqk0EiqoeeMLdwUCKiNF9UswKEacHkisUyKtesnNxqYwddtGwoDFR1Fj7AV1NIQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793778682;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=3teH1NkPDJEceFI53ssz8olhW9I/A7pSyBmfb0k3AWQ=;
+	b=SfHYQasEUnOtFN3v76Kj4MZNfASb7CRxdoWIyDq8KMBMT7IOv60FV0ixxmgfSCO0TSWJ
+	 P+EGDgg4FkK3eWrXjJD1gufofZLcvbLeeQDTY1U9T22Aci+LIh3s5mo6BZkwLbZ8tyJ7w
+	 FDJAIe2FFIVgs5HTZle430uWvPBHOwFJguTqtfaprns/kpQT76OrRBoD+P5uUtC59PpkB
+	 D1a91p89Ripbmxg8G0MC18qt2LIWGdZJzPuWEDukzXg1HEY32m3Je7EdQ6u4j1AGnWbId
+	 8waFuICsyzY/rDG6NZywionZUlErh+2Gvv9tAnNnr6QdU8yHRZu+TvJ4KPowEM+hHRw==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNt6U9gz;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNt6U9gz;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=bW3ss21I;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.221.47
+Received: from mail-wr1-f47.google.com (mail-wr1-f47.google.com [209.85.221.47])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9F82F606A31B
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 07:11:16 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9F82F606A31B
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1325B606A32E
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 07:51:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1325B606A32E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNt6U9gz;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNt6U9gz
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id AE22E1F79F
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 07:11:14 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793776274; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=z4FYX9MESJyKh2ZLRALRMZWR1o+SIg95Guf77ANqBTI=;
-	b=UNt6U9gzxqWsXKn2W3ECBwxszNq2YsotNMKS6vIMNyq0/U5HLQ4KngumICcTD/yU71Uo4M
-	z7ybMoLBvwhwUd0QYG1XXWKmJ7pzj7V9rHq3QaMpV2yBPzpPTsEu0F/Y9U/0DfU2XZ6m9k
-	ZIr4xKPXa8Jui6XH8EK9iVVkWD5eQlI=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=UNt6U9gz
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793776274; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=z4FYX9MESJyKh2ZLRALRMZWR1o+SIg95Guf77ANqBTI=;
-	b=UNt6U9gzxqWsXKn2W3ECBwxszNq2YsotNMKS6vIMNyq0/U5HLQ4KngumICcTD/yU71Uo4M
-	z7ybMoLBvwhwUd0QYG1XXWKmJ7pzj7V9rHq3QaMpV2yBPzpPTsEu0F/Y9U/0DfU2XZ6m9k
-	ZIr4xKPXa8Jui6XH8EK9iVVkWD5eQlI=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 6067E134A5
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 07:11:13 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Q1+GKZDa6mrXJwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 07:11:13 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC] btrfs: wait for encoded writes in fast fsync
-Date: Wed,  4 Nov 2026 17:40:46 +1030
-Message-ID: <c284dccd8c27a6434e56ed067b0ef4ea67935d8c.1793776224.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=bW3ss21I
+Received: by mail-wr1-f47.google.com with SMTP id ffacd0b85a97d-48afbd2c386so186774f8f.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2026 23:51:21 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1793778680; cv=none;
+        d=google.com; s=arc-20260327;
+        b=Bx9VcjdqELTNwd5rrbe0MiPHWBmmmpgFBzElftLPoy9eZH4HDwzLtj5n7NykreMPTc
+         Vw3tDbyyM3c2LDVawpFNvP4UTEbOH+a6GhlKtvPFRg4LnsI7Hli/bgiadME/C8koAPJp
+         Evb6JIqWnRSKKMPb0/J/jOOgSnEH3de2GJq1hkJxRi17JAWOzRlfubKUcaov3GWyhUv6
+         r4716nxdTWjdIz0fTZLtOu7Y2l1vS/DknOimpl8eFopBFW6zRtgwnxpjbtccvjKaahzC
+         xijtPW80SQE73s0afy487lQ0JOMXHafFWVzqMIy6wTtemYZXVv1G+8P6u1XOS5P8W6uY
+         R7Bg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=3teH1NkPDJEceFI53ssz8olhW9I/A7pSyBmfb0k3AWQ=;
+        fh=SoS0IIWU5eAVPargbNRbmBVtjU+4WCUxKhs2ITyWzNk=;
+        b=AbAUP5h9Q+m/+X03AozzxVL2kHN5JQ19jWPKN7Xnu0elsg7V0Xj4W6MhBgHrDets0r
+         zN17c42x1j8XCdGf0+xmdUPcUsxbc1sTIEHCR62pbGRev14a8/X6kqUsIdRUSNGIF7Uo
+         ARL5hFhVaEGgzCiBddrYwkaCiRJVLDIU5bbMOiJ0e0UkspqErZS+UH2WnOZl5NYCxoVS
+         cmNTHB4LazIyvKIQQYrzC8bsdiZyLTQ3TjAbMgH5Xl83ba1COuhtZMRHThN/bMFCmv3m
+         5LhJwZq6pLtWYv+rO8QTzXnfNdEK+E4NT8tKMMFZ3KJCR9lSPbC/7T4dvULNL7gLSTjD
+         fE1A==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1793778680; x=1794383480; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=3teH1NkPDJEceFI53ssz8olhW9I/A7pSyBmfb0k3AWQ=;
+        b=bW3ss21Iw/r8WPniO+hSndS9iAb59AhKj4dMwxAW/3p7AeTMIDtNJzgr55Nvb8+Lol
+         b/y2tEc2eD5L3t5nhuozwd7vvwMoD253QnSCo4jzNAd7gibTnmIEMtx9Ua0SYApbI3Hq
+         dd3vLBE4OpiBlDaywXFY2H3vSC7HuDMFjhcYyOGFRUP2x3mizi7w+ccv9hkldAPWN2an
+         AOf5XXs44tvXyYLQM5g1f94VdNEEYKF6Y3CiQDZ0xS/6QeotMDTLalguXr5DNXEirLla
+         fD+9d+8weJZyOIo4Jk4sO1vGbypBh4NDM1L4EuX9oBxjXQCkwXiDWWlzm9xRlGp1qFr0
+         8xcg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793778680; x=1794383480;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=3teH1NkPDJEceFI53ssz8olhW9I/A7pSyBmfb0k3AWQ=;
+        b=hATNHl8160Nth1P+EPaEHLUPwLigUATsIOieLNMmnv3dP8XjYwzo/Mk6HxIWnrmMkk
+         ClCn3+PYiBfPq4D+Q/TnPAoo3+9EHwINYkZs7R5mwThTR1bgyiBK67rjW/qPMUR+6A4O
+         Iwl73QGPrFYZjCR6YaAVlbetNx3YfJhpFi6lrZ1aRNbLC/u4etRLR3E0tukC0eqb4UtP
+         lDSIRKGXLb51VlcsYwON234szxACHLB6ynPBC2fKyPfoPQs2ODav9+z9OZ8qkHzI+KOi
+         pZnY6qP7PMeKZjf81/6KH5gOBQ59rZBrpfTXqmtqD3IDwOZO+H0f6G93UDbmwtBGvEaZ
+         +G3A==
+X-Forwarded-Encrypted: i=1; AKwUvBzxHFmydPkY6EU8Ng83+u6GbIAtsctp+dfYihpI2Yju6f6T/cJkfF41qrEn4/MpIx+xl0VUAEr3pPAG3Q==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8H+ejewLup9ntnO/ZelpvFUf44LSlXgyjlQ6fw/DAJVeQFjmkC
+	VkcNwHTtqvw/p+fMWE+LM7sQLGEcYZG1gRcXZFT0vdMC9vkoLZNyCy3DvRZWGaRKF5YiCHusQq6
+	PTKshE7YrtA1Qyy8Cp+UsMkR6uceQYG9X3DOB27jkbQ==
+X-Gm-Gg: AYBFou2gBk1ztklqQxh3EcKCwCpoA6Fd7znhodXAkdPNa4PJQj/2gotKsCFWnX7ZRJT
+	pmcv3Hx3kVOFD6mJsX56eSx2aG8j+PH3HtJ04uj6CDrHuijkdOu5I871JAbW5GAPeGjN3p971yd
+	pM7Co2jLulmiMrby5gdlq2vsXXwl0M9JnSEr7BxD/ija7Rjh0q8IsisQi2TgoW9DU0rSmMipWA5
+	Dj3OL1GJlR2NBTN6Vii7OceCbaznfcxKOKyCHwxBj5jW/2lc1L4J+VDXQTd1FV3GXxF6YwZROmX
+	eisypLR/RKM2kjiGItG1ksl9BoNfZTAlkT3a7p95y0E2px90kTdUI471rZeMnnDVzgD0B2i6F/q
+	0fJJSUmcvXmv6X4bsdXYMuncQlVtcwdJEV0g40UX6Zz2NE6HRwXNglfm7fwvSJorAN0Y+fBfM/p
+	H9X1jxm1fQg4s93SjO17hs+PHbHiSnhS2Zfw==
+X-Received: by 2002:a05:6000:2203:b0:48f:bba5:732e with SMTP id
+ ffacd0b85a97d-48fbba57504mr6959373f8f.57.1793778680437; Tue, 03 Nov 2026
+ 23:51:20 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -85,147 +105,65 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-12.01 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received,2a07:de40:b281:104:10:150:64:97:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,suse.com:email,suse.com:dkim]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: AE22E1F79F
+References: <fa0ffb25-3c1d-46ce-8cc6-bdc1e2d86c2c@app.fastmail.com> <5843fbc8-95e6-4703-92db-5cd1df13ae9d@suse.com>
+In-Reply-To: <5843fbc8-95e6-4703-92db-5cd1df13ae9d@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Wed, 4 Nov 2026 08:51:09 +0100
+X-Gm-Features: AclHuK8ucaXtt6yj-K9tQS7d5jLn2FO203dSpQrE7OyJFHESh1QiPPsGCCoP65A
+Message-ID: <CAPjX3FesndAq7zHfkz8O3_tTkh_ttx_g1SOhhKa9sZ4gOsXZ8Q@mail.gmail.com>
+Subject: Re: bitflip in extent tree questions
+To: Qu Wenruo <wqu@suse.com>
+Cc: Chris Murphy <lists@colorremedies.com>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-[BUG REPORT]
-Sashiko reported a bug that encoded writes can have its file extents
-recorded before their data reaches disks.
+On Tue, 3 Nov 2026 at 21:42, Qu Wenruo <wqu@suse.com> wrote:
+>
+>
+> =E5=9C=A8 2026/11/4 03:38, Chris Murphy =E5=86=99=E9=81=93:
+> > User reports transient Btrfs corruption.
+> [...]
+> >
+> > The questions:
+> >
+> > 1. In 3/8 checking extents, do the 1st and 3rd lines tell us that the m=
+etadata profile is DUP?
+>
+> Nope, it's just how the extent item cross-check works.
+>  From the backref item in the extent tree, and from the file extent in
+> the fs tree.
+>
+> > 2. Why does the kernel not report a checksum mismatch? What does this t=
+ell us about the nature of the bitflip?
+>
+> Bitflip happened in the RAM hardware. Btrfs calculate the csum when
+> committing, so it has no way to know if the RAM is reliable or not.
+>
+> > 3. Is this almost certainly logic board memory induced or is it possibl=
+e it's a drive cache induced? Seems the lack of a checksum error tells us t=
+he checksum was computed after the bitflip? Therefore not drive DRAM?
+>
+> I believe it's the system DRAM.
 
-[CAUSE]
-An encoded write returns to the caller as soon as its bio is submitted,
-and its folios are not in the inode's page cache:
+I've also seen system crashes where a bitflip happened in CPU
+registers. DRAM may still be reliable but CPU failing.
 
-  btrfs_ioctl_encoded_write()
-   \- btrfs_do_encoded_write()
-       |- btrfs_alloc_ordered_extent()
-       \- btrfs_submit_compressed_write()   <- returns before the bio ends
+--nX
 
-A fast fsync only waits for writeback of the folios in the page cache,
-so it has nothing to wait for on such an ordered extent:
-
-  btrfs_sync_file()
-   |- btrfs_get_ordered_extents_for_logging()
-   |- filemap_fdatawait_range()             <- no folio under writeback
-   \- btrfs_log_dentry_safe()
-       \- ...
-           \- log_extent_csums()
-               \- log_csums()               <- csum_list may be in flight
-
-This has two problems:
-
-- fsync can return before the data of the encoded write is on disk, while
-  the log tree describing it is already persisted.
-
-- With async data checksum generation, the sums are attached to
-  ordered->csum_list by btrfs_csum_one_bio() before the checksums are
-  calculated.  log_extent_csums() can then log zeroed or partially
-  calculated checksums.
-
-For buffered writes this is not a problem, as writeback of a folio ends
-after the bio endio, which in turn runs after the checksums are
-generated.
-
-[FIX]
-Fix it by waiting for the encoded ordered extents in the fast fsync path
-before waiting for writeback.
-
-And if the encoded OE failed, also fail the whole fsync early.
-
-Such an ordered extent can only complete after its bio is finished,
-meaning the data is on disk and the checksums are fully generated.
-
-Link: https://sashiko.dev/#/patchset/8eb322321cac98013cc46dfe8d89fa58c1ad3dee.1793766229.git.wqu%40suse.com
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Reason for RFC:
-
-This is only covering encoded IO, not direct IO.
-
-As we should not mix direct and buffered IO in the first place, fsync()
-definitely counts as a function in the buffered IO family.
-
-The problem is whether we should treat encoded IOs as buffered or direct?
-
-The encoded write itself doesn't wait for write to finish, so it looks
-like buffered, but on the other hand it doesn't touch page cache at all,
-which is similar to direct IO.
-
-Personally speaking, I tend to treat encoded IO more like buffered, thus
-that's why I sent the patch out, other than rejecting the Sashiko review
-result.
----
- fs/btrfs/file.c | 19 +++++++++++++++++++
- 1 file changed, 19 insertions(+)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 20e15dc30bfb..474bbb0adfef 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1629,12 +1629,31 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 		ret = btrfs_wait_ordered_range(inode, start, len);
- 		clear_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_flags);
- 	} else {
-+		struct btrfs_ordered_extent *ordered;
-+
- 		/*
- 		 * Get our ordered extents as soon as possible to avoid doing
- 		 * checksum lookups in the csum tree, and use instead the
- 		 * checksums attached to the ordered extents.
- 		 */
- 		btrfs_get_ordered_extents_for_logging(inode, &ctx.ordered_extents);
-+
-+		/*
-+		 * Encoded writes don't mark any folio of the inode as writeback,
-+		 * thus the fdatawait below can't wait for them.  Wait for them
-+		 * explicitly, so that their data is on disk and their checksums
-+		 * are fully generated before we log them.
-+		 */
-+		list_for_each_entry(ordered, &ctx.ordered_extents, log_list) {
-+			if (test_bit(BTRFS_ORDERED_ENCODED, &ordered->flags)) {
-+				btrfs_start_ordered_extent(ordered);
-+				if (test_bit(BTRFS_ORDERED_IOERR, &ordered->flags)) {
-+					ret = -EIO;
-+					goto out_release_extents;
-+				}
-+			}
-+		}
-+
- 		ret = filemap_fdatawait_range(inode->vfs_inode.i_mapping, start, end);
- 		if (ret)
- 			goto out_release_extents;
--- 
-2.56.0
-
+> A memtest is always recommended for DDR4.
+> DDR5 has some extra checks, although not as good as full ECC, it should
+> still reduce the chance.
+>
+>  > 4. Is it safe to run --repair?
+>
+> Yes. I believe so.
+>
+> >
+> > What else?
+> >
+> > Thanks!
+> >
+> > --
+> > Chris Murphy
+>
+>

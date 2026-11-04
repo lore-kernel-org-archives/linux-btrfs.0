@@ -1,55 +1,63 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=82.195.75.108
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793793580;
-	b=GU1ZXOcVWdebi2ZR5HccG9gABWlj1ezB8z7gKni+xmBTICRQ+zQQpc6TkyVoAROPSv+n
-	 pWqVAhKb4yCBpQAlGgZaKX9fNVchwYfY4gWT7Nl9bUqmzbY/XsC5nj+ED4CnIlDqj+2LE
-	 wlhCTxwObn1JSUDnX116kOqWOmvNR3IFIQh8pD1qxULiy8xOQkCx8tY1yIe0JKZCCA4sB
-	 tw8UnUWVnC28/nnX8knL//+BUd5Sk1vp+C9LvIMvk18OyqxchZyGANImhJKwYWUe9LURa
-	 rqLgadEuOILcNKar9Xlf/+HjDGfWXMIwC3whuFrK21QdjMFl4vlElJ5FulUwYB1hJnQ==
+	t=1793794262;
+	b=gbW0mOM/DEecx8M1xwHoeiSvCVXGQlpKw4ZQ/Z6XOUVkIubkgdvAVIHgwCebVp/ejJoM
+	 HOE/ZqfxgE7tTJl6+UnUFUlMtxTmDRcxKZoqkcvBHLrktlrJoBeRIz9cOGiQv6o9jDHgF
+	 YY26O8Z51jOJbxSdoTjFdYal2ZHmjQKQ4mt4NEln8mkO5UFzhEjZ1mURMipKhNZyLiePB
+	 0bu3KqY0xUgnsU3+2feJVvG+XUqh+Ly76sOe21yBHZ3ZFTl+Zj6H9E+bozp4ujPVv1skA
+	 x4TgZnW8V1/L8QegdP48g2SgsnQyMB0Kf7b3IQTWe3LbwTNVjE+creoiIfcxsqQoChQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793793580;
-	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
-	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
-	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=BkxAcssqhwrfNZxxJ2vO5PwNZOlikVUGFuoBFpDKXJI=;
-	b=oRpM9HWA+CJh8XiEXTt+SHqkFtMsFWu1S97omLYz7zjQqJ5nGrSQt+4/4oragOkdcP8b
-	 9Cj51kr4mGeOUJ+eQ2FrhYWMODQbQ/f6xRrC6NxppkccPi54G74AG8z9ex28Db4CGzyz/
-	 +62qIHC5yu76zAXo7qWYIhxLUff0xSiaInojORvm1u2IQmsIjnAJxRZq1Drz7KznefN/P
-	 g0+OV0hZpNbzcQUDSMwpRvRTx/pdmgwsNJLSiVM4FEcx/5vMjmYx707DTTJySNFYY10jh
-	 wm9nFgHGkOTSa0QRD3ms2fcK7UCftlWIIy7J7m5egfV6eO6/6NV16wDiE/g3WGm91fQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793794262;
+	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
+	 Message-ID:MIME-Version:Content-Type:Content-Disposition:
+	 X-Debian-User;
+	bh=PM+1SXBE1tO8IGolYslHAuqq+HDTOKBxAOZ2o3BRaQ0=;
+	b=qAZGTtd6UdXsl5ZypcsskiEF3uG8oTDtHR0ymTCMvEvdhyozv8zbXile9WAfJo9SN6Df
+	 cR9S+YwZCNhB2vPLqDWadhcT0LkofaLglO3tWGbm5f3gTd+mPxHSrLoaELxIZL28irqD9
+	 OPh7RqIz6FCwZ9YZ0AbsAkWCiWlnvWyJsfi2lVf1tNwxNLcvVv4v87lvxeaSjujOi4ef+
+	 iyTIOML8oCStPR+KYooBEQ8IS88nFVAJ1T4VbGTkkwJDwRtzjvO42biFOuoJKUF4aUxfH
+	 IbETd9AwAlh2ChZlaXqbHo9RlyzIT8QYFp490MuDclwk8G6r6pq+ZxHAMnqe3uHQDvA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FjRRlWkH;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=debian.org;
+	spf=pass smtp.mailfrom=debian.org;
+	dkim=pass header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=DPtVCVe+;
+	arc=none smtp.remote-ip=82.195.75.108
+Received: from stravinsky.debian.org (stravinsky.debian.org [82.195.75.108])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65BA7606A326
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 11:59:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7FB18606A31B;
+	Wed,  4 Nov 2026 12:11:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7FB18606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=debian.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=debian.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=FjRRlWkH
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0E7FF1F00A15
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 11:59:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793793580;
-	bh=BkxAcssqhwrfNZxxJ2vO5PwNZOlikVUGFuoBFpDKXJI=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=FjRRlWkHaxwfRwqJrzCnbAPkUDxseOy6iFpd9vQdZ+nc5w6kKYS/q63X2xhCXr3OV
-	 DUlOn+Zq1AVcPvnVILNE3GT8gkGZhKzsIhe/GZstoH5VgFNCocx+mnbo3Rh+oMNnyL
-	 uA8AOt1jkt9fMyUaK2YuMGMj2j2OgvO6rFbw2py2P9hyN/7nBB+ZLVGGal5opiWm+1
-	 b5Kb0R5eD2OvFukZezuHqj15/YMcJS/8gzKfVz9iCdswj24ZC7PZdZjrNbJdL8+cH+
-	 yoN2nAGKizF1yn7Pnne0n3bGIJ8jFArml6gIB/nNcvXYs0Q3rVdX8x96hm3Kaw/kyT
-	 GO9a/OdyncfNQ==
-Received: by mail-vs1-f44.google.com with SMTP id ada2fe7eead31-7777fa8f1ccso145645137.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 03:59:40 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AKwUvBwm4dVD+rIsH5VNNuNSg86CD3lfKOtzCqA1zwz22aVMUBeJtekAVCvI/nmNjyJ6d9SaM36orA3MTeYksw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9+WDS0FOWX28blSKqgwYAGhwlZFlZZ8a/UaIwHlaNGqhOPY5jB
-	bLQPyWEdUEe2KWt/sBR+GJ+qCJHa5YB2rd2cjhDM0WzoygjQElnKMfiqASzW3uP8aj9zj9qCmE5
-	qlZB3AiuLcNiRi/mHWjDXxdSxQ5JT6d0=
-X-Received: by 2002:a05:6102:6058:b0:7cc:95ed:30c9 with SMTP id
- ada2fe7eead31-7d0726402e2mr4408220137.29.1793793579252; Wed, 04 Nov 2026
- 03:59:39 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=debian.org header.i=@debian.org header.a=rsa-sha256 header.s=smtpauto.stravinsky header.b=DPtVCVe+
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed; d=debian.org;
+	s=smtpauto.stravinsky; h=X-Debian-User:Content-Type:MIME-Version:Message-ID:
+	Subject:Cc:To:From:Date:Reply-To:Content-Transfer-Encoding:Content-ID:
+	Content-Description:In-Reply-To:References;
+	bh=PM+1SXBE1tO8IGolYslHAuqq+HDTOKBxAOZ2o3BRaQ0=; b=DPtVCVe+pcamCzJc01XI7O4qkX
+	yYweOEk5BL88jVN6149yTUKRNpjMgHL52CAErHZFrEv/+eRNPDatL2ZAn2BmumA9wYAXxfPvPIfnJ
+	RazZoDmf0tVwNNPNcVy5UgOi/LJ3hpwamdFIo5kFwCvOoKe0tYBgWUboFgn97ov7IND0nVMYH9A6C
+	ifQvaYbClrAq5k6AjQFw/r2ulk6HiG/J4++BpWUm6jIgbYtW7TWw4LGVQKRyww+H91BmLEy7JCGKL
+	KA2swXz/S1unrolO/+TY4ic8tp/lb0+zSs27fiVp044phprOel4bGfW3h73sk7d6AWQic9psFni2x
+	ETp4vWCw==;
+Received: from authenticated-user
+	by stravinsky.debian.org with esmtpsa (TLS1.3:ECDHE_X25519__RSA_PSS_RSAE_SHA256__AES_256_GCM:256)
+	(Exim 4.96)
+	(envelope-from <leitao@debian.org>)
+	id 1xOZpS-007hWX-1p;
+	Wed, 04 Nov 2026 12:10:58 +0000
+Date: Wed, 4 Nov 2026 04:10:53 -0800
+From: Breno Leitao <leitao@debian.org>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+	Qu Wenruo <wqu@suse.com>, linux-kernel@vger.kernel.org, boris@bur.io, jlayton@kernel.org, 
+	linux-arm-kernel@lists.infradead.org
+Subject:  btrfs: bug report: reflink racing with async compression forces
+ read-only
+Message-ID: <ause7k_HjzUWT3D-@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,43 +67,45 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <c284dccd8c27a6434e56ed067b0ef4ea67935d8c.1793776224.git.wqu@suse.com>
- <aurorIaI3EAocPQE@infradead.org> <514c3590-27bd-42e0-b248-ec422a58e502@gmx.com>
-In-Reply-To: <514c3590-27bd-42e0-b248-ec422a58e502@gmx.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 4 Nov 2026 11:59:02 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5SFM3QGHnpEdgJepBzC0g9SEouDvpjkcdW4DCzquAVTA@mail.gmail.com>
-X-Gm-Features: AclHuK8CfLAXX3Uyq-1Y2PvDwJwk52Te-BNl06jAdLbsZFDLox3ksFGyCG9W1sw
-Message-ID: <CAL3q7H5SFM3QGHnpEdgJepBzC0g9SEouDvpjkcdW4DCzquAVTA@mail.gmail.com>
-Subject: Re: [PATCH RFC] btrfs: wait for encoded writes in fast fsync
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Christoph Hellwig <hch@infradead.org>, Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+X-Debian-User: leitao
 
-On Wed, Nov 4, 2026 at 8:15=E2=80=AFAM Qu Wenruo <quwenruo.btrfs@gmx.com> w=
-rote:
->
->
->
-> =E5=9C=A8 2026/11/4 18:41, Christoph Hellwig =E5=86=99=E9=81=93:
-> > On Wed, Nov 04, 2026 at 05:40:46PM +1030, Qu Wenruo wrote:
-> >> This is only covering encoded IO, not direct IO.
-> >>
-> >> As we should not mix direct and buffered IO in the first place, fsync(=
-)
-> >> definitely counts as a function in the buffered IO family.
-> >
-> > It absolutely does not.  fsync/fdatasync covers all data and metadata
-> > changes.  It is a fundamental part of O_DIRECT data integrity
-> > operations to write back metadata and to flush disk caches.
->
-> Even if there is a direct write in the fly? How would you even detect
-> it, there is no dirty page cache in the range.
+Hi,
 
-In btrfs direct IO writes lock the inode (vfs lock), create ordered
-extents and then unlock.
-Fsync always locks the inode (in exclusive/write mode), so it will see
-the ordered extents and take proper action.
+We are seeing btrfs go read-only on arm64 production hosts (64K pages,
+4K blocks, compress-force=zstd:3), on 6.16-based kernels and up, still
+being reproduced in linux-next as of today:
 
->
+  BTRFS warning (device nvme0n1p2): no extent map found for inode ...
+  when unpinning extent range [20480, 24576), generation ...
+  BTRFS: error (device nvme0n1p2 state A) in btrfs_finish_one_ordered:3200:
+  errno=-2 No such entry
+  BTRFS info (device nvme0n1p2 state EA): forced readonly
+
+A quick bissection seems to point to commit 1d2fbb7f1f9e ("btrfs: allow
+compression even if the range is not page aligned")
+
+I've able to come up with a reproducer that hits the issue within
+seconds with 64K pages:
+
+	https://github.com/leitao/btrfs-reflink-async-compress
+
+My robot identified this as the root cause, but I am not smart enough to
+understand: 
+
+A reflink into a range that is still being compressed does not wait
+for it:
+
+1. Another part of the same folio starts writeback first, which clears
+   the folio's dirty tag.
+2. The second filemap_fdatawrite_range() in btrfs_fdatawrite_range()
+   finds folios by that tag, so btrfs_wait_ordered_range() returns
+   before the async extent has an ordered extent.
+3. btrfs_clone() drops or splits the extent map pinned for that extent,
+   and the transaction aborts when it completes. If the clone wins the
+   race instead, the compressed write lands after it and the cloned data
+   is silently lost.
+
+Thanks,
+--breno

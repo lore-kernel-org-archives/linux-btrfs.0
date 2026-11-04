@@ -1,99 +1,78 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.176
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793787825;
-	b=AT3xPrY11KjKUhNfCuYCvgWVX6B5PLxHAmydO4nw3wRS/17neCzOr8HgVl07IScHdlZn
-	 /b094VzQliIWluHU3x3q6j0sQOkGmnMkf+eYxaAPwdTaO8kf72UgYf3EzK2S7WdM8oAVr
-	 m0M2DfkNUFlgbrJdHvADKgSecN61RCOrDBXiuG8QqUY8bMdGmv7hGG/2SoUmqFQjfXhAQ
-	 6f7LxCd/u/sYt9sYDtfbXRCCaEvYCqwDP6xP0cuOr9gN3nFWVi2exzhblH0wtv9sFUYF2
-	 muCfv+apZKDWikAAFBnkYotUdtMX5hW2ursUd3S/VI5+c7/XdFuMIxQnHxPiHj4t7+g==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793787825;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=uLK6MImajGiIdooVPMrO29/klV59rlibNvUSXvCXNpU=;
-	b=VyLTzl4jkcw+ZpGtO6PWNK7vTyekVyP1YCZqJGj9P3uUH6jUVUJ1d1eT1uurC5+ff0dN
-	 R6rkC/Z39nSrT0tDXqBmsSxZZMHsJMCMKh7IoKf6ZUCeEUz6WRwAnU5Njz0Eko3E5Ktoe
-	 46KcZoXO94BRK8jOZLhSMVZew1eyOu+UuJMAT/q6TpILLRL3u0H5pyb1qmrvOuTtlxddC
-	 B+LUE7O1HPduckGK6LwukBX1jh8kOhnfvvJWQ9/KHA6OEWMinThW+6wTL/DZ7zhhzCrSl
-	 v94W2UU64/KzLVYAYd/M39kDhmMuYvHMXiU4f0nN3rRAxNErRcF6PvROEst9IwRPYsA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=asu.edu;
-	spf=pass smtp.mailfrom=asu.edu;
-	dkim=pass header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=NrThgcDm;
-	arc=none smtp.remote-ip=74.125.82.176
-Received: from mail-dy1-f176.google.com (mail-dy1-f176.google.com [74.125.82.176])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793788696;
+	b=wMJkI10OitC3ddJMtI4jbSY4vfT8l3IEDihvvg1Fs7+pvL7NnVhAnImU/ypmqVkrjppn
+	 ZitUWg2o0FLioM6T9dWs+ubKTF1OsIS/NceyUBx00McA2i7jrGVqIviMn3+LP8knM0Ech
+	 wx7Wy02CIMmfRgQm5MB/sBPkF+6Zm4LprXekqEg36eKIfmSLB90/o7fe0WZXFbbT0xltA
+	 CWZaaQHciB6ryqoXrdqbMEDqW16Z0jWYLH8ge/+2OMkKZZdKz6cxSluR2iwe/4YNW6/js
+	 3dUOuXA/j5MJnYLkJY4lWafUXaPTxkBNN2yDSHZpDaCd/QcucPgnCvVGoXLE3CuKaYA==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793788696;
+	h=Received:DKIM-Signature:Received:From:Date:Subject:MIME-Version:
+	 Content-Type:Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
+	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
+	 X-Original-From:Reply-To:Content-Transfer-Encoding;
+	bh=7WqLBTNaocKw6zya4bDuJ8X9i+wGGcj+XzFlExge3f4=;
+	b=Zv3Bwcea9VKmpfS8163RE0RBea5iKHjiLlJwSRpLuHHCf3ZmywMQg+QqlX0e+nZdetT1
+	 W8qfUvsxGdmXviIPSa3a6iE1hGSWsjAqA5n8zAtPZeEPnQ+uTK9XTB/urErSC0EChJeSt
+	 qBtYiFfKt6fIvD7AwEFi5Gm36U+RFy0vYYEEVR0vX+qpkskR3k4HDgtNgTkqwFfrpJ1qH
+	 TW7CBwfOPGSgHYIfsqn8hElxQxkNIilpy61EtoWmGFgJzMD3DQMRY0dLfvzm7mfjyZb4B
+	 cyXKERww8V6ijrcclJxWdEfv50v+be5CNO5aMUzHt+8jByDkzGyKj7qObs80KUlr3Ww==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ntQ21sjp;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 08378606A33E;
+	Wed,  4 Nov 2026 10:38:15 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ntQ21sjp
+Authentication-Results: smtp.kernel.org; arc=none smtp.remote-ip=100.80.115.77
+ARC-Seal: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256; cv=none;
+	t=1793788695;
+	b=wyS7ZJu1du3tZjd2qWQNpKAADO33iHv0C0VDGEQ8m/QmzAH11KRuz3vDc2eaVXXm1t98
+	 Sb3C26YTi9anoZEExbtWj+2w3wW7C+R+anrgxUhkcx6woCoWt8X2Hlv7K7eNjOd7mVwHz
+	 yHkwu1wH5zRi0WQk7BEMwQwRWNxGtbqUcR1OyQdrH+wdabwERQMMSj/AL1s/pAoYpOJbL
+	 u+wwFwJTDVHcw9XgS8md/BlkrNRMXGMxi3Z9ICQ4JYpT/15YIadA3LUijFb6YbgyEdbnZ
+	 4VDL4TEha5QyF2jRYYrNIou/g/dMMCg0XkfPjm12gxBc5qTk7xvjze7vEQ8mewY87gg==
+ARC-Message-Signature: i=1; d=kernel.org; s=arc20260519; a=rsa-sha256;
+	c=relaxed/relaxed; t=1793788695;
+	h=DKIM-Signature:Received:From:Date:Subject:MIME-Version:Content-Type:
+	 Message-Id:X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:
+	 X-Developer-Signature:X-Developer-Key:X-Endpoint-Received:
+	 X-Original-From:Reply-To:Content-Transfer-Encoding;
+	bh=7WqLBTNaocKw6zya4bDuJ8X9i+wGGcj+XzFlExge3f4=;
+	b=RogfXq8PA4ho4PTgzi4Ke5ePYp4458ASHnQcnta5KwxkvTw2N0ctgqHjNr+jxa1XbZoO
+	 HtSeFnlRM1bFfZfcMYz/aw0JlzqwN9W3MpvUf/peBc9pdte+lEhqxdTQDRAOO2lfiibhI
+	 zhzmZIbHSvvtiiRZeIks730ztSupm4E7NNHCbO9LeDfGjGRnppyxfYtb9qbpNPUKkHGxq
+	 PZ63X/NeAmL5ifxtPTVe0CENXYKchiTcG34jtTojQJwOgfdvpHJKQyxdWQS/tbF3aLqHw
+	 w6SRzQwp4Bezi4SvfC+N1CnTaJyZ7hxtiPvI6p42YTKCdlGrlXeUQyVd/lOp3eH/sAA==
+ARC-Authentication-Results: i=1; smtp.kernel.org; 
+	arc=none smtp.remote-ip=100.80.115.77
+Received: from lkml.kernel.org (nexus.subspace.kernel.org [100.80.115.77])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EC2E606A336
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 10:23:33 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2EC2E606A336
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=NrThgcDm
-Received: by mail-dy1-f176.google.com with SMTP id 5a478bee46e88-36a0f27c9f4so907973eec.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 02:23:33 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=asu.edu; s=google; t=1793787812; x=1794392612; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=uLK6MImajGiIdooVPMrO29/klV59rlibNvUSXvCXNpU=;
-        b=NrThgcDmeQZgYynvlOumgkO72cQKo79T65Bwe/G2O+PAeyajpbMgFCcUoAphrH+21S
-         MrqXliJPQU9ti92Z4XaP9aBQ1bU9wOZqyohd0vL7apIZRj3GA+Xs+tRKahKU03r/cd/N
-         nEY+lzTRU4dNHp1vN6RL/iTqrfWpRVaxgFc5GMxdAgWnwS9wjujndGpOuCy+P/jz58cn
-         ZT9svNzkxF4pS5okfBQ3+eU6qPsJSk3aW87UhrWpaCfuKAdoXY4k5dlgdpDSWi29MXHm
-         nJrBsrEgKSog7s0trtWMeDO9e3Izv4snYoxIjTvvkwdtLsWgVSa7G12qGpAdfJn67CrC
-         c07g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793787812; x=1794392612;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=uLK6MImajGiIdooVPMrO29/klV59rlibNvUSXvCXNpU=;
-        b=KTPObSQWwKfI68DiMxVmMNZE5xA4VChSjWMab5nrJiH8Mc2rksb7j2XLmU+oCiW2vm
-         jX69dkR2eKx4Cb652VgFFATQ2XEjkC34ufw/kt79w7bs48QdHdXpgQC8TYc3rug98l6S
-         S0XOOxXB21KMHz03pEjlmPsnFr0P1EXBgbfbhROOj8fPfYkt8sBBhSs7SMgj+1nrHmdp
-         V+JU3ou1LJ2KHCeyZmoRvPCIYJ2ufYs03wzXb6lg8x4afNy16zc/YyY6vgtzTywZ6PVY
-         tfHD1+dN/slj/g112zR9WHKr1FCK0PKzcnjD1PRZrOfT+p4DYDMHHajQgp3iR1DU7nNr
-         c/Wg==
-X-Forwarded-Encrypted: i=1; AKwUvBxUpBGhwR6g6eldsWyNxuePgsZTkif0IXSRTH5+eGvIueDYkHBJyAmpHnz/qRkPs1mTuTlszR5BXNh+/g==@vger.kernel.org
-X-Gm-Message-State: APuU4Z8NVc5Us3hLgoTWTb9v9SfYNokF1kPiIZ3xw+wsud31KtHadbD6
-	lL+GeGNGJ5DojG/QqQsMWceW+QP7gxOC4jRV+yc7yiwB0pm9AIyOA9BV0aML8xR8yw==
-X-Gm-Gg: AYBFou0pipcCAZK1VofLvafx27VEOcBqGXKHv3VTVgnkW9ZkYJJs8RYD/2poODl3sGW
-	Pub+evqe/jZCExJAWIm/nPd1LR1G13qyRsPxGaH77Fj8KtsUs2t/k9tgDFXUygQUO526CrPkC8o
-	JNeDtnhAPICvhns0YYjd8VLXSuWS1cTKj6+LMbjSIfU23x4xwtrWieX9eVO+phfwSWQgpXOJGWx
-	cY/h32AmlCjsHFYd16gSkCEyohB3DcgjTQspMShTyFVWEMQ67eRn2S0GC3uK2LAgUO9dTEQ9wpd
-	UF3acg7v/6Sjvjuh7GyM4LWr87SVrgaFdB0oiPngoHgWT65u9G5dVSbICsbntEvDoGLft0G0MjI
-	4c29EJHa8d3bjIAz5w+9WVoJ98YhUTn9fqQbi1AesS4Fh+1NdIzoDR1b9y6iUNb1zuAiRefyQKJ
-	utabS53E5x6Pbw360nFGJxH8pwqUT2cHswv4ZYuiIcDpEDl+Kd4WKHsDtGIaLT9u57ANQNOEu/f
-	8cYwJb9Nb1PsTCVHhlg3vJllaSnBcF/JE41NWffWx0X2HVj22+VY5k7bje6oTxdLKwoZvrowT9y
-	lTA//HJtVRuM7VLhNTwIRl7DDAZKQkfdN+PWJiLC4g==
-X-Received: by 2002:a05:7301:f8b:b0:36a:2383:eb51 with SMTP id 5a478bee46e88-36a423c4070mr21425188eec.26.1793787812061;
-        Wed, 04 Nov 2026 02:23:32 -0800 (PST)
-Received: from localhost.localdomain ([2600:8800:1e00:25f0:ff01:97fc:f9e5:d7e1])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36ca38a6160sm5749086eec.9.2026.11.04.02.23.30
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 04 Nov 2026 02:23:31 -0800 (PST)
-From: Siddharth Mishra <smish149@asu.edu>
-To: dsterba@suse.com
-Cc: wqu@suse.com,
-	boris@bur.io,
-	josef@toxicpanda.com,
-	fdmanana@suse.com,
-	mason@kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Siddharth Mishra <smish149@asu.edu>
-Subject: [PATCH 2/5] btrfs: tree-checker: reject inline refs not matching the extent type
-Date: Wed,  4 Nov 2026 03:23:20 -0700
-Message-ID: <20261104102323.4090290-3-smish149@asu.edu>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20261104102323.4090290-1-smish149@asu.edu>
-References: <20261104102323.4090290-1-smish149@asu.edu>
+	by smtp.kernel.org (Postfix) with ESMTPS id C3ABA1F000C1;
+	Wed,  4 Nov 2026 10:38:14 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1793788695;
+	bh=7WqLBTNaocKw6zya4bDuJ8X9i+wGGcj+XzFlExge3f4=;
+	h=From:Date:Subject:To:Cc:Reply-To;
+	b=ntQ21sjpfglYdrNuDKbx+zsOFjNf5KR6yy6Wg+OBjFiBjci8wzKwraHKrc0d9dHMM
+	 2zXNZg1+TKYTetvnYa6qKaR6+K/xEHt9wwAw10MYuSbHWudAK7VA6Pr5W40vcmt1H5
+	 eBuqGrjy3HMX03pZ5wV7cOMFa5vVI9qffefkMKaoBdSNj3GsOV3cmocW5Ka8aknp5j
+	 GdYZTgVHHbCM+VmGrjsQH5JNGpZSHA3My56t21vGu/2K6kobBdMH5xRhYn+U02raGN
+	 r4tSQdqJZPuW7oSxkuNNCQtUwz7Oj+o5EeQq32Z0W+k0zmWJzyjQXGHXDEkGRBuovF
+	 VgdfMmhYs3LQw==
+Received: from nexus.subspace.kernel.org (localhost [IPv6:::1])
+	by lkml.kernel.org (Postfix) with ESMTP id 24F0346DA7;
+	Wed,  4 Nov 2026 10:38:14 +0000 (UTC)
+From: Mark Korenberg via B4 Relay <devnull+socketpair.gmail.com@kernel.org>
+Date: Wed, 04 Nov 2026 15:38:13 +0500
+Subject: [PATCH] btrfs: tag all metadata I/O with REQ_META
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,73 +82,237 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Message-Id: <20261104-btrfs-sb-read-req-meta-v1-1-e06b4d059897@gmail.com>
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/x2MOwqAQAwFryKpDbjiB72KWOxq1BT+kkUE8e4Gp
+ 3gwxZsHlIRJoU0eELpYed9MXJrAsPhtJuTRHPIsr5zLCgxRJkUNKORHmxNXih7rQGVTe6N0YOd
+ DaOL7D3f9+3590TW5aAAAAA==
+X-Change-ID: 20261104-btrfs-sb-read-req-meta-7be597aaaa51
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
+Cc: Qu Wenruo <wqu@suse.com>, Mark Harmstone <mark@harmstone.com>, 
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ Mark Korenberg <socketpair@gmail.com>
+X-Mailer: b4 0.14.3
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1793788693; l=8044;
+ i=socketpair@gmail.com; s=20260603; h=from:subject:message-id;
+ bh=mYH3/gnnOZUSAhAg/m5d4wWs4j5FYwgoK/14jQ1efxc=;
+ b=anZ01FKCWN9aFwRKCMSDidaF09ljwxpxtqjTu4+J+D4mLTyRtxHqg/1Ebg3vHvzEnqqce2nNl
+ 2mdA+kPyCbDDYWrQKrdpKdQVpSSglshizFCSC+5P4RIGaelMFvxgKRy
+X-Developer-Key: i=socketpair@gmail.com; a=ed25519;
+ pk=2iAMjWhs7kA9X8ccetT2YVX8dvniXua2okQogw3Don8=
+X-Endpoint-Received: by B4 Relay for socketpair@gmail.com/20260603 with
+ auth_id=806
+X-Original-From: Mark Korenberg <socketpair@gmail.com>
+Reply-To: socketpair@gmail.com
+Content-Transfer-Encoding: 7bit
 
-[BACKGROUND]
-An extent item is either for a tree block or for data, and each kind
-only gets its own inline ref types:
+From: Mark Korenberg <socketpair@gmail.com>
 
-  TREE_BLOCK: TREE_BLOCK_REF, SHARED_BLOCK_REF
-  DATA:       EXTENT_OWNER_REF, EXTENT_DATA_REF, SHARED_DATA_REF
+Tree block reads and writes and super block writes carry REQ_META, but
+several other paths do metadata I/O without it, so the block layer and
+drivers (blktrace, BFQ, blk-cgroup, wbt, ublk) see it as data I/O:
 
-Readers rely on this.  btrfs_get_extent_owner_root() only looks for an
-owner ref on data extents, and btrfs_get_extent_inline_ref_type() warns
-when a caller that expects a tree block ref or a data ref gets the
-other kind.
+- scrub reads super blocks with a bare REQ_OP_READ;
+- btrfs_repair_bbio_failure() rewrites a bad tree block copy without it;
+- RAID5/6 rbios build new per-device bios from a bare op, so all tree
+  block writes on RAID5/6, and recovery reads, lose the flag;
+- scrub and dev-replace read, repair and copy metadata block groups
+  without it;
+- remap relocation copies metadata block groups without it.
 
-[CAUSE]
-check_extent_item() verifies each inline ref on its own, but never
-checks that its type matches the TREE_BLOCK or DATA flag of the extent
-item.  So a data ref or an owner ref on a tree block, or a tree block
-ref on a data extent, passes the tree-checker.  For example this tree
-block has an owner ref instead of its tree block ref:
+Tag these by the chunk type: metadata and system chunks get REQ_META,
+mixed chunks do not, as they also hold data.  All bios of a block group
+then carry the same flag and stay mergeable (blk-cgroup does not merge
+bios that differ in REQ_META).
 
-	item 9 key (30478336 METADATA_ITEM 0) itemoff 3636 itemsize 33
-		refs 1 gen 13 flags TREE_BLOCK
-		tree block skinny level 0
-		(172 0x5) extent owner root 5
-		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This does not change the btrfs submission path: scrub and remap bbios
+skip checksumming, and scrub_read_endio() and scrub_repair_read_endio()
+do not wait for other I/O, so running them on endio_meta_workers is
+fine.  With blk-cgroup, metadata scrub I/O is now issued as root and
+charged back, like other metadata I/O.
 
-The leaf is accepted.  When the tree block is freed later,
-lookup_inline_extent_backref() skips the owner ref, finds no tree block
-ref, and the transaction aborts:
+bdev_rw_virt() takes an enum req_op, but gfs2 and xfs already pass
+REQ_META through it.
 
-  WARNING: fs/btrfs/extent-tree.c:3418 at __btrfs_free_extent
-  BTRFS error (device vda state A): Transaction 14 aborted (-EUCLEAN)
-  BTRFS info (device vda state EA): forced readonly
-
-[ENHANCEMENT]
-Reject an inline ref whose type does not match the extent flags with
--EUCLEAN, so the leaf is refused when it is read:
-
-  BTRFS critical (device vda): corrupt leaf: block=30441472 slot=9
-  extent bytenr=30478336 len=4096 inline ref type 172 does not match
-  extent flags 0x2
-
-Signed-off-by: Siddharth Mishra <smish149@asu.edu>
+Signed-off-by: Mark Korenberg <socketpair@gmail.com>
 ---
- fs/btrfs/tree-checker.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+I noticed this in the request log of a ublk zoned device: tree block
+reads and writes arrive with UBLK_IO_F_META, while the super block
+reads at mount do not.  An audit of all bio submission sites in
+fs/btrfs then found the paths listed in the commit message.
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index f021ac14b..db446c8af 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -1790,6 +1790,14 @@ static int check_extent_item(struct extent_buffer *leaf,
- 				   inline_type);
- 			return -EUCLEAN;
+The super block reads at mount are the one case I left alone, along
+with a few others:
+- btrfs_read_disk_super() and sb_write_pointer() read through the
+  block device page cache, which cannot pass REQ_META.  That is on
+  purpose since 8f32380d3f29 ("btrfs: use the page cache for super
+  block reading"), to stay coherent with mkfs and udev.  The same goes
+  for btrfs_scratch_superblocks().
+- Discards free space, and the empty preflush of write_dev_flush()
+  covers the whole device.
+
+Testing: virtme-ng VM, memory backed null_blk, tracefs
+block:block_bio_queue, every bio classified as super block or by the
+chunk type of its dev extent:
+- RAID5 metadata and data: copy /usr/include, scrub, then replace
+  devid 1 with a new device
+- DUP metadata with one copy of a leaf corrupted, read the directory
+  until "read error corrected"
+
+Bios of metadata chunks, with REQ_META / without:
+
+                                before      after
+  RAID5 writes (and RMW reads)  0 / 274     245 / 0
+  scrub                         0 / 390     369 / 0
+  scrub, super blocks           0 / 6         6 / 0
+  dev-replace                   0 / 258     243 / 0
+  repair write                  0 / 1         1 / 0
+
+No data bio carries REQ_META, before or after.  No new warnings, W=1
+build clean.
+
+Not tested: the remap relocation part, btrfs-progs 7.1 here cannot
+create a remap-tree filesystem.  Mark, could you give it a look?
+
+The audit, the patch and the test were drafted with the help of an AI
+assistant (Claude Opus 5.5).
+---
+ fs/btrfs/bio.c        |  3 ++-
+ fs/btrfs/raid56.c     |  3 ++-
+ fs/btrfs/relocation.c | 13 ++++++++-----
+ fs/btrfs/scrub.c      |  5 +++--
+ fs/btrfs/volumes.h    | 10 ++++++++++
+ 5 files changed, 25 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
+index 2e12a6d7e16f..efbce4d549ff 100644
+--- a/fs/btrfs/bio.c
++++ b/fs/btrfs/bio.c
+@@ -951,7 +951,8 @@ int btrfs_repair_bbio_failure(struct btrfs_bio *bbio, const struct bvec_iter *or
+ 	}
+ 
+ 	repair_bio = bio_alloc(smap.dev->bdev, max(1, length >> PAGE_SHIFT),
+-			       REQ_OP_WRITE | REQ_SYNC, GFP_NOFS);
++			       REQ_OP_WRITE | REQ_SYNC |
++			       (is_data_inode(inode) ? 0 : REQ_META), GFP_NOFS);
+ 	repair_bio->bi_iter.bi_sector = smap.physical >> SECTOR_SHIFT;
+ 	while (cur < length) {
+ 		struct page *page = bio_iter_page(&bbio->bio, iter);
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index a8a8004bb14c..1b5cdcdeced3 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1205,7 +1205,8 @@ static int rbio_add_io_paddrs(struct btrfs_raid_bio *rbio, struct bio_list *bio_
+ 	/* put a new bio on the list */
+ 	bio = bio_alloc(stripe->dev->bdev,
+ 			max(rbio->bioc->stripe_len >> PAGE_SHIFT, 1),
+-			op, GFP_NOFS);
++			op | btrfs_chunk_req_meta(rbio->bioc->map_type),
++			GFP_NOFS);
+ 	bio->bi_iter.bi_sector = disk_start >> SECTOR_SHIFT;
+ 	bio->bi_private = rbio;
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index b2ac5b836b21..af17be38eea3 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4146,8 +4146,9 @@ static int copy_remapped_data_io(struct btrfs_fs_info *fs_info,
+ }
+ 
+ static int copy_remapped_data(struct btrfs_fs_info *fs_info, u64 old_addr,
+-			      u64 new_addr, u64 length)
++			      u64 new_addr, u64 length, u64 type)
+ {
++	const blk_opf_t meta = btrfs_chunk_req_meta(type);
+ 	int ret;
+ 	const u64 copy_len = min_t(u64, length, SZ_1M);
+ 	struct page **pages;
+@@ -4172,12 +4173,12 @@ static int copy_remapped_data(struct btrfs_fs_info *fs_info, u64 old_addr,
+ 		to_copy = min_t(u64, to_copy, BIO_MAX_VECS << PAGE_SHIFT);
+ 
+ 		ret = copy_remapped_data_io(fs_info, &priv, pages, old_addr,
+-					    to_copy, REQ_OP_READ);
++					    to_copy, REQ_OP_READ | meta);
+ 		if (ret)
+ 			goto end;
+ 
+ 		ret = copy_remapped_data_io(fs_info, &priv, pages, new_addr,
+-					    to_copy, REQ_OP_WRITE);
++					    to_copy, REQ_OP_WRITE | meta);
+ 		if (ret)
+ 			goto end;
+ 
+@@ -4344,7 +4345,8 @@ static int move_existing_remap(struct btrfs_fs_info *fs_info,
+ 		goto end;
+ 	}
+ 
+-	ret = copy_remapped_data(fs_info, new_addr, dest_addr, dest_length);
++	ret = copy_remapped_data(fs_info, new_addr, dest_addr, dest_length,
++				 bg->flags);
+ 	if (unlikely(ret))
+ 		goto end;
+ 
+@@ -5161,7 +5163,8 @@ static int do_remap_reloc_trans(struct btrfs_fs_info *fs_info,
  		}
-+		if (unlikely(is_tree_block !=
-+			     (inline_type == BTRFS_TREE_BLOCK_REF_KEY ||
-+			      inline_type == BTRFS_SHARED_BLOCK_REF_KEY))) {
-+			extent_err(leaf, slot,
-+			"inline ref type %u does not match extent flags 0x%llx",
-+				   inline_type, flags);
-+			return -EUCLEAN;
-+		}
- 		if (unlikely(inline_type < last_type)) {
- 			extent_err(leaf, slot,
- 				   "inline ref out-of-order: has type %u, prev type %u",
+ 	}
+ 
+-	ret = copy_remapped_data(fs_info, start, new_addr, length);
++	ret = copy_remapped_data(fs_info, start, new_addr, length,
++				 src_bg->flags);
+ 	if (ret) {
+ 		btrfs_abort_transaction(trans, ret);
+ 		goto fail;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 98362c91bce4..269948b1caeb 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -934,7 +934,8 @@ static struct btrfs_bio *alloc_scrub_bbio(struct btrfs_fs_info *fs_info,
+ 	 * enough to contain the full stripe.
+ 	 */
+ 	bbio = btrfs_bio_alloc(round_up(stripe->stripe_len, PAGE_SIZE) >>
+-			       PAGE_SHIFT, opf,
++			       PAGE_SHIFT,
++			       opf | btrfs_chunk_req_meta(stripe->bg->flags),
+ 			       BTRFS_I(fs_info->btree_inode),
+ 			       logical, end_io, stripe);
+ 	bbio->is_scrub = true;
+@@ -2957,7 +2958,7 @@ static int scrub_one_super(struct scrub_ctx *sctx, struct btrfs_device *dev,
+ 	int ret;
+ 
+ 	ret = bdev_rw_virt(dev->bdev, physical >> SECTOR_SHIFT, sb,
+-			BTRFS_SUPER_INFO_SIZE, REQ_OP_READ);
++			BTRFS_SUPER_INFO_SIZE, REQ_OP_READ | REQ_META);
+ 	if (ret < 0)
+ 		return ret;
+ 	ret = btrfs_check_super_csum(fs_info, sb);
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 891bc2432870..66796f09eae8 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -709,6 +709,16 @@ static inline enum btrfs_map_op btrfs_op(const struct bio *bio)
+ 	}
+ }
+ 
++/*
++ * REQ_META for I/O to a chunk of type @type that holds only tree blocks.
++ * A mixed chunk also holds data and gets no flag, otherwise its data
++ * would be tagged as metadata.
++ */
++static inline blk_opf_t btrfs_chunk_req_meta(u64 type)
++{
++	return (type & BTRFS_BLOCK_GROUP_DATA) ? 0 : REQ_META;
++}
++
+ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ {
+ 	return offsetof(struct btrfs_chunk, stripe) +
+
+---
+base-commit: df5b88a7914e18488908ddf13e14e31ab39f954c
+change-id: 20261104-btrfs-sb-read-req-meta-7be597aaaa51
+
+Best regards,
 -- 
-2.54.0
+Mark Korenberg <socketpair@gmail.com>
+
 

@@ -1,59 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.172
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793821603;
-	b=Gx/yTWcLg8BaKWA0SkZDxvLqZHWZsfeJCUmvWEp+fooTw+F2O1Rw82u6tq0j3ac5KkJE
-	 XRzZQ8Sd5bkPrmai/Qj8l5w7SMDUkSV8dtLt0E4NzC7LukRZ+HW2b5MI9SBmq1OW3rL5h
-	 Nedh+gEnoxKm6dQeHFpVG7XFtFe1LZltBk0ZNSrcRLSLeomrtUJ2gbkWbKJCgsZFbYSsj
-	 pKYlhqKpJC3WXZH+mLtRrsub3U//bSetccYnUnoFbWbLSK25VlniSq6QNKa/8YaRg0ITx
-	 u4c8jeBNJ7hD+6Y4YVcHynl6AMIpacdOnZ1jMuD5wyqz2KjOHW7xTh6xmpCaXl0KTkg==
+	t=1793822214;
+	b=5plfna+XrPB/+MGUelyeW++qEFrATIej+2hiDc9VXzMrXUOflp70B1TPJEXwQaugTxho
+	 oxQ1mLcKS0E7vl9S32YlJWesZHnTeraGoBQhUbBKvHiZrhetEbS39TAq5VVSJj/h7DzPz
+	 m83OFLxZB07BvXjRWr6mx0TUuXuRzDZoDfXu737Pr8agp6uhEzbMgiFM3JKHkmQH3oxaI
+	 Z44vOiyFB5KEd9DLqxRwXKfn3V2ay0eTG3r0j69uztv1VCbst8TAjo4E54KKLdMVQJ162
+	 Ib9FFiGoAC/r2a5NrsonlNJgQ+0y9BD6f4M5zwkC08hA+YkNbyQ6WOOao5mH7XTm1Fw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793821603;
-	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=oUcPL85ei5U4d0RhTPCHJJ3QC2Sk5WoYZJdWFp/OwSg=;
-	b=THRg4BN9lHnXyX6ALtJnX/kPF5l0KEaYe7OFAqfAN0y3XpBgE3oMsPtT6/GLkGaekOXE
-	 ThFQoLNbYZAWex6AVElWDzWJU2Qwj306xk0UGO5RTADtzIaU/lE5e0y0ROp2sqSwC+YHw
-	 /bcFaGakYHA0uo0N8lGTHZgU5TlEDVXwGbqJeZ4qwahidOWtwoJrMxNsymewLz/7UlHXl
-	 FaUOuQbJt7wgMgz2hQDlud4b5a39+I9+JMLCL9G6Fx8KeprgPyQ2QSwDNoFeFrokSDEAq
-	 04FzrJziwIkk0YbJFBsuLCz24pXnyt4LsP3BQoy4hepMp0rSUquyEF/w5waUhofsaXA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793822214;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=xrKa+VT265YSl+/JqzQSpxcCcwhP8N6auXFpJdA3IgM=;
+	b=KD3V61syQ+2vZk1eG+CjqUQoUyUloIX7K3AVRPEwUdTPaxBlzvY1wkFv8nT3Ma3Y5V+u
+	 PxbCRxsMNMmbJQrCLT5TQnzGMmdngclqD89jO2EdVYKHqKmZnkicISVOVtCMOkxVBPG06
+	 pXMYaV67QY/CO+Q6rC2FhAjjtZj/Ue6IC2dblZ19wvz08DMN3rxa06WsJCZDSL2Brvabu
+	 7DtsqUdkGCn6ixBKqk0l6a0nE2bLoqX5Kt3UTNTqmaEdUskXnBHgeXB7DYrGSRvl2Qdpc
+	 fvRRSHow6WKiclMHwahVXnGWtl44w2sF7z5dX9sOyQoIprH22OxIjGnPFo1PE2oa1CA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=SGHBzpuU;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=asu.edu;
+	spf=pass smtp.mailfrom=asu.edu;
+	dkim=pass header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=N53fQ7A6;
+	arc=none smtp.remote-ip=74.125.82.172
+Received: from mail-dy1-f172.google.com (mail-dy1-f172.google.com [74.125.82.172])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2567B606A861;
-	Wed,  4 Nov 2026 19:46:42 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A01EC60E7530
+	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 19:56:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A01EC60E7530
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=SGHBzpuU
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id BAFCE1F000C1;
-	Wed,  4 Nov 2026 19:46:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793821602;
-	bh=oUcPL85ei5U4d0RhTPCHJJ3QC2Sk5WoYZJdWFp/OwSg=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=SGHBzpuU8UnmqexhEbiWAA20uJBNcu6XuwqLQ7V1psxJSeBN44dOujaKqLosA+wgl
-	 Ep6ep3fPvcC/sqScixQrr34pDRLsKuAR4Tg1iGrT/n5LrNp7j74+W9JfmXxnR46pbr
-	 0y/5K0URlBPSM6hufEUI61/VbCOMwyBRwraZpkQ2tRNH46tq27rG6UttS7EpWgFeOW
-	 XwCCqIpCGmMqu6yO0juELENSbdZDl2SojM/x7dzGlh/6/hSgJS86FvXJFbRkzXdUsq
-	 1gbdTMSZPmiEKm0MXwsZAj9L6z0dtKv91aOHJ+RPCBij9NituK5em8kZT3Vw+oTnRZ
-	 QqEHjk5GlvSVw==
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: ebiggers@kernel.org,
-	hch@lst.de,
-	fsverity@lists.linux.dev
-Cc: Andrey Albershteyn <aalbersh@kernel.org>,
-	linux-xfs@vger.kernel.org,
+	dkim=pass (2048-bit key, unprotected) header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=N53fQ7A6
+Received: by mail-dy1-f172.google.com with SMTP id 5a478bee46e88-33bf40b0c8bso2476493eec.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 11:56:53 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=asu.edu; s=google; t=1793822213; x=1794427013; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=xrKa+VT265YSl+/JqzQSpxcCcwhP8N6auXFpJdA3IgM=;
+        b=N53fQ7A6j6zDRf1HvGp2eiK1RyXqfnJynb0VUYXAeNZPhy2b8b5Yt/eQ4IMJWvBHuO
+         rPZSTNLo7fdbmdrIaxiUSLddCNXIQa4oLPJVeOIrdklDjmQAVduoWyS3ktQ0jD0i7pBC
+         rLvloDK1qSYvrAJbiVhgy8SMLD0alUNQbJg5KwfpDQfPbqt+49CbyYzlznWqs8Md/8Dk
+         PBOUx4RQSdCIBT4Vk0Y2q5cW8imS44umvk9MPlj6ISED8H84yKayQr+glentQgUPN75L
+         A3WncJrdc3t+z0fkgRFGu5smxposAYN9RQy7ZF0KPS2gDwLGc+f87PqBfK/Wk9cW2h6p
+         UZ9A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793822213; x=1794427013;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=xrKa+VT265YSl+/JqzQSpxcCcwhP8N6auXFpJdA3IgM=;
+        b=lXO43UatWddezoGfPmI1eJHf1mXRl0fxnz+OWN+vdsKUGJAvqB4y5vEK9bLMmpmk/I
+         Qo2+1mCez34Gn7CIQ4qy/2k+XBjAy9jMvkRThEXzKQ9W+Q8S5pm4BRDwnw7R4fpBfDsk
+         9ZPyA0dtCz/GFWxmosaWwmXgHriFciHhp3nrF7Hu0gnnZkzJ6Q4jZqyIIVzhn5j34KoI
+         OxO/fyF0DSZcLoUGO9hjx7hV9uoc5s768TDo2oKjxpQOUa48klVp3ZXc3LGyQDDnMsFU
+         r0MFm3Qx7WSX9Upk/YONCX8JkYdxGFyXuOkZw2RwFQVxYOIbr0DjLHVCAE8+WF/XZGGt
+         hPXQ==
+X-Forwarded-Encrypted: i=1; AKwUvBz9r5p/4ZmaJPSHGMTPH8DXsoGawg/qirnSz/K8zxBzgcb4sO4U/yi12Z4JnTle3OUg48W7B/KXyLvKZw==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+o8GmV5y5F5bRj65+QdSlD0M7OFEUIv1f5mw9FnLJ49luF285E
+	1Fg0HKCXl5TUVFocM2qAgYDMQ1wzHhs4xrYrr92z5S7XYh++4K9TVDaWD6JXc+wrAw==
+X-Gm-Gg: AYBFou2hYcstLpO0eFT0QWYQQYfvSvYOft8gsXOCqdv4kSpX0G/ZhbAVPNvnbgEB45S
+	pYZc8uAZCLyV4VeLxf8T4byae+YyApeRrP/51z7ZFIU+sXCOhAUlrHfTAJQOdcL4p8JD2fS9w5f
+	6VtrkTxRqn1z4gcYb3O6JrqbH6eEympzInsBXxWcVmTvHjVYeZAHtlSctWSEuMHO2DI9hwEL+z+
+	9TofYSXNhPSPSHKkrY3zKcDF4f4u1rB9UU9wvC2Un5P7ublrQbjXS6p6LXU8NORPgTc5EY/bIWF
+	CSMMXeAZLzZyhEtEBL+Jgy/4Uq0HuEjlbWe8HEDbI5oOTg+YHtJbYYvAcaO1eFkIUdexUFExgh2
+	KQyn8m3KqY6qwR9r1LZ2/o0k1Sf0awGjGwcfyIGVcsE7J7PlhSE77oIXaxu8dRAtJTRR5ybYTMk
+	eNZVZo2eA9UYW+kemZhL1stwgt2GWgEOiFHDg3TmKbX4sDj+viSEOV6Y/VUZgNOdXJAg0I8wdzy
+	XhhW3lO6FDAnoouFJBgmsV29yRNi5S1Z31LPbCjX9kNiPN7P3FN2DgIlD85Zp4n7fyAky6AKryF
+	v88ZGDWwUR7kHbVqA43G1ap3dUuZWq0OcbDU
+X-Received: by 2002:a05:693c:8806:10b0:369:f97f:72c1 with SMTP id 5a478bee46e88-36a4241bbd5mr26449643eec.36.1793822212586;
+        Wed, 04 Nov 2026 11:56:52 -0800 (PST)
+Received: from localhost.localdomain ([206.206.222.89])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36ca38fe477sm8703069eec.17.2026.11.04.11.56.51
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 04 Nov 2026 11:56:51 -0800 (PST)
+From: Siddharth Mishra <smish149@asu.edu>
+To: Boris Burkov <boris@bur.io>
+Cc: dsterba@suse.com,
+	wqu@suse.com,
+	josef@toxicpanda.com,
+	fdmanana@suse.com,
+	mason@kernel.org,
 	linux-btrfs@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net,
-	linux-ext4@vger.kernel.org
-Subject: [PATCH 3/5] btrfs: use I_VERITY_BUILDING instead of private flags
-Date: Wed,  4 Nov 2026 20:46:12 +0100
-Message-ID: <20261104194618.103332-4-aalbersh@kernel.org>
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 2/5] btrfs: tree-checker: reject inline refs not matching the extent type
+Date: Wed,  4 Nov 2026 12:56:49 -0700
+Message-ID: <20261104195649.2422485-1-smish149@asu.edu>
 X-Mailer: git-send-email 2.54.0
-In-Reply-To: <20261104194618.103332-1-aalbersh@kernel.org>
-References: <20261104194618.103332-1-aalbersh@kernel.org>
+In-Reply-To: <20261104192415.GD3301639@zen.localdomain>
+References: <20261104102323.4090290-1-smish149@asu.edu> <20261104102323.4090290-3-smish149@asu.edu> <20261104192415.GD3301639@zen.localdomain>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -65,96 +104,19 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Now that the VFS tracks an inode whose Merkle tree is under construction
-via I_VERITY_BUILDING and handles the concurrent-enable guard in the
-generic fs-verity enable path, drop the inode runtime flags that
-duplicated this.
+On Wed, Nov 04, 2026 at 11:24:15AM -0800, Boris Burkov wrote:
+> > 	item 9 key (30478336 METADATA_ITEM 0) itemoff 3636 itemsize 33
+> > 		refs 1 gen 13 flags TREE_BLOCK
+> > 		tree block skinny level 0
+> > 		(172 0x5) extent owner root 5
+> > 		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> >
+>
+> I assume this was crafted manually, not via btrfs operations with
+> squotas enabled, right?
 
-btrfs only used BTRFS_INODE_VERITY_IN_PROGRESS internally, so remove it
-outright.
+Right, it is a corrupted image found by fuzzing. I did not find a way
+to get an owner ref on a tree block with normal operations, the kernel
+only adds owner refs to data extents.
 
-Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
----
- fs/btrfs/btrfs_inode.h |  7 -------
- fs/btrfs/verity.c      | 12 ++----------
- 2 files changed, 2 insertions(+), 17 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 0782f917fccc..5c752b947b56 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -78,13 +78,6 @@ enum {
- 	 * the file range, inode's io_tree).
- 	 */
- 	BTRFS_INODE_NO_DELALLOC_FLUSH,
--	/*
--	 * Set when we are working on enabling verity for a file. Computing and
--	 * writing the whole Merkle tree can take a while so we want to prevent
--	 * races where two separate tasks attempt to simultaneously start verity
--	 * on the same file.
--	 */
--	BTRFS_INODE_VERITY_IN_PROGRESS,
- 	/* Set when this inode is a free space inode. */
- 	BTRFS_INODE_FREE_SPACE_INODE,
- 	/* Set when there are no capabilities in XATTs for the inode. */
-diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
-index b34d2247cf84..82e2ebad0d3e 100644
---- a/fs/btrfs/verity.c
-+++ b/fs/btrfs/verity.c
-@@ -461,7 +461,6 @@ static int rollback_verity(struct btrfs_inode *inode)
- 
- 	btrfs_assert_inode_locked(inode);
- 	truncate_inode_pages(inode->vfs_inode.i_mapping, inode->vfs_inode.i_size);
--	clear_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
- 	ret = btrfs_drop_verity_items(inode);
- 	if (ret) {
- 		btrfs_handle_fs_error(root->fs_info, ret,
-@@ -513,7 +512,6 @@ static int rollback_verity(struct btrfs_inode *inode)
-  * - mark the inode with the verity flag
-  * - delete the orphan item
-  * - mark the ro compat bit
-- * - clear the in progress bit
-  *
-  * Returns 0 on success, negative error code on failure.
-  */
-@@ -555,7 +553,6 @@ static int finish_verity(struct btrfs_inode *inode, const void *desc,
- 		goto end_trans;
- 	/* Now that rollback is no longer possible, set S_VERITY. */
- 	btrfs_sync_inode_flags_to_i_flags(inode);
--	clear_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
- 	btrfs_set_fs_compat_ro(root->fs_info, VERITY);
- end_trans:
- 	if (ret)
-@@ -570,8 +567,8 @@ static int finish_verity(struct btrfs_inode *inode, const void *desc,
-  *
-  * @filp:  file to enable verity on
-  *
-- * Begin enabling fsverity for the file. We drop any existing verity items, add
-- * an orphan and set the in progress bit.
-+ * Begin enabling fsverity for the file. We drop any existing verity items and
-+ * add an orphan.
-  *
-  * Returns 0 on success, negative error code on failure.
-  */
-@@ -587,9 +584,6 @@ static int btrfs_begin_enable_verity(struct file *filp)
- 	if (IS_ENCRYPTED(&inode->vfs_inode))
- 		return -EOPNOTSUPP;
- 
--	if (test_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags))
--		return -EBUSY;
--
- 	/*
- 	 * This should almost never do anything, but theoretically, it's
- 	 * possible that we failed to enable verity on a file, then were
-@@ -606,8 +600,6 @@ static int btrfs_begin_enable_verity(struct file *filp)
- 		return PTR_ERR(trans);
- 
- 	ret = btrfs_orphan_add(trans, inode);
--	if (!ret)
--		set_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
- 	btrfs_end_transaction(trans);
- 
- 	return 0;
--- 
-2.54.0
-
+Thanks for the review.

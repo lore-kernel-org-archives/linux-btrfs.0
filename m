@@ -1,92 +1,112 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.178
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793791184;
-	b=ovl9QJNGV/LC2f9R/nihtSGDOZ4y4G0O4lHIM9/lWYwDMk1ZCOSqGMt9/AYNFYO4t5JQ
-	 dx4nenrwq2MINNPJflkdb4mJN04f8rwNPGNb7bMhPAogYnXbh/NCxBmjwNcWK+YxowG7y
-	 zEmJN2YmEbNZ2pLvpGcr15ALfbBoncAKbXx9hGRArFy9o6KCKKL2gGOS6Y5ndQWW9sNG0
-	 fRlKz1DfrB7CRuPHaszrtB45JEZ2SuWgA+IGDcAvtpvKEnpcTK75bkQKQCPmW3CJ+vmH/
-	 zMTG2pub6musAdZAJ+EgYAfLV1+TKcstKYo0lm8suxKRWi2KnhBc3f/BBzNVXxHpSUQ==
+	t=1793791992;
+	b=1BdKS19IdY/S1DOoWa8Tp2E1dVIcC2svY8WB4Vel5L4oZTzMvU1/AFYsjYZwU8bz9qKh
+	 i+gkFxIUGNADP9CUkE6UuO//KTdXmr6p9yuO4QVgKfoInCGhTVZWud65Bokr54agW+Vnn
+	 hDWJnENM91omnXH9hP5PYcMbVR8+PtvtmgYbAvcbWTmTG94+CZPx+SjU6ksRlW0hSnrQm
+	 6ONaEsmafO43G6dzMdpyV62j+XhcP5hgd6x3R3cFk3VXCkzDBsr/Pm4YapQFAH+leIxX6
+	 rBZbFpW1THqA54MuqHsBSqanlo7Qd1s9rFOAgD1fkKs6T5cdXfO1zvLwT1EFxfdva5g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793791184;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=43M7TAHND2IcgQAiZY49uLLcef6xiXCMYceLHXJh6d8=;
-	b=PNVLGmq0c6oNmSrrnanZ2P/4dfUnRuUGZrGi/VCPGpDJQ5s3Ft9Od6j8OV5QCpKR5OOl
-	 7DA/fqaAAeVzeAJIQAkYR2ns2QESBExfxGgvJaHSDQus8mgVxHn+MUfxWYtg2yAGMNgEB
-	 z4WPUTs/7VeKHGiE5mG5EMzXOqM+Qnv6nTUAmvO0I08gh6AKAAz7j4iAR10VIe2e3t1kE
-	 spIRVjqn/PWmc0OeXgAGGIZlX4YEFKZhlGZdSX8wPhH2NTqrWgmxGGhjStJCS3LTJc+ys
-	 c2XgH7Cec2ASJA1/EuayRhYDTh2sXFYtDTlJgETY5bbDF7yEhKHEwYtjRgurU/o+0Bg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793791992;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Rspamd-Queue-Id:X-Spam-Level:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:X-Spam-Score;
+	bh=DA9gSK8SSw7yCKYFv/FiBrYaS7lH4KCu7a0mok+44Hw=;
+	b=fz7bdNJJCtj0BkfhlrT4fpKqdndf32GKtPlIdg9aJRbeZXbXJatoBs2sTriN3SZ+HJNF
+	 smkQVfRZfDLdsdn2C5fOom9D4Wb8mX+SlRTr5g690WVYq33Ne4jaMgZu8TXkC51/l92Pi
+	 wAdUyjihD9u3dJwAm5wwpgc0SZfbqk1L5BRzJl+dfOzmimN8smz603SWSkmAZiOcSG/mV
+	 qmzx1cVGdXf6gqkfC6w7CW0KgUTz23k3WEi+pgv9IbtKfhEKmofvHtodeFeBR+l2z65G6
+	 /C9OFjjb11/9QNnzM/8VOLFbBaNLZencKLhV9wGkVoe9Nv+1lfOw7rjzToXj6GyNaUQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=asu.edu;
-	spf=pass smtp.mailfrom=asu.edu;
-	dkim=pass header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=SRtwxuD2;
-	arc=none smtp.remote-ip=74.125.82.178
-Received: from mail-dy1-f178.google.com (mail-dy1-f178.google.com [74.125.82.178])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=K3o9XeQG;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=iKx8Vm2z;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=K3o9XeQG;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=iKx8Vm2z;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2560A606A31B
-	for <linux-btrfs@vger.kernel.org>; Wed,  4 Nov 2026 11:19:43 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2560A606A31B
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=asu.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=asu.edu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7165E606A326;
+	Wed,  4 Nov 2026 11:33:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7165E606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=asu.edu header.i=@asu.edu header.a=rsa-sha256 header.s=google header.b=SRtwxuD2
-Received: by mail-dy1-f178.google.com with SMTP id 5a478bee46e88-36661f953e4so720219eec.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 03:19:43 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=asu.edu; s=google; t=1793791183; x=1794395983; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=43M7TAHND2IcgQAiZY49uLLcef6xiXCMYceLHXJh6d8=;
-        b=SRtwxuD2UaSXKlZkigqHxPVcxKHp9ByY6a94nvRtJINRAH84FXB+wFOCl2PLxBifz2
-         TtfqCidb8LPR6J6PypOoEnRrqOqhFiqgiii6748sksBaHqvR8mgSe5sDW9280rjI2TRV
-         /dLIaD6B6bfyE6WkQY3pBuMGooqLWo4fImYZ6bF6M5zJ168dCZAIldQgXURJXhzQmiHQ
-         3UgfGP0j6cyoW+k0FldI64Ttyf7lqxiSfsfEyJEaR2anjujeq2wlTRcOPvm3gDesfvQR
-         qqBsI3IkXdBXyG+TsVyFrpARkDXUuswQMO936xIROY3De/qkWa1KHOhAGjAvGe0SZJi0
-         OWAA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793791183; x=1794395983;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=43M7TAHND2IcgQAiZY49uLLcef6xiXCMYceLHXJh6d8=;
-        b=eNdqzaAKu+qJPTCqTcsHKklakb1dEV++lEkU498PF0vDKHbqXedG8oiu4buTgscYls
-         d1tEeBiZuMSFu6v/WYBdqgr6qdeEoE6rMCMIfZkm9fYSgKrTl65aU9PzZr5vpJmJN4yN
-         coP+L4PKGW5oFRyQq2QNvuvzS8uNQW4Vz9rz0xgumcsJekIUu+7g1LCrT4ogdGsWQGP2
-         K/Qc2l8+cZEdw2m93Z3ZqO7Iqt49cWd/slVIz1ZYOxtauTuTRujwZ4BAkOSju38fn0lH
-         2NjgfbCewXxXBKLW8upY9CAd9hZ6KdNCOUdo3dVrRqyWJQuNdcbW99X9nDnvFeqLHtxa
-         bwOA==
-X-Gm-Message-State: APuU4Z+/vFd6L9uk1rxgi1NII3kXrsCt23GUbYe3lZGMqyeWkYmvoXOc
-	cQUvkr6RfdZreT/iFk6eT7WJpyOJK3EeZx/o5/O9K+qX07xObQjyDO1oEp3lBbxujw==
-X-Gm-Gg: AYBFou3xjO+w14SIZIHYNgKzG27hGeRuouWkwPXmGAZJKeQTYAX/FXII52BX6MtaUqR
-	L2GfaTonrBhx6IYaRXRMuOEt6JT/q4w5LSR7B53YGBC7ve53Bqs3vYkFc+JY4sUb8pWzgLzoIKi
-	1ONH+E6Kq6nBOnmxoS5ct0WWQ8Or7WXgVVnFlIKWSobJ9I3+4K9u6FFuQg0I8mPHB58wZDflvE9
-	DSP/4+HQF9SMXtnPxjjJHaDcx0u399tWlYT3sjOh72+3e4V/BCKw6li6DmkyVxCls0bvQp27+lN
-	kzf4xke6ChCCiHhs8cIPQkaUvqvc0uwBkGM15nxqly+g4WoWAjxgP8AMeiBXqSr3fZLDRWjd+Bv
-	aR8t4PoxmfJYrxNkJdpC+pmE0GYIxVNA3ZFqFJ2QcwgLNuck1XhrA/GSeWdubyfyUc83Vd7ABiw
-	UN+OJNkllVO8IdcfKGmgiauhdHyu8JKtDvEtx6deRQvLh1mshGU8szmYYYl0WvZ/F6L+6j1lzzX
-	iA1vabXgJW83Zxoi+a2ewTMCFVAWrlf7/QJjrypDQfXFtDEki3IDOn2SDNO+yMnnWa0FjWe6DqQ
-	hzI1DAxtQIuT20tmPqEmtKMu79Dzra7X8HpdJwVesA==
-X-Received: by 2002:a05:693c:894e:20b0:368:7c9d:1577 with SMTP id 5a478bee46e88-36a4238420dmr23201261eec.20.1793791183058;
-        Wed, 04 Nov 2026 03:19:43 -0800 (PST)
-Received: from localhost.localdomain ([2600:8800:1e00:25f0:ff01:97fc:f9e5:d7e1])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36ca38d36a1sm8044949eec.12.2026.11.04.03.19.42
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Wed, 04 Nov 2026 03:19:42 -0800 (PST)
-From: Siddharth Mishra <smish149@asu.edu>
-To: Dongjiang Zhu <zhudongjiang@fygo.io>
-Cc: linux-btrfs@vger.kernel.org,
-	Siddharth Mishra <smish149@asu.edu>
-Subject: Re: [RFC PATCH 1/5] btrfs: qgroup: clean up config after rescan resume failure
-Date: Wed,  4 Nov 2026 04:19:39 -0700
-Message-ID: <20261104111939.311651-1-smish149@asu.edu>
-X-Mailer: git-send-email 2.54.0
-In-Reply-To: <2d35ad0bec65ec74f998c7c1731b9a5aeed3f477.1789524388.git.zhudongjiang@fygo.io>
-References: <2d35ad0bec65ec74f998c7c1731b9a5aeed3f477.1789524388.git.zhudongjiang@fygo.io>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=K3o9XeQG;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=iKx8Vm2z;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=K3o9XeQG;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=iKx8Vm2z
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 531F11F7BE;
+	Wed,  4 Nov 2026 11:33:09 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793791989; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=DA9gSK8SSw7yCKYFv/FiBrYaS7lH4KCu7a0mok+44Hw=;
+	b=K3o9XeQGzok53jazelgy5Z8SnsmktVuxS3wbnsk4FBgZY8vaU2ERDfvmqskcp7OADTjmSD
+	7vMRvgB54NCDxhOCGQQWABEXjsPqedVgo+2k4J49IjDgOGQr6PwJUAFHoiRb/3/fOfnqaa
+	6ng0oVJWSyZTTMwoupQXzvR3ycJOQko=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793791989;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=DA9gSK8SSw7yCKYFv/FiBrYaS7lH4KCu7a0mok+44Hw=;
+	b=iKx8Vm2zq+MRBLzn1lzmhQErTr1wbqhMZQ3hZ21ZMNUanlt2beQm0pggIrkeESJufsSQsc
+	aEUK8lRIk5CfdABA==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=K3o9XeQG;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=iKx8Vm2z
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1793791989; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=DA9gSK8SSw7yCKYFv/FiBrYaS7lH4KCu7a0mok+44Hw=;
+	b=K3o9XeQGzok53jazelgy5Z8SnsmktVuxS3wbnsk4FBgZY8vaU2ERDfvmqskcp7OADTjmSD
+	7vMRvgB54NCDxhOCGQQWABEXjsPqedVgo+2k4J49IjDgOGQr6PwJUAFHoiRb/3/fOfnqaa
+	6ng0oVJWSyZTTMwoupQXzvR3ycJOQko=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1793791989;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=DA9gSK8SSw7yCKYFv/FiBrYaS7lH4KCu7a0mok+44Hw=;
+	b=iKx8Vm2zq+MRBLzn1lzmhQErTr1wbqhMZQ3hZ21ZMNUanlt2beQm0pggIrkeESJufsSQsc
+	aEUK8lRIk5CfdABA==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 29A27134A5;
+	Wed,  4 Nov 2026 11:33:09 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 7RUZAvUX62r4NQAAD6G6ig
+	(envelope-from <jack@suse.cz>); Wed, 04 Nov 2026 11:33:09 +0000
+Received: by quack.suse.cz (Postfix, from userid 1000)
+	id A8A99B325; Wed, 04 Nov 2026 12:33:08 +0100 (CET)
+Date: Wed, 4 Nov 2026 12:33:08 +0100
+From: Jan Kara <jack@suse.cz>
+To: koraynilay <koray.fra@gmail.com>
+Cc: Jan Kara <jack@suse.cz>, David Sterba <dsterba@suse.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
+	Chris Mason <mason@kernel.org>, "Darrick J . Wong" <djwong@kernel.org>, 
+	Sean Smith <defendthedisabled@gmail.com>, Andrey Albershteyn <aalbersh@kernel.org>, 
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [RFC PATCH 0/2] add provenance time (ptime)
+Message-ID: <unzslqbr7karhkgfxrcmjwgtps3byokmsqecyouqlc7aa6cszv@pgup6q2nxwt6>
+References: <20261027220532.736352-1-koray.fra@gmail.com>
+ <upe7qvhod63zd724s7uiql6kanqyrcwplodoavcvqjt35vd4ee@s3iglizxejlr>
+ <DMLN8XHASPL4.1R3MI7CMA5KCD@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -96,25 +116,94 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <DMLN8XHASPL4.1R3MI7CMA5KCD@gmail.com>
+X-Rspamd-Queue-Id: 531F11F7BE
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-11.51 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	SUSPICIOUS_RECIPS(1.50)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	MIME_TRACE(0.00)[0:+];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWELVE(0.00)[12];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_THREE(0.00)[3];
+	FREEMAIL_TO(0.00)[gmail.com];
+	RCVD_TLS_LAST(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	TO_DN_SOME(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TAGGED_RCPT(0.00)[];
+	MISSING_XM_UA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FREEMAIL_CC(0.00)[suse.cz,suse.com,zeniv.linux.org.uk,kernel.org,gmail.com,vger.kernel.org];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from]
+X-Spam-Score: -11.51
 
-On Wed, Sep 16, 2026 at 11:14:49AM +0800, Dongjiang Zhu wrote:
-> After step 4, the qgroup status item can contain
-> ON|SIMPLE_MODE|SCANNING. On the next mount the kernel reports:
->
->   qgroup rescan init failed, running in simple mode
->
-> and the mount task remains stuck in open_ctree().
+On Tue 03-11-26 15:26:20, koraynilay wrote:
+> On Tue Nov 3, 2026 at 2:25 PM CET, Jan Kara wrote:
+> > On Tue 27-10-26 23:05:30, koraynilay wrote:
+> >> This is an initial implementation of a new timestamp to indicate the
+> >> time when a file/directory was initially created.
+> >> 
+> >> This patch series takes inspiration from the one by Sean Smith
+> >> <defendthedisabled@gmail.com> [1], but using
+> >> file_setattr()/file_getattr() as suggested by Darrick J. Wong
+> >> <djwong@kernel.org> in [2].
+> >> 
+> >> The semantics of this new timestamp should be at least these:
+> >> - it should be the same as btime on a newly created file
+> >> - it's user-settable, so it can be preserved for backups, filesystem
+> >>   conversions, archives and any similar operation
+> >> - it should be preserved every time mtime gets preserved
+> >> 
+> >> and the correspondence with the other timestamps is as follows:
+> >> 
+> >> ctime <-> btime
+> >> mtime <-> ptime
+> >
+> > One thing I miss in this series is an explanation what this new timestamp is
+> > good for. Because frankly, I don't miss such timestamp as a Linux user :).
+> >
+> > 								Honza
+> 
+> Hello, my concrete use-cases are backups and filesystem conversions.
+> 
+> For backups, my setup is btrfs and using btrbk (so btrfs send to my nas
+> with ssh) and the only missing thing from the backup is the timestamp of
+> file creation (which I'm currently working around using xattrs).
+> 
+> The situation that prompted me to finally start working on this RFC
+> PATCH was when I wanted to merge 2 btrfs FSs and the only way of doing
+> that (AFAIK at least) is using cp/rsync, which can't set the creation
+> time since btime is immutable. The workaround I used was the same as
+> with backups, so with xattrs, but noticed that some files (symlinks)
+> wouldn't accept xattrs, so I looked into it and found out xattrs are
+> only for regular files/dirs.
+> 
+> (also see https://lore.kernel.org/DMGS4KQLY24Q.14MUTR6U93GIC@gmail.com/)
 
-I hit the same hang independently, from an image whose qgroup status
-item already has ON|SIMPLE_MODE|RESCAN, so a plain mount is enough to
-trigger it. The mount task stays in D state, on debug and non-debug
-kernels. An image with RESCAN but without ON hangs the same way.
+Ah, OK, I think I finally understand why do you want this. Thanks for
+explanation!
 
-I applied this patch on btrfs for-next (df5b88a7914e). With it, the
-first image fails to mount with -EINVAL and the second with -ENOTCONN,
-and both mounts return instead of hanging.
-
-Tested-by: Siddharth Mishra <smish149@asu.edu>
-
-I can share both images if it helps.
+								Honza
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

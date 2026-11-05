@@ -1,121 +1,55 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=202.12.124.150
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793901187;
-	b=uSD2ZVlUOiHwDh4oR/v5nF1loy6FdMUeSdpOOAhCx8tvoHVDtqzccx3iyz3wGXNpLLz7
-	 Eh6SgGUbmnZNr3lh1Aosn9wBT28x6PxKEO/lrilrMYKR89bVYmQ9TPYPujtSdeytzrygP
-	 DuyUkSkSeX/XKdrDF3vsYzlZ1/J5LWXqR3OeteneOggJhg2BWVr7cdv7XMzi34v5ahsGE
-	 I4ZPNXZLot3KoCnvGRcfaF6i60ZjTalEsW5F7StXSZN+sLFXEQveagyxavPfry9gCv+5Y
-	 wUWzN+l7udgZCrlMZYyk/sb4P+GpafnSPXxHpEa9uY3AUoKX2pjIvA/SCMWjz9yesNg==
+	t=1793901786;
+	b=nRV4chW+nMA0daDCzNpEYE2egu8MBeLYyFvaDesotPJTryGr37ylTTig/qJ9otYl8vyD
+	 ZV9bSpg/q4nOrFiNYdwv1/1OfAss0y9BU3w4D8oehB1NZ6NPdWh3FZ+Rixuc0/jGiLz15
+	 Uc4o+UdtEwxGUn+9H5olHZ82eObAv1vmAx1VKAcQq+3TMChRWKqbIAr4yblwHdCaQwFKt
+	 AVj4rXiosHtjFWd1aGfOfMUiS/JUf4A3pfd0FkVTQzfcI3pXBvK4wiW0zLG8E5adTlmrZ
+	 +nNFkWH+WyrcJpDxrncS3qF/zO5nIJRcmo2mFXge8TePgG7a+VdyOTSaJd9JobQr0SQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793901187;
-	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
-	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
-	 X-ME-Sender:X-ME-Received:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:
-	 Received:Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:In-Reply-To;
-	bh=s9wUzlGzFd1RKxNPzo4f2vgY8WDmbO0ienfaNsKgswQ=;
-	b=sgUSOK7CXlz10zPQCPwc5PryU3IzL2kzm/y8GURUOMt1XwND+/Fi7HHol0yXitnvItSq
-	 5MCeXCErKPns72obdmMadoA3R+MIwlovZtXTXRpdtVBqg/H6wiFzaP0+EDC/H2aZadcKA
-	 ZRDIvx4OHCz0OsJlQwU/NztYkQqOp08GbjCjMnzbK4HsoOeN8P5sEXpwPbvKy5b5Udq5a
-	 CK7Fsnt4mfzH6rSUxaPgsQAzT4QC08lSo68ZIRX+VphlSnhm1MWkS4j9mcmTqG5SwaAy9
-	 O/OX6YY4XsJ5XblyUNAqDub0BUISKyvO2Eua0U5DnstrW+hHp3fjwlphqZT3yJckb9w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793901786;
+	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=GwPyrlnKq19yfZdgGX9E8p1iXEWilgeEUNe3oswQZM0=;
+	b=0N6BiAissCF1E8+Ey2pADoyMPVZKDe4SFznCXY625Z5pAeuGrP2WX8kB+DzqrF/W0Mlq
+	 6yKOezYOLOe4GGOlNSwtfYWLzgszsghkzeRfkL+yjTnob470ttnCWmeqRCaSo1t8NvNdk
+	 I11CztqnszHm0/czqY04PLYr7OOFWC6UTpOcrcNBdu2XhgObSPzrNLSwNzzFyZ8O+acTT
+	 GkZCKvtmS90oIKAsVnQplBlcRe9ckqIM0EgXuJftonVtBHInGx+4NZH3SXxObAVc4EMk2
+	 5kMWz/G3ZTRBU2S45oOhe1wFcjaTuRcKebFQ3V+DbQNLIQ7Buv797psAcRjDJQ06KXg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=bur.io;
-	spf=pass smtp.mailfrom=bur.io;
-	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=L52lqOd+;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=EBjyFGQT;
-	arc=none smtp.remote-ip=202.12.124.150
-Received: from fout-b7-smtp.messagingengine.com (fout-b7-smtp.messagingengine.com [202.12.124.150])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OfH1qlY8;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AD65606A31B
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 17:53:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9AD65606A31B
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EEF19606A326
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 18:03:04 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=L52lqOd+;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=EBjyFGQT
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfout.stl.internal (Postfix) with ESMTP id B59B01D00023
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 12:53:05 -0500 (EST)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-03.internal (MEProxy); Thu, 05 Nov 2026 12:53:05 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc:cc
-	:content-type:content-type:date:date:from:from:in-reply-to
-	:in-reply-to:message-id:mime-version:references:reply-to:subject
-	:subject:to:to; s=fm1; t=1793901185; x=1793987585; bh=s9wUzlGzFd
-	1RKxNPzo4f2vgY8WDmbO0ienfaNsKgswQ=; b=L52lqOd+0EZ+TaDZBpZa7ySIMu
-	ZLyFejqS7YCK0NpjtVPvikznSi87vJV0rk4rlNOdYH0jSrLGnQq5oljOZ7affDT9
-	OR83JTIvI3IaB2RRVzMG0Z6uREBVNa6Y7VyoUzb9vGh7QzxndSC8uSR4FsveJssL
-	LpygKH+WZjTjGUbM0pE6GGpfPsZgm8PUv/Ug9uBe/UlTPwP+4kh30S9Hz6GZI7ih
-	U8rMrl/R/2wXHuBzP/0jNZdaAzXRpiyJNMFst8FcB+C89wdfOzf80ldjChLPS72A
-	Ej5K8lL4A/qUOpQsnX4HUxNCyc8ycbIgdbi7tHYr5rmzl3hy+DrRY94K9KsA==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-type:content-type:date:date
-	:feedback-id:feedback-id:from:from:in-reply-to:in-reply-to
-	:message-id:mime-version:references:reply-to:subject:subject:to
-	:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
-	1793901185; x=1793987585; bh=s9wUzlGzFd1RKxNPzo4f2vgY8WDmbO0ienf
-	aNsKgswQ=; b=EBjyFGQTET75iQtGowZv6QOaXqP0fDpqCcC2Qr0Erq6yha4+eqU
-	HqKrSReAJGaN9WMoWNGxs8zEk5Pr6cJ56kbomxeCV8XySvswUiWTQ+yC+eE9ykhP
-	U4LJvTi6RLPc0Xx+Om5qM9tqfBUyzCklBzEXQX39zPJI6AZt3xyeQFBcwtrS/7ir
-	Oabn4CunGbSPSVxCRo5s4HL9mpERz5GSzF1YBsptUKqjim/IV9byOVjpLcXjaPD5
-	IEzNmjoGHC4akqvIMclelJXVA0E1tILB1W9zI/9UcQjA0W/EgYj3cYBAoNHXqwa2
-	Nb54OrdWfszhWrTZXu5A/JXVyRuZzvAKr8w==
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=sign d=bur.io a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1793901185; d=bur.io;
-	mf=PGJvcmlzQGJ1ci5pbz4=;
-	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm1:rsa-sha256:aWxSwlSIH7XnFEAO6f5upXlP/NgMSQjSmV8U2aRUWemKeVM
-	JMoSTN98cxh+SpfmSFUH4R/HtWMF+z6yy5r1rfwvUCtCp8jlfbmIl4Kru9SdYGSn
-	ACMe3bmdrvWbyUFUqDvwOUof/cpcleTAy0Ye56NjvB0ZyXCjPESKFLyL7Ku/6n8a
-	4xal7vPOUqEcmQ9SBfyZM0A541lvlijgBin7Iwc792RBTOpZ+UFPYrmhzPh0SPlx
-	MYBk4HPUPgr2m/LcZVKfyufl1x/ZBmZ3VEM1NbQO5ED6EGlHPSU9sWR6Y8vQbmdd
-	PoT4EeZpM8ririrEz0x2ADqO5vdjZhePz9joBHA==;
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=mi-m=1; hc=12;
-	hn=cc,content-disposition,content-type,date,feedback-id,from,
-	in-reply-to,message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:kbtP4yKDe2IW2ddvtqEcK7mKtWDMvLvep9lgju732A8=:F+86diZaYWeQCXUjfSM6Gzo48+V4OZfPuP9ypSFG0nY=;
-X-ME-Sender: <xms:gcLsamrDWdErybHbWXOIUPvHFzmc4Nbi8tp7NOxlUFlHfwmWCw0Ymw>
-    <xme:gcLsalEmI-w_S-eEIX_-UwntApexJZwu_pvg-1I4n-awn4MOtUP4MRo50B7Tnek1c
-    WmH47y5pKOGH-tAbZU_hR-D2NlTwy1YmsJUECpAOL-if2Ch_S5rXyVq>
-X-ME-Received: <xmr:gcLsar4SF3mAFsjctUKg8YZqliFimb2iCS0eOBZV-8SX7RCK_ltgN2nH>
-X-ME-Proxy-Cause: dmFkZTFNkbq3oflfiKRMQKnm7iDgMmA5pLBcg1U9Q+sh9sAX6FMeh2mj5oSt50GTBILcHQ
-    NtFy08k5egVC03iKPjToZhWSSwYzt9ZsVwyyRgc5eettMrjSddaT9G39r2Nx6FyjP4L2C1
-    CM7a/Q0X2ckQeoW65p3kKsAnFtwGCMjddFYK1kVbMQO49Tet+AZa2UjT29LXQiXGFDZz2P
-    fFtXz7vS8Mb62xjS1zZyhO658FlPfrjFDYmxbEObW3VWGMtbSuqa04AV7QgX5dfCtFxvm2
-    1g2I+mILEE/tZ1E6Fil7N4F32hcC1hm+780dfnCKYPw+6xh/+2XfxS6lqELzGEaFVx/0tX
-    aROFiTbRjdDjjzeHCxJ99l+G1LLPvmiLu2+FflT4C0Bn4s8NqI/oi3KEXe+RQFWv2S47jH
-    xJcxdutWDr1MRGF0Q5vak/fR15XSdUkALk+4MvTYTwxsCs+Y/p93TGoRHex8KuUT1GBDMz
-    aas2EJUYbT7Gr/DLeQqDGl7iKveJeuFn07ThrO9ZwD5OszWM0tmJbP40yYBgvi8Ya7srMT
-    0mO3B7ZxJyC5PVqSeYCY2ZHhQKJKutpVX6uVhj3Nn7xyfE9sa+aeRlacdLIl9THB4qgt6y
-    wOEpMwFaZ/HJLE/8Kb4IUsZJtYFG1NaIDt2kcAsdeMAmZnj5kGcPjnOLXEbg
-X-ME-Proxy: <xmx:gcLsateVncwvoRm17flKdWdle73LNBZcwI5NCqKgz8dYfv30Wb0LMw>
-    <xmx:gcLsam4vkrsfxIuDt7moQaEadDdAhrpG2ZWmctX-tIUSPn2cQTURCg>
-    <xmx:gcLsai8HuIGchFqmV30bpSVTA8UZJpfH4x68GerkQPefqJV5hskRjw>
-    <xmx:gcLsagEhQU9P_nc5hHg6RZ07HbNZ1iFw4rw-TAnyfOai9CsPdEoZeQ>
-    <xmx:gcLsagZez6HtWGLtrKFPRs7wik1G5GFZsNihD0bZ5tPQNW3NrQW87tDL>
-Feedback-ID: i083147f8:Fastmail
-Received: by mail.messagingengine.com (Postfix) with ESMTPA; Thu,
- 5 Nov 2026 12:53:04 -0500 (EST)
-Date: Thu, 5 Nov 2026 09:53:21 -0800
-From: Boris Burkov <boris@bur.io>
-To: Breno Leitao <leitao@debian.org>
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>, Qu Wenruo <wqu@suse.com>,
-	Filipe Manana <fdmanana@kernel.org>,
-	Atish Patra <atish.patra@linux.dev>, linux-kernel@vger.kernel.org,
-	linux-arm-kernel@lists.infradead.org
-Subject: Re: bug: btrfs: direct IO fallback racing with in-flight direct IO
- fails fsync
-Message-ID: <20261105175321.GA3915752@zen.localdomain>
-References: <auxv7Tg0xSq5yHmb@gmail.com>
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OfH1qlY8
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 977A11F0093A
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 18:03:04 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1793901784;
+	bh=GwPyrlnKq19yfZdgGX9E8p1iXEWilgeEUNe3oswQZM0=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=OfH1qlY8/KFyZe7mgeo2KMOouXCzNGpJBnbtOg6zuQ48dV0Eys8hcfILTMUD2q2Fz
+	 TSgKQesJ1DACDI9t9POfID7qsAvZoCwg9mfRZf5uSIogrOxF/CuN4/+br2yk26HowO
+	 avZf+9NBhAoQPd4wtLebvMV4R7AAER6GNnE2jI4oUILuFhhv8frZL9MThghkOcaEYh
+	 S3fnSuoZGoJdxPoFnEbPKy7WxRieOl8wQQ+AilqkezquW3cs06zAuNnuEqihKRdpeX
+	 HeIxr255i5KkDUkjdszEc6dww/zAC1NJfWrPO2CyquEAaNRX4md9+VwzY+UUvQ8Kiy
+	 JbUHt0PTJ9LNQ==
+Received: by mail-vs1-f48.google.com with SMTP id ada2fe7eead31-7ce78f9d6baso679225137.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 10:03:04 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AKwUvByN9LBeGXnO4l3OazEhUMe8tleEhm75t1ZC4Mr+16uAD5zgaestf7/I7tyb1kVukeHb1oa+7/EKXioKSg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8ad48dR/TJh4txZAkcB2tdz4a8LYrtdhWLgaj5udy/jvhWdW8/
+	hBDPGlWVstdbV6y7PMJBpH7JL2i9mIRNqCi1fyPDCTBjhjU1RAu7hkIrInsyIhjfQtsAr2FGKEg
+	FgLjqHsCyPu7uW7AT+Ci+RMfwcGmoUpo=
+X-Received: by 2002:a05:6102:570b:b0:7c2:e5bb:d20c with SMTP id
+ ada2fe7eead31-7d286b5b47fmr2069338137.34.1793901783690; Thu, 05 Nov 2026
+ 10:03:03 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -125,144 +59,246 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <auxv7Tg0xSq5yHmb@gmail.com>
+References: <CAL3q7H6w1sY5R_+Ajg-uHYx_=KjeUwyt5Aw=Zj+qViLXKcB+_A@mail.gmail.com>
+ <20261105104453.2151-1-shishunbo@cmss.chinamobile.com>
+In-Reply-To: <20261105104453.2151-1-shishunbo@cmss.chinamobile.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 5 Nov 2026 18:02:25 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H7sKbmDocpBjBT3GkqaZwGYCR-A4iyW0TAcNj=sgsDTgg@mail.gmail.com>
+X-Gm-Features: AclHuK8sRFV15saRcot9eG0yBZPruX7Vv5MUiW8IZyaLB5vrU7JdT_lIOUX-OJs
+Message-ID: <CAL3q7H7sKbmDocpBjBT3GkqaZwGYCR-A4iyW0TAcNj=sgsDTgg@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix delayed_refs_rsv leak when realloc shrinks
+ an extent
+To: Shunbo Shi <shishunbo@cmss.chinamobile.com>
+Cc: dsterba@suse.com, mason@kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, 
+	syzbot+7ec60f4482abeecb0fd8@syzkaller.appspotmail.com
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On Thu, Nov 05, 2026 at 04:07:49AM -0800, Breno Leitao wrote:
-> Hi,
-> 
-> Atish reported that arm64 production hosts (64K pages, 4K blocks) that
-> keep VM disk images as NOCOW files on btrfs, opened with O_DIRECT, on
-> 7.x based kernels, and it still reproduces in linux-next as of
-> next-20261104:
-> 
->   Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-> 
-> Besides the message, dio_warn_stale_pagecache() records -EIO in the
-> mapping, so the next fsync() on the image fails. The message blames the
-> application for mixing buffered and direct IO, but every write here is
-> O_DIRECT: the buffered writes come from btrfs itself, when it falls back
-> for writes that are not 4K aligned.
-> 
-> It does not look like a regression, since the fallback never waited for
-> in-flight direct IO. 64K pages make it easy to hit, as a folio then holds
-> 16 blocks. Since e9b7b9d9e78e5b ("btrfs: use IOMAP_DIO_BOUNCE flag
-> instead of falling back to buffered IO"), COW files are exposed too.
-> 
-> I was able to come up with a reproducer that hits the issue within
-> seconds with 64K pages. With XFS on a loop device backed by such a file,
-> standing in for the VM, XFS shuts down on "log I/O error -5":
-> 
->         https://github.com/leitao/btrfs-dio-fallback
-> 
-> My robot identified this as the root cause:
-> 
-> 1. Task A has an async O_DIRECT write in flight to one 4K block of a 64K
->    folio. iomap invalidated the page cache before submitting it, and the
->    inode lock was dropped.
-> 2. Task B issues an O_DIRECT write whose offset, length or buffer is not
->    4K aligned. btrfs_direct_write() falls back to btrfs_buffered_write(),
->    which does not wait for in-flight direct IO, and dirties another block
->    of the same folio.
-> 3. Task A's write completes. kiocb_invalidate_post_direct_write() finds
->    the folio dirty, so invalidate_inode_pages2_range() fails with -EBUSY
->    and dio_warn_stale_pagecache() records -EIO. The next fsync() fails.
-> 
-> ext4 fixed the same race in 15cdefd0c052 ("ext4: drain in-flight DIO
-> before buffered write fallback"), and ext2, ntfs and exfat are getting
-> the same fix. Doing the same in btrfs_buffered_write() for the fallback
-> case makes the reproducer clean, and I can send that patch if it looks
-> like the right direction.
-> 
-> This patch is a copy of the fixes above (from other FS) and make the
-> reproducer happy.
-> 
-> commit 16cd17d1e8205f9f86b8da0a9b1ccefdb2665764
-> Author: Breno Leitao <leitao@debian.org>
-> Date:   Thu Nov 5 02:59:39 2026 -0800
-> 
->     btrfs: drain in-flight direct IO before buffered write fallback
->     
->     When btrfs_direct_write() cannot do a write as direct IO, because the
->     offset, the length or the user buffer is not aligned to the sectorsize,
->     or the range has compressed extents or page cache, it falls back to
->     btrfs_buffered_write(). That dirties the page cache without waiting for
->     direct IO still in flight from other tasks:
->     
->     1) Task A submits an async direct write to block 1 of a folio. iomap
->        invalidates the page cache in the range and submits the bio, and the
->        inode lock is dropped.
->     2) Task B issues a 512 byte O_DIRECT write to block 0 of the same folio.
->        btrfs_direct_write() falls back to btrfs_buffered_write(), which
->        dirties the folio.
->     3) Task A's write completes. kiocb_invalidate_post_direct_write() finds
->        the folio dirty, invalidate_inode_pages2_range() fails with -EBUSY,
->        and dio_warn_stale_pagecache() logs:
->     
->        [    2.048568] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
->        [    2.048574] File: /tmp/diorepro.JTCKpJ/block.img PID: 260 Comm: kworker/11:1
->     
->        It also records -EIO in the mapping, so the next fsync() fails.
->     
->     The two writes do not touch the same bytes, they only share a folio.
->     With 4K blocks on 64K pages a folio holds 16 blocks, so this is easy to
->     hit there. Meta's arm64 hosts with 64K pages hit it with VM disk images
->     that are NOCOW files on btrfs, opened with O_DIRECT. In a test, XFS on a
->     loop device with direct IO on such a file gets EIO on a log write and
->     shuts down within seconds.
->     
->     Wait for in-flight direct IO before the fallback dirties the page cache,
->     as ext4 does since commit 15cdefd0c052 ("ext4: drain in-flight DIO
->     before buffered write fallback"). btrfs_buffered_write() holds the inode
->     lock exclusively there, so no new direct IO can start until the write is
->     done. NOWAIT writes never get there, as btrfs_direct_write() returns
->     -EAGAIN for them before falling back.
->     
->     A reproducer that keeps 4K libaio O_DIRECT writes in flight while other
->     threads issue 512 byte O_DIRECT writes to the same folios of a NOCOW
->     file got 1123 fdatasync() EIOs in 10 seconds on a 64K page VM, and none
->     with this patch.
->     
->     Fixes: f85781fb505e ("btrfs: switch to iomap for direct IO")
->     Reported-by: Atish Patra <atish.patra@linux.dev>
->     Signed-off-by: Breno Leitao <leitao@debian.org>
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index f978c6524aa03f..2017a96814d857 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1334,6 +1334,14 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *iter)
->  	if (ret < 0)
->  		return ret;
->  
-> +	/*
-> +	 * A direct write that fell back to buffered IO must not dirty folios
-> +	 * while direct IO is in flight: its completion fails to invalidate
-> +	 * them and records -EIO in the mapping.
-> +	 */
-> +	if (iocb->ki_flags & IOCB_DIRECT)
-> +		inode_dio_wait(inode);
+On Thu, Nov 5, 2026 at 10:45=E2=80=AFAM Shunbo Shi
+<shishunbo@cmss.chinamobile.com> wrote:
+>
+> When a data extent is freed and reallocated (with a different size)
+> before its delayed refs are processed,
+> btrfs_alloc_reserved_file_extent() reuses the existing delayed ref
+> head and update_existing_head_ref() updates existing->num_bytes to
+> the new size, but neither adjusts the space used for checksums nor
+> releases excess space from the delayed refs block reserve.
+>
+> The csum space for deleting the checksums was reserved for the
+> original size in add_delayed_ref_head():
+>
+>         pending_csums +=3D head_ref->num_bytes;
+>         trans->delayed_ref_csum_deletions +=3D csum_leaves(num_bytes);
+>
+> but when total_ref_mod later turns non-negative,
+> update_existing_head_ref() releases the reservation based on the
+> new num_bytes:
+>
+>         pending_csums -=3D existing->num_bytes;
+>         btrfs_delayed_refs_rsv_release(fs_info, 0, csum_leaves);
+>
+> For a smaller new size the difference between the old and the new
+> size is never released, so delayed_refs_rsv.size (and .reserved)
+> stay above zero forever.  At unmount this triggers
+>
+>         WARNING: fs_info->delayed_refs_rsv.reserved > 0
+>         at btrfs_release_global_block_rsv
+>
+> and at runtime the leaked reservation keeps inflating
+> space_info->bytes_may_use, which can lead to premature ENOSPC.
+>
+> For a larger new size the release subtracts more than what was
+> reserved for the head: if the rsv does not hold reservations of
+> other delayed refs, delayed_refs_rsv.size underflows and leaks
+> reserved bytes; otherwise the rsv prematurely releases reservations
+> belonging to other delayed refs.
+>
+> Fix this by adjusting the csum accounting to the new size at the
+> time existing->num_bytes is updated, while the head is still in the
+> reservation state (total_ref_mod < 0): release the difference in
+> csum leaves for a smaller size, and grow the rsv size by the
+> difference for a larger size.  The grow direction must take effect
+> immediately (btrfs_delayed_refs_rsv_add()) rather than via
+> trans->delayed_ref_csum_deletions, because the total_ref_mod
+> transition below may release the new size in the same call, while
+> the trans counter is only folded into the rsv afterwards by
+> btrfs_update_delayed_refs_rsv().
+>
+> Fixes: ba2c4d4e3bda ("btrfs: introduce delayed_refs_rsv")
+> Reported-by: syzbot+7ec60f4482abeecb0fd8@syzkaller.appspotmail.com
+> Link: https://lore.kernel.org/linux-btrfs/6ae88b9e.64e51036.15cf6a.0027.G=
+AE@google.com/
+> Signed-off-by: Shunbo Shi <shishunbo@cmss.chinamobile.com>
+> ---
+>  fs/btrfs/delayed-ref.c | 61 ++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/delayed-ref.h |  4 ++-
+>  2 files changed, 64 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index 8bc1929237f7..45e269670068 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -63,6 +63,31 @@ bool btrfs_check_space_for_delayed_refs(struct btrfs_f=
+s_info *fs_info)
+>   * Drops the delayed ref head's count from the delayed refs rsv and free=
+ any
+>   * excess reservation we had.
+>   */
+> +/*
+> + * Grow the delayed refs rsv size for csum items to be deleted.
+> + *
+> + * Unlike trans->delayed_ref_csum_deletions, which is folded into the
+> + * delayed refs rsv by  at a later point,
+> + * this adjusts the size immediately.  It is needed when a ref head's
+> + * num_bytes is updated to a larger size and the head's reservation is
+> + * released in the same call to update_existing_head_ref(): the release
+> + * path subtracts from the rsv right away, so the size must cover the
+> + * new csum leaves before that happens, otherwise the rsv would
+> + * over-release reservations of other delayed refs.
+> + */
+> +void btrfs_delayed_refs_rsv_add(struct btrfs_fs_info *fs_info, int nr_cs=
+ums)
+> +{
+> +       struct btrfs_block_rsv *block_rsv =3D &fs_info->delayed_refs_rsv;
+> +       u64 num_bytes;
 > +
+> +       num_bytes =3D btrfs_calc_delayed_ref_csum_bytes(fs_info, nr_csums=
+);
+> +
+> +       spin_lock(&block_rsv->lock);
+> +       block_rsv->size +=3D num_bytes;
+> +       block_rsv->full =3D (block_rsv->reserved >=3D block_rsv->size);
+> +       spin_unlock(&block_rsv->lock);
+> +}
 
-The explanation and fix make good sense, thanks!
+First thing:
 
-However, thinking out loud, we do know that if we have started the DIO,
-we will have an ordered_extent from:
+You are adding a new function, and its comment, between an existing
+function and its comment.
+This is messy. Also the limit for comments is 80 characters per line,
+and this comment uses significantly less - the lines can be widened
+for better readability.
 
-btrfs_dio_iomap_begin()
-  btrfs_get_blocks_direct_write()
-    btrfs_create_dio_extent()
-      btrfs_alloc_ordered_extent()
+Second:
 
-so perhaps rather than waiting for *all* dio on the inode we can just do
-some variant of btrfs_wait_ordered_range() which only waits on dio OEs.
+Why export the function? Since it's only used in this file, it should be st=
+atic.
 
-Anyway, that is an enhancement for later, and not necessary for a fix,
-so I would be happy with this fix as-is.
+Third:
 
-Reviewed-by: Boris Burkov <boris@bur.io>
+Why exactly do we need it?
+We should update trans->delayed_ref_csum_deletions and then let the
+call to btrfs_update_delayed_refs_rsv() done up the callchain (at
+add_delayed_ref()) do the updates to the global delayed refs reserve.
+It's not clear to me why we can't simply do that.
 
->  	/*
->  	 * We can only trust the isize with inode lock held, or it can race with
->  	 * other buffered writes and cause incorrect call of
+
+> +
+>  void btrfs_delayed_refs_rsv_release(struct btrfs_fs_info *fs_info, int n=
+r_refs, int nr_csums)
+>  {
+>         struct btrfs_block_rsv *block_rsv =3D &fs_info->delayed_refs_rsv;
+> @@ -694,6 +719,42 @@ static noinline void update_existing_head_ref(struct=
+ btrfs_trans_handle *trans,
+>                 existing->must_insert_reserved =3D update->must_insert_re=
+served;
+>                 existing->owning_root =3D update->owning_root;
+>
+> +               /*
+> +                * The extent may have been reallocated with a different
+> +                * size before its delayed refs were processed.  The csum
+> +                * reservation was made for the old size (see
+> +                * add_delayed_ref_head()), so adjust the accounting to t=
+he
+> +                * new size here; otherwise the release done when
+> +                * total_ref_mod turns non-negative below is based on the
+> +                * new size while only the old size was reserved: for a
+> +                * smaller size the difference is leaked, for a larger si=
+ze
+> +                * the rsv over-releases reservations of other delayed re=
+fs.
+> +                *
+> +                * Both adjustments must take effect immediately: the
+> +                * total_ref_mod transition below may release new_leaves =
+in
+> +                * this same call, while trans->delayed_ref_csum_deletion=
+s
+> +                * is only folded into the rsv by
+> +                * btrfs_update_delayed_refs_rsv() after we return.
+> +                */
+> +               if (existing->is_data && existing->total_ref_mod < 0 &&
+> +                   existing->num_bytes !=3D update->num_bytes) {
+> +                       u64 old_leaves =3D btrfs_csum_bytes_to_leaves(fs_=
+info,
+> +                                                          existing->num_=
+bytes);
+> +                       u64 new_leaves =3D btrfs_csum_bytes_to_leaves(fs_=
+info,
+> +                                                           update->num_b=
+ytes);
+> +
+> +                       if (new_leaves < old_leaves) {
+> +                               btrfs_delayed_refs_rsv_release(fs_info, 0=
+,
+> +                                              (int)(old_leaves - new_lea=
+ves));
+> +                       } else if (new_leaves > old_leaves) {
+> +                               btrfs_delayed_refs_rsv_add(fs_info,
+> +                                              (int)(new_leaves - old_lea=
+ves));
+> +                       }
+
+For if statements, we only use { } when there's more than one
+statement in a branch. Since in both cases it's a single statement,
+please remove the  { }.
+
+> +
+> +                       delayed_refs->pending_csums +=3D update->num_byte=
+s;
+> +                       delayed_refs->pending_csums -=3D existing->num_by=
+tes;
+> +               }
+> +
+>                 /*
+>                  * update the num_bytes so we make sure the accounting
+>                  * is done correctly
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index 5ce940532144..f8434347b80b 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -408,7 +408,9 @@ struct btrfs_delayed_ref_node *btrfs_select_delayed_r=
+ef(struct btrfs_delayed_ref
+>
+>  int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info, u64 seq);
+>
+> -void btrfs_delayed_refs_rsv_release(struct btrfs_fs_info *fs_info, int n=
+r_refs, int nr_csums);
+> +void btrfs_delayed_refs_rsv_release(struct btrfs_fs_info *fs_info, int n=
+r_refs,
+> +                                    int nr_csums);
+
+We don't mix formatting changes without functional changes.
+Leave it as it was. It's a 94 characters line, and that's fine for
+today's standards.
+
+Finally, sashiko is still complaining about the same issues as in v1:
+
+https://sashiko.dev/#/patchset/20261105104453.2151-1-shishunbo%40cmss.china=
+mobile.com
+
+Thanks.
+
+> +void btrfs_delayed_refs_rsv_add(struct btrfs_fs_info *fs_info, int nr_cs=
+ums);
+>  void btrfs_update_delayed_refs_rsv(struct btrfs_trans_handle *trans);
+>  void btrfs_inc_delayed_refs_rsv_bg_inserts(struct btrfs_fs_info *fs_info=
+);
+>  void btrfs_dec_delayed_refs_rsv_bg_inserts(struct btrfs_fs_info *fs_info=
+);
+> --
+> 2.53.0
+>
+>
+>

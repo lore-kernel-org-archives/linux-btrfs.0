@@ -1,88 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.42
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793916392;
-	b=F3pATTjO++SwIghYLQIST8fcR2Zvsuym1r1wGcgn5TEXNQH/GUS32+TDFj6YZ4erFuF5
-	 itK37oBW3zPdCReVGzOLhYP2BzIEeSj6zdlQiNHXOzXtvYQ/w9OsIgF2eaH/rN/QVfxtB
-	 kxI/a5LGykLwY4471Mhz5MPEpOY43sEuSUe1gQA2EbIig5H+39QfwKRpRuXy0bKKLdzZW
-	 4OJL/Pz9FNqWLVGBgttnmd4MjPjx8JTox5MaXB1Do7OtU0Dqc1TA2oig3t172d8qSr0C9
-	 cKJeQ/JvLDLE6lXBeyvZ/Oi0p0ztUKy3ouMxOt0nlykccFexXzxGV2zkhIh+rbTm4Ig==
+	t=1793916554;
+	b=FXFHgH8Oj/OIHlUPKuAfTLipm9KYo/6UV19Ylv5ZtCeVHM/G55WfdY/gXuho1nd91VOh
+	 lIPX184sOAQCbdPTWzns1btWObOrb64Vr024J5CAZUBJXKn5I24IazH9vbrVe1VJN4Nr2
+	 E7tg0nNGD1fZb+oxxxydI8OP29Sdijg2SbZ8d+oQwlP9GhdP3meNuDErivHu4V68kHwXT
+	 z5XB7XuNtf4ZwgQoqALYV5w1XlnuD+qPUoyp2xkn0c8Cj/5uZk6RUWWHpHMmDzwsPN6/P
+	 lrF+mwhOIQprX2CBeMAZIG37rHziwc2JkHWp8NsdI4uTij18LUfKALwPoSbr+VcdPyA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793916392;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793916554;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
 	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding;
-	bh=ddrnZmJB37VdL/q6siqf8NrklVhSy4qXZBmdXTHloB8=;
-	b=C733VL2fuzhW2X16JdyN8Bvm41iXh9kHxunNVCjJBPInroc6GZc0VlqUCNy3/GXQmxKe
-	 YS0zg5Yfyqo6OmOxaiSX7t+x4lVBFL4Yb772luyOro2v3YHHP/nb5yu6Ag4s8bTuKg9ny
-	 TC1MPB/pa4GcMSKDeE7f+Ls8ix+9oE/OAy0mEW+JvbR2gVTaIQzwmxHxgboFfw3g6qLx4
-	 q4KvQCkZFW1mbWrs5EmJ0Ok6tJN2f4OFXRY0eHjbSm8g11WzgX3QX/FTA6Zo8OkRnExnH
-	 p05cHNgxdHJZ0clgmzBXaykk62WKgdYVg6NMuFP7B4xL16+zj5KpEIHzFrZDKeECp0g==
+	bh=oRI/qr02oAtiXK1RP7wgyiWcWCQ62GEKrDC35YzunHE=;
+	b=0LFipgwjXajFnaTbi/O2DQpQZQ6k+DgwKXw91o3YWF7qu6v4kiKzIoH2hd0IPJTEgwEh
+	 Fkk8Gk/Zw/rAevmkayTqgWpghqxR3aFy7D3T7b9QaoBtAiFjJM6zwFbZ2d3rgGZPVFRV8
+	 IbdpPpebj31rUe4Ntm9oOjnzpI2p5Wz+BrmGeD30mhuGYDoLDluqSay+YGdGyiCN135Pg
+	 20upksGKOc/cqFRtDDdZzwvvBTYlb89U0YfFDe5KZj6ap+M2g6CFpqQ1IQd1NsAGPlsNk
+	 PptVQWPToHbGRsgqp25Yh5Hzr7lT1m/n4j5HO/7NkXPzhgrNWhX3wKCcl+PKMTV5Hvw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=WWJn3IZu;
-	arc=none smtp.remote-ip=209.85.128.49
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=LgJwubQB;
+	arc=none smtp.remote-ip=209.85.128.42
+Received: from mail-wm1-f42.google.com (mail-wm1-f42.google.com [209.85.128.42])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 93A6C606A329
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 22:06:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 93A6C606A329
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7BDC606A328
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 22:09:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B7BDC606A328
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=WWJn3IZu
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4a214c5c4c0so143555e9.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 14:06:31 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=LgJwubQB
+Received: by mail-wm1-f42.google.com with SMTP id 5b1f17b1804b1-4a549cd7fd2so344215e9.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 14:09:13 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793916390; x=1794521190; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1793916552; x=1794521352; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=ddrnZmJB37VdL/q6siqf8NrklVhSy4qXZBmdXTHloB8=;
-        b=WWJn3IZu7/SBCB169KNJ09KjsviN3ME4cBl1ctqAtT1wnxTAHTXBfL0aVNat86L/Ik
-         rew7TuRrNSljKrYLdSvxfQeEb3fagl3RHJ3UT7Pz8SyAGHEJq4aXR76oNzpCPUxSjwVL
-         wWLZZvPlDb8FzUiviess2qAH/M/ocI4U8Mz7i7dGJjjv8hgan6iegAGL83dMBWrO1Ezd
-         hQCZ6CAZ0xp83fsXLn1NdlOp9obV09taUMZR0sj/hUsRhwbQQ/EyT5j3oMhQT1VqdNP0
-         drpqwQftx1DUSbakA9BTc/DLUyWQR8gyeelLNYAS753/pQCSh5iJ2UVBR2d69iWgF3cf
-         z1uw==
+        bh=oRI/qr02oAtiXK1RP7wgyiWcWCQ62GEKrDC35YzunHE=;
+        b=LgJwubQB6XTnBGzO+473DIgXgoAG68+ga6QOCtHMNL/FpijqKarU3WEUqC1fesZwPx
+         UcfbreJYex1n+0WFywGH25i8c2dLQPK8Ms8aVQNDLZcLyhrfplXqLljrviwUEbQD95n0
+         1c5FYpUuwrS3xxUKc6w4W5A94tgnTjYQukO4nkHmSJPZBtJFT/2YJTl/4zHltyBgQLC4
+         zqcXuOuRPHCS33zY6OnoPosS8HyK7GRHJUkWp9FKQqx+8/3HE/YmiVemisJG65VzQ7Xl
+         YNYl+brMLMZCugNog340S7RWZPPv5VRL907gDqXfKNp/nd2unoSCksRH4/AluA9Lfa4c
+         893Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793916390; x=1794521190;
+        d=1e100.net; s=20260707; t=1793916552; x=1794521352;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=ddrnZmJB37VdL/q6siqf8NrklVhSy4qXZBmdXTHloB8=;
-        b=pZAMF3ueq0OnbMEvqiHcmwKEF5Kkzub47n+mBUc3SEDTjo611F5unHBNP8WsJpiZGn
-         BfaeYfLtbyEj9A0lHkWtTPWJW8ooEdc/tq5zU/KeRd1B1Mdvb0TUXYE8KkwsctUx5Y0c
-         lXXYDRpnagVnvhbQjKqOm1/JEAjVL2lElVQe35B78ttxyhkQ+V4E4sWYzQUPbvYjD0lr
-         HVtIcO87GeNNJFikZ0bfLbA/oz/nylZtWw/dkGlrfONTb+d8h0Nz7OQm7o9mnLs1Zf17
-         ogXwLhy/t/LFOpqfvJ00I2RmmBLGqqAu69rLsV1vKxevuKYspnJwbH38zrJ+uCj05GOM
-         myfA==
-X-Forwarded-Encrypted: i=1; AKwUvBxkn6HT5xqq9xznsQ6+up1StHsb4XnnGlfTselw/jwN2QxtYKPKAMFL79kGlmVWKPiuEEEDElxjmTXTaw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/nw2aFKTUic7vFcIPde9S8kznz++MsyQbw1LobwQD+Fe2kARwv
-	Ua9UUBDxhEUtVMvrXQ0Lj+FzXBKIF6EnpakPAxk4dIlWcP2hBYDF5Orqx/q5/OlLOqI=
-X-Gm-Gg: AYBFou1dFggFy/E2ai9CyoTPVLhlL5Zrh6bIrGzfE2lzLLJ3Ws+2yVAuu0ShbyAzqnK
-	q0Wbvjw4tNDiTMSun/vTv0nolAMKJ2jYvRKEJEqLigt+PwnR6PKeQL5mwe5FMxjh24kybSHcG4t
-	ERapbAiTO6Gw5w5F10+3YiZ3hAbHv05sp7N4eLoxf5YoK7rbLs6WuZi3OJMw60SbDs8tiNN0fUC
-	z6tJeOW2CiQjS+BN7NvEplbsBiHOJeEXNygAdlj12nZ7LawuXBYR3SdCJOy29GMQsTR069N2IaN
-	xeDUbu1jUO0HERjgyoAheqrkylEwjX5cXkGeNVMvE7TdZYjIOJsgMEZYyjX6pKkKBdYjfNPwakW
-	Y7pwxGRLoVG/iab0im4sl8jU3vZ3sW0gC41/mENd8EmS5I9AXewXhv/70GQr7+2P42U+1ZVp3Hs
-	DhTn6PnhZWjsKzkG63QNSWoLbYDFlym2nmHz2TkEL9Q2cSipG0GPyMZX8JYL+9d2TUwfyo1IBQ+
-	PowUdBko/SUreOGrDS6Pjf4LFPbdkCOmOWfLx5bfRBAW9CevHJpETm+ttzB6blLek6OIQHdjXMD
-	Z2PUKmmVtjUeBVSU8kN2
-X-Received: by 2002:a05:600c:310f:b0:4a1:acaa:9d4c with SMTP id 5b1f17b1804b1-4b6de78934bmr7539875e9.25.1793916389942;
-        Thu, 05 Nov 2026 14:06:29 -0800 (PST)
+        bh=oRI/qr02oAtiXK1RP7wgyiWcWCQ62GEKrDC35YzunHE=;
+        b=xFoaitAS6/Hb6sdkJ6kkh28D5JG5RQGTMihWVv12d1XtJjyHB0GV08dDUsJYBVspaT
+         77esr+BhiCrWHbtWGrPjs5euco13ttxqdHHf6IAL5Ec9vU8W2Najl8k5QsS3TRp68/qW
+         h77yrMm7my4tDfCXVWLT8wXtT00bFnLfM5aQRhKRLaBeM3lpX9IP3ZWx5jCUhXdQeNLR
+         RT5lS5wzRJ0n+naQz9F8BDRoRAfQkR0Asg856Q8p+0CftnXS2fSdxXbABGTGrbcDv24X
+         7uOCW59sDJM4wD/7ugXzQMtM3sBys2ykNjfqc/bRfO/zBaWvAUf41K3o5wLNCgoYM95F
+         iYEQ==
+X-Forwarded-Encrypted: i=1; AKwUvBwC3Jm3oGLU2i/nkPcS6MHE/c2XWFsnTunHrtkwgFDeWU7hDOECbtSWd7TXL2BT/T6fEbfvvO9594Llwg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/9cSjvZ/qFt16WUv9FgBVx3QINH7KgOezpUVMdpK9YhiT1mR8t
+	72ELDRKnEZ/njl1txh9qyY2mdUBsV9mGF9yfJ746yi6At7bWNrUa34PmzoKmhZLFQUs=
+X-Gm-Gg: AYBFou2AXcx2Bje0g3+WIU/wlRkXcbemRjlK2IcWeIBLWQ/DnUDW72nsjunx7EHWSRh
+	nswcb/T3v+9L12mNG4QKOwS3U5y/9sGtHYHEQ7A96TCcgCHi8bCKEKWWMVNSW89efLqp2W85bLH
+	7rozLmUarWWfxp/ZnfAI/IwdzVyF413V+dNxW82sPGW6KJ8Gc27Oh9Wz/2gKd3QKlDPA1yLMONv
+	B41YkCEtto4OO+4KDg2sTFPk1/JeUOHbhJpVrKiq5qZ30NbQR941Wr6qPqzIFcB/v7x07kAPpok
+	GP7XX1rjswQA2QKRcP9N43D9g9RlEJnBGetHBNvB46mHt4wnGl09oZuIOUSDWYXgoD+Q7BvE2Lu
+	8Ej65LKKAdQxBejOBvWV92mPoY8B+kk90A8NjU1HN/kfs6yOL7qT9LONGJQhDsl4cN+pBlXwOn1
+	YeDRT7/DguipvEDiWcT8yXbGPSBkJK+fHvGIUM1yV7j1WMXgs/4E7S1wrWt8nqNT2tSJRS4qqRv
+	/tM+pnuE5eP3UFkHE7d8x9Q4Y2pQ4UlO74u0TkViJfeh189XZ/MWFH+JB6CR6pOYuKd/sGWdJBs
+	ZFo3PVpvVq63ITCAFbXC97+SJyeWYKMKw18mnIveUKc=
+X-Received: by 2002:a05:600c:1507:b0:4a2:1002:223e with SMTP id 5b1f17b1804b1-4b5603f9c78mr47181865e9.7.1793916551633;
+        Thu, 05 Nov 2026 14:09:11 -0800 (PST)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36f736a1da4sm1108191eec.7.2026.11.05.14.06.26
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-36f722eabb1sm1326422eec.20.2026.11.05.14.09.04
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Thu, 05 Nov 2026 14:06:28 -0800 (PST)
-Message-ID: <7595d1e6-b61d-48fc-b616-5562735297d2@suse.com>
-Date: Fri, 6 Nov 2026 08:36:23 +1030
+        Thu, 05 Nov 2026 14:09:10 -0800 (PST)
+Message-ID: <4c59541a-3f19-4ad3-bef3-59b9c42c2e90@suse.com>
+Date: Fri, 6 Nov 2026 08:39:01 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,12 +93,14 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/2] btrfs: tree-checker: add balance item size check
+Subject: Re: [PATCH 1/2] btrfs: overwrite a leftover balance item instead of
+ BUG_ON()
 To: Siddharth Mishra <smish149@asu.edu>, dsterba@suse.com
 Cc: mason@kernel.org, josef@toxicpanda.com, fdmanana@kernel.org,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+ syzbot+dc9291cf132691aeb478@syzkaller.appspotmail.com, stable@vger.kernel.org
 References: <20261105214738.111967-1-smish149@asu.edu>
- <20261105214738.111967-3-smish149@asu.edu>
+ <20261105214738.111967-2-smish149@asu.edu>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -125,158 +127,112 @@ Autocrypt: addr=wqu@suse.com; keydata=
  0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
  os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
  UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261105214738.111967-3-smish149@asu.edu>
+In-Reply-To: <20261105214738.111967-2-smish149@asu.edu>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
 在 2026/11/6 08:17, Siddharth Mishra 写道:
-> [BACKGROUND]
-> A paused or interrupted balance leaves a balance item in the root tree,
-> with the key (BALANCE_OBJECTID TEMPORARY_ITEM 0) and a struct
-> btrfs_balance_item of 448 bytes.  At mount btrfs_recover_balance()
-> reads the flags and the data, meta and sys args from this item, and
-> the balance is resumed with them.
-
-What's the point? The background provides nothing useful.
-
-You should directly say that a too small balance item can make btrfs to 
-read beyond item boundary.
-
+> [BUG]
+> A balance ioctl can hit this BUG_ON():
+> 
+>    kernel BUG at fs/btrfs/volumes.c:5088!
+>    Oops: invalid opcode: 0000 [#1] SMP NOPTI
+>    RIP: 0010:btrfs_balance (fs/btrfs/volumes.c:5088)
+>    Call Trace:
+>     <TASK>
+>     btrfs_ioctl (fs/btrfs/ioctl.c:3523 fs/btrfs/ioctl.c:5650)
+>     __x64_sys_ioctl
+>     do_syscall_64
+>     entry_SYSCALL_64_after_hwframe
+>     </TASK>
 > 
 > [CAUSE]
-> The tree-checker has no check for TEMPORARY_ITEM keys, and
-> btrfs_recover_balance() reads the item without checking its size.
-> With a balance item that is too short, the reads go past the end of
-> the item into the data of the previous item in the leaf,
+> btrfs_balance() expects insert_balance_item() to return -EEXIST only
+> when a balance item is on disk, and a balance item to be on disk only
+> when fs_info->balance_ctl is set (a paused balance, or one recovered
+> at mount). So for a new balance it uses BUG_ON(ret == -EEXIST).
+> 
+> Both assumptions can be wrong:
+> 
+> - insert_balance_item() inserts the item, then commits the transaction.
+>    btrfs_commit_transaction() can fail without aborting the
+>    transaction, for example when btrfs_start_dirty_block_groups() fails
+>    to allocate a path.
 
-Or even beyond the leaf boundary if it's at the last slot, which can be 
-more problematic.
+I think no call site can handle a btrfs_commit_transaction() failure 
+without transaction abort.
 
-> and the
-> balance is resumed with whatever those bytes hold.  Nothing is
-> reported.  For example this balance item is 48 bytes short:
-> 
->    item 11 key (DATA_RELOC_TREE ROOT_ITEM 0) itemoff 12545 itemsize 439
->    item 12 key (BALANCE TEMPORARY_ITEM 0) itemoff 12145 itemsize 400
->                                                         ^^^^^^^^^^^^
-> 
-> The mount succeeds and the balance is resumed:
-> 
->    BTRFS info (device vda): balance: resume
->    BTRFS info (device vda): balance: ended with status: 0
+This is a way bigger problem than what you're fixing.
 
-I don't think the succeeded case adds any value.
-
+> Then balance fails with -ENOMEM and
+>    balance_ctl is freed, but the item stays in the running transaction.
+>    The next balance ioctl finds the item and gets -EEXIST.
 > 
-> [ENHANCEMENT]
-> Add check_balance_item() to reject a balance item whose size is not
-> the size of struct btrfs_balance_item, so the leaf is refused when it
-> is read:
+> - When the transaction was aborted with -EEXIST, for example after
+>    "failed to run delayed ref ... -17" on a corrupted extent tree,
+>    btrfs_commit_transaction() returns the abort error, -EEXIST, and
+>    there is no balance item at all.
 > 
->    BTRFS critical (device vda): corrupt leaf: root=1 block=30654464
->    slot=12, invalid balance item size, have 400 expect 448
->    BTRFS error (device vda): read time tree block corruption detected
->    on logical 30654464 mirror 1
->    BTRFS warning (device vda): couldn't read tree root
->    BTRFS error (device vda): open_ctree failed: -EIO
+> [FIX]
+> Mount turns any balance item on disk into a paused balance, so a new
+> balance can only find an item left by a balance of the same mount that
+> failed after inserting it.  No balance owns that item, so let a new
+> balance overwrite it, run, and delete it at the end as usual, as Filipe
+> suggested in [1].
 > 
+> For a resumed balance -EEXIST is the normal result.  Any other error,
+> including the -EEXIST of an aborted transaction for a new balance, now
+> goes to the existing error path.
+> 
+> The BUG_ON() checks on the return value go away, and the one on
+> fs_info->balance_ctl becomes an ASSERT().
+> 
+> Reported-by: syzbot+dc9291cf132691aeb478@syzkaller.appspotmail.com
+> Closes: https://syzkaller.appspot.com/bug?extid=dc9291cf132691aeb478
+> Link: https://lore.kernel.org/linux-btrfs/ZNzE6CFOzu9kDG+G@debian0.Home/ [1]
+> Fixes: 1bbc621ef284 ("Btrfs: allow block group cache writeout outside critical section in commit")
+> Cc: stable@vger.kernel.org # 4.1+
+> Suggested-by: Filipe Manana <fdmanana@kernel.org>
 > Signed-off-by: Siddharth Mishra <smish149@asu.edu>
 > ---
-> An alternative is to check the size only where the item is read, in
-> btrfs_recover_balance(), before bctl is allocated.  That refuses only
-> the balance item and fails the mount with -EUCLEAN, instead of refusing
-> the whole root tree leaf:
+>   fs/btrfs/volumes.c | 10 ++++++----
+>   1 file changed, 6 insertions(+), 4 deletions(-)
 > 
->    BTRFS error (device vda): invalid balance item size, have 400 expect 448
->    BTRFS error (device vda): failed to recover balance: -EUCLEAN
->    BTRFS error (device vda): open_ctree failed: -EUCLEAN
-> 
-> It was tested the same way as this patch.  The tested diff, indented so
-> that it is not applied with this patch, in case it is preferred:
-> 
->    diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->    index 3d4ef6725..97154f59f 100644
->    --- a/fs/btrfs/volumes.c
->    +++ b/fs/btrfs/volumes.c
->    @@ -5230,11 +5230,17 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
->     		return 0;
->     	}
->     
->    +	leaf = path->nodes[0];
->    +	if (unlikely(btrfs_item_size(leaf, path->slots[0]) != sizeof(*item))) {
->    +		btrfs_err(fs_info, "invalid balance item size, have %u expect %zu",
->    +			  btrfs_item_size(leaf, path->slots[0]), sizeof(*item));
->    +		return -EUCLEAN;
->    +	}
->    +
-
-Don't put another diff part, even with extra spaces to break diff format.
-
-I'm almost hitting the key to send out a comment criticize the 
-duplicated code.
-
-All you doing is just to make the whole patch hard to read, not only the 
-comments after the "---" but also the cursed alternative.
-
-
-If you are not sure about what is the correct way to validate such item, 
-do read old codes/history of tree-checker and similar patches in the 
-mailing list that got rejected.
-
-Then you should not come up with such stupid question of using the 
-alternative way.
-
-
-The patch looks good, but the bad comments after "---" are so bad that 
-they make me hesitate to even add my reviewed-by tag.
-
->     	bctl = kzalloc_obj(*bctl, GFP_NOFS);
->     	if (!bctl)
->     		return -ENOMEM;
->     
->    -	leaf = path->nodes[0];
->     	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_balance_item);
->     
->     	bctl->flags = btrfs_balance_flags(leaf, item);
-> 
->   fs/btrfs/tree-checker.c | 17 +++++++++++++++++
->   1 file changed, 17 insertions(+)
-> 
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index f021ac14b..5698845be 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -2117,6 +2117,19 @@ static int check_qgroup_status_item(const struct extent_buffer *leaf, int slot)
->   	return 0;
->   }
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 3d4ef6725..4a8e5078b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3998,6 +3998,8 @@ static int insert_balance_item(struct btrfs_fs_info *fs_info,
 >   
-> +static int check_balance_item(const struct extent_buffer *leaf, int slot)
-> +{
-> +	const u32 item_size = btrfs_item_size(leaf, slot);
-> +
-> +	if (unlikely(item_size != sizeof(struct btrfs_balance_item))) {
-> +		generic_err(leaf, slot,
-> +			    "invalid balance item size, have %u expect %zu",
-> +			    item_size, sizeof(struct btrfs_balance_item));
-> +		return -EUCLEAN;
-> +	}
-> +	return 0;
-> +}
-> +
->   static int check_remap_key(const struct extent_buffer *leaf,
->   			   const struct btrfs_key *key, int slot)
->   {
-> @@ -2512,6 +2525,10 @@ static enum btrfs_tree_block_status check_leaf_item(struct extent_buffer *leaf,
->   	case BTRFS_QGROUP_STATUS_KEY:
->   		ret = check_qgroup_status_item(leaf, slot);
->   		break;
-> +	case BTRFS_TEMPORARY_ITEM_KEY:
-> +		if (key->objectid == BTRFS_BALANCE_OBJECTID)
-> +			ret = check_balance_item(leaf, slot);
-> +		break;
->   	case BTRFS_IDENTITY_REMAP_KEY:
->   	case BTRFS_REMAP_KEY:
->   	case BTRFS_REMAP_BACKREF_KEY:
+>   	ret = btrfs_insert_empty_item(trans, root, path, &key,
+>   				      sizeof(*item));
+> +	if (ret == -EEXIST && !(bctl->flags & BTRFS_BALANCE_RESUME))
+> +		ret = 0;
+>   	if (ret)
+>   		goto out;
+>   
+> @@ -5081,17 +5083,17 @@ int btrfs_balance(struct btrfs_fs_info *fs_info,
+>   	}
+>   
+>   	ret = insert_balance_item(fs_info, bctl);
+> -	if (ret && ret != -EEXIST)
+> +	if (ret == -EEXIST && (bctl->flags & BTRFS_BALANCE_RESUME))
+> +		ret = 0;
+> +	if (ret)
+>   		goto out;
+>   
+>   	if (!(bctl->flags & BTRFS_BALANCE_RESUME)) {
+> -		BUG_ON(ret == -EEXIST);
+> -		BUG_ON(fs_info->balance_ctl);
+> +		ASSERT(!fs_info->balance_ctl);
+>   		spin_lock(&fs_info->balance_lock);
+>   		fs_info->balance_ctl = bctl;
+>   		spin_unlock(&fs_info->balance_lock);
+>   	} else {
+> -		BUG_ON(ret != -EEXIST);
+>   		spin_lock(&fs_info->balance_lock);
+>   		update_balance_args(bctl);
+>   		spin_unlock(&fs_info->balance_lock);
 

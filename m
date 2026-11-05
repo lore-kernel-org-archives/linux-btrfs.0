@@ -1,49 +1,48 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793909275;
-	b=QppUFRjLoFrYDNcx7gpV+6Wz7qmZBVmSdgV3VB/JB2o+Ao/wW7FI+B24sJ2W4XtyS/WQ
-	 lqXYaw8wNa6IT4t5x3mXeJg6cxX1+uk+ai/B5l/9gyl+FISfH7+41/MWeEkmSmQs+FF6L
-	 upWJsORxiAmzUHuv6wkEJUSwysGe0PMIbAdS+RVM6060643/DdwaKaA8+HCW6CH5JUk0Y
-	 MVkoTHdhRt2EeEpgVPuPxcyFdkqkP/bP0YwIMQg/bmp5Gi5L5NK3hwvx6mOGm+VgclXCv
-	 PLSEgCbYAudhey0sAolNwydvBp5KRZgtLtcgV5vv/VT4ZTi4mvmxO/cYwtj7Wq8rwCw==
+	t=1793909276;
+	b=gOOl9tymUtIoykf2Qnz+gEjjE5xx73c79HDHP4E/q6LDNIVjWnLnxi6un1PgP24BtZm2
+	 XdVov2tD2Rgoez24SMhNJwOVX15rD2v2SQ9SkkCrHflmuJ2tm0echs329klhFGNQV0C8p
+	 g7g9N8OMKQ6ecfJg76VUkQqNKBBGCHnB6VXVe/Wa70aojv6qxxyfQsA0qi4UKig75MhH3
+	 ZN+0tS21gf1GZe+8hFzSIQULTuCNvP2J4A7e1fkBjT0uLbyJqzV4HkqUWC+TguaOGgkb4
+	 xASdvlm6BnROrfRq7P0gHF+RyDszVFyXgNZVaPAsFKFTIp1WKj8e5mI96RK6Cr5tqlg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793909275;
-	h=Received:DKIM-Signature:From:Subject:Date:Message-Id:MIME-Version:
-	 Content-Type:Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:
-	 Cc:X-Mailer:X-Developer-Signature:X-Developer-Key;
-	bh=lmH0Rd8KdrfGMEgDO27H40AfY5Euh0gAFmSDhmyefT0=;
-	b=W3QkPz0uf0HWvH2J9QkhPL1tO3Mmm9yyKyGyZC8jRwmLNc6GRUa9iMSow9dvJfZOpHvl
-	 GQD/AEvRBwvAFrEykxz2cH/nUEOgJ9sEpBUoo2RSbBNz2/1b10HuJRoV+5vQ7eneCt0sI
-	 R9wWNuIc53nPv/RGQVI95t+C+dT4T1Dxc9kUmKSEnHsZ/+VA0QsTRdhmV4xx7cRCWryU6
-	 45v+eZB2ESeDLcGtaWjl+GZ+TW++KaXcmmoMMWxsH7qS7LuMC7FdtYrTbSfVksitopM/3
-	 h1JNu3pIKmlAmSsnv+ioJaNAGuLFeunoYG0WAye74QgEnbsNMs5cOeIHN2SK1PlZ5IQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793909276;
+	h=Received:DKIM-Signature:From:Date:Subject:MIME-Version:Content-Type:
+	 Content-Transfer-Encoding:Message-Id:References:In-Reply-To:To:Cc:
+	 X-Mailer:X-Developer-Signature:X-Developer-Key;
+	bh=T/2PAL7hUGJebSowYu23xGWuD/WJk7TmHCUF8nszkHg=;
+	b=l/rrlrm2g5zYmDx4r8yFtIskzlu1qZ2I9YJQDdYcZibyAMue2Np3HrpB6rmQLan3QIax
+	 k+4whFwv0a3pGkthBo+w3XhI57Qx2TxedgT84n/UcKAWYdRmS9dxnWYX6M7WxibIVX23l
+	 FDil68AdlHiIiWUrHI0jI42MNczhBefbrLH3DckdvgpMx4rNgxw+slGX0gbeVDzc2n+3R
+	 t5GY/3NQ9Thw/YFrRp6hPTrwOBm9HjSGRVnRc6eBJaN1GsNH7gpBswpjvSlsn01hogSn/
+	 iEufrKN5zVGaqVnR1/ghXr79Vm5VcDqgV3tENrnEisVdqQ/OwwZZn3QuAx6qB2/skTw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=C4krmH4+;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=MDqapQsV;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CD19606D837;
-	Thu,  5 Nov 2026 20:07:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3B1D0606EE87;
+	Thu,  5 Nov 2026 20:07:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=C4krmH4+
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A86FB1F008BC;
-	Thu,  5 Nov 2026 20:07:54 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=MDqapQsV
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 67A6C1F0089F;
+	Thu,  5 Nov 2026 20:07:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
 	s=k20260515; t=1793909275;
-	bh=lmH0Rd8KdrfGMEgDO27H40AfY5Euh0gAFmSDhmyefT0=;
-	h=From:Subject:Date:To:Cc;
-	b=C4krmH4+W7hKEYLINs1SrrWaB1a3Gw3bHAxuW388Z8aVpnhBgYDEnzyrLmHa8p1MF
-	 qPAtQnNAZUVx+TccF76KbijMEWkscWGCzZVQiletiIFU7qsOvi1TdAbYOukJOr9fXc
-	 WkYWKdyGW/pecpA03OAsB4U5XWAhwJ4LYuCWgeWqOeTsoXQ64rOflGA54h1zLalA81
-	 1r09hTLZAMZyvBOYyiL7qlA0qAaEDkALy2Ppi0Y3XXbBnAMcanDtL4KNEek7BKfyvP
-	 yKrpDFNdltutSMz2aFhLT02VN/jTGj9BPxeyrABEeopC7utOiEPhH99V/BE9zWBfGM
-	 EbyekgYpsIK1g==
+	bh=T/2PAL7hUGJebSowYu23xGWuD/WJk7TmHCUF8nszkHg=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc;
+	b=MDqapQsVuCaw7b0dy4vIpwXLiBZinSIZN5991E9cVyEv55eHytCZaO1p47nGafgtV
+	 hb9cqAm0LvvmCsJYxTIUuseC+7EMDcOYfAVN8UXivW9IOLyCUnCkSl/1BWKwDIZcRb
+	 rSZnFoZigbifaqvCoflEutxNhpEp5EBxWowMDnbfEwYVGec+5ZvOYIPFUFuHQQVXEl
+	 xzz/o9jf6I+yjFLlF1+EzeVNjfQVnHdko+Fxualfcu8KBjX564inlYvB4jjQBm8Vpy
+	 cTUwdq/3wnD9N5wVYTLs63XorvkfiT43XkrVBQ9i8r0fIERqStIpvfpQ7Y9xIEPnq4
+	 ZIsGgp4Pk4ILA==
 From: Jeff Layton <jlayton@kernel.org>
-Subject: [PATCH 0/4] btrfs: fix FMODE_NOCMTIME handling in btrfs
-Date: Thu, 05 Nov 2026 15:07:41 -0500
-Message-Id: <20261105-delegts-btrfs-v1-0-a42a2b93cdc2@kernel.org>
+Date: Thu, 05 Nov 2026 15:07:42 -0500
+Subject: [PATCH 1/4] btrfs: honor FMODE_NOCMTIME in btrfs_write_check()
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -55,61 +54,64 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 7bit
-X-B4-Tracking: v=1; b=H4sIAAAAAAAC/6tWKk4tykwtVrJSqFYqSi3LLM7MzwNyDHUUlJIzE
- vPSU3UzU4B8JSMDIzNDQwMT3ZTUnNT0kmLdpJKitGJdQyMTI2MDAxOL5ERzJaCegqLUtMwKsHn
- RsbW1AJXFVBtfAAAA
-X-Change-ID: 20261104-delegts-btrfs-124230048ca7
+Message-Id: <20261105-delegts-btrfs-v1-1-a42a2b93cdc2@kernel.org>
+References: <20261105-delegts-btrfs-v1-0-a42a2b93cdc2@kernel.org>
+In-Reply-To: <20261105-delegts-btrfs-v1-0-a42a2b93cdc2@kernel.org>
 To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
  Chuck Lever <cel@kernel.org>
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
  Jeff Layton <jlayton@kernel.org>
 X-Mailer: b4 0.14.3
-X-Developer-Signature: v=1; a=openpgp-sha256; l=1166; i=jlayton@kernel.org;
- h=from:subject:message-id; bh=mf0FAxH80St5KOdNCyebSdgNvA7O8X+DwopV5PPMtns=;
- b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBq7OIVcytTCp/DZZAcbwkL9wakY9mqmSX42cZeq
- N3UR4SBSTeJAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCauziFQAKCRAADmhBGVaC
- Ff8XD/92ZopGN6ma3AM9nB4XHxWP2PJMxZaEAFWpB1FnUuro7WA3lls1JEfGi9yEbXmatJULjgy
- ntjfSOoETHCGQ3FcihUlOD2tdM+ekRYj6/yhn5w2tfXvB9CYB6V/r11q57IASOMgEB9wea9M5XQ
- 0kBd2Q7nMD1LMLQAqsIcqhVxoQJrbOnHgHpQ/zJaGlZu8yiseCad5eRgS/kqzGKmlaNq8wPKMnh
- hBtrkE7feztGKlut25kMlRr9AJ1+M8iIXLqe+ziK4ocJvhYXZ7PgEehhkmP57g3XF/3iH70jIHl
- G/Unfke8iuGPg6jI09flcica/WTHFN+qZ7k6o/NKsP0d4adsM3u+lgsJujiJmez8mcOHHN9TMhR
- bB/4ZrsmAokNf3y8svX+o3V9/JXVmoHXe7ip/zyM0hiZuRVxB1g5wxb44e5eabe2mg6DfNnr01P
- VH1Hb8v2GqiymfdjjeIAJD0HOfePqlgeOLt9VfWfhFQGzgsAK94hDC93R5ox98MkjZy0lrUVN+m
- TkI2SHnn3USsznaH7ygnZm2cCl7qR4lbU4ft7yXRUfVvCV8Sca7l0kAj1oVeTjAv3LoTSRwu5A1
- m4lAX8LK8z9lWyaJWIkQKlrpyfjjaQgeCthzqZGWcVFb1cnOjQhCmGfyGULKvzt3Z2RxdPK6aHp
- 6M2rnpO02AT0s1Q==
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1400; i=jlayton@kernel.org;
+ h=from:subject:message-id; bh=wTJQtHb1orW+Db9PDHKojgtAGA66pfaColtLfHUr7/w=;
+ b=owEBbQKS/ZANAwAKAQAOaEEZVoIVAcsmYgBq7OIZ53rtYIkQ4JNIn+bB3tgcNNewHJWWtyxQ3
+ xnPmOsZQX2JAjMEAAEKAB0WIQRLwNeyRHGyoYTq9dMADmhBGVaCFQUCauziGQAKCRAADmhBGVaC
+ FSrVD/sGmTnOWSj89XwtbyteD965qibdu8rqzAYtNeY+rnyzUXZPjVNQhgH+pjFnXNbn1Hvm9VQ
+ 8dLBUVZMWvN4saZpqoKhdDNFWDs7fuLD0XOxrZEY2Yy54uQXWywS7q2MFbz0GA95fMXfrqt4TNz
+ RxOXj9rDfg5uCtybGiaIRmups4Lw8TRChgpWtEjJ8frf+CPJZghDaudfnnWMausZmsZA0K7bot8
+ RKIF9w0+ggQ2k3qU+Xu8u6E3BcMacVKyVIvmNkXg2bSKiLOgC8OcGpOPA4lZKfWNnfr7FifTzaf
+ uq1uq01cml8pHLqwsghNM2IvuZuDKqcq1NMbmC+SDCbVdepCf/0M0zlZKwV8F2cYHan8fFL+lja
+ aQc8I7metHJL9Hee8IhIp3NJQAXmxaqUhBqK7OnXiL4lR0o9kCCEkFYBUJLrHZ4Vjhkvr7V/IZA
+ JdA3lV8xz5YrZs0ocYyXq48NsLtx0WKwC5nX6KGN/3ZGXEJdhIkADA/iGPA+6VPIZ/kIt85cYah
+ YBXbECs3A5hqUpTChPYO8LQZ53Lq85amcYxsnwEREBaUrG0chTxF3KbuhnBlccKeht4/PBRC2bB
+ S3VzuEJdt/7LLbFLA3ZKd0X1D4tDz1Ybs994bnZVC6lq/GxcSZOPhbwI1u1FsUMawXxUcFkMhr/
+ BxcAPGIZI8Ed3jQ==
 X-Developer-Key: i=jlayton@kernel.org; a=openpgp;
  fpr=4BC0D7B24471B2A184EAF5D3000E684119568215
 
-I tested the delegated timestamp support in nfsd recently. That support
-relies heavily on FMODE_NOCMTIME, and I found several places where btrfs
-didn't handle that flag properly. This series seems to fix them for me.
-I tested mostly with the git regression testsuite, because it is very
-sensitive to subtle bugs in timestamp handling.
+btrfs_write_check() open-codes the c/mtime update and checks only
+IS_NOCMTIME(inode). file_update_time() also skips the update when the
+file has FMODE_NOCMTIME. nfsd sets this flag on files that have a
+delegation with delegated timestamps.
 
-Please consider for v7.5.
+Thus, on a btrfs export, WRITEs from the delegation holder update the
+server's c/mtime. When the holder returns its times, nfsd restores the
+mtime. nfsd cannot move ctime backward, so ctime stays newer than the
+time that the holder reported. Over NFSv4.2, git test t1092 finds a
+stat-dirty file.
 
+Skip the update for FMODE_NOCMTIME files too.
+
+Fixes: e5e9b24ab8fa ("nfsd: freeze c/mtime updates with outstanding WRITE_ATTRS delegation")
 Signed-off-by: Jeff Layton <jlayton@kernel.org>
 ---
-Jeff Layton (4):
-      btrfs: honor FMODE_NOCMTIME in btrfs_write_check()
-      btrfs: honor FMODE_NOCMTIME when punching holes
-      btrfs: honor FMODE_NOCMTIME in fallocate
-      btrfs: honor FMODE_NOCMTIME when cloning
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- fs/btrfs/btrfs_inode.h |  3 ++-
- fs/btrfs/ctree.h       |  2 --
- fs/btrfs/file.c        | 60 +++++++++++++++++++++++++++++++++++---------------
- fs/btrfs/file.h        |  2 ++
- fs/btrfs/inode.c       | 13 ++++++-----
- fs/btrfs/reflink.c     |  9 ++++----
- fs/btrfs/relocation.c  |  2 +-
- 7 files changed, 59 insertions(+), 32 deletions(-)
----
-base-commit: d692f252c52b8d1b4bc7481554f314df31ed8249
-change-id: 20261104-delegts-btrfs-124230048ca7
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f978c6524aa0..94475976d8cf 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1053,7 +1053,7 @@ int btrfs_write_check(struct kiocb *iocb, size_t count)
+ 	 * need to start yet another transaction to update the inode as we will
+ 	 * update the inode when we finish writing whatever data we write.
+ 	 */
+-	if (!IS_NOCMTIME(inode)) {
++	if (!IS_NOCMTIME(inode) && !(file->f_mode & FMODE_NOCMTIME)) {
+ 		inode_set_mtime_to_ts(inode, inode_set_ctime_current(inode));
+ 		inode_inc_iversion(inode);
+ 	}
 
-Best regards,
 -- 
-Jeff Layton <jlayton@kernel.org>
+2.56.0
 

@@ -1,44 +1,44 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793879806;
-	b=3aMljxicSL4DDXlllKvGkgyRmDrjd5Pt18C1eK04/Vr4BQriad7ZUYCoeFsQ/qH5PzYu
-	 rRggQL0bH1G1AdszZ56hkw2yz5JyeCgjBDSj5/dL7gxmtsrdHZJ9EPCfZULnbe+R9ZOvu
-	 4Xvz+tUfKTHAcojzctn5rJH9AeRbvWst9dAC2Pcut5xfjTt4m95SspFKfI7soO5+tmKLQ
-	 IXkzq5ttqAJtolA9hQwDy8mCIR+k/a5/J+v6qfa3jN1rUenMC6vWzzrwldmrknFaNqOqA
-	 otrbGklPl7ZnwNcTFF5WHM3aeXSLHVRObqal8+1BSX7P947R/rr46gg1G0ETo5n3VxA==
+	t=1793879813;
+	b=fFvDvPjurEIAcNy8YL6fEQEb5llvnO4IXKLO0MpET+0GtrwPj+FBuSsVZ0bAiHkF6T50
+	 NmF1F/FGZJZ4ZE1GG5QYACEfNSZN4t2sH+xbTGH0YgGN6pgQrjFuWkNsPjzIxak8yqeMb
+	 88+w3MMJfz6IhTl51XhfViz7P6Q0GLZf2cqpA30HfMqNjwIQ+wf72N3IWnjxXhluZP8K+
+	 sjHiLjviqKUglNVUOvj8bdWa5AUyTZOBDcEsGEyhc+wddF+5OeSvn712RwNjJZvOij2yk
+	 T6BweFWquiJBAN6biTtiS1y9KdODBYpE5qsGT3ab+LBAaIa83o3Voj+lxq9Bu4lpy0w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793879806;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793879813;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=S9Elr35owCGoWrbIbOfwaKZniSZ+EtPctIpo1HzYHSY=;
-	b=Rzm2VIQoBQGDBT0LyhQn/DhR39rzfLXJS8zJassLJEajOEZs/8o4yVj2APcLukcF1BsN
-	 CqLEavwfKvQrglNf5ekFWV22MaCFdtLD3LMWoEncdbyIw+nwP77mLZIVMhd8gEAWn25R0
-	 1ki1u8sxwgV3S3SFPZ9tWHvXoxwZQSNj+4XZ7hVjghIDZAKtafdHFjLSURqxF9zTiV6I+
-	 c+z/1Ay84IhTGTaW0JrxCvK8lDUSdg6ptsLZVZ8sFxLPYid9BHTQQ6O2B0GNluAVOTeKR
-	 x3+SqBYbEAVrxEEGcZnNrRwRuio9O6pyxqhbex7+5t2UuT6AchJLTaWPyl+35hDc2XA==
+	bh=6OoXSuBVckbjMr10776+BofcenI1h9UgLTjzn6lRqQ0=;
+	b=Qo8ykn0ZjlkwYf2+u2QO+zWHJCDsUxLRtGfrg03U1LAwbiGIozBnOYOlnfNRTk4l/ByZ
+	 YrWmdFSVq5rAQ4EWgRivSWsnhqh4bA2lpqVXyQva2fgeQKgdly/LsJsBKaN9qobj5/5zy
+	 ilsu9W8xFcFnKLYjQoeMaJ3U1mvAYp43labogtAyhOxFmExv2pa7icxsS9WwoPmF+i5qA
+	 Redjhh4AOxPDWCtpEOXsdWgJeVTk2veeOMhrIR8FGntPmcve3m1ESWl7b6mwZWeZSBytG
+	 VRkV5jScRnlw/5h+v+wY3U4ZDxd6CPrVqVgBN5xxho5zTDZrzOoecxX/YibNt+uMCwg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DgBGr1nZ;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=AwocAs9b;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73B96606A328;
-	Thu,  5 Nov 2026 11:56:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C627606A33F;
+	Thu,  5 Nov 2026 11:56:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DgBGr1nZ
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DE6CC1F000C1;
-	Thu,  5 Nov 2026 11:56:41 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=AwocAs9b
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 828381F000C1;
+	Thu,  5 Nov 2026 11:56:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793879805;
-	bh=S9Elr35owCGoWrbIbOfwaKZniSZ+EtPctIpo1HzYHSY=;
+	s=k20260515; t=1793879812;
+	bh=6OoXSuBVckbjMr10776+BofcenI1h9UgLTjzn6lRqQ0=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=DgBGr1nZDAETi124q1hztIbhXV6KtPoh9zp8Kr1LzjPn5+GbCdwbl6JBBxqprK/nL
-	 KJr5Gvt5nNxIUrG9+7GyDhCjrCFkGGTUDcnSwU/xJc/nJ3S+qjSMYp2DfB7SzP7+WM
-	 lR3RxxVf5C/KduUopuvlnjE9tm2f6zVpmzbGaoMYL7TTAtLyqLGf0b0QbeGQja4ZaX
-	 qeZcTF3eb8UWxGQbqqQt4FIAMPKIdmXwSBputI1wBx0D3XQWUCqF7L0DGnFQ2iaEgl
-	 la51mVTz2YciPEh0TEggsXfjJcEQ+4+TRICemIp9QK/kMTfIRZbpYCAwK0WJepNQci
-	 mSBNyan/kY/Bw==
+	b=AwocAs9bXTz3L1BcS9htL33YQmVnDPQMOQLyznSDYXoML+o6az4Qgx+TbmpAWOGiV
+	 UrkcI2zSIXSQ4hUatXMpx0WXWOCh8fTa9Q5k9iotbw1UTewWYrG6JqNqYKmUq+S/v6
+	 zCagGSyIGuKKbbTSVHEM2mCN1DNZqMTCyTDhVgj8X7hjk9prq7nin0YJufM5JGwY8e
+	 tVQpOFuY0DPrNo140Y9EllrDUhfbk7K04enByXvmaVtK/uUDGMfkFEFGFDfaGeIMdo
+	 iOVBuSDiZ8TVUD/v1jvS3Fh87I3aFLITSz7vTS6P/xwYwhJHDWkGQ3uRL1kHnl3BwH
+	 6fw+xz8fXcPSw==
 From: Andrey Albershteyn <aalbersh@kernel.org>
 To: ebiggers@kernel.org,
 	hch@lst.de,
@@ -54,11 +54,10 @@ Cc: Andrey Albershteyn <aalbersh@kernel.org>,
 	viro@zeniv.linux.org.uk,
 	jaegeuk@kernel.org,
 	chao@kernel.org,
-	tytso@mit.edu,
-	Boris Burkov <boris@bur.io>
-Subject: [PATCH v2 1/5] fsverity: strip FS_VERITY_FL from FS_IOC_SETFLAGS
-Date: Thu,  5 Nov 2026 12:55:26 +0100
-Message-ID: <20261105115532.613467-2-aalbersh@kernel.org>
+	tytso@mit.edu
+Subject: [PATCH v2 3/5] btrfs: use I_VERITY_BUILDING instead of private flags
+Date: Thu,  5 Nov 2026 12:55:28 +0100
+Message-ID: <20261105115532.613467-4-aalbersh@kernel.org>
 X-Mailer: git-send-email 2.54.0
 In-Reply-To: <20261105115532.613467-1-aalbersh@kernel.org>
 References: <20261105115532.613467-1-aalbersh@kernel.org>
@@ -73,48 +72,100 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The common use of FS_IOC_GETFLAGS/SETFLAGS is get-modify-set loop.
-Filesystems could return verity status with GETFLAGS, attempting to then
-pass FS_VERITY_FL to SETFLAGS is not allowed.
+Now that the VFS tracks an inode whose Merkle tree is under construction
+via I_VERITY_BUILDING and handles the concurrent-enable guard in the
+generic fs-verity enable path, drop the inode runtime flags that
+duplicated this.
 
-The ext4 and f2fs already treat FS_VERITY_FL in the set path as no-op,
-however, BTRFS returns -EOPNOTSUPP. So, the modification of other flags
-doesn't work on BTRFS for fsverity inodes.
+btrfs only used BTRFS_INODE_VERITY_IN_PROGRESS internally, so remove it
+outright.
 
-Fix it for BTRFS and anyone else, the ext4 and f2fs masking becomes
-no-op. The file_get/setattr() path is fine here as this flag is cleared
-right before fileattr_set_prepare(). The future fsverity support in XFS
-would also need it.
-
-Cc: Boris Burkov <boris@bur.io>
-Cc: David Sterba <dsterba@suse.com>
-Fixes: 146054090b08 ("btrfs: initial fsverity support")
 Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
 ---
- fs/file_attr.c | 10 ++++++++++
- 1 file changed, 10 insertions(+)
+ fs/btrfs/btrfs_inode.h |  7 -------
+ fs/btrfs/verity.c      | 14 +++-----------
+ 2 files changed, 3 insertions(+), 18 deletions(-)
 
-diff --git a/fs/file_attr.c b/fs/file_attr.c
-index 833e03810b24..b43977d5f8e0 100644
---- a/fs/file_attr.c
-+++ b/fs/file_attr.c
-@@ -199,6 +199,16 @@ static int fileattr_set_prepare(struct inode *inode,
- 	if (err)
- 		return err;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 0782f917fccc..5c752b947b56 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -78,13 +78,6 @@ enum {
+ 	 * the file range, inode's io_tree).
+ 	 */
+ 	BTRFS_INODE_NO_DELALLOC_FLUSH,
+-	/*
+-	 * Set when we are working on enabling verity for a file. Computing and
+-	 * writing the whole Merkle tree can take a while so we want to prevent
+-	 * races where two separate tasks attempt to simultaneously start verity
+-	 * on the same file.
+-	 */
+-	BTRFS_INODE_VERITY_IN_PROGRESS,
+ 	/* Set when this inode is a free space inode. */
+ 	BTRFS_INODE_FREE_SPACE_INODE,
+ 	/* Set when there are no capabilities in XATTs for the inode. */
+diff --git a/fs/btrfs/verity.c b/fs/btrfs/verity.c
+index b34d2247cf84..c7eec8886e49 100644
+--- a/fs/btrfs/verity.c
++++ b/fs/btrfs/verity.c
+@@ -461,7 +461,6 @@ static int rollback_verity(struct btrfs_inode *inode)
  
-+	/*
-+	 * verity is settable only via FS_IOC_ENABLE_VERITY; never through
-+	 * fileattr
-+	 *
-+	 * Treat it as a no-op so the FS_IOC_GETFLAGS/SETFLAGS round-trip
-+	 * doesn't break for other flags
-+	 */
-+	fa->flags &= ~FS_VERITY_FL;
-+	fa->fsx_xflags &= ~FS_XFLAG_VERITY;
-+
+ 	btrfs_assert_inode_locked(inode);
+ 	truncate_inode_pages(inode->vfs_inode.i_mapping, inode->vfs_inode.i_size);
+-	clear_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
+ 	ret = btrfs_drop_verity_items(inode);
+ 	if (ret) {
+ 		btrfs_handle_fs_error(root->fs_info, ret,
+@@ -513,7 +512,6 @@ static int rollback_verity(struct btrfs_inode *inode)
+  * - mark the inode with the verity flag
+  * - delete the orphan item
+  * - mark the ro compat bit
+- * - clear the in progress bit
+  *
+  * Returns 0 on success, negative error code on failure.
+  */
+@@ -555,7 +553,6 @@ static int finish_verity(struct btrfs_inode *inode, const void *desc,
+ 		goto end_trans;
+ 	/* Now that rollback is no longer possible, set S_VERITY. */
+ 	btrfs_sync_inode_flags_to_i_flags(inode);
+-	clear_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
+ 	btrfs_set_fs_compat_ro(root->fs_info, VERITY);
+ end_trans:
+ 	if (ret)
+@@ -570,8 +567,8 @@ static int finish_verity(struct btrfs_inode *inode, const void *desc,
+  *
+  * @filp:  file to enable verity on
+  *
+- * Begin enabling fsverity for the file. We drop any existing verity items, add
+- * an orphan and set the in progress bit.
++ * Begin enabling fsverity for the file. We drop any existing verity items and
++ * add an orphan.
+  *
+  * Returns 0 on success, negative error code on failure.
+  */
+@@ -587,9 +584,6 @@ static int btrfs_begin_enable_verity(struct file *filp)
+ 	if (IS_ENCRYPTED(&inode->vfs_inode))
+ 		return -EOPNOTSUPP;
+ 
+-	if (test_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags))
+-		return -EBUSY;
+-
  	/*
- 	 * Project Quota ID state is only allowed to change from within the init
- 	 * namespace. Enforce that restriction only if we are trying to change
+ 	 * This should almost never do anything, but theoretically, it's
+ 	 * possible that we failed to enable verity on a file, then were
+@@ -606,11 +600,9 @@ static int btrfs_begin_enable_verity(struct file *filp)
+ 		return PTR_ERR(trans);
+ 
+ 	ret = btrfs_orphan_add(trans, inode);
+-	if (!ret)
+-		set_bit(BTRFS_INODE_VERITY_IN_PROGRESS, &inode->runtime_flags);
+ 	btrfs_end_transaction(trans);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ /*
 -- 
 2.54.0
 

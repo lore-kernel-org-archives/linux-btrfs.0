@@ -1,76 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.178
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793880473;
-	b=TWPxKhaQJ/Pi7PU29iayLHom6hiZJf7911D2gJQe3HsU/yD1K5JBruOkqRul5UnX/19F
-	 Yk1r/gfNGobz70UTaFzAncA2KFG9NRkud+oBb3SkrGWub45cRzkHahPnvaYnbgW+EO/2M
-	 H44rYqMS/iSGZJ//2H7J0SIfmmXl8x3xgKDfnlfgZd1fzq09CRiAUz7tvEv0xywi61lMX
-	 liCSJE1ERyzuMQOQolPQPhmu1MbvHaoGjDzCPfs+g/xQLX4EH/l1A8/lpTHWxHqhlvm3n
-	 VYeHqxH7JWVbMceHdgACusY4whN2SU3W0faiJPNZRWEeitvTYsyXjlmXdazftGxxIiw==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793880473;
-	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Gm-Message-State:
-	 X-Gm-Gg:X-Received:Received:Date:From:To:Cc:Subject:Message-ID:
-	 MIME-Version:Content-Type:Content-Disposition;
-	bh=P/GlmUjHdK49hN7w1Asyw8OwEiiwg391G3XQYJFs6CI=;
-	b=RPD68eM69o3sBB2yJoNKeC9Wu8XQUwDTgxp36x9bQghuosoYzMh0u4UYqSPbgKUw3ZSW
-	 lGTTX5a1tNagCAREr+kp+iR2BYW6Mf21bHWmn6Qt61Ro0DNii8ciEf9WHm9wjgU8+Y9RD
-	 jWO3yjSkWafh0YX6aDnzwYQO8NLZpsqiG5kxlstGzdK7/AZaqUxaW303fTAMctDb+Bl8s
-	 tKOxAorqI0QAFXmUFSDyGra7A6BizPdLg5VZ9BwsR9tV4FIbywNF2jL9h3FM9/Pt0zRJS
-	 5iQ+7/cnd5+rxfN4tlVqlsVBZf9UQf6aqGIqwqGzd0QGbcNAUVaIz8c9U4uAicJHs4Q==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=fail header.from=debian.org;
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.52
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793885815;
+	b=d2/42un+DX8RcG+BJsC/DZulRCaXVGpHR4wg6j9SQunMs5LvAfRNDYLN5/EnB7o/u7Xw
+	 JMGypSmJA9FYWeDuQHe6BduMFvmjX4b0OAWcVP2GH2oWcyYmfIUhjFGo6wkrlP8+VDL+1
+	 FqsWku9VR1QMUCaNLQPWMTW4ybH9wwXogZp/k9mlGWFZoPgbUjYQ76bQ0FqkcmJ9Eg077
+	 MfkYumZau/84T/T4T6fLGUXTqDicu2Ji1eAcjSJTGj3inADimV3g4MJQh+APiA6j0QChM
+	 CdwJfpPeZowJEPPReWkzAYCygAszWnsdvpZEjTbuuFHRcVPls825XQOgjpYo3qzaEyQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793885815;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
+	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=E/JaD1BhtEGYNt4yt7vPgLEA4SKFHQo60mOAW9/7kiM=;
+	b=oMZ9rjqZjrne4SLOMajcE/w78P3cQ1t3qGnvEkf+v/HsUGlziQavCgnNoe7nU4cEF4bg
+	 gQobLQe6LyyNAJvB67xShANSgoTjJl4/7yrf4uEZN+M9mYgFmuyl60/JsTTt4mMYjRfvE
+	 Zqqd5LWpvEa6ah4mURTLp2Qhf9x33AzVECBleL+jqcPG02yGv1zc9JCsrg6voMwnEupL4
+	 e9deIcezbcK59Xoz6O/RnZA/RTI3CKJrmoa4F1mWHsxWlXzN88ii4by7+GRuhYLQFwhJh
+	 NOOu9ocIfsqaajOCxzDGuRGjtsSCW+65ZXUWDsVBtEUUVwENfNDK0B2nGlEoTc7zUpQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	arc=none smtp.remote-ip=209.85.128.178
-Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pNxnVrV1;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.167.52
+Received: from mail-lf1-f52.google.com (mail-lf1-f52.google.com [209.85.167.52])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 898FD606A31B
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 12:07:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 898FD606A31B
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=debian.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DCD5B606A332
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 13:36:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DCD5B606A332
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-8b312be5de8so19997297b3.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 04:07:52 -0800 (PST)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pNxnVrV1
+Received: by mail-lf1-f52.google.com with SMTP id 2adb3069b0e04-5be4c78e8caso1542428e87.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 05:36:54 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1793885813; cv=none;
+        d=google.com; s=arc-20260327;
+        b=W+hWLwSw8QApObfSvhldXP1XM5xrJQoZIrcbgkZQtq0Xg5Ti03Rah6jGcNBg8aVqQi
+         XMR5j2KGoVVocSEhUbanWb67eGmDwqp1hn8NpFM5UC2ZSO3VJYWBWQ6KID8upXa763Rf
+         BnEt8v157WpzAGZEN/HcBHdYWRjSmjiAOZbmRIoFXZ9nw65nQSKEpwBCUFd39tpyOluc
+         Qk508XPi3Ak8Qc1fn8RPx2XhTcsLgXUhM58HMPjG54Rn8AkYA8tSAY1Tr5ID6szgYy9p
+         rTvDyRIXgJvZWA0FIfwe9u5gxhrSTq+yG6bpQP5YeSGgV9QNQrw2M7POkU5vUzq+OiSy
+         msKQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=E/JaD1BhtEGYNt4yt7vPgLEA4SKFHQo60mOAW9/7kiM=;
+        fh=XgyVQL63bakpFfKqPxJJiY5NdZTbMYsxaBXyIXgyd7w=;
+        b=OyDKZa7SwIxPSkbBOo7qCj6QU7BlGB1qjk2kZamhB7Su9J1FLUrmr8Ms4dmxV7PMQy
+         zKS0giAJxJyvhhRj3/i8OOmvKpadMeG1wUlmMDnOcag2pNHQEBvPtt5vslawiqCh2KE+
+         Adjkp84aKH2F2SpNRJyxunq2WuomjAo7E+KAzGbcCJ+biCMnkoFAAjkXqSeReq6Z0Wlj
+         iSbU/+uGFjj0ZY9OAAo3tHBpbWE03/4o2TKWCvjmYBLVvHJKXbbl+UhuSgTJdRE4ceZq
+         XFHUO5Y5GQcRYsPeVYBVPwyxdxhgt/LHuSxnWQSRmGkqsoM6eOemOeXb3xqwMoL24FmK
+         SvXQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793885813; x=1794490613; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=E/JaD1BhtEGYNt4yt7vPgLEA4SKFHQo60mOAW9/7kiM=;
+        b=pNxnVrV1Y1d1N5Y1a/C6W7woSNArE8ZSkEJlYvcxJfiaxPvBsw3zocShwRZOmjUa6i
+         8gwTmRqAfv2biezYwQOS/s0FjL0dVoMY58gcDmQigaY371fvBWwPiV3jm/IsCSNKykq6
+         LKUu6Ct7cNlRqECoCbH07Z//cz2L6heq+QbWMg1kNvoEFVIB+jrTk14NpkRJffoOa4sm
+         g5Qbma1VASqKnN/IyLIVeWDO0eiImyWdORkFFyq99RyS0Sj6qnJLNqlDhNwoFGBXoG/v
+         wLqfp6Ldh/lJZgR9I0wywhYZZna6Jmoas8yEIDwum68eR4hL6hVAzmCHWxCSMSl5ZJFK
+         j55w==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793880471; x=1794485271;
-        h=content-disposition:content-type:mime-version:message-id:subject:cc
-         :to:from:date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=P/GlmUjHdK49hN7w1Asyw8OwEiiwg391G3XQYJFs6CI=;
-        b=yL1ZGxPSBxT4kjKj7suaWHuoQ+qbzNlMDtZ8gRsrlowqXLiP0KvbYAtRXZsWmvw+7v
-         XafL9o/wwaZfhZzK0bDJ/+Pr6oe9O6RwkyOS16vlikb5MzFFzYQ9Qw2xEBtfyzUxUg0V
-         IAsppU81VyctEZ6OTZwutkqUUD70ivKO98EDdXx7IKEUGkB6lj5fmroXm467shC68OLO
-         JZAG9sCX6GTZbujdNjkYC7kAzEJ9dXWsXidx0PmCnD/C4FPip0TWp37oUPc367x0MRCa
-         aqm36f3MEZWyqch9j2iEFLsXDUikzOSphGRmjTRjQGtnkGzd7XT6EQlyiNO8sL9CQwbJ
-         ACUg==
-X-Gm-Message-State: APuU4Z82GpQNu806xuBkzpBVaPnjMG3nIv3btZjxexiQFF5D2+DGeE79
-	lduB2F1hPXrQE47SSkVWG8PVMIRQ5GLhoXtQzdkK07heAwsqxEhE3mf2U6ExJA==
-X-Gm-Gg: AYBFou31L9ceSO5U75Ad2gK7ha9qTmgPT/IcPy30Ku2cIU8NGEvbUU7+nPEBapw+H/U
-	zaOwAFMumeRznLGa/vckQxY5IY+X1MxlILhWD3kFrh7JjzfEkjrMGMwZRz47G1D8hSRAKQLvxsB
-	hLZ3FaVmRghRegqlTw47ke0EbfaQ4KJlyADpV9ZhGUqkVOuKXV065dgLh6RiPqG5InvvkV8pHzk
-	Ys/Nga/Thj+J817zboVRdN9kVjS1YztwFAThNrCVRLQV27/tSotdb114X9UkDSTJcqM+6VWj+Fj
-	J7ZO9m0Mksjcc6Rg8MB5GVLEu3Mvs/6+7pUjtASEkH44bDbr88z7XDyF8WXHsJMv72prXiryK7P
-	yQKseJAA0iEgnyqA0cQsDqpwswnHv1/P6XGziplQ9E+2V2l6hcZkeitLcTEIaDaVjN84AIkpa3F
-	V8w14oB3PR8i3cEO5FFlJ+JxN+9w5IwELEWghB5yKqP0Eo42fkwnQBUjpUeMXSt1VmN65wuZD9B
-	hEuZ0Eg3wAp7Iuk1rSLOZXJDJASzPN9O2BdgJWECfijuOSNbH3jgZU0d81qs+wlU0Bqk/TtBJ3e
-	VCTnsXstc9w0/41gw8w=
-X-Received: by 2002:a05:690e:1385:b0:67b:f101:ff2c with SMTP id 956f58d0204a3-67bf102166amr2388495d50.96.1793880471605;
-        Thu, 05 Nov 2026 04:07:51 -0800 (PST)
-Received: from gmail.com ([2a03:2880:24ff:8::])
-        by smtp.gmail.com with ESMTPSA id 956f58d0204a3-67bedf232ccsm3306902d50.3.2026.11.05.04.07.51
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Thu, 05 Nov 2026 04:07:51 -0800 (PST)
-Date: Thu, 5 Nov 2026 04:07:49 -0800
-From: Breno Leitao <leitao@debian.org>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
-	Qu Wenruo <wqu@suse.com>, Filipe Manana <fdmanana@kernel.org>, Boris Burkov <boris@bur.io>, 
-	Atish Patra <atish.patra@linux.dev>, linux-kernel@vger.kernel.org, 
-	linux-arm-kernel@lists.infradead.org, leitao@debian.org
-Subject: bug: btrfs: direct IO fallback racing with in-flight direct IO fails
- fsync
-Message-ID: <auxv7Tg0xSq5yHmb@gmail.com>
+        d=1e100.net; s=20260707; t=1793885813; x=1794490613;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=E/JaD1BhtEGYNt4yt7vPgLEA4SKFHQo60mOAW9/7kiM=;
+        b=nIuFJ5qOmL52t/YRs0ZMSfB+XyhSc9szTscsRWs+Qz9D+xallRd70lknWT1GHfSQjF
+         eifZX8k0dGLyurxL0eDcuEEvAfgi1dCLzqVQhXJhAiK2+4a5wvRvo+GEcQUcw6Q5fNAD
+         zx1kjUilVHI/Rb75FhJgtIzcudFxYbOkKSVlLxfUVk/4Qx+xzVGKfmgQejbfeB2XCksr
+         /uiW7XREBljz8BQu7+H2FIgneg9HZ+LhY26Kxf64R/zmLkid9ZYdKKKS+c1nT8LWMb5J
+         HahLI2invHyZ2c/2MnLQem60xd/F8RINL24W2Btm+IIX3baT1XRc/esxhGp08vnXGw4r
+         YS2g==
+X-Gm-Message-State: APuU4Z/8t1XR/6AKszRWg1gO25GM1QlIcZUEOc/ukktQOdSWVAD2arrZ
+	JxHFZB6vugLaC81kixXHLH4SiVFiFaJabmLk0qlsZsOWNEsFgVCg+b2x3YoJQQxRtdOWmm1nBVN
+	I1yTdlzCsnHNGvl7n+GksWabXnKEXqr/gPMiV
+X-Gm-Gg: AYBFou3f40GyYPjFcjS/31yggD1HjxAKEzdoeX6epKmS8pGfWvY8tjxlfbQ9vmlqt3c
+	Hvf0Gx/DNGsrXaUfJkqlwn1oMimSSQU/9OWRA/sSoTG0HXvsTCtuYfBbnupuohktJ0mzOYP8S3R
+	Bfi5p2beRm2uBFhojRl/UWvvdp7VuJ2qVNW+UB6HB5DavvdS6xsBSGDN/GiMkzNm50Kv+RuZWgL
+	GKk5qoKdWrYB4L90oPU7w9b9P3UoyPiUYnljLtQjOA8EboALxXV8HVOdyUNd/kWEUyr9AZqVlE2
+	m3Of+13ceT2c+XtCJRoj37E2kRGNeQnDTDpdYdFZhE8xWWp4t4U6f8WEqwVFfWwCpSeMM5wtkNV
+	H9Z8A9YlDYvIf9c6lm6srXNxEl/XGOyKM9LCxJ6QB/LkhSqvyaV1kkpQY1GImcb4D2wggvazA81
+	9lwZiI58n/KiDUU+EB84Rply9X+tt2s4PXy4RWixiHm9OQMAUE3RxBg4fXu7GKgmEsAnaYmA==
+X-Received: by 2002:a05:6512:124a:b0:5bf:d60c:9f98 with SMTP id
+ 2adb3069b0e04-5bfd9583912mr7363113e87.59.1793885812611; Thu, 05 Nov 2026
+ 05:36:52 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -80,123 +103,223 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+References: <CAD=K2o-BBqh+ikgfD732Cb3M1Xx48QGw3kTFsP5iSgH1mkr0wA@mail.gmail.com>
+ <ca6f02ee-8b39-4e90-9006-a6f0606e26f8@wdc.com> <CAD=K2o_-NwLNpvNE+OreAmsvX+izzZnb2R1nCBV0gDf6fH=kmw@mail.gmail.com>
+ <904615c7-003a-4158-922d-c57dee9a3ecf@wdc.com> <CAD=K2o_vLPSvm4Qzi8y4t5ay+Na9GNk2t5a3iMO3NYJvwodKDQ@mail.gmail.com>
+ <CAD=K2o8xFgYBHMim-KqMysV+Tec9LEUbo6jfD6R-GOAU8N8K4w@mail.gmail.com>
+ <CAD=K2o8kWgTRqBBw1sRfO2fopqQOLfdeX61h=OFPMST=Wdo+KQ@mail.gmail.com> <30a6e871-8578-4d27-bb0a-679b94fb7f92@wdc.com>
+In-Reply-To: <30a6e871-8578-4d27-bb0a-679b94fb7f92@wdc.com>
+From: Jochen Philipp <a2jphilipp@gmail.com>
+Date: Thu, 5 Nov 2026 14:36:41 +0100
+X-Gm-Features: AclHuK-hK9FARP3GAWdzRGPINXv1zGASS0vG0WFD6tYor7cjodOnzi8T5rI9QkE
+Message-ID: <CAD=K2o9LbeJUcb0xefwVx-rC5udLNLwqouO8pqFB0R+rWQvHng@mail.gmail.com>
+Subject: Re: Subject: zoned: transaction abort with -EAGAIN (-11) on
+ host-managed SMR (WD HC670), fs forced read-only
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-Hi,
+Hi Johannes,
 
-Atish reported that arm64 production hosts (64K pages, 4K blocks) that
-keep VM disk images as NOCOW files on btrfs, opened with O_DIRECT, on
-7.x based kernels, and it still reproduces in linux-next as of
-next-20261104:
+no problem, hope you had a good vacation!
 
-  Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
+Dropping the list was not on purpose, sorry about that - re-added
+it. Happy to stay in English here for the archive.
 
-Besides the message, dio_warn_stale_pagecache() records -EIO in the
-mapping, so the next fsync() on the image fails. The message blames the
-application for mixing buffered and direct IO, but every write here is
-O_DIRECT: the buffered writes come from btrfs itself, when it falls back
-for writes that are not 4K aligned.
+The full 'blkzone report /dev/sda' output is ~191k lines, so I've
+sent it to you off-list as an xz-compressed attachment.
 
-It does not look like a regression, since the fallback never waited for
-in-flight direct IO. 64K pages make it easy to hit, as a folio then holds
-16 blocks. Since e9b7b9d9e78e5b ("btrfs: use IOMAP_DIO_BOUNCE flag
-instead of falling back to buffered IO"), COW files are exposed too.
+The fs is currently mounted read-only via fstab, untouched since
+the last abort. I'll leave it like that until you tell me
+otherwise.
 
-I was able to come up with a reproducer that hits the issue within
-seconds with 64K pages. With XFS on a loop device backed by such a file,
-standing in for the VM, XFS shuts down on "log I/O error -5":
+Thanks,
+Jochen
 
-        https://github.com/leitao/btrfs-dio-fallback
-
-My robot identified this as the root cause:
-
-1. Task A has an async O_DIRECT write in flight to one 4K block of a 64K
-   folio. iomap invalidated the page cache before submitting it, and the
-   inode lock was dropped.
-2. Task B issues an O_DIRECT write whose offset, length or buffer is not
-   4K aligned. btrfs_direct_write() falls back to btrfs_buffered_write(),
-   which does not wait for in-flight direct IO, and dirties another block
-   of the same folio.
-3. Task A's write completes. kiocb_invalidate_post_direct_write() finds
-   the folio dirty, so invalidate_inode_pages2_range() fails with -EBUSY
-   and dio_warn_stale_pagecache() records -EIO. The next fsync() fails.
-
-ext4 fixed the same race in 15cdefd0c052 ("ext4: drain in-flight DIO
-before buffered write fallback"), and ext2, ntfs and exfat are getting
-the same fix. Doing the same in btrfs_buffered_write() for the fallback
-case makes the reproducer clean, and I can send that patch if it looks
-like the right direction.
-
-This patch is a copy of the fixes above (from other FS) and make the
-reproducer happy.
-
-commit 16cd17d1e8205f9f86b8da0a9b1ccefdb2665764
-Author: Breno Leitao <leitao@debian.org>
-Date:   Thu Nov 5 02:59:39 2026 -0800
-
-    btrfs: drain in-flight direct IO before buffered write fallback
-    
-    When btrfs_direct_write() cannot do a write as direct IO, because the
-    offset, the length or the user buffer is not aligned to the sectorsize,
-    or the range has compressed extents or page cache, it falls back to
-    btrfs_buffered_write(). That dirties the page cache without waiting for
-    direct IO still in flight from other tasks:
-    
-    1) Task A submits an async direct write to block 1 of a folio. iomap
-       invalidates the page cache in the range and submits the bio, and the
-       inode lock is dropped.
-    2) Task B issues a 512 byte O_DIRECT write to block 0 of the same folio.
-       btrfs_direct_write() falls back to btrfs_buffered_write(), which
-       dirties the folio.
-    3) Task A's write completes. kiocb_invalidate_post_direct_write() finds
-       the folio dirty, invalidate_inode_pages2_range() fails with -EBUSY,
-       and dio_warn_stale_pagecache() logs:
-    
-       [    2.048568] Page cache invalidation failure on direct I/O.  Possible data corruption due to collision with buffered I/O!
-       [    2.048574] File: /tmp/diorepro.JTCKpJ/block.img PID: 260 Comm: kworker/11:1
-    
-       It also records -EIO in the mapping, so the next fsync() fails.
-    
-    The two writes do not touch the same bytes, they only share a folio.
-    With 4K blocks on 64K pages a folio holds 16 blocks, so this is easy to
-    hit there. Meta's arm64 hosts with 64K pages hit it with VM disk images
-    that are NOCOW files on btrfs, opened with O_DIRECT. In a test, XFS on a
-    loop device with direct IO on such a file gets EIO on a log write and
-    shuts down within seconds.
-    
-    Wait for in-flight direct IO before the fallback dirties the page cache,
-    as ext4 does since commit 15cdefd0c052 ("ext4: drain in-flight DIO
-    before buffered write fallback"). btrfs_buffered_write() holds the inode
-    lock exclusively there, so no new direct IO can start until the write is
-    done. NOWAIT writes never get there, as btrfs_direct_write() returns
-    -EAGAIN for them before falling back.
-    
-    A reproducer that keeps 4K libaio O_DIRECT writes in flight while other
-    threads issue 512 byte O_DIRECT writes to the same folios of a NOCOW
-    file got 1123 fdatasync() EIOs in 10 seconds on a 64K page VM, and none
-    with this patch.
-    
-    Fixes: f85781fb505e ("btrfs: switch to iomap for direct IO")
-    Reported-by: Atish Patra <atish.patra@linux.dev>
-    Signed-off-by: Breno Leitao <leitao@debian.org>
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f978c6524aa03f..2017a96814d857 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1334,6 +1334,14 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *iter)
- 	if (ret < 0)
- 		return ret;
- 
-+	/*
-+	 * A direct write that fell back to buffered IO must not dirty folios
-+	 * while direct IO is in flight: its completion fails to invalidate
-+	 * them and records -EIO in the mapping.
-+	 */
-+	if (iocb->ki_flags & IOCB_DIRECT)
-+		inode_dio_wait(inode);
-+
- 	/*
- 	 * We can only trust the isize with inode lock held, or it can race with
- 	 * other buffered writes and cause incorrect call of
+Am Do., 5. Nov. 2026 um 14:07 Uhr schrieb Johannes Thumshirn
+<johannes.thumshirn@wdc.com>:
+>
+> On 11/2/26 1:28 PM, Jochen Philipp wrote:
+> > Hi Johannes,
+> > in addition:
+> >
+> > On unmount, 26 extent buffers from the aborted transaction could
+> > not be released (gen 860, contiguous addresses 16K apart, owners
+> > 1/2/4/10/11):
+> >
+> > [23383.428807] BTRFS info (device sda state EA): last unmount of
+> > filesystem d7485764-0e3c-416e-8b4f-56904307949f
+> > [23383.451749] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779683803136 owner 4 gen 860 refs 2 flags 0x7
+> > [23383.451756] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779683819520 owner 10 gen 860 refs 2 flags 0x7
+> > [23383.451760] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779683835904 owner 10 gen 860 refs 2 flags 0x7
+> > [23383.451763] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779683852288 owner 11 gen 860 refs 2 flags 0x7
+> > ...
+> > [23383.451814] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779684179968 owner 2 gen 860 refs 2 flags 0x7
+> > [23383.451817] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779684196352 owner 2 gen 860 refs 2 flags 0x7
+> > [23383.451820] BTRFS warning (device sda state EA): unable to release
+> > extent buffer 5779684212736 owner 1 gen 860 refs 2 flags 0x7
+> >
+> > ...
+> > Thanks,
+> > Jochen
+> >
+> > Am Mo., 2. Nov. 2026 um 13:15 Uhr schrieb Jochen Philipp <a2jphilipp@gmail.com>:
+> >> Hi Johannes,
+> >>
+> >> 7.3 is installed now (7.3.0-203.nobara.fc44), but the filesystem
+> >> does not survive the first commit after mount anymore:
+> >>
+> >> - mounted at boot via fstab, ~60 seconds later the first periodic
+> >>    commit fails with -EAGAIN, fs forced read-only
+> >> - no user writes at all before the abort
+> >> - on-disk transid is 859, the aborted transaction is 860 - the same
+> >>    transaction number that was aborted in my second report on 7.2
+> >>
+> >> My guess as a layman: the aborted commit on 7.2 left something on
+> >> disk (maybe partially written metadata in a zone) that the fs now
+> >> trips over on every mount. But that's just a guess.
+> >>
+> >> Nov 02 06:39:23 nobara-X99 kernel: mlx4_en: ens4: Steering Mode 1
+> >> Nov 02 06:39:24 nobara-X99 kernel: mlx4_en: ens4: Link Down
+> >> Nov 02 06:39:26 nobara-X99 kernel: r8169 0000:06:00.0 enp6s0: Link is
+> >> Up - 1Gbps/Full - flow control off
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS error (device sda): error
+> >> while writing out transaction: -EAGAIN
+> >> Nov 02 06:40:20 nobara-X99 kernel: ------------[ cut here ]------------
+> >> Nov 02 06:40:20 nobara-X99 kernel: btrfs_abort_should_print_stack(__error)
+> >> Nov 02 06:40:20 nobara-X99 kernel: WARNING:
+> >> fs/btrfs/transaction.c:2603 at btrfs_commit_transaction+0xf70/0x1000,
+> >> CPU#3: btrfs-transacti/1806
+> >> Nov 02 06:40:20 nobara-X99 kernel: Modules linked in: nvidia_uvm(OE)
+> >> snd_seq_dummy snd_hrtimer mlx4_ib mlx4_en ptp ib_core pps_core
+> >> nf_conntrack_netbios_ns nf_conntrack_broadcast nft_fib_inet
+> >> nft_fib_ipv4 uinput nft_fib_ipv6 nft_fib nft_reject_inet
+> >> nf_reject_ipv4 nf_reject_ipv6 nft_reject nft_ct nft_chain_nat nf_nat
+> >> nf_conntrack nf_defrag_ipv6 nf_defrag_ipv4 rfkill nf_tables qrtr
+> >> sunrpc intel_rapl_msr intel_rapl_common intel_uncore_frequency
+> >> intel_uncore_frequency_common sb_edac x86_pkg_temp_thermal
+> >> intel_powerclamp coretemp vfat nvidia_drm(OE) fat kvm_intel
+> >> nvidia_modeset(OE) kvm snd_hda_codec_alc662 spi_nor
+> >> snd_hda_codec_realtek_lib mtd snd_hda_codec_generic irqbypass r8169
+> >> rapl snd_hda_codec_nvhdmi snd_hda_codec_hdmi intel_cstate realtek
+> >> phy_package iTCO_wdt spi_intel_platform spi_intel gpio_ich
+> >> intel_pmc_bxt snd_hda_intel intel_uncore mdio_devres i2c_i801
+> >> snd_hda_codec mxm_wmi pcspkr nvidia(OE) libphy i2c_smbus mdio_bus
+> >> i2c_mux snd_hda_core snd_intel_dspcfg snd_intel_sdw_acpi snd_hwdep
+> >> snd_seq mousedev joydev snd_seq_device
+> >> Nov 02 06:40:20 nobara-X99 kernel:  drm_ttm_helper snd_pcm ttm
+> >> drm_display_helper snd_timer cec snd mlx4_core soundcore video lpc_ich
+> >> mac_hid dm_mod zram 842_decompress 842_compress lz4hc_compress
+> >> aesni_intel psmouse gf128mul wmi serio_raw crypto_user
+> >> Nov 02 06:40:20 nobara-X99 kernel: CPU: 3 UID: 0 PID: 1806 Comm:
+> >> btrfs-transacti Tainted: G           OE
+> >> 7.3.0-203.nobara.fc44.x86_64 #1 PREEMPT(lazy)
+> >> 002a07c3ed1de4339a31acc811ef5db3e3582962
+> >> Nov 02 06:40:20 nobara-X99 kernel: Tainted: [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+> >> Nov 02 06:40:20 nobara-X99 kernel: Hardware name: MACHINIST /E5-MR9A
+> >> PRO, BIOS 5.11 08/05/2024
+> >> Nov 02 06:40:20 nobara-X99 kernel: RIP:
+> >> 0010:btrfs_commit_transaction+0xf70/0x1000
+> >> Nov 02 06:40:20 nobara-X99 kernel: Code: 8b 43 60 f0 48 0f ba a8 88 0a
+> >> 00 00 02 0f 82 fc f5 6c ff 8d 45 1e 83 f8 19 77 0f ba 01 00 04 02 48
+> >> 0f a3 c2 0f 82 bf f5 6c ff <0f> 0b e9 b8 f5 6c ff be 03 00 00 00 4c 89
+> >> ef e8 ac 8c 2f 00 e9 41
+> >> Nov 02 06:40:20 nobara-X99 kernel: RSP: 0018:ffffce5e815abe28 EFLAGS: 00010296
+> >> Nov 02 06:40:20 nobara-X99 kernel: RAX: 0000000000000013 RBX:
+> >> ffff8970dcf1e1f0 RCX: 0000000000000001
+> >> Nov 02 06:40:20 nobara-X99 kernel: RDX: 0000000002040001 RSI:
+> >> 0000000000000000 RDI: ffff8970d6e0d400
+> >> Nov 02 06:40:20 nobara-X99 kernel: RBP: 00000000fffffff5 R08:
+> >> ffff89803ff49801 R09: ffffffff8d1d9ec0
+> >> Nov 02 06:40:20 nobara-X99 kernel: R10: ffffce5e815abbd0 R11:
+> >> ffffce5e815abbc8 R12: ffff8970d0a2a000
+> >> Nov 02 06:40:20 nobara-X99 kernel: R13: ffff8970d0a2a468 R14:
+> >> ffff8970fa392800 R15: ffff8970d0a2a470
+> >> Nov 02 06:40:20 nobara-X99 kernel: FS:  0000000000000000(0000)
+> >> GS:ffff898072788000(0000) knlGS:0000000000000000
+> >> Nov 02 06:40:20 nobara-X99 kernel: CS:  0010 DS: 0000 ES: 0000 CR0:
+> >> 0000000080050033
+> >> Nov 02 06:40:20 nobara-X99 kernel: CR2: 00007f7fefc07000 CR3:
+> >> 0000000060222004 CR4: 00000000003726f0
+> >> Nov 02 06:40:20 nobara-X99 kernel: Call Trace:
+> >> Nov 02 06:40:20 nobara-X99 kernel:  <TASK>
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ? start_transaction+0x337/0x8c0
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ? schedule_hrtimeout+0x150/0x150
+> >> Nov 02 06:40:20 nobara-X99 kernel:  transaction_kthread+0x152/0x1c0
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ? __pfx_transaction_kthread+0x10/0x10
+> >> Nov 02 06:40:20 nobara-X99 kernel:  kthread+0xe6/0x120
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ? __pfx_kthread+0x10/0x10
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ret_from_fork+0x294/0x330
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ? __pfx_kthread+0x10/0x10
+> >> Nov 02 06:40:20 nobara-X99 kernel:  ret_from_fork_asm+0x1a/0x30
+> >> Nov 02 06:40:20 nobara-X99 kernel:  </TASK>
+> >> Nov 02 06:40:20 nobara-X99 kernel: ---[ end trace 0000000000000000 ]---
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS error (device sda state A):
+> >> Transaction 860 aborted (-EAGAIN)
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS: error (device sda state A)
+> >> in btrfs_commit_transaction:2603: errno=-11 unknown
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS info (device sda state EA):
+> >> forced readonly
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS warning (device sda state
+> >> EA): Skipping commit of aborted transaction.
+> >> Nov 02 06:40:20 nobara-X99 kernel: BTRFS: error (device sda state EA)
+> >> in cleanup_transaction:2074: errno=-11 unknown
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS: device label Dateien devid 1
+> >> transid 8893 /dev/nvme0n1p1 (259:5) scanned by pool-7 (5400)
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS info (device nvme0n1p1):
+> >> first mount of filesystem c70bbc9e-8d1e-416c-8fef-1c8233578d21
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS info (device nvme0n1p1):
+> >> using crc32c checksum algorithm
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS info (device nvme0n1p1):
+> >> enabling ssd optimizations
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS info (device nvme0n1p1):
+> >> turning on async discard
+> >> Nov 02 07:38:52 nobara-X99 kernel: BTRFS info (device nvme0n1p1):
+> >> enabling free space tree
+> >> Nov 02 07:39:43 nobara-X99 kernel: loop: module loaded
+> >> Nov 02 07:39:43 nobara-X99 kernel: loop0: detected capacity change
+> >> from 0 to 1824522240
+> >>
+> >> btrfs check --readonly:
+> >> Opening filesystem to check...
+> >> Checking filesystem on /dev/sda
+> >> UUID: d7485764-0e3c-416e-8b4f-56904307949f
+> >> [1/8] checking log skipped (none written)
+> >> [2/8] checking root items
+> >> [3/8] checking extents
+> >> [4/8] checking free space tree
+> >> [5/8] checking fs roots
+> >> [6/8] checking only csums items (without verifying data)
+> >> [7/8] checking root refs
+> >> [8/8] checking quota groups skipped (not enabled on this FS)
+> >> found 4329982099456 bytes used, no error found
+> >> total csum bytes: 4222777424
+> >> total tree bytes: 5858017280
+> >> total fs tree bytes: 517259264
+> >> total extent tree bytes: 572080128
+> >> btree space waste bytes: 557473441
+> >> file data blocks allocated: 4324124082176
+> >>   referenced 4324124082176
+> >>
+> >> I haven't tried any repair. Reading works. Should I collect
+> >> anything else (zone report, dump-super, ...) before touching it?
+> >> Or is the fs in a state where recreating it is the only way?
+>
+> Sorry for the late answer, I've been on vacation for a few days.
+>
+> OK this is exactly what my patches should've fixed. I'll dig. Can you
+> also send me the output of 'blkzone report /dev/sda' so I can check what
+> the zone layout on the disks is.
+>
+>
+> Btw did you drop the Mailinglist on purpose? If you don't mind I'd like
+> to re-add it (for documentation purposes). But if you did it on purpose,
+> I'd also be happy to switch to German (judging from your name and the
+> Label of your drive I  think it's your native language as well).
+>

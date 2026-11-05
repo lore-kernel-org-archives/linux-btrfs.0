@@ -1,81 +1,97 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793852507;
-	b=W2NjsjzmEEIAa0Edjec9u0IyjsLdx72gp1tYVkRfr46XVy3OwN2iQJLd6XBP3VWQq9at
-	 Mh3pYoj+bUK2N2ezbJliSdaK45wV4rMTLtmdUsS6sQX7Tv0jrgjvxiKE3HK9zrBjZ01ze
-	 ixfG56qienjge6F1gdv2g5SuA+EdnwyNmFkacEi/pGdPZwZW55u/n20JRNJZaSJJrRJY/
-	 iStZ2q9cisQOc2ZSaTksi5cOCU5SFApCJKU/ZHHO2NcOn1g6CyetEo8uGK0QVW0HrWHrO
-	 9NzoqmY20RurWOEizp4KFq9qL+wPP6j8wHEiua9KKEvUEDkj2due3PmrHMI4vHLuk5Q==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793852507;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
-	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=rsrb/kDwr1n5JVcBT8EMffd2eikce8QtgXmfDGDR410=;
-	b=2bQKie0pUgnEAhhwdZZCSmow5HmQ265DnWhJlgMZriQTY6S8MHfShMIv52v5+ryxPoDF
-	 SvNBdqwCAwHl11Fc/ZgUUm5T910E/7FwqMesTahoIVwtWzbEG/uqi03stDKDlj/psI4oi
-	 b+DtmG8zLzo4n8HLzIknBSN0j/V0DQ7zHRvTBH+nx8XzUxnXa18+aVY3DlNYKKaHL7fr5
-	 mEl/uVRNYVkNCnG1nzCdPEO7ykzheAwg+1a9ZTKCiYTvSlJ3WmTbSI3DtnKY0lz4AEWMl
-	 58MPssigL1lP2+MsBC0TfZuTIAmZaFuEJSM8LPzINVuHYKXqHsdQpwkKBH6Jh2GDvfQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=U2lCLpfZ;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=U2lCLpfZ;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.230.70
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1793857354;
+	b=DBWgrxcgNXrnLuotNI1+4K7rLUNznrlDjmqHNAK7RwKkdJGRmjlujlZq99KSdL53H0o2
+	 8SOPDCY5MobNd1dzbwpTyzijcnzJxzwmO5elKTDLCKnaLaeHQMefWwgVlCfUiYhzWYIDR
+	 HlLIjl5zffPo2+5+me+n+hyeEhpe46ZUECDIpFuVQ5XcRWpOyDWZx1Aen9uGbQJU69An9
+	 ZQMfPYeOM3CnGtjSO1fTOHmAfNAEXolY8Q1pDUEl0gL6CFbOLyz3ExK5MaJZpZ6N8R/4J
+	 IFk+Te4seFNUIgFG4LQ6ebHnh1nVJB5/u7rgO0gn+hMU3s8GqSjI+3UhQVhGyYNNPCw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793857354;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=sJwxZdaMomxuzSPkUcgYTRWffu8jQrOj7UECiYOTgBY=;
+	b=vPAEUCqda4lfAaCD5Gq5Z9/+JXRElbjxlpflBfLwZ4rIYriEWFsXL78ipbjX3ymOwqob
+	 /TqIz1eN6bFg0wEu/w1p0EXLCZ66LPmta7PylY6dapbRNWD+oEngQHPoXb6prokUAQHAW
+	 p85ccnrNo8vFUwoe21TpYRYN4iAO31lkkKqkPxFkySIGRV401z5HOZiRb1uxf/j3avZDb
+	 uyCtFljx88OW8rLyDIM3hU4Hv5Y8rWK0nP/KgRXvpg74kt0B6PAjHnyjQKI1vX2B/8R8W
+	 4l8SgkSWlMV1YJm9rx261qXMZHwTsTAeOHbohtB8SKUszMXq5lhQ7Etmr2LNZNEolLA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=wTDzO7nl;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.230.70
+Received: from mail-lr2-f6.google.com (mail-lr2-f6.google.com [74.125.230.70])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 657D2606A326
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 04:21:46 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 657D2606A326
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BFDD3606A31B
+	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 05:42:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BFDD3606A31B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=U2lCLpfZ;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=U2lCLpfZ
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 834571F7E1
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 04:21:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793852504; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=rsrb/kDwr1n5JVcBT8EMffd2eikce8QtgXmfDGDR410=;
-	b=U2lCLpfZ5MRcgg9Lg2SrL4zws0m8MvTCbNjAHvNZtwJkxnFBs6FgNAT2irWzwL7HXF8kxg
-	9Gnrrz0tIA6Wa01UYz+Xp776HT50jCeuxosskomTOsAmPqmScF+PtXX/52Dku1GF/X7Px0
-	uwouXXPoaMG4vl/1Jl4ZTPiUw+Gils8=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=U2lCLpfZ
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1793852504; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=rsrb/kDwr1n5JVcBT8EMffd2eikce8QtgXmfDGDR410=;
-	b=U2lCLpfZ5MRcgg9Lg2SrL4zws0m8MvTCbNjAHvNZtwJkxnFBs6FgNAT2irWzwL7HXF8kxg
-	9Gnrrz0tIA6Wa01UYz+Xp776HT50jCeuxosskomTOsAmPqmScF+PtXX/52Dku1GF/X7Px0
-	uwouXXPoaMG4vl/1Jl4ZTPiUw+Gils8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 52EE2133F6
-	for <linux-btrfs@vger.kernel.org>; Thu,  5 Nov 2026 04:21:42 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id ICoyJlYE7GrhOQAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2026 04:21:42 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: skip fast sync for inodes with encoded writes
-Date: Thu,  5 Nov 2026 14:51:16 +1030
-Message-ID: <14e0d19262452be0d9e08478f47be08ec6fa6d6f.1793852473.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=wTDzO7nl
+Received: by mail-lr2-f6.google.com with SMTP id 38308e7fff4ca-3ab1be9340aso11062341fa.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2026 21:42:33 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1793857352; cv=none;
+        d=google.com; s=arc-20260327;
+        b=byuzjnragd9SRqoIz5Dos7HTdDR37ZVeDYezKZG5l3QuXZKl141a+FND0KgRkzyhyR
+         zGuCFAUQeMlqP/SdihXLphaH/wcSYzoeeCPGmd2vFqOIVvshjuTPEuxFp/IxjgafEB2L
+         lmz6OFlFOT/tGEZr+5ak3OsgfvJ4cxpJ9TnB/xbSlTDwGIfpbS6IvpKur+WljrWrJxL0
+         z+YcOAG+IbFA3AOOLoObW/DlP6q3FtCOJsXIZRV+KpwPRVv2mU+mKD/RyOruypvZIRUK
+         rrHS4GzsriW2CG+9tnP4HocBp9/Wq5UUnvQWjLQLCAWJgnrZqqO4NIrMtkqRlj7azhZi
+         Nb1g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=sJwxZdaMomxuzSPkUcgYTRWffu8jQrOj7UECiYOTgBY=;
+        fh=QPKPzEQ170N8s545JYNCfclGAmuxoOS2UYF5fbOiC2k=;
+        b=NdcYJM14s+shZAbDps7lDPKRtM6YR3Pd+O6ODUXJvGgOoZ8ctnKuVosZDjT3SDdiah
+         iWuNJoPEbX7siI7NzxI4WJrae3Fh7fR00VcGriqR9Myy0FeiWjNV8bNYwdvKvPqn3OYi
+         uFHnr1fnqj/Dc4KUt68eyGUD7GdRY6rk6UopKn4ufHkhdiityTD4J59M7wsEhbWc+JDX
+         66bH4MxVBe5OPICvC39CdNmbWgYtr2kmwi583j2FoosPfqCq8IXB8H5dwCZPHOmoWtv8
+         urz0Wmn6W98ADx4obbnqY2fEW5LIznt7ucrX9r/Uy1y+QEDVHh5dfSAs8yA4ou1//Eql
+         wn8w==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1793857352; x=1794462152; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=sJwxZdaMomxuzSPkUcgYTRWffu8jQrOj7UECiYOTgBY=;
+        b=wTDzO7nl8z+vDNVXZ+06zrAQzmUU5s54GB9f+fpF9hS4/8BUrPGy1kfqlxiCsI/1ma
+         J2+wygfFWv8RNpYP81SN5JPiyM4k5vNopmPOK7SOeyaHO2JK8MnlxUgARsZP/AA0NDpl
+         UsTcZ+Saoa6Z+IqW9xRTFGh+/E12I5OCTOye+EGZsoB47rS2jj8WNWpKbo9AlbmR5gJp
+         xjK2h56g9HZ4HN5n2YKsGRf1ecsKTrZO4KLWVLNXeWmOwGzDTe8HV5Gv/Yx75G6jELX2
+         7xQc4WKP7TH+rwo0DQOQ5YlHwftIJfMdoFm2y4Pqk9XzVfgqr7YdIM9MJGzkQW4hGmPa
+         W2fg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793857352; x=1794462152;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=sJwxZdaMomxuzSPkUcgYTRWffu8jQrOj7UECiYOTgBY=;
+        b=BYrVG/+Bj8xRp+8Lvp//KLFRXWdJy4gBVO/HfqoUM28y9l9CANHgIrDZO8IuKKv0nW
+         02D2Mss06TUMfKoFj2DAGPEMN92rahlR+uUKW9jZnZBJMRh5LiHBTRsU25lDdS54/2bF
+         6WbVpG5c5IJD7MpjimDqDJ4O4yBsBpQTWRFz+CsIpMz5iBL1r3whuDccHCj/X+xEJ/dv
+         jVwKN6CCfOuJxU+LIjORdQM4aqPW5DxCuVNTe1EqhrJ11qnw1QrqnzS9M5YqPWGlmd8Z
+         ipURpiuwQHLjAxM95poLamhHPp1CuA9jUr8brJTYtXUyC/T5fW0edLB6VGnR/6BUuujc
+         tswg==
+X-Forwarded-Encrypted: i=1; AKwUvByN7h94nSI3OHaimaR0Ap26dqaTpZuwrF+4HXD9hbRv7mDggoFnbxHLlKoLZkZgbvQtvHh0z5nzBWuo4Q==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+yndE3yufIBBxjeYBg06CrHDBPHHt3FHsoF2VJYg+H4G1DvK0R
+	wL2Yzso2/KtgbfeTAu13ZeVjntlBpYadsxIkqNPCRuvLlqIQwxqySuipquqLuN4TYjJPmzbYzdf
+	gbgftZA0RVjCfajn7A5WEYln/6CaPyhV0LJT1THAUrIlKNGYczA==
+X-Gm-Gg: AYBFou3+KcOv3J9nZnutmCcVuCYbin2r3QthcCeNbaPUyAiDWmJF3AURYXAJNjiHseS
+	J42UnroVlCXVm5Xy0Heg2W4iwETPFp2Tk0h1bQqTNGmv2IGlEAJ13wyou7TIrjiJRywL/w3bZPu
+	NhcbGFZb9WNE6hHTzUxG6jdplMUFe2V0a8UVVw8fpPuc40euERYzyMtXIP/bJmLho3ngMAp5N2h
+	jJD3QDgR6q/kjQQsbr/KncOQtUXWMezLtkrER5MVaaVzlUQ2I26tQ6b2MwvyBg/TdsIVpnxEeGN
+	SBg2t4CZr36661HOfXMQ4nsGM7MPtblayhHFuXC4hWyNjcBJSd0bDjHmMavF36kPQHidMxkNmi5
+	XEv0Cjsb442dPR6T4CDPP+6UhMNKYXZp6wmaoBw==
+X-Received: by 2002:a05:651c:3605:b0:3ab:1fc4:8eb6 with SMTP id
+ 38308e7fff4ca-3acb7a2bd0cmr44712301fa.5.1793857351847; Wed, 04 Nov 2026
+ 21:42:31 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -85,122 +101,158 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-12.01 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_TLS_ALL(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCVD_COUNT_TWO(0.00)[2];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: 834571F7E1
+From: =?UTF-8?B?6ZOu?= <fengaojigui88@gmail.com>
+Date: Thu, 5 Nov 2026 13:42:19 +0800
+X-Gm-Features: AclHuK87av003HGGv7TYWaUqf2Nj99Vy2yPpXmd11YNPMJBG96--wmz1nktymeE
+Message-ID: <CAO-4RZ0mqFEU8z44B+biaMw5Ee4ogCjs80Uws9YY8LMV7J685w@mail.gmail.com>
+Subject: [BUG] btrfs: WARNING in invalidate_and_check_btree_folios, during
+ unmount on 7.4-rc1
+To: dsterba@suse.com
+Cc: mason@kernel.org, linux-btrfs@vger.kernel.org, syzkaller@googlegroups.com, 
+	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-[BUG REPORT]
-Sashiko reported a bug that encoded writes can have its file extents
-recorded before their data reaches disks.
+Hi Btrfs maintainers,
 
-[CAUSE]
-An encoded write returns to the caller as soon as its bio is submitted,
-and its folios are not in the inode's page cache:
+We observed a WARNING in invalidate_and_check_btree_folios() during
+Btrfs filesystem unmount while running syzkaller on Linux 7.4-rc1.
+Because panic_on_warn was enabled, the warning escalated to a kernel
+panic.
 
-  btrfs_ioctl_encoded_write()
-   \- btrfs_do_encoded_write()
-       |- btrfs_alloc_ordered_extent()
-       \- btrfs_submit_compressed_write()   <- returns before the bio ends
+Kernel information:
 
-A fast fsync only waits for writeback of the folios in the page cache,
-so it has nothing to wait for on such an ordered extent:
+- Kernel: 7.4.0-rc1-kernsight-kasan+ #3
+- Base: v7.4-rc1 (6628e7d4c), plus one local io_uring SQPOLL fix
+(00043c58565e2d0d804f50c2e127f6966cd594af). The Btrfs source is
+unmodified.
+- Architecture: x86_64
+- Environment: QEMU Standard PC (i440FX + PIIX), KVM
+- Configuration: KASAN, CONFIG_BTRFS_DEBUG=y (full .config in repository)
+- Fuzzing framework: syzkaller
 
-  btrfs_sync_file()
-   |- btrfs_get_ordered_extents_for_logging()
-   |- filemap_fdatawait_range()             <- no folio under writeback
-   \- btrfs_log_dentry_safe()
-       \- ...
-           \- log_extent_csums()
-               \- log_csums()               <- csum_list may be in flight
+Warning:
 
-This has two problems:
+    BTRFS info (device loop3): last unmount of filesystem
+    0cb7aac4-39d5-48d7-a0de-5529c14770b2
 
-- fsync can return before the data of the encoded write is on disk, while
-  the log tree describing it is already persisted.
+    ------------[ cut here ]------------
+    IS_ENABLED(CONFIG_BTRFS_DEBUG)
+    WARNING: fs/btrfs/disk-io.c:3326 at
+    invalidate_and_check_btree_folios+0x5ce/0xbe0
 
-- With async data checksum generation, the sums are attached to
-  ordered->csum_list by btrfs_csum_one_bio() before the checksums are
-  calculated.  log_extent_csums() can then log zeroed or partially
-  calculated checksums.
+    Call Trace:
+      close_ctree+0xac9/0x16a0
+      generic_shutdown_super+0x169/0x3a0
+      kill_anon_super+0x3f/0x70
+      btrfs_kill_super+0x41/0x60
+      deactivate_locked_super
+      deactivate_super
+      cleanup_mnt
+      task_work_run
+    ...
 
-For buffered writes this is not a problem, as writeback of a folio ends
-after the bio endio, which in turn runs after the checksums are
-generated.
+    Kernel panic - not syncing: kernel: panic_on_warn set ...
 
-[FIX]
-Fix it by requiring full sync for the inode which went through encoded
-writes.
+Some initial reports carried the SOFTLOCKUP taint flag (L). We have
+not established whether an earlier soft lockup contributed to those
+reports. At least one independent reproduction was reported as "Not
+tainted" at the warning site.
 
-Encoded writes are mostly utilized by btrfs-recevice, so it's never on
-the hot path.
-And receveied subvolumes are set read-only, so normally no one should
-even call fsync() on those inodes. Thus the cost of full fsync on encoded
-writes should be very acceptable.
+Reproduction:
 
-Link: https://sashiko.dev/#/patchset/8eb322321cac98013cc46dfe8d89fa58c1ad3dee.1793766229.git.wqu%40suse.com
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
-Changelog
-RFC->v1: (RFC at https://lore.kernel.org/linux-btrfs/c284dccd8c27a6434e56ed067b0ef4ea67935d8c.1793776224.git.wqu@suse.com/)
-- Require full fsync instead of waiting for encoded writes
-  The common usage of encoded writes are btrfs receive, so we shouldn't
-  need to bother fsync on those files in the first place.
+- The warning was observed 19 times during concurrent syzkaller
+fuzzing, with the same warning site and call chain.
+- We reproduced it three times on fresh QEMU VMs by replaying a
+recorded set of 483 syzkaller programs extracted from the crash-store
+execution logs and a state-primed recipe.
+- The reproductions used syz-execprog -procs=8 -threaded -repeat=0.
+- Time to warning was approximately 32 minutes, 45 minutes and 2
+hours, respectively (kernel uptime 1807 s, 2732 s and 7445 s).
+- We have not yet obtained a minimized single-program reproducer.
+Automated minimization did not converge.
 
-  And this makes the fix much simpler.
+Additional diagnostics:
 
-- Drop the REASON for RFC part
-  Which contains quite some incorrect assumptions on fsync() and direct
-  IOs
----
- fs/btrfs/inode.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+We also reproduced the warning with panic_on_warn=0, allowing the
+kernel to print the extent buffer diagnostics following the WARN.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ab60b7d4f389..65714380a935 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -10035,6 +10035,12 @@ ssize_t btrfs_do_encoded_write(struct kiocb *iocb, struct iov_iter *from,
- 		ret = PTR_ERR(ordered);
- 		goto out_free_reserved;
- 	}
-+	/*
-+	 * fsync() of the inode can not go through fast path, as there is no
-+	 * dirty/writeback folio in the page cache for fsync() to wait.
-+	 * So fast sync can return without waiting for the data to reach disks.
-+	 */
-+	btrfs_set_inode_full_sync(inode);
- 	btrfs_dec_block_group_reservations(fs_info, ins.objectid);
- 
- 	if (start + encoded->len > inode->vfs_inode.i_size)
--- 
-2.56.0
+Four instances were captured:
 
+    BTRFS warning (device loop4 state I): unable to release extent
+buffer 6881280 owner 5 gen 9 refs 2 flags 0xd
+    BTRFS warning (device loop0 state I): unable to release extent
+buffer 6885376 owner 5 gen 9 refs 2 flags 0x1d
+    BTRFS warning (device loop8 state I): unable to release extent
+buffer 6885376 owner 5 gen 9 refs 2 flags 0x1d
+    BTRFS warning (device loop1 state I): unable to release extent
+buffer 6885376 owner 5 gen 9 refs 2 flags 0x5
+
+In all four instances, the recorded reference count was 2,
+corresponding to the expected baseline references described in
+invalidate_and_check_btree_folios().
+
+Two instances had EXTENT_BUFFER_WRITEBACK set (flags 0x1d), indicating
+that the extent buffer was marked as under writeback when its flags
+were printed.
+
+The other two instances (flags 0xd and 0x5) did not have
+EXTENT_BUFFER_DIRTY or EXTENT_BUFFER_WRITEBACK set at print time.
+
+Since WARN_ON_ONCE() is executed before the diagnostic message and the
+flags are read later, these observations may reflect changes in the
+extent buffer state between the initial condition check and the
+diagnostic print.
+
+The results suggest that the warning may involve extent buffer I/O
+state during filesystem teardown rather than an additional reference
+holder. However, we have not established the underlying cause.
+
+Related fixes:
+
+We checked two previous fixes associated with extent buffer cleanup
+and reference-counting warnings:
+
+- 4066c55e109475a06d18a1f127c939d551211956
+- 690c2accacb1aca91ab8186d15dee56da8723f31
+
+The corresponding dirty-pages cleanup and reference-count
+synchronization logic is present in the tested source tree.
+
+We are not yet sure whether this is another manifestation of a known
+issue or a separate extent buffer lifetime problem.
+
+Logs and reproduction evidence:
+
+Repository:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro
+
+Kernel configuration:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/config/kernel-7.4-rc1-kasan.config
+
+Initial warning and call trace:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/kernel-warning.log
+
+Full serial console (independent reproduction):
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/external-repro-full-serial.log
+
+Additional reproductions:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/serial-btrfs-repro2.log
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/serial-btrfs-repro3.log
+
+Extent buffer refs/flags diagnostics:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/refcap-refs-flags-diagnostic.log
+
+Syzkaller execution log:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/logs/syzkaller-execution-log0.txt
+
+Reproduction program set:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/repro/program-set.db
+
+Reproduction results:
+https://github.com/Zheng-zheng-codes/btrfs-extent-buffer-warning-repro/blob/main/REPRO-RESULTS.md
+
+Could you please advise whether this warning is related to a known
+issue or whether further diagnostics would be useful?
+
+Thanks,
+Zheng Zheng

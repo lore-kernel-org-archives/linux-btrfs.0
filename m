@@ -1,110 +1,67 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=111.22.67.137
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793871181;
-	b=OMyBytolRgHnEniT4ECBjiw94MyRf7YMtbYgOmAnOH/+2hbFSSa/l9MMd09Tdaq5VYIB
-	 G+hs5LQ1/oUv5HrRR/ehPBRtKOryhdoO2juXwcb1v3aUPBorScTNBajv2XNvMB5X3LF0V
-	 VkV8bdJhVCWw/V5k7vrVVnI1k0Mo1zRrEZeywHWiCLqz9R5d1wTphtrRYd+hEWm56K2dy
-	 OA/NBZngvvsS5wz/DFNaAUAPq43jZWr5jYLsrSv1A5g85Pq/3o1wmTbqAVonoRAodIyZO
-	 oFAXS8PFIDSCo8nuvfqPZmurtngMg8TnY/FP8iWvLd8li0JpJH2kYFvQ5bKOHOWz/kw==
+	t=1793875280;
+	b=Uh6il/gWQdjg8Hy0S40Aur72DZlTQY3R8aI+EIiNjxuMh8fCfYN3Im6NNEjaZxFuRIP2
+	 if/ePSfzT9kJt9kNX0daxp0q08xc72OLnUfx7falEmxzYxlXwZ3ADpGKvV2crxWQOmirh
+	 oECHpYk/QTrhKawXTS6B7wDdkdmf9LhF3ursGK6GJWjMfbaIV+yKq1HYoVphS5EAKpULY
+	 +9MWNuiZZJudk7QsJnVxoPAIEEmWhfP2dGMlvGoX/Ui7Sc+SMcpPRoZlfI+lBtVXh2NQZ
+	 FnVR+uEaW55MxK1oAixkF1V5Z3NdIlZV+PcBop5+myanv1evlqTvO43Wnja6tI8IQvw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793871181;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
-	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=pgu8NzTJnS2R+zD0u6Z5S8xrxcIoknrqJKi9obAmajo=;
-	b=WpI2rh6zZ8bR6kfoa/WVUQEDMczzClRROHFvY/Fj+2AEDVWxg/Iv+eR1ftOUL0mm+o/S
-	 LUgW1OLbl2pAgvJ5fI7cVn7uJkd1GtKslZjONL7NIIIy3ISWvxUm14BfckivcOgyyd0Gx
-	 5a0ImciyB+oaA967erp6BEVFseqkJDPvyd6hP4jRRNDdbxm6irdwzTowBjolWb2bbdDx7
-	 tl+SHCjdJGCBxzpPzAkCVc6SIsgFvwQwYJZozlOZoCgZqc6I7+AAygA/KCGS9J3+F1tG6
-	 0ybUiVJVCzu9Pj2F/b5t2/kqe//jMwDyDaI1gFKSsvZYMGjiz94LY5sb78+RsVEUCkg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793875280;
+	h=DMARC-Filter:DKIM-Signature:X-RM-TagInfo:X-RM-SPAM-FLAG:Received:
+	 X-RM-TRANSID:X-RM-TagInfo:X-RM-SPAM-FLAG:Received:X-RM-TRANSID:From:
+	 To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=EUwfItNbVxWuThy7+GfxliZb0cWbAWR22kcW0+kMz1o=;
+	b=M+nBlwaCeVterwsOCiDL4J7fda59k7lom1jZfrWitKzDY3JnBMkMvq50JqVrR2Nz/tYP
+	 FchqHKiX+nize0nWRy1Cfbldy3ctubQGu4b4D343+VZacXiRN7DiEC9/PKUHMbf2MHdfT
+	 FNQWgARR52OZ/WHi7xpHNXaZ6RSxHK/qaUYFSptHLU6UKJapmw9rgqCbFHRUL5tPV0Tfo
+	 QI2UilNTQ+dweJ3neMuFekYLnqdT0zlKBcb0BcVWn/or/xMyneWQtEu00GG0/RbUD5DQJ
+	 sPdbAUlo5f/RAZIAX3+F3smShkwZh7Rp0e/ayWTYh4nNdzYq/PENyXnIKL5GcD0mt4g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=suse.cz;
-	spf=pass smtp.mailfrom=suse.cz;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=v14WN48b;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=OvkNExNy;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=v14WN48b;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=OvkNExNy;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37944606A32C;
-	Thu,  5 Nov 2026 09:33:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 37944606A32C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	dmarc=pass header.from=cmss.chinamobile.com;
+	spf=pass smtp.mailfrom=cmss.chinamobile.com;
+	dkim=pass header.d=cmss.chinamobile.com header.i=@cmss.chinamobile.com header.a=rsa-sha256 header.s=default header.b=E7Dfyo4i;
+	arc=none smtp.remote-ip=111.22.67.137
+Received: from cmccmta4.chinamobile.com (cmccmta4.chinamobile.com [111.22.67.137])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 82622606A32C;
+	Thu,  5 Nov 2026 10:41:17 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 82622606A32C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=cmss.chinamobile.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cmss.chinamobile.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=v14WN48b;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=OvkNExNy;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=v14WN48b;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=OvkNExNy
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 43A9421F5B;
-	Thu,  5 Nov 2026 09:32:58 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1793871178; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pgu8NzTJnS2R+zD0u6Z5S8xrxcIoknrqJKi9obAmajo=;
-	b=v14WN48bHlIql9h5HLTugaVISujZG1I/c68I+QtgBbLoIBApSEacYXXWBcqgCfJXFq6f+A
-	a04b7rV9MZ+1A7GaOjZPNsUBb09L6OB9bhWH1gZyydPZAUwPj8q85pTy4SRbmwmJ76LAqC
-	SSzXuvpaBX/SH14eaONLs8VdXTpBuaQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1793871178;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pgu8NzTJnS2R+zD0u6Z5S8xrxcIoknrqJKi9obAmajo=;
-	b=OvkNExNyUPYRAlVHRPqHODS9azrcpr+2lIkcR7gaa3TaHUtdVPDuCCR60na21ee4PYtMBN
-	8FyqEylcSu5PIbBg==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1793871178; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pgu8NzTJnS2R+zD0u6Z5S8xrxcIoknrqJKi9obAmajo=;
-	b=v14WN48bHlIql9h5HLTugaVISujZG1I/c68I+QtgBbLoIBApSEacYXXWBcqgCfJXFq6f+A
-	a04b7rV9MZ+1A7GaOjZPNsUBb09L6OB9bhWH1gZyydPZAUwPj8q85pTy4SRbmwmJ76LAqC
-	SSzXuvpaBX/SH14eaONLs8VdXTpBuaQ=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1793871178;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=pgu8NzTJnS2R+zD0u6Z5S8xrxcIoknrqJKi9obAmajo=;
-	b=OvkNExNyUPYRAlVHRPqHODS9azrcpr+2lIkcR7gaa3TaHUtdVPDuCCR60na21ee4PYtMBN
-	8FyqEylcSu5PIbBg==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 160DB134F4;
-	Thu,  5 Nov 2026 09:32:58 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id jQQAOUlN7GrMbwAAD6G6ig
-	(envelope-from <jack@suse.cz>); Thu, 05 Nov 2026 09:32:58 +0000
-Received: by quack.suse.cz (Postfix, from userid 1000)
-	id 9A6FBB666; Thu, 05 Nov 2026 10:32:57 +0100 (CET)
-Date: Thu, 5 Nov 2026 10:32:57 +0100
-From: Jan Kara <jack@suse.cz>
-To: Christian Brauner <brauner@kernel.org>
-Cc: linux-fsdevel@vger.kernel.org, Jan Kara <jack@suse.com>, 
-	Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, 
-	linux-mm@kvack.org, ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, 
-	linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev, linux-efi@vger.kernel.org, 
-	linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org
-Subject: Re: [PATCH v2 31/34] ext4: use the generic emergency read-only state
-Message-ID: <m2tpyczkdirf7z4pnidxf3375ykgs6mrybxz6aejffpfgptw26@vfepghgrvgdr>
-References: <20261029-work-fs-sb_rdonly-v2-0-2f44f64f0b66@kernel.org>
- <20261029-work-fs-sb_rdonly-v2-31-2f44f64f0b66@kernel.org>
+	dkim=pass (1024-bit key, unprotected) header.d=cmss.chinamobile.com header.i=@cmss.chinamobile.com header.a=rsa-sha256 header.s=default header.b=E7Dfyo4i
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=cmss.chinamobile.com; s=default; l=0;
+	h=from:subject:message-id:to:cc:mime-version;
+	bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=;
+	b=E7Dfyo4iUv4M44fkZunCC/9nPOeyAo/VZ92uhavBLwtfiZQ4dp1I3XNwFrL3DpjgQ4MSe/4Mgi7JB
+	 DIHJeY3NCIjokCsf5cuUW2p2eDxW52AogudZa+Ivi7O8ZB277Y4Slv7yfHrrdeddJ/z1ykAS0bxwY4
+	 YvienmYAs6Dw0MFY=
+X-RM-TagInfo: emlType=0                                       
+X-RM-SPAM-FLAG:00000000
+Received:from spf.mail.chinamobile.com (unknown[10.188.0.87])
+	by rmmx-syy-dmz-app08-12008 (RichMail) with SMTP id 2ee86aec5d44d71-46aae;
+	Thu, 05 Nov 2026 18:41:09 +0800 (CST)
+X-RM-TRANSID:2ee86aec5d44d71-46aae
+X-RM-TagInfo: emlType=0                                       
+X-RM-SPAM-FLAG:00000000
+Received:from utest (unknown[223.108.79.103])
+	by rmsmtp-syy-appsvr06-12006 (RichMail) with SMTP id 2ee66aec5d3eb20-46190;
+	Thu, 05 Nov 2026 18:41:09 +0800 (CST)
+X-RM-TRANSID:2ee66aec5d3eb20-46190
+From: Shunbo Shi <shishunbo@cmss.chinamobile.com>
+To: Filipe Manana <fdmanana@kernel.org>
+Cc: dsterba@suse.com,
+	mason@kernel.org,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix delayed_refs_rsv leak when realloc shrinks an extent
+Date: Thu,  5 Nov 2026 10:41:00 +0000
+Message-ID: <20261105104101.2001-1-shishunbo@cmss.chinamobile.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <CAL3q7H6w1sY5R_+Ajg-uHYx_=KjeUwyt5Aw=Zj+qViLXKcB+_A@mail.gmail.com>
+References: <20261104082834.25047-1-shishunbo@cmss.chinamobile.com> <CAL3q7H6w1sY5R_+Ajg-uHYx_=KjeUwyt5Aw=Zj+qViLXKcB+_A@mail.gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -114,71 +71,54 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261029-work-fs-sb_rdonly-v2-31-2f44f64f0b66@kernel.org>
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.30 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	SUSPICIOUS_RECIPS(1.50)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_THREE(0.00)[3];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	RCPT_COUNT_TWELVE(0.00)[17];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_LAST(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	TO_DN_SOME(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.cz:email,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -11.30
+Content-Transfer-Encoding: 8bit
 
-On Thu 29-10-26 17:07:22, Christian Brauner wrote:
-> Set SB_STATE_EMERGENCY_RO next to EXT4_FLAGS_EMERGENCY_RO when an error
-> makes the filesystem read-only. The VFS then refuses modifications
-> before they reach ext4 and reports the superblock as read-only like it
-> did when ext4 still set SB_RDONLY. The shutdown state stays ext4's own
-> and so do all of ext4's checks because they cover both states. ext4
-> keeps showing "emergency_ro" in its mount options.
-> 
-> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+On Wed, 4 Nov 2026 at 17:41, Filipe Manana wrote:
+>
+> This last part of the sentence is unintelligible... an opening quote
+> without an ending quote, a backslash for no reason, and everything
+> after the opening quote doesn't make any sense.
 
-Looks good! Feel free to add:
+Sorry about that, I will rewrite the whole paragraph in v2 along
+the lines you suggested:
 
-Reviewed-by: Jan Kara <jack@suse.cz>
+    ... updates existing->num_bytes but neither adjusts the space used
+    for checksums nor releases excess space from the delayed refs block
+    reserve.
 
-								Honza
+> We can't update delayed_ref_csums_deletions blindly without looking
+> into existing->total_ref_mod.
+> This else branch should be:
+>
+> else if (new_leaves > old_leaves && existing->total_ref_mod < 0)
+>
+> And I probably missed something more.
+> Sashiko is complaining about that I think and more:
+>
+> https://sashiko.dev/#/patchset/20261104082834.25047-1-shishunbo%40cmss.chinamobile.com
+
+You were right to be suspicious about the grow branch, and the actual
+problem is worse than the missing total_ref_mod check: since the head
+reaches its total_ref_mod transition in the same call (realloc with
+ref_mod == 1 turns -1 into 0), the release below subtracts the new
+size from the rsv immediately, while trans->delayed_ref_csum_deletions
+is only folded into the rsv size by btrfs_update_delayed_refs_rsv()
+after we return.  The rsv only holds the reservation for the old size
+at that point, so its size underflows and the reserved bytes leak (or
+reservations of other pending delayed refs get released prematurely),
+as Sashiko's report spells out in detail.
+
+So v2 changes the grow direction to take effect immediately as well:
+it adds btrfs_delayed_refs_rsv_add(), which grows
+delayed_refs_rsv.size before the transition can release the new size,
+keeping both directions symmetric with the release.  The outer check
+still uses total_ref_mod < 0 (the reservation state before the update
+is applied), so the adjustment only runs while the head actually
+holds a reservation.
+
+Thanks for the review, v2 follows shortly in this thread.
+
+--
+Shunbo Shi
 
 
-> ---
->  fs/ext4/super.c | 1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/fs/ext4/super.c b/fs/ext4/super.c
-> index ae5ba6823c01..afbdbb607b14 100644
-> --- a/fs/ext4/super.c
-> +++ b/fs/ext4/super.c
-> @@ -757,6 +757,7 @@ static void ext4_handle_error(struct super_block *sb, bool force_ro, int error,
->  	 * and other problems.
->  	 */
->  	set_bit(EXT4_FLAGS_EMERGENCY_RO, &EXT4_SB(sb)->s_ext4_flags);
-> +	sb_set_emergency_ro(sb);
->  }
->  
->  static void update_super_work(struct work_struct *work)
-> 
-> -- 
-> 2.53.0
-> 
--- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR

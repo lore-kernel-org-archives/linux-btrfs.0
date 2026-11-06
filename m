@@ -1,86 +1,103 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.46
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.167.50
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793997092;
-	b=5ds9s+wh2tf36MZ9sa4avv8weMPy1b6D7RgOfSMXE0A0VNwBBouYVdexIF6tatjqOO0o
-	 q1y5WiWgcn9D5MMf2BAsavoA/SEfr5DKigzoY3I0LWrccWnEDSAogD9CBCG7fu/yzoF4P
-	 L5VkmzxiZGcY8P2JRKlC7mopnfXJ6QNsoXjbfsOQ7Sls5Z8f6rHh0hPecqZhhW3fa8JML
-	 vqWV7RoaUQi0yW2NX6OUIBqU8MbhVT4whvbVSfS/qVjKsuVpO1M0EyIBifGKh+Z4R64vr
-	 PswGkmCDrIjLKZxbNNsYzWHxlUdkVJ5VuT8XdZag13fpVzzbj5ayjiq+uRGEN8AJEfw==
+	t=1793997630;
+	b=Ll5Hn5M/HiwNUvi9hZEMZsJu3IF/23cGn6JzJQjzXsl0UCI6rBtBxK4ZTupisxL6e5/X
+	 6ADfM/1S3a8givVJRXKVmD2Qjc4XmZul6Uf67wxpGD3VQhcbI1NXlbP0SZoOitnkSwqWf
+	 7VJa1w2fOX5YUEnv+3OZxK5tRo8SEj9XcygZtXrfmfbk60ysjsGM/laXyclfebfDiHlL1
+	 XE09DHsDtIwfbCUq/uNkFjzGeoQ9Qb48mdc+9UY6MtrqTIhyWFKBxyVsW7hBlfpW1dYR6
+	 s/OKjJQHNNJ3qVVYISaSiJrRNGbp7Tu5FW7Y1FFBtFBWNxFDpwyikeXuoDwub6bvJMw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793997092;
+	a=rsa-sha256; c=relaxed/relaxed; t=1793997630;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Message-ID:Date:
-	 MIME-Version:User-Agent:Subject:To:Cc:References:Content-Language:
-	 From:Autocrypt:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	bh=4HyrTuXbst7br9sKPrZkGgpeMygeiy7Zv+e9Aez/n68=;
-	b=VtqeD5PJZH+CPb117QkllJSsyc3EKK0P0g32bFwIWNTo2EnjN99aEJ1e9QpJuyMa2sM+
-	 zeDwtcPtuvdMYdCDGe/XIckNTc0tEbXuWPSKNf+7aRMjHQqsmKx9qbUZRiHtuEH7VAfCa
-	 619vt47WjtkzPGYTn1KxU9hNEKnB/y12iF0P+VS8hZlEQifdM4jFZzo0hljlAVffYjKrc
-	 pMEGrrGkvarZ29Tqdi31CCYMgHwc/u6KotOcz5lQHuUFcpsB4608fW2MWGU8a0A1MCKAV
-	 Z5CuwqOTnfSSKUq0GVHWPZX3OP+U7Cp8aMvxKzix+9sW/jPLl/aIfmSgHh2VQ+QsEaA==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=D/PxjqMUnoRNvdLWmtMbPlTvfojIHeVHPRoAErTV6bk=;
+	b=UcZKG8OAB/lamkdWkSjfxaBtJSJ9EotmKU1/uf/2E6EziK8BcRfFPtxUJ52LSyzh/6wV
+	 cHDsrOTIGK8jUfstrfuLloTQ8ECbRqtSPJxMoZpTijXXSyJKNlELkqVLXr0GxF/bViACe
+	 ZYLDsgkaD0SSClPHQ+4naKa/opd/20kKCzcqtOfbXkEmv8ExHaVkGNcDD3hNsTpG6Wa1t
+	 mhrZqXVIsspd1pqrkqugzQKUgYRIwqRQgy3z2aPNhheKgdE4vguANFHTOTO6oxtPaUXzF
+	 KNIRdHCOisGC+S/834ka5u6aiHyHRXI+7Mcr1V8B7VACv/1aEu3P2QUn/USBeUQwLRg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=N1vkDgrp;
-	arc=none smtp.remote-ip=209.85.128.46
-Received: from mail-wm1-f46.google.com (mail-wm1-f46.google.com [209.85.128.46])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=SIJeD92Q;
+	arc=none smtp.remote-ip=209.85.167.50
+Received: from mail-lf1-f50.google.com (mail-lf1-f50.google.com [209.85.167.50])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7A6B7606A32E
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 20:31:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7A6B7606A32E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0673A606A32F
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 20:40:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0673A606A32F
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=N1vkDgrp
-Received: by mail-wm1-f46.google.com with SMTP id 5b1f17b1804b1-4a20bdaf39cso11763235e9.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 12:31:32 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=SIJeD92Q
+Received: by mail-lf1-f50.google.com with SMTP id 2adb3069b0e04-5be42ae8eadso835050e87.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 12:40:29 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1793997091; x=1794601891; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=4HyrTuXbst7br9sKPrZkGgpeMygeiy7Zv+e9Aez/n68=;
-        b=N1vkDgrpLaQ9xLrpsgl0rQ2gsKFKWXvc5hs/hI3K0WYl/rYitmtzT21QLf/eHO8SNY
-         FHEuJKtgPQsE0lDQWfUgPbh7vh4jF4DjcoVGh3Pg7tA8kj/xO7C/3SLtwUetdDB0CfcR
-         Wbo2O1AxPVN+RUgcGIXkMQUTyEgSxy4np9OV4BZ/7cJXl3pQjYCe9Y1LxTHSa//dvKid
-         WgCOsKMBVSK3WuI8XGBhZtVzROvAMScab04zrcsc9LEm+r5pxXxgkUJWq6aDzOSIpDSf
-         O+feNhDbru7WIWDtATogsL43clJaUhlJlfZbodVXhbcHTeRl80mwk+7zByWiS8RlFbo6
-         +aug==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1793997091; x=1794601891;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=gmail.com; s=20260707; t=1793997628; x=1794602428; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=4HyrTuXbst7br9sKPrZkGgpeMygeiy7Zv+e9Aez/n68=;
-        b=j9FCrsg1o+oHEy17fJ/crl6nn6RrP9cv0bk/2ZjfE0lxqmMs4Y2FUA3LivoMMLEVCa
-         BdJgvWiwmhrJSN3DUY9zaDMENbJv4psomzdpiVDf3F8xZ3r5IwCA0ww2x75xxIx0c33q
-         Lr7GSewQIjVCijQBc+dr1l52feNISovIWs4nuQR+7vnAB16ayXXerD7g+kXmaNaeM141
-         TGTEMAIOvTADlZ5vIweOLNGSexSZsT98Hj8Mttgltt5O0Z3IGba9wpW+KLbxAxHRb6JN
-         p5Zla094XQ+XmARF/O3uFuE03tOLdN4HqlkCj3VPZ6W+17dzSk1pQSSY1kRSHo2fvu2x
-         RMnQ==
-X-Gm-Message-State: APuU4Z8v5GeIqRQ7yIuw+cnaodXvuA8rPDBec8/eMrToYEG0fQfkypJc
-	CgayblTb5BImMHFavggT/qUFraIVDMwm6aOqVILupS/QKSxnpTPihdhsRG4RajuMSzs=
-X-Gm-Gg: AYBFou2tYVHyWGC30lSos+/HXeGpQ41gVlAAJyTrCmUBCitOqvqRplXYp0EBXsHbiUb
-	7sdIM4479NtWDSGB6F5BaASqzPC6jGiJp+HfrLK9i7uYjwMnMYYQ90O/3A3dJKubmjiIK8Xs/Qo
-	YjL2wC/XbHL2RRkz+Jx68g03vk6EPIktSHb2Ak5rk2KWFu0C/L9K0MRagNFUfJamnAv9A7RAOZf
-	H5gXVcquJLvPnrNwMX4de0ZX7wrk0b0kSrzSAkGyJg/xjj3alp5F72aIP9eKeMCFApYqkVI6gkB
-	MlClfGs4qx9kU6NbVD0q1DeN00s4PDS/PWAS9Jb64CjKE4LzIKp7RfRazFaObezfUOt+2abwsju
-	gINBnYJPNO/4MVIGqR5aTKBRn9AwscxUkctiTJs3X6HGqZwgy5rQS6VBl7DBO2W7c0hVFZe64oI
-	poqRR7CX4uI0TjtiKpBlk+AGCtgOgWyhL2v1HFu0hcnd0uYiIzF4cFXqb52OZq7QYykVaJC1/Rt
-	lcke/cRFUCkKEd2NKHKnKu+iJWmffjMnjQLpa+6HdzScHSRXvgA6xAg7BygBgmiuCRL7R2c/Rhd
-	WB9EILbuWro00Guei3qI
-X-Received: by 2002:a05:600c:1d0c:b0:4b2:612d:908c with SMTP id 5b1f17b1804b1-4b6df9beb91mr65943695e9.34.1793997090920;
-        Fri, 06 Nov 2026 12:31:30 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1b26294289dsm8635276c88.4.2026.11.06.12.31.26
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 06 Nov 2026 12:31:29 -0800 (PST)
-Message-ID: <a09d7471-111e-42fd-8ae8-42afce6df000@suse.com>
-Date: Sat, 7 Nov 2026 07:01:23 +1030
+        bh=D/PxjqMUnoRNvdLWmtMbPlTvfojIHeVHPRoAErTV6bk=;
+        b=SIJeD92Qu1ghLn6Diwyb6fKrNsRE4AsbWWViYIN/gXJsQyeupZTIwUP8vl58BvBs2t
+         YI+JBoAXYqrypkee0TpRKbjDCNK7XjE+X8s+DbIKRMNyYguo2UimIdmlW9FHJFkxsj6F
+         PRe74jak0M/nBlafEMyhrTfp5sy9m+5Y5AKj9tYqSQiZ8qhvXj75WvrXgfTpfb7Q8+QW
+         27tEhwXkHqsMzu2hu7fLcBCVVP92uvzvKB+vrrQgbQ1Xrnke6CxmcQt+JKCUCDBBy4tG
+         X4eElH8xoqVZzURtTRS97dAV9yMuUmrqd4xvPFm8WmomV7UhwzX7c9nlGhmbkKTPspy/
+         Z6QQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793997628; x=1794602428;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=D/PxjqMUnoRNvdLWmtMbPlTvfojIHeVHPRoAErTV6bk=;
+        b=11r9Uw3kyprmj5vuJK8NNF3UFUPRkcm5m4LO9v8df9MOewabymYXpManxA+M3Wwnqa
+         fKNr2M77N1NmuM8JpWKGH0u3VDz+WtBAqnJPYnKUCKKQNYDonWVq/f1oVagVMEqohmVE
+         yClFFTrIh0PtjCcZGY+ZHS9Trx6EIKAiNbMPMqPDvDvVi9k1rfNNQUCXZZ1c8I5znohh
+         /2S9tO1+VlC1TN6lObDt9xWRwmZB3oDMYpJY0Go501lwzhLhg/x7/XTWPZNxu0PZA1ch
+         +NYQRrJCaNPoz22feZLxnMGyRwngBAodfmEMQy9fyRR2QTOp1aJhHMClG5RAU0PL0uMz
+         E7ng==
+X-Forwarded-Encrypted: i=1; AL+hErGoHphDGzNQsipbo4zxKcx5188uHqmGflsqR7Lj3Kzm0epAlN0L2Pz8MSc8OdH+QocRjpEGjyrOAD3LmQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/DrY25Z6yTBSdBBb/1kUpzSKtqCijiXm3sYuw9H8l5pbjgoiU0
+	eShkJCfkE/RjIbz6MhzTheYombJaPUHTYVVzDVAl6Edj1LV4OVzUr1yQ
+X-Gm-Gg: AYBFou1oToINxx4jCM52i7f545kVnDFN7XODmWm00vHYSYZtMknmH6kI11/OT5jkgtw
+	XBF5DTD/AMp9xzhT46aEEZRaQbkCgqoMS6zENcDU4dGu5iVEwlF0xy5AH7P5ygx9FTpuwLa9hjq
+	thrReFm35S9lZc1zyWkH0gNNqICAEykY1tnbzRxvucU80dO1Zq7efzZJrPkpvO16LDumPyPz4eP
+	2nhC1QvOu9Jpi6KdMvG2xaCVeYg58AmijJCuYI4vmOGbEnn/47e+nJQw06cgeQqcPG99ik3iNT0
+	RbpWsD2lV81eW28Y0UiMlCkmN8Pf8UNTg2aE/Vb46xdVt/HMo2unXC/QZWayoi2KF6WFI+DMCNP
+	JrFuUKZr7ytXAZ/APudieFKEhvqLShiQUS7/itkC433vA4QRues8hvxvaxeK0pdXSOlMZt7veAB
+	2pFMWpmbPlHhb2qc0r1Q9iDxQsRUzloEgUsXeU2uVHRnLVBKP2DBni+e+Aur5FognEMoyVFHwWa
+	h7p/R3jCPOJmNN+wtNpknFgBM0ZPP2Mzi1+MI9zxWokq+hhJhWJZm5ZKDeXBTGwiimPfE2UF8oJ
+	TMQg4nYJ0PnF9mHrcg/1Rq+RsmUikriCiPnW/TGOvIjl1nM9B4W9sGAv2dazD/mRj4063x+ba15
+	uKKde/Yt9x/HsqR82JKYQcRnRzXH4lImoKMV6sH8fMnaIYA0Ht6YRrfADqz1P
+X-Received: by 2002:a05:6512:1104:b0:5bf:e341:b175 with SMTP id 2adb3069b0e04-5c003ab5418mr1155367e87.39.1793997627853;
+        Fri, 06 Nov 2026 12:40:27 -0800 (PST)
+Received: from Lauri-G-Pro-14-M4.intra.lakuz.com (n2vuxegy3pwmc89dqti-1.v6.elisa-laajakaista.fi. [2001:99a:2ab:bb00:c40d:a019:da27:d206])
+        by smtp.gmail.com with ESMTPSA id 2adb3069b0e04-5c00306f939sm494383e87.52.2026.11.06.12.40.27
+        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
+        Fri, 06 Nov 2026 12:40:27 -0800 (PST)
+From: Lauri Gates <lauri.gates@gmail.com>
+To: Christoph Hellwig <hch@infradead.org>
+Cc: Dave Chinner <dgc@kernel.org>,
+	linux-xfs@vger.kernel.org,
+	Carlos Maiolino <cem@kernel.org>,
+	Christian Brauner <christian@brauner.io>,
+	"Darrick J. Wong" <djwong@kernel.org>,
+	linux-api@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org,
+	ocfs2-devel@lists.linux.dev,
+	linux-nfs@vger.kernel.org,
+	linux-cifs@vger.kernel.org
+Subject: Re: Concurrent FIEMAP on reflinked files serialises on the AGF buffer lock
+Date: Fri,  6 Nov 2026 22:40:26 +0200
+Message-ID: <20261106204026.14530-1-lauri.gates@gmail.com>
+X-Mailer: git-send-email 2.56.0
+In-Reply-To: <au3wJNbRPXQZG5Op@infradead.org>
+References: <au3wJNbRPXQZG5Op@infradead.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,81 +107,149 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/2] btrfs: tag tree block repair writes with REQ_META
-To: socketpair@gmail.com, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20261106-btrfs-sb-read-req-meta-v2-0-71c1afaf5c67@gmail.com>
- <20261106-btrfs-sb-read-req-meta-v2-1-71c1afaf5c67@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261106-btrfs-sb-read-req-meta-v2-1-71c1afaf5c67@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
+On Fri, Nov 06, 2026 at 07:20:04AM -0800, Christoph Hellwig wrote:
+> Please do.  The main question are:
+>
+>  - do we want it in fileattr_get or as a STATX_ATTR_ in statx.
+>  - how do we make the query reliable, and do we even need to?
 
+Thanks. For the newly Cc'd lists: the thread [1] started from du-like
+tools that call FIEMAP on every file to count shared extents, which on
+XFS serialises on the AGF buffer lock. Dave suggested a per-file "may
+have shared extents" flag so such tools can skip FIEMAP on files that
+cannot share, and Christoph asked for a patch. Before writing one I'd
+like to settle the two questions above and the "two bits" question
+below.
 
-在 2026/11/7 04:03, Mark Korenberg via B4 Relay 写道:
-> From: Mark Korenberg <socketpair@gmail.com>
-> 
-> When a tree block read finds a bad copy, btrfs_repair_eb_io_failure()
-> rewrites it from a good one through btrfs_repair_bbio_failure().  That
-> rewrite is a plain REQ_OP_WRITE | REQ_SYNC, while the read that found
-> the bad copy and all other tree block writes carry REQ_META.
-> 
-> Tag it with REQ_META when the bbio belongs to the btree inode.
-> 
-> Signed-off-by: Mark Korenberg <socketpair@gmail.com>
+To see what the flag would buy, I emulated it: a walker that calls
+statx() on every file and runs open + FIEMAP + close only on files
+whose XFS_DIFLAG2_REFLINK was set, read beforehand with xfs_db -r. In
+all 80 configurations (trees 0-100% reflinked, 1-24 threads, two
+machines) it found the same shared files and extents as FIEMAP on
+every file.
 
-This part looks fine to me.
+On placement, a STATX_ATTR_ bit (say STATX_ATTR_MAY_SHARE) looks like
+the better fit to me, for two reasons, though I may well be missing
+history here.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+A du walk needs statx() for stx_blocks anyway, so a bit in
+stx_attributes would cost it no extra syscall, while the path-based
+file_getattr(2) adds a second call and lookup per file. Median of 5
+runs, 100,000 files, warm cache, Ryzen 9 3900X on 6.17:
+
+                               1 thread   24 threads
+    statx()                      195 ms      11.4 ms
+    statx() + file_getattr()     352 ms      19.9 ms
+
+(An arm64 VM on 7.2 shows a smaller gap: statx() alone vs with
+file_getattr() is 79 vs 97 ms on 1 thread, 8.9 vs 11.0 ms on 13.)
+
+The other is that for a "may share" bit, clear is the unsafe answer,
+so a filesystem that cannot answer should not look like one that
+answers "not shared". As I understand it, stx_attributes_mask makes
+that distinction, while struct file_attr has no validity mask today
+(it is size-versioned, so one could be added), so through
+file_getattr() btrfs would currently read as never shared. A spare
+bit in stx_attributes adds no field to struct statx, which I hope
+meets the concern Christian raised about spending statx space on the
+case-folding RFC [2]. If fileattr is preferred, the bit could instead
+mean "no shared extents", so that clear is the safe default, as it is
+for FS_XFLAG_CASEFOLD.
+
+> Besides xfs, btrfs and ocfs2 also support reflinks, and nfs (and maybe
+> cifs?) can export the semanics remotely.  So we really need a way
+> to indicate if the file system could support reflinks to start with,
+> and then one that the file could, so we probably need two bits
+
+For du, I think the mask could stand in for the "could support
+reflinks" bit if it means "this filesystem can answer for this file":
+
+  mask clear            not reported, fall back to FIEMAP
+  mask set, bit clear   no shared extents
+  mask set, bit set     may have shared extents
+
+A filesystem that cannot share extents at all would set the mask and
+leave the bit clear. If I read v7.4-rc1 right, only xfs, btrfs and
+ocfs2 report shared extents, and all three implement
+->remap_file_range, so the VFS might set the mask itself for files
+whose filesystem lacks ->remap_file_range. What I could find per
+filesystem:
+
+ - xfs: XFS_DIFLAG2_REFLINK is set on both inodes in
+   xfs_reflink_remap_prep() before any extent is remapped, so clear
+   means no shared extents.
+ - ocfs2: OCFS2_HAS_REFCOUNT_FL is set on both inodes before the
+   remap and cleared only at zero clusters, which looks like the same
+   meaning.
+ - btrfs: I could not find a persisted per-inode reflink record
+   (last_reflink_trans is in memory only and reset to last_trans when
+   the inode is loaded), so btrfs would leave the bit out of the mask
+   for now. btrfs folks, please correct me if I missed something.
+ - nfs, cifs: I could not find a per-file attribute in NFSv4.2 or
+   MS-FSCC that could carry it (space_freed comes closest, and nfsd
+   does not implement it), so no mask bit there.
+
+A filesystem-level "could reflink" bit might be a separate need:
+nfsd encodes clone_blksize for every export and ksmbd advertises
+FILE_SUPPORTS_BLOCK_REFCOUNTING unconditionally, I assume because
+neither can ask the exported filesystem. Did you have nfsd and ksmbd
+in mind for that bit?
+
+On reliability, my tentative answer is that the bit does not need to
+be exact for this use. A clear bit must never be wrong, and it never
+was in my tests, including a survey of my desktop's XFS root (2.0M
+files, flags read with xfs_db -r and matched by inode number). A
+stale set bit costs one FIEMAP, so I would document it as "may have
+shared extents"; since the contract is only "may", clearing it more
+eagerly later would not change the uapi.
+
+Stale bits do limit what it saves, though. The flag stays set when
+the other copy is deleted or the file is overwritten; only truncation
+to zero and FALLOC_FL_UNSHARE_RANGE (see the caveat below) clear it.
+Ordinary copies set it: coreutils 9.4 cp and install, cat (which
+copies with copy_file_range), Rust's std::fs::copy, and overlayfs
+copy-up all reflink on XFS. On my desktop, leaving out benchmark
+trees, 18% of inodes have the flag and 41% of those share nothing.
+That leaves out ~/.rustup too: an earlier test reflink-copied it, so
+all of its 132k inodes are flagged and none share; counting it, the
+figures are 25% and 62%.
+
+On real trees (24 threads, median of 5), statx() on every file, then
+open + FIEMAP + close on every file, on flagged files, or on files
+with shared extents only, the lower bound for a flag cleared when
+sharing ends (/usr has no shared files):
+
+                       statx only  every file  flagged  shared only
+  /usr      224k files      28 ms      264 ms    29 ms       -
+  ~/.local  372k files      63 ms      506 ms   487 ms    322 ms
+  ~/.rustup 132k files      20 ms      319 ms   318 ms     21 ms
+
+Would there be a reasonable point for XFS to clear the flag once
+sharing ends? I don't know the code well enough to tell what that
+would cost.
+
+The caveat, which may be unintended or may be my misreading:
+FALLOC_FL_UNSHARE_RANGE over a whole shared file does not clear the
+flag on the first call. bpftrace on 7.2 shows
+xfs_reflink_clear_inode_flag() entered and
+xfs_reflink_inode_has_shared_extents() not, so it looks like
+xfs_can_free_cowblocks() returned false, perhaps on I_DIRTY_PAGES
+left by the unshare. A second call after sync clears the flag.
+
+On Darrick's XFS_IOC_GETFSREFCOUNTS patch from your other mail:
+thanks for the pointer. It gives a device-wide total without
+privileges, which a du tool could show for the whole filesystem,
+though not per directory.
+
+If the statx direction sounds reasonable, I would be glad to put
+together an RFC with the uapi bit, xfs and ocfs2 support, a man-pages
+patch and an xfstest. This would be my first kernel patch, so
+corrections on any of the above are very welcome.
+
+[1] https://lore.kernel.org/linux-xfs/20261102193533.93690-1-lauri.gates@gmail.com/
+[2] https://lore.kernel.org/all/20251006-zypressen-paarmal-4167375db973@brauner/
 
 Thanks,
-Qu
-
-> ---
->   fs/btrfs/bio.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-> index 2e12a6d7e16f..efbce4d549ff 100644
-> --- a/fs/btrfs/bio.c
-> +++ b/fs/btrfs/bio.c
-> @@ -951,7 +951,8 @@ int btrfs_repair_bbio_failure(struct btrfs_bio *bbio, const struct bvec_iter *or
->   	}
->   
->   	repair_bio = bio_alloc(smap.dev->bdev, max(1, length >> PAGE_SHIFT),
-> -			       REQ_OP_WRITE | REQ_SYNC, GFP_NOFS);
-> +			       REQ_OP_WRITE | REQ_SYNC |
-> +			       (is_data_inode(inode) ? 0 : REQ_META), GFP_NOFS);
->   	repair_bio->bi_iter.bi_sector = smap.physical >> SECTOR_SHIFT;
->   	while (cur < length) {
->   		struct page *page = bio_iter_page(&bbio->bio, iter);
-> 
-
+Lauri

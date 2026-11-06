@@ -1,54 +1,48 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.127.231.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=213.95.11.211
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793957708;
-	b=ynULWYVblp1y11v9q+LjpqX5Fdm5+ccUaV+dI8PhzO/b4AIjG1+Fn+bH4CQami/4IhNW
-	 azGg+SDngQi34j5dSbcZoNnFctvk7lUvAgWugvDO6C6XtGKpdT3T4sE469zorZthYWjcj
-	 S4c15n8fudgrCOnqyjlEDx56j31ppIVgsuJPxPqjGSSriYt6friZUfXW8/qQmS9I7YMMb
-	 sMRV+K6bD54NijkkZ0yIUm3O0la/fEMQ3W+PTV1ggCuq5hXFhvS4hY+02yDfWiVhPT3FO
-	 VUIqn2pygKaBh5KvT+fzhL5RbvzTlHFv92y78S0LToOmSQo1pOFKJSlBrzpIx45AOhA==
+	t=1793960785;
+	b=32NI4fEz5vsSJ9T06Mvg0kR5zmyasiKPW63cFGoNnkxRxaxQoPPFfJOiJ0SIUiywkW1L
+	 KQtSOWwvQD7RI/ATj8HZsSw/HgkFWBKzE44roeQrUihbsy00sZucGt0STlHZPY2IoA1zk
+	 x1fMaaJCFrh9YpIgw84d0vkagO/B7jqySvTtWngWBEpxZ1gMSFkqKBInBRXDhZLSIjuWd
+	 4dArYG/7+5sC1mFWKA/18Qog5JSxBm2VA2W8cg9B2V8LnQgu2zGJ1nGVt2cnMBnzR9r3H
+	 +Xtm7YwBe71pU3JDeXHIxB1FP9au7V8SqVOLNKNJJodqWO5C8LgvndebrypAsEeUgng==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793957708;
-	h=DMARC-Filter:DKIM-Signature:Cc:Received:To:Date:Mime-Version:
-	 User-Agent:Content-Type:References:In-Reply-To:From:Subject:
-	 Message-Id:Content-Transfer-Encoding:X-Lms-Return-Path:
-	 X-Original-From;
-	bh=Hu28XpLEwWJ7+xUnuq8g3SEEbhUTtYM5zp2cNel/cQY=;
-	b=uTRhpN3aOQ/t4QHKXcvHMrOroft4gvyGLPxNHYUx/FLWMPiaWdVMRF1u9NiLBBAG744z
-	 sD9ZqiiLScUDIgFys32zzP/f/OF4GHGpsUAJQo6akGboSHgcAk9d/RRMgYYijSEW6dihn
-	 venJLV0l8E8tXuSGE0II2hCBjr9yurQPESk3sO6lmbLWdR72nzZ2dvk0BPBuWj+451m4j
-	 rF5L02usrwLyixvPZ3hK346KbHWEbmivqEejWfZFh9VeQKC+iiAXk9K1qVdKl88Jo14zJ
-	 4e2+f3FS82uxXrMtVwTEQFvVVFLkmI3gnTbpQUFXzbsOc94F9CZ1XIZIG9D6jcCAvAg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793960785;
+	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
+	 MIME-Version:Content-Type:Content-Disposition:In-Reply-To:User-Agent;
+	bh=RqQSYGOZZG/aIHhMQ8HE+3EsiHhz5Y9+6eyhSvGw+c0=;
+	b=maLzDZpyTPqz7b+7hp9SL1vE2+9g09LCaE4PyPOtbhklxojNcyncwJi7KSlBafUAb2jt
+	 mG3+evQ69ayM5pEtmi2xtGqN/feVza0vWvDqslaiWhl+SBTzS1/PuPJLQaUwNgnn0g/DB
+	 CX/7uHRHlJNnA15xvO9sKRE7ec06FVjA/ZSo4ONl3XLW0a724ZofjdAOiOQlgPMBGbO/Q
+	 kLSqTUpR2s9MM+dFjF3fW3tx8QektlufH2CDDIFHvEYvfbrndiHwH7sLag0fa4MTpjqBx
+	 YtYo2Df8TJesUi3vkqVBWhGYtKT2dwWMJoFkKqeBhYZBHqYQl8/yTZrf/oSC9sQfvCQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=fygo.io;
-	spf=pass smtp.mailfrom=fygo.io;
-	dkim=pass header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=asIfuVKn;
-	arc=none smtp.remote-ip=209.127.231.53
-Received: from va-2-53.ptr.blmpb.com (va-2-53.ptr.blmpb.com [209.127.231.53])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=lst.de;
+	spf=pass smtp.mailfrom=lst.de;
+	arc=none smtp.remote-ip=213.95.11.211
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7D2EA606EEB1
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 09:35:07 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7D2EA606EEB1
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=asIfuVKn
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1793957702;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=Hu28XpLEwWJ7+xUnuq8g3SEEbhUTtYM5zp2cNel/cQY=;
- b=asIfuVKnQZF60amh8dhg+v36je+ilhQRQRoe+4n4ujnBoncQQsWNJr9JJKfHCguXPCtiqw
- yusZe4NjhjD4YczpPY53w++rQ7jJcFMINlfRM+M1IplEFvlKCwmDI7Xk7TtRTWR2q5lIs5
- w2k6a/4TWy9Gns7tgBRtsUYuYfwzkEWrTbGf30NMOxepELfmxcpvYUdcKf0FLnHrbKzgxN
- ckURRF5EpltOuhHWElhlgLqis49FgKY+AEdRO/r9ClVdwnmyxDIoG/pmzEJE+EQfOjTiCb
- HarMPwVdX/pCJCjfJGTSE1if0BhMNEw18FG4i60YkE+x+bs7sMZNzEP1A2Ng1w==
-Cc: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>, 
-	<linux-btrfs@vger.kernel.org>, "Naohiro Aota" <Naohiro.Aota@wdc.com>
-Received: from [192.168.8.64] ([183.34.160.174]) by smtp.larksuite.com with ESMTPS; Fri, 06 Nov 2026 09:35:01 +0000
-To: "Jochen Philipp" <a2jphilipp@gmail.com>
-Date: Fri, 6 Nov 2026 17:34:56 +0800
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4C78606A329;
+	Fri,  6 Nov 2026 10:26:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B4C78606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 48CA668BEB; Fri,  6 Nov 2026 11:26:19 +0100 (CET)
+Date: Fri, 6 Nov 2026 11:26:18 +0100
+From: Christoph Hellwig <hch@lst.de>
+To: Andrey Albershteyn <aalbersh@kernel.org>
+Cc: ebiggers@kernel.org, hch@lst.de, fsverity@lists.linux.dev,
+	dsterba@suse.com, linux-xfs@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net,
+	linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	brauner@kernel.org, viro@zeniv.linux.org.uk, jaegeuk@kernel.org,
+	chao@kernel.org, tytso@mit.edu, Boris Burkov <boris@bur.io>
+Subject: Re: [PATCH v2 1/5] fsverity: strip FS_VERITY_FL from
+ FS_IOC_SETFLAGS
+Message-ID: <20261106102618.GA5319@lst.de>
+References: <20261105115532.613467-1-aalbersh@kernel.org> <20261105115532.613467-2-aalbersh@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -57,45 +51,50 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Content-Type: text/plain; charset=UTF-8
-References: <CAD=K2o-BBqh+ikgfD732Cb3M1Xx48QGw3kTFsP5iSgH1mkr0wA@mail.gmail.com> <904615c7-003a-4158-922d-c57dee9a3ecf@wdc.com> <CAD=K2o_vLPSvm4Qzi8y4t5ay+Na9GNk2t5a3iMO3NYJvwodKDQ@mail.gmail.com> <CAD=K2o8xFgYBHMim-KqMysV+Tec9LEUbo6jfD6R-GOAU8N8K4w@mail.gmail.com> <CAD=K2o8kWgTRqBBw1sRfO2fopqQOLfdeX61h=OFPMST=Wdo+KQ@mail.gmail.com> <30a6e871-8578-4d27-bb0a-679b94fb7f92@wdc.com> <CAD=K2o9LbeJUcb0xefwVx-rC5udLNLwqouO8pqFB0R+rWQvHng@mail.gmail.com> <CAD=K2o_MwSF_XS=iRu8GMPhH2Sn6t3bsKLm5BLOjZ34tV4aRvg@mail.gmail.com> <CAD=K2o82LSzq9CN3mQxfoByGCteSLCXXetjnxLGQaQv+8gC6-A@mail.gmail.com> <8d2e8334-8a6a-4bb9-9c78-a126be7d94d1@wdc.com> <CAD=K2o8CTZOPQ1iMTi2+zirKtQdY3bS5Dz9KMAamyid6Lf9QbQ@mail.gmail.com> <1f4f5514-b20c-40d7-a87c-911276a5e661@wdc.com> <CAD=K2o_A4HE7SwjTGJWr4cKFmu-OtJcLXQ2w=XFJDYGnOSbD-Q@mail.gmail.com> <5e929ec6-4641-4990-b910-489e34550ba7@fygo.io> <CAD=K2o8EAtV0p1dXBBXvrjw99zOb_XJUZ=Zz+1BjwVmhsScMDA@mail.gmail.com>
-In-Reply-To: <CAD=K2o8EAtV0p1dXBBXvrjw99zOb_XJUZ=Zz+1BjwVmhsScMDA@mail.gmail.com>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Subject: Re: Subject: zoned: transaction abort with -EAGAIN (-11) on host-managed SMR (WD HC670), fs forced read-only
-Message-Id: <18ae2f6f-956f-41cd-ba40-7ca4ab06e659@fygo.io>
-Content-Transfer-Encoding: quoted-printable
-X-Lms-Return-Path: <lba+26aed9f46+dfb261+vger.kernel.org+zhudongjiang@fygo.io>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261105115532.613467-2-aalbersh@kernel.org>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-=E5=9C=A8 2026/11/6 15:36, Jochen Philipp =E5=86=99=E9=81=93:
-> Hi Dongjiang,
->=20
-> thanks for reaching out - yes, I'm willing to give it a try.
->=20
-> Johannes asked me to keep the on-disk state untouched while he
-> looks at the zone report, so I'd like to coordinate with him
-> first: Johannes, are you fine with me testing Dongjiang's series
-> on this fs, or do you need anything else from the current state
-> before I do?
->=20
-> For testing I can set up a separate machine (bare metal, no
-> out-of-tree modules), so my main system isn't affected and
-> switching kernels is easy. I'd move the drive over there.
->=20
-> Two practical questions, since I've never built a patched kernel
-> for testing:
-> - Which base should I apply the series to (e.g. 7.3, or a
->   specific btrfs branch)?
-> - Is there a git branch with the series applied that I could
->   use instead?
+On Thu, Nov 05, 2026 at 12:55:26PM +0100, Andrey Albershteyn wrote:
+> The common use of FS_IOC_GETFLAGS/SETFLAGS is get-modify-set loop.
+> Filesystems could return verity status with GETFLAGS, attempting to then
+> pass FS_VERITY_FL to SETFLAGS is not allowed.
+> 
+> The ext4 and f2fs already treat FS_VERITY_FL in the set path as no-op,
+> however, BTRFS returns -EOPNOTSUPP. So, the modification of other flags
+> doesn't work on BTRFS for fsverity inodes.
+> 
+> Fix it for BTRFS and anyone else, the ext4 and f2fs masking becomes
+> no-op. The file_get/setattr() path is fine here as this flag is cleared
+> right before fileattr_set_prepare(). The future fsverity support in XFS
+> would also need it.
+> 
+> Cc: Boris Burkov <boris@bur.io>
+> Cc: David Sterba <dsterba@suse.com>
+> Fixes: 146054090b08 ("btrfs: initial fsverity support")
+> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
+> ---
+>  fs/file_attr.c | 10 ++++++++++
+>  1 file changed, 10 insertions(+)
+> 
+> diff --git a/fs/file_attr.c b/fs/file_attr.c
+> index 833e03810b24..b43977d5f8e0 100644
+> --- a/fs/file_attr.c
+> +++ b/fs/file_attr.c
+> @@ -199,6 +199,16 @@ static int fileattr_set_prepare(struct inode *inode,
+>  	if (err)
+>  		return err;
+>  
+> +	/*
+> +	 * verity is settable only via FS_IOC_ENABLE_VERITY; never through
+> +	 * fileattr
 
-Base: in sync with btrfs/linux's for-next branch as of today:
-https://github.com/pdzhu/btrfs-linux/tree/for-next
+Maybe spell out FS_VERITY_FL above?  Starting the sentence with a lower
+case letter looks odd, and spelling out the flag name doens't hurt.
 
-Testing branch: my v3 series rebased onto that base:
-https://github.com/pdzhu/btrfs-linux/tree/zoned-fixes-testing
+Otherwise looks good:
 
-Thanks,
-Dongjiang
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+

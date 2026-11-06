@@ -1,54 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.210.70
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1793966633;
-	b=wg4pmFM4I3hSrbRWa5oirDN87VftkzfL7qIgnKJ4wlHTrckRHurizJykHFx/rrSxdffd
-	 T1tpaxRhZB/iRxB6Yj5BwFkQh4tSHKRqeo8xmFpNOYlCSnJox4BfTTRgqxyIthYQimoqs
-	 /xGld6m/ap9goZy+jMar8U4B+/w6jDcK2V2T03HWj5lFdxAapFj4gu6prAuGNPnOQCOTK
-	 PpRzX8Hm6M4tB7++XkX2Pgrg5Rf/6KqfFQv1ecMjNiN90VwbRxy8DFPABvvbjRkERSe9I
-	 ZtoT9vTgG8ZpnTZld24nY7vb4Wo4d/+t6G3xgNs5mRr18us6Pnkl7Oxj7z9zjzS67oA==
+	t=1793968429;
+	b=4zeueNt+PLeovjmeZISe0PCJ57fY3QdcSrtzKGM9GMC2nh7MCnPHHjYTt4+ftmyHEfcW
+	 PxA6EuKXhzOdBERRXzD0ELIY9xmpEUWj18DguOnz1LegFE5BsSscbZMxlXSrtoiZd1cmk
+	 1usyFyHwY6tommSCW4scEdsQtN5t7VNi744E9OFVNoDub5143Rnm1O1j8ZzTo2rSMesIv
+	 3b/SbPKLjo+DFcSO1+eVO6Jyjvdv8Y3X7m+3IBiAJkhgZJNOGREUpfgNZ4zwB0jPsWN3q
+	 pkYgXO18KhWRw+726o4jmyaWETg7s2bCWypVVQL/gsDmE/yFJVvYsii5is/ZyaNIrww==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1793966633;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=wyYPPTXnF1ky1EOV9iMKwuhqeqdzrDAE8rQxJfvfPBA=;
-	b=BnkFrGJhIC/KwBmuBbpXo9TdIav+IIOwgkkSJzUeLBrIsMaxyIW4yb1JVH8sN6tPmtkc
-	 BIH/EviI6ZXl8gaj2+XYo2gNGVlE3zfUoaYrSHS3uqEOd8cG+s9wpYMiO5Pzd6pjkw81r
-	 +llb3rBZrs7OcRmkcWgEbETi66cqg4DET71qCc/AG4x6HYTVNbwheSqAW8qDxo0KZLvmu
-	 s48o/soqZ1eZbQHaux6JhkyY0q0VIRGCUYr4mEXjadAx2hAaUpmJzOtK95Se2ssUnsujk
-	 oFpOVntI0YQ8zMDBG7JWzKFvtcglKzN23q8QcnxST/9Pja6Tv2VdsiobfrHw2T/P9Xw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1793968429;
+	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:MIME-Version:X-Received:Date:
+	 X-Google-Appengine-App-Id:X-Google-Appengine-App-Id-Alias:Message-ID:
+	 Subject:From:To:Content-Type;
+	bh=vOuk4MEEMKLZz9SbU5bzBH5xfiLgItoR3reCPXp3778=;
+	b=tQ/q9MLM7J66xa6QEd8X/mQyDzujo7eywGRPpLA/dPt3DqRz1mQJjeDM3Um/S1oT2pov
+	 U3UKOXXMYHSouMGT/5pbOADBXHDZ33WnPinH18+lpwzOyeaFPs/VXbeUZ3xbP5Gfg5RCo
+	 LPCaLPuItInsP5bQ9nATQsIohLQsxpYFcSvX86MkqScJeHK93PTNyiGjl6e/jmftoc31U
+	 3G93aowsb7AERxuk44l6Fgxw/1nWhaIZ4Y5BS2jEY4+9OzgWwrgUgmSD0Hs3f6UzKKP7+
+	 dkFYnV3VO/TR+Zk7q67WnVNPMZf3AZP0rTQ5vvGYk34jw1JaAWkvfqXkLs3z4HWu8hg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TzV3tGhL;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=fail header.from=syzkaller.appspotmail.com;
+	spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com;
+	arc=none smtp.remote-ip=209.85.210.70
+Received: from mail-ot1-f70.google.com (mail-ot1-f70.google.com [209.85.210.70])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1403606D82E
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 12:03:52 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TzV3tGhL
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 622541F008BD
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 12:03:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1793966632;
-	bh=wyYPPTXnF1ky1EOV9iMKwuhqeqdzrDAE8rQxJfvfPBA=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=TzV3tGhLGAcV47JQjj7s3JEdcf6Fo/3yuAplG1ju1HFPFAb61KeXAtfesVwZ2sTNu
-	 /grLW638AE2+orolVa2RTY9obE401IF9ZBmauubGgxH7w/eOO4n2TuhfC/Bu5TVhi2
-	 6cfVIewuKHpGqHF9/bM5bBXJnZn/H3dleWHVdlHAmuXzAOjyFlaydC1LlV2plK145U
-	 9JlHrrVXowLeXZ7NW8w4qyPTQj5RPdCRLGxQxNhzRc2K4kEpBbo39bm2ksWlAmERfH
-	 JvERuZDX0I06Kf2aUvKvF3KNKf+4H8Y2q4hFtAr75hIm9x5fJCDLMiF9d4y3h630Mk
-	 xwmG1Me+mIX2Q==
-Received: by mail-vk1-f180.google.com with SMTP id 71dfb90a1353d-5ebf39def3aso188687e0c.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 04:03:52 -0800 (PST)
-X-Gm-Message-State: APuU4Z8WMBTkxWBCgWzF6z7RyXkGdolsm2xq3vNpIbX4GKYsTUcbbhmC
-	zcsXc5x6mSqJ/aIV0ww0QY4lSKt3NZYIQX0lClqYs+sqWCZUTXoMzOJQZcNKP1oGOMdLapjU+mS
-	iuLIalt1OgSb5TrYoNKbvRko1/Lah870=
-X-Received: by 2002:a05:6122:21a6:b0:5ca:fc48:5634 with SMTP id
- 71dfb90a1353d-5ecc43e5c71mr1030174e0c.11.1793966631484; Fri, 06 Nov 2026
- 04:03:51 -0800 (PST)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51EAD606A326
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 12:33:49 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 51EAD606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
+Received: by mail-ot1-f70.google.com with SMTP id 46e09a7af769-85a6d046af0so706927a34.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 04:33:49 -0800 (PST)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1793968428; x=1794573228;
+        h=content-type:to:from:subject:message-id:date:mime-version
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=vOuk4MEEMKLZz9SbU5bzBH5xfiLgItoR3reCPXp3778=;
+        b=snk4kptdwKEvDZV0avlc3h4YKFS+4FEngSX0alRWS6oPU42K9kvPFKFIuWPztxcHg9
+         C9u82MvcuLp2jfXU+Hq96Yco0j10J8+q6XZu5Jd2TW7lDNVZ3WzbuERWexrsHYbgEPUS
+         BYEEZJCGdC585nOcMNvmDa66BqpEmk4qe3ncoQpqD/N3IVAV7vTpE1OpF7UnUuI76axW
+         CzMhOHYimc+t7JiyzY7s8WQu9Y+wlDVwpEO6eDtyfuSSLm0SyTUxOxSZpZRtmY/+3oj9
+         28kc1+1zp+7xhmAnz6hkiDK+c/Iq139DyCCaId/m1Pc7VZCKF3y3HCJK3B7SbVcGTaxa
+         5SoQ==
+X-Forwarded-Encrypted: i=1; AKwUvBw1kZW5CiY1+cXAN8AZIwzDyIrRKOPjP888jPYySuv77kg1VoHT3R8pBSeZFQvrj8d3IqIyUF5k6avC4g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9xhGaMbBK60emSx8B24U30lPC1NMQsIV+8LrE8MzA0lUSl57Q6
+	qpdtlBSdtGvXyNPIROpSQWYMCIZtU11NjbW9LX+ulhCq2IEYVNLbMDC5YXLrU2bDDd/SY3ONrUx
+	z06YYGT5TLTx1cc6IfGjsIlNKP+g7487LznIqRJ6Wud8SanIrY87pzdPk+4g=
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,165 +58,62 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <14e0d19262452be0d9e08478f47be08ec6fa6d6f.1793852473.git.wqu@suse.com>
- <CAL3q7H7JCSuTuGvmwrf3ckBwhm-5Wnnub-6C1mXGX=ZTi0Yo8g@mail.gmail.com> <29d5cd74-1613-4ee2-a9e4-ec9e0b430bd1@suse.com>
-In-Reply-To: <29d5cd74-1613-4ee2-a9e4-ec9e0b430bd1@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 6 Nov 2026 12:03:15 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5S4qprU2PcGNyYyMjQQv2=KwF1tgOkBLiY12cXu5WPzw@mail.gmail.com>
-X-Gm-Features: AclHuK9sC6wkNqRiezAjHaRVuhdjXRE5G_hP9Eejdr-IFvg2Qv8McIey2Qs4BlY
-Message-ID: <CAL3q7H5S4qprU2PcGNyYyMjQQv2=KwF1tgOkBLiY12cXu5WPzw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: skip fast sync for inodes with encoded writes
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
+X-Received: by 2002:a05:6808:c2d6:b0:4c3:ebb:63d6 with SMTP id
+ 5614622812f47-567e11247c7mr1568823b6e.39.1793968428434; Fri, 06 Nov 2026
+ 04:33:48 -0800 (PST)
+Date: Fri, 06 Nov 2026 04:33:48 -0800
+X-Google-Appengine-App-Id: s~syzkaller
+X-Google-Appengine-App-Id-Alias: syzkaller
+Message-ID: <6aedc92c.a716b02e.a4a62.0001.GAE@google.com>
+Subject: [syzbot] Monthly btrfs report (Nov 2026)
+From: syzbot <syzbot+liste224054b66e11f54d148@syzkaller.appspotmail.com>
+To: dsterba@suse.com, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, syzkaller-bugs@googlegroups.com
 Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Thu, Nov 5, 2026 at 9:40=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
->
->
-> =E5=9C=A8 2026/11/6 04:39, Filipe Manana =E5=86=99=E9=81=93:
-> > On Thu, Nov 5, 2026 at 4:48=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
-> >>
-> >> [BUG REPORT]
-> >> Sashiko reported a bug that encoded writes can have its file extents
-> >> recorded before their data reaches disks.
-> >>
-> >> [CAUSE]
-> >> An encoded write returns to the caller as soon as its bio is submitted=
-,
-> >> and its folios are not in the inode's page cache:
-> >>
-> >>    btrfs_ioctl_encoded_write()
-> >>     \- btrfs_do_encoded_write()
-> >>         |- btrfs_alloc_ordered_extent()
-> >>         \- btrfs_submit_compressed_write()   <- returns before the bio=
- ends
-> >>
-> >> A fast fsync only waits for writeback of the folios in the page cache,
-> >> so it has nothing to wait for on such an ordered extent:
-> >>
-> >>    btrfs_sync_file()
-> >>     |- btrfs_get_ordered_extents_for_logging()
-> >>     |- filemap_fdatawait_range()             <- no folio under writeba=
-ck
-> >>     \- btrfs_log_dentry_safe()
-> >>         \- ...
-> >>             \- log_extent_csums()
-> >>                 \- log_csums()               <- csum_list may be in fl=
-ight
-> >>
-> >> This has two problems:
-> >>
-> >> - fsync can return before the data of the encoded write is on disk, wh=
-ile
-> >>    the log tree describing it is already persisted.
-> >>
-> >> - With async data checksum generation, the sums are attached to
-> >>    ordered->csum_list by btrfs_csum_one_bio() before the checksums are
-> >>    calculated.  log_extent_csums() can then log zeroed or partially
-> >>    calculated checksums.
-> >>
-> >> For buffered writes this is not a problem, as writeback of a folio end=
-s
-> >> after the bio endio, which in turn runs after the checksums are
-> >> generated.
-> >>
-> >> [FIX]
-> >> Fix it by requiring full sync for the inode which went through encoded
-> >> writes.
-> >>
-> >> Encoded writes are mostly utilized by btrfs-recevice, so it's never on
-> >> the hot path.
-> >> And receveied subvolumes are set read-only, so normally no one should
-> >> even call fsync() on those inodes. Thus the cost of full fsync on enco=
-ded
-> >> writes should be very acceptable.
-> >>
-> >> Link: https://sashiko.dev/#/patchset/8eb322321cac98013cc46dfe8d89fa58c=
-1ad3dee.1793766229.git.wqu%40suse.com
-> >> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> >> ---
-> >> Changelog
-> >> RFC->v1: (RFC at https://lore.kernel.org/linux-btrfs/c284dccd8c27a6434=
-e56ed067b0ef4ea67935d8c.1793776224.git.wqu@suse.com/)
-> >> - Require full fsync instead of waiting for encoded writes
-> >>    The common usage of encoded writes are btrfs receive, so we shouldn=
-'t
-> >>    need to bother fsync on those files in the first place.
-> >>
-> >>    And this makes the fix much simpler.
-> >>
-> >> - Drop the REASON for RFC part
-> >>    Which contains quite some incorrect assumptions on fsync() and dire=
-ct
-> >>    IOs
-> >> ---
-> >>   fs/btrfs/inode.c | 6 ++++++
-> >>   1 file changed, 6 insertions(+)
-> >>
-> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> >> index ab60b7d4f389..65714380a935 100644
-> >> --- a/fs/btrfs/inode.c
-> >> +++ b/fs/btrfs/inode.c
-> >> @@ -10035,6 +10035,12 @@ ssize_t btrfs_do_encoded_write(struct kiocb *=
-iocb, struct iov_iter *from,
-> >>                  ret =3D PTR_ERR(ordered);
-> >>                  goto out_free_reserved;
-> >>          }
-> >> +       /*
-> >> +        * fsync() of the inode can not go through fast path, as there=
- is no
-> >> +        * dirty/writeback folio in the page cache for fsync() to wait=
-.
-> >
-> > Neither there are dirty/writeback folios nor do we wait for the IO of
-> > the ordered extent to finish (bit BTRFS_ORDERED_IO_DONE set) before
-> > unlocking the inode.
-> > The comment focuses too much on this not being buffered IO, which is
-> > somewhat confusing because fsync works for direct IO.
->
-> Yep, I admit I focused too much on that.
->
-> Do you have some advice on how to change the comments?
+Hello btrfs maintainers/developers,
 
-Maybe something like this:
+This is a 31-day syzbot report for the btrfs subsystem.
+All related reports/information can be found at:
+https://syzkaller.appspot.com/upstream/s/btrfs
 
-/*
- * A fast fsync can't deal with encoded writes because it neither
-dirties folios nor it
- * waits for ordered extent completion (or finish its IO only) before
-unlocking the inode.
- * The consequence is that it results in a race that can make the fast
-fsync log file
- * extent items without logging the csum items for the extent, as it
-may not find them
- * neither in the ordered extent nor in the csum tree.
- */
+During the period, 2 new issues were detected and 1 were fixed.
+In total, 31 issues are still open and 121 have already been fixed.
+There are also 14 low-priority issues.
 
-Thanks.
+Some of the still happening issues:
 
->
-> Thanks,
-> Qu
->
-> >
-> > Otherwise:
-> >
-> > Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> >
-> > Thanks.
-> >
-> >> +        * So fast sync can return without waiting for the data to rea=
-ch disks.
-> >> +        */
-> >> +       btrfs_set_inode_full_sync(inode);
-> >>          btrfs_dec_block_group_reservations(fs_info, ins.objectid);
-> >>
-> >>          if (start + encoded->len > inode->vfs_inode.i_size)
-> >> --
-> >> 2.56.0
-> >>
-> >>
->
+Ref  Crashes Repro Title
+<1>  213     Yes   WARNING in btrfs_run_delayed_refs (2)
+                   https://syzkaller.appspot.com/bug?extid=810ea5febd3b79bdd384
+<2>  113     Yes   INFO: task hung in __alloc_workqueue (2)
+                   https://syzkaller.appspot.com/bug?extid=ead9101689c4ca30dbe8
+<3>  63      No    possible deadlock in kernfs_add_one
+                   https://syzkaller.appspot.com/bug?extid=f50d605480fdec503770
+<4>  19      No    WARNING in __btrfs_update_delayed_inode (4)
+                   https://syzkaller.appspot.com/bug?extid=768687d6d7c96a124e24
+<5>  17      Yes   WARNING in __add_block_group_free_space
+                   https://syzkaller.appspot.com/bug?extid=6931616d57696102d8aa
+<6>  17      Yes   WARNING in btrfs_add_to_free_space_tree (2)
+                   https://syzkaller.appspot.com/bug?extid=554a2e08e4abc56984a9
+<7>  7       No    kernel BUG in set_state_bits (2)
+                   https://syzkaller.appspot.com/bug?extid=64579ad11e26758151bc
+<8>  1463    Yes   WARNING in btrfs_chunk_alloc
+                   https://syzkaller.appspot.com/bug?extid=e8e56d5d31d38b5b47e7
+<9>  696     Yes   WARNING in btrfs_remove_chunk
+                   https://syzkaller.appspot.com/bug?extid=e8582cc16881ec70a430
+<10> 79      Yes   WARNING in btrfs_finish_one_ordered
+                   https://syzkaller.appspot.com/bug?extid=6e54e639e7b934d64304
+
+---
+This report is generated by a bot. It may contain errors.
+See https://goo.gl/tpsmEJ for more information about syzbot.
+syzbot engineers can be reached at syzkaller@googlegroups.com.
+
+To disable reminders for individual bugs, reply with the following command:
+#syz set <Ref> no-reminders
+
+To change bug's subsystems, reply with:
+#syz set <Ref> subsystems: new-subsystem
+
+You may send multiple commands in a single email message.

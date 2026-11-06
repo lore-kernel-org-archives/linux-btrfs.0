@@ -1,83 +1,83 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
 	t=1794004900;
-	b=jdGdWmCvFuPrEvGu96jhBS9Tp2AO3gKdJ7cVPVkJUbYEuFlISzeQx1XR3VgpuNEtEvjS
-	 Ua8fR9LEDw8sQHdvvksndvBtUFkGEdj4C1BIjScq9C3VPj6aqbxl+c6XvPa3WeL8IQgPB
-	 RYO4w9YEpwZcEtMWTbs/0brvUgT0LhT08b/QYvJVjuDm0y2/hTECAr257wR8LbXica/vj
-	 DnAH5+8suHcV7/gQdbO9SgKwWJOX2FaixyeLbetanuSgSR/Qg2cvHFTim3q2sLpJcTXUP
-	 H//0KHf8L9ufLrsqbYsC9Tx3iSFVsUkSug6S1EY/nuoWq7vSeF7s9hfawUCSBvEa+XA==
+	b=SIkbXZTe+XrsKRHC+H+EEaDw+SQH1/C/cTdKKicdSIRkhGCHfSnKRcmfDVOyUd2a0GZs
+	 z5VnZ7ysoF371HP8Sew7JgTgZT+hEOtl/mn8YOwYab0dCB2+vW6EY0EVPy6OcPKNELFQ6
+	 wAXMLGi4gBG+55k0G/nUPyQ8VZ5uRtQzW8mlBqlNuVZSw3zKeZTcfqPkuN79R/CruUWNU
+	 QsbKbJQDAClhuLPwOwQrzWtaL0xytrRG9w9DQbHJoYyl8h6YwnU2RQO15rxlHOgnUWwyD
+	 oSy5CLI8/4ZDORJq0IfjUc5zg844GQEecqN6wEcC/gjVr/jij+ZcikyXqiIT6x6ATSQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1794004900;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
-	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
-	b=Hr9xARj/RbFVNOHEJ7fCWXZlsYudBRepma2akqp7/21iLdnXHcQSB71ZpnXWj577HE5J
-	 4G7y49ewY64P1ohbrPW3THhlbyTheSGmpcAT/Fi+kjkWrshd0z4Z0lSvuueqrBek2qbNw
-	 SfIPa/sRlvMHGdDAkvcI+HbN512EQlPj66wH87C1blulcBPmu1HGKVnX6NcKjs6/r7uKV
-	 kqtWYZLI/NlpdnCjpFUBg2NhlF/dilbZ5uIg9aatJDqd9/YDdypPzGtvbV5w+fbGXSvdP
-	 sW2+8A4sfSvEF9z+1paNEjYZWxWm3dmMBUOdAgAB40r2VcoONyz3sr4P9CKOD0xz8RQ==
+	 References:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 X-Spamd-Result:X-Spam-Score:X-Spam-Level:X-Spam-Flag;
+	bh=mhcm8l3RdQaXnuT+fdUifBxtu71HC5ZbczdBTXwBgck=;
+	b=NMSELkRyyjFslz4Y8+OpF/kfW/y5kaYioIXgN2SKJzdhnDb7kUGYgBumdBmV7jrRWeFk
+	 ytdw1vKex85KKSlvvH9W7LRxMVmypdUClOT/kMWa5IbWflbIDtniVwBPdlk5C/Flhc7cq
+	 MLI11IVESbuzJUMm3fXErV2WSZEJHXub5fiaKov7jntXTf2zUVo1kWnufC42/qhhOz96a
+	 0AYS1XLAPIgIZWDcYjoU71BJjcqrj7pgjjIw/28ffHnQau1f5QTXmg+fggL0TOuAvEPEv
+	 MYWsq5+TjV7I9WGp0QCgURQGfYedwHWstPMkhJkxcoLxF43qMbvtJVLgWJynoUp1Q9Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HSvnhEtJ;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rEDQTGph;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=lKgefOhs;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=lKgefOhs;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4B433606A332
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 96FC3606A335
 	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 22:41:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4B433606A332
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 96FC3606A335
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HSvnhEtJ;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rEDQTGph
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=lKgefOhs;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=lKgefOhs
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 5241E1F443
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 22:41:36 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 01AE81F445
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 22:41:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794004897; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
+	t=1794004898; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
-	b=HSvnhEtJZDkIwn4JUwLbOQRqjQgbvlezMjb2NukexYf2SklKmTm3Rl1XYPfbJ4H5sa5oWY
-	EfALVZS81cctkbuIK0VizgR/lrv9oeUvSDSsgU6jvPUM7zO56HOd0ccljrrgLoZfHvU7vO
-	+ud+ZJCaAD4ijXxArB7up6kOT4s0rBU=
+	bh=mhcm8l3RdQaXnuT+fdUifBxtu71HC5ZbczdBTXwBgck=;
+	b=lKgefOhsF6yyKQA+mp1vBA4vhqxY7okDKMd/pIM3kXUjJ+q8vg771cOxRNhWXhhGdwWwYo
+	pCyDFsUM6RvGY/xQ8przmtHwGoR/GMraFhTSlZHkiakEO0oSQWNNV7pvJf2n6jEIhqnXWF
+	41YoMQ0m7CM8viG4LZevfCSuclAgfXk=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794004896; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
+	t=1794004898; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:content-type:content-type:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
-	b=rEDQTGph8C4j5aK53gkUMhQ4cXxjQOyK1WKFjqRl/jLv8bn0u3HhOmFHAzDWKpxGvdjNHz
-	fypVbpTNP99rGgm5Jhjy4W8AZDJTQf4PA1d9mo1MMVbI9x2bUKs6P5T7d+LLxqajLy2/hN
-	nTp14i7Vzn0UJGEwiiGqGiWG9KUkEns=
+	bh=mhcm8l3RdQaXnuT+fdUifBxtu71HC5ZbczdBTXwBgck=;
+	b=lKgefOhsF6yyKQA+mp1vBA4vhqxY7okDKMd/pIM3kXUjJ+q8vg771cOxRNhWXhhGdwWwYo
+	pCyDFsUM6RvGY/xQ8przmtHwGoR/GMraFhTSlZHkiakEO0oSQWNNV7pvJf2n6jEIhqnXWF
+	41YoMQ0m7CM8viG4LZevfCSuclAgfXk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 20814134F4
-	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 22:41:34 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id CFFAE132C9
+	for <linux-btrfs@vger.kernel.org>; Fri,  6 Nov 2026 22:41:36 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id NBMWKpxX7moVbQAAD6G6ig:T2
+	id NBMWKpxX7moVbQAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 22:41:34 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2026 22:41:36 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs-progs: cleanup inline asm usage
-Date: Sat,  7 Nov 2026 09:11:13 +1030
-Message-ID: <e785277ae0493c2e0f9c07c7720cff84ba4c0fb2.1794003341.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs-progs: crypto/crc32c: port crc32c-pcl optimization to C
+Date: Sat,  7 Nov 2026 09:11:14 +1030
+Message-ID: <95c8b6485b50a07c9cf41db4c1fdd39e481db83f.1794003341.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1794003341.git.wqu@suse.com>
 References: <cover.1794003341.git.wqu@suse.com>
@@ -90,299 +90,767 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
+X-Spamd-Result: default: False [-12.30 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
 	ARC_NA(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	URIBL_BLOCKED(0.00)[wikipedia.org:url,imap1.dmz-prg2.suse.org:helo,suse.com:email,intel.com:email];
+	RCVD_TLS_ALL(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[intel.com:email,suse.com:email];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,intel.com:email,intel.com:url]
+X-Spam-Score: -12.30
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-Both clang and gcc have lowlevel instruction wrappers already, there is
-no need to use inline asm just for several small operations like cpuid.
+This is inspired by Google's CRC32C library which has all the hardware
+acceleration, but without any ASM code.
 
-The cleanup includes:
+The idea is to use compiler wrapped commands instead of the hand written
+ASM code.
 
-- Use compiler wrappers to replace inlined asm
+The performance is at the same level as the old code:
 
-- Add dedicated target attributes for involved hardware acceleration
+The hardware is Ryzen 9 HX 370, on a single CPU core, unit is GiB/s.
 
-Asssited-by: LLM (locating the wrappers)
+   Size    |  Old (asm)  |   New (C)
+-----------+-------------+-------------
+ 64 B      | 4.76–4.80   | 4.80–4.82
+ 256 B     | 8.76–8.88   | 8.82–8.87
+ 1 KiB     | 12.26–12.41 | 12.47–12.51
+ 4 KiB     | 13.35–13.49 | 13.48
+ 16 KiB    | 13.69–13.78 | 13.66–13.79
+ 64 KiB    | 13.73–13.83 | 13.75–13.83
+ 1 MiB     | 13.62–13.72 | 13.61–13.63
+
+We should have a better hash-vectest to cover larger block sizes, but
+that will be added later by the newer ARMv8 CRC optimization.
+
+Asssited-by: LLM (code porting, testing)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/cpu-utils.c      | 31 ++++-------------------------
- crypto/crc32c.c         | 20 ++++++++-----------
- crypto/hash-speedtest.c | 14 +++-----------
- libbtrfs/crc32c.c       | 43 +++++++++++------------------------------
- 4 files changed, 26 insertions(+), 82 deletions(-)
+ Makefile                         |  14 --
+ crypto/crc32c-pcl-intel-asm_64.S | 370 -------------------------------
+ crypto/crc32c.c                  | 262 +++++++++++++++++++++-
+ 3 files changed, 258 insertions(+), 388 deletions(-)
+ delete mode 100644 crypto/crc32c-pcl-intel-asm_64.S
 
-diff --git a/common/cpu-utils.c b/common/cpu-utils.c
-index 32914d360e63..a99efb932ff2 100644
---- a/common/cpu-utils.c
-+++ b/common/cpu-utils.c
-@@ -15,37 +15,14 @@
-  */
+diff --git a/Makefile b/Makefile
+index 78c23ad3c694..e5a5534b4fb7 100644
+--- a/Makefile
++++ b/Makefile
+@@ -107,8 +107,6 @@ ENABLE_WARNING_FLAGS := $(call cc-option, -Wimplicit-fallthrough) \
+ 			$(call cc-option, -Wmissing-prototypes) \
+ 			-Wshadow
  
- #include <stdio.h>
-+#ifdef __x86_64__
-+#include <cpuid.h>
-+#endif
- #include "common/cpu-utils.h"
+-ASFLAGS =
+-
+ # Common build flags
+ CFLAGS = $(SUBST_CFLAGS) \
+ 	 -std=gnu11 \
+@@ -413,11 +411,6 @@ CRYPTO_OBJECTS = crypto/sha224-256.o crypto/blake2b-ref.o crypto/blake2b-sse2.o
+ CRYPTO_CFLAGS = -DCRYPTOPROVIDER_BUILTIN=1
+ endif
  
- unsigned long __cpu_flags = CPU_FLAG_NONE;
- unsigned long __cpu_flags_orig = CPU_FLAG_NONE;
+-ifeq ($(TARGET_CPU),x86_64)
+-CRYPTO_OBJECTS += crypto/crc32c-pcl-intel-asm_64.o
+-ASFLAGS += -fPIC
+-endif
+-
+ CHECKER_FLAGS += $(btrfs_convert_cflags)
  
--#ifdef __x86_64__
+ # collect values of the variables above
+@@ -478,13 +471,6 @@ else
+ 	check_echo = true
+ endif
+ 
+-.S.o:
+-	@echo "  AS       $@"
+-	$(Q)$(CC) $(CFLAGS) $(ASFLAGS) -c $< -o $@
+-
+-%.static.o: %.S
+-	@echo "  AS       $@"
+-	$(Q)$(CC) $(CFLAGS) $(ASFLAGS) -c $< -o $@
+ #
+ # Pick from per-file variables, btrfs_*_cflags
+ #
+diff --git a/crypto/crc32c-pcl-intel-asm_64.S b/crypto/crc32c-pcl-intel-asm_64.S
+deleted file mode 100644
+index f87e62bdf345..000000000000
+--- a/crypto/crc32c-pcl-intel-asm_64.S
++++ /dev/null
+@@ -1,370 +0,0 @@
 -/*
-- * Do manual cpuid as cpuid.h is not available for all versions.
+- * Implement fast CRC32C with PCLMULQDQ instructions. (x86_64)
 - *
-- * Plain cpuid(level) is __cpuidex(level, 0), otherwise look for the leaf/subleaf
-- * modes at https://en.wikipedia.org/wiki/CPUID or compilers' cpuid.h.
+- * The white papers on CRC32C calculations with PCLMULQDQ instruction can be
+- * downloaded from:
+- * http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/crc-iscsi-polynomial-crc32-instruction-paper.pdf
+- * http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-paper.pdf
+- *
+- * Copyright (C) 2012 Intel Corporation.
+- * Copyright 2024 Google LLC
+- *
+- * Authors:
+- *	Wajdi Feghali <wajdi.k.feghali@intel.com>
+- *	James Guilford <james.guilford@intel.com>
+- *	David Cote <david.m.cote@intel.com>
+- *	Tim Chen <tim.c.chen@linux.intel.com>
+- *
+- * This software is available to you under a choice of one of two
+- * licenses.  You may choose to be licensed under the terms of the GNU
+- * General Public License (GPL) Version 2, available from the file
+- * COPYING in the main directory of this source tree, or the
+- * OpenIB.org BSD license below:
+- *
+- *     Redistribution and use in source and binary forms, with or
+- *     without modification, are permitted provided that the following
+- *     conditions are met:
+- *
+- *      - Redistributions of source code must retain the above
+- *        copyright notice, this list of conditions and the following
+- *        disclaimer.
+- *
+- *      - Redistributions in binary form must reproduce the above
+- *        copyright notice, this list of conditions and the following
+- *        disclaimer in the documentation and/or other materials
+- *        provided with the distribution.
+- *
+- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+- * SOFTWARE.
 - */
 -
--#ifndef __cpuidex
--#define __cpuidex(leaf, subleaf, a, b, c, d)				\
--	__asm__ __volatile__ ("cpuid\n\t"				\
--			: "=a" (a), "=b" (b), "=c" (c), "=d" (d)	\
--			: "0" (leaf), "2" (subleaf))
--#endif
+-##include "linkage.h"
 -
--#else
+-#define ENDBR
 -
--#define __cpuidex(leaf, subleaf, a, b, c, d)				\
--	do {								\
--		a = 0;							\
--		b = 0;							\
--		c = 0;							\
--		d = 0;							\
--	} while(0)
--#endif
+-## ISCSI CRC 32 Implementation with crc32 and pclmulqdq Instruction
 -
- #define FLAG(name)	if (__cpu_flags & CPU_FLAG_ ## name) printf(" " #name)
- void cpu_print_flags(void) {
- 	printf("CPU flags: 0x%lx\n", __cpu_flags);
-@@ -88,7 +65,7 @@ void cpu_detect_flags(void)
- 		__cpu_flags |= CPU_FLAG_AVX2;
- 
- 	/* Flags unsupported by builtins */
--	__cpuidex(7, 0, a, b, c, d);
-+	__cpuid_count(7, 0, a, b, c, d);
- 	if (b & (1UL << 29))
- 		__cpu_flags |= CPU_FLAG_SHA;
- 
+-# Define threshold below which buffers are considered "small" and routed to
+-# regular CRC code that does not interleave the CRC instructions.
+-#define SMALL_SIZE 200
+-
+-# unsigned int crc_pcl(const u8 *buffer, unsigned int len, unsigned int crc_init);
+-
+-.text
+-###SYM_FUNC_START(crc_pcl)
+-.globl crc_pcl
+-crc_pcl:
+-###SYM_FUNC_START(crc_pcl)
+-#define    bufp		  %rdi
+-#define    bufp_d	  %edi
+-#define    len		  %esi
+-#define    crc_init	  %edx
+-#define    crc_init_q	  %rdx
+-#define    n_misaligned	  %ecx /* overlaps chunk_bytes! */
+-#define    n_misaligned_q %rcx
+-#define    chunk_bytes	  %ecx /* overlaps n_misaligned! */
+-#define    chunk_bytes_q  %rcx
+-#define    crc1		  %r8
+-#define    crc2		  %r9
+-
+-	cmp	$SMALL_SIZE, len
+-	jb	.Lsmall
+-
+-	################################################################
+-	## 1) ALIGN:
+-	################################################################
+-	mov	bufp_d, n_misaligned
+-	neg	n_misaligned
+-	and	$7, n_misaligned	# calculate the misalignment amount of
+-					# the address
+-	je	.Laligned		# Skip if aligned
+-
+-	# Process 1 <= n_misaligned <= 7 bytes individually in order to align
+-	# the remaining data to an 8-byte boundary.
+-.Ldo_align:
+-	movq	(bufp), %rax
+-	add	n_misaligned_q, bufp
+-	sub	n_misaligned, len
+-.Lalign_loop:
+-	crc32b	%al, crc_init		# compute crc32 of 1-byte
+-	shr	$8, %rax		# get next byte
+-	dec	n_misaligned
+-	jne     .Lalign_loop
+-.Laligned:
+-
+-	################################################################
+-	## 2) PROCESS BLOCK:
+-	################################################################
+-
+-	cmp	$128*24, len
+-	jae     .Lfull_block
+-
+-.Lpartial_block:
+-	# Compute floor(len / 24) to get num qwords to process from each lane.
+-	imul	$2731, len, %eax	# 2731 = ceil(2^16 / 24)
+-	shr	$16, %eax
+-	jmp	.Lcrc_3lanes
+-
+-.Lfull_block:
+-	# Processing 128 qwords from each lane.
+-	mov	$128, %eax
+-
+-	################################################################
+-	## 3) CRC each of three lanes:
+-	################################################################
+-
+-.Lcrc_3lanes:
+-	xor	crc1,crc1
+-	xor     crc2,crc2
+-	mov	%eax, chunk_bytes
+-	shl	$3, chunk_bytes		# num bytes to process from each lane
+-	sub	$5, %eax		# 4 for 4x_loop, 1 for special last iter
+-	jl	.Lcrc_3lanes_4x_done
+-
+-	# Unroll the loop by a factor of 4 to reduce the overhead of the loop
+-	# bookkeeping instructions, which can compete with crc32q for the ALUs.
+-.Lcrc_3lanes_4x_loop:
+-	crc32q	(bufp), crc_init_q
+-	crc32q	(bufp,chunk_bytes_q), crc1
+-	crc32q	(bufp,chunk_bytes_q,2), crc2
+-	crc32q	8(bufp), crc_init_q
+-	crc32q	8(bufp,chunk_bytes_q), crc1
+-	crc32q	8(bufp,chunk_bytes_q,2), crc2
+-	crc32q	16(bufp), crc_init_q
+-	crc32q	16(bufp,chunk_bytes_q), crc1
+-	crc32q	16(bufp,chunk_bytes_q,2), crc2
+-	crc32q	24(bufp), crc_init_q
+-	crc32q	24(bufp,chunk_bytes_q), crc1
+-	crc32q	24(bufp,chunk_bytes_q,2), crc2
+-	add	$32, bufp
+-	sub	$4, %eax
+-	jge	.Lcrc_3lanes_4x_loop
+-
+-.Lcrc_3lanes_4x_done:
+-	add	$4, %eax
+-	jz	.Lcrc_3lanes_last_qword
+-
+-.Lcrc_3lanes_1x_loop:
+-	crc32q	(bufp), crc_init_q
+-	crc32q	(bufp,chunk_bytes_q), crc1
+-	crc32q	(bufp,chunk_bytes_q,2), crc2
+-	add	$8, bufp
+-	dec	%eax
+-	jnz	.Lcrc_3lanes_1x_loop
+-
+-.Lcrc_3lanes_last_qword:
+-	crc32q	(bufp), crc_init_q
+-	crc32q	(bufp,chunk_bytes_q), crc1
+-# SKIP  crc32q	(bufp,chunk_bytes_q,2), crc2	; Don't do this one yet
+-
+-	################################################################
+-	## 4) Combine three results:
+-	################################################################
+-
+-	lea	(K_table-8)(%rip), %rax		# first entry is for idx 1
+-	pmovzxdq (%rax,chunk_bytes_q), %xmm0	# 2 consts: K1:K2
+-	lea	(chunk_bytes,chunk_bytes,2), %eax # chunk_bytes * 3
+-	sub	%eax, len			# len -= chunk_bytes * 3
+-
+-	movq	crc_init_q, %xmm1		# CRC for block 1
+-	pclmulqdq $0x00, %xmm0, %xmm1		# Multiply by K2
+-
+-	movq    crc1, %xmm2			# CRC for block 2
+-	pclmulqdq $0x10, %xmm0, %xmm2		# Multiply by K1
+-
+-	pxor    %xmm2,%xmm1
+-	movq    %xmm1, %rax
+-	xor	(bufp,chunk_bytes_q,2), %rax
+-	mov	crc2, crc_init_q
+-	crc32	%rax, crc_init_q
+-	lea	8(bufp,chunk_bytes_q,2), bufp
+-
+-	################################################################
+-	## 5) If more blocks remain, goto (2):
+-	################################################################
+-
+-	cmp	$128*24, len
+-	jae	.Lfull_block
+-	cmp	$SMALL_SIZE, len
+-	jae	.Lpartial_block
+-
+-	#######################################################################
+-	## 6) Process any remainder without interleaving:
+-	#######################################################################
+-.Lsmall:
+-	test	len, len
+-	jz	.Ldone
+-	mov	len, %eax
+-	shr	$3, %eax
+-	jz	.Ldo_dword
+-.Ldo_qwords:
+-	crc32q	(bufp), crc_init_q
+-	add	$8, bufp
+-	dec	%eax
+-	jnz	.Ldo_qwords
+-.Ldo_dword:
+-	test	$4, len
+-	jz	.Ldo_word
+-	crc32l	(bufp), crc_init
+-	add	$4, bufp
+-.Ldo_word:
+-	test	$2, len
+-	jz	.Ldo_byte
+-	crc32w	(bufp), crc_init
+-	add	$2, bufp
+-.Ldo_byte:
+-	test	$1, len
+-	jz	.Ldone
+-	crc32b	(bufp), crc_init
+-.Ldone:
+-	mov	crc_init, %eax
+-        RET
+-###SYM_FUNC_END(crc_pcl)
+-.size crc_pcl, .-crc_pcl
+-###SYM_FUNC_END(crc_pcl)
+-
+-.data
+-	################################################################
+-	## PCLMULQDQ tables
+-	## Table is 128 entries x 2 words (8 bytes) each
+-	################################################################
+-.section	.rodata, "a", @progbits
+-.align 8
+-K_table:
+-	.long 0x493c7d27, 0x00000001
+-	.long 0xba4fc28e, 0x493c7d27
+-	.long 0xddc0152b, 0xf20c0dfe
+-	.long 0x9e4addf8, 0xba4fc28e
+-	.long 0x39d3b296, 0x3da6d0cb
+-	.long 0x0715ce53, 0xddc0152b
+-	.long 0x47db8317, 0x1c291d04
+-	.long 0x0d3b6092, 0x9e4addf8
+-	.long 0xc96cfdc0, 0x740eef02
+-	.long 0x878a92a7, 0x39d3b296
+-	.long 0xdaece73e, 0x083a6eec
+-	.long 0xab7aff2a, 0x0715ce53
+-	.long 0x2162d385, 0xc49f4f67
+-	.long 0x83348832, 0x47db8317
+-	.long 0x299847d5, 0x2ad91c30
+-	.long 0xb9e02b86, 0x0d3b6092
+-	.long 0x18b33a4e, 0x6992cea2
+-	.long 0xb6dd949b, 0xc96cfdc0
+-	.long 0x78d9ccb7, 0x7e908048
+-	.long 0xbac2fd7b, 0x878a92a7
+-	.long 0xa60ce07b, 0x1b3d8f29
+-	.long 0xce7f39f4, 0xdaece73e
+-	.long 0x61d82e56, 0xf1d0f55e
+-	.long 0xd270f1a2, 0xab7aff2a
+-	.long 0xc619809d, 0xa87ab8a8
+-	.long 0x2b3cac5d, 0x2162d385
+-	.long 0x65863b64, 0x8462d800
+-	.long 0x1b03397f, 0x83348832
+-	.long 0xebb883bd, 0x71d111a8
+-	.long 0xb3e32c28, 0x299847d5
+-	.long 0x064f7f26, 0xffd852c6
+-	.long 0xdd7e3b0c, 0xb9e02b86
+-	.long 0xf285651c, 0xdcb17aa4
+-	.long 0x10746f3c, 0x18b33a4e
+-	.long 0xc7a68855, 0xf37c5aee
+-	.long 0x271d9844, 0xb6dd949b
+-	.long 0x8e766a0c, 0x6051d5a2
+-	.long 0x93a5f730, 0x78d9ccb7
+-	.long 0x6cb08e5c, 0x18b0d4ff
+-	.long 0x6b749fb2, 0xbac2fd7b
+-	.long 0x1393e203, 0x21f3d99c
+-	.long 0xcec3662e, 0xa60ce07b
+-	.long 0x96c515bb, 0x8f158014
+-	.long 0xe6fc4e6a, 0xce7f39f4
+-	.long 0x8227bb8a, 0xa00457f7
+-	.long 0xb0cd4768, 0x61d82e56
+-	.long 0x39c7ff35, 0x8d6d2c43
+-	.long 0xd7a4825c, 0xd270f1a2
+-	.long 0x0ab3844b, 0x00ac29cf
+-	.long 0x0167d312, 0xc619809d
+-	.long 0xf6076544, 0xe9adf796
+-	.long 0x26f6a60a, 0x2b3cac5d
+-	.long 0xa741c1bf, 0x96638b34
+-	.long 0x98d8d9cb, 0x65863b64
+-	.long 0x49c3cc9c, 0xe0e9f351
+-	.long 0x68bce87a, 0x1b03397f
+-	.long 0x57a3d037, 0x9af01f2d
+-	.long 0x6956fc3b, 0xebb883bd
+-	.long 0x42d98888, 0x2cff42cf
+-	.long 0x3771e98f, 0xb3e32c28
+-	.long 0xb42ae3d9, 0x88f25a3a
+-	.long 0x2178513a, 0x064f7f26
+-	.long 0xe0ac139e, 0x4e36f0b0
+-	.long 0x170076fa, 0xdd7e3b0c
+-	.long 0x444dd413, 0xbd6f81f8
+-	.long 0x6f345e45, 0xf285651c
+-	.long 0x41d17b64, 0x91c9bd4b
+-	.long 0xff0dba97, 0x10746f3c
+-	.long 0xa2b73df1, 0x885f087b
+-	.long 0xf872e54c, 0xc7a68855
+-	.long 0x1e41e9fc, 0x4c144932
+-	.long 0x86d8e4d2, 0x271d9844
+-	.long 0x651bd98b, 0x52148f02
+-	.long 0x5bb8f1bc, 0x8e766a0c
+-	.long 0xa90fd27a, 0xa3c6f37a
+-	.long 0xb3af077a, 0x93a5f730
+-	.long 0x4984d782, 0xd7c0557f
+-	.long 0xca6ef3ac, 0x6cb08e5c
+-	.long 0x234e0b26, 0x63ded06a
+-	.long 0xdd66cbbb, 0x6b749fb2
+-	.long 0x4597456a, 0x4d56973c
+-	.long 0xe9e28eb4, 0x1393e203
+-	.long 0x7b3ff57a, 0x9669c9df
+-	.long 0xc9c8b782, 0xcec3662e
+-	.long 0x3f70cc6f, 0xe417f38a
+-	.long 0x93e106a4, 0x96c515bb
+-	.long 0x62ec6c6d, 0x4b9e0f71
+-	.long 0xd813b325, 0xe6fc4e6a
+-	.long 0x0df04680, 0xd104b8fc
+-	.long 0x2342001e, 0x8227bb8a
+-	.long 0x0a2a8d7e, 0x5b397730
+-	.long 0x6d9a4957, 0xb0cd4768
+-	.long 0xe8b6368b, 0xe78eb416
+-	.long 0xd2c3ed1a, 0x39c7ff35
+-	.long 0x995a5724, 0x61ff0e01
+-	.long 0x9ef68d35, 0xd7a4825c
+-	.long 0x0c139b31, 0x8d96551c
+-	.long 0xf2271e60, 0x0ab3844b
+-	.long 0x0b0bf8ca, 0x0bf80dd2
+-	.long 0x2664fd8b, 0x0167d312
+-	.long 0xed64812d, 0x8821abed
+-	.long 0x02ee03b2, 0xf6076544
+-	.long 0x8604ae0f, 0x6a45d2b2
+-	.long 0x363bd6b3, 0x26f6a60a
+-	.long 0x135c83fd, 0xd8d26619
+-	.long 0x5fabe670, 0xa741c1bf
+-	.long 0x35ec3279, 0xde87806c
+-	.long 0x00bcf5f6, 0x98d8d9cb
+-	.long 0x8ae00689, 0x14338754
+-	.long 0x17f27698, 0x49c3cc9c
+-	.long 0x58ca5f00, 0x5bd2011f
+-	.long 0xaa7c7ad5, 0x68bce87a
+-	.long 0xb5cfca28, 0xdd07448e
+-	.long 0xded288f8, 0x57a3d037
+-	.long 0x59f229bc, 0xdde8f5b9
+-	.long 0x6d390dec, 0x6956fc3b
+-	.long 0x37170390, 0xa3e3e02c
+-	.long 0x6353c1cc, 0x42d98888
+-	.long 0xc4584f5c, 0xd73c7bea
+-	.long 0xf48642e9, 0x3771e98f
+-	.long 0x531377e2, 0x80ff0093
+-	.long 0xdd35bc8d, 0xb42ae3d9
+-	.long 0xb25b29f2, 0x8fe4c34d
+-	.long 0x9a5ede41, 0x2178513a
+-	.long 0xa563905d, 0xdf99fc11
+-	.long 0x45cddf4e, 0xe0ac139e
+-	.long 0xacfa3103, 0x6c23e841
+-	.long 0xa51b6135, 0x170076fa
+-
+-## Warning
+-.section .note.GNU-stack,"",@progbits
 diff --git a/crypto/crc32c.c b/crypto/crc32c.c
-index f0a23f836741..9a3c9fc14eab 100644
+index 9a3c9fc14eab..daf232c44e4d 100644
 --- a/crypto/crc32c.c
 +++ b/crypto/crc32c.c
-@@ -18,6 +18,8 @@ static uint32_t (*crc32c_impl)(uint32_t crc, unsigned char const *data, uint32_t
+@@ -10,6 +10,7 @@
  
- #ifdef __x86_64__
- 
-+#include <nmmintrin.h>
-+
- /* asmlinkage */ unsigned int crc_pcl(const unsigned char *buffer, unsigned int len, unsigned int crc_init);
- static unsigned int crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t len) {
- 	return crc_pcl(data, len, crc);
-@@ -34,22 +36,19 @@ static unsigned int crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t
-  * Volume 2A: Instruction Set Reference, A-M
-  */
- #if  __SIZEOF_LONG__ == 8
--#define REX_PRE "0x48, "
- #define SCALE_F 8
-+#define crc32c_hw_long(crc, v)	_mm_crc32_u64((crc), (v))
- #else
--#define REX_PRE
- #define SCALE_F 4
-+#define crc32c_hw_long(crc, v)	_mm_crc32_u32((crc), (v))
- #endif
- 
-+__attribute__((target("sse4.2")))
- static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
- 					uint32_t length)
- {
- 	while (length--) {
--		__asm__ __volatile__(
--			".byte 0xf2, 0xf, 0x38, 0xf0, 0xf1"
--			:"=S"(crc)
--			:"0"(crc), "c"(*data)
--		);
-+		crc = _mm_crc32_u8(crc, *data);
- 		data++;
- 	}
- 
-@@ -61,6 +60,7 @@ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
-  * Steps through buffer one byte at at time, calculates reflected crc using
-  * table.
-  */
-+__attribute__((target("sse4.2")))
- static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t length)
- {
- 	unsigned int iquotient = length / SCALE_F;
-@@ -68,11 +68,7 @@ static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t l
- 	unsigned long *ptmp = (unsigned long *)data;
- 
- 	while (iquotient--) {
--		__asm__ __volatile__(
--			".byte 0xf2, " REX_PRE "0xf, 0x38, 0xf1, 0xf1;"
--			:"=S"(crc)
--			:"0"(crc), "c"(*ptmp)
--		);
-+		crc = crc32c_hw_long(crc, *ptmp);
- 		ptmp++;
- 	}
- 
-diff --git a/crypto/hash-speedtest.c b/crypto/hash-speedtest.c
-index 6caa89f7d6f8..95ba63ee6025 100644
---- a/crypto/hash-speedtest.c
-+++ b/crypto/hash-speedtest.c
-@@ -30,6 +30,7 @@
+ #include <inttypes.h>
+ #include <stdio.h>
++#include <string.h>
+ #include "crypto/crc32c.h"
  #include "common/cpu-utils.h"
  
- #ifdef __x86_64__
-+#include <x86intrin.h>
- static const int cycles_supported = 1;
- #else
- static const int cycles_supported = 0;
-@@ -45,19 +46,10 @@ const int blocksize = 4096;
- int iterations = 100000;
- 
- #ifdef __x86_64__
--static __always_inline unsigned long long rdtsc(void)
--{
--	unsigned low, high;
--
--        asm volatile("rdtsc" : "=a" (low), "=d" (high));
--
--        return (low | ((u64)(high) << 32));
--}
--
- static inline u64 read_tsc(void)
- {
--       asm volatile("mfence");
--       return rdtsc();
-+	_mm_mfence();
-+	return __rdtsc();
- }
- 
- #define cpu_cycles()		read_tsc()
-diff --git a/libbtrfs/crc32c.c b/libbtrfs/crc32c.c
-index 4391e46f16ee..14c1694a2823 100644
---- a/libbtrfs/crc32c.c
-+++ b/libbtrfs/crc32c.c
-@@ -16,6 +16,9 @@ static uint32_t (*crc_function)(uint32_t crc, unsigned char const *data, uint32_
- 
+@@ -19,10 +20,262 @@ static uint32_t (*crc32c_impl)(uint32_t crc, unsigned char const *data, uint32_t
  #ifdef __x86_64__
  
-+#include <cpuid.h>
-+#include <nmmintrin.h>
+ #include <nmmintrin.h>
++#include <wmmintrin.h>
+ 
+-/* asmlinkage */ unsigned int crc_pcl(const unsigned char *buffer, unsigned int len, unsigned int crc_init);
+-static unsigned int crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t len) {
+-	return crc_pcl(data, len, crc);
++/*
++ * Fast CRC32C with PCLMULQDQ, three interleaved crc32 lanes combined with
++ * carry-less multiplication. Derived from the Intel implementation
++ * (crc32c-pcl-intel-asm_64.S in the kernel), available under GPLv2 or the
++ * OpenIB.org BSD license.
++ *
++ * Copyright (C) 2012 Intel Corporation.
++ * Copyright 2024 Google LLC
++ *
++ * Authors:
++ *	Wajdi Feghali <wajdi.k.feghali@intel.com>
++ *	James Guilford <james.guilford@intel.com>
++ *	David Cote <david.m.cote@intel.com>
++ *	Tim Chen <tim.c.chen@linux.intel.com>
++ */
 +
++/* ISCSI CRC 32 Implementation with crc32 and pclmulqdq Instruction */
++
++/*
++ * Define threshold below which buffers are considered "small" and routed to
++ * regular CRC code that does not interleave the CRC instructions.
++ */
++#define PCL_SMALL_SIZE	200
++
++/*
++ * PCLMULQDQ tables
++ * Table is 128 entries x 2 words (8 bytes) each. The first entry is for idx 1
++ * (one qword per lane), the constants are used as K1:K2 when combining lanes.
++ */
++static const uint32_t crc32c_pcl_k_table[128][2] = {
++	{ 0x493c7d27, 0x00000001 },
++	{ 0xba4fc28e, 0x493c7d27 },
++	{ 0xddc0152b, 0xf20c0dfe },
++	{ 0x9e4addf8, 0xba4fc28e },
++	{ 0x39d3b296, 0x3da6d0cb },
++	{ 0x0715ce53, 0xddc0152b },
++	{ 0x47db8317, 0x1c291d04 },
++	{ 0x0d3b6092, 0x9e4addf8 },
++	{ 0xc96cfdc0, 0x740eef02 },
++	{ 0x878a92a7, 0x39d3b296 },
++	{ 0xdaece73e, 0x083a6eec },
++	{ 0xab7aff2a, 0x0715ce53 },
++	{ 0x2162d385, 0xc49f4f67 },
++	{ 0x83348832, 0x47db8317 },
++	{ 0x299847d5, 0x2ad91c30 },
++	{ 0xb9e02b86, 0x0d3b6092 },
++	{ 0x18b33a4e, 0x6992cea2 },
++	{ 0xb6dd949b, 0xc96cfdc0 },
++	{ 0x78d9ccb7, 0x7e908048 },
++	{ 0xbac2fd7b, 0x878a92a7 },
++	{ 0xa60ce07b, 0x1b3d8f29 },
++	{ 0xce7f39f4, 0xdaece73e },
++	{ 0x61d82e56, 0xf1d0f55e },
++	{ 0xd270f1a2, 0xab7aff2a },
++	{ 0xc619809d, 0xa87ab8a8 },
++	{ 0x2b3cac5d, 0x2162d385 },
++	{ 0x65863b64, 0x8462d800 },
++	{ 0x1b03397f, 0x83348832 },
++	{ 0xebb883bd, 0x71d111a8 },
++	{ 0xb3e32c28, 0x299847d5 },
++	{ 0x064f7f26, 0xffd852c6 },
++	{ 0xdd7e3b0c, 0xb9e02b86 },
++	{ 0xf285651c, 0xdcb17aa4 },
++	{ 0x10746f3c, 0x18b33a4e },
++	{ 0xc7a68855, 0xf37c5aee },
++	{ 0x271d9844, 0xb6dd949b },
++	{ 0x8e766a0c, 0x6051d5a2 },
++	{ 0x93a5f730, 0x78d9ccb7 },
++	{ 0x6cb08e5c, 0x18b0d4ff },
++	{ 0x6b749fb2, 0xbac2fd7b },
++	{ 0x1393e203, 0x21f3d99c },
++	{ 0xcec3662e, 0xa60ce07b },
++	{ 0x96c515bb, 0x8f158014 },
++	{ 0xe6fc4e6a, 0xce7f39f4 },
++	{ 0x8227bb8a, 0xa00457f7 },
++	{ 0xb0cd4768, 0x61d82e56 },
++	{ 0x39c7ff35, 0x8d6d2c43 },
++	{ 0xd7a4825c, 0xd270f1a2 },
++	{ 0x0ab3844b, 0x00ac29cf },
++	{ 0x0167d312, 0xc619809d },
++	{ 0xf6076544, 0xe9adf796 },
++	{ 0x26f6a60a, 0x2b3cac5d },
++	{ 0xa741c1bf, 0x96638b34 },
++	{ 0x98d8d9cb, 0x65863b64 },
++	{ 0x49c3cc9c, 0xe0e9f351 },
++	{ 0x68bce87a, 0x1b03397f },
++	{ 0x57a3d037, 0x9af01f2d },
++	{ 0x6956fc3b, 0xebb883bd },
++	{ 0x42d98888, 0x2cff42cf },
++	{ 0x3771e98f, 0xb3e32c28 },
++	{ 0xb42ae3d9, 0x88f25a3a },
++	{ 0x2178513a, 0x064f7f26 },
++	{ 0xe0ac139e, 0x4e36f0b0 },
++	{ 0x170076fa, 0xdd7e3b0c },
++	{ 0x444dd413, 0xbd6f81f8 },
++	{ 0x6f345e45, 0xf285651c },
++	{ 0x41d17b64, 0x91c9bd4b },
++	{ 0xff0dba97, 0x10746f3c },
++	{ 0xa2b73df1, 0x885f087b },
++	{ 0xf872e54c, 0xc7a68855 },
++	{ 0x1e41e9fc, 0x4c144932 },
++	{ 0x86d8e4d2, 0x271d9844 },
++	{ 0x651bd98b, 0x52148f02 },
++	{ 0x5bb8f1bc, 0x8e766a0c },
++	{ 0xa90fd27a, 0xa3c6f37a },
++	{ 0xb3af077a, 0x93a5f730 },
++	{ 0x4984d782, 0xd7c0557f },
++	{ 0xca6ef3ac, 0x6cb08e5c },
++	{ 0x234e0b26, 0x63ded06a },
++	{ 0xdd66cbbb, 0x6b749fb2 },
++	{ 0x4597456a, 0x4d56973c },
++	{ 0xe9e28eb4, 0x1393e203 },
++	{ 0x7b3ff57a, 0x9669c9df },
++	{ 0xc9c8b782, 0xcec3662e },
++	{ 0x3f70cc6f, 0xe417f38a },
++	{ 0x93e106a4, 0x96c515bb },
++	{ 0x62ec6c6d, 0x4b9e0f71 },
++	{ 0xd813b325, 0xe6fc4e6a },
++	{ 0x0df04680, 0xd104b8fc },
++	{ 0x2342001e, 0x8227bb8a },
++	{ 0x0a2a8d7e, 0x5b397730 },
++	{ 0x6d9a4957, 0xb0cd4768 },
++	{ 0xe8b6368b, 0xe78eb416 },
++	{ 0xd2c3ed1a, 0x39c7ff35 },
++	{ 0x995a5724, 0x61ff0e01 },
++	{ 0x9ef68d35, 0xd7a4825c },
++	{ 0x0c139b31, 0x8d96551c },
++	{ 0xf2271e60, 0x0ab3844b },
++	{ 0x0b0bf8ca, 0x0bf80dd2 },
++	{ 0x2664fd8b, 0x0167d312 },
++	{ 0xed64812d, 0x8821abed },
++	{ 0x02ee03b2, 0xf6076544 },
++	{ 0x8604ae0f, 0x6a45d2b2 },
++	{ 0x363bd6b3, 0x26f6a60a },
++	{ 0x135c83fd, 0xd8d26619 },
++	{ 0x5fabe670, 0xa741c1bf },
++	{ 0x35ec3279, 0xde87806c },
++	{ 0x00bcf5f6, 0x98d8d9cb },
++	{ 0x8ae00689, 0x14338754 },
++	{ 0x17f27698, 0x49c3cc9c },
++	{ 0x58ca5f00, 0x5bd2011f },
++	{ 0xaa7c7ad5, 0x68bce87a },
++	{ 0xb5cfca28, 0xdd07448e },
++	{ 0xded288f8, 0x57a3d037 },
++	{ 0x59f229bc, 0xdde8f5b9 },
++	{ 0x6d390dec, 0x6956fc3b },
++	{ 0x37170390, 0xa3e3e02c },
++	{ 0x6353c1cc, 0x42d98888 },
++	{ 0xc4584f5c, 0xd73c7bea },
++	{ 0xf48642e9, 0x3771e98f },
++	{ 0x531377e2, 0x80ff0093 },
++	{ 0xdd35bc8d, 0xb42ae3d9 },
++	{ 0xb25b29f2, 0x8fe4c34d },
++	{ 0x9a5ede41, 0x2178513a },
++	{ 0xa563905d, 0xdf99fc11 },
++	{ 0x45cddf4e, 0xe0ac139e },
++	{ 0xacfa3103, 0x6c23e841 },
++	{ 0xa51b6135, 0x170076fa },
++};
++
++static inline uint64_t crc32c_load64(const unsigned char *p)
++{
++	uint64_t v;
++
++	memcpy(&v, p, sizeof(v));
++	return v;
++}
++
++__attribute__((target("sse4.2,pclmul")))
++static uint32_t crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t len)
++{
++	uint64_t crc0 = crc;
++
++	if (len >= PCL_SMALL_SIZE) {
++		unsigned int misaligned = -(uintptr_t)data & 7;
++
++		/*
++		 * 1) ALIGN:
++		 * Process 1 <= misaligned <= 7 bytes individually in order to
++		 * align the remaining data to an 8-byte boundary.
++		 */
++		len -= misaligned;
++		while (misaligned--)
++			crc0 = _mm_crc32_u8(crc0, *data++);
++	}
++
++	/*
++	 * 2) PROCESS BLOCK:
++	 * 5) If more blocks remain, repeat from here.
++	 */
++	while (len >= PCL_SMALL_SIZE) {
++		/*
++		 * Processing 128 qwords from each lane for a full block,
++		 * otherwise compute floor(len / 24) to get the number of qwords
++		 * to process from each lane. 2731 = ceil(2^16 / 24)
++		 */
++		unsigned int qwords = len >= 128 * 24 ? 128 : (len * 2731) >> 16;
++		unsigned int chunk = qwords * 8;
++		const uint32_t *k = crc32c_pcl_k_table[qwords - 1];
++		const unsigned char *p1 = data + chunk;
++		const unsigned char *p2 = data + 2 * chunk;
++		uint64_t crc1 = 0, crc2 = 0;
++		__m128i kvec, x1, x2;
++		unsigned int i;
++
++		/* 3) CRC each of three lanes: */
++		for (i = 0; i < qwords - 1; i++) {
++			crc0 = _mm_crc32_u64(crc0, crc32c_load64(data + i * 8));
++			crc1 = _mm_crc32_u64(crc1, crc32c_load64(p1 + i * 8));
++			crc2 = _mm_crc32_u64(crc2, crc32c_load64(p2 + i * 8));
++		}
++		crc0 = _mm_crc32_u64(crc0, crc32c_load64(data + i * 8));
++		crc1 = _mm_crc32_u64(crc1, crc32c_load64(p1 + i * 8));
++		/* SKIP the last qword of crc2, don't do this one yet */
++
++		/* 4) Combine three results: */
++		/* 2 consts: K1:K2 */
++		kvec = _mm_set_epi64x(k[1], k[0]);
++		/* CRC for block 1, multiply by K2 */
++		x1 = _mm_clmulepi64_si128(_mm_cvtsi64_si128(crc0), kvec, 0x00);
++		/* CRC for block 2, multiply by K1 */
++		x2 = _mm_clmulepi64_si128(_mm_cvtsi64_si128(crc1), kvec, 0x10);
++		x1 = _mm_xor_si128(x1, x2);
++		crc0 = _mm_crc32_u64(crc2, _mm_cvtsi128_si64(x1) ^
++				     crc32c_load64(p2 + i * 8));
++
++		data += 3 * chunk;
++		len -= 3 * chunk;
++	}
++
++	/* 6) Process any remainder without interleaving: */
++	while (len >= 8) {
++		crc0 = _mm_crc32_u64(crc0, crc32c_load64(data));
++		data += 8;
++		len -= 8;
++	}
++	if (len & 4) {
++		uint32_t v;
++
++		memcpy(&v, data, sizeof(v));
++		crc0 = _mm_crc32_u32(crc0, v);
++		data += 4;
++	}
++	if (len & 2) {
++		uint16_t v;
++
++		memcpy(&v, data, sizeof(v));
++		crc0 = _mm_crc32_u16(crc0, v);
++		data += 2;
++	}
++	if (len & 1)
++		crc0 = _mm_crc32_u8(crc0, *data);
++
++	return crc0;
+ }
+ 
  /*
-  * Based on a posting to lkml by Austin Zhang <austin.zhang@intel.com>
-  *
-@@ -27,25 +30,22 @@ static uint32_t (*crc_function)(uint32_t crc, unsigned char const *data, uint32_
-  * Volume 2A: Instruction Set Reference, A-M
-  */
- #if  __SIZEOF_LONG__ == 8
--#define REX_PRE "0x48, "
- #define SCALE_F 8
-+#define crc32c_hw_long(crc, v)	_mm_crc32_u64((crc), (v))
- #else
--#define REX_PRE
- #define SCALE_F 4
-+#define crc32c_hw_long(crc, v)	_mm_crc32_u32((crc), (v))
- #endif
- 
- static int crc32c_probed = 0;
- static int crc32c_intel_available = 0;
- 
-+__attribute__((target("sse4.2")))
- static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
- 					uint32_t length)
+@@ -82,7 +335,8 @@ static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t l
+ void crc32c_init_accel(void)
  {
- 	while (length--) {
--		__asm__ __volatile__(
--			".byte 0xf2, 0xf, 0x38, 0xf0, 0xf1"
--			:"=S"(crc)
--			:"0"(crc), "c"(*data)
--		);
-+		crc = _mm_crc32_u8(crc, *data);
- 		data++;
- 	}
- 
-@@ -56,6 +56,7 @@ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
-  * Steps through buffer one byte at at time, calculates reflected 
-  * crc using table.
-  */
-+__attribute__((target("sse4.2")))
- static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t length)
- {
- 	unsigned int iquotient = length / SCALE_F;
-@@ -63,11 +64,7 @@ static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t l
- 	unsigned long *ptmp = (unsigned long *)data;
- 
- 	while (iquotient--) {
--		__asm__ __volatile__(
--			".byte 0xf2, " REX_PRE "0xf, 0x38, 0xf1, 0xf1;"
--			:"=S"(crc)
--			:"0"(crc), "c"(*ptmp)
--		);
-+		crc = crc32c_hw_long(crc, *ptmp);
- 		ptmp++;
- 	}
- 
-@@ -78,31 +75,13 @@ static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t l
- 	return crc;
- }
- 
--static void do_cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
--		     unsigned int *edx)
--{
--	int id = *eax;
--
--	asm("movl %4, %%eax;"
--	    "cpuid;"
--	    "movl %%eax, %0;"
--	    "movl %%ebx, %1;"
--	    "movl %%ecx, %2;"
--	    "movl %%edx, %3;"
--		: "=r" (*eax), "=r" (*ebx), "=r" (*ecx), "=r" (*edx)
--		: "r" (id)
--		: "eax", "ebx", "ecx", "edx");
--}
--
- static void crc32c_intel_probe(void)
- {
- 	if (!crc32c_probed) {
- 		unsigned int eax, ebx, ecx, edx;
- 
--		eax = 1;
--
--		do_cpuid(&eax, &ebx, &ecx, &edx);
--		crc32c_intel_available = (ecx & (1U << 20)) != 0;
-+		__cpuid(1, eax, ebx, ecx, edx);
-+		crc32c_intel_available = (ecx & bit_SSE4_2) != 0;
- 		crc32c_probed = 1;
- 	}
- }
+ 	if (0) {
+-	} else if (cpu_has_feature(CPU_FLAG_PCLMUL)) {
++	} else if (cpu_has_feature(CPU_FLAG_PCLMUL) &&
++		   cpu_has_feature(CPU_FLAG_SSE42)) {
+ 		/* printf("CRC32C: pcl\n"); */
+ 		crc32c_impl = crc32c_pcl;
+ 	} else if (cpu_has_feature(CPU_FLAG_SSE42)) {
 -- 
 2.56.0
 

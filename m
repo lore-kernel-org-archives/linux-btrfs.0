@@ -1,84 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794197432;
-	b=TmVlKDhgTZZBo/TLf+9IV8SjdRohMRLA00vt9+hI3RiXMEkkH96t97A3xsWCV3Xhinpj
-	 Cw2bZvhoJQGz66KCt/PxEjHZTpe06vkQ9B2PC3QR7OmgwoctvBgji+mlgQjCbavEclVT9
-	 FeaaYo7w40QEdBsLZcf74Nv/sI6ypLiOh0GtgVPi/i7fSH02p/gMpDv/vb3409ExjBXbW
-	 SbNuxQTiXSTby6SVw3fSxDNJWiP9TXASMspA6Qhvdc5h6aMjf+lNMq3WJUqyCtV2RDpBN
-	 tn4q0n6mR9OflnEI8zX3+DBRklDbUwiJo97IHUPCkjmeU2gw6e/7vOxGf8d1hm45sWg==
+	t=1794197435;
+	b=IqIzbLIq3aBSG+kkg5YPVI+LjCfDol2vZztgbLzvAF57ocLV6m7PCiCEEt/Q5pvU11Ey
+	 +Ab5R1aldI34X34VVa14Fz6P1GZL3hnl3Z3xgD/wCQEC7esqlFI4K9FOmOB0wbwKQ/vpW
+	 vKVSNGVjQTg2d6hoDgzwWYG+PshdJmyOtw/4aSmYJAy9cIg571coejpeoA2/DvGwdXgib
+	 7cTkufY5kkqPjZjtYxlLLOyQsjeKdEDbzY8N2fysB1cYl+1a4rBmFey/e/UWCNs8Ik+K4
+	 ZM5W6wTsXQV/KXZeYOmEMi2Ndy/ZKF9ojNdZ+dQZzCxJcYM9ORiDD7ndW9Q8wb5kkwQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794197432;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794197435;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
-	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
-	 X-Spamd-Result:X-Spam-Score;
-	bh=/e2nXgLec3evPGvNloxFKIl1sZ36oC/JNRUYCAfts7Y=;
-	b=ibcPjPBd9Fm0XKx3QXzEdjnX4NiHoCJJvUPmmmIEerLmO8utG5xcNPUAOO+X8DIbpADy
-	 ZqEU2lUyMVP01nykJUg5FqA4PLPrqZ2ISSxmIqghpdIQ7xIQiyXoH7blL6d44JJItggoM
-	 kYocygvC1GHr+6FHPHji5Y1Z2ItSuj4Nd295+zHBr5IX4Dqg893YtB5GBECbxwrioinE9
-	 7EdzcpPJvmgsgIJ6ubCaDp94l4c8xQoTVEp4U0MN+98gPSUkgH9QXJoGKEdMEA0fMY0jo
-	 y09vHqs0lB5sH89vrV1k8HUNMk5aM1C8Ht/FQZvLdjiIthXaYe38KlIm9Q1ASp1EcaQ==
+	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
+	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
+	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
+	b=Knso/cdRlXYGDJ3n7vQtp4Ik3eq8rz2V/srGbnDiEkUQ2szAPYuy/2NlosPRyRh374yv
+	 P+2Hix/AUfxeRCXcJHuOGjNeCfDbZP+ijIcCiRoD7l7i+ZB03AUu3EsUAPxWxDPlbxpwZ
+	 ChPIs1m0RHvahTwtdhCmvknKqbgZzqurgkFTrgRh3YEtHg4oMi/8vgwbuBUeu89cRi7tg
+	 A7ZFGOl2lWY1vvHZEOviCLvgAID4n3THUZkBYK7Re1ItpqPQoQR5C5dqCenoZ76xJpmA4
+	 rzoqM0YoIbAry+mmZviU64vBs7M4Pwn5b1ySHSKP0w5KbVEwV/6DgMbmeLKAeiGzPQw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NO9PRrW2;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NO9PRrW2;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1D208606A331
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1D208606A331
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33BA3606A335
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:35 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 33BA3606A335
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NO9PRrW2;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=NO9PRrW2
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 5402922155
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:30 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9F1941FB6A
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:33 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794197430; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794197433; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/e2nXgLec3evPGvNloxFKIl1sZ36oC/JNRUYCAfts7Y=;
-	b=NO9PRrW2l+DJoW/5jz32H7N3z2hN8aSp8NuzNBfbdqVRHcW7IAdBnyyLOjBNp918dcJlYU
-	h+ni4jpD78oXs66FoiERRSyXQCAic8znNgiJctWsqLOlt3agiEirP8oPvS6CN5Dp87hl+e
-	xLq8MjDOe0eps/ZcqTGeSLesuf22698=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=NO9PRrW2
+	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
+	b=kZkt8VdriJDXC5g7yh37KMgTc/LSVgE9K9ykvMRnsfdnfmboBX7r6+qrnZDlDF7MAJOELT
+	pmdocCktRwum0hmBUup/t5OWuyWg/b138yM8AsLsOGP4IMhtbpwcZkhuhtyYevLsx+4ytx
+	DP/6wBZ5O6PM+39sVlWgqjJT29TuR5U=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794197430; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794197433; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=/e2nXgLec3evPGvNloxFKIl1sZ36oC/JNRUYCAfts7Y=;
-	b=NO9PRrW2l+DJoW/5jz32H7N3z2hN8aSp8NuzNBfbdqVRHcW7IAdBnyyLOjBNp918dcJlYU
-	h+ni4jpD78oXs66FoiERRSyXQCAic8znNgiJctWsqLOlt3agiEirP8oPvS6CN5Dp87hl+e
-	xLq8MjDOe0eps/ZcqTGeSLesuf22698=
+	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
+	b=kZkt8VdriJDXC5g7yh37KMgTc/LSVgE9K9ykvMRnsfdnfmboBX7r6+qrnZDlDF7MAJOELT
+	pmdocCktRwum0hmBUup/t5OWuyWg/b138yM8AsLsOGP4IMhtbpwcZkhuhtyYevLsx+4ytx
+	DP/6wBZ5O6PM+39sVlWgqjJT29TuR5U=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 38E2A13319
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 85F4313319
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:32 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AKhEN6tH8WrIZAAAD6G6ig:T6
+	id AKhEN6tH8WrIZAAAD6G6ig:T8
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 04:10:28 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 04:10:32 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 5/7] btrfs-progs: crypto: select accelerated algo directly for testing
-Date: Mon,  9 Nov 2026 14:39:59 +1030
-Message-ID: <e79babfb56c4a78559209c275a14cec1e304869d.1794196688.git.wqu@suse.com>
+Subject: [PATCH v2 7/7] btrfs-progs: crypto: hash-vectest: cover more block sizes
+Date: Mon,  9 Nov 2026 14:40:01 +1030
+Message-ID: <57c6f1a3a74881ceaa4ba63194003eb3064b6a7e.1794196688.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1794196688.git.wqu@suse.com>
 References: <cover.1794196688.git.wqu@suse.com>
@@ -92,396 +91,304 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: 5402922155
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-12.01 / 50.00];
+X-Spamd-Result: default: False [-11.80 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
 	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	FROM_EQ_ENVFROM(0.00)[];
-	ARC_NA(0.00)[];
-	FROM_HAS_DN(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim,suse.com:email];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	TO_DN_NONE(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	DKIM_TRACE(0.00)[suse.com:+]
-X-Spam-Score: -12.01
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-Currently hash-speedtest and hash-vectest use cpu_set_level() to mask
-out CPU flags, then call hash_init_accel() to pick the "best" algo under
-that mask.
+Currently hash-vectest only has small test vectors (up to 1023 bytes),
+which does not exercise the code paths used for real btrfs workloads,
+especially the accelerated ones which have different handling for
+different lengths.
 
-This relies on the CPU flag bit order being a strict capability ladder,
-which is true for x86_64 but will not hold for other architectures like
-arm64.
+Add test vectors for the following sizes for all algorithms:
 
-Since only hash-*test need to select a specific backend, introduce
-hash_force_accel() to select the algo bound to the exact CPU flag
-directly, falling back to the reference one if there is none.
-All other users still use hash_init_accel() to get the fastest one.
+- BTRFS_NAME_LEN (255), the max file name length for btrfs_name_hash()
+- SZ_4K, data checksum on 4K sectors
+- SZ_16K - BTRFS_CSUM_SIZE, metadata checksum on 16K tree blocks
+- SZ_16K
 
-With that, remove cpu_set_level(), cpu_reset_level() and
-__cpu_flags_orig, as they have no user anymore.
+For those large vectors, the plaintext is generated at runtime by an
+common LCG from "Numerical Recipes in C", instead of embedding tens of
+KiB of data.
 
-Also do some cleanups:
+The expected digests are calculated by independent tools using python.
 
-- Only one crc32c_init_accel() for all architectures
-  Do the __x86_64__ check inside the function, instead of defining
-  duplicated functions.
+Also add the CRC32C test patterns from RFC 3720 (iSCSI).
 
-- Use early return in sha256_*_accel()
-  So the reference implementation no longer needs an else branch across
-  the #endif.
+Finally add a gitignore entry for hash-vectest.
 
+Assisted-by: LLM (the idea of using LCG, coding)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- common/cpu-utils.c      | 15 ---------------
- common/cpu-utils.h      |  3 ---
- crypto/blake2.h         |  2 ++
- crypto/blake2b-ref.c    | 24 +++++++++++++++++++++++
- crypto/crc32c.c         | 42 +++++++++++++++++++++++------------------
- crypto/crc32c.h         |  2 ++
- crypto/hash-speedtest.c |  7 ++-----
- crypto/hash-vectest.c   |  7 ++-----
- crypto/hash.c           |  9 +++++++++
- crypto/hash.h           |  2 ++
- crypto/sha.h            |  2 ++
- crypto/sha224-256.c     | 18 +++++++++++++++---
- 12 files changed, 84 insertions(+), 49 deletions(-)
+ .gitignore            |   1 +
+ crypto/hash-vectest.c | 166 +++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 163 insertions(+), 4 deletions(-)
 
-diff --git a/common/cpu-utils.c b/common/cpu-utils.c
-index e933b8322dc5..76959c0b729f 100644
---- a/common/cpu-utils.c
-+++ b/common/cpu-utils.c
-@@ -16,10 +16,8 @@
+diff --git a/.gitignore b/.gitignore
+index 78333d679a7d..b93a9f872c65 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -49,6 +49,7 @@
+ /quick-test
+ /json-formatter-test
+ /hash-speedtest
++/hash-vectest
  
- #include <stdio.h>
+ /aclocal.m4
+ /autom4te.cache
+diff --git a/crypto/hash-vectest.c b/crypto/hash-vectest.c
+index c190a7a01b95..6032daa030f9 100644
+--- a/crypto/hash-vectest.c
++++ b/crypto/hash-vectest.c
+@@ -15,10 +15,16 @@
+  */
+ 
+ #include "kerncompat.h"
++#include "kernel-lib/sizes.h"
++#include "kernel-shared/uapi/btrfs_tree.h"
+ #include "crypto/hash.h"
+ #include "common/messages.h"
  #include "common/cpu-utils.h"
--#include "common/messages.h"
  
- unsigned long __cpu_flags = CPU_FLAG_NONE;
--unsigned long __cpu_flags_orig = CPU_FLAG_NONE;
++/*
++ * For test vectors with no plaintext but a non-zero psize, the plaintext is
++ * generated by fill_pattern().
++ */
+ struct hash_testvec {
+ 	const char *plaintext;
+ 	size_t psize;
+@@ -45,6 +51,55 @@ static const struct hash_testvec crc32c_tv[] = {
+ 		.psize = 7,
+ 		.digest = "\x41\xf4\x27\xe6",
+ 	},
++	/* CRC32C test patterns from RFC 3720 (iSCSI), section B.4 */
++	{
++		.plaintext = "\x00\x00\x00\x00\x00\x00\x00\x00"
++			     "\x00\x00\x00\x00\x00\x00\x00\x00"
++			     "\x00\x00\x00\x00\x00\x00\x00\x00"
++			     "\x00\x00\x00\x00\x00\x00\x00\x00",
++		.psize = 32,
++		.digest = "\xaa\x36\x91\x8a",
++	},
++	{
++		.plaintext = "\xff\xff\xff\xff\xff\xff\xff\xff"
++			     "\xff\xff\xff\xff\xff\xff\xff\xff"
++			     "\xff\xff\xff\xff\xff\xff\xff\xff"
++			     "\xff\xff\xff\xff\xff\xff\xff\xff",
++		.psize = 32,
++		.digest = "\x43\xab\xa8\x62",
++	},
++	{
++		.plaintext = "\x00\x01\x02\x03\x04\x05\x06\x07"
++			     "\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
++			     "\x10\x11\x12\x13\x14\x15\x16\x17"
++			     "\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f",
++		.psize = 32,
++		.digest = "\x4e\x79\xdd\x46",
++	},
++	{
++		.plaintext = "\x1f\x1e\x1d\x1c\x1b\x1a\x19\x18"
++			     "\x17\x16\x15\x14\x13\x12\x11\x10"
++			     "\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08"
++			     "\x07\x06\x05\x04\x03\x02\x01\x00",
++		.psize = 32,
++		.digest = "\x5c\xdb\x3f\x11",
++	},
++	{
++		.psize = BTRFS_NAME_LEN,
++		.digest = "\xbb\xd7\xaa\xea",
++	},
++	{
++		.psize = SZ_4K,
++		.digest = "\xb6\xaa\xa5\x04",
++	},
++	{
++		.psize = SZ_16K - BTRFS_CSUM_SIZE,
++		.digest = "\x1d\xb1\xa7\x39",
++	},
++	{
++		.psize = SZ_16K,
++		.digest = "\xd7\xd1\x5b\x37",
++	},
+ };
  
- #define FLAG_X64(name)	if (__cpu_flags & CPU_FLAG_X64_ ## name) printf(" " #name)
- void cpu_print_flags(void) {
-@@ -64,17 +62,4 @@ void cpu_detect_flags(void)
- 		__cpu_flags |= CPU_FLAG_X64_SHA;
- #endif /* HAVE___BUILTIN_CPU_SUPPORTS__SHA */
- #endif /* __x86_64__ */
--
--	__cpu_flags_orig = __cpu_flags;
--}
--
--void cpu_set_level(unsigned long topbit)
--{
--	UASSERT(topbit);
--	__cpu_flags &= (topbit << 1) - 1;
--}
--
--void cpu_reset_level(void)
--{
--	__cpu_flags = __cpu_flags_orig;
- }
-diff --git a/common/cpu-utils.h b/common/cpu-utils.h
-index 97107f3f9086..2ca195567b84 100644
---- a/common/cpu-utils.h
-+++ b/common/cpu-utils.h
-@@ -44,12 +44,9 @@ enum cpu_feature {
+ static const struct hash_testvec xxhash64_tv[] = {
+@@ -94,7 +149,23 @@ static const struct hash_testvec xxhash64_tv[] = {
+ 			     "\xed\xfd\x08\xf7\xe8\x04",
+ 		.psize = 222,
+ 		.digest = "\x41\xfc\xd4\x29\xfe\xe7\x85\x17",
+-	}
++	},
++	{
++		.psize = BTRFS_NAME_LEN,
++		.digest = "\x83\x5a\xfd\x3d\xdb\xda\x73\xfe",
++	},
++	{
++		.psize = SZ_4K,
++		.digest = "\x8a\x21\x49\xcf\x03\x49\x7c\x70",
++	},
++	{
++		.psize = SZ_16K - BTRFS_CSUM_SIZE,
++		.digest = "\xda\x59\x52\x99\x9f\x4e\x0b\x4e",
++	},
++	{
++		.psize = SZ_16K,
++		.digest = "\xf8\xec\x5d\xe3\x99\x47\xaa\x5d",
++	},
+ };
  
- /* Private but in public header to allow inlining */
- extern unsigned long __cpu_flags;
--extern unsigned long __cpu_flags_orig;
+ static const struct hash_testvec sha256_tv[] = {
+@@ -260,7 +331,35 @@ static const struct hash_testvec sha256_tv[] = {
+ 			     "\x32\x32\x17\xcc\xd4\x6a\x71\xa9"
+ 			     "\xf3\xed\x50\x10\x64\x8e\x06\xbe"
+ 			     "\x9b\x4a\xa6\xbb\x05\x89\x59\x51",
+-	}
++	},
++	{
++		.psize = BTRFS_NAME_LEN,
++		.digest = "\xde\x26\x80\x6a\x0d\x54\x41\x6d"
++			  "\xc6\x11\x04\x97\x16\xc5\xd1\x46"
++			  "\x7f\x90\x15\xb1\xe8\x99\x10\x4e"
++			  "\x16\xd5\x62\x46\xb8\x55\x01\x6c",
++	},
++	{
++		.psize = SZ_4K,
++		.digest = "\x28\xc7\x4f\x56\xd2\xc9\x59\x95"
++			  "\x5f\x64\xec\x0e\x74\x0b\xe7\xd0"
++			  "\x8a\x02\x3a\x0a\xbf\x03\x2c\x25"
++			  "\x7e\x8e\xf7\x58\x6a\x6b\xb7\x75",
++	},
++	{
++		.psize = SZ_16K - BTRFS_CSUM_SIZE,
++		.digest = "\x9e\x81\xe5\x25\xe3\x9f\xe6\x1b"
++			  "\x69\x74\xb0\x83\xb8\x30\x3d\x4e"
++			  "\xc7\x38\xf0\xb4\x66\x73\x61\x25"
++			  "\xa8\x2e\x4c\x6b\x58\xb9\x55\xa3",
++	},
++	{
++		.psize = SZ_16K,
++		.digest = "\xfb\xbb\xb4\x2b\xbd\xf4\xee\xb7"
++			  "\x85\xdd\x39\x84\xd8\x88\xa5\xa2"
++			  "\xa4\x38\xd4\xff\xb3\x45\xed\x5e"
++			  "\xa1\x2f\x06\x1d\x86\xa5\x4b\x77",
++	},
+ };
  
- /* Public API */
- void cpu_detect_flags(void);
--void cpu_set_level(unsigned long topbit);
--void cpu_reset_level(void);
- void cpu_print_flags(void);
+ static const struct hash_testvec blake2b_256_tv[] = {
+@@ -423,7 +522,35 @@ static const struct hash_testvec blake2b_256_tv[] = {
+ 			     "\xbf\xe6\x82\x94\x3f\x59\x91\xee"
+ 			     "\x18\xa6\x27\xc3\x00\x12\xa5\xd0"
+ 			     "\x92\x3a\xb1\xc6\xa3\x46\x5a\xea",
+-	}
++	},
++	{
++		.psize = BTRFS_NAME_LEN,
++		.digest = "\x1e\x1f\xab\x3d\xb0\x47\x44\x16"
++			  "\x0a\xa7\x57\xd7\xc3\x5b\x61\xe0"
++			  "\x8b\xe5\xba\x1e\x4b\x6a\x31\xec"
++			  "\xc3\xcd\x5e\x33\x98\x21\x0a\xac",
++	},
++	{
++		.psize = SZ_4K,
++		.digest = "\x8b\x28\x0b\xea\xd0\x4d\x22\x0f"
++			  "\x6f\x20\xc8\xdb\x23\x91\xdc\x2e"
++			  "\x97\x90\xee\x86\x73\x12\xbc\x56"
++			  "\xe7\x17\x08\x34\xd9\x00\xf8\xc8",
++	},
++	{
++		.psize = SZ_16K - BTRFS_CSUM_SIZE,
++		.digest = "\x71\x89\xeb\x26\x42\x2e\xb5\x1d"
++			  "\x30\xb5\x76\xe5\x76\x8a\xf7\x53"
++			  "\x3a\x39\xb9\x1d\xad\x13\xcf\x92"
++			  "\x17\xe3\x70\x32\x34\xd2\xd4\x23",
++	},
++	{
++		.psize = SZ_16K,
++		.digest = "\x28\x4d\xcc\xe6\x6b\x9e\x55\xb1"
++			  "\x27\x0a\xa6\x7a\x6e\x5f\x8f\xca"
++			  "\xcf\x45\xff\x6e\xd4\xbc\x0d\x6d"
++			  "\x33\x24\x22\x7a\xab\x3e\xe4\x90",
++	},
+ };
  
- static inline bool cpu_has_feature(enum cpu_feature f)
-diff --git a/crypto/blake2.h b/crypto/blake2.h
-index 052afe34a651..c4cc079ba04e 100644
---- a/crypto/blake2.h
-+++ b/crypto/blake2.h
-@@ -17,6 +17,7 @@
+ static const struct hash_testspec test_spec[] = {
+@@ -594,6 +721,24 @@ static const struct hash_testspec test_spec[] = {
+ 	}
+ };
  
- #include <stddef.h>
- #include <stdint.h>
-+#include "common/cpu-utils.h"
- 
- #if defined(_MSC_VER)
- #define BLAKE2_PACKED(x) __pragma(pack(push, 1)) x __pragma(pack(pop))
-@@ -91,6 +92,7 @@ extern "C" {
-   int blake2b( void *out, size_t outlen, const void *in, size_t inlen, const void *key, size_t keylen );
- 
-   void blake2_init_accel(void);
-+  void blake2_force_accel(enum cpu_feature f);
- 
-   /* Export optimized versions to silent -Wmissing-prototypes warnings. */
-   void blake2b_compress_avx2( blake2b_state *S, const uint8_t block[BLAKE2B_BLOCKBYTES] );
-diff --git a/crypto/blake2b-ref.c b/crypto/blake2b-ref.c
-index 56774ccb04f9..e8d2adb0498e 100644
---- a/crypto/blake2b-ref.c
-+++ b/crypto/blake2b-ref.c
-@@ -239,6 +239,30 @@ void blake2_init_accel(void)
- 		blake2b_compress = blake2b_compress_ref;
- }
- 
-+void blake2_force_accel(enum cpu_feature f)
++/*
++ * Fill the buffer with bytes from a 32-bit LCG, x = x * 1664525 + 1013904223,
++ * as used in "Numerical Recipes in C". The seed is arbitrary.
++ *
++ * Only the top byte is used, since the low bits of a power-of-2 modulus LCG
++ * have very short periods.
++ */
++static void fill_pattern(u8 *buf, size_t size)
 +{
-+	switch (f) {
-+#if HAVE_CFLAG_mavx2 == 1
-+	case CPU_FLAG_X64_AVX2:
-+		blake2b_compress = blake2b_compress_avx2;
-+		break;
-+#endif
-+#if HAVE_CFLAG_msse41 == 1
-+	case CPU_FLAG_X64_SSE41:
-+		blake2b_compress = blake2b_compress_sse41;
-+		break;
-+#endif
-+#if HAVE_CFLAG_msse2 == 1
-+	case CPU_FLAG_X64_SSE2:
-+		blake2b_compress = blake2b_compress_sse2;
-+		break;
-+#endif
-+	default:
-+		blake2b_compress = blake2b_compress_ref;
-+		break;
++	u32 x = 1;
++	size_t i;
++
++	for (i = 0; i < size; i++) {
++		x = x * 1664525 + 1013904223;
++		buf[i] = x >> 24;
 +	}
 +}
 +
- int blake2b_update( blake2b_state *S, const void *pin, size_t inlen )
+ static int test_hash(const struct hash_testspec *spec)
  {
-   const unsigned char * in = (const unsigned char *)pin;
-diff --git a/crypto/crc32c.c b/crypto/crc32c.c
-index 0da4a1573c30..b7a7ce74b526 100644
---- a/crypto/crc32c.c
-+++ b/crypto/crc32c.c
-@@ -332,30 +332,36 @@ static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t l
- 	return crc;
- }
+ 	int i;
+@@ -603,6 +748,8 @@ static int test_hash(const struct hash_testspec *spec)
+ 		int ret;
+ 		const struct hash_testvec *vec = &spec->testvec[i];
+ 		u8 csum[CRYPTO_HASH_SIZE_MAX];
++		const u8 *data = (const u8 *)vec->plaintext;
++		u8 *buf = NULL;
  
--void crc32c_init_accel(void)
--{
--	if (0) {
--	} else if (cpu_has_feature(CPU_FLAG_X64_PCLMUL) &&
--		   cpu_has_feature(CPU_FLAG_X64_SSE42)) {
--		/* printf("CRC32C: pcl\n"); */
--		crc32c_impl = crc32c_pcl;
--	} else if (cpu_has_feature(CPU_FLAG_X64_SSE42)) {
--		/* printf("CRC32c: intel\n"); */
--		crc32c_impl = crc32c_sse42;
--	} else {
--		/* printf("CRC32c: fallback\n"); */
--		crc32c_impl = crc32c_ref;
--	}
--}
--
--#else
-+#endif /* __x86_64__ */
- 
- void crc32c_init_accel(void)
- {
- 	crc32c_impl = crc32c_ref;
-+#ifdef __x86_64__
-+	if (cpu_has_feature(CPU_FLAG_X64_PCLMUL) &&
-+	    cpu_has_feature(CPU_FLAG_X64_SSE42))
-+		crc32c_impl = crc32c_pcl;
-+	else if (cpu_has_feature(CPU_FLAG_X64_SSE42))
-+		crc32c_impl = crc32c_sse42;
-+#endif
- }
- 
--#endif /* __x86_64__ */
-+void crc32c_force_accel(enum cpu_feature f)
-+{
-+	switch (f) {
-+#ifdef __x86_64__
-+	case CPU_FLAG_X64_PCLMUL:
-+		crc32c_impl = crc32c_pcl;
-+		break;
-+	case CPU_FLAG_X64_SSE42:
-+		crc32c_impl = crc32c_sse42;
-+		break;
-+#endif
-+	default:
-+		crc32c_impl = crc32c_ref;
-+		break;
-+	}
-+}
- 
- /*
-  * This is the CRC-32C table
-diff --git a/crypto/crc32c.h b/crypto/crc32c.h
-index f990177147e5..dd427893cf99 100644
---- a/crypto/crc32c.h
-+++ b/crypto/crc32c.h
-@@ -20,9 +20,11 @@
- #define __CRC32C__
- 
- #include <inttypes.h>
-+#include "common/cpu-utils.h"
- 
- uint32_t crc32c_le(uint32_t seed, unsigned char const *data, uint32_t length);
- void crc32c_init_accel(void);
-+void crc32c_force_accel(enum cpu_feature f);
- 
- #define crc32c(seed, data, length) crc32c_le(seed, (unsigned char const *)data, length)
- 
-diff --git a/crypto/hash-speedtest.c b/crypto/hash-speedtest.c
-index b51ccbb19284..a26959ae66e8 100644
---- a/crypto/hash-speedtest.c
-+++ b/crypto/hash-speedtest.c
-@@ -312,10 +312,8 @@ int main(int argc, char **argv) {
- 		printf("%16s: ", c->name);
- 		fflush(stdout);
- 
--		if (c->cpu_flag) {
--			cpu_set_level(c->cpu_flag);
--			hash_init_accel();
--		}
-+		if (c->cpu_flag)
-+			hash_force_accel(c->cpu_flag);
- 		tstart = get_time();
- 		start = get_cycles(units);
- 		for (iter = 0; iter < iterations; iter++) {
-@@ -327,7 +325,6 @@ int main(int argc, char **argv) {
- 		tend = get_time();
- 		c->cycles = end - start;
- 		c->time = tend - tstart;
--		cpu_reset_level();
- 
- 		if (units == UNITS_CYCLES || units == UNITS_PERF)
- 			total = c->cycles;
-diff --git a/crypto/hash-vectest.c b/crypto/hash-vectest.c
-index 3b1b79eae138..c190a7a01b95 100644
---- a/crypto/hash-vectest.c
-+++ b/crypto/hash-vectest.c
-@@ -617,12 +617,9 @@ static int test_hash(const struct hash_testspec *spec)
+ 		if (spec->cpu_flag != 0 && !cpu_has_feature(spec->cpu_flag)) {
+ 			printf("%s skipped, no CPU support\n", spec->name);
+@@ -617,9 +764,20 @@ static int test_hash(const struct hash_testspec *spec)
  			header = true;
  		}
  
--		if (spec->cpu_flag) {
--			cpu_set_level(spec->cpu_flag);
--			hash_init_accel();
--		}
-+		if (spec->cpu_flag)
-+			hash_force_accel(spec->cpu_flag);
- 		ret = spec->hash((const u8 *)vec->plaintext, vec->psize, csum);
--		cpu_reset_level();
++		if (!data && vec->psize) {
++			buf = malloc(vec->psize);
++			if (!buf) {
++				error_mem("test vector");
++				return 1;
++			}
++			fill_pattern(buf, vec->psize);
++			data = buf;
++		}
++
+ 		if (spec->cpu_flag)
+ 			hash_force_accel(spec->cpu_flag);
+-		ret = spec->hash((const u8 *)vec->plaintext, vec->psize, csum);
++		ret = spec->hash(data, vec->psize, csum);
++		free(buf);
  		if (ret < 0) {
  			error("hash %s = %d", spec->name, ret);
  			return 1;
-diff --git a/crypto/hash.c b/crypto/hash.c
-index 4af7b04a2507..675051873ef9 100644
---- a/crypto/hash.c
-+++ b/crypto/hash.c
-@@ -49,6 +49,15 @@ int hash_xxhash(const u8 *buf, size_t length, u8 *out)
- 	return 0;
- }
- 
-+void hash_force_accel(enum cpu_feature f)
-+{
-+	crc32c_force_accel(f);
-+#if CRYPTOPROVIDER_BUILTIN == 1
-+	blake2_force_accel(f);
-+	sha256_force_accel(f);
-+#endif
-+}
-+
- /*
-  * Implementations of cryptographic primitives
-  */
-diff --git a/crypto/hash.h b/crypto/hash.h
-index 4f8f668ad260..11d977922039 100644
---- a/crypto/hash.h
-+++ b/crypto/hash.h
-@@ -18,6 +18,7 @@
- #define CRYPTO_HASH_H
- 
- #include "kerncompat.h"
-+#include "common/cpu-utils.h"
- #include <stddef.h>
- 
- #define CRYPTO_HASH_SIZE_MAX	32
-@@ -28,6 +29,7 @@ int hash_sha256(const u8 *buf, size_t length, u8 *out);
- int hash_blake2b(const u8 *buf, size_t length, u8 *out);
- 
- void hash_init_accel(void);
-+void hash_force_accel(enum cpu_feature f);
- void hash_init_crc32c(void);
- 
- #endif
-diff --git a/crypto/sha.h b/crypto/sha.h
-index ea387c212dc6..0292b292f357 100644
---- a/crypto/sha.h
-+++ b/crypto/sha.h
-@@ -71,6 +71,7 @@
-  */
- 
- #include <stdint.h>
-+#include "common/cpu-utils.h"
- /*
-  * If you do not have the ISO standard stdint.h header file, then you
-  * must typedef the following:
-@@ -210,6 +211,7 @@ extern int hmacResult(HMACContext *context,
-                       uint8_t digest[USHAMaxHashSize]);
- 
- void sha256_init_accel(void);
-+void sha256_force_accel(enum cpu_feature f);
- 
- /* Export for optimized version to silent -Wmissing-prototypes. */
- void sha256_process_x86(uint32_t state[8], const uint8_t data[], uint32_t length);
-diff --git a/crypto/sha224-256.c b/crypto/sha224-256.c
-index 69e7ce5b9bd2..1df03825fa8f 100644
---- a/crypto/sha224-256.c
-+++ b/crypto/sha224-256.c
-@@ -110,11 +110,23 @@ static void sha256_process_x86_dispatch(SHA256Context *context)
- void sha256_init_accel(void)
- {
- #if HAVE_CFLAG_msha == 1
--	if (cpu_has_feature(CPU_FLAG_X64_SHA))
-+	if (cpu_has_feature(CPU_FLAG_X64_SHA)) {
- 		sha256_process_message_block = sha256_process_x86_dispatch;
--	else
-+		return;
-+	}
- #endif
--		sha256_process_message_block = SHA224_256ProcessMessageBlock;
-+	sha256_process_message_block = SHA224_256ProcessMessageBlock;
-+}
-+
-+void sha256_force_accel(enum cpu_feature f)
-+{
-+#if HAVE_CFLAG_msha == 1
-+	if (f == CPU_FLAG_X64_SHA) {
-+		sha256_process_message_block = sha256_process_x86_dispatch;
-+		return;
-+	}
-+#endif
-+	sha256_process_message_block = SHA224_256ProcessMessageBlock;
- }
- 
- /*
 -- 
 2.56.0
 

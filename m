@@ -1,83 +1,111 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.54
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=202.12.124.151
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794232813;
-	b=MAseNhFnTFyJT49/JONGUo3zhwp4y+hVeITEV9O7zVkqKws7htsuel5+bGIEMcN214cE
-	 ZGluPT4FrNXdOZqwSbD6iAJWlH/pYchz8tNZmvjUSXv7c/1lMl6r2JTY8e9v2QSOFG8BL
-	 JnONCj69MB+01iKj1kDKWzSFUd8CYdlgTAkNYOAgbr32WL2qJX89uB5bB6a37DilTFGrI
-	 HFSj6RTCQ2mfczdsf68pHYnShr8CMOP7Fpo3l5/rQobDOT+GgQH8ofiE2c0xa6v+LtwBW
-	 9q7gvTqEXDQ8GaYMj1I/V1uQsC+kkw7KoA1T2oBNdhumAgiIJlwckiZ7wr7BMZXy2gw==
+	t=1794233665;
+	b=cg0mHtRE2ehezMx5AxgYENZ4dOvT8dN0v8iK6lmBfL0ZEUmveDgkVlZ/0R7J72yiY9fX
+	 aHqdP2eEikd0UrMSaiIBBfNVYyTiUUuit9S4+cD5yaSa4dNByv0ZKmP4zzEVHMRGeHYpj
+	 EpmiCb0RZsTcPIDHXCCxoE88aVnXs+lmk7n77R80+xZZUr8ARapysZvrVHv5HTOC749dh
+	 LsEXbtkdIDwFuyzk3x+n+9gvxYV+E299gjd2Yd9vfv9AHH2sOxFyieBVL//lbqKO8W9gp
+	 2wRYT2BYDmqYbGIATNuaJHSLcJAq3APZR5p9E0uDiPDXxiKu5/0tYA2bj2a4hSFE3VA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794232813;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:X-Mailer:
-	 References:In-Reply-To;
-	bh=Qj08Tru3q90mwREYm2hLwjpQ1d8T/ElrfKESX3hounE=;
-	b=EHRBQJ218D5MT6sOqw+pUdcFtEryv/0sLRJ6uHZVlS9BEusgtMByIKAYqSc4WpvTAdQC
-	 sRfN7sEuJ9pCXziTJPZTlAQNbJEePMxk3KpqFmaIguqV7uxKayUjVL5E/nKJEKsb3X3Nf
-	 cQvPbCY4KoABU3OmRjJ4xJ0AhxJI2mHezVqwbH0HmWkvufmBiAQIehtACvxqVRxPLE2Ir
-	 i7AJBOkel9m1lY3sXFyKN7gABjMmagDBoiy5IGU0UIZO3ntDD4h4wOxe3DyWZPg1r0Nq3
-	 c6mLIXQuuSo9UoT/6bWyOiWC+zApHAWAO7Nx7d8gQS/4Q5SxGDluhci5WyCdRMdMImg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794233665;
+	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
+	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
+	 X-ME-Sender:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:Received:X-Mailer:
+	 MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
+	 Subject:Content-Type:Content-Transfer-Encoding;
+	bh=AcHHMXrnuSzlxN8df3lXl8TWnZ4VN2Rd3OQcEzkx2fk=;
+	b=EQnaEmZmnhtlhze8qKMXDCeBl4KP1LkvU8gybCTLFj7JhUmP8Ew1n0KRESnvob3C92e/
+	 WtvjaIy7NP9pMCBf1wyMrH/YwuzuoTbE5UUsdM/ynB+8Br9jyTNfOKj5Aee+rPWtiQuAi
+	 9rclFcltprykc2GJReQsVj62ptxUeBBCryhM4OBQMQEF1MkgAp99sjHnIZwcv5y8N4z72
+	 2IaT4f7y0WQaseNSfS5pDlWva3w/xMSc2yjqnKLM1qxPv3Gs2sF94ZipS0Z5vZqowZSsh
+	 1Ec+VXNqSHr/yOLT6//plVdDP+3t9pOcv695K020vC14GMrjhsjE6t3Rx4p38EMJ3TA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=t43998Qn;
-	arc=none smtp.remote-ip=209.85.221.54
-Received: from mail-wr1-f54.google.com (mail-wr1-f54.google.com [209.85.221.54])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=ampx.net;
+	spf=pass smtp.mailfrom=ampx.net;
+	dkim=pass header.d=ampx.net header.i=@ampx.net header.a=rsa-sha256 header.s=fm2 header.b=s+gGsApI;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=Wx1j63xz;
+	arc=none smtp.remote-ip=202.12.124.151
+Received: from fout-b8-smtp.messagingengine.com (fout-b8-smtp.messagingengine.com [202.12.124.151])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57F05606A335
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 14:00:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 57F05606A335
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2D257606A33D
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 14:14:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2D257606A33D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=ampx.net
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ampx.net
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=t43998Qn
-Received: by mail-wr1-f54.google.com with SMTP id ffacd0b85a97d-490c1d337d8so637304f8f.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 06:00:13 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794232811; x=1794837611; darn=vger.kernel.org;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=Qj08Tru3q90mwREYm2hLwjpQ1d8T/ElrfKESX3hounE=;
-        b=t43998QnnNc3KCXSzJRp5nYW9XLpP7oeklxX8QwyLtaibyju1NFYrX0Aum85RZyLzN
-         VnRUUTXQONh10hJjfS7of52eYQHHH5BNdhhIzFHdiRyac1vBnZ2sARf9NCukfs16/Gsx
-         h72Z+z5dNM6WtX0RRidNu7l79qx4TshR+8k1rgXLK48z3o+XWN/f50Laqj4wybAZXuFQ
-         o+5i+0bC9DK35gxcCiteTmftuI36TYjaVjTg7HBE1p5Y6C+SRDo3AS8XyP2xs0tfbWx6
-         YDMajHGp2NuWgkh5VXHNYFc2c2GGl9KifyGEikJSlwWq3JduVPwL9XXkpHmBZu+pF9Xt
-         H1/g==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794232811; x=1794837611;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Qj08Tru3q90mwREYm2hLwjpQ1d8T/ElrfKESX3hounE=;
-        b=OY3I6+IXt6JMUjCOPqGRg60IxkPxA6mpaK9TfJD8kINjdkpoVdg2xqk2lKrzrOcQI+
-         lcBlaYQhfcqbBuOjoFEEnrWgXzcE5odGSdRAbi+OOAw+kCPXxdRBiCWRRwYXOv1OeV0S
-         MDyHYbO5QWKtUgBHxVOHtqMGakq4Eogjn0qQ1zjf+EGhZm0ADGO5Uh5Xi3Pb+znvBlqA
-         xge27wVzPCVm7raxeMdsbf2eq1nGvNQwQyDhXs1NrR/mhEHdrTNkboJ6nVZuURNE9Wvt
-         3tclDMQhKN+oSWkPVqqOME2Y1vHrA4cQBLlgOoKfGWJ9QYYfBOhL8qvymZknyn+thaCj
-         CPoA==
-X-Forwarded-Encrypted: i=1; AL+hErG4HkLpqqiiqCPWwylcGXNnVNLcp49vDyYy/4pVqLoDO3/azFN/mih2Ci2WeDyCu9ZJVVhCPMd9lCz0gg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/p63e0SzjrKmpgtsRCHy2tHEVaiYT67cyGSzuzwX8AftQNSd7N
-	AdPYrdq3KDZFIxGkhi1T7tmHZwOUvH4cUUV/jyiO129iLwdhQljsYZur
-X-Gm-Gg: AYBFou068wrAwetsBPmB0GBIKJf2+vV7hH3MeugND8brryBk8MLcGmlGQtzFuTTvQZa
-	cc9qCDRAM//bWFEKfsSPTTJyEhACDodEhgm+ouERy3UdDcsdMAwDwTDhoLcVFJ+i5gkWN0CvCkj
-	S5mH4yj+rBi5Dm3NQ6dNzuK56u31lh6oaWY3N2m7ZuHrTmxRnS/7CYC2JTj/fezkaks2FF8GPtp
-	2fE/4BTcdLt6VWFZPEz4KjffnWFrG6OE7xSuWAHexgqzQrmP3HGa0II8O+il9OdFWKxEzzOHYeR
-	aLKKivibcPnyP/Z6A77PVoVPuAJKEFBUeVwdvAHgjzJAOGbZf9dTn4n6OL4HoyY1s2+G9KxE61J
-	JalMFralqtHbSf3YHdFBTXq1ZE+NAgIpbror8BfAOxZ/Z2nhiS5RsvS4/TtbpKDQ85HMP0wYl3l
-	JEz4nT4M6bd2dK+qGed7Sl4IN3nQqr2twfvNTcqlaDiRc9Ae5p0DdQ4CNJRoc6riUWrygrDJ3jr
-	pWJE3yClLzTxfgtjfiwKZB9aHzgwQiVisiyCnTNA8rwQOFzYy1fZG4cGC7JJjSy8Yyt0adSkMCS
-	dx6R5VWwL23QFyn9XZ9fSBbe03DjF3sMxQsq4Bb4VHuSip8ROGih3rk1P2ZWyPQ=
-X-Received: by 2002:a05:6000:984:b0:48e:6dd5:30d0 with SMTP id ffacd0b85a97d-4958607a6a7mr7247961f8f.53.1794232806056;
-        Mon, 09 Nov 2026 06:00:06 -0800 (PST)
-Received: from localhost (mob-176-246-40-238.net.vodafone.it. [176.246.40.238])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49597d0a775sm11109545f8f.55.2026.11.09.06.00.04
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 09 Nov 2026 06:00:05 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=ampx.net header.i=@ampx.net header.a=rsa-sha256 header.s=fm2 header.b=s+gGsApI;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=Wx1j63xz
+Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
+	by mailfout.stl.internal (Postfix) with ESMTP id 809781D0015B
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 09:14:24 -0500 (EST)
+Received: from phl-imap-03 ([10.202.2.93])
+  by phl-compute-03.internal (MEProxy); Mon, 09 Nov 2026 09:14:24 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ampx.net; h=cc
+	:cc:content-transfer-encoding:content-type:content-type:date
+	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to; s=fm2; t=1794233664;
+	 x=1794320064; bh=AcHHMXrnuSzlxN8df3lXl8TWnZ4VN2Rd3OQcEzkx2fk=; b=
+	s+gGsApI/EOmS/8fjmiE5NOp0inQvwJ38uekgsY2CE1S4qTJ7/zQ3VINRYg/ytps
+	Wv+xH9BlNQZaM7HMnFHoAVIg3EPEc8ysNI8MaBFhoGwu1e1pxMhR/EXDD8+q1I71
+	8M1eZ9JvbNqpTLutXvjsXl2TU+UclNM6RBQ9ghOPGYEfPIOf08n8RMK482SuY0wk
+	Z2qsQaVW5uy9NhydUYXSFzO19NsRNRl8WE2XLIUP3TH8u2znlem4PyYWoYFLUkT2
+	5ILlHrbwk4PWEyk3cB5lOPb+XzoV2aE8ihTun8cDvWvbHXsNCwIjoI/Te0YLAODl
+	PEE7XubGNFgelaC9b0UH6w==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:cc:content-transfer-encoding
+	:content-type:content-type:date:date:feedback-id:feedback-id
+	:from:from:in-reply-to:in-reply-to:message-id:mime-version
+	:references:reply-to:subject:subject:to:to:x-me-proxy
+	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1794233664; x=
+	1794320064; bh=AcHHMXrnuSzlxN8df3lXl8TWnZ4VN2Rd3OQcEzkx2fk=; b=W
+	x1j63xzkHr3O+V8hiqVOwQyuVs/WtrVru+gCWSXyNx7QA2TFSf8aC+5QvcvPZ2nD
+	EXPPORJ7/bHH+BYJFJ2xCAaalmKbB1vCxOBcJywpGeHyzzh29H18pFiKfnKHe3JM
+	z/hGa71QJ7dIwffEq7QtqJahfm5lzr2XMinvvLGwLY7Uvv1v/twBFmaqDrUf9/NX
+	Bt0fn4U0q65TXo9hHRiHPALKMSORWgOyb6cue+hyxY5hKOmBYeuOyLl/MNqQR0x+
+	+ZlHwD2zeYqQK0HAwnFTjqmRzGBXHsjlVgQJXFscoA14ZF02ehW0B2tfpIzRDhye
+	q8Na+cCy1m4NhhbTCcnKA==
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=sign d=ampx.net a=rsa-sha256;
+DKIM2-Signature: i=1; m=1; t=1794233664; d=ampx.net;
+	mf=PHN0ZXJsaW5nQGFtcHgubmV0Pg==;
+	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
+	s=fm2:rsa-sha256:hXkt7cbsLd3HEpCkk7BeX1YrqqQ8OOhF7StxO6XTo5Ouj29
+	MBZbIs8uD3slPCe5EaufWioM1gmXtWYkzbKVF2H8/9FYHseDt11UriX1SvKlCwPs
+	TIdWjagiD6buLPa2P+ifjM7QSn6rBLD+InK4VdlaMbfxEmaTlbD76Mno/uo172Qq
+	XyD2jCYgQruTGTldRhOwr8EhF2EeF3FmBbrGcfv6yqJA0MVVupRbE74UCNUDc8RN
+	FTVHf4mQ7GxWGeMOsHulxxyX2n7kb+J/mXIgEWiaD8JjOvcTT/s/876dceZizRRi
+	Y4ywR88XOgqeaHy9kMF8OZdMGJ24acTJduJ6omQ==;
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=mi-m=1; hc=12;
+	hn=cc,content-transfer-encoding,content-type,date,feedback-id,
+	from,in-reply-to,message-id,mime-version,references,subject,to;
+Message-Instance: m=1; h=sha256:grEPGYTIn6AXRshIEtQ0VUkNY3bbUuCjSwBw/SuTTR0=:AcHHMXrnuSzlxN8df3lXl8TWnZ4VN2Rd3OQcEzkx2fk=;
+X-ME-Sender: <xms:P9Xxalm6VN0-UU4aafcwMaD7RRM65Cu49PXkM-HjZC30c3EHekQkMw>
+    <xme:P9XxarohGjC9dFd1_bKibeT4BR-akmweyzLOctqhyRrNwCrRnR_lUpIH9dUkQhnp7
+    WuL2yV-p38GEj_wX4mmk9uV8jspxXuJFaJeiX9MVuX79LqVfx9iAzo>
+X-ME-Proxy-Cause: dmFkZTF6APVwtVper2eHHd7Gh6EOKMvX/m35lt4HzcybNXK87dQPWluZ8gj2e3PMK5uvqI
+    sM3UNtZtm+18ZKSDrbTDT6USGJZsd6yTVuR8lQMA/QkYN/4K1+wZfvqoeUXwd+Uh/VpasL
+    XRPHauBjgO4k2vP8zXC45tBnR5vhOX/KZ2w4RMzFuWc3Q8PIvy790eY3JQzR09NiUhGDEe
+    Dyq0gdXF3RoZSgqol4ZFCI2nNkLHXqPZ4+bKFVeEUr0+hpaJNqnxWd8M4vf/eM1/srQlS7
+    RGwBxugNbiEGjihbQrsOmygh1Y6j2twl2cup/qFgTLAV3c+tcAyyQET3NhRBOpnp/jWCjI
+    I4SmWGSQI8OXdcNsZGOsZaYPbc2EHyeW72wFaNfsudmXDJiGveqewIu3L5P6i/A3adf/6g
+    xvO1b1cLO6PUpbUC/wDsbgcA/988Bm9TZr03Qwy7VHlCYi3sJ1OKSJZoY9AFhk1jH7WcL/
+    1jpD69bXOMvJzkS9d16Rzdh/t9jK/ZNOfht0ZCwDXNVC4Ol1ltKkjUuspg0MspgvsduRJQ
+    fN04+MMWjgq2N5OiYwWaTIIFlQtR5m8WAoW01MRt3JTIE0yrj7zdWOK0ejA9Ow/vDPdR7P
+    zsfcl8n79Jwc9+9NW2S+GXp2ClhkL8LpQ9nokCsjxbiq3O9993u437IM7ZlA
+X-ME-Proxy: <xmx:P9XxaijDpdEFh7WjCCJgSLW3yA9-ORY5aAEI80YtRmNRzSJbBmXcvQ>
+    <xmx:P9XxaqyLlLLiWKR6X4vy-1Wc1PIID5XXJCWZbpfPZWCNcjkR3TmrAA>
+    <xmx:P9XxatJ7rdOnmzFNuVH4hBrmBJTUNvWFJFvulsgYavtOnjfDT80G6A>
+    <xmx:P9XxapTlRUrTIqwa4-c4999c36JrV8xWSt6F6iAd2WV6Uz4xPCTIaw>
+    <xmx:QNXxap_9lxgwbbkSokGuf1Lt0vJTZaR2IgG8kR6aR1MkhDLH488pxIr5>
+Feedback-ID: iebe147d5:Fastmail
+Received: by mailuser.phl.internal (Postfix, from userid 501)
+	id DBB8D18E0071; Mon,  9 Nov 2026 09:14:23 -0500 (EST)
+X-Mailer: MessagingEngine.com Webmail Interface
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,125 +114,49 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=92f8a953699a83d31cf7ddaaf00b8c75f9017743c904bd52c6971950bc57;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Mon, 09 Nov 2026 15:00:00 +0100
-Message-Id: <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>, "koraynilay" <koray.fra@gmail.com>
-Subject: Re: [RFC] btrfs: forcing compression per inode via the compression
- property?
-From: "koraynilay" <koray.fra@gmail.com>
-To: "Sterling Windmill" <sterling@ampx.net>, <linux-btrfs@vger.kernel.org>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
+MIME-Version: 1.0
+Date: Mon, 09 Nov 2026 09:14:03 -0500
+From: "Sterling Windmill" <sterling@ampx.net>
+To: koraynilay <koray.fra@gmail.com>, linux-btrfs@vger.kernel.org
+Cc: "David Sterba" <dsterba@suse.com>
+Message-Id: <5225511a-c66f-40e5-b9d6-31ff572496da@app.fastmail.com>
+In-Reply-To: <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
 References: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
-In-Reply-To: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
+ <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
+Subject: Re: [RFC] btrfs: forcing compression per inode via the compression property?
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
 
---92f8a953699a83d31cf7ddaaf00b8c75f9017743c904bd52c6971950bc57
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
+> Hello, there is a github issue tracking this and a patch[2] (by me)
+> currently pending final review.
+>
+> Can you see if [2] has the same behaviour you expect?
+>
+> [1]: https://github.com/kdave/btrfs-progs/issues/329
+> [2]: https://lore.kernel.org/linux-btrfs/20261103194734.598182-1-koray.fra@gmail.com/T/#t
 
-On Mon Nov 9, 2026 at 2:51 PM CET, Sterling Windmill wrote:
-> (Resending as plain text; the list rejected my first copy as HTML.
-> Sorry for the duplicate to those on Cc.)
->
-> Hi,
->
-> compress-force can only be set for the whole filesystem. I would like
-> to apply it to one subvolume and leave the rest of the filesystem on
-> plain compress. Before writing a patch, I'd like to know whether this
-> would be welcome and what form it should take.
->
-> My filesystem (kernel 7.3.3, 10-device RAID10) holds both raw disk
-> image backups and large, already-compressed video files, and these
-> want opposite settings.
->
-> The images need compress-force. I copied one image (about 60G of data
-> in a sparse 249G file) three times with
-> "cp --reflink=3Dnever --sparse=3Dalways". Sizes are from compsize:
->
->   mode                      extents   on disk   stored raw  zstd in->out
->   compress-force=3Dzstd:3     615,577     23G        11G      48G -> 12G
->   compress=3Dzstd:3 + prop    492,796     31G        27G      33G -> 4.6G
->   compress=3Dzstd:3           218,911     60G        60G     944K -> 296K
->
-> "prop" is btrfs.compression=3Dzstd. The last copy ended up with
-> NOCOMPRESS set. This is one image and one sequential write, so I would
-> not read much into the exact percentages, but the property costs about
-> 35% more space here than compress-force. I have not measured how much
-> of that comes from the heuristic's sampling and how much from data
-> that is compressible despite its byte distribution.
->
-> The video pays for compress-force. An 82G file had 169,776 extents and
-> read sequentially at 270 MB/s. After "btrfs filesystem defragment
-> --nocomp" it had 666 extents and read at 622 MB/s. That works, but it
-> has to be repeated for new files and it breaks reflinks.
->
-> As I read inode_need_compress(), FORCE_COMPRESS is only ever taken from
-> the mount option, and a property always goes through
-> btrfs_compress_heuristic(). compress_file_range() already avoids
-> setting NOCOMPRESS when prop_compress is set, so a per-inode force
-> seems to need little more than this (hypothetical field, untested):
->
-> 	if (btrfs_test_opt(fs_info, FORCE_COMPRESS) ||
-> 	    inode->prop_compress_force)
-> 		return 1;
->
-> With that, I could mount with compress=3Dzstd:3 and set force on the
-> backup subvolume, relying on the usual property inheritance.
->
-> Questions:
->
-> 1. Is a per-inode force something you would accept, or would you
->    rather see the heuristic improved for this kind of data?
->
-> 2. What should the interface be? The per-inode compression levels
->    series [1] adds "algo:level" to the same property. Would a suffix
->    such as "zstd:3:force" be acceptable, or a separate property? How
->    much does the behaviour of older kernels reading the value
->    constrain this?
->
-> 3. How should it interact with NOCOMPRESS? I assume setting force
->    would clear the flag and take precedence over it. The 2020 thread
->    on compress-force and per-inode settings seems to have left the
->    three-state question open:
->    https://lore.kernel.org/all/b92d0141-f68f-ce96-8099-e145ebc6f594@toxic=
-panda.com/T/
->
-> 4. Should this wait until the levels series is settled?
->
-> If there is interest, I am happy to write the patch and test it on
-> this data.
+Hi koraynilay,
 
-Hello, there is a github issue tracking this and a patch[2] (by me)
-currently pending final review.
+Thanks for pointing me at it. From reading the series (I haven't built
+or run it), it looks like it solves a related but different problem.
 
-Can you see if [2] has the same behaviour you expect?
+It lets the property carry a level, which is useful, but the only
+inode.c changes are to how the level is chosen. inode_need_compress()
+is untouched, so a file with btrfs.compression=zstd:3 would still go
+through btrfs_compress_heuristic(), because FORCE_COMPRESS still only
+comes from the mount option. I would expect to keep getting the 31G
+result from my table, unless I've missed something.
 
-[1]: https://github.com/kdave/btrfs-progs/issues/329
-[2]: https://lore.kernel.org/linux-btrfs/20261103194734.598182-1-koray.fra@=
-gmail.com/T/#t
+What I'm after is a way for the property to skip the heuristic the
+way compress-force does, so that one subvolume can behave like
+compress-force on a filesystem mounted with plain compress.
 
-Best,
-koraynilay
+Since your series defines the "algo:level" syntax, would something
+like "zstd:3:force" fit as a follow-up on top of it? The alternative
+I can see is a separate property, which would only need a small
+change to inode_need_compress() and wouldn't depend on your series,
+at the cost of having two properties for one setting. I'd be glad to
+hear which you or others on the list would prefer.
 
-> Thanks,
-> Sterling Windmill
->
-> [1] https://lwn.net/Articles/1096934/
-
-
-
---92f8a953699a83d31cf7ddaaf00b8c75f9017743c904bd52c6971950bc57
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQRJ2XvJtXGwULYEerQ0bnTtJTDoOAUCavHR4AAKCRA0bnTtJTDo
-OI7LAQDc2jtghBHeTPNU6Et+fUIvDM0/w6mZNkm7PApLu/jnlgD/Ym4hQGX/A0lL
-Ya1/Cj90A0d5b0riG1b/puPtwGzbrgY=
-=HZwJ
------END PGP SIGNATURE-----
-
---92f8a953699a83d31cf7ddaaf00b8c75f9017743c904bd52c6971950bc57--
+Thanks,
+Sterling

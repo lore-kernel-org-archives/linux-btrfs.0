@@ -1,96 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.181
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794256164;
-	b=Vfm+ZljiNdJcW2/vVu486iDhw8BH28wJ48NivAB9OzziOFpktSRzeRStcDgB5gJjC7on
-	 4OhVXE89Z/wkbcIUycfwrRY6RnnpFzsN3wewT8ZdH78UV0aDL0tLXyd3S8w7E4RZDLXch
-	 tuvDpoHdlwfJ05BGWUrCO6Zve1AW70uU2xx5lm55LW0ta1f9DrwW0CXq3ODXwpUxv2QsP
-	 EqbMSIWAb+pvIwqKpIoKp1wndDwWa7KV388hpnb1QyO12CihmYVsLKbJ5vv7TRvv079QI
-	 +hQS4Cmy/pImAV6J0sKRvQIVpF7e2GtxzVDw8WLK43bf6+atch6glYLkFVlOOR0gG6A==
+	t=1794256244;
+	b=UXvWDbaNszFuecMsNfq6doaGCvWgmQLhPZT53GwrbJyc2mx/EShuLiYqXd1cRNzbzFBt
+	 xMPzUKsVZNF+M07aPsN/cHd3JAsJdR814Av0B81EsaI7Xm2cPZR+IvuPnjIdLbn5ogQk2
+	 eUUflx7wXjJmiffNI/cuW8RsdRxri09U4SS070tYNx+GG+HsD75PntER9nVZj93qFYRX/
+	 44BKjmmSZoIfxfQ3J0mrzuh6wkBNkyNpXlNrlSnmBtxBi/BwFXLxaTxvwq/HkQQkWQEjP
+	 7/UaIwvdi/5TieMlP8Qv2HzpGVNRYJRVs8oUUc5UbV0EzRIZoqCOlfPf+G0ZJ3QSsxw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794256164;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794256244;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding;
-	bh=Q9kT3fz3vzDuXqjcm0DKy/dEcUDkUtFVvLm4k11ssrI=;
-	b=RwLCR3XFy3Nq2H+XzqV7pZLALLUvJDOmxvvz9pLRcsnMXlGdMwXOtollNzHyAb2h5zGn
-	 FGLGqU73oR4mEmfGTpQcIoVbUGU8P/A7L460Uc/99eAV3NeK03bwAxKEV25xIx3vFe3Mw
-	 VgMHB/+CSqYOC3dqpokQYH4pEZC9N/fBOaoELzXruhydftdGfRDDH+LX/I0nDN02Yu/ch
-	 VqOPNicduMZ060kA9AgpdQAygtAofQnP+MsVOwefIdzP9Oux0O26XAh8gHA9Ocg9j4H0F
-	 GPUAAW5EcqPGmkCghVFUvKEUpcO7clSnbniLU3uo72atGp+mkuuGVOb7VA+T737IMLw==
+	bh=+tMX62hpYm7986gg5n8urKNYmz9FWSZU4tmvG1SnovM=;
+	b=HlJWxJAa9EPox2qhoeQwn6BPmVwwz+DJ6ePxLlu+bZ6d5Zpu+TRsrrPNyrZR7AhChGyq
+	 VwlaDG4DsYZpnOUaT+6KnqQHHSLh9sbhMZZDKSPlG7WfMEIgTWsChl2npvb5G4UVvIrDh
+	 ICOfo55f/Uqr1C+Rv+MEBoVogQvAM2cqk3TflUrJAi9rXmjOSh+s5V5ktxQ928m8gZhlW
+	 3bklziXsOWM3oHbhjOUK7AnKQDuuTUHbnHUApyocw+Mq5a343yvNPO51n0PWSfYlz4yYY
+	 txNpRuS2JnI6WuxSzYgwnmPsQJfXT1yz54YacJq8Hr9SnuSQvLar3IO6GqgpeBZLCcg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b="d6cJ/SBd";
-	arc=none smtp.remote-ip=74.125.82.181
-Received: from mail-dy1-f181.google.com (mail-dy1-f181.google.com [74.125.82.181])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=VEhyVY7K;
+	arc=none smtp.remote-ip=209.85.128.54
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 59A4960A2607
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 20:29:24 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 59A4960A2607
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 930A4606A331
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 20:30:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 930A4606A331
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=d6cJ/SBd
-Received: by mail-dy1-f181.google.com with SMTP id 5a478bee46e88-3704d30b84fso1669901eec.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 12:29:24 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=VEhyVY7K
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4a1b07c3c5fso12800605e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 12:30:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794256163; x=1794860963; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=Q9kT3fz3vzDuXqjcm0DKy/dEcUDkUtFVvLm4k11ssrI=;
-        b=d6cJ/SBdX6/ehEp7fUvEZQHyH4npkIz/bk620SpXxhNeU4ycWM9MQ7rBM67z/By/Dy
-         un2hBXuepA6rMAHdc5OXzIoutG2ABVr2M0UXeyOLKYsb6+N853l5qDZNMGXEzRNGoU8J
-         /bdTYVTfKBBdFMa994el7JpOeeOhWsFBxd+Tna7800XYUgbuwpbSrQbAPZSuZxEN0u5w
-         K0DT3JvVtGACO0jis1Ga0DQWyndLoVZANqJ5fpDcFQoJeciCN5Z2aeY7E4or6k/jm3wv
-         zl9ZGBtWgVFtiNAuaDGxy1buvoon0G/2JKuFxYEbBnJlSFjEPOv6ny1uzT9KEnS1gZR4
-         ZT3Q==
+        d=suse.com; s=google; t=1794256242; x=1794861042; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=+tMX62hpYm7986gg5n8urKNYmz9FWSZU4tmvG1SnovM=;
+        b=VEhyVY7K42NAxTw8H2+GjeVz4ETJMueGbExtxQRoLg3PbImG65GKtXb+CzJOTr1zRS
+         c/R5pZGxgciPVhJInqhITwICQVjnQsI6ez+h8kRKrSxOYe7qHB/26wEF4ujKkYKiC6Gy
+         RTPYbtH2ePG5GJhLQsEGOCv9XjnmeiL+jBYMwfpP8c9U42loUfWhJiT60iBkjfyQgZKq
+         1j2J/6oAbhvyWK6iHS73Vs/q1iF7C8E7xbcQ/w6tL8H8YCC0NdJ6pJtRosg//YNp4VB6
+         efa1BS8wFx5YYiJtkxAfoLJxGeKWfEGsw6dQ51lGZuyOUZ/N/ksb0WtujasW3qct6ayq
+         dS7g==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794256163; x=1794860963;
-        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
-         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+        d=1e100.net; s=20260707; t=1794256242; x=1794861042;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=Q9kT3fz3vzDuXqjcm0DKy/dEcUDkUtFVvLm4k11ssrI=;
-        b=TKrIg8HIFbgOArsHf2HDIBuT1Zl7nf4HxWhP8+dz8RuwTEVKrla3BtZoRx453Ry++J
-         DwgimBazyN+IaR7rISi+WHVORbGz+Z23phQYzLREXPEZpxTLkkMjXnqhr2JhcGDxbZrV
-         UIt2/QjSbMfVfGYU9Y5CdAgtTar4CUQ8LgGd2N4nWbshZwoZ90OmU73a+mWiJzzqPAmC
-         aS5acfp0e4EGsdkn7qHYWvSwHsdy6woB+OAFhsfwDzrAr/qMr7siLtzEZ5tw0AJl6KPK
-         mD4QXLa7gaAg9QBs5v976DgjuCH4l0HKsINqkB8ylTQBlknJQLTPAKQmP7BSApwYIDxE
-         9nJw==
-X-Forwarded-Encrypted: i=1; AL+hErHXcx8wHjlWS/socbguX0OIDBPPQA7bhIAzhML+BspIeQuVN6hHNvbYUcyL12mUZwtguv5VkXQ2L5e97w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9leVTsFRa6c6C1OQXhv6IFjOmAlMIyh4YgPgLm56I6FGm+CpBs
-	ABHBlbK/u3VTHQ9w6Nl5PlmWLfKovdQ6zaiuFP3RlajzypnRwahgHGlJ
-X-Gm-Gg: AYBFou06sMWOdFAJIwnYSp5Rr9SHOiLHtK9xMWCIMmr1KqQFbtiuRb8wz3fmMslqP6L
-	seSyd1NrcQ9FFnaI3zNs9Sn8ZtvjdzSOXV2Uy1CfpAuPAVQ+6R06N1nV3PIwxWfSoTc+wgV89El
-	WJlMmZwWH0OaKLrQaC7PFtIJFGvkA5lEpgVif0IKyAngA3c5GjOpnBkZ1OK7MWfifDR/rSlj17N
-	praudwMMyTQNwO4XNpyzTmaDIPWRVasZritAHwQvkSFnXBBFceOvMnvPt6eL7PFygdDuW+V+eX2
-	XLBH9JUXxETEku1bTO6iDwYMRdCjQPD7flLl53fjXlT7brfLG29hCke9GVWKufA9gpy3kNCL1dM
-	5PR/E2eClUlw6CZin5DRqP0iyDwQwWNVKKcf9Hj0HGqrdvSVYRUgTLvpMYGMyZuPJGtSN7/FP7Y
-	YOEMAcf9WBT9uduKueHWK4Pq1a6sYvSwmUQn+ZtQU7bcY6DO4KC3+O5yRoLiITvERUse6u4I86D
-	e0sBvEeUb8hcQ8z86nyP++Os5zrf2aWCfj0I7UqieQLFuY1BcaCDuADVx9bJubtLX4i9EDczGUB
-	A27vG+t7NdNvniTtydbSNaKxqLqJI0wdgu36
-X-Received: by 2002:a05:693c:8845:b0:366:9f06:3c4c with SMTP id 5a478bee46e88-3751fe3228cmr430632eec.32.1794256163417;
-        Mon, 09 Nov 2026 12:29:23 -0800 (PST)
-Received: from user.. ([2405:201:c052:b00b:fe08:4a28:dbaf:f2aa])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3751fe32276sm703045eec.8.2026.11.09.12.29.19
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 09 Nov 2026 12:29:22 -0800 (PST)
-From: pavankumaryalagada@gmail.com
-To: dsterba@suse.com
-Cc: mason@kernel.org,
-	fdmanana@suse.com,
-	josef@toxicpanda.com,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	skhan@linuxfoundation.org,
-	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>,
-	syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
-Subject: [PATCH] btrfs: Clean up delayed inode items on transaction abort
-Date: Tue, 10 Nov 2026 01:59:14 +0530
-Message-ID: <20261109202914.64371-1-pavankumaryalagada@gmail.com>
-X-Mailer: git-send-email 2.43.0
+        bh=+tMX62hpYm7986gg5n8urKNYmz9FWSZU4tmvG1SnovM=;
+        b=UOkcyAkt85y2jnRPGB4oPtlRXw5Qh5Z+3BikoB96fAPyu4f8tz4rGJ1zz9T7hSoVks
+         K0+tTK+926k2yD2gbhlGkfx9LKXWQPB9LIUmn5XmYoySkeN0yAEr9KWR4V8zzZhRrgeH
+         Moqgx0d95KC2XBv3OklqfkiCtvQlOFGllXOsYIHP5i41cn/OBuLZ8qJ2DwWu6gGNy+og
+         2INTv3t+/aLFX1IyxTEAUQKDDTqWaooKQYMvCTFDKVR3yjhslWJDGWuRChHc1wroLQxd
+         b3p/NVBikP3uTVAfbbdkxXgyjilcPxanN4q/mImNyRAzgKxPfKRlla8gOiULAoUjjlme
+         +/8A==
+X-Forwarded-Encrypted: i=1; AL+hErFc9wid7f9l31jDo/jWBPdP9c+oLBtwSiv4wrHt+y1/0SOr3unXLdZYQdw/apEO8lArAe+TN4gjpME83g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/tWMqtDO6WSXCfgXHT5iCdVNuJVYrsVuTldk1+Kg2yTOFSf2SQ
+	WbfZEPlYRWZnaEjRKECr7TVIuQxh8o6diwqVo7AmjvQ17UGgyK7G3cKbSs3MT7NdrMY=
+X-Gm-Gg: AYBFou0lU4W+jqModgXV9ePmqeHl9zEW4SbQYKn310b3TRDFVby/GrOTh7kR2V2Ikzl
+	cjWo1QRwQ7p8utpCQJ6eEIAtABttD9793FXsDAeMxEZGNWIngZYYj8YiUam+OsBs2EUfAwdvCn8
+	dHIorgpTXsoVP3YlKDZBQu7SfdMU7uDmD3rrYZmDAwZ1qhK9uH1BCgrvsgmIZh9ZOadFxkYu9B/
+	c5YoYJJj9thumkURkLdjkVMyZNEMgyXu3AoPgrIJCKjeqpWcMAsDzd+4iz4mkVvHDQjCghjGY8F
+	+KuVXoJYHoEBBdNYlvTj0EAl0+nMNl08l77kbmn0J60/7zDw5Zr44LIy2xAq5OWKPv6tDXyNdhF
+	3ULzBwYeepzHeMjj7OGXDwV51a/IphAl5P5sa4gLcoY8a5wIthZ2PjVnp1yUqdo5Bh3WK897SjF
+	/tXyQ3ry0G0wgeD9FNgv19DSZSjo+7hS2s3SSwyoZWNxRhKZpfZtS2h3ef3wEopGGkx32LeE+Vd
+	W2Owuzj0Ye4ssYrHYkmxFZOBdsKxnEbvUolY8LvsH8U+42Fc24V2/soV3LsQc/DivN+Kw3KLRnU
+	hUrwhh1QExbpCfpZLLiAWBo=
+X-Received: by 2002:a05:600c:3d05:b0:4a3:598e:e7a8 with SMTP id 5b1f17b1804b1-4ba0230519amr6586835e9.4.1794256241974;
+        Mon, 09 Nov 2026 12:30:41 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b16769b589sm831706a91.5.2026.11.09.12.30.37
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 09 Nov 2026 12:30:41 -0800 (PST)
+Message-ID: <70aa1a4e-895b-416f-a3cb-195af489b55e@suse.com>
+Date: Tue, 10 Nov 2026 07:00:34 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -100,49 +92,72 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: reject refs=0 subvolume without DEAD in
+ SUBVOL_SYNC_WAIT
+To: dsterba@suse.cz
+Cc: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>,
+ Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org, stable@vger.kernel.org
+References: <20261101062539.1744605-1-teel4res@gmail.com>
+ <a92d223b-55fa-493e-821a-e5acc8afee08@suse.com>
+ <b4962b1b-bc5e-4302-8456-73b9b8a6474b@suse.com>
+ <20261109184712.GF4186782@twin.jikos.cz>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <20261109184712.GF4186782@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
 
-When a transaction is aborted, btrfs_commit_inode_delayed_inode()
-fails because btrfs_join_transaction() returns an error. This makes
-btrfs_evict_inode() skip btrfs_kill_delayed_inode_items(), leaving
-pending items in the delayed node.
 
-Move the error check after btrfs_kill_delayed_inode_items() to
-ensure pending items are removed when the transaction is aborted.
+在 2026/11/10 05:17, David Sterba 写道:
+> On Sun, Nov 01, 2026 at 05:48:21PM +1030, Qu Wenruo wrote:
+>> With that said, there are more problems with the ioctl.
+>>
+>> - No real user
+>>     No one is utilizing BTRFS_SUBVOL_SYNC* flags. Btrfs-progs itself
+>>     doesn't even bother it.
+>>
+>>     So all these fixes are very low priority, unless there are some wild
+>>     programs utilizing this.
+>>
+>>     But even btrfs-progs doesn't utilize them, the possibility are very
+>>     low.
+> 
+> Obviously the ioctl was added so progs 'subvol sync' can use it for
+> non-root users. I started working on it but there's a problem with the
+> behaviour change between the user types. Root has full access and
+> reports the progress while with this ioctl there were some problems I
+> don't remember. The ioctl was designed to emulate all modes that root
+> can do so it should be possible to get 1:1 output.
 
-Reported-by: syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
-Link: https://lore.kernel.org/all/6af131f2.44d55313.247daf.0001.GAE@google.com/T/
-Fixes: 2adc75d61203 ("btrfs: move btrfs_kill_delayed_inode_items into evict")
-Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
----
- fs/btrfs/inode.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+Are you still planning to implement the full root-less subvolume wait in 
+progs?
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index abaa33471456..397aa64b4816 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5623,8 +5623,6 @@ void btrfs_evict_inode(struct inode *inode)
- 	 * the inode update is released.
- 	 */
- 	ret = btrfs_commit_inode_delayed_inode(BTRFS_I(inode));
--	if (ret)
--		goto out;
- 
- 	/*
- 	 * This drops any pending insert or delete operations we have for this
-@@ -5634,6 +5632,9 @@ void btrfs_evict_inode(struct inode *inode)
- 	 */
- 	btrfs_kill_delayed_inode_items(BTRFS_I(inode));
- 
-+	if (ret)
-+		goto out;
-+
- 	btrfs_init_metadata_block_rsv(fs_info, &rsv, BTRFS_BLOCK_RSV_TEMP);
- 	rsv.size = btrfs_calc_metadata_size(fs_info, 1);
- 	rsv.failfast = true;
--- 
-2.43.0
-
+Or is this feature deprecated and we can eventually remove it to reduce 
+LLM bug reports?

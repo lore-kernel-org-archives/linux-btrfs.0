@@ -1,83 +1,83 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794197435;
-	b=IqIzbLIq3aBSG+kkg5YPVI+LjCfDol2vZztgbLzvAF57ocLV6m7PCiCEEt/Q5pvU11Ey
-	 +Ab5R1aldI34X34VVa14Fz6P1GZL3hnl3Z3xgD/wCQEC7esqlFI4K9FOmOB0wbwKQ/vpW
-	 vKVSNGVjQTg2d6hoDgzwWYG+PshdJmyOtw/4aSmYJAy9cIg571coejpeoA2/DvGwdXgib
-	 7cTkufY5kkqPjZjtYxlLLOyQsjeKdEDbzY8N2fysB1cYl+1a4rBmFey/e/UWCNs8Ik+K4
-	 ZM5W6wTsXQV/KXZeYOmEMi2Ndy/ZKF9ojNdZ+dQZzCxJcYM9ORiDD7ndW9Q8wb5kkwQ==
+	t=1794197434;
+	b=vh/ZO4t1S0zPGwR94UjkTEXMyXOEB9vPdjM0c0DOyNA1F15e5v3MMFvoi2N4PA1i3gzi
+	 ZfSMJ4QCGs/Ii6wOTAJ4UNnHFO8CQUz+hO2o9uU1ezT9VIqOnARqQUhdpnDkT5eA+gErY
+	 vc3rtnDVHtl7la91ovtue4gUwXbUmXox3SeMEu2zVtkOyv0WkROZeTmYTgZ/yroJ/OfTb
+	 7UApHxyR07uWQbadwW79CZSSY8mlaSpco2yV3N6KCwGmaA9EhPLZCsiuTrVKKS0D9rEyF
+	 fxpGUaHFTDqUWaJrAFeKgOLHhTNt1uJIyT4E+vBkTO39g3IDRguqrQIATKCjyoZGlww==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794197435;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794197434;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
 	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
-	b=Knso/cdRlXYGDJ3n7vQtp4Ik3eq8rz2V/srGbnDiEkUQ2szAPYuy/2NlosPRyRh374yv
-	 P+2Hix/AUfxeRCXcJHuOGjNeCfDbZP+ijIcCiRoD7l7i+ZB03AUu3EsUAPxWxDPlbxpwZ
-	 ChPIs1m0RHvahTwtdhCmvknKqbgZzqurgkFTrgRh3YEtHg4oMi/8vgwbuBUeu89cRi7tg
-	 A7ZFGOl2lWY1vvHZEOviCLvgAID4n3THUZkBYK7Re1ItpqPQoQR5C5dqCenoZ76xJpmA4
-	 rzoqM0YoIbAry+mmZviU64vBs7M4Pwn5b1ySHSKP0w5KbVEwV/6DgMbmeLKAeiGzPQw==
+	bh=+yY4/k5WOF03/TkNYQqUTF4bf3qu1iZofvHWh25+4HA=;
+	b=0ZCtoWlDPJPfjvLXFsL0CIrI00A66fmMSOkbV7WYabtkoNMSj5FrnV5dllJb0xIDexOT
+	 cgVMhhgsSMud99TFBfKZ+m+XQMzmj98hoJPT7NK4bXPvzEJvHSGRDbhjJUYcIwoHtDA89
+	 TVrdBFErynNZyggvPpZkLKiIVai8bPgS1yyO+/2QjZMhBlzFLvhRv3H9JoUIQZopNOals
+	 AoDBvW2TBUS5Mx2C+/TSrKwVLdpmMdr0olhMZvrYsDzhjZSeAcceiiPZcdwkF3YESGuzz
+	 5Ji9Jr4MrJLz4XBsZElVyPV+muZbu0w3F30iK/sGHVtvwbbjRiviSXixvxiRb4ytOLg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dMZmUXe7;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dMZmUXe7;
 	arc=none smtp.remote-ip=195.135.223.131
 Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33BA3606A335
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:35 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 33BA3606A335
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CE00606A338
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:33 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8CE00606A338
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=kZkt8Vdr
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dMZmUXe7;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=dMZmUXe7
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 9F1941FB6A
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:33 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id F31E71F82A
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:31 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794197433; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794197432; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
-	b=kZkt8VdriJDXC5g7yh37KMgTc/LSVgE9K9ykvMRnsfdnfmboBX7r6+qrnZDlDF7MAJOELT
-	pmdocCktRwum0hmBUup/t5OWuyWg/b138yM8AsLsOGP4IMhtbpwcZkhuhtyYevLsx+4ytx
-	DP/6wBZ5O6PM+39sVlWgqjJT29TuR5U=
+	bh=+yY4/k5WOF03/TkNYQqUTF4bf3qu1iZofvHWh25+4HA=;
+	b=dMZmUXe7+Cku0DYxQ/25+p58oYSnw1BQhs8I8KOSnuY3kB3vJeGzj/teS4jlD8d736k4Uj
+	zWvnmAtkCRRkvQBjPtA7vDAWscLcXtuvUwryw3GK4ymMg2RHk/2MuPuI6FJwJhRr0EiVgT
+	0/pFQxgo+fwQ0YNw/OVDAFkFi1zVLis=
 Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794197433; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794197432; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=EHTkKAoAx0x1IXCnaiV62m64RvzOh1PuCfQTaY2iqGo=;
-	b=kZkt8VdriJDXC5g7yh37KMgTc/LSVgE9K9ykvMRnsfdnfmboBX7r6+qrnZDlDF7MAJOELT
-	pmdocCktRwum0hmBUup/t5OWuyWg/b138yM8AsLsOGP4IMhtbpwcZkhuhtyYevLsx+4ytx
-	DP/6wBZ5O6PM+39sVlWgqjJT29TuR5U=
+	bh=+yY4/k5WOF03/TkNYQqUTF4bf3qu1iZofvHWh25+4HA=;
+	b=dMZmUXe7+Cku0DYxQ/25+p58oYSnw1BQhs8I8KOSnuY3kB3vJeGzj/teS4jlD8d736k4Uj
+	zWvnmAtkCRRkvQBjPtA7vDAWscLcXtuvUwryw3GK4ymMg2RHk/2MuPuI6FJwJhRr0EiVgT
+	0/pFQxgo+fwQ0YNw/OVDAFkFi1zVLis=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 85F4313319
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:32 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id D96A213319
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:30 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id AKhEN6tH8WrIZAAAD6G6ig:T8
+	id AKhEN6tH8WrIZAAAD6G6ig:T7
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 04:10:32 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 04:10:30 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 7/7] btrfs-progs: crypto: hash-vectest: cover more block sizes
-Date: Mon,  9 Nov 2026 14:40:01 +1030
-Message-ID: <57c6f1a3a74881ceaa4ba63194003eb3064b6a7e.1794196688.git.wqu@suse.com>
+Subject: [PATCH v2 6/7] btrfs-progs: crypto: hash-speedtest: cover more block sizes
+Date: Mon,  9 Nov 2026 14:40:00 +1030
+Message-ID: <586e2432deb39abb1934dd4c8a9868c42832fd68.1794196688.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1794196688.git.wqu@suse.com>
 References: <cover.1794196688.git.wqu@suse.com>
@@ -97,7 +97,7 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
 	MIME_GOOD(-0.10)[text/plain];
 	RCPT_COUNT_ONE(0.00)[1];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
@@ -116,279 +116,202 @@ X-Spam-Score: -11.80
 X-Spam-Level: 
 X-Spam-Flag: NO
 
-Currently hash-vectest only has small test vectors (up to 1023 bytes),
-which does not exercise the code paths used for real btrfs workloads,
-especially the accelerated ones which have different handling for
-different lengths.
+Currently hash-speedtest only benchmarks 4K blocks, but btrfs hashes
+buffers of very different sizes:
 
-Add test vectors for the following sizes for all algorithms:
+- btrfs_name_hash() on file names, up to 255 bytes
+- data checksum on 4K sectors
+- metadata checksum on tree blocks, 16K by default
 
-- BTRFS_NAME_LEN (255), the max file name length for btrfs_name_hash()
-- SZ_4K, data checksum on 4K sectors
-- SZ_16K - BTRFS_CSUM_SIZE, metadata checksum on 16K tree blocks
-- SZ_16K
+Run every contestant against 16, 255 (BTRFS_NAME_LEN), 4K and 16K,
+printing a separate section for each block size.
 
-For those large vectors, the plaintext is generated at runtime by an
-common LCG from "Numerical Recipes in C", instead of embedding tens of
-KiB of data.
+For the 16K case, the real metadata checksum length is 16K - 32 as the
+csum header is skipped, but the difference to a full 16K is minimal, so
+just use 16K.
 
-The expected digests are calculated by independent tools using python.
+Also fix the MiB/s calculation, which can overflow int for large sizes.
 
-Also add the CRC32C test patterns from RFC 3720 (iSCSI).
-
-Finally add a gitignore entry for hash-vectest.
-
-Assisted-by: LLM (the idea of using LCG, coding)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- .gitignore            |   1 +
- crypto/hash-vectest.c | 166 +++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 163 insertions(+), 4 deletions(-)
+ crypto/hash-speedtest.c | 132 ++++++++++++++++++++++------------------
+ 1 file changed, 74 insertions(+), 58 deletions(-)
 
-diff --git a/.gitignore b/.gitignore
-index 78333d679a7d..b93a9f872c65 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -49,6 +49,7 @@
- /quick-test
- /json-formatter-test
- /hash-speedtest
-+/hash-vectest
- 
- /aclocal.m4
- /autom4te.cache
-diff --git a/crypto/hash-vectest.c b/crypto/hash-vectest.c
-index c190a7a01b95..6032daa030f9 100644
---- a/crypto/hash-vectest.c
-+++ b/crypto/hash-vectest.c
-@@ -15,10 +15,16 @@
-  */
- 
- #include "kerncompat.h"
-+#include "kernel-lib/sizes.h"
-+#include "kernel-shared/uapi/btrfs_tree.h"
+diff --git a/crypto/hash-speedtest.c b/crypto/hash-speedtest.c
+index a26959ae66e8..9a7d81d582fb 100644
+--- a/crypto/hash-speedtest.c
++++ b/crypto/hash-speedtest.c
+@@ -27,7 +27,9 @@
+ #endif
  #include "crypto/hash.h"
  #include "common/messages.h"
++#include "kernel-lib/sizes.h"
  #include "common/cpu-utils.h"
++#include "kernel-shared/uapi/btrfs_tree.h"
  
+ #ifdef __x86_64__
+ #include <x86intrin.h>
+@@ -42,7 +44,15 @@ enum {
+ 	UNITS_PERF,
+ };
+ 
+-const int blocksize = 4096;
 +/*
-+ * For test vectors with no plaintext but a non-zero psize, the plaintext is
-+ * generated by fill_pattern().
++ * Default sizes:
++ * - 16, 255	btrfs_name_hash() on short and max name length
++ * - 4096	data checksum with 4K sectorsize
++ * - 16384	metadata checksum with 16K nodesize, the difference from the
++ *		real size (16K - 32, no csum header) is minimal
 + */
- struct hash_testvec {
- 	const char *plaintext;
- 	size_t psize;
-@@ -45,6 +51,55 @@ static const struct hash_testvec crc32c_tv[] = {
- 		.psize = 7,
- 		.digest = "\x41\xf4\x27\xe6",
- 	},
-+	/* CRC32C test patterns from RFC 3720 (iSCSI), section B.4 */
-+	{
-+		.plaintext = "\x00\x00\x00\x00\x00\x00\x00\x00"
-+			     "\x00\x00\x00\x00\x00\x00\x00\x00"
-+			     "\x00\x00\x00\x00\x00\x00\x00\x00"
-+			     "\x00\x00\x00\x00\x00\x00\x00\x00",
-+		.psize = 32,
-+		.digest = "\xaa\x36\x91\x8a",
-+	},
-+	{
-+		.plaintext = "\xff\xff\xff\xff\xff\xff\xff\xff"
-+			     "\xff\xff\xff\xff\xff\xff\xff\xff"
-+			     "\xff\xff\xff\xff\xff\xff\xff\xff"
-+			     "\xff\xff\xff\xff\xff\xff\xff\xff",
-+		.psize = 32,
-+		.digest = "\x43\xab\xa8\x62",
-+	},
-+	{
-+		.plaintext = "\x00\x01\x02\x03\x04\x05\x06\x07"
-+			     "\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
-+			     "\x10\x11\x12\x13\x14\x15\x16\x17"
-+			     "\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f",
-+		.psize = 32,
-+		.digest = "\x4e\x79\xdd\x46",
-+	},
-+	{
-+		.plaintext = "\x1f\x1e\x1d\x1c\x1b\x1a\x19\x18"
-+			     "\x17\x16\x15\x14\x13\x12\x11\x10"
-+			     "\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08"
-+			     "\x07\x06\x05\x04\x03\x02\x01\x00",
-+		.psize = 32,
-+		.digest = "\x5c\xdb\x3f\x11",
-+	},
-+	{
-+		.psize = BTRFS_NAME_LEN,
-+		.digest = "\xbb\xd7\xaa\xea",
-+	},
-+	{
-+		.psize = SZ_4K,
-+		.digest = "\xb6\xaa\xa5\x04",
-+	},
-+	{
-+		.psize = SZ_16K - BTRFS_CSUM_SIZE,
-+		.digest = "\x1d\xb1\xa7\x39",
-+	},
-+	{
-+		.psize = SZ_16K,
-+		.digest = "\xd7\xd1\x5b\x37",
-+	},
- };
++static const size_t sizes[] = { SZ_16, BTRFS_NAME_LEN, SZ_4K, SZ_16K };
++
+ int iterations = 100000;
  
- static const struct hash_testvec xxhash64_tv[] = {
-@@ -94,7 +149,23 @@ static const struct hash_testvec xxhash64_tv[] = {
- 			     "\xed\xfd\x08\xf7\xe8\x04",
- 		.psize = 222,
- 		.digest = "\x41\xfc\xd4\x29\xfe\xe7\x85\x17",
--	}
-+	},
-+	{
-+		.psize = BTRFS_NAME_LEN,
-+		.digest = "\x83\x5a\xfd\x3d\xdb\xda\x73\xfe",
-+	},
-+	{
-+		.psize = SZ_4K,
-+		.digest = "\x8a\x21\x49\xcf\x03\x49\x7c\x70",
-+	},
-+	{
-+		.psize = SZ_16K - BTRFS_CSUM_SIZE,
-+		.digest = "\xda\x59\x52\x99\x9f\x4e\x0b\x4e",
-+	},
-+	{
-+		.psize = SZ_16K,
-+		.digest = "\xf8\xec\x5d\xe3\x99\x47\xaa\x5d",
-+	},
- };
+ #ifdef __x86_64__
+@@ -162,10 +172,8 @@ static const char *units_to_str(int units)
+ }
  
- static const struct hash_testvec sha256_tv[] = {
-@@ -260,7 +331,35 @@ static const struct hash_testvec sha256_tv[] = {
- 			     "\x32\x32\x17\xcc\xd4\x6a\x71\xa9"
- 			     "\xf3\xed\x50\x10\x64\x8e\x06\xbe"
- 			     "\x9b\x4a\xa6\xbb\x05\x89\x59\x51",
--	}
-+	},
-+	{
-+		.psize = BTRFS_NAME_LEN,
-+		.digest = "\xde\x26\x80\x6a\x0d\x54\x41\x6d"
-+			  "\xc6\x11\x04\x97\x16\xc5\xd1\x46"
-+			  "\x7f\x90\x15\xb1\xe8\x99\x10\x4e"
-+			  "\x16\xd5\x62\x46\xb8\x55\x01\x6c",
-+	},
-+	{
-+		.psize = SZ_4K,
-+		.digest = "\x28\xc7\x4f\x56\xd2\xc9\x59\x95"
-+			  "\x5f\x64\xec\x0e\x74\x0b\xe7\xd0"
-+			  "\x8a\x02\x3a\x0a\xbf\x03\x2c\x25"
-+			  "\x7e\x8e\xf7\x58\x6a\x6b\xb7\x75",
-+	},
-+	{
-+		.psize = SZ_16K - BTRFS_CSUM_SIZE,
-+		.digest = "\x9e\x81\xe5\x25\xe3\x9f\xe6\x1b"
-+			  "\x69\x74\xb0\x83\xb8\x30\x3d\x4e"
-+			  "\xc7\x38\xf0\xb4\x66\x73\x61\x25"
-+			  "\xa8\x2e\x4c\x6b\x58\xb9\x55\xa3",
-+	},
-+	{
-+		.psize = SZ_16K,
-+		.digest = "\xfb\xbb\xb4\x2b\xbd\xf4\xee\xb7"
-+			  "\x85\xdd\x39\x84\xd8\x88\xa5\xa2"
-+			  "\xa4\x38\xd4\xff\xb3\x45\xed\x5e"
-+			  "\xa1\x2f\x06\x1d\x86\xa5\x4b\x77",
-+	},
- };
- 
- static const struct hash_testvec blake2b_256_tv[] = {
-@@ -423,7 +522,35 @@ static const struct hash_testvec blake2b_256_tv[] = {
- 			     "\xbf\xe6\x82\x94\x3f\x59\x91\xee"
- 			     "\x18\xa6\x27\xc3\x00\x12\xa5\xd0"
- 			     "\x92\x3a\xb1\xc6\xa3\x46\x5a\xea",
--	}
-+	},
-+	{
-+		.psize = BTRFS_NAME_LEN,
-+		.digest = "\x1e\x1f\xab\x3d\xb0\x47\x44\x16"
-+			  "\x0a\xa7\x57\xd7\xc3\x5b\x61\xe0"
-+			  "\x8b\xe5\xba\x1e\x4b\x6a\x31\xec"
-+			  "\xc3\xcd\x5e\x33\x98\x21\x0a\xac",
-+	},
-+	{
-+		.psize = SZ_4K,
-+		.digest = "\x8b\x28\x0b\xea\xd0\x4d\x22\x0f"
-+			  "\x6f\x20\xc8\xdb\x23\x91\xdc\x2e"
-+			  "\x97\x90\xee\x86\x73\x12\xbc\x56"
-+			  "\xe7\x17\x08\x34\xd9\x00\xf8\xc8",
-+	},
-+	{
-+		.psize = SZ_16K - BTRFS_CSUM_SIZE,
-+		.digest = "\x71\x89\xeb\x26\x42\x2e\xb5\x1d"
-+			  "\x30\xb5\x76\xe5\x76\x8a\xf7\x53"
-+			  "\x3a\x39\xb9\x1d\xad\x13\xcf\x92"
-+			  "\x17\xe3\x70\x32\x34\xd2\xd4\x23",
-+	},
-+	{
-+		.psize = SZ_16K,
-+		.digest = "\x28\x4d\xcc\xe6\x6b\x9e\x55\xb1"
-+			  "\x27\x0a\xa6\x7a\x6e\x5f\x8f\xca"
-+			  "\xcf\x45\xff\x6e\xd4\xbc\x0d\x6d"
-+			  "\x33\x24\x22\x7a\xab\x3e\xe4\x90",
-+	},
- };
- 
- static const struct hash_testspec test_spec[] = {
-@@ -594,6 +721,24 @@ static const struct hash_testspec test_spec[] = {
+ int main(int argc, char **argv) {
+-	u8 buf[blocksize];
++	u8 *buf;
+ 	u8 hash[32];
+-	int idx;
+-	int iter;
+ 	char *filter = NULL;
+ 	struct contestant {
+ 		char name[20];
+@@ -282,69 +290,77 @@ int main(int argc, char **argv) {
+ 			iterations = 1;
  	}
- };
  
-+/*
-+ * Fill the buffer with bytes from a 32-bit LCG, x = x * 1664525 + 1013904223,
-+ * as used in "Numerical Recipes in C". The seed is arbitrary.
-+ *
-+ * Only the top byte is used, since the low bits of a power-of-2 modulus LCG
-+ * have very short periods.
-+ */
-+static void fill_pattern(u8 *buf, size_t size)
-+{
-+	u32 x = 1;
-+	size_t i;
-+
-+	for (i = 0; i < size; i++) {
-+		x = x * 1664525 + 1013904223;
-+		buf[i] = x >> 24;
+-	memset(buf, 0, 4096);
++	buf = malloc(SZ_16K);
++	if (!buf) {
++		error_mem("buffer");
++		return 1;
 +	}
-+}
+ 
+-	printf("Block size:     %d\n", blocksize);
+ 	printf("Iterations:     %d\n", iterations);
+ 	printf("Implementation: %s\n", CRYPTOPROVIDER);
+ 	printf("Units:          %s\n", units_to_desc(units));
+-	printf("\n");
+ 
+-	for (idx = 0; idx < ARRAY_SIZE(contestants); idx++) {
+-		struct contestant *c = &contestants[idx];
+-		u64 start, end;
+-		u64 tstart, tend;
+-		u64 total = 0;
++	for (int i = 0; i < ARRAY_SIZE(sizes); i++) {
++		size_t size = sizes[i];
+ 
+-		if (c->cpu_flag != 0 && !cpu_has_feature(c->cpu_flag)) {
+-			printf("%16s: no CPU support\n", c->name);
+-			continue;
++		printf("\nBlock size:     %zu\n", size);
++		for (int idx = 0; idx < ARRAY_SIZE(contestants); idx++) {
++			struct contestant *c = &contestants[idx];
++			u64 start, end;
++			u64 tstart, tend;
++			u64 total = 0;
 +
- static int test_hash(const struct hash_testspec *spec)
- {
- 	int i;
-@@ -603,6 +748,8 @@ static int test_hash(const struct hash_testspec *spec)
- 		int ret;
- 		const struct hash_testvec *vec = &spec->testvec[i];
- 		u8 csum[CRYPTO_HASH_SIZE_MAX];
-+		const u8 *data = (const u8 *)vec->plaintext;
-+		u8 *buf = NULL;
- 
- 		if (spec->cpu_flag != 0 && !cpu_has_feature(spec->cpu_flag)) {
- 			printf("%s skipped, no CPU support\n", spec->name);
-@@ -617,9 +764,20 @@ static int test_hash(const struct hash_testspec *spec)
- 			header = true;
- 		}
- 
-+		if (!data && vec->psize) {
-+			buf = malloc(vec->psize);
-+			if (!buf) {
-+				error_mem("test vector");
-+				return 1;
++			if (c->cpu_flag != 0 && !cpu_has_feature(c->cpu_flag)) {
++				printf("%16s: no CPU support\n", c->name);
++				continue;
 +			}
-+			fill_pattern(buf, vec->psize);
-+			data = buf;
-+		}
++			/* Backend not compiled in */
++			if (c->backend == 1)
++				continue;
 +
- 		if (spec->cpu_flag)
- 			hash_force_accel(spec->cpu_flag);
--		ret = spec->hash((const u8 *)vec->plaintext, vec->psize, csum);
-+		ret = spec->hash(data, vec->psize, csum);
-+		free(buf);
- 		if (ret < 0) {
- 			error("hash %s = %d", spec->name, ret);
- 			return 1;
++			if (c->digest == hash_null_memcpy)
++				/* Always run NULL-MEMCPY to warm up memory. */;
++			else if (filter && fnmatch(filter, c->name, FNM_CASEFOLD) != 0)
++				continue;
++
++			printf("%16s: ", c->name);
++			fflush(stdout);
++
++			if (c->cpu_flag)
++				hash_force_accel(c->cpu_flag);
++			tstart = get_time();
++			start = get_cycles(units);
++			for (int iter = 0; iter < iterations; iter++) {
++				memset(buf, iter & 0xFF, size);
++				memset(hash, 0, 32);
++				c->digest(buf, size, hash);
++			}
++			end = get_cycles(units);
++			tend = get_time();
++			c->cycles = end - start;
++			c->time = tend - tstart;
++
++			if (units == UNITS_CYCLES || units == UNITS_PERF)
++				total = c->cycles;
++			if (units == UNITS_TIME)
++				total = c->time;
++
++			printf("%s: %12llu, %s/i %8llu",
++					units_to_str(units), total,
++					units_to_str(units), total / iterations);
++			if (idx > 0) {
++				float t;
++				float mb;
++
++				t = (float)c->time / 1000 / 1000 / 1000;
++				mb = (float)size * iterations / 1024 / 1024;
++				printf(", %12.3f MiB/s", mb / t);
++			}
++			putchar('\n');
+ 		}
+-		/* Backend not compiled in */
+-		if (c->backend == 1)
+-			continue;
+-
+-		if (c->digest == hash_null_memcpy)
+-			/* Always run NULL-MEMCPY to warm up memory. */;
+-		else if (filter && fnmatch(filter, c->name, FNM_CASEFOLD) != 0)
+-			continue;
+-
+-		printf("%16s: ", c->name);
+-		fflush(stdout);
+-
+-		if (c->cpu_flag)
+-			hash_force_accel(c->cpu_flag);
+-		tstart = get_time();
+-		start = get_cycles(units);
+-		for (iter = 0; iter < iterations; iter++) {
+-			memset(buf, iter & 0xFF, blocksize);
+-			memset(hash, 0, 32);
+-			c->digest(buf, blocksize, hash);
+-		}
+-		end = get_cycles(units);
+-		tend = get_time();
+-		c->cycles = end - start;
+-		c->time = tend - tstart;
+-
+-		if (units == UNITS_CYCLES || units == UNITS_PERF)
+-			total = c->cycles;
+-		if (units == UNITS_TIME)
+-			total = c->time;
+-
+-		printf("%s: %12llu, %s/i %8llu",
+-				units_to_str(units), total,
+-				units_to_str(units), total / iterations);
+-		if (idx > 0) {
+-			float t;
+-			float mb;
+-
+-			t = (float)c->time / 1000 / 1000 / 1000;
+-			mb = blocksize * iterations / 1024 / 1024;
+-			printf(", %12.3f MiB/s", mb / t);
+-		}
+-		putchar('\n');
+ 	}
+ 	perf_finish();
++	free(buf);
+ 	free(filter);
+ 
+ 	return 0;
 -- 
 2.56.0
 

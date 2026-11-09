@@ -1,54 +1,86 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.167.197
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794191859;
-	b=4c7rQ1/GaGFHlt0XmOhJA8/9i9WiGlboS/F75CF1Y7+eSkcNHl9LMHqDRKL/umA85v76
-	 sK7IzZQX/nAOozE0R1ShgwOGeId+Uop+Za2qVUIZBUZDl49428MQ8PWKCbtkSh1gMsy4+
-	 7xrhsqUjO+w9lDfSi1yAGf2vu1bju+B8lXPs83FVeVQSDymKgFPLnjBDqcJoRjb8BqC8x
-	 j2QPmPMcr4Uv/Kl3eXXmOQmCO2bw7s5cKePjh6EsukbkCs9iKr4bT/wDIRr6l5jV4DVgc
-	 gwhEXNYL020IKpaLIrWGfEIpuUhfJ2kaJzLobj73O4i5lSbX3GrqgBwZ3F5uCBAbCbA==
+	t=1794197426;
+	b=nmJOIjmt97h+5QvW0ik2XMFAazxXCFvaqIg7PcFl2cxHGWN4t3SuMDKSJRvgGx+SSn6z
+	 VY+rXZtN2IkQXwBAlKtf0/88A4uYqCZ0yTNZ6tPMXRd7A1hNCTtKYuahJXwzbmgYRqR4z
+	 vxactwVFK4ZU5CsJ1ayxpq+BT6E0GiBBx0rEw+qZ5/DokhwZaYyu1Edm5WtsL4s0DQF/4
+	 fqpkcpFUBZfHPVpCdsUGPGWTnuOQay7RSpUaWmWY/1wtsQO0y5QGbReunzRrECQmaleBR
+	 d3lA+Nk6BRyjjB5pdZIGpUpWehdg3sDTZFRuo1MgP9Vuuj0bxsHzJSEXx6dPSA6KTaw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794191859;
-	h=DMARC-Filter:Received:X-Google-DKIM-Signature:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:MIME-Version:X-Received:Date:
-	 X-Google-Appengine-App-Id:X-Google-Appengine-App-Id-Alias:Message-ID:
-	 Subject:From:To:Content-Type;
-	bh=9rXEcNZzcZAe4iE0p0XDHsc0VjCCW/UujjQm/s4ivWE=;
-	b=ZPKH3yNrvQglZOECZeldGn5UxzCEaM7HwWiwUjkNZ0XtiPipc3Jw7jFXcUvhFKZVdBa6
-	 7cA6z6hnOHfNn5Ianeu9y/k8LZu9lAOrmfzUUx6LXUslRTLR4yqYhgguse7o5kwUlsoeZ
-	 om/f3YFaiTtJslBCoVeTLxHo2sCDp3pIqOexGH0gA9jrLW+EgaQX3ngi53llJ5TdR6DRJ
-	 OJC7XkpNbOzuiztLB4HszcI7h4u9rG1uR7m3iM3YEpJOz8F3F6dwlOAldqPhNL1B96Bw+
-	 a6XZ8K9BnNZYMANabwv2hx0bAWpj4YjtFEya4I6ik9TjVUxscY6h5Ka8ywb4SBHgcfA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794197426;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
+	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
+	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
+	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
+	b=puVUmHgi+MRhNleKhVgUrbGtvaljJrkibivoDX8SnX/Yd+vwQ4b19T8k+jIeF2RNxqZ7
+	 HIRWtS6NyqF9PJLKo3lLfiPzIYDymlrQIAXsvYJEEJU5bl8ooFT2y8E0rxJiQZBhDXe7x
+	 HuS15WYJxmSq7mBrqsuZeD/jCWgQi6LD4f4VeogfCL28eJqI9L/DF8MlUMDo2UlR42EFE
+	 ehLYs1cL3/IDgeB51mUXAHdqjZL4omcNzeTufgXtWhoJwfPi4xr5lv+e4bO2kwu36M+t0
+	 WD0PY4K4Fw6LpEMc9Q+qunM/nR0eCixsVwl+vvqdZ7lN+552Jhefs/OZy751pQuPJPQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=fail header.from=syzkaller.appspotmail.com;
-	spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com;
-	arc=none smtp.remote-ip=209.85.167.197
-Received: from mail-oi1-f197.google.com (mail-oi1-f197.google.com [209.85.167.197])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="o+JwrGZ/";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="o+JwrGZ/";
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5EC49606A320
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 02:37:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 5EC49606A320
-Authentication-Results: smtp.subspace.kernel.org; dmarc=fail (p=none dis=none) header.from=syzkaller.appspotmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=M3KW2WVRGUFZ5GODRSRYTGD7.apphosting.bounces.google.com
-Received: by mail-oi1-f197.google.com with SMTP id 5614622812f47-4eb0b989f0eso555832b6e.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2026 18:37:39 -0800 (PST)
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794191858; x=1794796658;
-        h=content-type:to:from:subject:message-id:date:mime-version
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=9rXEcNZzcZAe4iE0p0XDHsc0VjCCW/UujjQm/s4ivWE=;
-        b=VO7oIUCAclYa4VtVDmcojFDjd8uE4jQSeVX5euU2xD3uBf5bJkXuvbIb2LqWGl6zW3
-         I6uar4lripjNfQUvUy5H05G1Au/FIhSyuAppFGV0I2GccRQ+G7HqArS1twXTYhZKQGQW
-         oCDz0wlDQVpq/60wZAbN25G+IJTUuvNfVJRdjlaBL903F1eD7FYzSE/jvmxjRcz92OWQ
-         GO0vuiPZNJduOugInpV5taOHfr6A8S1ZTNeL8ovtx4orWGVwt2WiMayUBoQpm+X7V6Up
-         +QcO7nVSjakSjk7Z9XuvECTK2zf+acFFmULvPAygsy85wLmth1yztrNEwCux8xqaYWSb
-         szhA==
-X-Forwarded-Encrypted: i=1; AL+hErG7plDF2x/jP+hktlwzBt/2+orM6Ld+1sLzvzWnmwpaKoqiDvX0mJpv6QIxjViDufprTBbMaIIYgq4SFw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+Ty3ZLg7kgQBcECRnZLr33laypt/bP9njN+/SsgWDP1bAG7tEc
-	MdtPUl5RKHoZo3NwU/UHkc0WkFqF7xk+WmS6qP9tiJcvNIQPxLMgw8yfjGvZRJcVe6jVmxkhdog
-	RWFTvJB5ZDAV4c43c3v8s+5634rHBiAcJwGkHWH6ItzwCvy4js8BSxRP+Hak=
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4591D606A31C
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4591D606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=o+JwrGZ/;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=o+JwrGZ/
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 5936922155
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794197423; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
+	b=o+JwrGZ/9nKKrjSNX5XuVdFvEOXsCvsi4RQ1frLV8UqtQTReGbcbewyhWQIgOlrlZwGwl5
+	F9HOXQqcWdk5V3UAMUclqAuYcqE9YCaSUGcOmoRRfy8Mi85t8jXrDOb+s6RotKuMiuHl6n
+	XbWa1D2HfFAFCUr6RN1iGOET67uzo7Y=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794197423; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=+wtudTUEdJcq8gxrIwsv1CiNXvcHUyHp9M8H7fT0q3E=;
+	b=o+JwrGZ/9nKKrjSNX5XuVdFvEOXsCvsi4RQ1frLV8UqtQTReGbcbewyhWQIgOlrlZwGwl5
+	F9HOXQqcWdk5V3UAMUclqAuYcqE9YCaSUGcOmoRRfy8Mi85t8jXrDOb+s6RotKuMiuHl6n
+	XbWa1D2HfFAFCUr6RN1iGOET67uzo7Y=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3EA9113479
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 04:10:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id AKhEN6tH8WrIZAAAD6G6ig:T2
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 04:10:21 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 1/7] btrfs-progs: cleanup inline asm usage
+Date: Mon,  9 Nov 2026 14:39:55 +1030
+Message-ID: <7b5c87adfcec07020bfe171d950f1a3e85f9a56e.1794196688.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
+In-Reply-To: <cover.1794196688.git.wqu@suse.com>
+References: <cover.1794196688.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,117 +90,298 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Received: by 2002:a05:6808:518b:b0:495:f8a5:8797 with SMTP id
- 5614622812f47-567fcf350damr2647509b6e.0.1794191858336; Sun, 08 Nov 2026
- 18:37:38 -0800 (PST)
-Date: Sun, 08 Nov 2026 18:37:38 -0800
-X-Google-Appengine-App-Id: s~syzkaller
-X-Google-Appengine-App-Id-Alias: syzkaller
-Message-ID: <6af131f2.44d55313.247daf.0001.GAE@google.com>
-Subject: [syzbot] [btrfs?] WARNING in btrfs_put_root
-From: syzbot <syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com>
-To: dsterba@suse.com, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, mason@kernel.org, 
-	syzkaller-bugs@googlegroups.com
-Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email,wikipedia.org:url,intel.com:email];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
 
-Hello,
+Both clang and gcc have lowlevel instruction wrappers already, there is
+no need to use inline asm just for several small operations like cpuid.
 
-syzbot found the following issue on:
+The cleanup includes:
 
-HEAD commit:    fa4ad798f6f6 Merge tag 'for-7.4-rc1-tag' of git://git.kern..
-git tree:       upstream
-console output: https://syzkaller.appspot.com/x/log.txt?x=16f5af35580000
-kernel config:  https://syzkaller.appspot.com/x/.config?x=d44b06612b68f56
-dashboard link: https://syzkaller.appspot.com/bug?extid=55d1814e49f1fc0ba542
-compiler:       Debian clang version 22.1.8 (1~deb13u4), Debian LLD 22.1.8
+- Use compiler wrappers to replace inlined asm
 
-Unfortunately, I don't have any reproducer for this issue yet.
+- Add dedicated target attributes for involved hardware acceleration
 
-Downloadable assets:
-disk image: https://storage.googleapis.com/syzbot-assets/7a262c93f0a1/disk-fa4ad798.raw.xz
-vmlinux: https://storage.googleapis.com/syzbot-assets/670f0137c169/vmlinux-fa4ad798.xz
-kernel image: https://storage.googleapis.com/syzbot-assets/7b5f342645af/bzImage-fa4ad798.xz
-
-AI-generated root cause summary:
-When a Btrfs filesystem encounters a transaction abort (reported in state EA),
-inodes being evicted during unmount (particularly via delayed iputs in
-close_ctree(), which runs after btrfs_error_commit_super()) fail to persist
-their delayed inode updates in btrfs_commit_inode_delayed_inode() because
-transaction joining fails. In btrfs_evict_inode(), this error causes execution
-to jump directly to the out label, bypassing btrfs_kill_delayed_inode_items().
-Because the delayed items remain uncleaned, __btrfs_release_delayed_node()
-re-queues the delayed node into delayed_root->node_list and retains a reference,
-preventing refcount_dec_and_test() from hitting zero and skipping
-xa_erase(&root->delayed_nodes, ...). When the root is finally freed in
-btrfs_put_root(), root->delayed_nodes is still non-empty, triggering
-WARN_ON(!xa_empty(&root->delayed_nodes)).
-
-full analysis:  https://syzkaller.appspot.com/x/ai_root_cause?x=55d1814e49f1fc0ba542
-
-IMPORTANT: if you fix the issue, please add the following tag to the commit:
-Reported-by: syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
-
-BTRFS info (device loop6 state EA): last unmount of filesystem 395ef67a-297e-477c-816d-cd80a5b93e5d
-------------[ cut here ]------------
-!xa_empty(&root->delayed_nodes)
-WARNING: fs/btrfs/disk-io.c:1844 at btrfs_put_root+0x1f9/0x250 fs/btrfs/disk-io.c:1844, CPU#1: syz-executor/6160
-Modules linked in:
-CPU: 1 UID: 0 PID: 6160 Comm: syz-executor Not tainted syzkaller #0 PREEMPT(full) 
-Hardware name: Google Google Compute Engine/Google Compute Engine, BIOS Google 11/06/2026
-RIP: 0010:btrfs_put_root+0x1f9/0x250 fs/btrfs/disk-io.c:1844
-Code: c5 0e fe e8 b9 81 a3 fd 48 8d bb 40 05 00 00 90 0f 0b 90 e8 69 98 de 07 e9 9b fe ff ff e8 9f 81 a3 fd 48 8d bb 90 05 00 00 90 <0f> 0b 90 e8 4f 98 de 07 e9 ad fe ff ff e8 85 81 a3 fd 90 0f 0b 90
-RSP: 0018:ffffc90006287d18 EFLAGS: 00010293
-RAX: ffffffff84258d21 RBX: ffff888079a62000 RCX: ffff8880233e8000
-RDX: 0000000000000000 RSI: 0000000000000001 RDI: ffff888079a62590
-RBP: 0000000000000001 R08: ffff888079a6262b R09: 1ffff1100f34c4c5
-R10: dffffc0000000000 R11: ffffed100f34c4c6 R12: dffffc0000000000
-R13: ffff888069f06218 R14: ffff888079a625d8 R15: dffffc0000000000
-FS:  000055556295c500(0000) GS:ffff888123509000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-CR2: 00007faacae5e000 CR3: 000000001ef0b000 CR4: 0000000000350ef0
-Call Trace:
- <TASK>
- btrfs_free_fs_info+0x252/0x360 fs/btrfs/disk-io.c:1257
- deactivate_locked_super+0xbe/0x110 fs/super.c:558
- cleanup_mnt+0x204/0x2a0 fs/namespace.c:1396
- task_work_run+0x1d9/0x260 kernel/task_work.c:233
- resume_user_mode_work include/linux/resume_user_mode.h:50 [inline]
- __exit_to_user_mode_loop kernel/entry/common.c:70 [inline]
- exit_to_user_mode_loop+0x204/0x770 kernel/entry/common.c:101
- __exit_to_user_mode_prepare include/linux/irq-entry-common.h:207 [inline]
- syscall_exit_to_user_mode_prepare include/linux/irq-entry-common.h:230 [inline]
- syscall_exit_to_user_mode include/linux/entry-common.h:343 [inline]
- do_syscall_64+0x328/0x520 arch/x86/entry/syscall_64.c:89
- entry_SYSCALL_64_after_hwframe+0x77/0x7f
-RIP: 0033:0x7fb8687a0d57
-Code: a2 c7 05 9c a9 25 00 00 00 00 00 eb 96 e8 e1 12 00 00 90 31 f6 e9 09 00 00 00 66 0f 1f 84 00 00 00 00 00 b8 a6 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 01 c3 48 c7 c2 e8 ff ff ff f7 d8 64 89 02 b8
-RSP: 002b:00007ffc6dae6688 EFLAGS: 00000246 ORIG_RAX: 00000000000000a6
-RAX: 0000000000000000 RBX: 0000000000000000 RCX: 00007fb8687a0d57
-RDX: 0000000000000000 RSI: 0000000000000009 RDI: 00007ffc6dae6740
-RBP: 00007ffc6dae6740 R08: 00007ffc6dae7740 R09: 00000000ffffffff
-R10: 0000000000000000 R11: 0000000000000246 R12: 00007ffc6dae77d0
-R13: 00007fb868836fb3 R14: 0000000000041ae3 R15: 00007ffc6dae7810
- </TASK>
-
-
+Asssited-by: LLM (locating the wrappers)
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-This report is generated by a bot. It may contain errors.
-See https://goo.gl/tpsmEJ for more information about syzbot.
-syzbot engineers can be reached at syzkaller@googlegroups.com.
+ common/cpu-utils.c      | 31 ++++-------------------------
+ crypto/crc32c.c         | 20 ++++++++-----------
+ crypto/hash-speedtest.c | 14 +++-----------
+ libbtrfs/crc32c.c       | 43 +++++++++++------------------------------
+ 4 files changed, 26 insertions(+), 82 deletions(-)
 
-syzbot will keep track of this issue. See:
-https://goo.gl/tpsmEJ#status for how to communicate with syzbot.
+diff --git a/common/cpu-utils.c b/common/cpu-utils.c
+index 32914d360e63..a99efb932ff2 100644
+--- a/common/cpu-utils.c
++++ b/common/cpu-utils.c
+@@ -15,37 +15,14 @@
+  */
+ 
+ #include <stdio.h>
++#ifdef __x86_64__
++#include <cpuid.h>
++#endif
+ #include "common/cpu-utils.h"
+ 
+ unsigned long __cpu_flags = CPU_FLAG_NONE;
+ unsigned long __cpu_flags_orig = CPU_FLAG_NONE;
+ 
+-#ifdef __x86_64__
+-/*
+- * Do manual cpuid as cpuid.h is not available for all versions.
+- *
+- * Plain cpuid(level) is __cpuidex(level, 0), otherwise look for the leaf/subleaf
+- * modes at https://en.wikipedia.org/wiki/CPUID or compilers' cpuid.h.
+- */
+-
+-#ifndef __cpuidex
+-#define __cpuidex(leaf, subleaf, a, b, c, d)				\
+-	__asm__ __volatile__ ("cpuid\n\t"				\
+-			: "=a" (a), "=b" (b), "=c" (c), "=d" (d)	\
+-			: "0" (leaf), "2" (subleaf))
+-#endif
+-
+-#else
+-
+-#define __cpuidex(leaf, subleaf, a, b, c, d)				\
+-	do {								\
+-		a = 0;							\
+-		b = 0;							\
+-		c = 0;							\
+-		d = 0;							\
+-	} while(0)
+-#endif
+-
+ #define FLAG(name)	if (__cpu_flags & CPU_FLAG_ ## name) printf(" " #name)
+ void cpu_print_flags(void) {
+ 	printf("CPU flags: 0x%lx\n", __cpu_flags);
+@@ -88,7 +65,7 @@ void cpu_detect_flags(void)
+ 		__cpu_flags |= CPU_FLAG_AVX2;
+ 
+ 	/* Flags unsupported by builtins */
+-	__cpuidex(7, 0, a, b, c, d);
++	__cpuid_count(7, 0, a, b, c, d);
+ 	if (b & (1UL << 29))
+ 		__cpu_flags |= CPU_FLAG_SHA;
+ 
+diff --git a/crypto/crc32c.c b/crypto/crc32c.c
+index f0a23f836741..9a3c9fc14eab 100644
+--- a/crypto/crc32c.c
++++ b/crypto/crc32c.c
+@@ -18,6 +18,8 @@ static uint32_t (*crc32c_impl)(uint32_t crc, unsigned char const *data, uint32_t
+ 
+ #ifdef __x86_64__
+ 
++#include <nmmintrin.h>
++
+ /* asmlinkage */ unsigned int crc_pcl(const unsigned char *buffer, unsigned int len, unsigned int crc_init);
+ static unsigned int crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t len) {
+ 	return crc_pcl(data, len, crc);
+@@ -34,22 +36,19 @@ static unsigned int crc32c_pcl(uint32_t crc, unsigned char const *data, uint32_t
+  * Volume 2A: Instruction Set Reference, A-M
+  */
+ #if  __SIZEOF_LONG__ == 8
+-#define REX_PRE "0x48, "
+ #define SCALE_F 8
++#define crc32c_hw_long(crc, v)	_mm_crc32_u64((crc), (v))
+ #else
+-#define REX_PRE
+ #define SCALE_F 4
++#define crc32c_hw_long(crc, v)	_mm_crc32_u32((crc), (v))
+ #endif
+ 
++__attribute__((target("sse4.2")))
+ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
+ 					uint32_t length)
+ {
+ 	while (length--) {
+-		__asm__ __volatile__(
+-			".byte 0xf2, 0xf, 0x38, 0xf0, 0xf1"
+-			:"=S"(crc)
+-			:"0"(crc), "c"(*data)
+-		);
++		crc = _mm_crc32_u8(crc, *data);
+ 		data++;
+ 	}
+ 
+@@ -61,6 +60,7 @@ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
+  * Steps through buffer one byte at at time, calculates reflected crc using
+  * table.
+  */
++__attribute__((target("sse4.2")))
+ static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t length)
+ {
+ 	unsigned int iquotient = length / SCALE_F;
+@@ -68,11 +68,7 @@ static uint32_t crc32c_sse42(uint32_t crc, unsigned char const *data, uint32_t l
+ 	unsigned long *ptmp = (unsigned long *)data;
+ 
+ 	while (iquotient--) {
+-		__asm__ __volatile__(
+-			".byte 0xf2, " REX_PRE "0xf, 0x38, 0xf1, 0xf1;"
+-			:"=S"(crc)
+-			:"0"(crc), "c"(*ptmp)
+-		);
++		crc = crc32c_hw_long(crc, *ptmp);
+ 		ptmp++;
+ 	}
+ 
+diff --git a/crypto/hash-speedtest.c b/crypto/hash-speedtest.c
+index 6caa89f7d6f8..95ba63ee6025 100644
+--- a/crypto/hash-speedtest.c
++++ b/crypto/hash-speedtest.c
+@@ -30,6 +30,7 @@
+ #include "common/cpu-utils.h"
+ 
+ #ifdef __x86_64__
++#include <x86intrin.h>
+ static const int cycles_supported = 1;
+ #else
+ static const int cycles_supported = 0;
+@@ -45,19 +46,10 @@ const int blocksize = 4096;
+ int iterations = 100000;
+ 
+ #ifdef __x86_64__
+-static __always_inline unsigned long long rdtsc(void)
+-{
+-	unsigned low, high;
+-
+-        asm volatile("rdtsc" : "=a" (low), "=d" (high));
+-
+-        return (low | ((u64)(high) << 32));
+-}
+-
+ static inline u64 read_tsc(void)
+ {
+-       asm volatile("mfence");
+-       return rdtsc();
++	_mm_mfence();
++	return __rdtsc();
+ }
+ 
+ #define cpu_cycles()		read_tsc()
+diff --git a/libbtrfs/crc32c.c b/libbtrfs/crc32c.c
+index 4391e46f16ee..14c1694a2823 100644
+--- a/libbtrfs/crc32c.c
++++ b/libbtrfs/crc32c.c
+@@ -16,6 +16,9 @@ static uint32_t (*crc_function)(uint32_t crc, unsigned char const *data, uint32_
+ 
+ #ifdef __x86_64__
+ 
++#include <cpuid.h>
++#include <nmmintrin.h>
++
+ /*
+  * Based on a posting to lkml by Austin Zhang <austin.zhang@intel.com>
+  *
+@@ -27,25 +30,22 @@ static uint32_t (*crc_function)(uint32_t crc, unsigned char const *data, uint32_
+  * Volume 2A: Instruction Set Reference, A-M
+  */
+ #if  __SIZEOF_LONG__ == 8
+-#define REX_PRE "0x48, "
+ #define SCALE_F 8
++#define crc32c_hw_long(crc, v)	_mm_crc32_u64((crc), (v))
+ #else
+-#define REX_PRE
+ #define SCALE_F 4
++#define crc32c_hw_long(crc, v)	_mm_crc32_u32((crc), (v))
+ #endif
+ 
+ static int crc32c_probed = 0;
+ static int crc32c_intel_available = 0;
+ 
++__attribute__((target("sse4.2")))
+ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
+ 					uint32_t length)
+ {
+ 	while (length--) {
+-		__asm__ __volatile__(
+-			".byte 0xf2, 0xf, 0x38, 0xf0, 0xf1"
+-			:"=S"(crc)
+-			:"0"(crc), "c"(*data)
+-		);
++		crc = _mm_crc32_u8(crc, *data);
+ 		data++;
+ 	}
+ 
+@@ -56,6 +56,7 @@ static uint32_t crc32c_intel_le_hw_byte(uint32_t crc, unsigned char const *data,
+  * Steps through buffer one byte at at time, calculates reflected 
+  * crc using table.
+  */
++__attribute__((target("sse4.2")))
+ static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t length)
+ {
+ 	unsigned int iquotient = length / SCALE_F;
+@@ -63,11 +64,7 @@ static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t l
+ 	unsigned long *ptmp = (unsigned long *)data;
+ 
+ 	while (iquotient--) {
+-		__asm__ __volatile__(
+-			".byte 0xf2, " REX_PRE "0xf, 0x38, 0xf1, 0xf1;"
+-			:"=S"(crc)
+-			:"0"(crc), "c"(*ptmp)
+-		);
++		crc = crc32c_hw_long(crc, *ptmp);
+ 		ptmp++;
+ 	}
+ 
+@@ -78,31 +75,13 @@ static uint32_t crc32c_intel(uint32_t crc, unsigned char const *data, uint32_t l
+ 	return crc;
+ }
+ 
+-static void do_cpuid(unsigned int *eax, unsigned int *ebx, unsigned int *ecx,
+-		     unsigned int *edx)
+-{
+-	int id = *eax;
+-
+-	asm("movl %4, %%eax;"
+-	    "cpuid;"
+-	    "movl %%eax, %0;"
+-	    "movl %%ebx, %1;"
+-	    "movl %%ecx, %2;"
+-	    "movl %%edx, %3;"
+-		: "=r" (*eax), "=r" (*ebx), "=r" (*ecx), "=r" (*edx)
+-		: "r" (id)
+-		: "eax", "ebx", "ecx", "edx");
+-}
+-
+ static void crc32c_intel_probe(void)
+ {
+ 	if (!crc32c_probed) {
+ 		unsigned int eax, ebx, ecx, edx;
+ 
+-		eax = 1;
+-
+-		do_cpuid(&eax, &ebx, &ecx, &edx);
+-		crc32c_intel_available = (ecx & (1U << 20)) != 0;
++		__cpuid(1, eax, ebx, ecx, edx);
++		crc32c_intel_available = (ecx & bit_SSE4_2) != 0;
+ 		crc32c_probed = 1;
+ 	}
+ }
+-- 
+2.56.0
 
-If the report is already addressed, let syzbot know by replying with:
-#syz fix: exact-commit-title
-
-If you want to overwrite report's subsystems, reply with:
-#syz set subsystems: new-subsystem
-(See the list of subsystem names on the web dashboard)
-
-If the report is a duplicate of another one, reply with:
-#syz dup: exact-subject-of-another-report
-
-If you want to undo deduplication, reply with:
-#syz undup

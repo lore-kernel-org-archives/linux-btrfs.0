@@ -1,87 +1,93 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.48
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.47
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794294350;
-	b=G+12xwg1eSNjARxGPYeLUSF6QrAf3K1VOfZE6eZSwOW4u/Z7bPFTXGSFh40QPlxcDFnA
-	 RtA2CTrv2AWzUH14MX7SxMmAoCyakvBMbp/0MWaWLlrm0Hw+TdRTx1NqDLbfdMUhw7dY+
-	 GR3Mce6Bf0+EvLJERL5nGOGADrDJehwI5TR1YwHAx6RXUIZ4KWvvOdS199rdjYfm1eYF0
-	 zUpg4uY+4hOEK7nAOiMVUT6YIL/oxduCLCXfZxCxGhkoGJabByUtxj9Ujt64RC26eiqun
-	 8jEL+gVx9ZN+Jk3/23gQ5uFfW9ZUbujXjeH0tPFH+92MA0dPFpfOTW+X5w4IDFTvMtg==
+	t=1794296137;
+	b=JPGUqS+OtKZ4zCBKV2a/zlTRBP2khgcxY5xNVuAPYaTiKaSOM0GQ/+mlYxkUTn3knYNv
+	 B5SBCITEk58rcKakyEGb2MHrhUHvUXBJDVPNyh5qvANhRA89/+Z17YHIV39NSes63iWk4
+	 wq1rANoVwmZZf9PqtpEaBih9RMeSaOVcVQLp1SwAQnBF95+LCzRi9WcAkqgyYG4tD7j7D
+	 uLtCylezTFBJf9DFbXrbdID1rlYU39ly9PEz1pAB9zUof6M1OW0jWl+2UcO0evqH6YS+N
+	 yuMrk4B+JwmOP+aLF7I2AN879DFSNenX0sggEKvo0ABzUmJBCrRIzVx4ytXxOzO5e9A==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794294350;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794296137;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Message-ID:Date:
-	 MIME-Version:User-Agent:Subject:From:To:References:Content-Language:
-	 Autocrypt:In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	bh=pvjYsiwU3cv4C7oM5j/eIU9we4Tv1PLDXjBXS8XiR1o=;
-	b=aDaf7sS8Il2OJsIKIJTLmJXLZg5lQOI1If14n1DPQvcH0NaH+YxQJP10FN/TNOGZVgMs
-	 DxYN8868ftURwyEv7GAdl82ShemCFApJC7rP3j2bEWDAghPgdv1P4NxRJD8oV0hAwbfra
-	 HlCM0nEDDr0h4YlWrainvwh3p0lgyWhq80jeD62g4IBdNh0YoO6fV+UeLcqV+xYd1oCLS
-	 Y/M/6gnybc01jE366AbrOVOtaxIgeduIn98TRDaymSnbmDm7n2Dn7A5PH6JkKU30i0Qar
-	 zkDQasNITLPy9tyJqXucC4Qj36JA26hIZ2qlUC2wwlxt8MJVtsIIzUS48hhlNNXnxeA==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Date:From:To:Cc:Subject:Message-ID:In-Reply-To:References;
+	bh=PHDIoEm9ZHwm2QbXfcuNgzAchc1Bm5nQ/5nALaIInYs=;
+	b=3QGLxFJGKi6WWs8Wg0FHW/umyRHwiIbTksHWIa2s+PQehzD7lXTlaT6Pjh/nsGof3g5g
+	 /o3A3eieZIILqDx6R/fWZZucZXAy31fqR7orQDbLh4spX8r4YHFH+7u9IYRO8mUjUMHPm
+	 uS4QGIG6lo/RXwqRQ2JasMfnRFf9Il8mkLaAE+a2WcmnXHXp9aNeN3GVH+dJMRHrOL3FY
+	 NNzKhyRPUAl4dYj6IENgK/RUesWEnZQb7v7zR1Uua8lAEc/2EZNvHvBtxme7c5+PBBsX+
+	 pGYrzmz1hNVWzAvo4uEDU65kLvx26JwtnnW79I9mMo8xRL+QoXbSIBqC7AIv4CowqKQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=dvDOcWFY;
-	arc=none smtp.remote-ip=209.85.218.48
-Received: from mail-ej1-f48.google.com (mail-ej1-f48.google.com [209.85.218.48])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=rcRZgM1P;
+	arc=none smtp.remote-ip=209.85.128.47
+Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49B27606A338
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 07:05:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 49B27606A338
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 95FF060A2630
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 07:35:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 95FF060A2630
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=dvDOcWFY
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-c4203bbb1e9so247253966b.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 23:05:50 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=rcRZgM1P
+Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-4a215e64962so19125375e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 23:35:37 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794294349; x=1794899149; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=pvjYsiwU3cv4C7oM5j/eIU9we4Tv1PLDXjBXS8XiR1o=;
-        b=dvDOcWFYbzkv9QGT55v9cS5JHb2ifUJZr8POD1F/8pYVlNSGb1lTrjneHiIjPP7GSQ
-         Bzmhlm4UL4Gn8brGlYNNxTBXqU1fguiR3jma2/fs0UX3IHTrN8FDGifq6YKA0nCgC7PT
-         cLRsOHvuDA1TVUcxK9ro17Y4rNTFM5wm1oLoOPkX8kv+o+/+KWR6wupi1PoQEvgyA0ni
-         4fHPMiMi/czGjIXKlEc5a/1LC/jcgyn0XCbXv03NU9aeNKxHfu6Mfdj5S0dcEQO453Nt
-         3lYMWsSIT0piGPB1dFCsyJtllU5bepBt2UKfnHymqUkmMLdj+/jFwdgEX06qqjQUmZ10
-         Ly2g==
+        d=gmail.com; s=20260707; t=1794296136; x=1794900936; darn=vger.kernel.org;
+        h=references:in-reply-to:message-id:subject:cc:to:from:date:from:to
+         :cc:subject:date:message-id:reply-to:content-type;
+        bh=PHDIoEm9ZHwm2QbXfcuNgzAchc1Bm5nQ/5nALaIInYs=;
+        b=rcRZgM1PKg2J1JQ5LF41jxrEtSDmU9PsA/mVX2U7WzkWWMzbzB14U5Beqh+b2xStlr
+         5CHavIIrkckY9vZ1MQ76qxQvfb9c1rQgsnv6m7QCUcAVnGA2Qin4LJZM93AxAZf4VE6A
+         NoZOCkd8+6ODzzKFgDYqBXPK6yuHeGKvl46YHjnxyGLAUd4nm9S06hzYpE5N6bi8BzZ5
+         64yOh3MsgX8L538ywidwH/dyRQeWb5/phrRQdZydqNvj8RYFSDLEe7KwURziaZfyMiAh
+         45eLie5PRjJ2aQDl27OUtS34ECvvfzhajXuhqhD6iYLkX+PLhmrk44/paCLtDSkEwsY/
+         hSHw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794294349; x=1794899149;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:to:from:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=pvjYsiwU3cv4C7oM5j/eIU9we4Tv1PLDXjBXS8XiR1o=;
-        b=DSN9xvBlC4GqD/qDqohTtqPA2lP1fqzvrC1IN7uCsXE6Vo3WvsHgd30wRC2KLmjlUm
-         HPfGzSLFi5EUeBoH5AHMBrHrkCkajLib+O28i02NPK0lmZb8iDo1tYmKs3Ue2CetZHkW
-         NaeGKDcliLHH2DeC7kaa24BDnykqozoLlLHxEaeNP4SiiS3iHr9PYJsTBECb3l9VnsFc
-         RUjXYlidUYqSVZdey5rLUclcMevJVQrUp/JDA08kVrbmBTgWx4eoBFaNQRr/3G352KDp
-         tp1eMkhiy6qi2bRkac8HjMaBFuYlsYuTFK+aG7TgKSvMruCCpUAuCR0aPB2vvhbMLNFz
-         kX+w==
-X-Gm-Message-State: APuU4Z/vr3zXg2ncMfv61Ju8IIcohpUvZ3KCeS7VemNuk/tm7s0zKUHZ
-	+Q11Eyj0n2dAWMSbGFVX713FLli7b/4r3ZGdOXh+tIA5SB6ZmSCE89W3SC0D2hsI/ZYid9Zf/DC
-	CktENAiUOZA==
-X-Gm-Gg: AYBFou0XDmEqzQtnaV/mzA02/OHRjfwB9KdwbnEGJRNLsJSgtB3eeFrDjgLN1fifGDA
-	s6F4DuChjuT/FvKXIGqYp308HBrfUOGEI80zR7kOCyDdOtsGl+iNNoewm3cCXFkY/+udpNACYLo
-	bninEoH08maA/xtAaVEvEHOB3OVNBBAdXSvDrGta3b4zd1KoW71KOM5UgIyhxbhvMBKuqX4Swtu
-	mH0ILypFUPpogP2k3USHQud+en77ONaEkj2oAVR4YpOZumm5l9C2dOD736Dzws+ETPToBfHWSra
-	ka/Ur8CM4va+nEQ4h+XWiDlJbLCLTUtrumyqivHAIjKJnohfwspfXfwtp8NPheEj7K7b6a1kfNs
-	IT0uJKLA6fqGsFAjLzfH687Jq+tCZMTzWg7gr7KQIIMKlCQq9kALaAe4Etmv9Abl199nBxO4OJP
-	JvM1S88k80UQjSLcKVWT1ssAOadgzDA2z8ZGqn2mMcCG/FPTwyVFR3VIofk2K8tQwq2vm0Xyew7
-	+sZt2uqphUNaOoB3MEwJ0U6pH0Szg3fnlIgA4ZLexAQ6UNApE5CZxIEH9v+bsNDmGIGbbGxmIkJ
-	8KMoXqfQH+O5QhPZ0rn1Pw==
-X-Received: by 2002:a17:906:9f92:b0:c50:59e4:199 with SMTP id a640c23a62f3a-c5059e40eccmr8868266b.3.1794294348465;
-        Mon, 09 Nov 2026 23:05:48 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 41be03b00d2f7-cdd8d7bdd57sm432211a12.24.2026.11.09.23.05.45
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 09 Nov 2026 23:05:47 -0800 (PST)
-Message-ID: <6399e4a7-8a3a-4c64-9e80-9cd26a4613db@suse.com>
-Date: Tue, 10 Nov 2026 17:35:43 +1030
+        d=1e100.net; s=20260707; t=1794296136; x=1794900936;
+        h=references:in-reply-to:message-id:subject:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=PHDIoEm9ZHwm2QbXfcuNgzAchc1Bm5nQ/5nALaIInYs=;
+        b=WvP8vRs7WsfeqrsUcb6Xl14+EhM+NKvjQ9MD69uWXstGnVKLNG6jj0vWugNTSEwHFn
+         TrXl/DiVpUboe1ywYKdvVganQPgH5R5IkdOA/J8fh8UF/srD+LZRgdZZQ2i/n9573keT
+         j0eKd63bCPBA0F1F3cj7u2XS4krTUyByO1PRRy8lvZNIF9UhWyUXRMBuYyOob5NyNBlJ
+         Qesb6CpBDru/kgAAY6ImUp3d6rFQOq/LJ/HW6VqKDgIyMK9VNu4PWFyeTzDnrnXJR9bg
+         HLdrqnanQVPLNc5wdxIOPkl+UAE+7YoIVAIGxS6xMru7TVQN2KZ8HOqCcPkxWv2Iplua
+         wyug==
+X-Forwarded-Encrypted: i=1; AL+hErGJLAfNyghJebuA1zatQ0xsbiMlbAGZLA+oh82VL2nVvxK+yaNEmhchA+6efnRDowoZpQqCwdDCvAY1Ug==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8RumIQR2fdZT5X/REzz0GPYEzVi9QD8NCg0rMr6TXGvwcsLzQQ
+	u099sHw72Rv/nag2sZ9hy/OpCyW/JvWKgxsbpcACGw2twMbMwWEcef0V
+X-Gm-Gg: AYBFou0dAO3I8sT/XQMcNtJHH87CerZ1FSk2Rv7sw2ZRzx1Lwe0Jkntdic2ubkF4g3b
+	3EEdk3ei4GNTzw55A9JAUZOFtHkST6uYxjGYAi2FEm9rnyvWJZP3MZmCIbACGFDpCMol8ev23AX
+	ouhlHNm9GYK1TTAWo20kU4X2GhpJAGFe6EId2pvqEmksUWcO4vJ5eoPcu/UwyrTuWNJ3ehydoBI
+	V2Lwlp25XJ+nFO2Wog2ArB6UGDsP5JDXfDzC7uXsxmk9attIFrdU/AkdRjxQIDzLXrtyZE9IulA
+	N+XAgfDCL4UXZNADqBxowNhtSkobMmkL3Y+KmmYom2s0hZDZeWbPTu0dCa4V+ygplJwqCGDcCZ8
+	JFU7XFP0LHuzckavf2OP6ml9hW/t1O2KAT1pEEv6a9gjWzfwBGX49/XgZp6brNdOI71DFbROjrT
+	Ppy1vOr13n1hsY9zUZ3pPTVAxR9AMqVnHRRXclIDd2ImQWxsHDaDI4yytYTJRPkoDCo7LP4zl47
+	clI9WeSe79K6sA0uFDn2zaC5B7eagIwCkwrWG9psW20KGeR1rSyBEH9zHxbWmeMCz8FaogavJ3d
+	CTWzMEnWzToor1xJIblLyPrTc6A72/Xnx+zthWnPugqn9gEHIigXEGMFpF9+alRaMchtaXUqYr1
+	zEPJwi/eZrcwPLyL5pjyfNDsZEtr46lsFU/w=
+X-Received: by 2002:a05:600c:6094:b0:4a8:cb23:f71b with SMTP id 5b1f17b1804b1-4ba0234759bmr24627895e9.18.1794296135745;
+        Mon, 09 Nov 2026 23:35:35 -0800 (PST)
+Received: from localhost ([46.36.23.99])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-498362eb158sm3448199f8f.36.2026.11.09.23.35.34
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 09 Nov 2026 23:35:35 -0800 (PST)
+Date: Tue, 10 Nov 2026 12:35:33 +0500
+From: Mark Korenberg <socketpair@gmail.com>
+To: Qu Wenruo <wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+ linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] btrfs: raid56: pass REQ_META to per-device bios
+Message-ID: <f05b71b2a735d2b9d018c072f30a0b78@gmail.com>
+In-Reply-To: <e29db0cb-2054-4894-958b-800d03ad4d79@suse.com>
+References: <20261106-btrfs-sb-read-req-meta-v2-0-71c1afaf5c67@gmail.com>
+ <20261106-btrfs-sb-read-req-meta-v2-2-71c1afaf5c67@gmail.com>
+ <e29db0cb-2054-4894-958b-800d03ad4d79@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,135 +96,15 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 1/4] btrfs: do not allow fast fsync if there is any
- async dio write
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org, Goldwyn Rodrigues <rgoldwyn@suse.com>,
- Filipe Manana <fdmanana@suse.com>
-References: <cover.1794290876.git.wqu@suse.com>
- <aa2343bbda662ef5f425c0dfbb5c84cc67940fcd.1794290876.git.wqu@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <aa2343bbda662ef5f425c0dfbb5c84cc67940fcd.1794290876.git.wqu@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
 
+On 2026/11/7 06:56, Qu Wenruo wrote:
+> NACK.
+>
+> One should not even use RAID56 for metadata chunks in the first place.
+> Nor we're any different from other RAID56 implementation.
 
+Fair enough, I'm dropping this patch.  Thanks for the reviews.
 
-在 2026/11/10 16:42, Qu Wenruo 写道:
-> Sashiko reported a possible race where an async direct write happened, a
-> fast fsync() can return before the write reaches the storage:
-> 
->    CPU0 (io_uring/AIO direct write)| CPU1
->    --------------------------------+-----------------------------------
->    btrfs_direct_write()
->    |-btrfs_dio_write()
->    | \-__iomap_dio_rw()
->    |   |-btrfs_dio_iomap_begin()
->    |   | |-btrfs_new_extent_direct()
->    |   |   ^^^ new extent + ordered extent, data not written yet
->    |   |
->    |   |-btrfs_dio_submit_io()
->    |   | |-btrfs_submit_bbio()
->    |   |   ^^^ bio in flight, not finished
->    |   |
->    |   \- return -EIOCBQUEUED
->    \-btrfs_inode_unlock()
->                                      btrfs_sync_file()
->                                      |-btrfs_get_ordered_extents_for_logging()
->                                      | ^^^grabs the incomplete OE
->                                      |
->                                      |-filemap_fdatawait_range()
->                                      | ^^^no folio under writeback, returns
->                                      |    immediately
->                                      |
->                                      |-btrfs_log_dentry_safe()
->                                      | | ...
->                                      | \-btrfs_log_changed_extents()
->                                      |   ^^^ logs file extent item for the new extent
->                                      |       OE only marked PENDING, nobody waits for its IO
->                                      |
->                                      \-btrfs_sync_log()
->                                        ^^^ log tree is on disk, data bio still in flight
->                                            fsync() returns
-> 
->    power loss, the data bio never reached disk
-> 
->    mount
->    |-btrfs_recover_log_trees()
->      ^^^ replays the extent item, file now points to unwritten blocks
-> 
-> To prevent such problem, disable fast fsync for async direct writes.
-> 
-> Fixes: 487781796d30 ("btrfs: make fast fsyncs wait only for writeback")
-> Link: https://sashiko.dev/#/bug/linux-ee047626-2fa7-46d5-b543-861136993fc7
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->   fs/btrfs/direct-io.c | 11 +++++++++++
->   1 file changed, 11 insertions(+)
-> 
-> diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
-> index ed3914257d39..6e796163015e 100644
-> --- a/fs/btrfs/direct-io.c
-> +++ b/fs/btrfs/direct-io.c
-> @@ -974,6 +974,17 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
->   
->   	if (IS_ERR_OR_NULL(dio)) {
->   		ret = PTR_ERR_OR_ZERO(dio);
-> +		/*
-> +		 * The async direct write is not waiting for its IO to finish.
-> +		 *
-> +		 * If fsync() went through the fast path, the direct write OE
-> +		 * will be logged, but the data may not yet reach disks.
-> +		 * And fsync() returned without waiting for the data.
-> +		 *
-> +		 * So for async direct writes, we can not go to fast sync path.
-> +		 */
-> +		if (ret == -EIOCBQUEUED)
-> +			btrfs_set_inode_full_sync(BTRFS_I(inode));
-
-Unfortunately btrfs_set_inode_full_sync() is not safe if the caller is 
-only holding a shared inode lock.
-
-So it can still race with fsync.
-
-The shared inode lock for dio writes is introduced by commit 
-e9adabb9712e ("btrfs: use shared lock for direct writes within EOF").
-
-This is making me wonder if the shared inode lock for direct IO is a 
-good idea in the first place.
-
-Or should I change fsync() to wait for direct IOs instead of using 
-btrfs_set_inode_full_sync()?
-
-Thanks,
-Qu
->   	} else {
->   		/*
->   		 * If we have a synchronous write, we must make sure the fsync
-
+David, patch 1/2 stands on its own and has Qu's Reviewed-by.  Could
+you take it from this series, or would you prefer a v3 with only that
+patch?

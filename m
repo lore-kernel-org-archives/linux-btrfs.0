@@ -1,57 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794349966;
-	b=kfcg18JM6qlrBxhuZaxztJnPGSN2swNOKLOM4mtrgJtjZa949pcsUdoqfYUanlV9behe
-	 BEdw+2F3+j/a7+xMNvxXfmDDVKWbFZxXX73yzaf0hJd2ESrYNAklIOVo08aePKcr4NCYP
-	 pF1BUvl1o53JeT0753bfdhwlCJA2RsPxfU650KRkl8Ut84TJ5xQSobScP7FNPds7pU+0D
-	 aZN6b6TvvgRWvD2lISYcn45V938vs9rV/C+RPeV5nTyMLb9tNK4lUf+bzCjK91uyzZQxf
-	 JymysBfbkd6liwvyVYwLzkVffE78Hd6HsH6V/a9+LmcTxLy3GvARxlYhDq/vNdFgu7w==
+	t=1794350028;
+	b=5lLaP57fdr9+poM/nFusn2IM/9zFMzuoXjIJKRGCtc3bf2AaVmYVHhBFzl37U5TuL/fx
+	 4O3NZwq/P51Mq4byJ3nnL0Ve9SKxt8hw+E4r3qkerj+BoXK24y0STcF0wiRQ1yuCBVv/m
+	 i4+/1MdyiblifbjPjnktuvpJ6X2APAvgdByJqlSLve3HqlcobVGPwIcSGqTO4Grc/a16z
+	 3g7WHZs+PH+WHiEbFpG2hRHY2L6YhyV/jPEmXfsLenUJTFOAt/p9t9b663SBT7h74HXzz
+	 p6MTAgusyWIT2HMSTUvGG3tROXi/EaLql4P44JV8oefAi27k9EzX7P+FuGN3Op2b5kw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794349966;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=HQ7x/TllQKscfko1enh7ZEudM21vFfhSSI8zpxm9WxU=;
-	b=Qd1YSopRV81/T0nK7B51k0/Qf/Rs/otdeZBxR0LfnpSe6IAOu/Vmm/u881e00Uzev5yj
-	 hFGIN9AypDfBqEhF056OWTLn3TfG3vJt823QTS9PG1zl3Wac9DPeFVoBdTh5D75+eYtWV
-	 C7qXyV9FUNG8C3khsuPC21g060sEl1VT9R0jqxVT3P9y9ObY6lmxzg7lki3vh8Nh0mm9c
-	 jfXw6XF4kI4RrGMsFWd3VTWryQH+Sx1u4PmGI1Vissnp1a0aXQkxoZ6pFzpVv+8K780ks
-	 NzVEZexbPrBx+tYoQKa364G2L4+LO3yBPNZaFn7jRHKRV6VTH2dOCODXvUDqiutQI8g==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794350028;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
+	 X-Rspamd-Queue-Id;
+	bh=LYi52fHRrUwpfCo3I18O9gimlArt2PV+RQHum1r2UEE=;
+	b=KHHK4nTp2/4YOOFzONDP5d49GolHn+4jffJLFjnsJol9UXG8VwdDYIw/n4S4q/eWtKwI
+	 jd+8w/mwyctqkeVGUSMcAfQFxJUgSypMf7TU5LhM1YiVDIr4Ol+h/6TL2pzuAU5ndxi+M
+	 B+Vcb+lzT7Q20O6scxocOaJgkFHh8SWhZo//3F/kykNGFCiJDI7EJyGTKGqVXZUuPGTON
+	 tgL5h0yu3REs2vjXPMGxrXOGuKy1Vl7s/SkFpHhSTEcrWW6fT4kpsB9vKiNpWAc/XmaGR
+	 ZmM8w4GsIXjEKAFcXZ7FENK4Y+RAjtuYG20Uizv7ClCDOtbAVx+NvY2A877SgSq6++g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DNij6F7O;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=SrAidA6Z;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=SrAidA6Z;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 30914606A31C;
-	Tue, 10 Nov 2026 22:32:45 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7C48C606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:33:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7C48C606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DNij6F7O
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 48A5B1F008A2;
-	Tue, 10 Nov 2026 22:32:45 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794349965;
-	bh=HQ7x/TllQKscfko1enh7ZEudM21vFfhSSI8zpxm9WxU=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=DNij6F7OuI5XOtcmTJS7mQ74EjScBg5KrzI5SF+tcsu2XCZXUAdVGJd+QGxFFhk43
-	 pte2jeJ3BU/3vPPeTE+1dmBTTbYGgf8fpCwOETFKxsyWxbYU78iE98lrc3OtVcnuVk
-	 bsBTIJbuvu9iTKP2FRHZYizKxaylLy+JMRBIUX+QsL4+WxMt25yiBz/XSVXsMgpxBt
-	 3A+hlDqapoXwRa2TwXu+dl6mEzo6U0+yKmfX6mLWvLnK0/JJr9FPB11EaxUxVaraEU
-	 xQE86hHfcG1vNEg3MPDiblk4WTR6NeLEv4RWMypBMM+24R1EeuOgIHwmpTFT+GIJDF
-	 Fh6I5KRsXxuXw==
-Date: Tue, 10 Nov 2026 14:32:44 -0800
-From: Eric Biggers <ebiggers@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: hch@lst.de, fsverity@lists.linux.dev, dsterba@suse.com,
-	linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, brauner@kernel.org,
-	viro@zeniv.linux.org.uk, jaegeuk@kernel.org, chao@kernel.org,
-	tytso@mit.edu, Boris Burkov <boris@bur.io>
-Subject: Re: [PATCH v2 1/5] fsverity: strip FS_VERITY_FL from FS_IOC_SETFLAGS
-Message-ID: <20261110223244.GC1907@quark>
-References: <20261105115532.613467-1-aalbersh@kernel.org>
- <20261105115532.613467-2-aalbersh@kernel.org>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=SrAidA6Z;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=SrAidA6Z
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 8DF6421EEC
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:33:45 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794350025; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=LYi52fHRrUwpfCo3I18O9gimlArt2PV+RQHum1r2UEE=;
+	b=SrAidA6ZktafaL5tM+tCIIU6tb2ExRllrCMeB2Vs9YilHvZo12f7fgzVXAByPmYtutY0lo
+	RdnKZ1FVz/BoabB6dJqOpiQUMfZ2tbvo59vN1FQf7nVVGMa38auiWwPtK7KYwdRUpzD3OO
+	TWWwkWWbpr8MdmXm1EmwtVMCxw//eCg=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=SrAidA6Z
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794350025; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=LYi52fHRrUwpfCo3I18O9gimlArt2PV+RQHum1r2UEE=;
+	b=SrAidA6ZktafaL5tM+tCIIU6tb2ExRllrCMeB2Vs9YilHvZo12f7fgzVXAByPmYtutY0lo
+	RdnKZ1FVz/BoabB6dJqOpiQUMfZ2tbvo59vN1FQf7nVVGMa38auiWwPtK7KYwdRUpzD3OO
+	TWWwkWWbpr8MdmXm1EmwtVMCxw//eCg=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5D2C513693
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:33:44 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id bA6vKceb82r5DgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:33:44 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs-progs: mkfs: fix garbage in QGROUP_LIMIT
+Date: Wed, 11 Nov 2026 09:03:23 +1030
+Message-ID: <cover.1794349527.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -61,14 +85,57 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261105115532.613467-2-aalbersh@kernel.org>
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[99.99%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -12.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 8DF6421EEC
 
-On Thu, Nov 05, 2026 at 12:55:26PM +0100, Andrey Albershteyn wrote:
-> [PATCH v2 1/5] fsverity: strip FS_VERITY_FL from FS_IOC_SETFLAGS
+Running "mkfs.btrfs -O quota" will result garbage values in QGROUP_LIMIT
+items.
 
-Should use the "fs:" prefix for this one, since it only changes
-fs/file_attr.c.
+This is inspired by recent tree-checker changes to check QGROUP_LIMIT
+and QGROUP_INFO.
 
-- Eric
+And a new test case for it.
+
+Qu Wenruo (2):
+  btrfs-progs: mkfs: fix garbage in the QGROUP_LIMIT item
+  btrfs-progs: tests: add test for zeroed QGROUP_LIMIT item from mkfs
+
+ mkfs/main.c                                   |  6 ++++
+ .../046-qgroup-limit-zeroed/test.sh           | 30 +++++++++++++++++++
+ 2 files changed, 36 insertions(+)
+ create mode 100755 tests/mkfs-tests/046-qgroup-limit-zeroed/test.sh
+
+--
+2.56.0
+

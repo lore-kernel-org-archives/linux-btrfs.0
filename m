@@ -1,117 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.153.144
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1794298235;
-	b=17qoFAvBlmWoVfnpB/yJhiL1IONknC/iszAV9CyAVH3cxNdOKlzVwXn/j+OPrNbEibcm
-	 dWSkZtRU9XXf3/3CRUAIyHHNsUo2ZUxgthD2s36U0QbVrlzr3RZb/kh1SZW09I2ZKsikK
-	 ITcHU/SGdGgNTXo61Em6oRSsql4Y05RiLaDvf7KU598C5BSJNvo5ksWkc9bxcrk/eoibQ
-	 UdOEPmAJqPWS+i9L1VjKcZreU76R/YwKGf7eNzkPjHDliTIquTahpRqDWhMfy73gf8op/
-	 7v6Nt4bSC1i0AmKKq+qNnfxs1Sjd4uVZQD2qNSA5s1OBwlvZT9jmCDP2zMcppsxhXLg==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794298235;
-	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
-	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:From:To:Cc:
-	 Subject:Date:Message-ID:X-Mailer:Content-Transfer-Encoding:
-	 Content-Type:X-ClientProxiedBy:MIME-Version:X-MS-PublicTrafficType:
-	 X-MS-TrafficTypeDiagnostic:X-MS-Office365-Filtering-Correlation-Id:
-	 WDCIPOUTBOUND:X-MS-Exchange-SenderADCheck:
-	 X-MS-Exchange-AntiSpam-Relay:X-Microsoft-Antispam:
-	 X-Microsoft-Antispam-Message-Info:X-Forefront-Antispam-Report:
-	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-MessageData-0:
-	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
-	 X-MS-Exchange-CrossTenant-Network-Message-Id:
-	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
-	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
-	 X-MS-Exchange-CrossTenant-FromEntityHeader:
-	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
-	 X-MS-Exchange-CrossTenant-UserPrincipalName:
-	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
-	bh=cJlhEb1IIIxbgL1jwtsdbwZa1cfUQCRlS5U83x1+ktc=;
-	b=mkZ1qBQqcQ7dxlb2CsqLwAsJ9rGnuHAR/r43HYSkcrV5bBy7dklbWUbb6hqPxo+46S6s
-	 9S6fIFW6EunQGm2wU+fuISzmuH4La11AX9wLpzE73jmNIVmldcBjJyURFHJoFHCoXrHT0
-	 Vc9QCGXb+iErm6XiduoIFy65J4c07Q7ySj/pe5GkSacuJk3NBti9thIG+MctBFjTXVxzt
-	 kgDmWpH9Uk8esp/xMthnceMcO6yPAWEp7QN7i716sFQT5NtvsYsZpTlk16f+5Qn12ey2f
-	 8HE9DlU5jplVZGByKM+Ia9pdJyBcPFrRCMk7ZnW+lrZIxyTUK9ugJ11KavSqYmMUWPA==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=wdc.com;
-	spf=pass smtp.mailfrom=wdc.com;
-	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=r10SRJZP;
-	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=hSWFgpj4;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.153.144
-Received: from esa5.hgst.iphmx.com (esa5.hgst.iphmx.com [216.71.153.144])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1794300137;
+	b=Zk9VY6esEt7YZFELnzAUQohmrZPmqgCnwsyxyUR6mfhdFMvPeOASZDIpyqXrQdZmptYM
+	 OQweNdf/o1l529VBajgMIjgjSjq0NIi9os73v+VFVHGbAFP1ePHBFhedRvtryMhqIDFlR
+	 H6lO5TO2GfuzubVuuZHnsPTPWNW6nLEDRBqrFbapuQ1jus6pStDmnQe7+2GPjLyoOltwx
+	 dbDnoGC4oXg1uqft1jSKZwbLqu0YEL5L96ABgjTRNUXhbx6fDL2Qj2tKv8ohx5woh2BrQ
+	 oL+hPB0YX2IVlyU+6pHxitiCtVWVFNngIpkbniu0Yr7+SlZhG0OoNPQx7sqJoIkx/FA==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794300137;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=taShu/fHcVI0vHZKByzl7kgth2lhnSLlY1j56cP1WAs=;
+	b=YxvWaErKDKXqXcVb8xMa+w00HOyPRaT4H+sGOQlMf3+NrHZucEkHu7db9L1ctxVNZhn6
+	 7zWLoRdKMd35BEvuAbxRMkcVv5vu92TvPdotz1G/7yzNjZ1T+TumF00meyuyu/93Mtca6
+	 IHQ3Y1m5XkzOieEG5QiTBdL1hRhcutVxzDgTy/pP3FjZHQpfVG238FZUgFuF3o6UrSpxT
+	 PaJdzBkYknBzVKG2G59oqhlTxiQGpwOB1ZjrbkLba9A79ZeS6kxm2aO2aVVGzEfpM7GGM
+	 7Xin7BXVTgMxzB9KosmIPRJZNvYihafNUpn/MsXov6qBB2dpr9xGdl4oOgO7fC5VnbQ==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=qR7yRsM6;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=qR7yRsM6;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B88A0606A31C
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 08:10:34 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B88A0606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 505C4606A332
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 08:42:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 505C4606A332
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=r10SRJZP;
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=hSWFgpj4
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1794298234; x=1825834234;
-  h=from:to:cc:subject:date:message-id:
-   content-transfer-encoding:mime-version;
-  bh=GPcVSVBeFeL6xXGgdvIAFK3gpcacBOS16zjianatXZQ=;
-  b=r10SRJZP9IKm5wtyWSOZ3A3Zv9km/oF4ZiH6H9g2ZuKzoRbTrJjCf3XS
-   fBPk5UA/SxUrTZt2l5FmSa+ij9ucxf5n3tLl4RhvItZcH7CaYkQFhRRdg
-   9SFwZw/6Mtl0rSDXDa4ebOLjodYRCtkNFYA37Vp2zBBShMnOAIBZRKZIT
-   LxNmt56lSlSJuK2NHoG8NLmYeEGZgAVZa+XMbz9kvj5qOG9niWmCw52uG
-   STAq1HT/M2L1ik3hvQNLT2FMYa8UAhEaVYdj3/oRFgnQHJ7vmKYSizUOI
-   oZA/G89HN19iUDT54P1ljFDQfhKGmT9rRKzTtjDnRcj9ZTxLs2Sy7hDYo
-   g==;
-X-CSE-ConnectionGUID: dQmorzA+Teu7Zz3owfSMYg==
-X-CSE-MsgGUID: zIUAkZipT9qZrZDJm1iq1Q==
-X-IronPort-AV: E=Sophos;i="6.27,205,1786982400"; 
-   d="scan'208";a="159527789"
-Received: from mail-southcentralusazon11011008.outbound.protection.outlook.com (HELO SN4PR0501CU005.outbound.protection.outlook.com) ([40.93.194.8])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 10 Nov 2026 16:10:27 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=v8edOnTXDMtDKPyA7qQdKZCe1yqQcugOAwYrEACNHkricTqX8rk1LgJR2+5/DbA5a0r+AEkEYvI7J5OQ/RQigzAV5v0ErbWzJ8yJYC9eRgF3xKxIh0tv+YCjTE0T3KKDYYapcuVj1mDsCeuiBoyDxrYLtaiKtpSj+IIdeczemrWuYwCMjwMmBl53gtR6jOGBdqS3S3c4Xxs81OsNdroWSxeoQ4BwVHJZ3Ju4ZqNLpoeZM6CIxFstBlVkaw0BiCnXayIbra5gR9YC1po/ObcDp2s21cfWDDbmJvsANf7T6rklibtoMyFkstlFo1B4L2Blr9pvukCv7CmSerYvT3gwog==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=cJlhEb1IIIxbgL1jwtsdbwZa1cfUQCRlS5U83x1+ktc=;
- b=GPoA+kkLTUQyRFiCKKueii8/UtILEmIkKElHTKyfQI+2MT2N9wVZa9/1uXxOpkmXkVfZSWdLZMA5PE6rB+yy9dvllLkYTw6Q93srJM2yZBHyjWswZgWGDiPcnPB9OH2mr7aT4rm1zdf4SSkeOvpMCk+4l6rhrubnP4R5caRDXOk5ijstLQK/ufHrRsHJeBw+rbIzb/iZ/gEGC947BN+/eTmZjRzeYz/ci96+kqax8aMuYBedzdtt1pKl2/zPBB08I73eYFGcWvUCzoecE+bfxMkxr3WImXi5300v/88DsHeCE4Ub0v1bFcS31HWVz7Ktv/ftHMFm6tsuRCt7AgE7VA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=cJlhEb1IIIxbgL1jwtsdbwZa1cfUQCRlS5U83x1+ktc=;
- b=hSWFgpj4J3lnbSP9GP/T1veu1bw1CCUhjFTeIBreOQbOeTA6MusrsqDgYB4kSxWZy8FfWvwdZFCEYgl0vL1WX56JgCMQ6D6g1k7dZZNaVm9EuloliFQV81ymTMNP2tlc9EkANfJK2QwS+2Ql2lQdRsqcECWU+tI+464hqCe+RC4=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by DM8PR04MB7813.namprd04.prod.outlook.com (2603:10b6:8:26::18) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.615.8; Tue, 10 Nov
- 2026 08:09:58 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0592.012; Tue, 10 Nov 2026
- 08:09:58 +0000
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=qR7yRsM6;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=qR7yRsM6
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id AF44520127
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 08:42:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794300133; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=taShu/fHcVI0vHZKByzl7kgth2lhnSLlY1j56cP1WAs=;
+	b=qR7yRsM6Fk20gur2gTvAzGAz8IQreKMyZCwWJHi220qP+z0qPmWJ222mU+TcPpx7OV3mqp
+	zbFBVrNXAB3HjhTOlSrFzLW9D1X0XB74eswVwqBuKVFR3lJjrzx2ki/op4FulJnVMRwN0c
+	vUFmzaJ7pR5nn8ox+3Bbyb3foa3VJxA=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=qR7yRsM6
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794300133; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=taShu/fHcVI0vHZKByzl7kgth2lhnSLlY1j56cP1WAs=;
+	b=qR7yRsM6Fk20gur2gTvAzGAz8IQreKMyZCwWJHi220qP+z0qPmWJ222mU+TcPpx7OV3mqp
+	zbFBVrNXAB3HjhTOlSrFzLW9D1X0XB74eswVwqBuKVFR3lJjrzx2ki/op4FulJnVMRwN0c
+	vUFmzaJ7pR5nn8ox+3Bbyb3foa3VJxA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 8B6E513479
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 08:42:11 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 6b/+NeLY8mr/PQAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 08:42:11 +0000
+From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Jochen Philipp <a2jphilipp@gmail.com>,
-	Dongjiang Zhu <zhudongjiang@fygo.io>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v3] btrfs: zoned: don't release active zone reservations for conventional zones
-Date: Tue, 10 Nov 2026 09:09:32 +0100
-Message-ID: <20261110080932.1205332-1-johannes.thumshirn@wdc.com>
+Subject: [PATCH] btrfs: set write error flags before clearing writeback on failed buffered writes
+Date: Tue, 10 Nov 2026 19:11:44 +1030
+Message-ID: <93ad6002c98614b7a35c87b2792bce8dadb1e6b2.1794300081.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: FR2P281CA0117.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:9d::7) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -121,111 +85,217 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DM8PR04MB7813:EE_
-X-MS-Office365-Filtering-Correlation-Id: 90015237-6ca5-4956-8725-08df3f0202f7
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|366016|19092799006|10070799003|376014|1800799024|23010399003|11063799006|56012099006|18002099003|10067099003|261009223027099003|261102123227099003|261026140227099003|261021123027099003|261021121427099003|261022105027099003|261028144727099003|4133799003;
-X-Microsoft-Antispam-Message-Info:
-	w8RK/+YMsK6BIsvWn62P39LTNhd+QcOsvuUTfWC7gVDEHo9QwHApiwXM9XnFlZvI+0uKVc30ERFapdJVrkCLjjLtB10BNa47IF/zCgkMCvkYi+4iDbBuv9C6HH96HuqSgiTFriYG8WbsuWfMxJ3RK44+2qwZJycX0x8cr07rDclLQpKkicGqDr7R71Sy3mTfWb75G9sGFcntAa3758Nn0jc6G0soNeeaikT/Jczm052iwUWqVLrMZHC1uWged+jaNhQX1Zj++qColI1pYjpTIbyuyoBohhti8+X6Pp/kX6wuuuaCU1L7pELQRRtI+U5haNCS2kml8/T2AlRs+WOcHidj8EV852HCDcNFgxfn4bwuopgOs4noPjIhsles/Jv5/DwHPlDjTLxO33+HGxVafN/J0Z5V+kydPOL5ogX2uzTkYydX6vtd3y39Ootry/m1j8wcUqeVWEPXf78ZR8LM5FRbyEaEO/wQ8Pvdv1bbwejGavl3XJPeF6v6P5sObHkkPA5HIrmBU1H7qw1PhrLPXRscWWV67x678WOk3d48pXQ5LLW3U/Hp5UOvB/ezrqByInDbK0waY/tIHtwf5siKNXPe2CegNssDoKn8DzgmthA=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(366016)(19092799006)(10070799003)(376014)(1800799024)(23010399003)(11063799006)(56012099006)(18002099003)(10067099003)(261009223027099003)(261102123227099003)(261026140227099003)(261021123027099003)(261021121427099003)(261022105027099003)(261028144727099003)(4133799003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?us-ascii?Q?2exLPWj6fbcCJjOH1mg02I5wiGxZi5ykwdQT/gjAuY0nMYx1vJQDSIz+THgq?=
- =?us-ascii?Q?w0uaTvHPGRaZjVP3ZGnY92IFD/OH+1i5+ASbjquntfI36kByI+RCFUCAWqGz?=
- =?us-ascii?Q?C6TY6Fj39L2fc7x0mqkjSPBu6D9vYxzzsfhf+NX0QVpXqVwLqVu5PFX9tByD?=
- =?us-ascii?Q?5yCpxtCMgUMpFZ+EETT97IZ2ogsY64QyMU/UyfQ995Liv/9RoV8AUP6EEPvo?=
- =?us-ascii?Q?t1yYUXm5nnqhuKMJSGzcrcxPvPKgp5weZvdubqM1lxb4g0RVR5zl9NSN4UTy?=
- =?us-ascii?Q?Vz+u1juhb/ueWfnYE+IR2m9mayg6d5FsMw17KHiqQPPAmVKYwmYd1OCZeKg0?=
- =?us-ascii?Q?AhbECTUnWy/h7DKo8zhbURIJTAx5zRwNlll0vouJzkDeL5Q4P8yPdgzm55VP?=
- =?us-ascii?Q?zQXyAmHPNhtEXSemyY23xx0eRJey4UmM3OIreqAwtN+655UHerpfeMBxtblq?=
- =?us-ascii?Q?m3CYB+/gRJM17NmUmk/3eTeWnsPueMdESo31flOOjta3kuUNLYKVnyYEpqVh?=
- =?us-ascii?Q?xCbW5Q0Oeup73YpH/KDWo7pnazE3A1Rb9LLCq2aHBnOPWxcmJ2pnGt3mR56Z?=
- =?us-ascii?Q?FNDOas6MJO3Sj2au4QANRO2qctEDCUC7Q+bCjuzCFegVqwaf8gNx7yzb7vyl?=
- =?us-ascii?Q?U1rNDyYlwATzwJTL5zuvp8N7m+jy4cRkHxSlRZJQ6WpidZ2g+/O6qR6TUBfJ?=
- =?us-ascii?Q?7oN+esm8ZNXtzSCmT+WM7QZ1w6+SE5Bag/AqzBJXI2isUBhsrhKyoKIyurBd?=
- =?us-ascii?Q?PzI0PhdPkFFLCI85gN7X0WXcdhAYZ1kSx72hdhHeywhFCRDgm06ZpmA0WEAe?=
- =?us-ascii?Q?R9v2X61bOaI2hS5exz3TmUTMK701dM3WOd532bOwjvIf+T8QvqMBhhpGyHsb?=
- =?us-ascii?Q?L6afoq+P8c7YcaE1SN2CtfhKr88QsWXUBizgxWRS/rSdSeTqYUtGiLg4P/ra?=
- =?us-ascii?Q?B2MVT56Vj5Io4tob9k1p3BfnORr8LcCaksT2+3mWNVk4kSUPibgf6wVltDS6?=
- =?us-ascii?Q?YTifVidtkGl0fd+8V5/6YJVHV5WXIFVP8h8YrBpdFyblAlwoOYp9FVhtObat?=
- =?us-ascii?Q?c6l2o5jS0CAPan/ncFjq9PFPHXZaxwhY8DL2ItUi2jxGXB+4GUKoMcjgiivC?=
- =?us-ascii?Q?h/teXv3/tj/YJLsnHYYQtxHN+3sosL8gduIn1JQ81Rmx7k7P1Gwx467EuJQR?=
- =?us-ascii?Q?BxTxkVCFsx+4iXT4yQphXke3SgJxvuILTC7Ut+HDNkTIOhKJcjx+jTZeZHr3?=
- =?us-ascii?Q?D3SQB8n3O37GbdshP2JmgT6omGyP+F0sstTcotxd+r3uETuY8bgeYEoHnjM2?=
- =?us-ascii?Q?Adw6xdP9FYYCR4guhmgrhYgzRdZE6TYoZ9YAGJ8zQip3zDpWoxCT/WscRiHB?=
- =?us-ascii?Q?kHNNxpqqnT/Df071w7kbe4Ggc17CG4XVPj3OBBKwFbOtzl89mqWg3p2dJkMa?=
- =?us-ascii?Q?BkeS5u7puXIGMHGtolk9SkveNn8j/f/EEDKowZCQiCn4qe5fmU0d9Tg9/cDC?=
- =?us-ascii?Q?tfnVH94bI1+nwSZqNbcWQN17H08HABrMcBtwiz3Iw+vtxnaE8IlZAdNiqp3S?=
- =?us-ascii?Q?YnBeknRnm8FijqH4vWEG2SDEYM4QrlvwNCvnvqNRpCeVbaA0nGoT9FNzX+Eh?=
- =?us-ascii?Q?LReoo0BALs+d0ADwbMAmpEY1kj34nfIaOCc4TLtI+rVCggasi8mZlMAxSVXn?=
- =?us-ascii?Q?EMPFoe0eFk1GJ5Gw7Jzqk7VvqtQnOvA6hwlIFeYpoTmQebNsGshfRVXGZwIr?=
- =?us-ascii?Q?VvBuBcQME1BD7z2jh9WmfinTKW5tLrqknwJj2P1hhDSCTIXkC+z6Rdqg7W0i?=
-X-MS-Exchange-AntiSpam-MessageData-1: RR4JvHNNxDrjcnz6Br+3eYk/7yyiTv6gzzA=
-X-Exchange-RoutingPolicyChecked:
-	FiYTe5Dyev8MCPW2t+js87iWb2n/yq4/cO+gUm/YUreKo9PKoVgRE7VLDLZSxx5XFl+g8b3KgIW0Fd8PoKDP/hjRbpHJ8tKhaS0Rh6cdal3apjpvD8Nq91LFhMhobtL1vtIcUudp4eb4rXA9fUbnGlpogTDuE8jBSwCI4fA2Jlbr/LUlKjQghxHZuvNFisoPBjSv57ycvCSAjwoFo/KxPV3IKO2cUhcbUk5DfQWhlIKlguVaP99twwq/dQ2PJ/MLCWGWDU4QQ5vMznCsEsgjpOmk/RyQS1ol1Gd9h6vES0URRiiPwUy1MwEGE2xpAfZ0piFLGg2ZzmJZXjRJSpPLBw==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	/e5mm0x78GZhlIkeA2446lHA3URkoO54E/tNhc/S/hCcjjKq8eVyCXa70S0C0wSCq9r8mRk8wTSZXbnAugfpyqyc57U+Qk5Ml5zKavpHwklS7LCNOa3nbzloRIEjTdHyhX2jx4bg15Z3sbm8h4y2eka5xjQ78oi7wZFsatpDoJCU1QLy9wqHDxRWU28O2w+BmzQyaqAzPSYS6v30myud9YrAeo1yF6BrjnD+b2agulLVZYlkUdt5eTwIRoQknDmD4Sr7mMZfTMVecD4I/YSuWr8DyKVndVCAX62OyY1p0QlWwxqbw89cNzv6AOamrdw2qA0PjXBk36yqtgzyP03PYAFh4d0E4GTiyPwxdzxXm4qujJoTork/t1dt4MzZF5TpYjE0xAeKopO7qJ7igtqtTEji3KWy2mj+Ds9jD5ZD6WzLhrNNQrRkgzBAqywzOF9rZl2TixnWvoeSCZ+h6cjXEtcEwgvRCCUb6E7UUFIl7dcOJ4QspJU/smec/6+w5MvGBYStk4v9xNrzvBB6Bni4Y2VT1EAb8A3Hl81tjaWWMrCW4oUekXDE4QvGPh6Hgut7fZn0dzygub09QAtdG06KPghrIjJSydVDoz3+tMJTNSewjTVr169ivo3T/qZ99w+D
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 90015237-6ca5-4956-8725-08df3f0202f7
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 10 Nov 2026 08:09:58.3431
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 0nQZ+mfRKauORRip69t4z4LHpX8bDbEjgQq8QunSiGSYFSWPxpQ7HbeRObUehxexCMey7mBmEB50Qr6t58I8pXFMfv9Ip7j4cgoF1x7VAMk=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DM8PR04MB7813
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: AF44520127
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	FROM_EQ_ENVFROM(0.00)[];
+	ARC_NA(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Score: -12.01
 
-On mount, btrfs_check_active_zone_reservation() releases a reserved
-active zone for each stripe of an active metadata or system block-group.
-Stripes on conventional zones usually hold no active zone on the device,
-so they use up the reservation. Once metadata moves to a sequential
-block-group, its activation fails and the transaction commit aborts
-with -EAGAIN.
+[BUG]
+After commit f13e01b89daf ("btrfs: ensure fast fsync waits for ordered
+extents after a write failure"), a failed COW write sets the inode's
+BTRFS_INODE_COW_WRITE_ERROR flag.
 
-Only release reservations for stripes holding an active zone, matching
-what finishing the zone gives back.
+That flag makes the next fast fsync wait for ordered extents to complete,
+so that it never logs the failed extents.
 
-Fixes: a7e1ac7bdc5a ("btrfs: zoned: reserve zones for an active metadata/system block group")
-Reported-by: Jochen Philipp <a2jphilipp@gmail.com>
-Link: https://lore.kernel.org/linux-btrfs/CAD=K2o-BBqh+ikgfD732Cb3M1Xx48QGw3kTFsP5iSgH1mkr0wA@mail.gmail.com/
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+However for buffered writes the flag can be set too late, and a fast
+fsync can still log file extent items for the failed write.
+
+[CAUSE]
+In end_bbio_data_write() the folios' writeback is cleared before the error
+is recorded:
+
+ CPU0 (endio, failed buffered bio)  CPU1 (fast fsync)
+ end_bbio_data_write()
+ |-btrfs_folio_clear_writeback()
+ | ^^^ wakes up the fsync           btrfs_sync_file()
+ |                                  |-filemap_fdatawait_range()
+ |                                  | ^^^ Returns after the writeback
+ |                                  | finished
+ |                                  |
+ |                                  |-test_and_clear_bit(COW_WRITE_ERROR)
+ |                                  | ^^^ Still 0, skips
+ |                                  |     btrfs_wait_ordered_range()
+ |                                  |
+ |                                  \-btrfs_log_changed_extents()
+ |                                    ^^^ logs the extent maps of the
+ |                                        failed ordered extent
+ |-mapping_set_error()
+ \-btrfs_finish_ordered_extent()
+   \-set_bit(COW_WRITE_ERROR)
+     ^^^ Too late.
+
+A power loss after the log tree is persisted makes log replay point the
+file to blocks that didn't receive its data.
+
+The mapping error is recorded late too, so the fsync can miss it as well.
+
+[FIX]
+Record the error before anything a fast fsync can wait for.
+
+Introduce btrfs_ordered_extent_io_failed(), which marks the ordered
+extent with BTRFS_ORDERED_IOERR, sets the mapping error and sets
+BTRFS_INODE_COW_WRITE_ERROR for COW ordered extents.
+
+Call it from end_bbio_data_write() before clearing writeback, along with
+mapping_set_error() with the real error code.
+
+Also call it from btrfs_finish_ordered_extent() before
+can_finish_ordered_extent(), which sets BTRFS_ORDERED_IO_DONE, so that the
+flag is also visible to anyone woken up by IO_DONE.
+Compressed writes already finish the ordered extent before clearing
+writeback and are not affected.
+
+Assisted-by: LLM (exposing the bug and coding)
+Fixes: f13e01b89daf ("btrfs: ensure fast fsync waits for ordered extents after a write failure")
+Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
-Changes to v2:
-- Only decrement reservation for zones marked as active (Shashiko) 
+ fs/btrfs/extent_io.c    | 13 ++++++++++---
+ fs/btrfs/ordered-data.c | 40 +++++++++++++++++++++++++++++-----------
+ fs/btrfs/ordered-data.h |  1 +
+ 3 files changed, 40 insertions(+), 14 deletions(-)
 
- fs/btrfs/zoned.c | 11 +++++++++--
- 1 file changed, 9 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 3192b86669b9..81489fa4a42d 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -3115,8 +3115,15 @@ void btrfs_check_active_zone_reservation(struct btrfs_fs_info *fs_info)
- 		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
- 			continue;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index b2739838c646..53fced2756b5 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -545,6 +545,16 @@ static void end_bbio_data_write(struct btrfs_bio *bbio)
+ 	u32 bio_size = 0;
  
--		for (int i = 0; i < map->num_stripes; i++)
--			map->stripes[i].dev->zone_info->reserved_active_zones--;
-+		for (int i = 0; i < map->num_stripes; i++) {
-+			struct btrfs_zoned_device_info *zinfo = map->stripes[i].dev->zone_info;
-+			u64 physical = map->stripes[i].physical;
+ 	ASSERT(!bio_flagged(bio, BIO_CLONED));
 +
-+			if (!test_bit(physical >> zinfo->zone_size_shift, zinfo->active_zones))
-+				continue;
++	/*
++	 * Record the error before clearing writeback, as a fast fsync waiting
++	 * for writeback checks the error right after being woken up.
++	 */
++	if (error) {
++		mapping_set_error(bbio->inode->vfs_inode.i_mapping, error);
++		btrfs_ordered_extent_io_failed(bbio->ordered);
++	}
 +
-+			zinfo->reserved_active_zones--;
-+		}
+ 	bio_for_each_folio_all(fi, bio) {
+ 		struct folio *folio = fi.folio;
+ 		u64 start = folio_pos(folio) + fi.offset;
+@@ -554,9 +564,6 @@ static void end_bbio_data_write(struct btrfs_bio *bbio)
+ 		btrfs_folio_clear_writeback(fs_info, folio, start, len);
  	}
- 	spin_unlock(&fs_info->zone_active_bgs_lock);
+ 
+-	if (error)
+-		mapping_set_error(bbio->inode->vfs_inode.i_mapping, error);
+-
+ 	btrfs_finish_ordered_extent(bbio->ordered, bbio->file_offset, bio_size, !error);
+ 	bio_put(bio);
  }
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index df74c75d6c29..0a851203e589 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -423,18 +423,18 @@ static void btrfs_queue_ordered_fn(struct btrfs_ordered_extent *ordered)
+ 	btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
+ }
+ 
+-void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+-				 u64 file_offset, u64 len, bool uptodate)
++/*
++ * Record that the IO of @ordered failed.
++ *
++ * Must be called before anything a fast fsync can wait on is signaled: the
++ * writeback bit of the folios for buffered IO, or BTRFS_ORDERED_IO_DONE for
++ * direct IO. Otherwise the fast fsync can miss the error.
++ */
++void btrfs_ordered_extent_io_failed(struct btrfs_ordered_extent *ordered)
+ {
+ 	struct btrfs_inode *inode = ordered->inode;
+-	bool ret;
+ 
+-	trace_btrfs_finish_ordered_extent(inode, file_offset, len, uptodate);
+-
+-	spin_lock(&inode->ordered_tree_lock);
+-	ret = can_finish_ordered_extent(ordered, file_offset, len,
+-					uptodate);
+-	spin_unlock(&inode->ordered_tree_lock);
++	btrfs_mark_ordered_extent_error(ordered);
+ 
+ 	/*
+ 	 * If this is a COW write it means we created new extent maps for the
+@@ -442,7 +442,7 @@ void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+ 	 * before submitting a bio or during IO.
+ 	 *
+ 	 * We have marked the ordered extent with BTRFS_ORDERED_IOERR, and we
+-	 * are queuing its completion below. During completion, at
++	 * will queue its completion. During completion, at
+ 	 * btrfs_finish_one_ordered(), we will drop the extent maps for the
+ 	 * unwritten extents.
+ 	 *
+@@ -464,8 +464,26 @@ void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+ 	 * Set a flag in the inode so that the next fast fsync will wait for
+ 	 * ordered extents to complete before starting to log.
+ 	 */
+-	if (!uptodate && !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
++	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
+ 		set_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_flags);
++}
++
++void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
++				 u64 file_offset, u64 len, bool uptodate)
++{
++	struct btrfs_inode *inode = ordered->inode;
++	bool ret;
++
++	trace_btrfs_finish_ordered_extent(inode, file_offset, len, uptodate);
++
++	/* Must be done before BTRFS_ORDERED_IO_DONE can be set below. */
++	if (!uptodate)
++		btrfs_ordered_extent_io_failed(ordered);
++
++	spin_lock(&inode->ordered_tree_lock);
++	ret = can_finish_ordered_extent(ordered, file_offset, len,
++					uptodate);
++	spin_unlock(&inode->ordered_tree_lock);
+ 
+ 	if (ret)
+ 		btrfs_queue_ordered_fn(ordered);
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 8d5d5ba1e02f..1bb8f9c8c472 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -226,6 +226,7 @@ bool btrfs_try_lock_ordered_range(struct btrfs_inode *inode, u64 start, u64 end,
+ struct btrfs_ordered_extent *btrfs_split_ordered_extent(
+ 			struct btrfs_ordered_extent *ordered, u64 len);
+ void btrfs_mark_ordered_extent_error(struct btrfs_ordered_extent *ordered);
++void btrfs_ordered_extent_io_failed(struct btrfs_ordered_extent *ordered);
+ void btrfs_mark_ordered_extent_truncated(struct btrfs_ordered_extent *ordered,
+ 					 u64 truncate_len);
+ int __init ordered_data_init(void);
 -- 
 2.56.0
 

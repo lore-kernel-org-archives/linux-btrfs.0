@@ -1,53 +1,109 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794270178;
-	b=FNI1P8iXeBnJ43osauDLG4MvC5h/cL3sir6n9YhdCabxtnoMqHnSZBIpW4RmId6mGS7e
-	 QAoeRJIRJqjLwcarDafElQ293lChUPnDDNCun+fqlHuFvgZd5IHJKcPFgcodFkMiaGbDW
-	 d3hkWnaB+wJWRhebO+yOoR3iuyk6c80FrV0OQxH1HOH1BLVD1EkXVa5uo1PHnN8RRozlY
-	 DwxzYkh28oVv0vRV2gIVRdTf3QHtonx17dJN0KLEhBYhP2VQ9zHklkJsF00Yhc80BKk39
-	 dVHXeaItWZTI7xOtg7TQ9rDQYV697DkQiZPfvtrLEFmRhlWUTnaNEeovHWTAd602Ryw==
+	t=1794272333;
+	b=s18frIZupHHFQDU111uKXG82V5QVQKwmmWhiAF+C/0bqVTXzf3JhrV8IWCYb62BFp58z
+	 IaHcIsUCqr6ylwaSsG9ebNIQc9zzMKAjm0y372FkUDBoMiGEERTziLedaImvherrct7J0
+	 yp/saClqyF3IZtauQ98cqwMa0nlurZp2xvJuxUr9ilXsqH8VrIyjIHzVUB5Em5JW3tbdl
+	 MzlPChAFqTon/hUK20+EkagLcQOd9atHenldOX8MWEmVaTz9/qKB3tJkEGAZijXx/B473
+	 El7dRZopto8FcCaslr70lJcnKRuO6NPeTiyWvH7bpBglBbUz3Wn9nKwoIW41gGU6g3w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794270178;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=NALYbTqpQWKn266kqz03n6anoRhQmXzYtdFJ2lho0vY=;
-	b=ApnO37R8scZVvi6/utYKJBp1vAI5TqhubXAnCU67tinn6gNs9LhDI+yrtPOtFmSZ5x2a
-	 qVCuruwwhyIFSQ5b4vclwFeVc318IlX+XyK7shkhXz64vYyDSkVB3JOpCP5zcCb6bgIde
-	 bUpiI6IliMv4P1kokZ5FA0xAjchT5IuDG5MupLXYAB6hs6Y96Pmdbnb2nMi81L6bFn6KH
-	 IFS4aMfbUc93NabPG3atBpQhGQJvaL5ZDw2QwYatgcVN/2D5lTN28Hsl/qad2pIsSHa01
-	 T8D7LLL6QXwRw6QTCHZ29LWtCzOPQ/M+i2mqJ4rT4ES+XWZc0zq1t98Q3DzrR5jzV2w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794272333;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Date:From:To:Cc:Subject:Message-ID:
+	 Reply-To:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:User-Agent:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
+	b=l23cjbwVcCKJ65lvW327USbOAGDvmkeTLE8R1Moa3wHr4OK+Z2iakd3GtqKeAkoa/dyr
+	 Zb3gDNIMjpFngG0DvrF9aXMlcrAAD1xEPw6Wshm7P9vZYs35kLqn9sqp+jwUEYkbqFDGn
+	 vxljam/VGUK89CgM6/HNkKUACi7wiMBITcKBvJ58Z5XodKvqzgr5GYJyPCS2kMSfjYEEM
+	 ZVGZ1DhQsHVyr2QTseRH6+iHCaiV9+FGZ81gK0VF3F5EOlBmeI0g9R01Ye5LGq9W5MXer
+	 aN4cn4Rv6mTdy8dkuG1M1pC9OeX2zYYAN2ync8TUjnh4jSGn3EfICaU9M8y1Teji1nw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=UQlfEHs8;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AA512606A32A;
-	Tue, 10 Nov 2026 00:22:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68878606A31C;
+	Tue, 10 Nov 2026 00:58:52 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 68878606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=UQlfEHs8
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 50A7C1F008A1;
-	Tue, 10 Nov 2026 00:22:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794270177;
-	bh=NALYbTqpQWKn266kqz03n6anoRhQmXzYtdFJ2lho0vY=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=UQlfEHs8AAxyHNVuPQA7/aRHC383S+CL5aWQeYX79CchXnK2IDgmKGkEY72pDN0+k
-	 U0F2gQVM2c7xbo5q+VwhKNSIIbaOVU/fKAfvtSI36+K5iIsd1XefjgUxC6N0XHaH6V
-	 kb1MOQH0GdlUjcZgU4knQdkcrTmQOdztg58ANSjHEqKB9BelaFrA1Apelcr4cmLwJX
-	 VwamiFt0jLEYrzl0z9Z8xVrwa0fEMxXBXkhrwbFju3qHZXsVAIQbNWYZm+s+5NmtS1
-	 /7qeT1o8eWK0rdi423cy7AS+CsWJLPHPRfVgAQz4h+1C7HlE5PhjSmCrJu/pebJt8l
-	 Q4beZ+gN18nvg==
-Date: Mon, 9 Nov 2026 16:22:55 -0800
-From: Eric Biggers <ebiggers@kernel.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
-	ardb@kernel.org
-Subject: Re: [PATCH] lib/crc: x86: rewrite crc32c_x86_3way() in C with inline
- asm
-Message-ID: <20261110002255.GA1958@quark>
-References: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3CE9D21FAE;
+	Tue, 10 Nov 2026 00:58:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1794272330;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
+	b=zHAludM15y7EIEkCCM4s/AFQypniYwUdp9QWZWwgq3mjCCAP/O2DZHRoad1CT/vvAGv2FD
+	sC8zDlLboI16Ex8/g8h7mVNZCDYqSzg3f6dOC/IFIlkhMULih69lDQs/1ri9xxMmRd2OdR
+	AX39BGYrQHmGX6zWFeryAAWzG6GaPsE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1794272330;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
+	b=BkUepYyq4mmHQ223mOTu0lGKVytiV1RyCaDgqEgMEJmlPmYeBGJmx+Ps3KN48lSXap93X3
+	hjOLXxw7ine2yvAw==
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1794272330;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
+	b=zHAludM15y7EIEkCCM4s/AFQypniYwUdp9QWZWwgq3mjCCAP/O2DZHRoad1CT/vvAGv2FD
+	sC8zDlLboI16Ex8/g8h7mVNZCDYqSzg3f6dOC/IFIlkhMULih69lDQs/1ri9xxMmRd2OdR
+	AX39BGYrQHmGX6zWFeryAAWzG6GaPsE=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1794272330;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
+	b=BkUepYyq4mmHQ223mOTu0lGKVytiV1RyCaDgqEgMEJmlPmYeBGJmx+Ps3KN48lSXap93X3
+	hjOLXxw7ine2yvAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0E2B01339F;
+	Tue, 10 Nov 2026 00:58:50 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 5lr1Nkls8mrlagAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Tue, 10 Nov 2026 00:58:50 +0000
+Date: Tue, 10 Nov 2026 01:58:48 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Cheng Yongkang <teel4res@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	stable@vger.kernel.org, Qu Wenruo <wqu@suse.com>
+Subject: Re: [PATCH v2] btrfs: remove devid kobject when deleting a missing
+ device
+Message-ID: <20261110005848.GG4186782@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20261026105109.1148939-1-teel4res@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,135 +115,77 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
+In-Reply-To: <20261026105109.1148939-1-teel4res@gmail.com>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spamd-Result: default: False [-13.00 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_SOME(0.00)[];
+	ARC_NA(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	RCPT_COUNT_SEVEN(0.00)[7];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	FREEMAIL_TO(0.00)[gmail.com];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.com:email,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Score: -13.00
 
-On Tue, Nov 10, 2026 at 10:22:48AM +1030, Qu Wenruo wrote:
-> Unlike user space, we can not use intrinsics, so some instructions must
-> still use inlined ASM, but that is only limited to crc32_u*() helpers
-> and the PCLMULQDQ based lanes combination.
+On Mon, Oct 26, 2026 at 03:51:09AM -0700, Cheng Yongkang wrote:
+> btrfs_rm_device() removes the sysfs device entry only when
+> device->bdev_file is non-NULL.  A missing device (created by
+> add_missing_dev() for an absent disk) has bdev_file == NULL, but
+> btrfs_sysfs_add_device() still registers its devid kobject under
+> /sys/fs/btrfs/<uuid>/devinfo/<devid>.
 > 
-> Those wrappers are in the new crc32c-inst.h header, and are also
-> utilized by crc32c_arch() and the new C based crc32c_x86_3way().
+> When such a device is deleted, btrfs_free_device() frees the
+> btrfs_device while the devid kobject remains registered.  The kobject
+> is embedded in the freed btrfs_device and its show functions use
+> container_of() to reach it, so reading any devinfo attribute is a
+> use-after-free:
 > 
-> The hot loop is the same sequence of crc32 instructions as in the asm
-> version, with the same lane addressing.
-> The differences in the generated code (x86_64, clang, function tracing
-> enabled) are as follows.
+>   BUG: KASAN: slab-use-after-free in sysfs_kf_seq_show+0x157/0x490
+>   Read of size 8 at addr ffff88801d8172a8 by task poc/9385
+>   ...
+>   Freed by task 9385:
+>    kfree
+>    btrfs_rm_device+0x11ee/0x17b0
+>    btrfs_ioctl_rm_dev+0x265/0x400
+>   Allocated by task 9390:
+>    btrfs_alloc_device+0x7e/0x400
+>    device_list_add
+>    btrfs_scan_one_device
+>    btrfs_control_ioctl
 > 
-> The old 4x unrolled loop is 12 memory-operand crc32q plus 3 bookkeeping
-> instructions per iteration:
+> The freed object is kmalloc-1k and the faulting access is 680 bytes
+> inside it (offsetof(struct btrfs_device, devid_kobj) = 640 plus
+> offsetof(struct kobject, ktype) = 40), confirming the embedded
+> devid_kobj.
 > 
->     crc32q  (bufp), crc0_q
->     crc32q  (bufp,chunk_bytes_q), crc1
->     crc32q  (bufp,chunk_bytes_q,2), crc2
->     ... same for offsets 8, 16 and 24 ...
->     add     $32, bufp
->     sub     $4, %eax
->     jge     .Lcrc_3lanes_4x_loop
+> btrfs_sysfs_remove_device() already skips the block-device link when
+> device->bdev is NULL and only touches the devid kobject when it is
+> initialized.  Call it for missing devices too.
 > 
-> The new one has the same 12 crc32 and the same addressing, but clang
-> can't fold the load into the instruction because ASM_INPUT_RM is "r" for
-> clang, so every crc32 has a preceding mov:
-> 
->     mov     (%rsi),%r14
->     crc32   %r14,%r9
->     mov     (%rsi,%rdx,8),%r14
->     crc32   %r14,%r11
->     mov     (%rsi,%r10,1),%r14
->     crc32   %r14,%rax
->     ... same for offsets 8, 16 and 24 ...
->     add     $-4,%rbx
->     add     $0x20,%rsi
->     cmp     $3,%rbx
->     ja      <loop>
-> 
-> Thus 12 extra loads per iteration.  They don't matter in practice, as the
-> loop is bound by the latency of the three crc32 dependency chains, not by
-> uop throughput.
-> Forcing the memory form with "m" made no difference either in a userspace
-> benchmark.  gcc accepts "rm" and folds the loads into crc32q (checked on
-> a userspace build of the same code).
-> 
-> The combination step is the same instructions, with the old code being
-> 
->     pmovzxdq (K_table-8)(%rax,chunk_bytes_q), %xmm0
->     movq    crc0_q, %xmm1
->     pclmulqdq $0x00, %xmm0, %xmm1
->     movq    crc1, %xmm2
->     pclmulqdq $0x10, %xmm0, %xmm2
->     pxor    %xmm2, %xmm1
->     movq    %xmm1, %rax
->     xor     (bufp,chunk_bytes_q,2), %rax
->     mov     crc2, crc0_q
->     crc32   %rax, crc0_q
-> 
-> and the new one
-> 
->     mov     %r9d,%r9d
->     mov     %r11d,%r11d
->     pmovzxdq 0x0(%rdi,%rdx,8),%xmm0
->     movq    %r9,%xmm1
->     pclmulqdq $0x00,%xmm0,%xmm1
->     movq    %r11,%xmm2
->     pclmulqdq $0x10,%xmm0,%xmm2
->     pxor    %xmm2,%xmm1
->     movq    %xmm1,%rdx
->     xor     (%rsi,%r10,1),%rdx
->     crc32   %rdx,%rax
-> 
-> The two movs at the top are the (u64) zero extensions of the lane CRCs,
-> which are redundant as crc32q already zeroes the upper half.  The
-> register copy of crc2 disappears as crc2 is just the accumulator for the
-> final crc32.
-> 
-> The rest (prologue/epilogue, alignment head and sub-qword tail) is not
-> performance critical.  The only visible difference is the usual kernel
-> function prologue with a few callee-saved register pushes.
-> 
-> Measured throughput matches the old implementation within noise, both in
-> a userspace comparison (gcc and clang, 200 bytes to 1 MiB) and in the
-> in-kernel CRC32C KUnit benchmark, using a Zen5 (HX 370) based system.
-> 
-> Assisted-by: LLM (coding and testing)
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Link: https://lore.kernel.org/all/20261025180252.349049-1-teel4res@gmail.com/
+> Fixes: 668e48af7a94 ("btrfs: sysfs, add devid/dev_state kobject and device attributes")
+> Cc: stable@vger.kernel.org
+> Reviewed-by: Qu Wenruo <wqu@suse.com>
+> Assisted-by: LLM
+> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
 > ---
-> Reason for RFC:
-> 
-> The idea is inspired when I was cleaning up btrfs-progs, to prepare for
-> new arm64 CRC32C implementation, as a preparation I want to remove all
-> ASM file and inline ASM usages in userspace btrfs-progs.
-> That works pretty well, so here I'm trying to cross-port this change to
-> the kernel 3way acceleration path.
-> 
-> Although I would prefer a code base with less minimal ASM files, I'm not
-> sure if everyone prefers this solution other than hand-written ASM code.
-> 
-> Furthermore all my tests are on a Zen5 based system (HX 370), with
-> cpuid masking to test the 3way optimization code.
-> 
-> So no test on older platforms.
-> 
-> If this one is fine, I can continue converting the AVX512 version too.
-> And hopefully can cross-port the C version of AVX512 back to
-> btrfs-progs.
+> v2: add Link, Fixes and stable tags, keep the Reviewed-by because the code is
+> unchanged, and remove local validation details from the commit message.
 
-As much as I'd like to reduce the use of asm, I'm not sure this is super
-convincing.  We get worse code generation and have to fall back to
-inline asm anyway, as the x86 intrinsics are still unusable in the
-kernel (which is different from userspace).
-
-This patch also introduces a compiler error with gcc. It seems only
-clang was tested.  (Showing again that this kind of code often has
-compiler-specific issues, and we have to be extra careful to test it
-with every supported compiler version.)
-
-There's also a subtle bug where the inline asm blocks are missing the
-volatile qualifier, so technically they could be reordered after the
-kernel_fpu_end() and corrupt a userspace process's XMM registers.
-Without inline asm, this issue would not have been possible.
-
-I'd be interested in seeing what you can come up with for
-crc-pclmul-template.S, though I think that one is going to be harder to
-replace.
-
-- Eric
+Added to for-next, thanks.

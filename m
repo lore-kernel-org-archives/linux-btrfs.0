@@ -1,111 +1,91 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=202.12.124.152
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.227.200
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794279041;
-	b=XzJB4QXhIVZR13wlba8/QktvQAcG9Rl71/uc5N3ezO5GasJJk3bTAPfg3b1KrI37ArGe
-	 L0c6K1tkbQSPMmSPQCGJLeCGvmAt5BpHW5n2SphpWg6Gwc04uvtJYRClwANrxlLYQgaW4
-	 h5zGs5L9td/brvBQOPSTk+9Tx8evGgPC/jWtW4ppnQsDSqvjzb2RaBhYNv1aKt67vEeH5
-	 UTZpyToxfQ7VyoD8OPISDIoP7W+DCeBEJtDUEPzdB0ue4sRlpenYauynPhQxuG5/TnSax
-	 mVXo0yUnb9PXP6VQkHmCXmdLkuj0HRrQ7PVux7uZhEF7dwVAcpCfrQGKA30UcuBE5gQ==
+	t=1794279939;
+	b=pS0658NXaH2lsZvFXlpxxh375pXPweywqfiwsC3eP00UCtrMYJz8uUEKXU79Fei5fjld
+	 q87K72Aj80sLEytCjY5B1Ro6rspZW2rR1vPQAi270wBS9i+CmsB6zj050fvHsz3z9NTyD
+	 IyLcPwRnqN9y/WuCnS7Nm4pKkaXKPdLjnZCgoCF1EwdDGbaLu4IOIcDitjnuGZq7YDCDn
+	 LYlGAAUinGL0BO/Vh1ExfbBTkQ9zu3HqvmSg0ERn3p3JQZRiWgst1mt70igX5bvjB7VS0
+	 m+MLM9wNqM2HI8UbCLIR8ZHYHZmgq8eOn91BCbM76uf4saMCkY89EDxfEHpPP7vFeDg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794279041;
-	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
-	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
-	 X-ME-Sender:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:Received:X-Mailer:
-	 MIME-Version:Date:From:To:Cc:Message-Id:In-Reply-To:References:
-	 Subject:Content-Type:Content-Transfer-Encoding;
-	bh=5UHj/t5CDWyFZXFdKWFyneK5LIc0CEinK2vxzwjd+YM=;
-	b=OGN7PCBBd43qzxRcu+i2z19RcgPnDN0e4coAcELeAHmJZZapgdWthAX+lTCNP5oMUDk7
-	 o3KWA4VNZEIn0p0xOEFMMze6A3Blm6GhI3WD8IB2/Jd75QkQZcRzsQfYFeJyZilaOnkzu
-	 cMKPQHwybZsITM/evdni8Jk7I1iSqV5su5EwnAG6OAqac6OrPYm8M6cBL4J3MEQhR9DA/
-	 Dt9uL57860JN5tMcL9o6dZWyLI79wZIkXVKxBaObHh/AzGPTDDrHauKEqYwEkHazVOtL8
-	 ehtJzML1MQEsYrBm9jdTbSfJ+29pucV0ReJ4+292xVpcI7RkUpN1nLBf5Jl5/uAULyw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794279939;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Date:From:To:Cc:
+	 Subject:Message-ID:MIME-Version:Content-Type:Content-Disposition:
+	 X-Mailer;
+	bh=WX8HAKlzGxNN6geVNUiXNfag9XxIX/lb5PTYIBvV6kQ=;
+	b=irjvYaZrDRplIsEUTuAQb2o9W+4TSivvMHgsWZIrIe0tdsa2JB9k7ZL/MFRN5F6SFBnk
+	 nCBC4ovLZarotpwbT4vvgfTlm8im6oYSA6A1MDkvuQmIy4NnvkhGCdXvO6aXN/zI6/36H
+	 Et5d6j0fuqi+7hKD/AhV2c11lu5HVPxsHRfI5+aq9/fdrLELNhyAEXFHhDoV6ysfWa5QY
+	 D5TR8gPJFcS/glkpX/ibTnf5pptUddrZQ0szziMH4oR2CAI/2qBL8C4/bHhREetrQziTS
+	 4TjSrJ97eLGusZfnk4VZbQt4IPnBa3/A1TvQTM6+zsHr4m6MHqhJw0XNc5XRD0lYjAA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=ampx.net;
-	spf=pass smtp.mailfrom=ampx.net;
-	dkim=pass header.d=ampx.net header.i=@ampx.net header.a=rsa-sha256 header.s=fm2 header.b=SejwmCSu;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=QKQnPT9a;
-	arc=none smtp.remote-ip=202.12.124.152
-Received: from fhigh-b1-smtp.messagingengine.com (fhigh-b1-smtp.messagingengine.com [202.12.124.152])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=A+i0H708;
+	arc=none smtp.remote-ip=74.125.227.200
+Received: from mail-pi2-f8.google.com (mail-pi2-f8.google.com [74.125.227.200])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0FA6A606A31C
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 02:50:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0FA6A606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=ampx.net
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=ampx.net
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9CFBF606A325
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 03:05:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9CFBF606A325
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=ampx.net header.i=@ampx.net header.a=rsa-sha256 header.s=fm2 header.b=SejwmCSu;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=QKQnPT9a
-Received: from phl-compute-03.internal (phl-compute-03.internal [10.202.2.43])
-	by mailfhigh.stl.internal (Postfix) with ESMTP id 733B97A01B4
-	for <linux-btrfs@vger.kernel.org>; Mon,  9 Nov 2026 21:50:40 -0500 (EST)
-Received: from phl-imap-03 ([10.202.2.93])
-  by phl-compute-03.internal (MEProxy); Mon, 09 Nov 2026 21:50:40 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ampx.net; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1794279040;
-	 x=1794365440; bh=5UHj/t5CDWyFZXFdKWFyneK5LIc0CEinK2vxzwjd+YM=; b=
-	SejwmCSuprwOIw/Ne2Hx54OOEY7nbBRzTm71YLeUoI/uPQf2+I4Y8E/GwYGIDA42
-	mAElNW5+xCJGZ0TYYkfL9Sy/WcHTFWYi8RuhfjA8t7n3wvOjaiZ46jzuuKFoNSkA
-	BL/bUwT2C1JgXhzN9lOtNodbh/6HdEvE8R3a3/EAwiRW1eWyR37a8ON+R/GUybto
-	MPYMICzKjzQtVxdE+Il7uJKPMwyOuYzPc7+gdGcVfJNm30kc2VLhQTUgZ7SlFldx
-	UDsBvFV7bOc6Bj59H1MCWUWkwSM902yBHxyrAbv8nIZHbjdKxErISDJbDRtYgpdD
-	OZwQt5apQDtTN+xZcyENEg==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1794279040; x=
-	1794365440; bh=5UHj/t5CDWyFZXFdKWFyneK5LIc0CEinK2vxzwjd+YM=; b=Q
-	KQnPT9a4mORUzJS3oz1Opa7RV4fd69qwNS/fRQx6IT7OigYl8w4g8gPxPSciJf0m
-	38gLhrzYz1aVCn3O0UkA1kzq/Sspld2TAxcaGgT8swDz2BvRmzpVqikjtPBHSwhR
-	vpGPsXy5xYB2TEh9jddf0xiadw6UArshAIVZqtTxrZ3LSe+P6zqFce7gMkDErh/7
-	zrvnITgFgXqYarpA9KOhfJ4FA241Ef+/oK92zDH6MB8/CmsSzCVdeJ8SmFEj6CEb
-	uBNoGYfLrc+ogla3/REJNIhxnxygDaRUZkeX5L3JZyLk8mvCSAoRAGhBGhKf4F4B
-	nVx2bI9ROm436pGqmc61A==
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=sign d=ampx.net a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1794279040; d=ampx.net;
-	mf=PHN0ZXJsaW5nQGFtcHgubmV0Pg==;
-	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm2:rsa-sha256:Uqt6KoU562cFCIRGKWibqpjJZ7SbyAoOcrSlmmJ5TAHeKAX
-	+JFv9100VXTVIk2Az9eUhheQI5Kpl6LM+8NhKjLh87BPxFZITJc7PEEX3VZQ3DTS
-	TQmwIh1uh/ikFcwzpftgunDSR+r5I3gp3Ky80CTkKLCjpvGvq+G9k4oT0F81j9p6
-	pLqpJa7wrPcv+rWBYhQDLP+bG20aWLpiOKQtzocDmaoVzeyHM9jME2xa1cFQR+zy
-	5rqL719yPtYMzPBbbqqObRz+X2bkDnl2KiX8TWN6CDIZWXFsIY8a8nb1fUbRuQPJ
-	OIXCa22KDZIVh6ow8sh6KNa3ULtVplFWcS15ZEw==;
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=mi-m=1; hc=12;
-	hn=cc,content-transfer-encoding,content-type,date,feedback-id,
-	from,in-reply-to,message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:A3CTrlkx7EC1iw9ZZVgdJsb7hnfYv67dttRbaIlwawA=:5UHj/t5CDWyFZXFdKWFyneK5LIc0CEinK2vxzwjd+YM=;
-X-ME-Sender: <xms:f4byanlhRWunXntgrryDlD4qBsqtTenSWo3D_Hf8Y0LPjzYtGuEqlg>
-    <xme:f4byaloKOKfY7jjTqhowVAfsJJ4QuNitRL72kFBN4ySPwqBryLaiQJcHAjZEx1fBq
-    oFeMD9rH1esGxhPlFbz6EEi80WlP1Cr4hoGO_DzY01LF0pnFrw2WKQD>
-X-ME-Proxy-Cause: dmFkZTFydLUBivG1RLJg+ULrvIXrDv0ytzC3zWyvH5h3ajH7KwEdl+4JEUSRiRwKiKFXKh
-    uabz+Jh1GYiWUxhgc5Up5SmKhQghAZwx0oyFk7F+tumURlRKpFwRmuATZHpnIrauPgTSzV
-    lQFfXB9iZKS0yRlYr8p49XKFJK1O3RU9vQgkzz4m2whCjmCb1cRg9JFsatsXeBwGrtffAD
-    pM0pkK/UvHFtxGImjP2ezrAH4SiBugm7EdzaNn6vvUpLJYgPG5/0JxBYMOcfpqNFm0JCUq
-    b2UkAe7IAByMJaLI5nsytgsiOukgpPx8o8U+tzCCxKSAsqqaBIW0lCxGUhxsSh1o/jrbq1
-    WLjmYQOK9e6U/5gs1ZYHtqsp51SROx+JZi7EBmGq55HogFzqdZMieTiavHchH2tYiLvecm
-    glflF2RF921zrlBQOeiNcEPCq+JG21RiWjebE5chh7rwU8eojPr48SX9+Iti2vxbAcBxE/
-    oJJheVYg4NZc4gm4ws3O8GTtPeb2xEzj4mLgyBgIXzD2cn2qeOUfaRsk3AnKz3vhhhI4iG
-    O4gsV1Ir4d1exVfcykj4UZ8y68bPPt5LKs5q/dW0CsvvKCUgtWYIYChwCAWiKPvA7S3H5X
-    lkeOxx8TUNi5Kqnp4moqXZrAFElsTBJyXSOSUsqSiMpfFVUBucHACPGfcimA
-X-ME-Proxy: <xmx:f4byakj5VcsFvpUSvdf77YXAjDjrvgytywbVNUeC2HLFb3yco7Imdw>
-    <xmx:f4byakxXvPid9Muz-PCE5dwpfVD7ECtAirvEBX_G2O0RJNydPTfF2g>
-    <xmx:f4byavLuEOuO8koYx6fStsl1T5Ja4IrPclorg0qgZ6HD7H5al1SpXw>
-    <xmx:f4byajSqjHoNR_IjDn6Jxqqo4zrnX_e_UxL65TYA6Dr5f41KKKkaOQ>
-    <xmx:gIbyapVXNDlRnabyWWuUlmh6dwWFUNAPbWzi6dCw0lmO_8h_pK9q_eDA>
-Feedback-ID: iebe147d5:Fastmail
-Received: by mailuser.phl.internal (Postfix, from userid 501)
-	id B245618E006C; Mon,  9 Nov 2026 21:50:39 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=A+i0H708
+Received: by mail-pi2-f8.google.com with SMTP id 41be03b00d2f7-cd8cb23d52eso597726a12.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 19:05:38 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1794279938; x=1794884738; darn=vger.kernel.org;
+        h=content-disposition:content-type:mime-version:message-id:subject:cc
+         :to:from:date:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=WX8HAKlzGxNN6geVNUiXNfag9XxIX/lb5PTYIBvV6kQ=;
+        b=A+i0H708U0QhhS/auEv9RXynihAQg5JUK56vhWJuStLBuxsYlHpMBakfVnh6EzLj3b
+         Gy9vlMUuqNOnWne61jTAmePg+MOto1QYGb/dtNUzm0g4ptrrxBY39l+jXxVszQDbD/eL
+         DOLMiyFNJb7FJ/duLezj0VblqoAeaZnN0PYZMT8oGOeM0svmYHcb45CCUUhwlCV09t/+
+         /P8h5qAky1D6pDcpqDzU0NQE8OZCIvBNdFsB/+JujP8Ujv7VWfO1LBxBDvurdxYSdIuX
+         zYi9vFydpGS16c/GCkcWZXLtyzTVffpAwRdl1VAX4qd4/u+nw0aJqxJWXN47YPAukMYC
+         6MNw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794279938; x=1794884738;
+        h=content-disposition:content-type:mime-version:message-id:subject:cc
+         :to:from:date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=WX8HAKlzGxNN6geVNUiXNfag9XxIX/lb5PTYIBvV6kQ=;
+        b=bhMA95MMmy/+fc9mpQ/gaZi1aXN6svnH2J9jh4X8Hlghk4VlcJeDx4IFuCxDH4y7JK
+         xL11LqM9ug3+RNzhhaXZTOkNafmqUujiAOUhhz9tLqXti67WZ8lCaaMZsKgViMcYx3VG
+         9+7VFkKtbSUujnvk6CmZ+M9VEc6ENqwRRVSfnGa4f9j30eMK2SX1jijhs2dk4yExrH9r
+         jMfj3XA4R5RxiZUmNhf3CaoufG5D8KFPgaOoLRNkr/QmWi+VtM7+wCYLc/C5zKP6/zD7
+         08Ki598DcPVPHRJAkIw/CgBAGmFH8XLXRQjKQ3nVtBbFKEIVZz3v85TdbcqJqmjVvFy7
+         swuA==
+X-Gm-Message-State: APuU4Z9zHrW5BEGSXEFWaDCx1qkx8MYug/V5SiVTNCVRHcCHJAPXbdqs
+	C3btvhgIyfweRAhWTURianUWbCvJEY/MnBHvi4S+4Ia2pzmzd1VRiPE1
+X-Gm-Gg: AYBFou1jLalhS+KbSBHH55M0yQDYhDAjB7h29FCR9ny/ML9urxWVxr4wiJKiQA21mB+
+	4G1+QuOpChIBUb6ON+PM/z7oQnItC3q+veHHSmJ3SfigDgGhsFQGy96u4GMr2ry5dQ3KTVMWnZm
+	cUGzahLFo8aHDQmriS2DZe2WI29HCw9aUCPANAtc/U+PKj9Q5EcnBSZBMg+xUo4O73AA/JkJD8w
+	csoUmF+3Af0LBNR1uK2HKm0qTdElIvf+3O9pogr4oCCHhfdv8sg6IeMLKbn3tmCboDVkdUxJM7P
+	cS2auC+0/yMqebdaPgx3H/94/2FPdj6o9FsV3wZIuX8LL+FdZarmBXRPNY7+FmjxtFI7LIss00+
+	Ec2zBUuxyA5HmzQTWJzKcD+Z5OuDSRKzyH4LZNpubOw5WHCMAIy+Gzw0elRr/FpiisCKvVNkddl
+	nWne8nukab9pnjr4IGzl1fVVUXqrZ4dqkwI7HiWaNksOXpgg07fkYTaANOvZDWvq30/2CXiwg++
+	yuVBe0LDNPP7x8hnO0SEl38uZMcGsmUnU+CZOFuWbATht4gDtMcSNoWYffqXYyWDGmhusXEWc2v
+	czEf2koEOm2XUXHy/u8m
+X-Received: by 2002:a05:6372:a80c:b0:3de:4976:a0fe with SMTP id adf61e73a8af0-3f190087dfcmr1128599637.64.1794279937902;
+        Mon, 09 Nov 2026 19:05:37 -0800 (PST)
+Received: from hhost ([120.231.212.144])
+        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8baab21835fsm321901b3a.42.2026.11.09.19.05.35
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Mon, 09 Nov 2026 19:05:37 -0800 (PST)
+Date: Tue, 10 Nov 2026 11:05:20 +0800
+From: Xingyuan Mo <hdthky0@gmail.com>
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>
+Cc: "open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
+	open list <linux-kernel@vger.kernel.org>,
+	Xingyuan Mo <hdthky0@gmail.com>
+Subject: [PATCH] btrfs: bound free space runs by extent count in remap tree
+ setup
+Message-ID: <20261110030459.2640203-1-hdthky0@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -115,73 +95,144 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Date: Mon, 09 Nov 2026 21:50:19 -0500
-From: "Sterling Windmill" <sterling@ampx.net>
-To: linux-btrfs@vger.kernel.org, koraynilay <koray.fra@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>
-Message-Id: <bebe248b-8eb5-48f3-8dc7-ddaf8e4a09c4@app.fastmail.com>
-In-Reply-To: <DMQYN0GE281B.1PW8AIHGLUNDF@gmail.com>
-References: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
- <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
- <5225511a-c66f-40e5-b9d6-31ff572496da@app.fastmail.com>
- <DMQYN0GE281B.1PW8AIHGLUNDF@gmail.com>
-Subject: Re: [RFC] btrfs: forcing compression per inode via the compression property?
-Content-Type: text/plain
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+X-Mailer: git-send-email 2.43.0
 
-> I read the code a bit (and bounced some ideas with gemini) and I think a
-> "force:algo:level" would work well.
->
-> This, compared to "algo:level:force", would also allow a "force" value
-> (handled like "none" is already handled), that lets the user set *only*
-> the compress-force, without having to specify algo:level, so inheriting
-> from -o compress=, and the parsing would be as simple as if ("force")
-> str += 6, where str is the xattr string that gets then parsed by the
-> rest of the code (in compression_apply()).
+create_remap_tree_entries() sizes the space_runs array with the extent
+count read from the FREE_SPACE_INFO item of the block group, then fills
+it while walking the free space tree.  Nothing on this path cross-checks
+that count against the items that follow, and the only guards in the
+walk are two ASSERTs, compiled out unless CONFIG_BTRFS_ASSERT is set:
+the FREE_SPACE_BITMAP branch hands the array to parse_bitmap(), which
+appends one struct space_run per run of set bits without any bound at
+all.
 
-Thanks, a bare "force" value is a nice thing to have, and I agree the
-separate property isn't worth it.
+A crafted (or corrupted) filesystem that advertises a smaller extent
+count than the number of runs its free space items describe therefore
+gets a heap out-of-bounds write with disk-controlled contents during
+relocation, e.g. through BTRFS_IOC_BALANCE.  The free space tree load
+path validates the same count when it caches a block group, but that
+check runs lazily and only leaves the block group in
+BTRFS_CACHE_ERROR, which does not stop the remap path from re-reading
+and trusting the item.
 
-From reading the code only, a few things stand out for the bare
-"force" case, where prop_compress would stay 0:
+Bound the writes by the extent count: make parse_bitmap() take the
+array size and return -EUCLEAN when a bitmap would overflow it, and
+replace the ASSERT in the FREE_SPACE_EXTENT branch with the same
+check.  This also covers an extent count of 0 (ZERO_SIZE_PTR) and
+keeps the downstream entries array, sized extent_count + 2 and filled
+with at most num_space_runs + 1 entries, within bounds.  Consistent
+filesystems are unaffected, as merging adjacent runs can only shrink
+the number of runs below the recorded extent count.
 
-- compress_file_range() starts from fs_info->compress_type, so on a
-filesystem mounted without compress= there is no algorithm to use.
-It needs a defined behaviour, such as falling back to zlib as the
-chattr +c path does, or having no effect.
+Validated with a crafted image on a KASAN kernel: an info item
+claiming one extent next to a bitmap encoding 40 runs makes an
+unpatched kernel write up to 624 bytes past the 16-byte allocation in
+parse_bitmap() during balance:
 
-- The check at mark_incompressible only looks at FORCE_COMPRESS and
-prop_compress, so a failed attempt would set NOCOMPRESS and leave
-it behind after force is removed.
+  BUG: KASAN: slab-out-of-bounds in btrfs_relocate_block_group+0x2a46/0x3600
+  Write of size 8 at addr ffff88800c992550 by task balance/278
+  __asan_store8+0x85/0xb0
+  btrfs_relocate_block_group+0x2a46/0x3600
+  btrfs_relocate_chunk+0x82/0x320
+  btrfs_balance+0x1071/0x2e30
+  btrfs_ioctl+0x2943/0x3c60
+  __x64_sys_ioctl+0xd1/0x120
+  The buggy address is located 0 bytes to the right of
+  allocated 16-byte region [ffff88800c992540, ffff88800c992550)
 
-- btrfs_compress_typelevel2str() returns NULL when prop_compress is
-0, so children wouldn't inherit it and btrfs_fileattr_set() would
-fall back to the mount algorithm. That helper would also need to
-emit "force" in whichever form we choose.
+with create_remap_tree_entries() and parse_bitmap() inlined into
+btrfs_relocate_block_group, while with this patch the same image fails
+balance with -EUCLEAN and an image with a matching count still
+relocates cleanly.
 
-One thing I should have mentioned: Qu pointed out on v1 that older
-kernels ignore an appended ":<level>" because apply only compares the
-leading bytes. "zstd:3:force" would keep that property, with older
-kernels treating it as plain zstd, while "force:zstd:3" and a bare
-"force" would get -EINVAL from both validate and apply. Is bare
-"force" worth that trade-off, or would the suffix be better?
+Fixes: b56f35560b82 ("btrfs: handle setting up relocation of block group with remap-tree")
+Signed-off-by: Xingyuan Mo <hdthky0@gmail.com>
+---
+ fs/btrfs/relocation.c | 34 ++++++++++++++++++++++------------
+ 1 file changed, 22 insertions(+), 12 deletions(-)
 
-If we go with the prefix, the match probably needs to be exactly
-"force:", in both validate and apply, and "force:none" should be
-rejected.
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index b2ac5b836b217..d57522cc7f386 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4013,16 +4013,16 @@ struct space_run {
+ 	u64 end;
+ };
+ 
+-static void parse_bitmap(u64 block_size, const unsigned long *bitmap,
+-			 unsigned long size, u64 address, struct space_run *space_runs,
+-			 unsigned int *num_space_runs)
++static int parse_bitmap(u64 block_size, const unsigned long *bitmap,
++			unsigned long size, u64 address, struct space_run *space_runs,
++			unsigned int *num_space_runs, u32 max_space_runs)
+ {
+ 	unsigned long pos, end;
+ 	u64 run_start, run_length;
+ 
+ 	pos = find_first_bit(bitmap, size);
+ 	if (pos == size)
+-		return;
++		return 0;
+ 
+ 	while (true) {
+ 		end = find_next_zero_bit(bitmap, size, pos);
+@@ -4034,6 +4034,9 @@ static void parse_bitmap(u64 block_size, const unsigned long *bitmap,
+ 		    space_runs[*num_space_runs - 1].end == run_start) {
+ 			space_runs[*num_space_runs - 1].end += run_length;
+ 		} else {
++			if (*num_space_runs >= max_space_runs)
++				return -EUCLEAN;
++
+ 			space_runs[*num_space_runs].start = run_start;
+ 			space_runs[*num_space_runs].end = run_start + run_length;
+ 
+@@ -4047,6 +4050,8 @@ static void parse_bitmap(u64 block_size, const unsigned long *bitmap,
+ 		if (pos == size)
+ 			break;
+ 	}
++
++	return 0;
+ }
+ 
+ static void adjust_block_group_remap_bytes(struct btrfs_trans_handle *trans,
+@@ -4608,7 +4613,11 @@ static int create_remap_tree_entries(struct btrfs_trans_handle *trans,
+ 				space_runs[num_space_runs - 1].end =
+ 					found_key.objectid + found_key.offset;
+ 			} else {
+-				ASSERT(num_space_runs < extent_count);
++				if (num_space_runs >= extent_count) {
++					mutex_unlock(&bg->free_space_lock);
++					ret = -EUCLEAN;
++					goto out;
++				}
+ 
+ 				space_runs[num_space_runs].start = found_key.objectid;
+ 				space_runs[num_space_runs].end =
+@@ -4634,14 +4643,15 @@ static int create_remap_tree_entries(struct btrfs_trans_handle *trans,
+ 
+ 				read_extent_buffer(leaf, bitmap, offset, data_size);
+ 
+-				parse_bitmap(fs_info->sectorsize, bitmap,
+-					     data_size * BITS_PER_BYTE,
+-					     found_key.objectid, space_runs,
+-					     &num_space_runs);
+-
+-				ASSERT(num_space_runs <= extent_count);
+-
++				ret = parse_bitmap(fs_info->sectorsize, bitmap,
++						   data_size * BITS_PER_BYTE,
++						   found_key.objectid, space_runs,
++						   &num_space_runs, extent_count);
+ 				kfree(bitmap);
++				if (ret) {
++					mutex_unlock(&bg->free_space_lock);
++					goto out;
++				}
+ 			}
+ 		}
+ 
+-- 
+2.43.0
 
-> It should probably be a separate patch, but it'd depend on my patch
-> series, so not sure if I should just make a v7 with that or not.
-
-I'd lean towards a separate patch on top rather than a v7, since this
-is a new feature that may need its own discussion, and it shouldn't
-hold up your series.
-
-David, do you have a preference? And if the series isn't likely to
-land soon, would you rather see force as a small standalone patch?
-
-I'm happy to write the force patch on top, or to test yours on the
-images from my table, whichever you prefer.
-
-Thanks,
-Sterling

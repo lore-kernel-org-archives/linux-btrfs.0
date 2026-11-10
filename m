@@ -1,77 +1,52 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794329543;
-	b=MqUrDRKNkm5LTuWw/p72EmWMN8y5gRS7IKO9coqAv0GrbEWIJsBAT987R4Icfg+VWKI2
-	 uo4ni/3H9tbkzcfyK89ILbPx2po3H4aJt8bADreecaLh6FLcAahbfvoewTUJCStR54Bk0
-	 JkbQES+PqiCgbMDyF1EAIJilLbna8+LZHRvL2MPVmcTpyKzzbXa2rQF+IWXQEj0blP8ym
-	 WgivW55NuDvwXCrregevCDHueABXJ1HvJA+1Z++6bstcMbA/95HTL3+D31s3o6SMuwFgR
-	 VlIH7aw/1GBxOdCm8o9fF+QmMVKT9YNCFkJQeswK5esi27KX1ayMXXTXdDTj4VVAQYA==
+	t=1794332915;
+	b=QMxwtCSs6LIEjzwAnxOQYoCQL1zSdvSol32uE+rPx1eS3XYgAyoVDKgfSK2UQvxtbJBk
+	 XwHth4Xppw7KU1hUGDeFXcdyJ2GkPUg3x2/bNOveYQY59TtXgt3jShmcp6KJmOYDLMkXV
+	 BBAnEHaiaHs4I7Jn48/lQ7BBoKoePpctANGKxJknFwawJwsQmP5Q0J7E53aFc+GRtSTkZ
+	 83ABRuRWKla7Ha+eMeSnRMiNuwNYBp6E/n6t275qLawZWifZcq3BEF3yKBQh/VwFg9Ggp
+	 gLDmWYQPKmRC4bMnkTxj2D+P9MJ+xcB2FD+cOsvbctHY3815kZ9m0JQXea2YmNsiAYw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794329543;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=KyDcpTwF2G84cUTe+PVKDz9G3rULU78GRC2w0kOsrLc=;
-	b=l4aw2tre8GbBz5g9LuX5bM4yQTz96CFbLG8LsM7VKIXayuVmXV30ZQ32DPTyLKLklvnF
-	 fYFQ3zY+xdGIl+RC9ylnA/C7J49VUkApYGigBDyRkZo5czIM8Cqw8hUKbFZyn1/IgtQ3m
-	 Z/RGVRymJUJsoZqE4xFLoNPCFQbl09Pa3uiRQy/26ID/0+MFb3/zKlbTzp+JvVrStnzwK
-	 eWITQsh2iQT/0NCBfg5oKIZVh3Q6CWsgmG0dT0HwHYfcy3NvJnhpa5fox9BM20Ijf/wdi
-	 YYcsCHji+6Oik6v5hEeEl7hh1kCC4piXf0Q3DTWANagDf07zGSFRMlxB9cJ+9m6KinQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794332915;
+	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
+	bh=YwgxZY5f+/iFDU9D+iJMsauiI8SAcgrPCtizeAgN4Ao=;
+	b=xZuhm3Pu9YN7nuomhvhLlQdwBWxUkOSZ4EVX5u1bkb8DiJildn8c5A96969uyc4mZw1Q
+	 CwFPiQdy3MDIxLNF0Z/STvSH3zQTpeBpbbwZcpfxDU9YqMOTkThPMXwi9ewr1dL+Z8XnX
+	 u9Fk8q75miuaK2Z0viS2XjpuQFqftyjS31hwI04wuP75Y+TqtHOMY+ttGFBD+MqOF0X5u
+	 uI8PgnS3tMvuhAr5NIk+a7KU/5rCOgbfLbCqHgdpHSuCao2nhcwzw1XM3dJEvn6tOFGou
+	 4V/lOkusrF4Y1CMJnvxo3VH18iL+w46rRMAaWbOXz+ZoEbAjNe7/yaBv3fy0h2BEOpA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="WSR4/meg";
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="i9Yb/VQ4";
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57DB6606A330;
-	Tue, 10 Nov 2026 16:52:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88BAF606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 17:48:35 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WSR4/meg
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0C6B21F0089F;
-	Tue, 10 Nov 2026 16:52:05 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=i9Yb/VQ4
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A5BEA1F0089F
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 17:48:34 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794329543;
-	bh=KyDcpTwF2G84cUTe+PVKDz9G3rULU78GRC2w0kOsrLc=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=WSR4/megdggMO9wsDWOY+uoQSmNtO3j2yfbZkG8wNi5rB7hE651wqOzDxlgDXK7Ew
-	 RmAWiz2VBpllg4ynVFTcPIjgzyk7nAxhySjvb+byysmSgsCnpkfEzxkJqRWKHq9/mc
-	 YNAQhE0ikpxZ0sqlywqGqK0vnkiWmSjRjigl1fL7x76Q0lUOnOc+fEhl7WUDNrnt2X
-	 Hda+VOxkwzLr8arHFGMZFn9v/vCdMOGy5b+eY24hGBQ3e42uhb8xHhCF/aPlSMJPft
-	 3tCywwxXOQqTXxdhv8EqxUpg5QCSLRW2i8oyD+4B0ftty6ddfdgKmdarmtnmAcuyq1
-	 heVa4ehNncfYw==
-Date: Tue, 10 Nov 2026 17:52:03 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: Cai Xinchen <caixinchen1@huawei.com>
-Cc: mic@digikod.net, gnoack@google.com, paul@paul-moore.com, 
-	jmorris@namei.org, serge@hallyn.com, corbet@lwn.net, skhan@linuxfoundation.org, 
-	utilityemal77@gmail.com, ast@kernel.org, daniel@iogearbox.net, andrii@kernel.org, 
-	eddyz87@gmail.com, memxor@gmail.com, martin.lau@linux.dev, song@kernel.org, 
-	yonghong.song@linux.dev, jolsa@kernel.org, emil@etsalapatis.com, ihor.solodrai@linux.dev, 
-	rdunlap@infradead.org, gregkh@linuxfoundation.org, rafael@kernel.org, dakr@kernel.org, 
-	johan@kernel.org, dlemoal@kernel.org, hch@lst.de, axboe@kernel.dk, 
-	viro@zeniv.linux.org.uk, jack@suse.cz, dhowells@redhat.com, code@tyhicks.com, 
-	linkinjeon@kernel.org, sj1557.seo@samsung.com, yuezhang.mo@sony.com, 
-	hirofumi@mail.parknet.co.jp, cel@kernel.org, jlayton@kernel.org, neil@brown.name, 
-	okorniev@redhat.com, Dai.Ngo@oracle.com, tom@talpey.com, hyc.lee@gmail.com, 
-	miklos@szeredi.hu, amir73il@gmail.com, senozhatsky@chromium.org, 
-	chenxiaosong@chenxiaosong.com, dsterba@suse.com, mason@kernel.org, kpsingh@kernel.org, 
-	matt@bobrowski.net, rostedt@goodmis.org, mhiramat@kernel.org, 
-	mathieu.desnoyers@efficios.com, john.johansen@canonical.com, georgia.garcia@canonical.com, 
-	zohar@linux.ibm.com, roberto.sassu@huawei.com, dmitry.kasatkin@gmail.com, 
-	eric.snowberg@oracle.com, stephen.smalley.work@gmail.com, omosnacek@gmail.com, 
-	casey@schaufler-ca.com, takedakn@nttdata.co.jp, penguin-kernel@i-love.sakura.ne.jp, 
-	xiujianfeng@huawei.com, nanx95726@gmail.com, djwong@kernel.org, lujialin4@huawei.com, 
-	bpf@vger.kernel.org, linux-doc@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-security-module@vger.kernel.org, driver-core@lists.linux.dev, linux-block@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, netfs@lists.linux.dev, 
-	ecryptfs@vger.kernel.org, exfat@lists.linux.dev, linux-nfs@vger.kernel.org, 
-	ntfs@lists.linux.dev, linux-unionfs@vger.kernel.org, linux-cifs@vger.kernel.org, 
-	linux-trace-kernel@vger.kernel.org, apparmor@lists.ubuntu.com, linux-integrity@vger.kernel.org, 
-	selinux@vger.kernel.org, linux-kselftest@vger.kernel.org
-Subject: Re: [PATCH v3 -next 00/18] landlock: Add READ_METADATA and
- WRITE_METADATA access rights
-Message-ID: <20261110-rekonstruieren-erbfolge-vollversammlung-26be74966211@brauner>
-References: <20261027121151.1887650-1-caixinchen1@huawei.com>
+	s=k20260515; t=1794332915;
+	bh=YwgxZY5f+/iFDU9D+iJMsauiI8SAcgrPCtizeAgN4Ao=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=i9Yb/VQ4zJNIYjOSpml8vMzoVD4+qS/7bbWjtMPz2x2/IXw2yzQTBuW6/ps4D2X3q
+	 dOPm0D2JTdua4EZi6WHAYKip76S8bpvvZ41lW2ReNTYBSyMTnFP+YH3zMWP1A+wXCz
+	 ljqg3qxrxyD9ywBDxhhV6sLf6t+wmu3IjB1oT3duLFvzGE4OL7X2k/epEhcCU78G4/
+	 +Q9SPvvk9OChN9+Nye39bxj0IayNfkEhrcnmAVUtlVVPyA5YGkgsq6HwBYZPOqZaA8
+	 /VHHuMR6iX0ulk1JMgCkusLJVJF9tYLH42Jcsn5LwGYKovbQGKd/B7eUB9bxlS/YKv
+	 at+DS/RLMQr0g==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix return value to report partial success for direct IO writes
+Date: Tue, 10 Nov 2026 17:48:17 +0000
+Message-ID: <8da77d7db1e50bd725179dd123d5518b9a7d29b2.1794329417.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <c40fb9e159c3ddc020c5d48db85a517caf63bc30.1794246932.git.fdmanana@suse.com>
+References: <c40fb9e159c3ddc020c5d48db85a517caf63bc30.1794246932.git.fdmanana@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -81,27 +56,88 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20261027121151.1887650-1-caixinchen1@huawei.com>
+Content-Transfer-Encoding: 8bit
 
-On Tue, Oct 27, 2026 at 08:11:33PM +0800, Cai Xinchen wrote:
-> - The idmap is passed separately from the struct path again, instead
->   of being derived from path->mnt inside the helpers and the hooks.
->   As Christian explains in his review of patch 1, the idmap must be
->   taken of the mount at the time it was checked and passed down to
->   the filesystem so that the VFS and the filesystem are guaranteed
->   to see the same idmap.
+From: Filipe Manana <fdmanana@suse.com>
 
-This regresses AT_EMPTY_PATH. fchmodat2(), fchownat() and utimensat()
-with an empty path now go through CLASS(fd) which is fdget() and that 
-refuses O_PATH file descriptors. IOW, this is very very broken.
+When a direct IO write in btrfs_direct_write() is only partially
+successful, the remaining data may trigger a page fault retry or a
+fallback to buffered I/O. If this subsequent operation encounters an
+error (for example -ENOSPC, -EFAULT, or -EAGAIN if we are in a NOWAIT
+context), the  current error handling logic drops the count of already
+successfully written bytes and returns the negative error code to
+user space:
 
-Please also go through Sashiko's review of v3 (cf. [1]). The new struct
-file arguments need __nullable or bpf programs can dereference NULL,
-and the ntfs3 stream setattr and overlayfs fileattr paths that bypass
-the hooks need treatment.
+    return ret < 0 ? ret : written;
 
-[1]: https://sashiko.dev/#/patchset/20261027121151.1887650-1-caixinchen1%40huawei.com
+This goes against the write(2) semantics, which dictate that if some data
+was successfully written before an error occurs, the system call should
+return the number of bytes written.
 
+By returning the error code instead of the short write count, user space
+applications are misled into believing the entire write operation failed
+and that no data was persisted to disk. For append-only workloads that
+blindly retry the entire buffer upon receiving an error, this results in
+a silent data duplication and corruption, as the initial partially
+successful direct IO write is repeated.
+
+Fix this by always returning the number of written bytes if we wrote
+anything, otherwise return an error.
+
+Fixes: 51bd9563b678 ("btrfs: fix deadlock due to page faults during direct IO reads and writes")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+
+V2: Addressed a couple issues pointed by Sashiko.
+
+ fs/btrfs/direct-io.c | 24 ++++++++++++++++++++----
+ 1 file changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index ed3914257d39..66debd730e42 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -1048,20 +1048,36 @@ ssize_t btrfs_direct_write(struct kiocb *iocb, struct iov_iter *from)
+ 	/*
+ 	 * Ensure all data is persisted. We want the next direct IO read to be
+ 	 * able to read what was just written.
++	 * On success btrfs_buffered_write() incremented iocb->ki_pos already.
+ 	 */
+ 	endbyte = pos + written_buffered - 1;
+ 	ret = btrfs_fdatawrite_range(BTRFS_I(inode), pos, endbyte);
+-	if (ret)
++	if (ret) {
++		iocb->ki_pos = pos;
+ 		goto out;
++	}
+ 	ret = filemap_fdatawait_range(inode->i_mapping, pos, endbyte);
+-	if (ret)
++	if (ret) {
++		iocb->ki_pos = pos;
+ 		goto out;
++	}
+ 	written += written_buffered;
+-	iocb->ki_pos = pos + written_buffered;
+ 	invalidate_mapping_pages(file->f_mapping, pos >> PAGE_SHIFT,
+ 				 endbyte >> PAGE_SHIFT);
+ out:
+-	return ret < 0 ? ret : written;
++	if (ret == -EIOCBQUEUED)
++		return ret;
++	/*
++	 * Always report partial writes if we wrote something, otherwise it
++	 * could lead to silent corruption for some applications: for example
++	 * if an application does writes to a file opened with append only mode,
++	 * in case we succeed doing a part of the write and then fallback to
++	 * buffered IO and that fails (or return -EAGAIN because we are in a
++	 * NOWAIT context), we mislead the application into trying to write the
++	 * whole buffer again, resulting in duplicating part of the data and
++	 * therefore a corruption at the application level.
++	 */
++	return written > 0 ? written : ret;
+ }
+ 
+ static int check_direct_read(struct btrfs_fs_info *fs_info,
 -- 
+2.53.0
+

@@ -1,109 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794272333;
-	b=s18frIZupHHFQDU111uKXG82V5QVQKwmmWhiAF+C/0bqVTXzf3JhrV8IWCYb62BFp58z
-	 IaHcIsUCqr6ylwaSsG9ebNIQc9zzMKAjm0y372FkUDBoMiGEERTziLedaImvherrct7J0
-	 yp/saClqyF3IZtauQ98cqwMa0nlurZp2xvJuxUr9ilXsqH8VrIyjIHzVUB5Em5JW3tbdl
-	 MzlPChAFqTon/hUK20+EkagLcQOd9atHenldOX8MWEmVaTz9/qKB3tJkEGAZijXx/B473
-	 El7dRZopto8FcCaslr70lJcnKRuO6NPeTiyWvH7bpBglBbUz3Wn9nKwoIW41gGU6g3w==
+	t=1794272985;
+	b=dLL8Mj89C3QssK4nb5V4qZvmxSBFxEyTnIhkC5RfaNjS93VvM3Hssx8z2CIY+fYEw0x6
+	 X0vl+84Br7sjOUWhS6Lr3wo1YY4gDVgxzzpTjBxTbQBnFIEqZFViCDgH/6eyDthU6MYse
+	 Vi9OUBvcYP5szageqrrwu/pUqyAVRWfP6j+c/eolxvDqYbBNde63MXHyR6jmWgukqcswU
+	 v53qQH1qS0EmHVK3yORbD9P+q9XW8y1u/MCuyBvTlXpNYWkVjwaAzyB5ZPc5NHQreTShG
+	 N35l7UaCjCt8jNsf49NoV/XLBn11Qmt8HEzr6x297swAxcxAg5Bw2GJKBdgtqIK2jSg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794272333;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
-	 DKIM-Signature:Received:Received:Date:From:To:Cc:Subject:Message-ID:
-	 Reply-To:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To:User-Agent:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
-	b=l23cjbwVcCKJ65lvW327USbOAGDvmkeTLE8R1Moa3wHr4OK+Z2iakd3GtqKeAkoa/dyr
-	 Zb3gDNIMjpFngG0DvrF9aXMlcrAAD1xEPw6Wshm7P9vZYs35kLqn9sqp+jwUEYkbqFDGn
-	 vxljam/VGUK89CgM6/HNkKUACi7wiMBITcKBvJ58Z5XodKvqzgr5GYJyPCS2kMSfjYEEM
-	 ZVGZ1DhQsHVyr2QTseRH6+iHCaiV9+FGZ81gK0VF3F5EOlBmeI0g9R01Ye5LGq9W5MXer
-	 aN4cn4Rv6mTdy8dkuG1M1pC9OeX2zYYAN2ync8TUjnh4jSGn3EfICaU9M8y1Teji1nw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794272985;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=to4URsqxtJTbFmKpwZytobao7Gf403ptNh65jyzE0WM=;
+	b=5RCMprPG3viUkBZynRHSXskWi7tkkcFiSq9k3Ia1Pi2JNrCuZUFr+4AW70BUdstOfIjm
+	 8RtoOy5uf5uICUmIpk9oXk9qdoae3GhmmfepgLtsLeXaQ8pGVolO+YnmvbBN2vqHL19mH
+	 TezRENCTrx9mnE7RXCbNsUlC0gKDhAxSXHSNhg7y8NxQ65diP6JkAmrETVk/brGg1/4a6
+	 L3vGvJSRQfN1vtB3lW5WwdyzJlsnfkfppr0xe0UX3VEdb4Pxi7K0sTekCBYsgcYqHkxjq
+	 +hr+72VRfjYPHxLHgyEf9LCSH1wa7Ry6LPQUd0MlBND1XCb3aSrzkLTmfmSic1W57+Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=suse.cz;
-	spf=pass smtp.mailfrom=suse.cz;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=gXV1WQGr;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 68878606A31C;
-	Tue, 10 Nov 2026 00:58:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 68878606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4C391606A331;
+	Tue, 10 Nov 2026 01:09:45 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zHAludM1;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=BkUepYyq
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 3CE9D21FAE;
-	Tue, 10 Nov 2026 00:58:50 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1794272330;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
-	b=zHAludM15y7EIEkCCM4s/AFQypniYwUdp9QWZWwgq3mjCCAP/O2DZHRoad1CT/vvAGv2FD
-	sC8zDlLboI16Ex8/g8h7mVNZCDYqSzg3f6dOC/IFIlkhMULih69lDQs/1ri9xxMmRd2OdR
-	AX39BGYrQHmGX6zWFeryAAWzG6GaPsE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1794272330;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
-	b=BkUepYyq4mmHQ223mOTu0lGKVytiV1RyCaDgqEgMEJmlPmYeBGJmx+Ps3KN48lSXap93X3
-	hjOLXxw7ine2yvAw==
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1794272330;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
-	b=zHAludM15y7EIEkCCM4s/AFQypniYwUdp9QWZWwgq3mjCCAP/O2DZHRoad1CT/vvAGv2FD
-	sC8zDlLboI16Ex8/g8h7mVNZCDYqSzg3f6dOC/IFIlkhMULih69lDQs/1ri9xxMmRd2OdR
-	AX39BGYrQHmGX6zWFeryAAWzG6GaPsE=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1794272330;
-	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
-	 cc:cc:mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=9lqqwcZ9XnbvHpSrJpxapi5L34S1YmBQvqDv/pgHJfs=;
-	b=BkUepYyq4mmHQ223mOTu0lGKVytiV1RyCaDgqEgMEJmlPmYeBGJmx+Ps3KN48lSXap93X3
-	hjOLXxw7ine2yvAw==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 0E2B01339F;
-	Tue, 10 Nov 2026 00:58:50 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 5lr1Nkls8mrlagAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Tue, 10 Nov 2026 00:58:50 +0000
-Date: Tue, 10 Nov 2026 01:58:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Cheng Yongkang <teel4res@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	stable@vger.kernel.org, Qu Wenruo <wqu@suse.com>
-Subject: Re: [PATCH v2] btrfs: remove devid kobject when deleting a missing
- device
-Message-ID: <20261110005848.GG4186782@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20261026105109.1148939-1-teel4res@gmail.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=gXV1WQGr
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 058481F0089F;
+	Tue, 10 Nov 2026 01:09:44 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1794272985;
+	bh=to4URsqxtJTbFmKpwZytobao7Gf403ptNh65jyzE0WM=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=gXV1WQGrQcPdjiUv/tsrb40RSdvpIdiCSqfT3/UnWFIdH4Ye8LJJxjR8jXiX6LY+s
+	 sFo4uQ77lb1CNsdJAqKBlm8fg91TdCqiP/s/mCWJ4s63sM2ErDt+aw15N61G6NjFRn
+	 Q3AkOD8/YtfYeplsoFE3SEu8KWDaRGU15bupzOwaBwrjXkBxeGMmm3v/pRWkoHq072
+	 JLiI+tE+vLyFkJSW1UTLv6na5wyMQBSdqWOdynbd5kz7j6JmnBoGnfEybZbllbCkYu
+	 yNdAno4Cyc8Xx0HUtUf7O/cmglmiXZw6+d6b+OFigffvV4mmdVlxYVQtdKbhlTWigV
+	 QWrpsaq0EdCAQ==
+Date: Mon, 9 Nov 2026 17:09:43 -0800
+From: Eric Biggers <ebiggers@kernel.org>
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
+	ardb@kernel.org
+Subject: Re: [PATCH] lib/crc: x86: rewrite crc32c_x86_3way() in C with inline
+ asm
+Message-ID: <20261110010943.GB1958@quark>
+References: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
+ <20261110002255.GA1958@quark>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -115,77 +60,42 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20261026105109.1148939-1-teel4res@gmail.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-13.00 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	HAS_REPLYTO(0.30)[dsterba@suse.cz];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FREEMAIL_ENVRCPT(0.00)[gmail.com];
-	RCPT_COUNT_SEVEN(0.00)[7];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	FREEMAIL_TO(0.00)[gmail.com];
-	REPLYTO_ADDR_EQ_FROM(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.cz:replyto,suse.com:email,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -13.00
+In-Reply-To: <20261110002255.GA1958@quark>
 
-On Mon, Oct 26, 2026 at 03:51:09AM -0700, Cheng Yongkang wrote:
-> btrfs_rm_device() removes the sysfs device entry only when
-> device->bdev_file is non-NULL.  A missing device (created by
-> add_missing_dev() for an absent disk) has bdev_file == NULL, but
-> btrfs_sysfs_add_device() still registers its devid kobject under
-> /sys/fs/btrfs/<uuid>/devinfo/<devid>.
+On Mon, Nov 09, 2026 at 04:22:55PM -0800, Eric Biggers wrote:
+> As much as I'd like to reduce the use of asm, I'm not sure this is super
+> convincing.  We get worse code generation and have to fall back to
+> inline asm anyway, as the x86 intrinsics are still unusable in the
+> kernel (which is different from userspace).
 > 
-> When such a device is deleted, btrfs_free_device() frees the
-> btrfs_device while the devid kobject remains registered.  The kobject
-> is embedded in the freed btrfs_device and its show functions use
-> container_of() to reach it, so reading any devinfo attribute is a
-> use-after-free:
+> This patch also introduces a compiler error with gcc. It seems only
+> clang was tested.  (Showing again that this kind of code often has
+> compiler-specific issues, and we have to be extra careful to test it
+> with every supported compiler version.)
 > 
->   BUG: KASAN: slab-use-after-free in sysfs_kf_seq_show+0x157/0x490
->   Read of size 8 at addr ffff88801d8172a8 by task poc/9385
->   ...
->   Freed by task 9385:
->    kfree
->    btrfs_rm_device+0x11ee/0x17b0
->    btrfs_ioctl_rm_dev+0x265/0x400
->   Allocated by task 9390:
->    btrfs_alloc_device+0x7e/0x400
->    device_list_add
->    btrfs_scan_one_device
->    btrfs_control_ioctl
+> There's also a subtle bug where the inline asm blocks are missing the
+> volatile qualifier, so technically they could be reordered after the
+> kernel_fpu_end() and corrupt a userspace process's XMM registers.
+> Without inline asm, this issue would not have been possible.
 > 
-> The freed object is kmalloc-1k and the faulting access is 680 bytes
-> inside it (offsetof(struct btrfs_device, devid_kobj) = 640 plus
-> offsetof(struct kobject, ktype) = 40), confirming the embedded
-> devid_kobj.
-> 
-> btrfs_sysfs_remove_device() already skips the block-device link when
-> device->bdev is NULL and only touches the devid kobject when it is
-> initialized.  Call it for missing devices too.
-> 
-> Link: https://lore.kernel.org/all/20261025180252.349049-1-teel4res@gmail.com/
-> Fixes: 668e48af7a94 ("btrfs: sysfs, add devid/dev_state kobject and device attributes")
-> Cc: stable@vger.kernel.org
-> Reviewed-by: Qu Wenruo <wqu@suse.com>
-> Assisted-by: LLM
-> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
-> ---
-> v2: add Link, Fixes and stable tags, keep the Reviewed-by because the code is
-> unchanged, and remove local validation details from the commit message.
+> I'd be interested in seeing what you can come up with for
+> crc-pclmul-template.S, though I think that one is going to be harder to
+> replace.
 
-Added to for-next, thanks.
+Also, just to emphasize: most "C" code using this strategy will be
+mostly inline asm blocks, since that's what is needed to access the
+vector registers in kernel code.  See lib/raid/*/x86/ for some examples.
+
+crc32c_x86_3way() is an exception because it mostly use scalar
+instructions, with only a few vector instructions.  So it makes this
+strategy seem a bit more workable.  But actually, as soon as this same
+strategy is adopted for crc-pclmul-template.S or any of the many crypto
+assembly files (AES, GHASH, ChaCha, Poly1305, BLAKE2, etc.) that use far
+more vector instructions, it will become mostly inline asm blocks, just
+like the RAID code.
+
+So I feel it's kind of an odd path to go down.  Perhaps as a
+prerequisite for reimplementing some of this code in C (or will it soon
+be Rust?), we should get the x86 intrinsics working in the kernel first?
+
+- Eric

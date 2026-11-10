@@ -1,58 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794350264;
-	b=n6Zcl0ygGQhG5POGR4qLCAJvYuYoz//7NGgJm2/XWdVIJQCJcfoJrjXjGmZ/GTxIVg90
-	 fVqual5OofmgFVyi/e9wgLVqVBrxaCdkgkqkRWeY/kfoTBrr60vIP/Lzhv+P0Fj1s7tGK
-	 /+eQZ7fj3mic8YocGpwPLP1WAF0M4vq7Puemv+mOV9/o41zsp/dqtUlAkYVki1NDgM0cQ
-	 N3xM7oZCmDrfTx1ffG5iTFMxllIWHxcR0rsBmBUwAD7mOMk1016+rnzvZjp8keAimhhfI
-	 ToqlQRQQPiIzOk/C7pMGk9QBt2y/LHUngEZiyjmCs8BlH+rBToT/8uVN1ML+9GUZAtg==
+	t=1794350342;
+	b=L5qx+Vwbal1ylwWDTcdIqnp3Fk/MOqBKsAFJmEtRZg6Fl9Xbs7zDPMeEPhSs0/0aqeLk
+	 lmIaZ3gun91HtS6esTuDXNu/JUODgL3khfDR6JxO25BcZeSsIDOVQ4IcpulRqRznwcX0O
+	 VYfHT7KbQ7FE7ZAWHRfEOk/uEhz8c10nRMnbsAtaFt6fl9Pq/A0lDinuZzdkHqy5yI/Iw
+	 NOgZabLfEt2lKM5IqDYvhcDQCRW6+g7pGpP6FisFXQcO6XzvMf2LQ5JtdnqftPhvL7D03
+	 7JxW7HQdGZ2WsllXnMSWyVz4NXR5k/TnQC54N944KnBMLV9rAyuYWWN+wv+Wb7il3iA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794350264;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=n8XbVRklTf23qieQRD1VyauRsHNye3gZo1o86GLGMcE=;
-	b=bWOrADltRIulWnzc9lzRt6DsK2DWSeMo1Ps7lKE9d5zJRXztTz9SRpTEpi3L1dBIx/La
-	 t72xHcUF4YLRy3hl7p4dGtbuzpEK41qUkppZeCFwY2NU4oNremAWvMvMGLDFXPmBqoHP3
-	 GD0r1qP6nM12drmcp6/6oGDsqY+yqLhSMX8nhkuIgDcyZuS8N5oA4qDdiIgQ+kn6GHhro
-	 9saSExNWEpyAt3JgMiXP9XoX0NoqmAG/lVcVq9k4Iady4TWkxg81MV/Iz+LyCTQ2bNMtZ
-	 uDvktHpBuw/LDhY7teAcVZeeX0g6Dd1LgGFPzeSTNACRjNcamxnlW3OekvaJYXp4cbw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794350342;
+	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=dAn9BRnMEdw62ipwmJ1r9hnK7L45Q4EfFHbfLwTI8ns=;
+	b=NR1PZJ4LAWvEVMlVR31oWcKXFGt4tDVI6HeznRIcLQNM8O0ilCP0G/J6ozCoFEcetdCU
+	 jAFMDQrcjgQf/6A4Z01QV0ENIE5PJ1b8FlGbHozF+ztRzn4mav/dfmfXIcaEZYIKVvuqm
+	 vnZ/rpMdToSd+QBMNxfBSMDJGrZmriH7dVzups/i1lhaT1jGFO8nafCi62aKv007TYXjp
+	 cNrCh+Q7bVQdIjQDfEcgYLDfLM3iQHjjKLD4xu1O1+vNnOyBDUza7Ex7pepHj1Zyko/Rv
+	 Wb5iFkhHiocX29unOHf87pkGy7Yf47S1ic1cnSsi1/XHt+gXQfOKXCqSNJpYhqVQTfQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TOp9f9x7;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=mkfFsJGP;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 15956606A31C;
-	Tue, 10 Nov 2026 22:37:43 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48CD9606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:39:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=TOp9f9x7
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2ECE31F008A2;
-	Tue, 10 Nov 2026 22:37:43 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=mkfFsJGP
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 5F9671F008A2
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 22:39:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794350263;
-	bh=n8XbVRklTf23qieQRD1VyauRsHNye3gZo1o86GLGMcE=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=TOp9f9x7TncAgXrdmTrTBClcnbzWo8BWTKAM5lNyJpIRpGbGEhz46LODD43Q+nLZc
-	 f1xpTTvd20e+0sCXnhNoRGahw54LNb/ZkMI50VsPtUyBfiQhGj7dhxIFw2w1LskOMr
-	 +i95YSLoHjEsKnX9gcyTmc0YVaq8S5qgkeyeic1dVN9dQ85JgYpbkIB3dYGlLhTboh
-	 YccPuY1BUZpWnT6U90opJJObCAsUf7nNPLbQS8PvKP9+kWyN5/UNOLtGZjnuhfhcJU
-	 sZ2DX/U7bFjKJaJCwIg17LTdTmBAX6tKkTyb++GMCGZICdU+DDLDvQnDvPIr0QZJBX
-	 YzPlKGxyB9Z8Q==
-Date: Tue, 10 Nov 2026 14:37:41 -0800
-From: Eric Biggers <ebiggers@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: hch@lst.de, fsverity@lists.linux.dev, dsterba@suse.com,
-	linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, brauner@kernel.org,
-	viro@zeniv.linux.org.uk, jaegeuk@kernel.org, chao@kernel.org,
-	tytso@mit.edu
-Subject: Re: [PATCH v2 2/5] fsverity: add I_VERITY_BUILDING inode state flag
-Message-ID: <20261110223741.GE1907@quark>
-References: <20261105115532.613467-1-aalbersh@kernel.org>
- <20261105115532.613467-3-aalbersh@kernel.org>
- <20261110223526.GD1907@quark>
+	s=k20260515; t=1794350341;
+	bh=dAn9BRnMEdw62ipwmJ1r9hnK7L45Q4EfFHbfLwTI8ns=;
+	h=From:To:Subject:Date;
+	b=mkfFsJGP+t3zLn6aEH9NUUpg9lEDVE136rtoU3vnJER4UH9+w369nd5WWM2lvUwxl
+	 GdTDUTR+/kQuxOA7UDq45KzjJRxs+SRY8Ajco91Bovq6IY0UFyGn/P8M8OjB5np3nK
+	 /DlAReXhdXr3UWoH0zvIvq59T6U1lBexGm2EzURE6EmzoxWhCVuevUJhEbOABTZg+2
+	 SnHfVV79iu/xun7ar8UV7Qion2HgASY9gbHjcm7qHk78JUYO3uIVvyUP7ogPSMuGku
+	 /7TlvHIoj/I9g48F8t7fKY5+hFolw4nzifGiR9XEPkEH0rHpGFgWyrxjooVwC1+3dt
+	 D2oe3UCUabzHg==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: zstd: fix UAF due to race between putting workspace and reclaim
+Date: Tue, 10 Nov 2026 22:38:36 +0000
+Message-ID: <e99992bc6c660128215a601d84675ede40930789.1794350146.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,25 +54,71 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261110223526.GD1907@quark>
+Content-Transfer-Encoding: 8bit
 
-On Tue, Nov 10, 2026 at 02:35:26PM -0800, Eric Biggers wrote:
-> On Thu, Nov 05, 2026 at 12:55:27PM +0100, Andrey Albershteyn wrote:
-> > +	} else if (inode_state_read_once(inode) & I_VERITY_BUILDING) {
-> 
-> fsverity_is_building()?
-> 
-> > +static inline bool fsverity_is_building(const struct inode *inode)
-> > +{
-> > +	return inode_state_read_once((struct inode *)inode) & I_VERITY_BUILDING;
-> > +}
-> 
-> It would make more sense for inode_state_read_once() itself to take
-> 'const struct inode *'.  Then the cast wouldn't be needed.
+From: Filipe Manana <fdmanana@suse.com>
 
-Also, we should include an IS_ENABLED(CONFIG_FS_VERITY) check here, so
-that it gets compiled away to nothing if CONFIG_FS_VERITY is disabled.
+When we put a workspace with a level matching the requested level, we add
+it back to the lru list of the workspace manager and set the timer to
+run the reclaim function (zstd_reclaim_timer_fn()). If that workspace than
+gets used by some other task, obtained with zstd_find_workspace(), for
+some compression level lower than the workspace's level, we set the
+workspace's req_level field to the requested level (done in
+zstd_find_workspace()) and leave it in the lru list without updating the
+last_used field of the workspace. Once the last_used field ages past the
+ZSTD_BTRFS_RECLAIM_JIFFIES value, when zstd_put_workspace() is called it
+skips the lru update branch because the workspace's req_level does not
+match its level, and then it sets its req_level to 0 before releasing
+the workspace manager's lock - and after that and before
+zstd_put_workspace() does:
 
-- Eric
+  if (workspace->level == clip_level(ZSTD_BTRFS_MAX_LEVEL))
+       cond_wake_up(&zwsm->wait);
+
+the reclaim function, zstd_reclaim_timer_fn(), can run, see the workspace
+in the lru list and see that it has a req_level of 0 and an expired
+last_used time, and therefore call zstd_free_workspace() to free the
+workspace, right before the task that is putting the workspace executes
+the code above to read its level.
+
+Fix this by reading the workspace's level before unlocking the workspace
+manager in zstd_put_workspace().
+
+Link: https://sashiko.dev/#/bug/linux-92b08485-a86c-4bb5-9138-fa80c84389f0
+Fixes: 3f93aef535c8 ("btrfs: add zstd compression level support")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/zstd.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/zstd.c b/fs/btrfs/zstd.c
+index b686f67d52ec..8756b19f37b6 100644
+--- a/fs/btrfs/zstd.c
++++ b/fs/btrfs/zstd.c
+@@ -340,6 +340,7 @@ void zstd_put_workspace(struct btrfs_fs_info *fs_info, struct list_head *ws)
+ {
+ 	struct zstd_workspace_manager *zwsm = fs_info->compr_wsm[BTRFS_COMPRESS_ZSTD];
+ 	struct workspace *workspace = list_to_workspace(ws);
++	bool wakeup;
+ 
+ 	ASSERT(zwsm);
+ 	spin_lock_bh(&zwsm->lock);
+@@ -363,9 +364,14 @@ void zstd_put_workspace(struct btrfs_fs_info *fs_info, struct list_head *ws)
+ 	list_add(&workspace->list, &zwsm->idle_ws[workspace->level]);
+ 	workspace->req_level = 0;
+ 
++	/*
++	 * Check if we should wakeup before releasing the lock because after
++	 * that the reclaim function can run and free the workspace.
++	 */
++	wakeup = (workspace->level == clip_level(ZSTD_BTRFS_MAX_LEVEL));
+ 	spin_unlock_bh(&zwsm->lock);
+ 
+-	if (workspace->level == clip_level(ZSTD_BTRFS_MAX_LEVEL))
++	if (wakeup)
+ 		cond_wake_up(&zwsm->wait);
+ }
+ 
+-- 
+2.53.0
+

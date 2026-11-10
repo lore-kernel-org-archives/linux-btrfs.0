@@ -1,86 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.51
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794291180;
-	b=vtl8BhUX4ZnlsrHYZXFs4vR4+ptmTFQRbCranKK/9oXEXtB6aolAqRoYshjir666/yzi
-	 bwYX742+lB+9OKJsJ+P2swKsflNlF7asbjvK2Dz67OX3GQsTZ4yw9QK0WIuLB/y2hfphj
-	 lzGWusclu+86nPDARYkTJHvm+4POs2Ckd+jP5n5ZOuBIW+gvdHq5Xv+sqYq6v6sjvabit
-	 pXL9k/kzcX6Vu3Qbfx1oppRb7iEGTwQgVVw0sATQPu9k5J5bmxqxobRM5KACICbQzZJ+h
-	 mgOK7sOn0kmt54UcHvqcg9JEvvYZ3KoIbW99rIw1KxhMy9pCtNLvFiY2O78q6q59coA==
+	t=1794291799;
+	b=X6aguZoDZGaVb9C265bcQy8aHq3u19Za0YJVVQNinKEncCKIXA8vj+FjAysPiUUMpJH5
+	 Jy4vEzTnCf/BINbQvvKQluXU3Ga8FXaF7SqYCDMBAakJ4isiFuB1JT1M8LxvoSHCYjRhL
+	 6x6RtzDr8O98ho9/1d5eiWOlnS40QEoJoBEyblnxEG/FwiTqx/oRYfF46LWxMDt/kH4qj
+	 HhlL3rMrB9yqhCYBVmSH6uzO2xChbFg3YQclSGJqP++DJ/jC/emhJY+bo9+xzQjND59p+
+	 ldtgsq5XabfJAhQg+s7D4O4j/X0OopQTojRnseU4b4JbySxSr0hjhp+8klz8U8DVPeA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794291180;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=FFIxS8ts9MOCfbUBLilLOS4iArSnA6XYD9r0CVASk3o=;
-	b=f4Wk/l65QcIHD1WoYWzXnU2R+fSbVa2eva86BeJwOweKYO/ZCTy2KbenhPtEZZ25bg0B
-	 QTCVMXYOfFR5Yzr0Io+vFELdwYNNZqFNiIj8c4xfmIoiXdTCwf5PYwyWelTV30KajD73M
-	 gEQ9/uqHrwvP+ohlhY28mk+rdMPFWpcSTcEdNysO89Hrn4OkpUsHP8oj32WO7HNA2Vc3j
-	 +mfvA/JqzsTZZtd1umBqSaEfSAjC/7TUVqlqkWNQ43dZvmBx9PJDTKP0dvqwhlCNDIctW
-	 fX+jF1GVITvXoxBF11P0zntqjH4mhqQnxD9yeZJWhU2kumXLPYL8T5soCk0Kxp3GfWA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794291799;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Message-ID:Date:
+	 MIME-Version:User-Agent:Subject:To:Cc:References:Content-Language:
+	 From:Autocrypt:In-Reply-To:Content-Type:Content-Transfer-Encoding;
+	bh=UAPDPpsWyOzP1GmMDjs7bfHO6Bj6rMt1kUP4yCPLw44=;
+	b=Kc2TefKJWnCfzKHcxIrgn7WaZqnPtjfPSPXla/EqZ6kWgpiOz2WY1BKPqOF2NEZ8xpho
+	 zWRq1eriobq0ocXZbSoRYL29oOFisGCrAUAPjtY8O/IT3ROiGfmjVPX2g398HMhehCckm
+	 +AryeqbFPcmcJaSxSVwUujzEJGo6Nq1ejNweAzP+AtjhEaRQ88TUTawm35TZOZ5+YuiCR
+	 xlPNbvLLZ1YXv/z3UhfbtOKn/YBvLoAimWawkABhFAepbOpBsUtI+Ly6qTRM5yyW3npn8
+	 BIqqfxtG6ux1Q64E1q66LZm8DByQ9lX8r6iavCsius2aDTPJ2/4xb3MRNmS2jHME+xw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=m0LpDRyD;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=m0LpDRyD;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=F7O0DTSe;
+	arc=none smtp.remote-ip=209.85.128.51
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80965606A326
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:12:59 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 80965606A326
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 36A29606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:23:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 36A29606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=m0LpDRyD;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=m0LpDRyD
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id B218521E6E
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:12:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794291177; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=FFIxS8ts9MOCfbUBLilLOS4iArSnA6XYD9r0CVASk3o=;
-	b=m0LpDRyDh7B2rvDm4fGlKYzjVUL7jOyO5f5YlXB2uicFFfYfj9V9Zhc4Pl3RHSJAFrlPnN
-	iySesWtMkqU/QK1x7An4x+KQPkarkpVO+CETfSbwqq10j8WsQbFm1ohJilvVjpUeD25hdj
-	urkitVh4xBzQzYvzMfnxedTNf3Pf0V8=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794291177; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=FFIxS8ts9MOCfbUBLilLOS4iArSnA6XYD9r0CVASk3o=;
-	b=m0LpDRyDh7B2rvDm4fGlKYzjVUL7jOyO5f5YlXB2uicFFfYfj9V9Zhc4Pl3RHSJAFrlPnN
-	iySesWtMkqU/QK1x7An4x+KQPkarkpVO+CETfSbwqq10j8WsQbFm1ohJilvVjpUeD25hdj
-	urkitVh4xBzQzYvzMfnxedTNf3Pf0V8=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 92DC013479
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:12:56 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id no3bCeG18mreJQAAD6G6ig:T5
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:12:56 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 4/4] btrfs: move async data csum generation out of experimental features
-Date: Tue, 10 Nov 2026 16:42:27 +1030
-Message-ID: <0a8648bbadc68fc18cb81f9f697817cf3ceb3641.1794290876.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1794290876.git.wqu@suse.com>
-References: <cover.1794290876.git.wqu@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=F7O0DTSe
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4a1b07c3c5fso15571095e9.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2026 22:23:18 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1794291797; x=1794896597; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=UAPDPpsWyOzP1GmMDjs7bfHO6Bj6rMt1kUP4yCPLw44=;
+        b=F7O0DTSeH9j3hBOerSKxMhnuEDavLr+NDUBf1JMSukD+zGq5ZWVtSAh3+WAC1RteHm
+         GchSK/pZvQuk4LEN+TBdQXa1uwsHfduBZdHDgNobqWBMrLz7ZBUAoLpgPcQivvcHId8D
+         vgXduduIlf5XYE8/oR8r5zpivriURS70I6I4g84NFmNFhGH0/uyKBoxRV7luTASKtS1f
+         AH9oNVZpF8YSicuM2PSZqWqaSOBJ/YimYfb5cOvXsdXcIuhZqBErFyyslkLbtUuQ4q+u
+         wTmsUjpdUpsCPDMx+gCFcljGiRQ4tyjWYvdav0tPlXknfymoMVv0K5E1G7YSPc/CopLJ
+         Iwww==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794291797; x=1794896597;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=UAPDPpsWyOzP1GmMDjs7bfHO6Bj6rMt1kUP4yCPLw44=;
+        b=2nF1Rul2I55zenXcM/lJVSnySBaiD7/3gmSDiBghFmINHD4tqf7bOVj2eIDGlhD6eD
+         QaeqU9w5uum9MaEBJSesn3/9i3LtMGqRuL2IKMztZH1uEbKuLons/fP3EOfvQRH3GJCr
+         g7r8jEKGdzj2JW3o1W1p1xQrOEXJ6FRhZ9C2q6/GWY/GyQGuD48gqb/2hNftGpkpyvV8
+         YcfNXzPPphLgi7sJ7rcusEySTwD+QRUCAVjJmaTOfEWlm1vXrPrZGJnYsIUqQDmBh4fK
+         +QMK2g5QN3InK4FPQ9v1k54nyiTLVwLHiBhdR6S2Uy5xgZyia0uh6M5Y/5JDvzOSox/I
+         gIsA==
+X-Gm-Message-State: APuU4Z+rtFY/eTUjJpMYEiH0x7GLqMI9lhZRJCgvWS/H3aa+Z07tydKE
+	uIGoL+WJVrwIoHjaEveXttWLQEsyYq3BS5Ty9XU2o2Prd/E2bQSmlTy8BVyxET/mORYygwH/KQO
+	LI5ldOr0=
+X-Gm-Gg: AYBFou1nm8xnDgYpbvQgDTYvXZwh3esQSOF1uOwaO0H3rDjB3i9B2HgQdkveoYQZROF
+	4F7/N2ZfnJBoue6d0Ldn8NvlDGuJGdSUTC2KTK/fodhlaRRb+sJYAD0JaQnrFea1S3LvZ30rgZA
+	Blqm4HNn9td/k0u9TAqzRIBZxRn5U486BwKj6vKPFStD70PSQxolVz83inpx9YI43ZMHJ1kg5tH
+	6bSNFjTlLKKCglAudV89+EGocKsdJmbdgbBQmfXJgeHaM+N4PTqD5cXW/Gby07inhVquh2egzwA
+	A6Do5LRplXDOD3pxX8X6qx7YcgGCeyAoFEkfe+KCjap0FNQ3ZaeMIUfrM/XXb3tj8D9mVZDXXcr
+	Va9MuED+beMvFAyUj3g5mlON1FrezH5uVcJ6V+J65x3Wbl9l1BkvgRJfqOMYPhwoSHd2jh/nFB8
+	1QKDrc7yti1VrjxKeSoW/kPq2uPkEVgovuLcCEnt7RTsHpcODkwC4ac3ZN81w63ELn1Hj+cevEI
+	oQR+NbD0/+ey4DswxPcr1c8rYdvqQ/8D7NTLP7kYh8XyRn4XNj8k+uzRQeUTzQZfRMKmMVig+e+
+	0YbU8vXEZ6hf3dFLZ8V1pg==
+X-Received: by 2002:a05:600c:8b83:b0:4a1:dade:f049 with SMTP id 5b1f17b1804b1-4ba0234278bmr21402045e9.15.1794291797504;
+        Mon, 09 Nov 2026 22:23:17 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2edb6d9baa5sm5100535ad.45.2026.11.09.22.23.14
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 09 Nov 2026 22:23:16 -0800 (PST)
+Message-ID: <1f37e2df-a832-4184-b9fc-798f8325731e@suse.com>
+Date: Tue, 10 Nov 2026 16:53:12 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,369 +91,130 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] lib/crc: x86: rewrite crc32c_x86_3way() in C with inline
+ asm
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Eric Biggers <ebiggers@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org, ardb@kernel.org
+References: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
+ <20261110002255.GA1958@quark> <20261110010943.GB1958@quark>
+ <44965cd2-30f9-4846-86b5-537f94f18958@suse.com> <20261110013546.GC1958@quark>
+ <e2a8d755-c989-42bf-9adb-bb0ef2bc3872@gmx.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <e2a8d755-c989-42bf-9adb-bb0ef2bc3872@gmx.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 
-The feature has been under experimental features for a long time, it's
-time to enable it by default for end users.
 
-This also means we can completely get rid of the current csum offload
-for slow checksum algorithms, as there is no difference between slow and
-fast csum generation anyway.
 
-There is a minor behavior change for metadata writes, previously if the
-checksum algorithm is slow, we will offload the metadata checksum
-generation into a workqueue, and wait for the csum generation to finish
-before submission.
+在 2026/11/10 15:08, Qu Wenruo 写道:
+> 
+> 
+> 在 2026/11/10 12:05, Eric Biggers 写道:
+>> On Tue, Nov 10, 2026 at 11:52:03AM +1030, Qu Wenruo wrote:
+>>> 在 2026/11/10 11:39, Eric Biggers 写道:
+>>>> On Mon, Nov 09, 2026 at 04:22:55PM -0800, Eric Biggers wrote:
+>>>>> As much as I'd like to reduce the use of asm, I'm not sure this is 
+>>>>> super
+>>>>> convincing.  We get worse code generation and have to fall back to
+>>>>> inline asm anyway, as the x86 intrinsics are still unusable in the
+>>>>> kernel (which is different from userspace).
+>>>>>
+>>>>> This patch also introduces a compiler error with gcc. It seems only
+>>>>> clang was tested.  (Showing again that this kind of code often has
+>>>>> compiler-specific issues, and we have to be extra careful to test it
+>>>>> with every supported compiler version.)
+>>>>>
+>>>>> There's also a subtle bug where the inline asm blocks are missing the
+>>>>> volatile qualifier, so technically they could be reordered after the
+>>>>> kernel_fpu_end() and corrupt a userspace process's XMM registers.
+>>>>> Without inline asm, this issue would not have been possible.
+>>>>>
+>>>>> I'd be interested in seeing what you can come up with for
+>>>>> crc-pclmul-template.S, though I think that one is going to be 
+>>>>> harder to
+>>>>> replace.
+>>>>
+>>>> Also, just to emphasize: most "C" code using this strategy will be
+>>>> mostly inline asm blocks, since that's what is needed to access the
+>>>> vector registers in kernel code.  See lib/raid/*/x86/ for some 
+>>>> examples.
+>>>>
+>>>> crc32c_x86_3way() is an exception because it mostly use scalar
+>>>> instructions, with only a few vector instructions.  So it makes this
+>>>> strategy seem a bit more workable.  But actually, as soon as this same
+>>>> strategy is adopted for crc-pclmul-template.S or any of the many crypto
+>>>> assembly files (AES, GHASH, ChaCha, Poly1305, BLAKE2, etc.) that use 
+>>>> far
+>>>> more vector instructions, it will become mostly inline asm blocks, just
+>>>> like the RAID code.
+>>>>
+>>>> So I feel it's kind of an odd path to go down.  Perhaps as a
+>>>> prerequisite for reimplementing some of this code in C (or will it soon
+>>>> be Rust?), we should get the x86 intrinsics working in the kernel 
+>>>> first?
+>>>
+>>> Indeed, it works almost flawlessly in user space just because there are
+>>> already intrinsics available, and most of the code is just regular 
+>>> control
+>>> flow, with mostly scalar code.
+>>>
+>>> Thanks for the feedback, I'll just give up the idea in kernel, and 
+>>> enjoy the
+>>> complete intrinsics in user space for now.
+>>>
+>>> Thanks,
+>>> Qu
+>>
+>> Okay.  I'd be interested in someone trying to get the x86 intrinsics
+>> working in the kernel, though.  Just when I last tried it, it still
+>> wasn't possible to include <immintrin.h> without errors.
+> 
+> I don't think we can use the compiler's wrappers directly, there are 
+> quite a lot of conflicts with kernel's library.
+> 
+> So a different, independent copy may be needed.
+> 
+> If we can get that part done, it will be much easier to do the conversion.
+> Although introducing the intrinsics itself may be a much larger project.
 
-That brings no concurrency improvement, and will only introduce extra
-context switches as overhead. Now metadata checksum generation is always
-inlined.
+It looks like there is already 
+`arch/arm64/include/asm/neon-intrinsics.h` including the intrinsics from 
+the compiler and solves the conflicts manually.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/Kconfig     |   2 -
- fs/btrfs/bio.c       | 120 +------------------------------------------
- fs/btrfs/disk-io.c   |  41 +++++----------
- fs/btrfs/file-item.c |  10 ++--
- fs/btrfs/file-item.h |   2 +-
- fs/btrfs/fs.h        |  15 +-----
- 6 files changed, 22 insertions(+), 168 deletions(-)
+So that looks like a solution to pull in the needed intrinsics to make 
+things a little simpler.
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 4b10d78ed99b..47faa08d9059 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -111,8 +111,6 @@ config BTRFS_EXPERIMENTAL
- 
- 	  - huge folios for data - folios can be as large as 2MiB now
- 
--	  - asynchronous checksum generation for data writes
--
- 	  - remap-tree - logical address remapping tree
- 
- 	  If unsure, say N.
-diff --git a/fs/btrfs/bio.c b/fs/btrfs/bio.c
-index 508b44841768..1b3de0ecb3ec 100644
---- a/fs/btrfs/bio.c
-+++ b/fs/btrfs/bio.c
-@@ -562,120 +562,7 @@ static int btrfs_bio_csum(struct btrfs_bio *bbio)
- {
- 	if (bbio->bio.bi_opf & REQ_META)
- 		return btree_csum_one_bio(bbio);
--#ifdef CONFIG_BTRFS_EXPERIMENTAL
--	return btrfs_csum_one_bio(bbio, true);
--#else
--	return btrfs_csum_one_bio(bbio, false);
--#endif
--}
--
--/*
-- * Async submit bios are used to offload expensive checksumming onto the worker
-- * threads.
-- */
--struct async_submit_bio {
--	struct btrfs_bio *bbio;
--	struct btrfs_io_context *bioc;
--	struct btrfs_io_stripe smap;
--	int mirror_num;
--	struct work_struct work;
--};
--
--/*
-- * In order to insert checksums into the metadata in large chunks, we wait
-- * until bio submission time.   All the pages in the bio are checksummed and
-- * sums are attached onto the ordered extent record.
-- *
-- * At IO completion time the csums attached on the ordered extent record are
-- * inserted into the tree.
-- */
--static void run_one_async_submit(struct work_struct *work)
--{
--	struct async_submit_bio *async =
--		container_of(work, struct async_submit_bio, work);
--	struct btrfs_bio *bbio = async->bbio;
--	struct btrfs_io_context *bioc = async->bioc;
--	struct btrfs_io_stripe smap = async->smap;
--	const int mirror_num = async->mirror_num;
--	struct bio *bio = &bbio->bio;
--	int ret;
--
--	kfree(async);
--
--	/* If an error occurred we just want to clean up the bio and move on. */
--	ret = btrfs_bio_csum(bbio);
--	if (ret) {
--		btrfs_put_bioc(bioc);
--		btrfs_bio_counter_dec(bbio->inode->root->fs_info);
--		btrfs_bio_end_io(bbio, errno_to_blk_status(ret));
--		return;
--	}
--
--	/*
--	 * All of the bios that pass through here are from async helpers.
--	 * Use REQ_BTRFS_CGROUP_PUNT to issue them from the owning cgroup's
--	 * context.  This changes nothing when cgroups aren't in use.
--	 */
--	bio->bi_opf |= REQ_BTRFS_CGROUP_PUNT;
--	btrfs_submit_bio(bio, bioc, &smap, mirror_num);
--}
--
--static bool should_async_write(struct btrfs_bio *bbio)
--{
--	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
--	bool auto_csum_mode = true;
--
--#ifdef CONFIG_BTRFS_EXPERIMENTAL
--	/*
--	 * Write bios will calculate checksum and submit bio at the same time.
--	 * Unless explicitly required don't offload serial csum calculate and bio
--	 * submit into a workqueue.
--	 */
--	return false;
--#endif
--
--	/* Submit synchronously if the checksum implementation is fast. */
--	if (auto_csum_mode && test_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags))
--		return false;
--
--	/*
--	 * Try to defer the submission to a workqueue to parallelize the
--	 * checksum calculation unless the I/O is issued synchronously.
--	 */
--	if (op_is_sync(bbio->bio.bi_opf))
--		return false;
--
--	/* Zoned devices require I/O to be submitted in order. */
--	if ((bbio->bio.bi_opf & REQ_META) && btrfs_is_zoned(fs_info))
--		return false;
--
--	return true;
--}
--
--/*
-- * Submit bio to an async queue.
-- *
-- * Return true if the work has been successfully submitted, else false.
-- */
--static bool btrfs_wq_submit_bio(struct btrfs_bio *bbio,
--				struct btrfs_io_context *bioc,
--				struct btrfs_io_stripe *smap, int mirror_num)
--{
--	struct btrfs_fs_info *fs_info = bbio->inode->root->fs_info;
--	struct async_submit_bio *async;
--
--	async = kmalloc_obj(*async, GFP_NOFS);
--	if (!async)
--		return false;
--
--	async->bbio = bbio;
--	async->bioc = bioc;
--	async->smap = *smap;
--	async->mirror_num = mirror_num;
--
--	INIT_WORK(&async->work, run_one_async_submit);
--	queue_work(fs_info->workers, &async->work);
--	return true;
-+	return btrfs_csum_one_bio(bbio);
- }
- 
- static u64 btrfs_append_map_length(struct btrfs_bio *bbio, u64 map_length)
-@@ -784,10 +671,6 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 		if (!(inode->flags & BTRFS_INODE_NODATASUM) &&
- 		    !test_bit(BTRFS_FS_STATE_NO_DATA_CSUMS, &fs_info->fs_state) &&
- 		    !btrfs_is_data_reloc_root(inode->root) && !bbio->is_remap) {
--			if (should_async_write(bbio) &&
--			    btrfs_wq_submit_bio(bbio, bioc, &smap, mirror_num))
--				goto done;
--
- 			ret = btrfs_bio_csum(bbio);
- 			status = errno_to_blk_status(ret);
- 			if (status)
-@@ -802,7 +685,6 @@ static bool btrfs_submit_chunk(struct btrfs_bio *bbio, int mirror_num)
- 	}
- 
- 	btrfs_submit_bio(bio, bioc, &smap, mirror_num);
--done:
- 	return map_length == length;
- 
- fail:
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e69055d84606..14389e7c22b4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1829,6 +1829,10 @@ static void btrfs_stop_all_workers(struct btrfs_fs_info *fs_info)
- 	if (fs_info->fixup_workers)
- 		destroy_workqueue(fs_info->fixup_workers);
- 	btrfs_destroy_workqueue(fs_info->delalloc_workers);
-+	/*
-+	 * The async csum work on @workers can queue work on the endio queues
-+	 * destroyed below, so @workers must be destroyed before them.
-+	 */
- 	if (fs_info->workers)
- 		destroy_workqueue(fs_info->workers);
- 	if (fs_info->endio_workers)
-@@ -2087,25 +2091,6 @@ static int btrfs_init_workqueues(struct btrfs_fs_info *fs_info)
- 	return 0;
- }
- 
--static void btrfs_init_csum_hash(struct btrfs_fs_info *fs_info, u16 csum_type)
--{
--	/* Check if the checksum implementation is a fast accelerated one. */
--	switch (csum_type) {
--	case BTRFS_CSUM_TYPE_CRC32:
--		if (crc32_optimizations() & CRC32C_OPTIMIZATION)
--			set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
--		break;
--	case BTRFS_CSUM_TYPE_XXHASH:
--		set_bit(BTRFS_FS_CSUM_IMPL_FAST, &fs_info->flags);
--		break;
--	default:
--		break;
--	}
--
--	btrfs_info(fs_info, "using %s checksum algorithm",
--		   btrfs_super_csum_name(csum_type));
--}
--
- static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 			    struct btrfs_fs_devices *fs_devices)
- {
-@@ -3476,7 +3461,8 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
- 	fs_info->csum_size = btrfs_super_csum_size(disk_super);
- 	fs_info->csum_type = csum_type;
- 
--	btrfs_init_csum_hash(fs_info, csum_type);
-+	btrfs_info(fs_info, "using %s checksum algorithm",
-+		   btrfs_super_csum_name(csum_type));
- 
- 	/*
- 	 * We want to check superblock checksum, the type is stored inside.
-@@ -4466,19 +4452,18 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
- 	btrfs_flush_workqueue(fs_info->delalloc_workers);
- 
- 	/*
--	 * We can have ordered extents getting their last reference dropped from
--	 * the fs_info->workers queue because for async writes for data bios we
--	 * queue a work for that queue, at btrfs_wq_submit_bio(), that runs
--	 * run_one_async_submit() which calls btrfs_bio_end_io() in case the bio
--	 * has an error, and that later function can do the final
-+	 * The fs_info->workers queue runs the async data checksum work, queued
-+	 * at btrfs_csum_one_bio(), which calls bio_endio() on the write bio
-+	 * after the checksums are calculated. If the device has already
-+	 * finished the bio, this is the final bio_endio() which ends up in
-+	 * btrfs_finish_ordered_extent(), and that can do the final
- 	 * btrfs_put_ordered_extent() on the ordered extent attached to the bio,
- 	 * which adds a delayed iput for the inode. So we must flush the queue
- 	 * so that we don't have delayed iputs after committing the current
- 	 * transaction below and stopping the cleaner and transaction kthreads.
- 	 *
--	 * That queue also runs the async checksum work, csum_one_bio_work(),
--	 * whose bio_endio() can lead to work being queued on the endio queues
--	 * flushed below, so it must be flushed before them.
-+	 * That final bio_endio() can also queue work on the endio queues
-+	 * flushed below, so this queue must be flushed before them.
- 	 */
- 	flush_workqueue(fs_info->workers);
- 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index af3c73189bc1..109806482733 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -813,8 +813,12 @@ static void csum_one_bio_work(struct work_struct *work)
- 
- /*
-  * Calculate checksums of the data contained inside a bio.
-+ *
-+ * The checksums are calculated by a work queued on fs_info->workers, so they
-+ * are not valid on return. This must be called before the bio is submitted, as
-+ * the extra bio_inc_remaining() makes the bio completion wait for the work.
-  */
--int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
-+int btrfs_csum_one_bio(struct btrfs_bio *bbio)
- {
- 	struct btrfs_ordered_extent *ordered = bbio->ordered;
- 	struct btrfs_inode *inode = bbio->inode;
-@@ -840,10 +844,6 @@ int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async)
- 	btrfs_add_ordered_sum(ordered, sums);
- 
- 	bbio->csum_saved_iter = bio->bi_iter;
--	if (!async) {
--		csum_one_bio(bbio);
--		return 0;
--	}
- 	bio_inc_remaining(bio);
- 	INIT_WORK(&bbio->csum_work, csum_one_bio_work);
- 	queue_work(fs_info->workers, &bbio->csum_work);
-diff --git a/fs/btrfs/file-item.h b/fs/btrfs/file-item.h
-index 6c678787c770..60a0eb17b3f6 100644
---- a/fs/btrfs/file-item.h
-+++ b/fs/btrfs/file-item.h
-@@ -64,7 +64,7 @@ int btrfs_lookup_file_extent(struct btrfs_trans_handle *trans,
- int btrfs_insert_data_csums(struct btrfs_trans_handle *trans,
- 			    struct btrfs_root *root,
- 			    struct btrfs_ordered_sum *sums);
--int btrfs_csum_one_bio(struct btrfs_bio *bbio, bool async);
-+int btrfs_csum_one_bio(struct btrfs_bio *bbio);
- int btrfs_alloc_dummy_sum(struct btrfs_bio *bbio);
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit,
-diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
-index abf1db539c49..298ebbe71ccf 100644
---- a/fs/btrfs/fs.h
-+++ b/fs/btrfs/fs.h
-@@ -189,12 +189,6 @@ enum {
- 	/* Indicate that the cleaner thread is awake and doing something. */
- 	BTRFS_FS_CLEANER_RUNNING,
- 
--	/*
--	 * The checksumming has an optimized version and is considered fast,
--	 * so we don't need to offload checksums to workqueues.
--	 */
--	BTRFS_FS_CSUM_IMPL_FAST,
--
- 	/* Indicate that the discard workqueue can service discards. */
- 	BTRFS_FS_DISCARD_RUNNING,
- 
-@@ -696,13 +690,8 @@ struct btrfs_fs_info {
- 	struct list_head delalloc_roots;
- 
- 	/*
--	 * There is a pool of worker threads for checksumming during writes and
--	 * a pool for checksumming after reads.  This is because readers can
--	 * run with FS locks held, and the writers may be waiting for those
--	 * locks.  We don't want ordering in the pending list to cause
--	 * deadlocks, and so the two are serviced separately.
--	 *
--	 * A third pool does submit_bio to avoid deadlocking with the other two.
-+	 * @workers is the pool of worker threads for checksumming during
-+	 * data writes.
- 	 */
- 	struct workqueue_struct *workers;
- 	struct btrfs_workqueue *delalloc_workers;
--- 
-2.56.0
+> 
+> Thanks,
+> Qu
+> 
+>>
+>> - Eric
+> 
 

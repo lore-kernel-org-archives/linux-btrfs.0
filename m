@@ -1,83 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.49
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794302963;
-	b=gUCMbXcC7P4Ca9bvPwOCIusiiOdsGTXcewjqglx08G+bufGIvhR7xq+Eu6XkXgLBKrJU
-	 Gme/4sKG4R1a/X5leNpU2Sn6z6x0VqQRYV0xCN9pnlYejUHd9q4dHnNqaTGv4lW/OrL3W
-	 P1WbqdxwAfiDWbuxs+Cu1S/BlRV8fWz99UMNGa+oqtcLvYI2g+0jwYBX9CHPMQCWH/tu6
-	 AnsqnjcQwbqInL91fpi/LADL7gNijaywEmpFSl9WLpu3xrP9Ggw+sGJKOAy93zbFyAQHJ
-	 O328qVENcNflL0LoRbVTQaHjRqBnvvxGT72XQ6qc0FgJFLsLqIM1/UY2MpwxumgNkGA==
+	t=1794304184;
+	b=NXWgzHcNEumw2YB5/gKrqNdg08RggZ333T+Q4ne2pFP3q8mzEg1R8mFSOh/SthGQOjWF
+	 LyIMRVT696egUCQVf/Vw7ivkmp4JLsK4zoHm0gXoP/GYoX8qLJIdmA+WoHfX/GMkzhu6G
+	 Oy9xXwrAHgjRbrfRYIwE0X1GHQMv3oSPTawSOg2NQY411JryRCpk9Se7+mjK0Lc32+AZO
+	 H4Dl3hlFmYbypGO8mqUE/rffjt32pFLYtAuX32/0nc0gDnjxBvdeox06LKgPC3+luoVpY
+	 LVAb8GRt0etumXyRxeWSsWgGikLpQcO5fHlwA2aOA77F7keMO/fN0sy4u/wyKOLUMEw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794302963;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:To:Cc:Subject:From:X-Mailer:
-	 References:In-Reply-To;
-	bh=Ta7Rmu2fpHeZDp4qmckKp7R+s67LUiF51AacgPVr8kE=;
-	b=VaIzkZDgkpOHBnrRwFxMVBetkBUYZopL2KlwN4S8JTtdvmjR85AyDob81lBAyMgVoS9z
-	 tPCOSuBML6xKdi4zgho+jP2/GGky5jtdz0/3DgzewNpNkTI9Df+DYC3jXADaOwYwDh4qR
-	 NT24GEabCKk3ghXSxWS/eC32fRpaWaT0OxRPxxRtO2A1zOv30cJa/LCVAIvhGU3RO7PGN
-	 EIfTsowKYfGZywAMfiq1j8SA30Zc2+YroN0lZHmQsxaaR4zqLWf7p2wI3wFDHEWGpFVNx
-	 XsiHunCEJgDIlrQXwCLIkyfToJaT+v8iIxdflmr81eokbrTN1uVE3mPVjtSNPvT6gvw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794304184;
+	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:
+	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=oNfUXd2xnmUZCki7dWgTDcG4rfZ3klzhlFljaWY6ARA=;
+	b=YJxaSrUenU9CWon2cZCwNTdJzNmBmqcFFJj5m2TXB846134OuDqblj2OS/g/TYWoGq3e
+	 4h/FFKXcvayGaattn3tDI1RC9KzhWasgUQhUw2kNuSrrDa99Pies2IrIHkB13IAoqCWYu
+	 o68Sil8ZCQCmjsSPSZPUrj4aXfjDRzE5lmjMW7br2Eg95wHTZLzd/CpOieO5eCb4rmtGC
+	 VzGZb+BB28Cq/H1Pv5hS6lSEHcFjuCcXaHeczw62URlVEqSUXenrkZ6Jy0LQEhANCvWqs
+	 kmYPivKhYhnVoveOpAlLo/TJL6IQ6Wo9fgQ9cNoTdkZxOuOHFbFReCQ0X94TevCpaOQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=FvkvzyHp;
-	arc=none smtp.remote-ip=209.85.128.49
-Received: from mail-wm1-f49.google.com (mail-wm1-f49.google.com [209.85.128.49])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Xinw6iOr;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 28556606B147
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 09:29:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 28556606B147
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1DBE4606B9CD
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 09:49:43 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=FvkvzyHp
-Received: by mail-wm1-f49.google.com with SMTP id 5b1f17b1804b1-4a5036bbac7so11540895e9.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 01:29:22 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794302961; x=1794907761; darn=vger.kernel.org;
-        h=in-reply-to:references:from:subject:cc:to:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=Ta7Rmu2fpHeZDp4qmckKp7R+s67LUiF51AacgPVr8kE=;
-        b=FvkvzyHp+7w5iCyIxqp3Y1bwrMWS+d+A+/F/Bx98nfZGd/AQuCoWn7rBsmWmy8nhfJ
-         kna6zUSwt1wD43MF7xeJbllogs4bhgjZVQ5wPcTdoq0M2cl3Xnvm+IOmTeE/8vIjSsL1
-         R6iFbcS76Q51Ex7n513e8xWTc8Mro/V0UOk+GcJe8fc8n+pdmkahAe1bpsl/8CWWbRB7
-         xtUwKXk3zO+SdqN5/1nSq+V6GK6Fv0erbWDHEV/B8nrsm+wTlpBFxm+mga4KvUo8NdPX
-         rLsiV9YGNb58MEITqQgo5GTS50ppMZx37+muQDYrBc3DZs15NHQhAPCRJ5KIga52wEcY
-         2BOQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794302961; x=1794907761;
-        h=in-reply-to:references:from:subject:cc:to:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Ta7Rmu2fpHeZDp4qmckKp7R+s67LUiF51AacgPVr8kE=;
-        b=PtXzYe5KXyrZpmtkRp3CvCOtW9eJQT3hPHjkcrsNIvoBTxHL2ieDMOp64nUvyNg7bV
-         Ng3dh6zOwy5rld96Ch9EFGt0/j6apbDzrWZ090HaLLhZMH2ds4qbPAczf32uTRJcs+dk
-         VOFyEvsLckFe+lZijFCY7z0FwpV/yQhi7oj38NlS0v2TW4fH4q6DXUew1Qz7/atzXpKs
-         XrvmpdGWnNLYNW9SMiFvvFlYCpxIUXRZDZg/K+nOmO5R6lppH4hcvUNnsCtMjjU2vWF5
-         d9z9E787S7aVmGrxmwC02XaCRpVXk2htnmITvcadIOuL+/jW9r/WjTRYGEeScC0uc8mP
-         u92Q==
-X-Forwarded-Encrypted: i=1; AL+hErHH5GVwcfem8TUqRvekSYqv124zw3lF58h7YLAyVhVcg/V44jw3PGgkWCjQg1OD+oiX+DbIJuJY8RB/yA==@vger.kernel.org
-X-Gm-Message-State: APuU4Z8R7KmorISCxoeFDyX/jKR9LnllEEN0a07O6lQfN78yUoW88oJN
-	QSwFc42q9xE5XFvKmP0C7bN2mfYhqckhtkMuzRGjFK48GDPyBLjObNJJ
-X-Gm-Gg: AYBFou3Bu8O43ZjjFJr0kvdMz7bhzbV3Ai+p0sHpT+BmNJe0dwIC0bhIttwvv5oYCpW
-	Nk8WNuQRqJny331S6b937eOHb5UCBJ3uN1s+G38n+hdqf3Wf1cbfFpQ/PszvaBkGOrhsAFhZtbz
-	jzfacPMTWpjhiruTOiCn4DO7j8VOEJXaS3vOBt8UK/kf7VsJA2RhJ2awl7woQW2nzXFQrCZuFVt
-	v2/sk7tv1ahICNi/fTdQn13jOboqiO0/016LWAkf+xFFnCDqN5Xb6Cuszo4zS5fXCOOpxhgQc/m
-	8ZgY2+lucrXUs9j5aKbxUUyThE364hMWmTonpmMY7VVKz6faLlqgN5EZ43q3cxgxLfNzSeQS0NU
-	2/otlMSlX4+z6xdKPtcOaOL2VjP5WNPlkjhaYZgoksoSZ/YpPKxPzN63WzssfQAh/fBxiMyMZJ2
-	n2qlaD0yBkjxy39c1o1EuwwQ+ze1JGpdMrL+cwUlldsgbv8UUxArUqJK8WhRIjgprRpI11se0FK
-	gOQhVWTkPHY3rOXa4d2m38xjbsewZ+2tKLJnctVnZRMSlD49zCzxqi02yxFg5lOBgzD52QvwHL0
-	UHOLh7k2hRL3n9sqS2O5GkTKyZxTu5lcnfQJk1n3jnRMz4m1RoMgwOtpNZVmd6J8qBNOBM0=
-X-Received: by 2002:a05:600c:4e08:b0:4a3:2f35:38aa with SMTP id 5b1f17b1804b1-4ba0234f05cmr28642815e9.29.1794302961104;
-        Tue, 10 Nov 2026 01:29:21 -0800 (PST)
-Received: from localhost ([130.192.98.149])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4ba023690f5sm38482335e9.3.2026.11.10.01.29.20
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Tue, 10 Nov 2026 01:29:20 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Xinw6iOr
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A8CE41F0089F
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 09:49:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1794304183;
+	bh=oNfUXd2xnmUZCki7dWgTDcG4rfZ3klzhlFljaWY6ARA=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=Xinw6iOraNhlUHyN+ZDlz3aNzClOt0gSNXyVWxfnhh7VNTkq4tBe0MXgiU5o6qILf
+	 gsb3rGm2qllXims3qQ6232VGAXjFnRuHt8BavkpyEG8mzIq3Ha7AoPIsshLsMaOqQi
+	 QvFhmeTTOnwkyzpBV5akkwCHJHv5vqBNGIg/X/y60mM+1ukHKL1JKglqPoAX72x4++
+	 rA99SzRSVRJgOBzyygTphJw7KhlArZonHnmDzwBmcFxuE05qZsfcWcfXUW79L1W5IH
+	 CeXgxHqIBRJg4DQePX2gYOL2xE9j6TCnhzdjkzMW4W+Yb8RMJ7f92vx52qjH3PhDzK
+	 vZXYsDpx1ePfQ==
+Received: by mail-vs1-f50.google.com with SMTP id ada2fe7eead31-74ab99038afso1604891137.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 01:49:43 -0800 (PST)
+X-Gm-Message-State: APuU4Z8Boqe3hTdKywMpJ+pK8lYrZJkN5THVJKuaUduOoFBvwrys0N2q
+	7vArSnv98dMWPEtuqMeKViREKSSv+O3ZqF5roglURIefsYYN65P8A4pU1i3cgrDiKTH40B2Z/BK
+	4TeAkj7Kld0u3IgWOIIZ+6XaYM8lqqW8=
+X-Received: by 2002:a05:6102:fa0:b0:7d2:8dd0:2ed with SMTP id
+ ada2fe7eead31-7d301baca4fmr655976137.10.1794304182804; Tue, 10 Nov 2026
+ 01:49:42 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,123 +57,242 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=d0aff31089870834420541c7cbc50e6e7be7fe8f58ccaa249c6a287d39e0;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Tue, 10 Nov 2026 10:29:16 +0100
-Message-Id: <DMRFBAXJM4OA.CV6LZNBPYR7J@gmail.com>
-To: "Sterling Windmill" <sterling@ampx.net>, <linux-btrfs@vger.kernel.org>,
- "koraynilay" <koray.fra@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>
-Subject: Re: [RFC] btrfs: forcing compression per inode via the compression
- property?
-From: "koraynilay" <koray.fra@gmail.com>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
-References: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
- <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
- <5225511a-c66f-40e5-b9d6-31ff572496da@app.fastmail.com>
- <DMQYN0GE281B.1PW8AIHGLUNDF@gmail.com>
- <bebe248b-8eb5-48f3-8dc7-ddaf8e4a09c4@app.fastmail.com>
-In-Reply-To: <bebe248b-8eb5-48f3-8dc7-ddaf8e4a09c4@app.fastmail.com>
-
---d0aff31089870834420541c7cbc50e6e7be7fe8f58ccaa249c6a287d39e0
+MIME-Version: 1.0
+References: <93ad6002c98614b7a35c87b2792bce8dadb1e6b2.1794300081.git.wqu@suse.com>
+In-Reply-To: <93ad6002c98614b7a35c87b2792bce8dadb1e6b2.1794300081.git.wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Tue, 10 Nov 2026 09:49:06 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6JQk7X0Y-BtJmUHp+qhEMFYB=1=qxYkCihXVpcFGBPtg@mail.gmail.com>
+X-Gm-Features: AclHuK_eOFFYNPTQ3PturQ-WA5XRfH4SjjPYZPcyWkKD-7rHQ6mLPimFZfSqAOE
+Message-ID: <CAL3q7H6JQk7X0Y-BtJmUHp+qhEMFYB=1=qxYkCihXVpcFGBPtg@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: set write error flags before clearing writeback on
+ failed buffered writes
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
 
-On Tue Nov 10, 2026 at 3:50 AM CET, Sterling Windmill wrote:
->> I read the code a bit (and bounced some ideas with gemini) and I think a
->> "force:algo:level" would work well.
->>
->> This, compared to "algo:level:force", would also allow a "force" value
->> (handled like "none" is already handled), that lets the user set *only*
->> the compress-force, without having to specify algo:level, so inheriting
->> from -o compress=3D, and the parsing would be as simple as if ("force")
->> str +=3D 6, where str is the xattr string that gets then parsed by the
->> rest of the code (in compression_apply()).
+On Tue, Nov 10, 2026 at 8:43=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
 >
-> Thanks, a bare "force" value is a nice thing to have, and I agree the
-> separate property isn't worth it.
+> [BUG]
+> After commit f13e01b89daf ("btrfs: ensure fast fsync waits for ordered
+> extents after a write failure"), a failed COW write sets the inode's
+> BTRFS_INODE_COW_WRITE_ERROR flag.
 >
-> From reading the code only, a few things stand out for the bare
-> "force" case, where prop_compress would stay 0:
+> That flag makes the next fast fsync wait for ordered extents to complete,
+> so that it never logs the failed extents.
 >
-> - compress_file_range() starts from fs_info->compress_type, so on a
-> filesystem mounted without compress=3D there is no algorithm to use.
-> It needs a defined behaviour, such as falling back to zlib as the
-> chattr +c path does, or having no effect.
+> However for buffered writes the flag can be set too late, and a fast
+> fsync can still log file extent items for the failed write.
 >
-> - The check at mark_incompressible only looks at FORCE_COMPRESS and
-> prop_compress, so a failed attempt would set NOCOMPRESS and leave
-> it behind after force is removed.
+> [CAUSE]
+> In end_bbio_data_write() the folios' writeback is cleared before the erro=
+r
+> is recorded:
 >
-> - btrfs_compress_typelevel2str() returns NULL when prop_compress is
-> 0, so children wouldn't inherit it and btrfs_fileattr_set() would
-> fall back to the mount algorithm. That helper would also need to
-> emit "force" in whichever form we choose.
-
-Ah yes, these would all need to be changed (but only small changes
-AFAICT) for a "force" patch to work.
-
-> One thing I should have mentioned: Qu pointed out on v1 that older
-> kernels ignore an appended ":<level>" because apply only compares the
-> leading bytes. "zstd:3:force" would keep that property, with older
-> kernels treating it as plain zstd, while "force:zstd:3" and a bare
-> "force" would get -EINVAL from both validate and apply. Is bare
-> "force" worth that trade-off, or would the suffix be better?
-
-I think it's a worth trade-off, and my patch series already will break
-some setups where users had "zstd:random_text" (which would be
-semantically invalid anyway).
-
-> If we go with the prefix, the match probably needs to be exactly
-> "force:", in both validate and apply, and "force:none" should be
-> rejected.
-
-Yes, my current thinking is handling "force" exactly like "none"/"no" is
-handled right now, with an additional else if for "force:" which moves
-the string pointer to +6, which gets then passed to the rest of the
-checks as they are in my patch series.
-
->> It should probably be a separate patch, but it'd depend on my patch
->> series, so not sure if I should just make a v7 with that or not.
+>  CPU0 (endio, failed buffered bio)  CPU1 (fast fsync)
+>  end_bbio_data_write()
+>  |-btrfs_folio_clear_writeback()
+>  | ^^^ wakes up the fsync           btrfs_sync_file()
+>  |                                  |-filemap_fdatawait_range()
+>  |                                  | ^^^ Returns after the writeback
+>  |                                  | finished
+>  |                                  |
+>  |                                  |-test_and_clear_bit(COW_WRITE_ERROR)
+>  |                                  | ^^^ Still 0, skips
+>  |                                  |     btrfs_wait_ordered_range()
+>  |                                  |
+>  |                                  \-btrfs_log_changed_extents()
+>  |                                    ^^^ logs the extent maps of the
+>  |                                        failed ordered extent
+>  |-mapping_set_error()
+>  \-btrfs_finish_ordered_extent()
+>    \-set_bit(COW_WRITE_ERROR)
+>      ^^^ Too late.
 >
-> I'd lean towards a separate patch on top rather than a v7, since this
-> is a new feature that may need its own discussion, and it shouldn't
-> hold up your series.
-
-I think adding a force patch to my series wouldn't be a problem, as my
-series has been finalized since september, so I doubt it will change
-much in merging time.
-
-> David, do you have a preference? And if the series isn't likely to
-> land soon, would you rather see force as a small standalone patch?
+> A power loss after the log tree is persisted makes log replay point the
+> file to blocks that didn't receive its data.
 >
-> I'm happy to write the force patch on top, or to test yours on the
-> images from my table, whichever you prefer.
+> The mapping error is recorded late too, so the fsync can miss it as well.
+>
+> [FIX]
+> Record the error before anything a fast fsync can wait for.
+>
+> Introduce btrfs_ordered_extent_io_failed(), which marks the ordered
+> extent with BTRFS_ORDERED_IOERR, sets the mapping error and sets
+> BTRFS_INODE_COW_WRITE_ERROR for COW ordered extents.
+>
+> Call it from end_bbio_data_write() before clearing writeback, along with
+> mapping_set_error() with the real error code.
+>
+> Also call it from btrfs_finish_ordered_extent() before
+> can_finish_ordered_extent(), which sets BTRFS_ORDERED_IO_DONE, so that th=
+e
+> flag is also visible to anyone woken up by IO_DONE.
+> Compressed writes already finish the ordered extent before clearing
+> writeback and are not affected.
+>
+> Assisted-by: LLM (exposing the bug and coding)
+> Fixes: f13e01b89daf ("btrfs: ensure fast fsync waits for ordered extents =
+after a write failure")
 
-Yes, please test mine and also write a patch on top of my series, I'll
-be happy to test that on my end as well.
-After that we can decide if it's better to include it in a v7 or send it
-as a standalone patch with references to my v6.
+If you look at when that commit was made, we cleared the writeback bit
+from the folio after calling btrfs_finish_ordered_extent(), so all was
+fine.
+The commit that introduced the bug is:
 
-Thanks,
-koraynilay
+a11d6912fdd9 ("btrfs: remove folio parameter from ordered io related functi=
+ons")
 
-> Thanks,
-> Sterling
+And we already have an in-progress patch to solve this:
+
+https://lore.kernel.org/linux-btrfs/20261103-b4-btrfs-data-integrity-v2-3-5=
+77dc2690061@toxicpanda.com/
 
 
-
---d0aff31089870834420541c7cbc50e6e7be7fe8f58ccaa249c6a287d39e0
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQRJ2XvJtXGwULYEerQ0bnTtJTDoOAUCavLj7QAKCRA0bnTtJTDo
-OD92AP9zLKee3SkHlJxIannr1eSEcrVCRwc5KDDwu1cEavlubAEApIrHLhaPg0a2
-IplfzxAIN+3eHaUZjvPrxRjJuOELvAs=
-=JgyW
------END PGP SIGNATURE-----
-
---d0aff31089870834420541c7cbc50e6e7be7fe8f58ccaa249c6a287d39e0--
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/extent_io.c    | 13 ++++++++++---
+>  fs/btrfs/ordered-data.c | 40 +++++++++++++++++++++++++++++-----------
+>  fs/btrfs/ordered-data.h |  1 +
+>  3 files changed, 40 insertions(+), 14 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b2739838c646..53fced2756b5 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -545,6 +545,16 @@ static void end_bbio_data_write(struct btrfs_bio *bb=
+io)
+>         u32 bio_size =3D 0;
+>
+>         ASSERT(!bio_flagged(bio, BIO_CLONED));
+> +
+> +       /*
+> +        * Record the error before clearing writeback, as a fast fsync wa=
+iting
+> +        * for writeback checks the error right after being woken up.
+> +        */
+> +       if (error) {
+> +               mapping_set_error(bbio->inode->vfs_inode.i_mapping, error=
+);
+> +               btrfs_ordered_extent_io_failed(bbio->ordered);
+> +       }
+> +
+>         bio_for_each_folio_all(fi, bio) {
+>                 struct folio *folio =3D fi.folio;
+>                 u64 start =3D folio_pos(folio) + fi.offset;
+> @@ -554,9 +564,6 @@ static void end_bbio_data_write(struct btrfs_bio *bbi=
+o)
+>                 btrfs_folio_clear_writeback(fs_info, folio, start, len);
+>         }
+>
+> -       if (error)
+> -               mapping_set_error(bbio->inode->vfs_inode.i_mapping, error=
+);
+> -
+>         btrfs_finish_ordered_extent(bbio->ordered, bbio->file_offset, bio=
+_size, !error);
+>         bio_put(bio);
+>  }
+> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+> index df74c75d6c29..0a851203e589 100644
+> --- a/fs/btrfs/ordered-data.c
+> +++ b/fs/btrfs/ordered-data.c
+> @@ -423,18 +423,18 @@ static void btrfs_queue_ordered_fn(struct btrfs_ord=
+ered_extent *ordered)
+>         btrfs_queue_work(fs_info->endio_write_workers, &ordered->work);
+>  }
+>
+> -void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+> -                                u64 file_offset, u64 len, bool uptodate)
+> +/*
+> + * Record that the IO of @ordered failed.
+> + *
+> + * Must be called before anything a fast fsync can wait on is signaled: =
+the
+> + * writeback bit of the folios for buffered IO, or BTRFS_ORDERED_IO_DONE=
+ for
+> + * direct IO. Otherwise the fast fsync can miss the error.
+> + */
+> +void btrfs_ordered_extent_io_failed(struct btrfs_ordered_extent *ordered=
+)
+>  {
+>         struct btrfs_inode *inode =3D ordered->inode;
+> -       bool ret;
+>
+> -       trace_btrfs_finish_ordered_extent(inode, file_offset, len, uptoda=
+te);
+> -
+> -       spin_lock(&inode->ordered_tree_lock);
+> -       ret =3D can_finish_ordered_extent(ordered, file_offset, len,
+> -                                       uptodate);
+> -       spin_unlock(&inode->ordered_tree_lock);
+> +       btrfs_mark_ordered_extent_error(ordered);
+>
+>         /*
+>          * If this is a COW write it means we created new extent maps for=
+ the
+> @@ -442,7 +442,7 @@ void btrfs_finish_ordered_extent(struct btrfs_ordered=
+_extent *ordered,
+>          * before submitting a bio or during IO.
+>          *
+>          * We have marked the ordered extent with BTRFS_ORDERED_IOERR, an=
+d we
+> -        * are queuing its completion below. During completion, at
+> +        * will queue its completion. During completion, at
+>          * btrfs_finish_one_ordered(), we will drop the extent maps for t=
+he
+>          * unwritten extents.
+>          *
+> @@ -464,8 +464,26 @@ void btrfs_finish_ordered_extent(struct btrfs_ordere=
+d_extent *ordered,
+>          * Set a flag in the inode so that the next fast fsync will wait =
+for
+>          * ordered extents to complete before starting to log.
+>          */
+> -       if (!uptodate && !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
+> +       if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
+>                 set_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_flag=
+s);
+> +}
+> +
+> +void btrfs_finish_ordered_extent(struct btrfs_ordered_extent *ordered,
+> +                                u64 file_offset, u64 len, bool uptodate)
+> +{
+> +       struct btrfs_inode *inode =3D ordered->inode;
+> +       bool ret;
+> +
+> +       trace_btrfs_finish_ordered_extent(inode, file_offset, len, uptoda=
+te);
+> +
+> +       /* Must be done before BTRFS_ORDERED_IO_DONE can be set below. */
+> +       if (!uptodate)
+> +               btrfs_ordered_extent_io_failed(ordered);
+> +
+> +       spin_lock(&inode->ordered_tree_lock);
+> +       ret =3D can_finish_ordered_extent(ordered, file_offset, len,
+> +                                       uptodate);
+> +       spin_unlock(&inode->ordered_tree_lock);
+>
+>         if (ret)
+>                 btrfs_queue_ordered_fn(ordered);
+> diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+> index 8d5d5ba1e02f..1bb8f9c8c472 100644
+> --- a/fs/btrfs/ordered-data.h
+> +++ b/fs/btrfs/ordered-data.h
+> @@ -226,6 +226,7 @@ bool btrfs_try_lock_ordered_range(struct btrfs_inode =
+*inode, u64 start, u64 end,
+>  struct btrfs_ordered_extent *btrfs_split_ordered_extent(
+>                         struct btrfs_ordered_extent *ordered, u64 len);
+>  void btrfs_mark_ordered_extent_error(struct btrfs_ordered_extent *ordere=
+d);
+> +void btrfs_ordered_extent_io_failed(struct btrfs_ordered_extent *ordered=
+);
+>  void btrfs_mark_ordered_extent_truncated(struct btrfs_ordered_extent *or=
+dered,
+>                                          u64 truncate_len);
+>  int __init ordered_data_init(void);
+> --
+> 2.56.0
+>
+>

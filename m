@@ -1,96 +1,79 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.54
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=198.175.65.9
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794319418;
-	b=m77hqiDc9je0CetEL088gJleX2dbsNqVkL1EV6Z0FAEh0nm9ZNrA1RbpgOXSQBSqHN8J
-	 YAQ63/JYz1weD7q250ieWthrfZ7ms3OmHatz1tVf+x0CXMNUW1WtGBbHWVpFCGqvxY4Pb
-	 RmjPuV38jszc5sSbnDq7NiQIydER5BJ/WDBr22S1kUT4RBPfLMtowMt2fAq8MJvs+o9hU
-	 iCy9XpJuwYdUUE6Fgf36pFkxNXDi1t6XVXu69pOU8jFmMRJaXqG2d0jApvCbyEuaFI2zT
-	 96Pmovs/caiQx739W67majgr7R72q8grL0bq8xM9QHDBXXCJ4sJoQPZzJ59kOFce6Bg==
+	t=1794320206;
+	b=nPd3dsI97ObWy1E+60DwNamQaOOP9p1zdRvoXvbXGSL2CnKBiVa967VAlzs7t6PtQjac
+	 X6ljtRe3UO1yFF8CjB/V5dJHPQcwoNTrV5K/pc4CGnL8DhlTJac1vapQC0K4wqAnmwtmj
+	 MPSUprWRxbp0hndIFTUzCnkvpIPmA+l8SgK5z3OA5A9UDtfbBReU5Qb+utDSMuHokoRax
+	 1UQvoQeGOSeSCpFR+A9v+lV4TKHlx9Hja6s6CnTVKytzJRbdrSPcLbqxheXRoW69u6pls
+	 qSPZtq11qIbOeSd7QxYuZagJskvYgC+igcjzOo+4/7+OTi/HanHcNYlJKSgsVyaPugg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794319418;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Date:From:To:Cc:Subject:Message-ID:References:MIME-Version:
-	 Content-Type:Content-Disposition:Content-Transfer-Encoding:
-	 In-Reply-To;
-	bh=LmeHeiyAlUzpahmPYHz4GdQzrqGVFRf1t8/WmrIMmcY=;
-	b=gazju2GiUMDnkJyCL9wBgukEsVqepcV/U1+lIH5BQ6JhlWi6EWYxlIsTq5xK8dD9KjeF
-	 jaXDaIkBl52NA5dTDHL5KXQQ6mfwP5gdSgdI9JKJarBnR912x7tZKkGGzr9nAWtpRnn5m
-	 QvXqYeyQmnjY78Rbq7bfL5tJHb1fAOiL6svkJod6QVlstEAqfTSJ1SKWeoXPsUgdvYV3M
-	 iR8n2XpezLo7Y2ybpUlILoIo5c03zqHvCu1ky3yTO1rUpRQ9MgAmu8MAwFJW0R98MqTdh
-	 Xu3+kekBjIqTv5KDGcaGr98bsSPNnIz6cuiscsOLvbFZTbbnOC3Rj53IzOUlK2vdjcA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794320206;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:X-IronPort-AV:Received:X-CSE-ConnectionGUID:
+	 X-CSE-MsgGUID:X-ExtLoop1:X-IronPort-AV:Received:Received:Date:From:To:
+	 Cc:Subject:Message-ID:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=4+eeFvuJfyHDd+BuwMG2B+Gd8aNxZAE+8wiGXBSlO+s=;
+	b=xS63fvH4b7YlA1/LFjRLVjYu0WkTW4I0LZt5cmWg6sVFUf0CM5xPBx4AjXN7y6Yl4Svm
+	 2VfMFy0ctFS0MpxugLw3cyQc+75JmIAdiape27MJrNYfc4f1fAyc2PGMZdaRhKyfmNrJs
+	 VCOb36dBSCa0xt6Zobn15rk+xsI3SUGhpTBnTuFuEVby47NWUwD5vhZ2cQOZISM41JwPH
+	 c+Omn+Yult66h5OrtBaZ6GM5oyC4vDXE/LgZjdo+PaedEdlC/IUqk2Kkiz2N2fEMIxnPG
+	 iwaKZPWs82HRhqtBEhsUA1K/A3e73+qyQSmh9nveuQoXiOMlhRmqJWJ7p1lzvoPnwYA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=qd9av5Tu;
-	arc=none smtp.remote-ip=74.125.82.54
-Received: from mail-dl1-f54.google.com (mail-dl1-f54.google.com [74.125.82.54])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=intel.com;
+	spf=pass smtp.mailfrom=intel.com;
+	dkim=pass header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=SAqh8Bs2;
+	arc=none smtp.remote-ip=198.175.65.9
+Received: from mgamail.intel.com (mgamail.intel.com [198.175.65.9])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9FC7960A2605
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 14:03:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9FC7960A2605
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48BFB606A32A;
+	Tue, 10 Nov 2026 14:16:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 48BFB606A32A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=qd9av5Tu
-Received: by mail-dl1-f54.google.com with SMTP id a92af1059eb24-1ae58d17cd9so1552421c88.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 06:03:37 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794319417; x=1794924217; darn=vger.kernel.org;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :content-type:mime-version:references:message-id:subject:cc:to:from
-         :date:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=LmeHeiyAlUzpahmPYHz4GdQzrqGVFRf1t8/WmrIMmcY=;
-        b=qd9av5TujnJ/Aq2L1f9AluP+IX3Le7VDPsCMuxi5ml0vPbBJfX3Jo1rG2fwV09ZX5T
-         aqfMSuVz4Xo8ffuvtx+E+Ciavvr7pXC8sn8XUOz3jkjccMl7gjn8Vdpr9ghNM/P4WWAx
-         v/USo4lQ+1gEnB89Tt0XE4vsIe6RCG5dGhQjo1ND5JhUIj71jya89EG/jvg18+kgsEDm
-         cVfYN1oX5lVwo/KSlzSpW+qMSCL6E4nqPk9wH0H4nMIV0gbSMqD/yJUJn4cbeGK92VPa
-         12kUBQeF7WVm5zCXOLGqPjd7q22p2sE9VLrWlxuV+o9Hjs7XdwP+2iUEp+seLdDcDeAt
-         2Pcw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794319417; x=1794924217;
-        h=in-reply-to:content-transfer-encoding:content-disposition
-         :content-type:mime-version:references:message-id:subject:cc:to:from
-         :date:x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=LmeHeiyAlUzpahmPYHz4GdQzrqGVFRf1t8/WmrIMmcY=;
-        b=hcPKIOBmCmFrm0Uod7wQ1hhsVfxAQMHP74b/KXLRkr+9dWGET4ZmEF49jqdbAvqDbR
-         AazREp/IA6cwtbr2R6cBJHbLrlRG9WW++BDlBwNOuTOqgfrDYs4heR39JeRG0HxQhCvz
-         7zbWEkY3TVPHX5dMS196Iq/IuG2/c0yApssupiBaexWZEweqQWhBkfuAJHYOtzFBfo4g
-         MOin30ZKXVmDU7Kgd7TTRdPNuGN+DtunheBzn0POHcZylNLKCQJ6v4kmAqGXdcqtJckd
-         QyxK9gWKeM2Wbv5XquyXsW2HAh+IFM+N2cXw++jCBXvNgDUq3vUmvEL15WRGd6rD+j+7
-         gOjw==
-X-Forwarded-Encrypted: i=1; AL+hErEBoBxR4+DkwNgCY6u+nzNKkEpgvjmqwfTMTgi5OyrhBAolK6OsyrtgrmywqXJowcK1WHg9DHaLke9BuQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9b5jgE5pxnmMFwKeETtTAIrJ9Df32SmoVpn3HWBdrOu3QO9thZ
-	vQwLrmZ3GyqrAaPwZOjQgZOUCl1yCknrEB+8k4RZoFWMu+RRgFMrTGVRbzx5fg==
-X-Gm-Gg: AYBFou2B7Ruq+DwUwyjm5HKuu3KTekS6FcWKZgBteLEFDxzDNy6W4Gl4kkNs+VrOJQb
-	fb06C15sdaTNz+5BnOD/yfR/nHrhNby1mgUOWvjELiJieOtnb3kN4U8NOaXmufkck55Vnwg6dwM
-	yFpn3EqP5Ba29w+pjIse/mo6Yico6RxsnT5mAIHMkDqEXXx+VyoM8oM0k0Uq1991lcSpEeTLoXs
-	gVtyly97luBJBiU8HK02MlXG1psC2MsSIJcSgQJ+rXXVl3IefxD2ZxA+Ml2bzwTewXkjGRmJZaU
-	7+wkCeRFwmnMIdMiUq2ZRhb1BmE/QYCmeRaXS+FMy0mZkmhGVZwi4EJJBGtK4HwS/E7+VCQOzZP
-	9RQUAB3R7tSe6z6jT7ozEpMZ5q5ow9q6j1V9+YwGyU2WrCxzWdUQo//FDC+BgRRgPOscZ0yOwR+
-	i1sBIHyJvY6AUh/qCF31dgcGqttnKocp4vwTl+GsiYco554HJEKQWb5giRfyu1c/N3hz0nIcV4U
-	KW7EQzdiiEvHalzy5XC8z8H+lscMDQnxiOg4IvPlq3Ck8b8ZpEvuRFB5aGDLEAMnHAAAKcGqTux
-	Yr8xz0FK6C3yRGBnog8coN/27edVNAzixA==
-X-Received: by 2002:a05:701b:2089:20b0:159:2c6d:fcc3 with SMTP id a92af1059eb24-1b3b602d056mr3655380c88.33.1794319415066;
-        Tue, 10 Nov 2026 06:03:35 -0800 (PST)
-Received: from user ([2405:201:c052:b00b:e920:f0ce:52ca:a7ce])
-        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1b3b5ba8426sm6831793c88.23.2026.11.10.06.03.31
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 10 Nov 2026 06:03:34 -0800 (PST)
-Date: Tue, 10 Nov 2026 19:33:04 +0530
-From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: dsterba@suse.com, mason@kernel.org, fdmanana@suse.com,
-	josef@toxicpanda.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, skhan@linuxfoundation.org,
-	syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
-Subject: Re: [PATCH] btrfs: Clean up delayed inode items on transaction abort
-Message-ID: <avMkGGHSH2scfa0t@user>
-References: <20261109202914.64371-1-pavankumaryalagada@gmail.com>
- <d3e07f45-58f3-4668-b9c2-e0cf63decd4c@gmx.com>
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=SAqh8Bs2
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1794320207; x=1825856207;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=qHIoRdta/Rz12+sgDyk+MbbHJpDaq49xq1iYbp05iFo=;
+  b=SAqh8Bs2qK5EjAJ/3pxC2yV8fjHpkZZsIasREG34gZ2cjEsn4K61RGyN
+   nlq9u9/Np7qGdiHgkpyWCuSEaEkRBP7G5U7NtJell7FF0p6uXRshpKvns
+   +U9TLEVw7UgsoJws4rliKqRcXOjnI2nnTOvMT2m81q8C26mu+EAcNH3d8
+   mzgQRwMwC4eWf0h2sqgPOUUcTkNa11TPZFzwtjn5EO4mNyLFjN5VY22qe
+   p9XBDttVSUHX3cs1vtoCBBde/GxRxB9zELQZtu1eoDkUG2OwADNz9zmcZ
+   pxJ5FMc3F1Vh9PoA9YOcEHwtZ6KAC077/92Wle9IuDzPFXXRy2SDg7ack
+   A==;
+X-CSE-ConnectionGUID: rCnyLOtmRqG60fKEGxBh4g==
+X-CSE-MsgGUID: 03ut2M50QmiWJSrhT15WQg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11961"; a="2971072"
+X-IronPort-AV: E=Sophos;i="6.27,205,1787036400"; 
+   d="scan'208";a="2971072"
+Received: from orviesa008.jf.intel.com ([10.64.159.148])
+  by orvoesa101.jf.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 10 Nov 2026 06:16:46 -0800
+X-CSE-ConnectionGUID: TjYZSHtDQLCCdUxLQAHSMA==
+X-CSE-MsgGUID: bYRN2TmjTzSgMB/r4uvwpg==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.27,205,1787036400"; 
+   d="scan'208";a="7992142"
+Received: from lkp-server01.sh.intel.com (HELO 0caa9d2d175c) ([10.239.97.150])
+  by orviesa008.jf.intel.com with ESMTP; 10 Nov 2026 06:16:44 -0800
+Received: from kbuild by 0caa9d2d175c with local (Exim 4.98.2)
+	(envelope-from <lkp@intel.com>)
+	id 1xQmeQ-00000000wwt-0Do9;
+	Tue, 10 Nov 2026 14:16:42 +0000
+Date: Tue, 10 Nov 2026 22:15:50 +0800
+From: kernel test robot <lkp@intel.com>
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-crypto@vger.kernel.org
+Cc: oe-kbuild-all@lists.linux.dev, ebiggers@kernel.org, ardb@kernel.org
+Subject: Re: [PATCH] lib/crc: x86: rewrite crc32c_x86_3way() in C with inline
+ asm
+Message-ID: <202611102233.Xe1YmTvH-lkp@intel.com>
+References: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -100,101 +83,68 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <d3e07f45-58f3-4668-b9c2-e0cf63decd4c@gmx.com>
+In-Reply-To: <090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu@suse.com>
 
-On Tue, Nov 10, 2026 at 08:37:16AM +1030, Qu Wenruo wrote:
-> 
-> 
-> 在 2026/11/10 06:59, pavankumaryalagada@gmail.com 写道:
-> > From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-> > 
-> > When a transaction is aborted, btrfs_commit_inode_delayed_inode()
-> > fails because btrfs_join_transaction() returns an error. This makes
-> > btrfs_evict_inode() skip btrfs_kill_delayed_inode_items(), leaving
-> > pending items in the delayed node.
-> > 
-> > Move the error check after btrfs_kill_delayed_inode_items() to
-> > ensure pending items are removed when the transaction is aborted.
-> > 
-> > Reported-by: syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
-> > Link: https://lore.kernel.org/all/6af131f2.44d55313.247daf.0001.GAE@google.com/T/
-> > Fixes: 2adc75d61203 ("btrfs: move btrfs_kill_delayed_inode_items into evict")
-> > Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
-> > ---
-> >   fs/btrfs/inode.c | 5 +++--
-> >   1 file changed, 3 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index abaa33471456..397aa64b4816 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -5623,8 +5623,6 @@ void btrfs_evict_inode(struct inode *inode)
-> >   	 * the inode update is released.
-> >   	 */
-> >   	ret = btrfs_commit_inode_delayed_inode(BTRFS_I(inode));
-> 
-> What if btrfs_commit_inode_delayed_inode() failed but without a transaction
-> abort?
+Hi Qu,
 
-If the transaction has not been aborted, we shouldn't remove pending delayed
-items.
+kernel test robot noticed the following build errors:
 
-> 
-> E.g. btrfs_alloc_path() failed inside btrfs_commit_inode_delayed_inode(),
-> then the transaction is just ended regularly without aborting.
+[auto build test ERROR on ebiggers/crc-next]
+[also build test ERROR on linus/master v7.4-rc2 next-20261109]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-Agreed. In this case, -ENOMEM is returned, but the transaction hasn't been
-aborted, so we should keep the pending delayed items.
+url:    https://github.com/intel-lab-lkp/linux/commits/Qu-Wenruo/lib-crc-x86-rewrite-crc32c_x86_3way-in-C-with-inline-asm/20261110-102248
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/ebiggers/linux.git crc-next
+patch link:    https://lore.kernel.org/r/090c5f6603b1102c877c8649f7a6569f362bfe61.1794268279.git.wqu%40suse.com
+patch subject: [PATCH] lib/crc: x86: rewrite crc32c_x86_3way() in C with inline asm
+config: x86_64-rhel-9.4 (https://download.01.org/0day-ci/archive/20261110/202611102233.Xe1YmTvH-lkp@intel.com/config)
+compiler: gcc-14 (Debian 14.2.0-19) 14.2.0
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20261110/202611102233.Xe1YmTvH-lkp@intel.com/reproduce)
 
-> 
-> In that case, won't the btrfs_kill_delayed_inode_items() call causing
-> problems?
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/202611102233.Xe1YmTvH-lkp@intel.com/
 
-Yes, calling it unconditionally could remove pending operations even when
-the transaction hasn't been aborted. I'm thinking of making the cleanup
-conditional so that delayed items are removed when the commit succeeds or
-the transaction has been aborted, but are left untouched on other errors
-like -ENOMEM.
+All errors (new ones prefixed by >>):
 
-	ret = btrfs_commit_inode_delayed_inode(BTRFS_I(inode));
+   In function 'crc32c_fold_lanes',
+       inlined from 'crc32c_x86_3way' at lib/crc/x86/crc32c-3way.c:285:12:
+>> lib/crc/x86/crc32c-3way.c:217:9: error: the register 'xmm2' cannot be clobbered in 'asm' for the current target
+     217 |         asm("pmovzxdq   %[k], %%xmm0\n\t"       /* 2 consts: K2:K1 */
+         |         ^~~
 
-	if (!ret || BTRFS_FS_ERROR(fs_info) ||
-	    test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
-		btrfs_kill_delayed_inode_items(BTRFS_I(inode));
 
-	if (ret)
-		goto out;
+vim +217 lib/crc/x86/crc32c-3way.c
 
-I included both checks because TRANS_ABORTED detects whether a transaction
-has been aborted, while BTRFS_FS_ERROR() checks whether a filesystem error
-has been recorded.
+   208	
+   209	/*
+   210	 * Fold the CRCs of lane 0 and lane 1 into a single 64-bit value, which is to be
+   211	 * XOR'ed into the last qword of lane 2 before being CRC'ed.
+   212	 */
+   213	static __always_inline u64 crc32c_fold_lanes(u32 crc0, u32 crc1, const u32 *k)
+   214	{
+   215		u64 res;
+   216	
+ > 217		asm("pmovzxdq	%[k], %%xmm0\n\t"	/* 2 consts: K2:K1 */
+   218		    "movq	%[crc0], %%xmm1\n\t"	/* CRC for lane 0 */
+   219		    "pclmulqdq	$0x00, %%xmm0, %%xmm1\n\t" /* Multiply by K2 */
+   220		    "movq	%[crc1], %%xmm2\n\t"	/* CRC for lane 1 */
+   221		    "pclmulqdq	$0x10, %%xmm0, %%xmm2\n\t" /* Multiply by K1 */
+   222		    "pxor	%%xmm2, %%xmm1\n\t"
+   223		    "movq	%%xmm1, %[res]"
+   224		    : [res] "=r" (res)
+   225		    : [crc0] "r" ((u64)crc0), [crc1] "r" ((u64)crc1),
+   226		      [k] "m" (*(const u64 *)k)
+   227		    : "xmm0", "xmm1", "xmm2");
+   228		return res;
+   229	}
+   230	
 
-Since the TRANS_ABORTED bit can be set before the filesystem error is
-recorded, checking both ensures that we also catch that case.
-
-This way, we clean up the delayed items if the commit suceeds or the transaction
-is aborted, but keep them on recoverable errors like -ENOMEM.
-
-I'll send this as v2. Please let me know if you see any issues with this
-approach.
-
-Thanks,
-Pavan
-
-> > -	if (ret)
-> > -		goto out;
-> >   	/*
-> >   	 * This drops any pending insert or delete operations we have for this
-> > @@ -5634,6 +5632,9 @@ void btrfs_evict_inode(struct inode *inode)
-> >   	 */
-> >   	btrfs_kill_delayed_inode_items(BTRFS_I(inode));
-> > +	if (ret)
-> > +		goto out;
-> > +
-> >   	btrfs_init_metadata_block_rsv(fs_info, &rsv, BTRFS_BLOCK_RSV_TEMP);
-> >   	rsv.size = btrfs_calc_metadata_size(fs_info, 1);
-> >   	rsv.failfast = true;
-> 
+--
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

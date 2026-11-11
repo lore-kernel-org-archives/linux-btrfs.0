@@ -1,58 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=115.124.30.99
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794400920;
-	b=FQzfd8qoJcvr4/beVvo4WtdG9HDAI20SBqnNmFqVyA4s0TUjF83OriEB7YRQ8k+erLJn
-	 uBQFKJPJYvNdpiQQetYiobLY3bc6F53Hvodzp6SOciabamS+U1a3LuJegCF4maqy8ANC0
-	 1Ur6uTPFY3qu/UubzUEhMW95Dp1OHShHEnN4qRliRxJQbSs7bEjs4Tb9koVqCp01VLUQp
-	 tXGA2qveXkupu03CqzzMxaRxevoYUmbCJCqlPjE1CFgiWqfYsX5Ek5c5q/QrvlHUOPRVK
-	 MFLJx/m7BdFb2U2MLkZ5xdbMV4qlky+2xhw1b2Z77JKdv4zCt4ydStNnN5wEbKhz19w==
+	t=1794406514;
+	b=pnS1pFA387ZVO9e7L211jNYdB7CVEsrISckdBlDXxrCwDOPeUUfigZ5M0EAL+1zpgNxX
+	 lPm/QrLfL6MQuWcOrgas8sOQ5Z3bPFBj8cqyfsx82wtvoBfh5i/IXTnWKMVKKRy7xre3V
+	 didVrbYy9r6f8XdubW6OdZF3tC02IRM2lP6r+ALbq8LBPteLp1Z4mmLu8BxgOHGIz5eB3
+	 mH8iQMuLFJKy0X64QnRZvbbjKxJ2FKSog3lQ5cbrAX93xiMGf6Buw5AV8/VilJ1QwYkrv
+	 VoVs/I60Jedx41RbDMk9TzI3pmAs2oLrsRkFHf9FdNysgpRbMaavWZ10LqWGjRWkYZA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794400920;
-	h=DMARC-Filter:DKIM-Signature:X-Alimail-AntiSpam:Received:From:To:Cc:
-	 Subject:Date:Message-Id:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=WNLIs73HAX9Ek1Kug6m2tjkKoSTQsmiO0dW+3tYRneM=;
-	b=KCy4ClSg8aH1ZVn3S2dZ8YpmtKOHakMAlVKxLC1N1WHmgGNZEBT1Y4csHoT4pTDIdqc7
-	 l9l5A/5EfgfvypggZX2iiqWkkshauYnZNGueCDMRqVZJGG/JNdfML9b9Zi5MJCWB5VOJa
-	 Wanh26NrPGzy6it37ykRfQfzwNxvc2CzV+vu82q+YEuUAhQmi3m9q/PzNpdCXpsktf/zd
-	 bukllhFx0tsXBKQiN4XcQQUwJLfQ6tTSX/ozVBn1vepv9Fd644OiEBSD5XNwlAEfgDLQX
-	 462mnFMpX30V8331rwPNJ7mwnwwtYPP3K7sAQfpmnBhUdKYdusDbYJ+O9yCHdD/5vPA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794406514;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
+	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:X-Rspamd-Queue-Id:X-Spam-Level:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:X-Spam-Score;
+	bh=iEM9kPeISwrg1hp3zFsHM5gU3S8hitOkRPQJum2vFMU=;
+	b=oDSv8TML6Br2ANrNyyHl5eLdEaqkGzeKqpFh5cUnWgNS3fFOATWhduyRajWfNTE5l6fy
+	 uzP1ErgGCX40NlHPlSkrYAyCKWd/DrM3AR1hSHvG7Gt9Errj1r27oDq/v6I2EXnOowHjj
+	 yJXfIJaifMDI9/c8fAjy0oc1c0mbEkwVJlkJSr6dcwENjDpa8I3oR9yzWDT+3C5P1fw2t
+	 RbK2FcApV6zWx9SnMoOkoEMy1hWiBt8IIC507Xei0f8qg6s4ZwFwoHWE9Sm3dFhOwvroq
+	 n/I8nuOGPIkkWsUxEZu67qnuVp5v8q97OyQpfwpLZyLlwi0nYOp8xfQAY+e7ZNPPghg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=linux.alibaba.com;
-	spf=pass smtp.mailfrom=linux.alibaba.com;
-	dkim=pass header.d=linux.alibaba.com header.i=@linux.alibaba.com header.a=rsa-sha256 header.s=default header.b=rYAEKAhu;
-	arc=none smtp.remote-ip=115.124.30.99
-Received: from out30-99.freemail.mail.aliyun.com (out30-99.freemail.mail.aliyun.com [115.124.30.99])
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=r58BF0D8;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=15TlV9Nr;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=r58BF0D8;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=15TlV9Nr;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9ECAD606A31C;
-	Wed, 11 Nov 2026 12:41:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9ECAD606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3FE1C606A334;
+	Wed, 11 Nov 2026 14:15:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3FE1C606A334
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.a=rsa-sha256 header.s=default header.b=rYAEKAhu
-DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
-	d=linux.alibaba.com; s=default;
-	t=1794400916; h=From:To:Subject:Date:Message-Id:MIME-Version;
-	bh=WNLIs73HAX9Ek1Kug6m2tjkKoSTQsmiO0dW+3tYRneM=;
-	b=rYAEKAhumPWDzgSszc2vrm/NXyEkpM5xkH/fCJHSG1GYJq5D5nE3TrOTCwH2rceQUtPCs/gCCxsQEqSRH0MQA9Q8DpQb4Qu2cZJ8xrJEGGCz41sJMsHunRlGtTx454lzKXWP/X4ONtle7No2eJX3tZ+p232V+3G8mnS1AVQX1tU=
-X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R101e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033032089153;MF=joseph.qi@linux.alibaba.com;NM=1;PH=DS;RN=6;SR=0;TI=SMTPD_---0XEYtCBw_1794400915;
-Received: from localhost(mailfrom:joseph.qi@linux.alibaba.com fp:SMTPD_---0XEYtCBw_1794400915 cluster:ay36)
-          by smtp.aliyun-inc.com;
-          Wed, 11 Nov 2026 20:41:55 +0800
-From: Joseph Qi <joseph.qi@linux.alibaba.com>
-To: David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>
-Cc: linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	Joseph Qi <joseph.qi@linux.alibaba.com>,
-	stable@vger.kernel.org
-Subject: [PATCH] btrfs: don't wait for ordered extents in nowait buffered writes
-Date: Wed, 11 Nov 2026 20:41:52 +0800
-Message-Id: <20261111124152.546406-1-joseph.qi@linux.alibaba.com>
-X-Mailer: git-send-email 2.39.3
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=r58BF0D8;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=15TlV9Nr;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=r58BF0D8;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=15TlV9Nr
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 09F3E22A5E;
+	Wed, 11 Nov 2026 14:15:12 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1794406512; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=iEM9kPeISwrg1hp3zFsHM5gU3S8hitOkRPQJum2vFMU=;
+	b=r58BF0D8W8gzgIAphVb7+yXG4Wp0CzJfQUUtsAILSsDExswBBX2Vz1DZhrqDcoIpRX0ZTt
+	0gBD9RMFaruNOsM+g+SXe7YVni3W376lEjHWkMsC8cv+03B46mcbwzWMdN6eutgUbVcR1I
+	skb2yG6nBdMmWTQD7PkbKOeYbn2js8w=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1794406512;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=iEM9kPeISwrg1hp3zFsHM5gU3S8hitOkRPQJum2vFMU=;
+	b=15TlV9Nrfb6fbwPB+XQGAF9gQF4YSshvgg4Qr4JwuaNYvo4isPqFDJlR8PRYTR3/TFQArE
+	KUe4A2NvjL7x2ZAw==
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=r58BF0D8;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=15TlV9Nr
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1794406512; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=iEM9kPeISwrg1hp3zFsHM5gU3S8hitOkRPQJum2vFMU=;
+	b=r58BF0D8W8gzgIAphVb7+yXG4Wp0CzJfQUUtsAILSsDExswBBX2Vz1DZhrqDcoIpRX0ZTt
+	0gBD9RMFaruNOsM+g+SXe7YVni3W376lEjHWkMsC8cv+03B46mcbwzWMdN6eutgUbVcR1I
+	skb2yG6nBdMmWTQD7PkbKOeYbn2js8w=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1794406512;
+	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=iEM9kPeISwrg1hp3zFsHM5gU3S8hitOkRPQJum2vFMU=;
+	b=15TlV9Nrfb6fbwPB+XQGAF9gQF4YSshvgg4Qr4JwuaNYvo4isPqFDJlR8PRYTR3/TFQArE
+	KUe4A2NvjL7x2ZAw==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id BD61B134E5;
+	Wed, 11 Nov 2026 14:15:11 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id oMu1Jm949GpWAQAAD6G6ig
+	(envelope-from <jack@suse.cz>); Wed, 11 Nov 2026 14:15:11 +0000
+Received: by quack.suse.cz (Postfix, from userid 1000)
+	id 475D422933; Wed, 11 Nov 2026 15:15:11 +0100 (CET)
+Date: Wed, 11 Nov 2026 15:15:11 +0100
+From: Jan Kara <jack@suse.cz>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Jan Kara <jack@suse.cz>, linux-fsdevel@vger.kernel.org, 
+	Jan Kara <jack@suse.com>, Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net, 
+	linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, linux-mm@kvack.org, ntfs@lists.linux.dev, 
+	ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev, 
+	linux-efi@vger.kernel.org, linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org, 
+	Karl Mehltretter <kmehltretter@gmail.com>
+Subject: Re: [PATCH v2 04/34] ext2: don't set SB_RDONLY after filesystem
+ errors
+Message-ID: <za33axmgzmuzsj3zmfeh43fkphtcsqtkhhrauwuvs7aiftelgp@dzl6z322st5f>
+References: <20261029-work-fs-sb_rdonly-v2-0-2f44f64f0b66@kernel.org>
+ <20261029-work-fs-sb_rdonly-v2-4-2f44f64f0b66@kernel.org>
+ <5qefa4mracb3x2z4vsdejmkyyfrhdcrixmmnooz4rzwcdfoejm@mqkvixj6afwp>
+ <20261110-kargheit-impfen-pausieren-881763d28b19@brauner>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,113 +120,92 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261110-kargheit-impfen-pausieren-881763d28b19@brauner>
+X-Rspamd-Queue-Id: 09F3E22A5E
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-11.51 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	SUSPICIOUS_RECIPS(1.50)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_RHS_NOT_FQDN(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RCPT_COUNT_TWELVE(0.00)[19];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCVD_COUNT_THREE(0.00)[3];
+	SPAMHAUS_XBL(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	MIME_TRACE(0.00)[0:+];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	FREEMAIL_ENVRCPT(0.00)[gmail.com];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_LAST(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	MISSING_XM_UA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	FREEMAIL_CC(0.00)[suse.cz,vger.kernel.org,suse.com,zeniv.linux.org.uk,lists.sourceforge.net,lists.linux.dev,kvack.org,lists.infradead.org,gmail.com];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:dkim]
+X-Spam-Score: -11.51
 
-lock_and_cleanup_extent() honours @nowait when taking the extent lock,
-but then waits for an overlapping ordered extent regardless of it:
+On Tue 10-11-26 22:50:47, Christian Brauner wrote:
+> On Thu, Nov 05, 2026 at 10:22:07AM +0100, Jan Kara wrote:
+> > So shouldn't we just modify the sb_rdonly() check in sync_filesystem() to
+> > use also sb_emergency_ro() and don't bother with modifying individual
+> > filesystems?
+> 
+> The VFS patch I posted in v1 thread did that. I dropped it because
+> of jfs. jfs keeps anonymous tlocks for every allocation that writeback
+> hasn't committed yet. If sync_filesystem() bails after the error nothing
+> commits them before evict_inodes() and jfs_evict_inode() hits the
+> BUG_ON() for a non-empty anon_inode_list on umount.
+> 
+> Which is what happened before the series because the error set
+> SB_RDONLY. jfs_reconfigure() relies on the same sync_filesystem() call
+> when going read-only after the error.
+> 
+> jfs could commit them itself before evict_inodes() but that means a
+> ->kill_sb() wrapper and a txQuiesce()-like walk over the global
+> anon_list filtered by superblock. I don't think that's worth it.
 
-  btrfs_start_ordered_extent()
-    wait_event(entry->wait, BTRFS_ORDERED_COMPLETE)
+OK, so instead of BUGing in jfs_evict_inode(), shouldn't JFS just do
+something like:
 
-BTRFS_ORDERED_COMPLETE is only set by btrfs_remove_ordered_extent(),
-which runs from the ordered extent completion work, so this sleeps
-uninterruptibly until that work gets to run, and it starts a
-transaction.  A pwritev2(RWF_NOWAIT) buffered write must not block like
-that.
+-	BUG_ON(!list_empty(&ji->anon_inode_list));
++	if (!list_empty(&ji->anon_inode_list)) {
++		WARN_ON_ONCE(!sb_emergency_ro(inode->i_sb));
++		/* This needs helper in fs/jfs/jfs_txnmgr.c */
++		TXN_LOCK();
++		list_del_init(&ji->anon_inode_list);
++		TXN_UNLOCK();
++	}
 
-This used to be limited to writes starting below i_size, because the
-ordered extent lookup was guarded by a start_pos < i_size test.  Commit
-ec78575dde99 ("btrfs: always wait for ordered extents to avoid OE races")
-dropped that guard so that appends also wait for the ordered extent left
-behind by a short direct write whose i_size was reverted, which made the
-wait, and the blocking with it, unconditional.
+So that JFS doesn't block everybody else? Because conceptually, once sb is
+marked as emergency read-only, we really want to stop writeback so letting
+sync_inodes() run seems moot.
 
-btrfs_write_check() rejects a NOWAIT write with -EAGAIN unless the inode
-has BTRFS_INODE_NODATACOW or BTRFS_INODE_PREALLOC, so the inode has to
-have one of those: a chattr +C file, a preallocated file, or a nodatacow
-mount.  Those are the usual setups for database files and VM images,
-which is also where NOWAIT writes get used.
+> > Is this really needed? All the xattr operations go through mnt_want_write()
+> > / mnt_want_write_file() so this should be caught in VFS...
+> 
+> Not the ones ecryptfs does on the lower filesystem...
+> Hm, maybe we should make ecryptfs get write access to the lower mount
+> instead and drop the xattr checks from the filesystems. Not sure.
 
-Given such an inode, an append write does reach the wait.  With i_size S
-and a direct write of L bytes of which only W get submitted:
+Argh, also NFS I assume. OK, that won't be easy to get rid of AFAICT (we
+generally don't have mount available there).
 
-  task A: O_DIRECT append, short write  task B: pwritev2(RWF_NOWAIT) append
-  ------------------------------------  -----------------------------------
-  btrfs_split_ordered_extent() gives
-  the submitted part [S, S+W) its own
-  OE, so dio_data->ordered is left
-  covering [S+W, S+L)
-  btrfs_dio_iomap_end():
-    i_size_write(max(S, S+W))
-      <- i_size reverted
-    btrfs_mark_ordered_extent_truncated()
-    btrfs_finish_ordered_extent()
-      btrfs_queue_ordered_fn()
-        -> endio_write_workers
-      <- the OE is still in the tree
-  iomap_dio_complete()
-  btrfs_inode_unlock()
-                                        btrfs_buffered_write() at S+W
-                                          btrfs_inode_lock(BTRFS_ILOCK_TRY)
-                                            <- succeeds, A dropped it
-                                          btrfs_write_check()
-                                            <- passes
-                                          copy_one_range()
-                                            lock_and_cleanup_extent()
-                                              btrfs_try_lock_extent()
-                                                <- succeeds
-                                              btrfs_lookup_ordered_range()
-                                                <- finds A's [S+W, S+L)
-                                              btrfs_start_ordered_extent()
-                                                wait_event()
-                                                  <- blocks here
-  endio_write_workers eventually runs
-  finish_ordered_fn()
-    btrfs_finish_ordered_io()
-      btrfs_remove_ordered_extent()
-        <- sets BTRFS_ORDERED_COMPLETE,
-           B finally wakes up
-                                        -EAGAIN propagates back through
-                                        copy_one_range() to userspace
-
-Because i_size was reverted to S+W, start_pos equals i_size, which is
-exactly the case the dropped start_pos < i_size guard used to skip.
-
-Return -EAGAIN without starting the ordered extent instead.
-copy_one_range() passes that straight back and btrfs_buffered_write()
-returns it to userspace when nothing was written yet, so a nowait caller
-retries from a blocking context without IOCB_NOWAIT and takes the
-waiting branch then.  btrfs_try_lock_ordered_range(), which
-btrfs_check_nocow_lock() uses for the same purpose, already behaves this
-way.
-
-Fixes: ec78575dde99 ("btrfs: always wait for ordered extents to avoid OE races")
-Cc: stable@vger.kernel.org
-Signed-off-by: Joseph Qi <joseph.qi@linux.alibaba.com>
----
- fs/btrfs/file.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f978c6524aa03..e84e9e129169e 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -916,7 +916,14 @@ lock_and_cleanup_extent(struct btrfs_inode *inode, struct folio *folio,
- 				    cached_state);
- 		folio_unlock(folio);
- 		folio_put(folio);
--		btrfs_start_ordered_extent(ordered);
-+		/*
-+		 * Waiting for the ordered extent blocks uninterruptibly, which
-+		 * a nowait caller must not do.  Leave it alone and let the
-+		 * caller retry where blocking is acceptable, like
-+		 * btrfs_try_lock_ordered_range() does.
-+		 */
-+		if (!nowait)
-+			btrfs_start_ordered_extent(ordered);
- 		btrfs_put_ordered_extent(ordered);
- 		return -EAGAIN;
- 	}
+								Honza
 -- 
-2.39.3
-
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

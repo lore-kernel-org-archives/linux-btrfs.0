@@ -1,54 +1,49 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=115.124.30.133
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794352876;
-	b=Z3+sxFdRpqtu5aAjNxcSk3WKPMgfff5gQk+8L34jgKqFrQJKP6vct2VTs2HNoSsOdeVf
-	 s+wX7XR6oaqhS6JxTSzADkfi/a9/fzJqicDVio6IjTEpol9Q2/WsoB3mJUpNsgU4IDsmY
-	 S26pS00kU3vMLw+4EGQtAEHAXZUEk6PE9Yn4r0CKCPxjQzz6Up9SJ9jhRHuhmQiLdml9H
-	 +GazbZKMPxcI9DXMNDD6Tgp0MY7R/7+3jhQAY6tuW5zqv3V6dfkN6AnQdLtDw4f5BMZWu
-	 TVDwbrfVNGKljSERTTuZfPDb9pCQU+i62qDmxS74GDXSBW4Cu8immj0MDeNtTh6vA9A==
+	t=1794360670;
+	b=FfO+lx5GXogLgqb7DWOxYqGfL+fjnDw1YZx3slNeIC3v4+Cc3UnugRghWpdcsC9dhquP
+	 giGHgAtZWkmEagFZyPpebKZ0VoVyRkMczeJMpgUlYw73vY+2VvQQ4z4yK4HRzs0APY3BL
+	 YNBLK3gL55Lt/G3qscMukWAWr0AbKNQfqggcr1RxSxr9PIpKoWFb0fTvtw/7jgL2dslMa
+	 vMPZSwG52GKFpqHI9mU0OJyTCR6A621Q1gAQ4Fxgz720hFJe7qcMm/v70PufBbeTLP5OE
+	 aArDEQ1SgC+TvqF6Me1XRcyIWMDYE5MyYEEJ8b7tPJRC2FAC0GVqVjh3/FlDDRHPvig==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794352876;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=QB8MbDWEyGVAfh+sMolcgor+trKpKEIlCi5B4QpJMt8=;
-	b=UJ7OEFrVE1n2/I+UjTODzptNe8kP0+q69JUPhEi818fPUwd/4vGnY2Qz5QHeQqsKVmLg
-	 ay/lCZpiT2N+6CiPDrDX2weh3HWvsbZo0SolHlxoAKIOdP7JLiKBmSTOb6DdE7J/nvHJ3
-	 WULQiAqv6UAvAlg4ySjo+5TcBcVZfgw2TlvEyCHzYv10FlvJCh5LkOSrNwANX2c9LGhPM
-	 bIBvU3mnPPp21gqmQjqm6Mw95gbtqBShxQw+FYXFQTDf/JIt5hPPo0D841muXzCK8nFpy
-	 dnK/rlXmASTniiYzGIksrCVdQCcll/ah1+yPA31ZFwFbwXqEQDxHNRO3rx3QPxdBFLw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794360670;
+	h=DMARC-Filter:DKIM-Signature:X-Alimail-AntiSpam:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:Cc:References:From:
+	 In-Reply-To:Content-Type:Content-Transfer-Encoding;
+	bh=fz7Db6YPpucPps2P9eFgAPZMsl4Z2nZBpO1+iQqdPhM=;
+	b=RBXudb244Rweuyty63SC19rHx0w4ElIL+4AYxc8G84M3xHfHQ5LVGNRZsNrUcRkXkJEH
+	 q5FP0X704Gd1o5zUtY1T09F1xIJS79yfImNaqoZBsHaoTdQqW5RsLqV8d8n8WVLVtn9Sf
+	 dc/D7/Tj3QLc119ZInWARA9tUST3vFtWtyVboKVDlgCSEw0ZpaVWGsNZyLRb4iK82oGQH
+	 D3+q3uoDzMei+Wgi6WaK3KrYicoZBCLmTzg2BRBgLvw70ErJttB1rko2mSlpSMcPTlq7y
+	 J6skwU+HublMytAcf4DLkTq/Oq2m1HGbdsxwlFsbYTqXsBmZt7H0PGeEXOzf764e0vg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bLBBQF3p;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=linux.alibaba.com;
+	spf=pass smtp.mailfrom=linux.alibaba.com;
+	dkim=pass header.d=linux.alibaba.com header.i=@linux.alibaba.com header.a=rsa-sha256 header.s=default header.b=mq7w0PoV;
+	arc=none smtp.remote-ip=115.124.30.133
+Received: from out30-133.freemail.mail.aliyun.com (out30-133.freemail.mail.aliyun.com [115.124.30.133])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3AB5606A334
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 23:21:15 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D0DE606A321;
+	Wed, 11 Nov 2026 01:31:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6D0DE606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.alibaba.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.alibaba.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bLBBQF3p
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 950451F00A07
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 23:21:15 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794352875;
-	bh=QB8MbDWEyGVAfh+sMolcgor+trKpKEIlCi5B4QpJMt8=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=bLBBQF3plDwF/ZDiX6TQhNW5HRQZ1we1atfBv+Cv3Apu2MuIZNj9cdYLdYLJ7/0kp
-	 4g15XezOBpusah2eW0YDH+ueZ3pvPP3Y884VkUMOsrW9YJE/96n1pw0Wlppx+Rbp2L
-	 rqTc1YpNKFDt5A98iSEgBeIzYsw3imqD6w0nZ8czzYt830GdJtsQClMOe5INYNqeGS
-	 ltzA4Yjqr/KFdm8suPgM8XkJXFIKz4GR1Vyp5C3CEYRSz+D6VJ8GRTNMpKMvD4qZea
-	 UuWNNFjl8+dv1tAqvUUMOD0uyZLyy9sqcmPLqbs0Fug+cJDMLy1qiJfVwKEiQRTFNU
-	 YTy+7LpfwwiOg==
-Received: by mail-ua1-f46.google.com with SMTP id a1e0cc1a2514c-9999f21f617so720575241.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2026 15:21:15 -0800 (PST)
-X-Gm-Message-State: APuU4Z+sJ54LW/fjUiFGmEz3uo2GW8YPjBeMLcsCuemIBqkfFSKCpKWU
-	9yr6V+x/5kP+b4sbuxS6JtuwXJB6QJ5lhSIdOPLLWZraxBoEvkr/0TEXORmaJSj2nXjmaec7a0Z
-	v1L/JR8wO0PqAXlvheiDSWGivaCzIu+A=
-X-Received: by 2002:a05:6102:374f:b0:7d2:7827:c01 with SMTP id
- ada2fe7eead31-7d506101879mr190850137.28.1794352874777; Tue, 10 Nov 2026
- 15:21:14 -0800 (PST)
+	dkim=pass (1024-bit key, unprotected) header.d=linux.alibaba.com header.i=@linux.alibaba.com header.a=rsa-sha256 header.s=default header.b=mq7w0PoV
+DKIM-Signature:v=1; a=rsa-sha256; c=relaxed/relaxed;
+	d=linux.alibaba.com; s=default;
+	t=1794360664; h=Message-ID:Date:MIME-Version:Subject:To:From:Content-Type;
+	bh=fz7Db6YPpucPps2P9eFgAPZMsl4Z2nZBpO1+iQqdPhM=;
+	b=mq7w0PoVXCwu1IX5ivmHA8As80sOmn10inPCZOG+QhlYp6qb0mg+dgSd17z1pXOsln4JJ09DELsc+5awHi3JyuM1vG3mkZkxNGxXiVtr8wj0fz65Fmeo+JddfxQeZaPB2cDKH76kna5eWQAcDs3+9zCCKwZ7z1M/3EU9JhzwAZ0=
+X-Alimail-AntiSpam:AC=PASS;BC=-1|-1;BR=01201311R121e4;CH=green;DM=||false|;DS=||;FP=0|-1|-1|-1|0|-1|-1|-1;HT=maildocker-contentspam033045133197;MF=joseph.qi@linux.alibaba.com;NM=1;PH=DS;RN=17;SR=0;TI=SMTPD_---0XEX6F-L_1794360662;
+Received: from 30.221.145.127(mailfrom:joseph.qi@linux.alibaba.com fp:SMTPD_---0XEX6F-L_1794360662 cluster:ay36)
+          by smtp.aliyun-inc.com;
+          Wed, 11 Nov 2026 09:31:03 +0800
+Message-ID: <f6cdf5d0-9468-48cb-9bfb-0cc41b46c7fe@linux.alibaba.com>
+Date: Wed, 11 Nov 2026 09:31:01 +0800
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,158 +53,56 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <6e59a1f7c6493ec2aed4d01d8ee67acb1ae60588.1794349782.git.wqu@suse.com>
-In-Reply-To: <6e59a1f7c6493ec2aed4d01d8ee67acb1ae60588.1794349782.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Tue, 10 Nov 2026 23:20:38 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H4z=zutVAbjzPjEOReNwpCreOa-O7V8ssMuDdSwDk_h1Q@mail.gmail.com>
-X-Gm-Features: AclHuK-L_DFf_clFj5MUyvo7qtgwpfI8ZxOatqNovmYT2C3nx0v-mbaE8cKLeh4
-Message-ID: <CAL3q7H4z=zutVAbjzPjEOReNwpCreOa-O7V8ssMuDdSwDk_h1Q@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: tree-checker: validate qgroup info and limit items
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, 
-	Noah Weinberger <NoahWeinberger2003@proton.me>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2 19/34] ocfs2: keep the current mount options on remount
+To: Christian Brauner <brauner@kernel.org>
+Cc: Al Viro <viro@zeniv.linux.org.uk>, Jan Kara <jack@suse.com>,
+ ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+ jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org,
+ exfat@lists.linux.dev, linux-mm@kvack.org, ntfs@lists.linux.dev,
+ ocfs2-devel@lists.linux.dev, linux-btrfs@vger.kernel.org,
+ gfs2@lists.linux.dev, linux-efi@vger.kernel.org,
+ linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org,
+ linux-fsdevel@vger.kernel.org
+References: <20261029-work-fs-sb_rdonly-v2-0-2f44f64f0b66@kernel.org>
+ <20261029-work-fs-sb_rdonly-v2-19-2f44f64f0b66@kernel.org>
+ <0a8576a4-e397-4a49-ab0e-8f0f32bf2642@linux.alibaba.com>
+ <20261110-zerfallen-meiden-wacholderbeere-a90ac157e063@brauner>
+From: Joseph Qi <joseph.qi@linux.alibaba.com>
+In-Reply-To: <20261110-zerfallen-meiden-wacholderbeere-a90ac157e063@brauner>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
 
-On Tue, Nov 10, 2026 at 10:32=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
-> Add tree-checker entries for them. Both items check:
->
-> - The key objectid must be 0
->   They are always created with (0, QGROUP_INFO/QGROUP_LIMIT, qgroupid),
->   the qgroup id is stored in the key offset.
->
-> - The item size must be exactly the size of the item structure
->   The items are always inserted with that size and there is no extension
->   of the structures.
->
-> For the qgroup info item there is one more check:
->
-> - The generation must not exceed the super block generation + 1
->
-> All of them are always satisfied by items created by the kernel, so there
-> is no compatibility concern.
->
-> The limit flags and values are not checked intentionally, the reasons are=
-:
->
-> - The kernel has no runtime rejection for invalid limit flags
->   So some one can use qgroup inherit to intentionally pass some invalid
->   values. If we apply strict checks before runtime validation, this can
->   easily flips the fs RO, causing a DoS attack.
->
-> - The mkfs.btrfs is generating garbage for limit item
->   Because we didn't zero the limit item, all kinds of garbage can be
->   there if using "mkfs.btrfs -O quota".
->   That will be fixed, but we can not reject such fses yet.
->
-> Reported-by: Noah Weinberger <NoahWeinberger2003@proton.me>
-> Link: https://lore.kernel.org/linux-btrfs/B_lvw-WNI1mnHnK011Sfk_ZNaL0eg5u=
-OfD2T3q-vOfWv8426VwPA4NPpWaAcHxRZf3OrzGzwZjckHqKEKUS7UQJk6TEN_7xD1SkwM5q8hs=
-w=3D@proton.me/
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Thanks.
+On 11/11/26 5:52 AM, Christian Brauner wrote:
+> On Fri, Oct 30, 2026 at 10:58:52AM +0800, Joseph Qi wrote:
+>> ocfs2_reconfigure() decides the transition from fc->sb_flags alone without
+>> sb_flags_mask test, unlike reconfigure_super(). And fspick() passes
+>> fs_context_for_reconfigure(target.dentry, 0, 0). So on a read-only mount:
+> 
+>> So it seems we should test sb_flags_mask as well?
+> 
+> No, that's a generic bug. I fixed that in reconfigure_super() with
+> "super: keep the read-only state if a reconfiguration doesn't change it".
+> That is in vfs-7.5.super (cf. [1]). This series depends on that work.
+> 
+> If SB_RDONLY isn't in sb_flags_mask it fills in the current read-only
+> state. So ocfs2_reconfigure() sees SB_RDONLY and stays read-only. ocfs2
+> is one of the 23 filesystems listed there that only look at
+> fc->sb_flags.
+> 
 
-> ---
->  fs/btrfs/tree-checker.c | 59 +++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 59 insertions(+)
->
-> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-> index f021ac14babf..5f1c7622f07a 100644
-> --- a/fs/btrfs/tree-checker.c
-> +++ b/fs/btrfs/tree-checker.c
-> @@ -2117,6 +2117,59 @@ static int check_qgroup_status_item(const struct e=
-xtent_buffer *leaf, int slot)
->         return 0;
->  }
->
-> +static int check_qgroup_info_item(const struct extent_buffer *leaf,
-> +                                 const struct btrfs_key *key, int slot)
-> +{
-> +       const u32 item_size =3D btrfs_item_size(leaf, slot);
-> +       const u64 super_gen =3D btrfs_super_generation(leaf->fs_info->sup=
-er_copy);
-> +       struct btrfs_qgroup_info_item *ptr;
-> +       u64 generation;
-> +
-> +       if (unlikely(key->objectid !=3D 0)) {
-> +               generic_err(leaf, slot,
-> +               "invalid key objectid for qgroup info item, have %llu exp=
-ect 0",
-> +                           key->objectid);
-> +               return -EUCLEAN;
-> +       }
-> +       if (unlikely(item_size !=3D sizeof(struct btrfs_qgroup_info_item)=
-)) {
-> +               generic_err(leaf, slot,
-> +               "invalid item size for qgroup info item, have %u expect %=
-zu",
-> +                           item_size, sizeof(struct btrfs_qgroup_info_it=
-em));
-> +               return -EUCLEAN;
-> +       }
-> +
-> +       ptr =3D btrfs_item_ptr(leaf, slot, struct btrfs_qgroup_info_item)=
-;
-> +       /* Use super block generation + 1 to cover the transaction being =
-committed. */
-> +       generation =3D btrfs_qgroup_info_generation(leaf, ptr);
-> +       if (unlikely(generation > super_gen + 1)) {
-> +               generic_err(leaf, slot,
-> +               "invalid qgroup info generation, have %llu expect no more=
- than %llu",
-> +                           generation, super_gen + 1);
-> +               return -EUCLEAN;
-> +       }
-> +       return 0;
-> +}
-> +
-> +static int check_qgroup_limit_item(const struct extent_buffer *leaf,
-> +                                  const struct btrfs_key *key, int slot)
-> +{
-> +       const u32 item_size =3D btrfs_item_size(leaf, slot);
-> +
-> +       if (unlikely(key->objectid !=3D 0)) {
-> +               generic_err(leaf, slot,
-> +               "invalid key objectid for qgroup limit item, have %llu ex=
-pect 0",
-> +                           key->objectid);
-> +               return -EUCLEAN;
-> +       }
-> +       if (unlikely(item_size !=3D sizeof(struct btrfs_qgroup_limit_item=
-))) {
-> +               generic_err(leaf, slot,
-> +               "invalid item size for qgroup limit item, have %u expect =
-%zu",
-> +                           item_size, sizeof(struct btrfs_qgroup_limit_i=
-tem));
-> +               return -EUCLEAN;
-> +       }
-> +       return 0;
-> +}
-> +
->  static int check_remap_key(const struct extent_buffer *leaf,
->                            const struct btrfs_key *key, int slot)
->  {
-> @@ -2512,6 +2565,12 @@ static enum btrfs_tree_block_status check_leaf_ite=
-m(struct extent_buffer *leaf,
->         case BTRFS_QGROUP_STATUS_KEY:
->                 ret =3D check_qgroup_status_item(leaf, slot);
->                 break;
-> +       case BTRFS_QGROUP_INFO_KEY:
-> +               ret =3D check_qgroup_info_item(leaf, key, slot);
-> +               break;
-> +       case BTRFS_QGROUP_LIMIT_KEY:
-> +               ret =3D check_qgroup_limit_item(leaf, key, slot);
-> +               break;
->         case BTRFS_IDENTITY_REMAP_KEY:
->         case BTRFS_REMAP_KEY:
->         case BTRFS_REMAP_BACKREF_KEY:
-> --
-> 2.56.0
->
->
+Now it looks fine.
+Reviewed-by: Joseph Qi <joseph.qi@linux.alibaba.com>
+
+>> The same falls out of a legacy remount whose flags omit MS_RDONLY.
+> 
+> No, do_remount() always passes MS_RMT_MASK which includes MS_RDONLY. A
+> remount without MS_RDONLY asks for read-write.
+> 
+> Thanks for the review!
+> 
+> [1]: https://lore.kernel.org/r/20261011-work-super-fixes-core-v1-11-c727176c5b53@kernel.org
+
+

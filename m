@@ -1,50 +1,55 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794419582;
-	b=NMtU/8NxbbC8mr0j/VecsX9YDeSKNuPZoVfqKfzIoTDa/N6gKNIHfotqD7w7EpPO/EW6
-	 eBLS8XTqWyIY0u5KM1oRPblM7g0g0JILwonjqpfuRRkNSwolAKjKX9H24ZJ18fiaIFf9s
-	 a8GaU3+8O5c0Lw1/byeZK47qTpA+/wKRlHVI2CutO7zDX/THnYBB5OlHzhdvNeoKammqa
-	 RYi8dORrNSm3SGgZrSAEEsQX1Sgi+cghNn5bn3tamVhQccN5X4u7vNJTqD+3W2sgecgex
-	 X32IMVSOpeyGSboQody4RtkHjnTo8ewdGj6YQB8xE/UaPSifrv09EEjczsycJcs/OXw==
+	t=1794419917;
+	b=3zGynqpYMwpZLpBjaHmdPmmD/ULzVF+Zv3c4PU0UV/H5E6vSPh/b/Nv1O2Gw2iPsheSH
+	 pOFmwVTW4w9cdQVHKq3yOfLHRCj8OZEGJAOfyeVh0tR1TUAoQtsIvOg++KiiqNxUG+kJq
+	 hnbEXaLhvlybGv2y+bR4iCcRkN0BXTg8CRqEUChVJym3Kn2z891PVfKFNK2XwTYxw1kp7
+	 +85wf34Odqy2cZYSmLAyNdWjgywFKF4W7DdDbExodBGAJI5zJqreyTaA0+0EE1rpqLbdr
+	 4vwfxW82zqmCK2oa87LgbDoxyyrV5MMUA3v2eiUp5wM6o9MQegAVgyKtOb9zRQcc7Iw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794419582;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=GkjFHtQWF0tztspkFzgV81jcKJwRqCZN0wCqyxbV20I=;
-	b=pUmEfYoU6+CYY+lHvdVH2/HvY1dtt6Xflq4TUp5k5TOopiqRg2RaVaXQQDdkkw8aRqCg
-	 R9qWeqlFGQiNYvIUGQFV7dPlxpiKQKzWbfcZH/JXit0KWHcfvLW/jGbc14qCca+MrylT3
-	 fzVqpuV7N3Ga6AbC3JPlS/kRtlPss/7QbrTh0P0b6AGVZ33q++uwsiilr+wDhprct7tzO
-	 7AYMk/KmXjKc6PGG5/7qsKvyr2SdE6j02LFxZ9yt9y5505iCETWXl9FT6gT7whray/aig
-	 smCGdXkMF57rtWNhRj1WQA7u9f2ufrRAOjRMX68skFGpYi9GCmD4xciiyrLAd5bZ4wA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794419917;
+	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=45oiK5Uovs91ezmf98ECIxhFeJ06uJno3Y2TbfBMJ68=;
+	b=by6+eJxd+3NCSr3inu9VPNpVBXOF2FqUIpJlD0DkMjI1bfi7seZAPhTQWPAWytuTrG6M
+	 6bZrIT40BWBJcVCyjjTr4NL1O5xJds8RaJqFn9z0BGF4ZpqbarHP07CJRd5rDqoVijE6H
+	 6BKOwJUjQDj/cUoDtEuGlLjsU+k9sbmSxhK27u4GrYQcTv7xK0hnmkrDlZCfENrFF5Z2j
+	 8XHuukHGAWHtXGeJ4RTgMQ8r6QMPmATVYu4QgglEPDQGkGr0ZkyFNicMmo6tN/uKxRRB6
+	 WGrEf4ZmHnXDk+E7zt7d0YEOk3YNs2lY3hdMYPpe2WfdmBM+NPwy9RJ7cIZvQZYgU1g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HbwYtqID;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=S1o2yzo+;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C8A94606A31C
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 17:53:02 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EC5BD606A896
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 17:58:36 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=HbwYtqID
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 060961F00A05
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 17:53:01 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=S1o2yzo+
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 966CC1F00A07
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 17:58:36 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794419582;
-	bh=GkjFHtQWF0tztspkFzgV81jcKJwRqCZN0wCqyxbV20I=;
-	h=From:To:Subject:Date;
-	b=HbwYtqIDPCqDojoJ0uqLZ+1jrvlASh4W3KY7fsqqea5tf/fHvn/OFk8zgzyjJDYP5
-	 PSQ9ofZMYOIL5I0uS36SsyaDSag+29gcWjA9ROKzsNc5d0GZp/8Ney9mXH+RnQbMj0
-	 2+wtqNrA0wjul5M17d456Aq25Y0+sj6mg0B17/F7QFDkT3xtTEKWJKxazAM/vAlqnz
-	 LsVt2KJt7CXRGjtKnBO2BMghXrMUxXPUGsroLcd3ZvISr05JmAj3aIv1y0nDWw3ZKP
-	 2l389ruYfibKHYYYV2cIdbJJzCtv9iGXRETY9QCHnPUzsXuNsyvj/+vjlV9gttGwmr
-	 aR4ouHCPoUa6w==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
-Date: Wed, 11 Nov 2026 17:52:58 +0000
-Message-ID: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
+	s=k20260515; t=1794419916;
+	bh=45oiK5Uovs91ezmf98ECIxhFeJ06uJno3Y2TbfBMJ68=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=S1o2yzo+RnXVY75Kz++nRoxtF4Vfy8X2UNW5StBp9SQFi4nIUV3zgrn3RWQQcNPDW
+	 ut6amV0lG5woDDOPWsc4QUct34tl7oGhQiBjvMC344MMrwYWZnu5j2lUS5thQWDCP2
+	 iOUdtDP1Xmkt4DOAA5D3VTfGTwDBhrZckdMEZAqkeUNCF8uhJwCMDpQaOpxnp+6KGt
+	 7YPubbS6jUBe/vapK3RBRWHPwZ1oLMkxXNgY4MVGl8RUPErxA024QniwDTECQsrWYg
+	 Q8Za3sA8y/RXMZpSYwBasqraMcJo2haGpYe3YmoankgSb64ukzWSanZhTLf6ghkLfr
+	 aR48YI6+RBQvA==
+Received: by mail-ua1-f48.google.com with SMTP id a1e0cc1a2514c-98c7798ce74so928236241.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 09:58:36 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AL+hErE+k+IMeSYolJd5EnUiRH8/IE7+mWBPHh6deVPoALqPLbQ4/5t5BYp8Rtfz+e7xY8gXiUprtv7tOjeI9g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8/0NH7ok2GZ+bb/onF3ltEt4gpiK9kRe/qwjWa8M7qIEIY8vLA
+	+FkUPnivPngtmp1cgTz0BrARDsRSeJtQR4DOgCRcZu7Tp/towNHuTraU4c8grBd9yxvmr+rz5D9
+	9j8jRrb7h3eazpPsPLyVqdkL6GvYGwR4=
+X-Received: by 2002:a05:6102:f88:b0:7cc:2712:cafb with SMTP id
+ ada2fe7eead31-7d4fb294ca9mr1167666137.15.1794419915738; Wed, 11 Nov 2026
+ 09:58:35 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -54,131 +59,143 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20261111124152.546406-1-joseph.qi@linux.alibaba.com>
+In-Reply-To: <20261111124152.546406-1-joseph.qi@linux.alibaba.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Wed, 11 Nov 2026 17:57:59 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H5YSfxCVRTkmdc=W0UpWU10h=+dafiL0++jyzGwgQPy5g@mail.gmail.com>
+X-Gm-Features: AclHuK9up2bHAWsxlv1bUqwiFajrzfaKA8whphnS9xlAkaR64tJ_1QWH2kLi-NI
+Message-ID: <CAL3q7H5YSfxCVRTkmdc=W0UpWU10h=+dafiL0++jyzGwgQPy5g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: don't wait for ordered extents in nowait buffered writes
+To: Joseph Qi <joseph.qi@linux.alibaba.com>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Nov 11, 2026 at 12:58=E2=80=AFPM Joseph Qi <joseph.qi@linux.alibaba=
+.com> wrote:
+>
+> lock_and_cleanup_extent() honours @nowait when taking the extent lock,
+> but then waits for an overlapping ordered extent regardless of it:
+>
+>   btrfs_start_ordered_extent()
+>     wait_event(entry->wait, BTRFS_ORDERED_COMPLETE)
+>
+> BTRFS_ORDERED_COMPLETE is only set by btrfs_remove_ordered_extent(),
+> which runs from the ordered extent completion work, so this sleeps
+> uninterruptibly until that work gets to run, and it starts a
+> transaction.  A pwritev2(RWF_NOWAIT) buffered write must not block like
+> that.
+>
+> This used to be limited to writes starting below i_size, because the
+> ordered extent lookup was guarded by a start_pos < i_size test.  Commit
+> ec78575dde99 ("btrfs: always wait for ordered extents to avoid OE races")
+> dropped that guard so that appends also wait for the ordered extent left
+> behind by a short direct write whose i_size was reverted, which made the
+> wait, and the blocking with it, unconditional.
+>
+> btrfs_write_check() rejects a NOWAIT write with -EAGAIN unless the inode
+> has BTRFS_INODE_NODATACOW or BTRFS_INODE_PREALLOC, so the inode has to
+> have one of those: a chattr +C file, a preallocated file, or a nodatacow
+> mount.  Those are the usual setups for database files and VM images,
+> which is also where NOWAIT writes get used.
+>
+> Given such an inode, an append write does reach the wait.  With i_size S
+> and a direct write of L bytes of which only W get submitted:
+>
+>   task A: O_DIRECT append, short write  task B: pwritev2(RWF_NOWAIT) appe=
+nd
+>   ------------------------------------  ---------------------------------=
+--
+>   btrfs_split_ordered_extent() gives
+>   the submitted part [S, S+W) its own
+>   OE, so dio_data->ordered is left
+>   covering [S+W, S+L)
+>   btrfs_dio_iomap_end():
+>     i_size_write(max(S, S+W))
+>       <- i_size reverted
+>     btrfs_mark_ordered_extent_truncated()
+>     btrfs_finish_ordered_extent()
+>       btrfs_queue_ordered_fn()
+>         -> endio_write_workers
+>       <- the OE is still in the tree
+>   iomap_dio_complete()
+>   btrfs_inode_unlock()
+>                                         btrfs_buffered_write() at S+W
+>                                           btrfs_inode_lock(BTRFS_ILOCK_TR=
+Y)
+>                                             <- succeeds, A dropped it
+>                                           btrfs_write_check()
+>                                             <- passes
+>                                           copy_one_range()
+>                                             lock_and_cleanup_extent()
+>                                               btrfs_try_lock_extent()
+>                                                 <- succeeds
+>                                               btrfs_lookup_ordered_range(=
+)
+>                                                 <- finds A's [S+W, S+L)
+>                                               btrfs_start_ordered_extent(=
+)
+>                                                 wait_event()
+>                                                   <- blocks here
+>   endio_write_workers eventually runs
+>   finish_ordered_fn()
+>     btrfs_finish_ordered_io()
+>       btrfs_remove_ordered_extent()
+>         <- sets BTRFS_ORDERED_COMPLETE,
+>            B finally wakes up
+>                                         -EAGAIN propagates back through
+>                                         copy_one_range() to userspace
+>
+> Because i_size was reverted to S+W, start_pos equals i_size, which is
+> exactly the case the dropped start_pos < i_size guard used to skip.
+>
+> Return -EAGAIN without starting the ordered extent instead.
+> copy_one_range() passes that straight back and btrfs_buffered_write()
+> returns it to userspace when nothing was written yet, so a nowait caller
+> retries from a blocking context without IOCB_NOWAIT and takes the
+> waiting branch then.  btrfs_try_lock_ordered_range(), which
+> btrfs_check_nocow_lock() uses for the same purpose, already behaves this
+> way.
+>
+> Fixes: ec78575dde99 ("btrfs: always wait for ordered extents to avoid OE =
+races")
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Joseph Qi <joseph.qi@linux.alibaba.com>
 
-We are using a RCU read section but then we call btrfs_find_device() which
-iterates the device lists using a plain list_for_each_entry() and that is
-not safe it can result in loading uninitialized or torn pointers, leading
-to arbitrary memory dereferences, use-after-free conditions, and kernel
-panics.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-We can't just update btrfs_find_device() to use list_for_each_entry_rcu()
-instead, because all other callers are not in a RCU read section and they
-ensure protection from concurrent list changes by either holding the
-device_list_mutex, uuid_mutex, under an exclusive operation or simply
-being called in a context where concurrency can not happen (like during
-mount). So use a macro to generate both a RCU and a non-RCU variant of
-the function and make btrfs_ioctl_dev_info() use the RCU variant.
+Pushed it to the for-next branch on github, thanks.
 
-Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f6070f
-Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ioctl.c   |  2 +-
- fs/btrfs/volumes.c | 58 +++++++++++++++++++++++++++++-----------------
- fs/btrfs/volumes.h |  2 ++
- 3 files changed, 40 insertions(+), 22 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 651a780dd7b1..3fc30649d01a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2791,7 +2791,7 @@ static long btrfs_ioctl_dev_info(const struct btrfs_fs_info *fs_info,
- 		args.uuid = di_args->uuid;
- 
- 	rcu_read_lock();
--	dev = btrfs_find_device(fs_info->fs_devices, &args);
-+	dev = btrfs_find_device_rcu(fs_info->fs_devices, &args);
- 	if (!dev) {
- 		ret = -ENODEV;
- 		goto out;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a494c913ad12..c44ae0e9afc1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -7549,30 +7549,46 @@ static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
-  * If devid and uuid are both specified, the match must be exact, otherwise
-  * only devid is used.
-  */
--struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
--				       const struct btrfs_dev_lookup_args *args)
--{
--	struct btrfs_device *device;
--	struct btrfs_fs_devices *seed_devs;
-+#define BTRFS_GENERATE_FIND_DEVICE(func_name, iter_macro)			\
-+struct btrfs_device *func_name(const struct btrfs_fs_devices *fs_devices,	\
-+			       const struct btrfs_dev_lookup_args *args)	\
-+{										\
-+	struct btrfs_device *device;						\
-+	struct btrfs_fs_devices *seed_devs;					\
-+										\
-+	if (dev_args_match_fs_devices(args, fs_devices)) {			\
-+		iter_macro(device, &fs_devices->devices, dev_list) {		\
-+			if (dev_args_match_device(args, device))		\
-+				return device;					\
-+		}								\
-+	}									\
-+										\
-+	iter_macro(seed_devs, &fs_devices->seed_list, seed_list) {		\
-+		if (!dev_args_match_fs_devices(args, seed_devs))		\
-+			continue;						\
-+		iter_macro(device, &seed_devs->devices, dev_list) {		\
-+			if (dev_args_match_device(args, device))		\
-+				return device;					\
-+		}								\
-+	}									\
-+										\
-+	return NULL;								\
-+}
- 
--	if (dev_args_match_fs_devices(args, fs_devices)) {
--		list_for_each_entry(device, &fs_devices->devices, dev_list) {
--			if (dev_args_match_device(args, device))
--				return device;
--		}
--	}
-+/*
-+ * Instantiate the non-RCU version.
-+ * Callers must hold device_list_mutex, or uuid_mutex, under an exclusive
-+ * operation or be in a context where the lists can not be changed concurrently.
-+ */
-+BTRFS_GENERATE_FIND_DEVICE(btrfs_find_device, list_for_each_entry)
- 
--	list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
--		if (!dev_args_match_fs_devices(args, seed_devs))
--			continue;
--		list_for_each_entry(device, &seed_devs->devices, dev_list) {
--			if (dev_args_match_device(args, device))
--				return device;
--		}
--	}
-+/*
-+ * Instantiate the RCU version.
-+ * Callers must hold rcu_read_lock().
-+ */
-+BTRFS_GENERATE_FIND_DEVICE(btrfs_find_device_rcu, list_for_each_entry_rcu)
- 
--	return NULL;
--}
-+#undef BTRFS_GENERATE_FIND_DEVICE
- 
- static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
- 					    u64 devid, u8 *dev_uuid)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 891bc2432870..2319789635a3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -773,6 +773,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
- struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
- 				       const struct btrfs_dev_lookup_args *args);
-+struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
-+					   const struct btrfs_dev_lookup_args *args);
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- struct file *btrfs_open_device_deny_freeze(struct btrfs_fs_info *fs_info,
--- 
-2.53.0
-
+> ---
+>  fs/btrfs/file.c | 9 ++++++++-
+>  1 file changed, 8 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index f978c6524aa03..e84e9e129169e 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -916,7 +916,14 @@ lock_and_cleanup_extent(struct btrfs_inode *inode, s=
+truct folio *folio,
+>                                     cached_state);
+>                 folio_unlock(folio);
+>                 folio_put(folio);
+> -               btrfs_start_ordered_extent(ordered);
+> +               /*
+> +                * Waiting for the ordered extent blocks uninterruptibly,=
+ which
+> +                * a nowait caller must not do.  Leave it alone and let t=
+he
+> +                * caller retry where blocking is acceptable, like
+> +                * btrfs_try_lock_ordered_range() does.
+> +                */
+> +               if (!nowait)
+> +                       btrfs_start_ordered_extent(ordered);
+>                 btrfs_put_ordered_extent(ordered);
+>                 return -EAGAIN;
+>         }
+> --
+> 2.39.3
+>
+>

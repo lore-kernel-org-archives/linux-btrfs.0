@@ -1,64 +1,80 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794518651;
-	b=jQ5n120oNb5UYqruzpaR66GutGqUx4KCa1liZkWSTdQ38gpUtg/sPXaY16gpQjnghf3b
-	 RsAPQDl3TLCdyM/v2nM3lYIakfkZAFoYaRDup9x0O3/Jjz8AhMPFK4KFc7y7bxnZYlR3d
-	 kotRFQfwIHEA4s7/J4wQFHKcxtJolf/8mVXZM3XFaexjo1uu/yViMyjzBDTSlPSFeNM9M
-	 yMP3IoF95Mjgo4E05VYve610wU11lUqXYOrSVTAYVAo3TlZPeB6fvlRCaeDGxEkfwW4EL
-	 XGlDRjG0Nj2C/3sCyuCoX+oLcYtDAXYoWuMC8IylnZ8C8KEJ0EYyZPoDazy32GkmmbQ==
+	t=1794520661;
+	b=2WRO7oHqLv04SQZNvWF/g82xQB5pwEQgt3pAxoiy4I6FR3jK+K14h+Ar5IvtRlEJAk1t
+	 myW6TVAh/mmF7z5/13trghh93gEY+Lwm9GMACm+AT2LmcEqLnC0grQ3vIwZIrFjByAIZo
+	 a61mPNJUdrWaT63m9EI1g4x206vg4BsFnjxlctrMJ2/9zz84FQto2/su0DotX41nZ32Xt
+	 J6sHSR3kTue4glUEBaUrw8n6jSVsu/+jBKWQLK/6vo1Bf0/u74gdqdDFVlEFajJe5rC7h
+	 lcKxG3/In2PEc+BNnsfWzEACesP0TKpPU337AzaThaSlrHv10r1x6DEPHpEZU5o31wQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794518651;
-	h=Received:DKIM-Signature:Received:Subject:From:In-Reply-To:References:
-	 X-PR-Tracked-List-Id:X-PR-Tracked-Message-Id:X-PR-Tracked-Remote:
-	 X-PR-Tracked-Commit-Id:X-PR-Merge-Tree:X-PR-Merge-Refname:
-	 X-PR-Merge-Commit-Id:Message-Id:Date:To:Cc;
-	bh=HEF0xcm9Wf1kqsPsq1QLRo7lfasxMA/6lEpzmVjqXb8=;
-	b=KHhOPhNSzd5LDvfijzYkAA27rlSW+y83LmHA0eiBqH3oYRNZtsOBQWZYdRaIS+vH7Hc/
-	 NvtPBqqAjQr2CRxCBm+9HzySDQfnkJAZ6+JqvzYS8eb6e0Yk1Vy3dl0nkR49JBClVHs+1
-	 Xx3haGQvDuECHxqAmZSOv9B6W2TQSSk20omWs+4VKvnD3cfge2l7Rw8QszQeuUCUCsSaO
-	 3i+r+YcnF6klZpGt9tJQHiEGlmZe5MU4ggGpNR+/HPL68S24XoElIahlbC0qBMjFddH1S
-	 bdbI/A4h6IwcT6A7+SEaSlYpBbl7ta4jV4mcNBpZkYATEArlye0dZZuN/n8RsFWLbAA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794520661;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=Z9HwCqT0BnCcOkys/blVtOoOY1C3PBAP7XOFkUJysIY=;
+	b=Nq7Zbs+mjd4+BEv+P8EfZQ7VLtzCMDc8sJsxXI9SYPtZqNH5z+FRKBmvqqtgLNwkbaZ1
+	 xZD5CETeCtSChm/n3ROvhv5QUnhifUtqiSR5iDdsGlatbUjmY3ZxirCWxw5zVDO/jkBgY
+	 J1kGxcAqIWKqRKaIvFUr5j8d50voPIpn/cIG0VVtHDM3/6VihI1+eec4/RiQbe/ENSRqg
+	 tEV96Kil5OH4Hr7xjGwmp7eEq9ZVf7A3BkzR/xn7njFEkm2mHRlvyIdvkX2Xtovo5ABdp
+	 Op5bfi+V7YURZu76UuFj9IjDoydoYXKMaE8+guE6kM6xV07lpYXFAQm2Cn1Jk8uYRNQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=fySbS7ax;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=LdSBQ9HX;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IHVKhwed;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3789606A33A;
-	Thu, 12 Nov 2026 21:24:11 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1935606A31C
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 21:57:40 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D1935606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=fySbS7ax
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 80E9F1F000C4;
-	Thu, 12 Nov 2026 21:24:11 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794518651;
-	bh=HEF0xcm9Wf1kqsPsq1QLRo7lfasxMA/6lEpzmVjqXb8=;
-	h=Subject:From:In-Reply-To:References:Date:To:Cc;
-	b=fySbS7axKibqhjdf9UdwgIcwW/dxDYA7QE66ckSTixqK52tohDNSvB7UbWjWqjb2P
-	 egCg5bscHdcRn6F9UO03Nh/AQTgWMrPMYd78j96FSme7Ooc3DJH9IbBxxjG/YykaqP
-	 7KmluUFbQXh71Opfor9Ud9XVPM83EEkeE5ZsCv1uu+n9zISbh8xzn9zbvbqObhPLWG
-	 vVDx1sPf20ibLMdyu026ZEDJnzFIMD3mmhw5IVHNPuMXPq2nz6awUt3Dyk2Go7TtKC
-	 y3pX0mhhiAPKGR/9zOzQf9Bc0Tb2PDaJ/ajdbbqgcFijnPxNxrY8EO8jo0gwdHdZLx
-	 3S6uoobkG1wog==
-Received: from [10.30.226.235] (localhost [IPv6:::1])
-	by aws-us-west-2-korg-oddjob-rhel9-1.codeaurora.org (Postfix) with ESMTP id 77645392626A;
-	Thu, 12 Nov 2026 21:24:11 +0000 (UTC)
-Subject: Re: [GIT PULL] Btrfs fixes for 7.4-rc3
-From: pr-tracker-bot@kernel.org
-In-Reply-To: <cover.1794506624.git.dsterba@suse.com>
-References: <cover.1794506624.git.dsterba@suse.com>
-X-PR-Tracked-List-Id: <linux-kernel.vger.kernel.org>
-X-PR-Tracked-Message-Id: <cover.1794506624.git.dsterba@suse.com>
-X-PR-Tracked-Remote: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-rc2-tag
-X-PR-Tracked-Commit-Id: d27d0039bc1334be8a72c769e14c0b0c3efc317d
-X-PR-Merge-Tree: torvalds/linux.git
-X-PR-Merge-Refname: refs/heads/master
-X-PR-Merge-Commit-Id: d3e7c23ec3d004de154dc85d3ddeae0feff4159d
-Message-Id: <179451865014.654083.8523188552672362972.pr-tracker-bot@kernel.org>
-Date: Thu, 12 Nov 2026 21:24:10 +0000
-To: David Sterba <dsterba@suse.com>
-Cc: torvalds@linux-foundation.org, David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=LdSBQ9HX;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IHVKhwed
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id D0262220F9;
+	Thu, 12 Nov 2026 21:57:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794520659; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Z9HwCqT0BnCcOkys/blVtOoOY1C3PBAP7XOFkUJysIY=;
+	b=LdSBQ9HX+oSjmVo5TGX33VYEROlyeAkxtYwk4o6floPdzjYGGDoGVkyBOurgjV1Iggubmu
+	UdCA0LgS7RbBsZSKhQ7+Muhe5wDt7la/c0QDTWK3RqTtOP3UziueSaG4jz4FHzdNpJVBTx
+	2jBnfDsIOPKLryzRJM5QmEmHcZ2LD1I=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794520658; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=Z9HwCqT0BnCcOkys/blVtOoOY1C3PBAP7XOFkUJysIY=;
+	b=IHVKhwedV6YS/He/V97MYuqUoyAA9y4+G3xsqXxSF+uD3AkCs65Qe2Ks5+gMwKY/KHWUDE
+	s2OVYkf2N1iNKFTCrMFJ/nYin7+ncL+qYexZsu07aEYuptfiR3JSk6Vo/IEW1eaL/LMXEt
+	SD+pjO6xBuxuimJeyFzaV/b+29J6zrw=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 57211134A0;
+	Thu, 12 Nov 2026 21:57:37 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id cGrVKFA29mpUDAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 12 Nov 2026 21:57:37 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Sashiko <sashiko-bot@kernel.org>
+Subject: [PATCH] btrfs: relocation: release path on copy failure in move_existing_remap()
+Date: Fri, 13 Nov 2026 08:27:14 +1030
+Message-ID: <ea3810fb56f15af9878aafcf4632eb82d2245003.1794520632.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -67,16 +83,62 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_DN_SOME(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
 
-The pull request you sent on Thu, 12 Nov 2026 19:08:57 +0100:
+All other error exits in move_existing_remap() release the path before
+jumping to the end label, but the copy_remapped_data() failure doesn't.
+The remap root leaf stays write locked until the caller frees the path,
+across the transaction abort.
 
-> git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-rc2-tag
+Release the path before jumping to the error path like the others.
 
-has been merged into torvalds/linux.git:
-https://git.kernel.org/torvalds/c/d3e7c23ec3d004de154dc85d3ddeae0feff4159d
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Link: https://sashiko.dev/#/bug/linux-a9bb6565-ee24-429b-a2d7-ab427317fa57
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/relocation.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-Thank you!
-
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 9af207446848..94eda599b97b 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4345,8 +4345,10 @@ static int move_existing_remap(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	ret = copy_remapped_data(fs_info, new_addr, dest_addr, dest_length);
+-	if (unlikely(ret))
++	if (unlikely(ret)) {
++		btrfs_release_path(path);
+ 		goto end;
++	}
+ 
+ 	/* Change data of old remap entry. */
+ 	leaf = path->nodes[0];
 -- 
-Deet-doot-dot, I am a bot.
-https://korg.docs.kernel.org/prtracker.html
+2.56.0
+

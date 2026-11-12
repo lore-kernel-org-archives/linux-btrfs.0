@@ -1,86 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.50
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794461223;
-	b=zQewrZvrLezWqOe02jLjuMr/2P93tJ8rZv3A5dt/WIv5n2nYIeCxbl+dCrR+rzOLHKK+
-	 EglaQASFasjI2/kA2quRVh96WtxknsXKF3w2Kmxaa3XQsjwIEBe1Q9YKGONgvQPSSRSZH
-	 gNholMn0VTPFYFP3Thbgv57RNu+ayOovwNKePz3W+bjaxr/mbZaG/jOQtCMTat8AR/Rxs
-	 GG2Lbf2h4eYBStfj93s7dyeXWZGvdDaJ31hIU90Zq3wV+ai0UpcJ9SKqizpM8sAbo52V8
-	 aBkOsh4pe4aHBnT/GoearEeeHgtQKRvnPQFvJVrfv4xq0bXO9fFMfwctBpo/Yhmg8yA==
+	t=1794462201;
+	b=Y9/JlPFAJ+Qh85tyg24XHiTQOB+3jFz5OUDcMWlAV8zzRyPp9c39lc/FSygwpUiecTmf
+	 m9WoqsP4BbXDRWUWqDtY6BckXB2bebvMwzRi9z4hVIJBvdFB+w/df9e1yF/tLdPWPdYsA
+	 9UyONN2lnxuhkZC+60antu92B4OHa12kyGZtMyXsytaOh1pdy64uWujGtrBdcKKoIyHed
+	 nL+groBjsF5sTnsTFmKoK3/S4Rwhk1z40GNZPFoP7LxxbK/jjCqmyfPJ0E/OxrK3eSH4e
+	 afsdLLoD/N7N7d04gde+MM3JB44JH0XJNy9AZMjhM/P3Dd+6td4H/alxUHEhzsS8QAQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794461223;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
-	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
-	b=UNcDVTlpCgnqmyzkY4/4e+DqjLHGBe1q6sni60n0RaSR436NA1AMQOvbMZ358FuLl20F
-	 /MgxkA/FZHmOOXXP3iBuACllNGUPsado26vJv3xoz6BC/+Kuws9ftuOricwLRidlDWUaC
-	 4/+P0AqyJGc9Ze6I3aEWI0EzVTjFYpDnrOi4g2yJce5OBYzawWQOahjZhvkJCoM6NQ9C0
-	 TsbsLdSBuerWmGIKDZwRLMSp3F7lTp9QvwPAxaZs2TV2riiAOhAQ7KiyjZ3gE5RCKi+X9
-	 WV0Oi/pp/qJrgBcAGwK5AY9Oj8wWP/lRJclMN8uW03UhWZPqIjikFJ3fHaeCKiT8B8w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794462201;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
+	b=5mExMQLnSXCcUxQ78+8Rrdj0ADYfHRvMOukPLXTrozxEgld5qqgW7Lm4HjvtwJUPQUMI
+	 /a+SuKLwz6f0/7vb5VcKVWtI3yQZPPLAkHkxJAupmz91wzILAUacXp5dPCke7lHluKVPq
+	 CkD8qJakIMjVZIygo/apogI9JcJAydMw9lbEBXeZkk+15P9vXYPdyKB6dV4Shhlm8U6Gz
+	 Re/LTVHHwxmKPlfLbozrIFjgUD6CMuCD/fvjCjJW7h1ARFhlfMABCVxifn1OPxxqrgi01
+	 US+gmSyh3auzyvQMHP/6V9mdVB9SAnqt+/EpnFOgrkaglx23ElXqzenaWSWLkXb2+RA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="YD1n4t/z";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="YD1n4t/z";
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=IUi4Sr6O;
+	arc=none smtp.remote-ip=209.85.218.50
+Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com [209.85.218.50])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F04AD606A89C
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:27:02 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F04AD606A89C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6884C606A323
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:43:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6884C606A323
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YD1n4t/z;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YD1n4t/z
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 4AA8D1F388
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:27:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794461221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
-	b=YD1n4t/z7jbGhAbKynS9DPwCnCVemX+hq3KeX0cQE1hYMSGdIdzE2T2j4Nhoj7y716XxSi
-	AXni+yBPy1FnX2HQhcbEe8b5IqAsCgQSdNkgBJVSLJ9DhLHX/1/1fPB9No8lTy0jXkCxcw
-	icyDhCrbjxS2qkOoSgmsId5jznmxLgw=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794461221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
-	b=YD1n4t/z7jbGhAbKynS9DPwCnCVemX+hq3KeX0cQE1hYMSGdIdzE2T2j4Nhoj7y716XxSi
-	AXni+yBPy1FnX2HQhcbEe8b5IqAsCgQSdNkgBJVSLJ9DhLHX/1/1fPB9No8lTy0jXkCxcw
-	icyDhCrbjxS2qkOoSgmsId5jznmxLgw=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2CA68134A0
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:59 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id buNLCCBO9WrVDwAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:59 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: fix double free of anon_dev in btrfs_get_root_ref() on -EEXIST
-Date: Thu, 12 Nov 2026 15:56:34 +1030
-Message-ID: <de8e0a4389d2eb4b2c60717e2b3655247a3234dc.1794461116.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1794461116.git.wqu@suse.com>
-References: <cover.1794461116.git.wqu@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=IUi4Sr6O
+Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-c4c9abc1824so542689666b.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 21:43:21 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1794462200; x=1795067000; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
+        b=IUi4Sr6OJLSxsf7172IrJjYS452TUyDWo9Sa8QRwLrCli61GVQIDtniOC7L67wB+XZ
+         7YfjhTS74jEyagjz3p5KILUccQg7lVTjqPa+oKHW4I8avHW4DXmeZOEZ6cwVLWsoH1fh
+         ksbCBbkpy3wOGXexSDTj+keWxFCDH01rIBJNgbX1W/dmlTYvy1a2zJvP04gEBgJ5O0fr
+         gc1jKM7vw9HOlw/Ptm0GyHdLRTkvF7zbwlu9E5/PMGh3oPpFwDMLuYIzIXyPp3k0q4Fz
+         MJnVQFeEmlOFoqjn7tiY3G8zHXpca8imb22B9X++ceHj+BK7c/ge6I1Lh8S7tzCYkop+
+         bncg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794462200; x=1795067000;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:to:subject:user-agent:mime-version:date
+         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
+        b=JVSqLr1E3VPorUhaZD2SK1HcJ95FNnmR4QTwTR0ZLtBSPTOJiivaACMlZMaJmiWVb4
+         bEQfVzUywH/jDk4itq6CXP7muQ0pdQBgnPnUHZzt/Vf22VokSA/L7K4cjiUy+hklxPLw
+         X43ngdbadGO5hynFHRfdVzMXaUp8sEr+gPHBA9B+dznTYAZ98oaFPDSFWTQ9GyKZF1li
+         fQxrFpCkk9pPqWIC2dE6dF0NbsSVfJ4+PBm2fIL5fNnjV7mR6+5Y3e4E7pAIkqOBG2ob
+         VzDXDqt5mG5OutYaWV0waN1tDtdBuXdRtonNIPoO2+rrJzrGibWueKM8WvJErqDPKgIJ
+         S8aw==
+X-Forwarded-Encrypted: i=1; AL+hErGITvTNqr0EyfSHa88lgkYGHvW6+9L/vC36Ip/0S4o5gj2lzmBdlApScR4aDi4x779ewNjO0k0equzyCg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/z+o6ABJIa1HVqWeYx990gWpQGRVG0tLyDRYY/kJLW0Sv94GGU
+	uCyjcfxc/MMGq0DFlJO2ZTsaWV6Z5ENW0uChUX8e5gtJR/kUoZkUSfIrI8cTBc2itkQ=
+X-Gm-Gg: AYBFou0PWAyG5kJ+wQiuYQkmVKYUHVd4xUxAfptTtN2FOyJjTJDuvk02UWPVcvo9g+w
+	nonezD/TdnGnyPmVglRKxwKjTEX/xYeAshl01NX0HvM1VTA8/dzX92rdHmLMwzJNqj2jpBYqZ5Q
+	tc159kWNeIGpYTsuCmkkrAVzE89hgmIkevgjdlXykUSdLW5MZLV9HUaKckZ5M3HrSwJojkzylDx
+	FQ5DKU+89BWFn1Wb3w+Di2ici2rZc7c/NwuL/I822CaZ308uuiCXVW6PTIrq9Ue468dQ97BfAzj
+	jblU8HzwOGrpSfxIitf+euH/9gha38P6EH6Tw34e6jl59OojiQUGwjsP9SjWxcKCkVet0PSedt6
+	0lemFqDXYdU4QWYyR5TqVoW72TXOtqv0FBU3fssgwV3jbrvlMclKQhTlJBHX+w7pnETdEcy8lR1
+	K5vfv5wRnCr3M/GG3+iP6Tbo+8pLPpLN2rVzxxuIo5VnnXygjrGgam5otnu0H1m1URhCOyWF8XO
+	nUjO6AYe+iUn3Pr8M/1PYygId7biYBhVoUk0JE+F18ykKoFCsw5Ik1mZ2ugGQydpflIkJ8CMf5l
+	4VOvT3+4IOd4Se5QgGMplg==
+X-Received: by 2002:a17:907:2d2c:b0:c46:7ec3:fde7 with SMTP id a640c23a62f3a-c5066b32327mr351480666b.31.1794462199671;
+        Wed, 11 Nov 2026 21:43:19 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2edb6d4b12esm28552285ad.21.2026.11.11.21.43.16
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Wed, 11 Nov 2026 21:43:18 -0800 (PST)
+Message-ID: <bb7bfec5-eb4a-4f8b-9dc6-d5eabdec9bc7@suse.com>
+Date: Thu, 12 Nov 2026 16:13:14 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,84 +91,105 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: fix block group ref leak when scrub races with
+ unused bg deletion
+To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
+ kernel-team@fb.com
+References: <52f2ee4b5d0879b99ea8c863ee40403bb06c5345.1794441990.git.boris@bur.io>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <52f2ee4b5d0879b99ea8c863ee40403bb06c5345.1794441990.git.boris@bur.io>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
 
-[BUG]
-If btrfs_get_root_ref() is given a preallocated anon_dev and loses the
-race to insert the new root, the preallocated ID is freed twice.
 
-[CAUSE]
-The offending call trace looks like the following:
 
- btrfs_get_root_ref(*anon_dev = X)
- |- btrfs_init_fs_root()
- |  \- root->anon_dev = X
- |- btrfs_insert_fs_root() returns -EEXIST
- |- btrfs_put_root(root)
- |  \- free_anon_bdev(root->anon_dev)
- |     ^^^ ID X is freed here.
- |
- \- again:
-    \- btrfs_lookup_fs_root() finds the existing root
-       \- free_anon_bdev(*anon_dev)
-          ^^^ ID X is freed again.
+在 2026/11/12 10:38, Boris Burkov 写道:
+> btrfs_delete_unused_bgs() takes a block group off fs_info->unused_bgs
+> with list_del_init() and, when discard is on, later moves it onto the
+> transaction's deleted_bgs list and takes a reference for that list
+> membership. Meanwhile, it is possible for scrub to add it back to the
+> unused block groups list:
+> 
+>           CLEANER                               SCRUB
+>    btrfs_delete_unused_bgs()
+>      list_del_init(&bg->bg_list)
+>                                          scrub_enumerate_chunks()
+>                                            btrfs_mark_bg_unused(bg)
+>                                              if (list_empty(&bg->bg_list))
+>                                                btrfs_get_block_group(bg)
+>                                                list_add_tail(unused_bgs)
+>      list_move(&bg->bg_list, deleted_bgs)
+>      btrfs_get_block_group(bg)
+> 
+> Other users of list_move() for bg->bg_list (like btrfs_mark_bg_unused
+> itself) ensure that the list was empty under the bg spin lock to decide
+> whether it merits a fresh reference for being linked to the list, and
+> we need to apply that pattern here as well.
+> 
+> Note that this is not abstracted to a helper function because some of
+> the callers have additional logic deciding whether to link it or not and
+> I think a twice used, twice unused helper would be more confusing than it
+> would be helpful.
+> 
+> Reported-by: Sashiko <sashiko-bot@kernel.org>
+> Link: https://sashiko.dev/#/bug/linux-821034ac-556f-4d72-af2c-d04468879af8
+> Signed-off-by: Boris Burkov <boris@bur.io>
 
-[FIX]
-Clear root->anon_dev before putting the unpublished root, the same as
-the fail: label does, so the ID stays owned by the caller.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-The next retry either got the existing root and free the anon_dev, or
-win the race (the root is removed by someone else) and reuse the
-preallocated anon_dev.
+Thanks,
+Qu
 
-Assisted-by: LLM (exposing the bug)
-Fixes: 2dfb1e43f57d ("btrfs: preallocate anon block device at first phase of snapshot creation")
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/disk-io.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 50888d1e3e1e..7775fc768f7e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1387,6 +1387,12 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
- 	ret = btrfs_insert_fs_root(fs_info, root);
- 	if (ret) {
- 		if (ret == -EEXIST) {
-+			/*
-+			 * The preallocated anon_dev is still owned by the
-+			 * caller, don't let btrfs_put_root() free it.
-+			 */
-+			if (anon_dev && *anon_dev)
-+				root->anon_dev = 0;
- 			btrfs_put_root(root);
- 			goto again;
- 		}
--- 
-2.56.0
+> ---
+>   fs/btrfs/block-group.c | 7 +++++--
+>   1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
+> index 027830a53f7d..0b3b8843d221 100644
+> --- a/fs/btrfs/block-group.c
+> +++ b/fs/btrfs/block-group.c
+> @@ -1830,12 +1830,15 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+>   			/*
+>   			 * A concurrent scrub might have added us to the list
+>   			 * fs_info->unused_bgs, so use a list_move operation
+> -			 * to add the block group to the deleted_bgs list.
+> +			 * to add the block group to the deleted_bgs list. In
+> +			 * that case the list reference moves along with it,
+> +			 * so only take a new one if we were not on any list.
+>   			 */
+> +			if (list_empty(&block_group->bg_list))
+> +				btrfs_get_block_group(block_group);
+>   			list_move(&block_group->bg_list,
+>   				  &trans->transaction->deleted_bgs);
+>   			spin_unlock(&fs_info->unused_bgs_lock);
+> -			btrfs_get_block_group(block_group);
+>   		}
+>   end_trans:
+>   		/*
 

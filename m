@@ -1,83 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794461222;
-	b=yIexdD9FaxDZelFYqQDx9AigaKWENHMy0ussSB7j28Cr0vZRBFowFUAV3hpj+BhwgYAc
-	 QVxz71OzJKfOYuMZy2LoRs/OjXezl+Qz7B6UlWmbotb3HJxq29boaSUPwtDJqQ64Mvu81
-	 P3tlhxlBe5TmfGlkJSCXFIf3RID+BrJ9ibcj9S+RucP36oHjz6Lb17+nkSzIO/wmGuntw
-	 7ko18mBVQRZr3JgxU2cI4kZzaXvk2LneEm6hL+RItYXt600c7kQ+RW5xwI5QReTvCt8+v
-	 6FAMpO/bCW3mq3Df7N3iZFwO42zakvAJFRNEvDa+esaaTe18G6kF0l35LKq5JOVOXQA==
+	t=1794461223;
+	b=zQewrZvrLezWqOe02jLjuMr/2P93tJ8rZv3A5dt/WIv5n2nYIeCxbl+dCrR+rzOLHKK+
+	 EglaQASFasjI2/kA2quRVh96WtxknsXKF3w2Kmxaa3XQsjwIEBe1Q9YKGONgvQPSSRSZH
+	 gNholMn0VTPFYFP3Thbgv57RNu+ayOovwNKePz3W+bjaxr/mbZaG/jOQtCMTat8AR/Rxs
+	 GG2Lbf2h4eYBStfj93s7dyeXWZGvdDaJ31hIU90Zq3wV+ai0UpcJ9SKqizpM8sAbo52V8
+	 aBkOsh4pe4aHBnT/GoearEeeHgtQKRvnPQFvJVrfv4xq0bXO9fFMfwctBpo/Yhmg8yA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794461222;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794461223;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=oz/ADgQ4qo1qowW/i6m9uS3Mp6zsqorDc+OW/J1G0cU=;
-	b=KMeUQx8UnVjXbv/7/GnVnZb8n7N85LNeZwCANLCF76F3GXRTs+ZZL9zJTKL3qamKMjvB
-	 bf1nn2+QPJIx8L5e9IxBX/lww1fxoHa5ihW9aGptNzeQrLerBU2E1KNxTUelDltOV5ka5
-	 3PzydZHhKGFpzI5HITUVD8K9fcZHmJXlhEv71A+60Jh/ZpYAoSR+08kRqDP2BUlwOM371
-	 XZPRQjVZXP/eDqJDl/I3wTjUJbrKMgmd4CbvV1Zzh/j2uJD2QhTiANyKVTMWU1TLiGcza
-	 hJVJRIqlOKladu0eLIY9j2uMIzfyx8x+pQkUry+Wvvk+0tdvn1WT1nq7O+knXlxJ/IA==
+	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
+	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
+	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
+	b=UNcDVTlpCgnqmyzkY4/4e+DqjLHGBe1q6sni60n0RaSR436NA1AMQOvbMZ358FuLl20F
+	 /MgxkA/FZHmOOXXP3iBuACllNGUPsado26vJv3xoz6BC/+Kuws9ftuOricwLRidlDWUaC
+	 4/+P0AqyJGc9Ze6I3aEWI0EzVTjFYpDnrOi4g2yJce5OBYzawWQOahjZhvkJCoM6NQ9C0
+	 TsbsLdSBuerWmGIKDZwRLMSp3F7lTp9QvwPAxaZs2TV2riiAOhAQ7KiyjZ3gE5RCKi+X9
+	 WV0Oi/pp/qJrgBcAGwK5AY9Oj8wWP/lRJclMN8uW03UhWZPqIjikFJ3fHaeCKiT8B8w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=F8u5oojB;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=F8u5oojB;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="YD1n4t/z";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="YD1n4t/z";
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 54265606A89B
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:27:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 54265606A89B
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F04AD606A89C
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:27:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F04AD606A89C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=F8u5oojB;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=F8u5oojB
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YD1n4t/z;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YD1n4t/z
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 9C58B21E9F
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:59 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 4AA8D1F388
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:27:01 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794461219; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794461221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=oz/ADgQ4qo1qowW/i6m9uS3Mp6zsqorDc+OW/J1G0cU=;
-	b=F8u5oojBxLyTvGARYRMHV8X4GTdpxlGeEi9dez4fpWwD/oS9aH2ur+t+NvIdzTmpIt3L7v
-	FpkedB0GauYa2kcxDG5f5Xm8cxkt/IZT+imz0YwDr+33oT5wRcflpj6l30FLYYwi+4Srai
-	wIqthoHFEDeNsaOqkEW51bDonSo1BIY=
-Authentication-Results: smtp-out1.suse.de;
+	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
+	b=YD1n4t/z7jbGhAbKynS9DPwCnCVemX+hq3KeX0cQE1hYMSGdIdzE2T2j4Nhoj7y716XxSi
+	AXni+yBPy1FnX2HQhcbEe8b5IqAsCgQSdNkgBJVSLJ9DhLHX/1/1fPB9No8lTy0jXkCxcw
+	icyDhCrbjxS2qkOoSgmsId5jznmxLgw=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794461219; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	t=1794461221; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=oz/ADgQ4qo1qowW/i6m9uS3Mp6zsqorDc+OW/J1G0cU=;
-	b=F8u5oojBxLyTvGARYRMHV8X4GTdpxlGeEi9dez4fpWwD/oS9aH2ur+t+NvIdzTmpIt3L7v
-	FpkedB0GauYa2kcxDG5f5Xm8cxkt/IZT+imz0YwDr+33oT5wRcflpj6l30FLYYwi+4Srai
-	wIqthoHFEDeNsaOqkEW51bDonSo1BIY=
+	bh=s+MShrtrErGoKaeHvC/IuYopW2sb8Tl8pmrjpffJIPo=;
+	b=YD1n4t/z7jbGhAbKynS9DPwCnCVemX+hq3KeX0cQE1hYMSGdIdzE2T2j4Nhoj7y716XxSi
+	AXni+yBPy1FnX2HQhcbEe8b5IqAsCgQSdNkgBJVSLJ9DhLHX/1/1fPB9No8lTy0jXkCxcw
+	icyDhCrbjxS2qkOoSgmsId5jznmxLgw=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7E22C134A0
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:58 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2CA68134A0
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:59 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id buNLCCBO9WrVDwAAD6G6ig:T2
+	id buNLCCBO9WrVDwAAD6G6ig:T3
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:58 +0000
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:26:59 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix anon_dev leak when snapshot creation races with a root read
-Date: Thu, 12 Nov 2026 15:56:33 +1030
-Message-ID: <399fda6a2e930a40447c7562fa97f97c194b83f1.1794461116.git.wqu@suse.com>
+Subject: [PATCH 2/2] btrfs: fix double free of anon_dev in btrfs_get_root_ref() on -EEXIST
+Date: Thu, 12 Nov 2026 15:56:34 +1030
+Message-ID: <de8e0a4389d2eb4b2c60717e2b3655247a3234dc.1794461116.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1794461116.git.wqu@suse.com>
 References: <cover.1794461116.git.wqu@suse.com>
@@ -91,6 +91,8 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spamd-Result: default: False [-11.80 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -103,7 +105,7 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
@@ -113,119 +115,59 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 
 [BUG]
-When create_snapshot() fails after the new snapshot root is already
-cached (e.g. by a backref lookup), an anonymous block device ID can be
-leaked.
+If btrfs_get_root_ref() is given a preallocated anon_dev and loses the
+race to insert the new root, the preallocated ID is freed twice.
 
 [CAUSE]
-The leak call chain looks like the following:
+The offending call trace looks like the following:
 
- create_snapshot()
- |- btrfs_commit_transaction()
- |  \- create_pending_snapshot()
- |     \- pending->snap = btrfs_get_new_fs_root()
- |        \- btrfs_get_root_ref()
- |           |- free_anon_bdev(*anon_dev);
- |           |- *anon_dev = 0;
- |           |  ^^^ found the cached root, freeing the preallocated
- |           |      anon_dev and retry
- |           |
- |           |- root = btrfs_lookup_fs_root()
- |           \- return root;
- |              ^^^ now pending->snap is the cache root.
+ btrfs_get_root_ref(*anon_dev = X)
+ |- btrfs_init_fs_root()
+ |  \- root->anon_dev = X
+ |- btrfs_insert_fs_root() returns -EEXIST
+ |- btrfs_put_root(root)
+ |  \- free_anon_bdev(root->anon_dev)
+ |     ^^^ ID X is freed here.
  |
- |- btrfs_orphan_cleanup() fails
- \- fail:
-    \- pending_snapshot->snap->anon_dev = 0
-       ^^^ clears the cached root's ID which is not the preallocated ID.
-           Futhermore, the old ID is not released, causing a leak.
+ \- again:
+    \- btrfs_lookup_fs_root() finds the existing root
+       \- free_anon_bdev(*anon_dev)
+          ^^^ ID X is freed again.
 
 [FIX]
-Make the ownership of the preallocated ID explicit: btrfs_get_root_ref()
-now sets *anon_dev to 0 whenever it consumes the ID.
+Clear root->anon_dev before putting the unpublished root, the same as
+the fail: label does, so the ID stays owned by the caller.
 
-This makes pending_snapshot->anon_dev non-zero only if it has not been
-consumed, so the "prevent double freeing" hack in create_snapshot() is no
-longer needed.
+The next retry either got the existing root and free the anon_dev, or
+win the race (the root is removed by someone else) and reuse the
+preallocated anon_dev.
 
-Remove it, along with the now redundant anon_dev resets in
-create_snapshot() and create_subvol().
-
-Thankfully this is really hard to hit, the window is pretty small, so
-it's just to make the ID ownership more explicit and consistent.
-
+Assisted-by: LLM (exposing the bug)
 Fixes: 2dfb1e43f57d ("btrfs: preallocate anon block device at first phase of snapshot creation")
-Assisted-by: LLM (planning and coding)
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/disk-io.c | 7 +++++++
- fs/btrfs/ioctl.c   | 8 +-------
- 2 files changed, 8 insertions(+), 7 deletions(-)
+ fs/btrfs/disk-io.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 78865704b45d..50888d1e3e1e 100644
+index 50888d1e3e1e..7775fc768f7e 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1297,6 +1297,8 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
-  * @objectid:	root id
-  * @anon_dev:	preallocated anonymous block device number for new roots,
-  *		pass NULL for a new allocation.
-+ *		If the ID is consumed, *@anon_dev is set to 0.
-+ *		Otherwise the caller needs to release the ID.
-  * @check_ref:	whether to check root item references, If true, return -ENOENT
-  *		for orphan roots
-  */
-@@ -1390,6 +1392,9 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
+@@ -1387,6 +1387,12 @@ static struct btrfs_root *btrfs_get_root_ref(struct btrfs_fs_info *fs_info,
+ 	ret = btrfs_insert_fs_root(fs_info, root);
+ 	if (ret) {
+ 		if (ret == -EEXIST) {
++			/*
++			 * The preallocated anon_dev is still owned by the
++			 * caller, don't let btrfs_put_root() free it.
++			 */
++			if (anon_dev && *anon_dev)
++				root->anon_dev = 0;
+ 			btrfs_put_root(root);
+ 			goto again;
  		}
- 		goto fail;
- 	}
-+	/* The new root owns the preallocated anon_dev now. */
-+	if (anon_dev)
-+		*anon_dev = 0;
- 	return root;
- fail:
- 	/*
-@@ -1424,6 +1429,8 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
-  * @objectid:	tree objectid
-  * @anon_dev:	if NULL, allocate a new anonymous block device or use the
-  *		parameter value if not NULL
-+ *		Check the comment of btrfs_get_root_ref() on the lifespan
-+ *		of @anon_dev if not NULL.
-  */
- struct btrfs_root *btrfs_get_new_fs_root(struct btrfs_fs_info *fs_info,
- 					 u64 objectid, dev_t *anon_dev)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 651a780dd7b1..6cd12f586423 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -712,10 +712,8 @@ static noinline int create_subvol(const struct mnt_idmap *idmap,
- 		btrfs_abort_transaction(trans, ret);
- 		goto out;
- 	}
--	/* anon_dev is owned by new_root now. */
--	anon_dev = 0;
- 	BTRFS_I(new_inode_args.inode)->root = new_root;
--	/* ... and new_root is owned by new_inode_args.inode now. */
-+	/* new_root is owned by new_inode_args.inode now. */
- 
- 	ret = btrfs_record_root_in_trans(trans, new_root);
- 	if (unlikely(ret)) {
-@@ -868,11 +866,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 
- 	d_instantiate(dentry, inode);
- 	ret = 0;
--	pending_snapshot->anon_dev = 0;
- fail:
--	/* Prevent double freeing of anon_dev */
--	if (ret && pending_snapshot->snap)
--		pending_snapshot->snap->anon_dev = 0;
- 	btrfs_put_root(pending_snapshot->snap);
- 	btrfs_block_rsv_release(fs_info, block_rsv, (u64)-1, NULL);
- 	if (qgroup_reserved)
 -- 
 2.56.0
 

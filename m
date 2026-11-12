@@ -1,49 +1,49 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794514006;
-	b=HUq1/qgXGshi5e+wTmG2Xu98lxCB0UiW8oJLwecWhQc+9NVbSNtzSBScQSowFh5WIofG
-	 EIM0gC24rSuavE0kNFrBBTjRO+oinzkfIwNBfo4e2kmW3B9VCv9ug1/fAMMX+9BJhhu5h
-	 89DrUNk6bWiW2CLIC5DVSaH4rRiBU+BKrUgbWogPkSBKZBTwIn3uiHXEucdchDaYoEJCO
-	 qOtzgzaVpUA9HvdfLezTI07kk0gy1HdvB0XoTBO9tIQ+zpdArA/pw+oA7aNOluWKRitqR
-	 kdzAyCZTqqLaCidraqvXx+7cXn3cST4vZr71thiWkk7WBrrfqvYf146qo4dVXjkCEtA==
+	t=1794515559;
+	b=O8uHVh5JlC/f3awUiDjl5oRxzxKZsDHvfazd79A+3k0k6qM/eMm8wMw5/sQ/JySBxaiX
+	 +WqNNbTWvVSAueqTUxH7huuukaRY/BMkeJsXJAF7LZI+oB1ARz0v79qYQxY6ZZpdQJlBs
+	 A9Vg3lYJA6tQKhu0yUNWZ1xTgc5mtTvmIWcu5xfz+ks8gkTihBxeUC22zl2CWpj/X2VHE
+	 5Ed86fWfhHXFZoOyH9QYTHj3PoO1iAS5g0o2cnakfhFKAiz8TyAbf1MvD6X9MQHwi6PnX
+	 C80ymtgwqh0PBH9ZCcAbvWmaU5Bg3woEA/oOi5VCZEi/wSxoagfZfJYkETRYKIOJH0Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794514006;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794515559;
 	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=AwMqk+wVYfD8ZAh2ZN275j8BDp8LNbUEXkEo7EjsqUc=;
-	b=MU6JQ8QN4dHqEwLTUOicA2koiWEVps2guTLuy2ogOb3wuLDldTyBwB4BcLxi4quBewHb
-	 DL1H/tMq1Nh3z5iljtMKP+Xhlgb/pMtjC2dkVKYQUfYCPPtT68P8BA+VYOfMS8BH7wWd9
-	 Chz2ldf/JibP1+Ufh9GqA6KxQxBkkk0XGRDxQ+hCZXQgqlDYdZzFowttVep26/xxcneDe
-	 fPl0oE9bj2owPsUwGMGzQZRQFS2lHZGHzHZ/Z9zN8PkMbJchHbkepMAu72WkwCISMY5QN
-	 2ND0G1wYJbG88nx3gBwvAOmbeK+PTHu8zW8JKTcNcxnV2BEJZTdrJbF18rsIVFP4X4g==
+	bh=NdYY1Vjz8VrlrRLxTJZR7Qna/ZoG8DVk/ueF1oJdnWU=;
+	b=X1SWDoa6QlWG86BVYKNnnVl0bL+TMiu3Hhy7H2isf38gakNJPfLf8RsbwD0z3/dgUiXw
+	 gl1EeoHDypkHoqGauqddfOwxMuG8lOq2HW58EeqRW7FGx24xesJcK0h+Nl5Y1h3jTtec1
+	 q/8W/0aAmpQu9ts5bvhskDUbktNbeQU/L080j+95T4c4ZBluCQLCKvVA1LeDNN9VeZGCR
+	 rxaS36/n2Q+zBG/UNW2tfr4fMS2zh3iGkKr7O3DKcZbFJvR+ichF2t5O2ej7+5sFj5GdN
+	 aK6u148sTE3BMyciAz9Kz9NCauvXzKbqgJtPahg0y1FMB7hFPKn3EyW/+SVQSUAsY6Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=CT50Bzsg;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OOvkigqh;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 56488606A31C
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 20:06:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6D719606A31C
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 20:32:39 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=CT50Bzsg
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 80D7C1F000C4
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 20:06:45 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OOvkigqh
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id A92B11F000C4
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 20:32:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794514006;
-	bh=AwMqk+wVYfD8ZAh2ZN275j8BDp8LNbUEXkEo7EjsqUc=;
+	s=k20260515; t=1794515559;
+	bh=NdYY1Vjz8VrlrRLxTJZR7Qna/ZoG8DVk/ueF1oJdnWU=;
 	h=From:To:Subject:Date;
-	b=CT50BzsgatzoCOmUeMDKJ9xPsQY0HAVyHS186QEJRyLxEhib+AGWG7U7X2rAGs+BY
-	 1isFlABgQnOOJg3k9Dwq0IuVZwh/h9If0cBRezvsazq6QoC82KG4kd2nurK9i6WoxJ
-	 zb1Or0nijk4+/mspvCCY1SmGxSsoBNTfFEZjgdy2BaNLGXldDOr95Sw1WOATDuFvOU
-	 gphr9yORMPXsXOgWSet8Ghsi4eJtzcM2Qjig2EEvH5JpFfA8JGHXfAnWKyHxvafTlV
-	 U92JP8pdO1Z1/yQ7ODSj66/AAaBg60UJobt+Hi8s2Cifg+OqGAENjvmBOaPzjyr9Jz
-	 vxbAzlFpby4bg==
+	b=OOvkigqhENTt6womvqCZrx8xw6Flmw35wlZC4pf46X/fTwNQhMWd32Q65g6Wrztfc
+	 jMPvU/91sX7jfTvYxARzYaXrhYTnkmUhGX8GFo4y6kN2Da5eXeyIs5iNkuXOW3vxKU
+	 CRq/BAGlpW3DC38THDMZWXnowOa3X6CNeOOPLAEwjq0/395XxKcAuZy0Sah/yD5G4+
+	 f+ydS0XmN1QNL6n1oq5NpAgFO/hMkFuhyjkZD8Xw1LDJOlnkx9s8U2X9cKeU9TYG6c
+	 AQXT3jVYTnL7OtgPsmTSgMUxdIMThrDYf4HDtJBGGNEoyu5crirhToiFKjv9pSZlx1
+	 36Vvl4ee2bt8g==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix off-by-one max tree level bound when replaying log trees
-Date: Thu, 12 Nov 2026 20:06:42 +0000
-Message-ID: <b8a17190faf5846c5d843cef9c0887a050eaf98f.1794513725.git.fdmanana@suse.com>
+Subject: [PATCH] btrfs: fix double release of space when cloning compressed inline extent
+Date: Thu, 12 Nov 2026 20:32:25 +0000
+Message-ID: <74b6b5edcf6a3c1105cc660809c2e4c8a9049b4d.1794515528.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -58,40 +58,51 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In walk_up_log_tree() we are bounding the loop iteration to 7 levels
-instead of 8. This is a bug since the maximum number of levels for a
-tree is 8 and they go from 0 (leaf level) to 7, so the loop condition
-should be:
+In copy_inline_to_page(), if we fail to decompress the inline extent, we
+jump to the out_unlock label and release the reserved data and metadata
+space with a call to btrfs_delalloc_release_space(). However we leave the
+range in the inode's io_tree maked as delalloc, which was set by
+btrfs_reset_extent_delalloc(), and that means when someone later clears
+the delalloc range, using EXTENT_DO_ACCOUNTING (like
+btrfs_reset_extent_delalloc() does), it will release again the space.
 
-   i < BTRFS_MAX_LEVEL (which 8)
+This does not happen for uncompressed inline extents, because after the
+call to btrfs_reset_extent_delalloc() we can't get any other errors.
 
-and not
-
-   i < BTRFS_MAX_LEVEL - 1 (7)
-
-This means that in case if we ever get a log tree with 8 levels, which
-theoretically should be impossible specially because they are very
-short lived, we would miss replaying large parts of the log tree.
-
-Link: https://sashiko.dev/#/bug/linux-8d5b7229-3920-47fa-ad36-3a7ddd02f0e7
+Link: https://sashiko.dev/#/bug/linux-52478dd4-bd10-48de-baba-a527b38b64aa
+Fixes: 05a5a7621ce6 ("Btrfs: implement full reflink support for inline extents")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/tree-log.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/reflink.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 85ef3c26e0e4..399414ae67c8 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -3067,7 +3067,7 @@ static noinline int walk_up_log_tree(struct btrfs_path *path, int *level,
- 	int slot;
- 	int ret;
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index 5154db82ef3e..ecef21773027 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -120,8 +120,21 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
+ 		ret = btrfs_decompress(comp_type, data_start, folio,
+ 				       offset_in_folio(folio, file_offset),
+ 				       inline_size, datal);
+-		if (ret)
++		if (ret) {
++			/*
++			 * btrfs_reset_extent_delalloc() set the range as
++			 * delalloc, so clear it, otherwise we will free the
++			 * reserved data and metadata space twice, once below by
++			 * btrfs_delalloc_release_space() and once again when
++			 * someone else clears the delalloc range with
++			 * EXTENT_DO_ACCOUNTING (like
++			 * btrfs_reset_extent_delalloc() does).
++			 */
++			btrfs_clear_extent_bit(&inode->io_tree, file_offset,
++					       range_end, EXTENT_DELALLOC |
++					       EXTENT_DELALLOC_NEW, NULL);
+ 			goto out_unlock;
++		}
+ 		flush_dcache_folio(folio);
+ 	}
  
--	for (i = *level; i < BTRFS_MAX_LEVEL - 1 && path->nodes[i]; i++) {
-+	for (i = *level; i < BTRFS_MAX_LEVEL && path->nodes[i]; i++) {
- 		slot = path->slots[i];
- 		if (slot + 1 < btrfs_header_nritems(path->nodes[i])) {
- 			path->slots[i]++;
 -- 
 2.53.0
 

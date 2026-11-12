@@ -1,52 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794505177;
-	b=tNpCzqklMp1Wy3wDuYFDhM/qTPCTaVAuRNF22ZwXIKLQcFbnEvEBeeGlJ2iZU1rQXlOI
-	 P0SXo1mHe+ryaSxIl2lA6N3alJsV4bOK1NRCg6hJ3O3TakdC0AuHPMTMsBFTBXFyuWFD2
-	 Qi9J8Kb5ChVU9ncm8aUqZJhgiErQsrz/jVr187z4UJ/ep2RJb5h1Xuqhji6I+Hz6e/JHV
-	 xByhxj/wCSHYPlbWIdl/OOhPyKWwSy3J5LER9X2TeZGgTYWjQ7DbAMmt4YzYsUPmiECEq
-	 pLKkwlAeziHLc/26kubXQaCSvAV5j7rfXorGX/O/KIemh6oQSB+2TwH1CXiUKhz99iA==
+	t=1794506942;
+	b=ofZ/57aZAPj92RsYifIjIUQ19t58Nwg4UeXhxqHp7qT4yP6SCTmmZ+O5NmjeVlxZL4tt
+	 ftDrjlPOEQBe7x9b+DYptddeAXg1vM9viK6g2tkeFYCfecG9ACEy6qPHgZS+tC1fSm42c
+	 J7mKv0nnsy+HNuDQuZJdzUsD/RbfKh850LRZdDKJkf0JvHUj8GOLn7mepB+GPY0uVXhX8
+	 JpPBTug0yQ8Lbz+3nPRTKEVVEXNzN6tffJBlJr+1xBwAlr83gCqBiecA3OAoV8IJrglcQ
+	 0wAC7UbeSDjcdyLihzY5t0GnyED6QvjI2lSeIBWvhdZbzirP5KhhcXhkz7l3hVGgprw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794505177;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=SOzQObsU9mKRLCKDYOycNTXWczNDCseu98qT3H7uVmk=;
-	b=B/QCqh2XgvmGftAefQSW23jDDzvqU20mz7Whj/AhUphI9dguLvxdK2YyRLaw1stC2W2g
-	 HMSHc3kkLWopJZe+r2YR8RNd61elFDP0pc3EodkktR7AeR6ErL+EhGd1fgB8bPPxyRvKL
-	 XMP2FTgAzPTbtFyQozylzlGgCUomokuv81wvn2iq01FyyrdTIX63DQltAL7P5ogYdh4GP
-	 VQ0UrkFHFETS+SJlhfhWOhCF6KSl3ZwgtI4JOXXe4PChFcgzPckxjygPf47qGj7gVcKkf
-	 EyXrDOBumhItw8c14jXsoDM8rjIRGNGoc9mw0DoGER2/hZZ+suUdQZtSa7sPT0+gdRg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794506942;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=0uqFwBn+9Y/5L04B28BEdx1Vva9wKMxDDuER2cKqQQY=;
+	b=ZCuHu4KPCa53eUZW/01xvv0PiO5RcQT6noIwyNacGWQIV4PdinpCO/Ttioo2YN9l4HPm
+	 H/8iKzcJuVaAUH05qCJ6e8SWZH+dpaA5oaJH0xelaMiHCKEEgjlCPhzZa1Jbv2c04Utum
+	 GMGJ110g376jXVil/f51S2aooJ8n7qOryAVSu/RGijHbrkkFDcE/1yVtVT5xX5MCW7XhT
+	 1bbK0D/fvkWh76K8S2yEEelPovmQOfCTepbTrrufub0CSBn9aVFcdX293wTRcalJjzzfk
+	 dVr+9kmzOFWUJSTyTDsDNpavNWpOhF+3VMWlFGZN1te0XE9nUlLEX8Wv1Woc3W8wylQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ihdYFzmI;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HZ4Kg0Ko;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="oQD/PD1H";
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 65E93606A8A3
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 17:39:37 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D4B6B606A31C;
+	Thu, 12 Nov 2026 18:09:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D4B6B606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ihdYFzmI
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C77621F000C7
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 17:39:36 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794505177;
-	bh=SOzQObsU9mKRLCKDYOycNTXWczNDCseu98qT3H7uVmk=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=ihdYFzmIyZpcTihe5m9v6KBVNc5jpCgZcEms/2Qd0wxri+jhXPJZ7Hx71RqUryXoL
-	 VUvPv2/KVNAC7g5B//ZW6i7dYMpw+JYqOe11k9NLbKhEjP9X9Fjyn1w+sD/FZi7rNw
-	 aJwKBDs+t+r6hbTBJDdT6hMNeBwvNJlBypQGGyjs/m74Tufn8y+XZBSCV5OuHHlrMe
-	 eEBd9nOswT+oVfoRG1Di05pJadrrSKqBXfGy3ada84DMC8SPBDkOtKjee6k/BMg/JV
-	 DfxswDWlXskweW6hUj5DBlNcNRW8RMPCiixJgixe8+C+YyKtdVf1ryzjDc4G92ZPQ7
-	 /0YMvBxyzjrnQ==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: send: fix invalid access to inline extents in clone_range()
-Date: Thu, 12 Nov 2026 17:39:34 +0000
-Message-ID: <3a9994c5325a0d6687798909f9d02688420aad83.1794505101.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <a8f80de0fd18699ffc6f9fbbdfa794e80e9a1fe1.1794504038.git.fdmanana@suse.com>
-References: <a8f80de0fd18699ffc6f9fbbdfa794e80e9a1fe1.1794504038.git.fdmanana@suse.com>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=HZ4Kg0Ko;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=oQD/PD1H
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id C14A221FAF;
+	Thu, 12 Nov 2026 18:08:59 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794506940; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=0uqFwBn+9Y/5L04B28BEdx1Vva9wKMxDDuER2cKqQQY=;
+	b=HZ4Kg0KofldsTFC0g7akEVAbx3P6HdGjEA++iBa32I3qGyYJjJ77Zz+5oeG/kcOmGQRRPE
+	G8RnestCrtueRtjgr8gznI5rZL/rYatlsllFYNnUCDeKN9bhSYFwAYuzM/izh7hISkHRBL
+	56A1WYWRiGzKjQkTsOR/q8sAyx+Glvk=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="oQD/PD1H"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794506939; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=0uqFwBn+9Y/5L04B28BEdx1Vva9wKMxDDuER2cKqQQY=;
+	b=oQD/PD1H/AGoAjfACqF4LZB7KOJodIKVL04hIAxi2ztyKAM2J82caBMCSuYmBmWUDMcOfd
+	KoR3GchNKm8Jz8dZ2izisPF83eUDZdx3+vc260mF4EfVZydv5wEEZwHxOkp+5AWIVambBN
+	j1Z/BMvi8+5z2WAeXVi7r21VsdoQa+k=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9A35513432;
+	Thu, 12 Nov 2026 18:08:59 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id AU4dHbsA9mqFJwAAD6G6ig
+	(envelope-from <dsterba@suse.com>); Thu, 12 Nov 2026 18:08:59 +0000
+From: David Sterba <dsterba@suse.com>
+To: torvalds@linux-foundation.org
+Cc: David Sterba <dsterba@suse.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [GIT PULL] Btrfs fixes for 7.4-rc3
+Date: Thu, 12 Nov 2026 19:08:57 +0100
+Message-ID: <cover.1794506624.git.dsterba@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -57,81 +88,107 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: C14A221FAF
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Spam-Score: -12.01
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-We can't access the disk_bytenr and offset fields of a file extent item
-that represents an inline extent, since the extent's data starts at the
-offset of the disk_bytenr field and the offset field is after that, so
-both fields point either to inline data or beyond the file extent item
-in case the data is too small.
+please pull a few fixes. Thanks.
 
-Fix this by not reading the disk_bytenr and offset fields if we are
-dealing with an inline extent.
+- zoned mode fixes
+  - fix counting active zones after activation
+  - redo zone reset after error
+  - update device lock range during mount and zone loading to avoid lockdep
+    warnings with device drivers (virtio)
+  - space accounting and extent buffer handling fixes
 
-Link: https://sashiko.dev/#/bug/linux-b662b951-0491-465b-a262-f01a108d8146
-Fixes: 040ee6120cb6 ("Btrfs: send, improve clone range")
-Fixes: d906d49fc5f4 ("Btrfs: send, fix file corruption due to incorrect cloning operations")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+- fix keeping zstd workspace for the last level
 
-V2: Fix a missing extent item offset access.
+- in SUBVOL_SYNC ioctl handle a real case of a subvolume with 0 refs
 
- fs/btrfs/send.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
+- properly handle case of zero num_stripes when reading chunk items
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1b903e75cec0..3cc7749f0452 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5842,7 +5842,7 @@ static int clone_range(struct send_ctx *sctx, struct btrfs_path *dst_path,
- 		u8 type;
- 		u64 ext_len;
- 		u64 clone_len;
--		u64 clone_data_offset;
-+		u64 clone_data_offset = 0;
- 		bool crossed_src_i_size = false;
- 
- 		if (slot >= btrfs_header_nritems(leaf)) {
-@@ -5906,23 +5906,26 @@ static int clone_range(struct send_ctx *sctx, struct btrfs_path *dst_path,
- 			crossed_src_i_size = true;
- 		}
- 
--		clone_data_offset = btrfs_file_extent_offset(leaf, ei);
--		if (btrfs_file_extent_disk_bytenr(leaf, ei) == disk_byte) {
--			clone_root->offset = key.offset;
--			if (clone_data_offset < data_offset &&
--				clone_data_offset + ext_len > data_offset) {
--				u64 extent_offset;
--
--				extent_offset = data_offset - clone_data_offset;
--				ext_len -= extent_offset;
--				clone_data_offset += extent_offset;
--				clone_root->offset += extent_offset;
-+		if (type != BTRFS_FILE_EXTENT_INLINE) {
-+			clone_data_offset = btrfs_file_extent_offset(leaf, ei);
-+			if (btrfs_file_extent_disk_bytenr(leaf, ei) == disk_byte) {
-+				clone_root->offset = key.offset;
-+				if (clone_data_offset < data_offset &&
-+				    clone_data_offset + ext_len > data_offset) {
-+					u64 extent_offset;
-+
-+					extent_offset = data_offset - clone_data_offset;
-+					ext_len -= extent_offset;
-+					clone_data_offset += extent_offset;
-+					clone_root->offset += extent_offset;
-+				}
- 			}
- 		}
- 
- 		clone_len = min_t(u64, ext_len, len);
- 
--		if (btrfs_file_extent_disk_bytenr(leaf, ei) == disk_byte &&
-+		if (type != BTRFS_FILE_EXTENT_INLINE &&
-+		    btrfs_file_extent_disk_bytenr(leaf, ei) == disk_byte &&
- 		    clone_data_offset == data_offset) {
- 			const u64 src_end = clone_root->offset + clone_len;
- 			const u64 sectorsize = SZ_64K;
--- 
-2.53.0
+- exclude reloc tree from xarray as it's special and it's key does not fit
+  unsigned long on 32bit platforms
 
+- in tree-checker, handle extent item tree owner depending on the features
+  (enabled in simple quota mode)
+
+- fix bio control structure leak when checksumming fails
+
+----------------------------------------------------------------
+The following changes since commit 8c66a6aa59a5df1d672d72b7cd379d897ff73200:
+
+  btrfs: zoned: fix double free of bitmaps on clone failure (2026-10-30 23:17:16 +0100)
+
+are available in the Git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-rc2-tag
+
+for you to fetch changes up to d27d0039bc1334be8a72c769e14c0b0c3efc317d:
+
+  btrfs: fix bio counter and bioc leak when async checksumming fails (2026-11-09 18:50:58 +0100)
+
+----------------------------------------------------------------
+Cheng Yongkang (2):
+      btrfs: reject refs=0 subvolume without DEAD in SUBVOL_SYNC_WAIT
+      btrfs: handle zero num_stripes in btrfs_chunk_item_size()
+
+Filipe Manana (1):
+      btrfs: zstd: prevent leak of workspace below maximum level
+
+Johannes Thumshirn (6):
+      btrfs: zoned: only change active zone counter on successful (de)activation
+      btrfs: zoned: fix possible UAF in wait_eb_writebacks()
+      btrfs: zoned: requeue block group if zone reset bails out
+      btrfs: zoned: avoid underflow of space info bytes_zone_unusable
+      btrfs: zoned: don't wait for ordered extents in do_zone_finish()
+      btrfs: zoned: fix lockdep splat on mount
+
+Mani Tofigh (1):
+      btrfs: fix bio counter and bioc leak when async checksumming fails
+
+Qu Wenruo (1):
+      btrfs: do not insert the data reloc tree into fs_roots_radix
+
+Siddharth Mishra (1):
+      btrfs: tree-checker: reject extent owner ref without simple quota
+
+ fs/btrfs/bio.c          |  4 +++
+ fs/btrfs/block-group.c  |  2 +-
+ fs/btrfs/disk-io.c      | 53 +++++++++++++++++++++++++++------
+ fs/btrfs/ioctl.c        |  8 +++--
+ fs/btrfs/tree-checker.c |  6 +++-
+ fs/btrfs/volumes.h      |  5 ++--
+ fs/btrfs/zoned.c        | 78 +++++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/zstd.c         |  3 +-
+ 8 files changed, 120 insertions(+), 39 deletions(-)

@@ -1,55 +1,52 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794495207;
-	b=rqpb66gOzwrZlfpWH8f8axm+I4EgsUziUacNsJtGI1TVpF6kIBAR+7lYgC+/FyCjVzGJ
-	 bqRbBh2D82mYg82xv3amCy+qwMzh3Gk/GcsKNgFqrb0ru/9Pkt1n9umwo5m9t4EJdzT6T
-	 EC2If1GDhcwbjjP8xd1Ok07xJE0JYq6UVWbfCLwC2qHzjbldv5vs65OHWOCupPTJLJxNB
-	 EAWsoAHfAJvdYVFBpQw2gdris6FE87hebnOGv3cLFd+yjHoPUK8P5+md57lcg/SneFzB2
-	 N7lC4ig3LL/gksDd2Adh9VEUOhBXr/OUi1gNXxWCex+U12G9rV02NP6LnsES0gdkTXw==
+	t=1794501650;
+	b=dmc+rwnZLyQm2IMppqfkiyAtmoQAaD8HU39EsdqxSSVXI/1K+qWGuOw7aaWoLXC4N5A8
+	 VJex+B1zHa11iZhZJU9eEf/yYD70DKe0Q98+uktqq7AJJoI0Z5QZfKVSNa3N0oBkLu8cq
+	 9stqhRVvgP2iDy1LX/sgWqbIagxaKzeMZ9KlKVF0gU6zJdU9cPjnRJcCfEPzSzmTwpYyc
+	 M0LjQ1qxKlIrOp0vZei7rQ1pYiG0Txbca/nobyOriP053x+mBzBnCNJQomsHKjPQYs0Pw
+	 0/pIXsbNayaXuu8TlZuWXSEUCZF8eFqhlx3+gNQp77NIyOgJaSkUjOFtksLNSDz8OZQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794495207;
-	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
-	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
-	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=L/v5qWn68YMFs8B3Gf+RGYVilFpufPgqWHu/IxMthQ0=;
-	b=3MwHSidzxB52nBVifffDJesB5ojHQqluRlk5YU4A1J4TZMSSbbcxH/Y+zKUv7FUGNyfh
-	 PDEiCA9pu9TB3luoqjDyZtyFhFd4JeMEm+era5VU6Ee0os48QEiLrP03KMEgNtRtGIkyR
-	 8i+OG9LmzVKQFz1ZS90gpbe/XQ+e4JuhsPw+NN0ca71SKabDZixiUDl1UkR7qIoKy0Ojj
-	 wkbw1g5jJ3RxmEFWG0dSwSlt/xLWySxyMNGmTXLvwD2zZjOQoGciuij4RX1cXEL8q0Y78
-	 cqc3/D9QTxRIcJ/7EHuqC7VTpSBgThD0mJ7KCkXQqj1LiV9K/fkoQyG0T1z4GrRCVgw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794501650;
+	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
+	bh=dqQ8pn06E8y7UmR4fLgZA0goeYeVLXGmGCNzZ7AcUm8=;
+	b=GWlXEy8beZBnLAOQeKs5WOpnvqsePtV0iFj7UMQTNMP6CsM7L57jcw4AYzqZMLuifuv9
+	 9XMC2bHNpwvk8XaxHb9b1MHBJ0DH/qGLFfFU1cv8/qs3uOm0ln6SERaqxxVqFtmY0j5l/
+	 nV/8AyH1H0xMlDAJYBH8MfDe3Sx9KU7km1UdB+O0yKSgUGkIlHvd5uxHhB+rdWTHMzyYf
+	 3G5D20IQp5rr8W2h2fIUh3mB8oCiSGH8rBpdHsqhQVIr0uZP4qJRuZoYkIV3/SwUm96XW
+	 g5TVYUqadLLe9XoFMigr1q/xYbHGSFSDjuyGbrFfp5zf20wEzdBKs1IUUzr8u1TIr5g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=oYJzdJAf;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nfV82xIb;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8CF14606A323
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 14:53:27 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 49F6660A2602
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 16:40:50 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=oYJzdJAf
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 1B1301F00A05
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 14:53:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nfV82xIb
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 6D6211F000C7
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 16:40:49 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794495207;
-	bh=L/v5qWn68YMFs8B3Gf+RGYVilFpufPgqWHu/IxMthQ0=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=oYJzdJAf4aYMUDBQEeXrpfh22yWpBUKHypF3AObESHT65Ioymi2bT+MZHtB7j6SC0
-	 BDC47WbS3H91OaFjK0ky2fJyhYMyly+R2jaIdF8k3Mz+fV5OVOOaUuMxgZ601idQ1M
-	 8tmVJvDeIddpGiu4yvsMw6Sj5UfgXpzqnrUeIUCY94FOoZl+y1KoJgYZwtaPLzJH66
-	 yxd7/HWXaYbOwbUU2EU9wbOZrmEFJds9rtL63bGYZAyG+06C6hDrbywawjrEagNk1/
-	 x9eAYDW1ovPA0RvsTno7FDg4CpJxUFRdrC8QwyKL6o+8qtm7gANLT5VDVRNfFtyZ/E
-	 01pS85LUPEwWA==
-Received: by mail-vs1-f42.google.com with SMTP id ada2fe7eead31-7d2f4cc314eso2184928137.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 06:53:27 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AL+hErGlSUkmlfCJVeM4XsgL+EeMEsc2jmgdhS9JiDcKn8rL7Sca0jnQ/D25Nh8qQHB29frO2Tq6XHrkLbpioQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/AqaXTRAroXwo+0dB3anKjMu7dxMv/70g2TPuykI5hkxGb+aLf
-	E+t3AGm+3EdY9qpwrWNmBFFPeZawIm/RLQLdV6KvJBiAJIsXzcTzK5GpOeEccq00TAalHdVD+tl
-	gtZohOPossTOipafS2JdphpyTKEJ5afs=
-X-Received: by 2002:a05:6102:2c81:b0:7c1:9f20:36ad with SMTP id
- ada2fe7eead31-7d4ee0f082cmr2674233137.2.1794495206400; Thu, 12 Nov 2026
- 06:53:26 -0800 (PST)
+	s=k20260515; t=1794501649;
+	bh=dqQ8pn06E8y7UmR4fLgZA0goeYeVLXGmGCNzZ7AcUm8=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=nfV82xIbnRhkNlzos1SRClibGKlPorrs5d7dnyQC7UNgHwPNcZcF4I92oj6QloyDn
+	 KouRog7ILN20VrELNz5ma3WaKWuDH5JyQzlAIB/lmKxAyqInhUUNwr+HY7ZHm+x03G
+	 o48x0JJoO1W4+JQP8EPkxwYcu/XSodMx4F+IVc7JlinZMoY+Ic7TcuMXcaM65yONes
+	 Abu8Nl5e+nqMz0VcJMB6tVAaI9YEMilIHWTEe0Fi4SZnbT0gAm6M+/NljsXNTlKSdS
+	 O0XZVGVE3pn0wRI7bVKI6BaIZROfqqzNyp6ZdDcKpXM8fByyOcdV9fkqldtYbVcWcK
+	 saJof1aCt8/4g==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
+Date: Thu, 12 Nov 2026 16:40:30 +0000
+Message-ID: <150f66a817441013417e0002b9d6c8a78010a494.1794501065.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
+References: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,154 +56,251 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261111-btrfs-link-unlink-fsync-v1-1-a817d4a890af@columbia.edu>
-In-Reply-To: <20261111-btrfs-link-unlink-fsync-v1-1-a817d4a890af@columbia.edu>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Thu, 12 Nov 2026 14:52:49 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H4xx2_ik775aK9KzNdBF+M=do+01FKVdL-KcdWNaSJnyw@mail.gmail.com>
-X-Gm-Features: AclHuK89qaA7CCVafBDQqtIfrsEWX0NuC-UZNceAjGa8T_eBaD9Xl1LYLKe2ANU
-Message-ID: <CAL3q7H4xx2_ik775aK9KzNdBF+M=do+01FKVdL-KcdWNaSJnyw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix loss of fsynced file after link into new dir
- and unlink
-To: mt4022@columbia.edu
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
-	Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, tz2294@columbia.edu, stable@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Wed, Nov 11, 2026 at 9:42=E2=80=AFPM Mani Tofigh via B4 Relay
-<devnull+mt4022.columbia.edu@kernel.org> wrote:
->
-> From: Mani Tofigh <mt4022@columbia.edu>
->
-> If we create a file, add a hard link to it in a new directory, remove
-> its old name and then fsync the file through a file descriptor opened
-> before the unlink, the file is gone after a power failure.  Example:
->
->   mkdir /mnt/A
->   fd =3D open("/mnt/A/foo", O_CREAT | O_WRONLY)
->   mkdir /mnt/A/B
->   ln /mnt/A/foo /mnt/A/B/bar
->   unlink /mnt/A/foo
->   fsync(fd)                     /* or fdatasync(fd) */
+From: Filipe Manana <fdmanana@suse.com>
 
-fdatasync and fsync do exactly the same thing on btrfs, so no need to comme=
-nt.
+We are using a RCU read section but then we call btrfs_find_device() which
+iterates the device lists using a plain list_for_each_entry() and that is
+not safe it can result in loading uninitialized or torn pointers, leading
+to arbitrary memory dereferences, use-after-free conditions, and kernel
+panics.
 
->   <power fail>
->
-> After log replay, B and B/bar don't exist and the file is gone.
->
-> The fsync uses the file's dentry, which is still the unlinked A/foo.
-> The inode is new, so btrfs_log_all_parents() finds no parent in the
-> commit root, and log_all_new_ancestors() then takes the fast path for a
-> single link.  That path walks up from the dentry's parent A and never
-> logs B.  On log replay the inode ref for B/bar is skipped because B
-> doesn't exist, and the inode ends up with no links.
->
-> Fix this by not taking the fast path when the inode had a link, unlink
-> or rename in the current transaction.  The slow path finds the parents
-> from the inode refs in the subvolume tree and logs B and A.  That only
-> adds a search of the subvolume tree.
->
-> The problem is old, e.g., v7.1 loses the file as well.  It was only
-> hidden, by a fallback to a transaction commit, between
-> commit 0f24ea456ae1 ("btrfs: tracepoints: add trace event for
-> btrfs_log_all_parents()") and commit 36f9aafa46f5 ("btrfs: fix
-> unnecessary transaction commit fallback from btrfs_log_all_parents()").
->
-> With the fix, the file and its data survive.
->
-> This bug was identified and confirmed with the help of a deterministic
-> hypervisor currently under development.  The C reproducer below however
-> hits it every time.
+We can't just update btrfs_find_device() to use list_for_each_entry_rcu()
+instead, because all other callers are not in a RCU read section and they
+ensure protection from concurrent list changes by either holding the
+device_list_mutex, uuid_mutex, under an exclusive operation or simply
+being called in a context where concurrency can not happen (like during
+mount). So use a macro to generate both a RCU and a non-RCU variant of
+the function and make btrfs_ioctl_dev_info() use the RCU variant. We also
+have manipulation of the devices and seed_list lists that is not RCU
+safe, in btrfs_init_dev_replace_tgtdev(), btrfs_rm_device(),
+btrfs_setup_sprout() and btrfs_rollback_sprout(), so update those places
+to use proper RCU list manipulation variants.
 
-This last paragraph is useless in the changelog because:
+Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f6070f
+Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-1) It's pointless to know that it was found using a hypervisor under
-development.
-Unless it exists, has a name, and is available somewhere, it adds
-nothing useful.
+V3: Fix some more RCU related issues pointed by Sashiko.
 
-2) Who reads the change log after commiting the patch, has no idea
-what the C reproducer is.
-The link to the reproducer is after the ---, so it does not get to the
-changelog.
-Plus, the log should should be as self contained as possible, with no
-links to  personal github accounts that may disappear anytime.
-The reproducer is also unnecessarily long and complex, nearly 400 lines.
-At the top of the changelog we already have simple steps to reproduce,
-that is enough.
-
->
-> CC: stable@vger.kernel.org
-> Signed-off-by: Mani Tofigh <mt4022@columbia.edu>
-> ---
-> Reproducer: https://github.com/manitofigh/files/blob/main/linux-repros/bt=
-rfslink.c
->
-> It uses dm-flakey to drop all writes once fsync returns.
->
-> No Fixes: tag since this looks older than the single link fast path.
-> ---
->  fs/btrfs/tree-log.c | 8 ++++++--
->  1 file changed, 6 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-> index 85ef3c26e0e4..4f24b277f1b7 100644
-> --- a/fs/btrfs/tree-log.c
-> +++ b/fs/btrfs/tree-log.c
-> @@ -7543,9 +7543,13 @@ static int log_all_new_ancestors(struct btrfs_tran=
-s_handle *trans,
->
->         /*
->          * For a single hard link case, go through a fast path that does =
-not
-> -        * need to iterate the fs/subvolume tree.
-> +        * need to iterate the fs/subvolume tree. But not if the inode ha=
-d a
-> +        * link, unlink or rename in the current transaction, since then =
-the
-> +        * dentry used for the fsync may be an unlinked one, whose parent=
- is
-> +        * not the parent of the remaining link.
->          */
-> -       if (inode->vfs_inode.i_nlink < 2) {
-> +       if (inode->vfs_inode.i_nlink < 2 &&
-> +           inode->last_unlink_trans < trans->transid) {
-
-So this now introduces the possibility of entering the fast path for
-an inode with no refs (link count of 0),
-wich will result in the function returning 1 (coming from the
-btrfs_search_slot() call), and triggering a
-transaction commit.
-
-Early after the tracepoint call we should have:
-
-if (inode->vfs_inode.i_nlink =3D=3D 0) {
-    ret =3D 0;
-    goto out;
-}
-
-See:  https://sashiko.dev/#/patchset/20261111-btrfs-link-unlink-fsync-v1-1-=
-a817d4a890af%40columbia.edu
-
-Otherwise it looks good, thanks.
+V2: Fix other existing RCU issues pointed by Sashiko.
 
 
->                 ret =3D log_new_ancestors_fast(trans, inode, parent, ctx)=
-;
->                 goto out;
->         }
->
-> ---
-> base-commit: 4c34f0909344e48d917afac0eeffb6e1c2681524
-> change-id: 20261111-btrfs-link-unlink-fsync-28ea82e5c56b
->
-> Best regards,
-> --
-> Mani Tofigh <mt4022@columbia.edu>
->
->
->
+ fs/btrfs/dev-replace.c |   2 +-
+ fs/btrfs/ioctl.c       |   2 +-
+ fs/btrfs/volumes.c     | 100 +++++++++++++++++++++++++++++------------
+ fs/btrfs/volumes.h     |   2 +
+ 4 files changed, 76 insertions(+), 30 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 3c48cc714fef..6f04d0a49d86 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -319,7 +319,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+ 		goto error;
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+-	list_add(&device->dev_list, &fs_devices->devices);
++	list_add_rcu(&device->dev_list, &fs_devices->devices);
+ 	fs_devices->num_devices++;
+ 	fs_devices->open_devices++;
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 651a780dd7b1..3fc30649d01a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2791,7 +2791,7 @@ static long btrfs_ioctl_dev_info(const struct btrfs_fs_info *fs_info,
+ 		args.uuid = di_args->uuid;
+ 
+ 	rcu_read_lock();
+-	dev = btrfs_find_device(fs_info->fs_devices, &args);
++	dev = btrfs_find_device_rcu(fs_info->fs_devices, &args);
+ 	if (!dev) {
+ 		ret = -ENODEV;
+ 		goto out;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a494c913ad12..94af5ea3b0e1 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2358,6 +2358,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
+ 	u64 num_devices;
+ 	int ret = 0;
++	bool free_cur_devices = false;
+ 
+ 	if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2)) {
+ 		btrfs_err(fs_info, "device remove not supported on extent tree v2 yet");
+@@ -2483,8 +2484,29 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 
+ 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
+ 	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
++
++	/*
++	 * This can happen if cur_devices is the private seed devices list.  We
++	 * cannot call close_fs_devices() here because it expects the uuid_mutex
++	 * to be held, but in fact we don't need that for the private
++	 * seed_devices, we can simply decrement cur_devices->opened and then
++	 * remove it from our list and free the fs_devices.
++	 */
++	if (cur_devices->num_devices == 0) {
++		list_del_rcu(&cur_devices->seed_list);
++		ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
++		cur_devices->opened--;
++		free_cur_devices = true;
++	}
++
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+ 
++	*bdev_file = device->bdev_file;
++	synchronize_rcu();
++	btrfs_free_device(device);
++	if (free_cur_devices)
++		free_fs_devices(cur_devices);
++
+ 	/*
+ 	 * At this point, the device is zero sized and detached from the
+ 	 * devices list.  All that's left is to zero out the old supers and
+@@ -2503,24 +2525,6 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ 
+-	*bdev_file = device->bdev_file;
+-	synchronize_rcu();
+-	btrfs_free_device(device);
+-
+-	/*
+-	 * This can happen if cur_devices is the private seed devices list.  We
+-	 * cannot call close_fs_devices() here because it expects the uuid_mutex
+-	 * to be held, but in fact we don't need that for the private
+-	 * seed_devices, we can simply decrement cur_devices->opened and then
+-	 * remove it from our list and free the fs_devices.
+-	 */
+-	if (cur_devices->num_devices == 0) {
+-		list_del_init(&cur_devices->seed_list);
+-		ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
+-		cur_devices->opened--;
+-		free_fs_devices(cur_devices);
+-	}
+-
+ 	return btrfs_commit_transaction(trans);
+ 
+ error_undo:
+@@ -2799,7 +2803,7 @@ static void btrfs_setup_sprout(struct btrfs_fs_info *fs_info,
+ 	fs_devices->open_devices = 0;
+ 	fs_devices->missing_devices = 0;
+ 	fs_devices->rotating = false;
+-	list_add(&seed_devices->seed_list, &fs_devices->seed_list);
++	list_add_rcu(&seed_devices->seed_list, &fs_devices->seed_list);
+ 
+ 	generate_random_uuid(fs_devices->fsid);
+ 	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
+@@ -2821,11 +2825,15 @@ static void btrfs_rollback_sprout(struct btrfs_fs_info *fs_info,
+ 	lockdep_assert_held(&uuid_mutex);
+ 	lockdep_assert_held(&fs_devices->device_list_mutex);
+ 
+-	list_del_init(&seed_devices->seed_list);
+-	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
+-	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++	list_del_rcu(&seed_devices->seed_list);
++	/*
++	 * Before splicing seed_devices, update the fs_devices of each seed
++	 * device, otherwise a concurrent RCU reader could get a use-after-free
++	 * on device->fs_devices still pointing to seed_devices.
++	 */
++	list_for_each_entry(device, &seed_devices->devices, dev_list)
+ 		device->fs_devices = fs_devices;
+-	}
++	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
+ 
+ 	fs_devices->seeding = true;
+ 	fs_devices->num_devices = seed_devices->num_devices;
+@@ -7549,23 +7557,47 @@ static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
+  * If devid and uuid are both specified, the match must be exact, otherwise
+  * only devid is used.
+  */
+-struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
+-				       const struct btrfs_dev_lookup_args *args)
++static struct btrfs_device *btrfs_find_device_int(
++				  const struct btrfs_fs_devices *fs_devices,
++				  const struct btrfs_dev_lookup_args *args,
++				  bool in_rcu)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *seed_devs;
++	/* If !CONFIG_PROVE_RCU_LIST we get variable unused warning. */
++	bool rcu_cond __maybe_unused;
++
++	/*
++	 * We are called in several contextes, sometimes protected by the
++	 * device_list_mutex, by being in an exclusive operation, in a context
++	 * where no concurrency can happen (so without any locking) or while
++	 * under an RCU read section.
++	 */
++	if (in_rcu) {
++		/*
++		 * rcu_read_lock_held() always returns true when
++		 * CONFIG_DEBUG_LOCK_ALLOC is not enabled.
++		 */
++		ASSERT(rcu_read_lock_held());
++		rcu_cond = false;
++	} else {
++		rcu_cond = true;
++	}
+ 
+ 	if (dev_args_match_fs_devices(args, fs_devices)) {
+-		list_for_each_entry(device, &fs_devices->devices, dev_list) {
++		list_for_each_entry_rcu(device, &fs_devices->devices, dev_list,
++					rcu_cond) {
+ 			if (dev_args_match_device(args, device))
+ 				return device;
+ 		}
+ 	}
+ 
+-	list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
++	list_for_each_entry_rcu(seed_devs, &fs_devices->seed_list, seed_list,
++				rcu_cond) {
+ 		if (!dev_args_match_fs_devices(args, seed_devs))
+ 			continue;
+-		list_for_each_entry(device, &seed_devs->devices, dev_list) {
++		list_for_each_entry_rcu(device, &seed_devs->devices, dev_list,
++					rcu_cond) {
+ 			if (dev_args_match_device(args, device))
+ 				return device;
+ 		}
+@@ -7574,6 +7606,18 @@ struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices
+ 	return NULL;
+ }
+ 
++struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
++				       const struct btrfs_dev_lookup_args *args)
++{
++	return btrfs_find_device_int(fs_devices, args, false);
++}
++
++struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
++					   const struct btrfs_dev_lookup_args *args)
++{
++	return btrfs_find_device_int(fs_devices, args, true);
++}
++
+ static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
+ 					    u64 devid, u8 *dev_uuid)
+ {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 891bc2432870..2319789635a3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -773,6 +773,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+ 		      struct btrfs_device *device, u64 new_size);
+ struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
+ 				       const struct btrfs_dev_lookup_args *args);
++struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
++					   const struct btrfs_dev_lookup_args *args);
+ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
+ struct file *btrfs_open_device_deny_freeze(struct btrfs_fs_info *fs_info,
+-- 
+2.53.0
+

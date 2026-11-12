@@ -1,79 +1,79 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794522813;
-	b=OY4kf2Alktr9RG3LRFGBqPn0DJdMC5FsE0i8yDm1A+ER3GKKV0xw6UU/dJj4q+Qo7v6c
-	 o3gDZpbvoPql165gUC8RD/F4yExTVl03lsMWiuRmELj5te9qHVc12/ezj+qKX9ds9H1Qa
-	 TJ5po+H9xcslfNvam9ju4+eA+HWjbNuallqVVPY5PJEXJuVACRXrtzeOa6MEP0UxCF3iO
-	 +zJZXRu1VqlZ2/TLv46ikewfWT82I9i1g8DUjPBxgdboke/2sNSdSEixMZRYkofcnsNZt
-	 TLxlbIueNBWhEvM2YMusyB0rAylO4jPXDRUeOBUCjHp4gJjFt7Bcb/Ww4fM1y5oKv/g==
+	t=1794524281;
+	b=dQYEA0pHSbL+AL9hmev+LUTaJN6rPNmhHfEpT40NMywO2QW0yhUoPRYPFksT4K+v/1uk
+	 Xh1Mrz2zDvKoG9XulAq3T/4fdGSajaHYGrtiXCwfGChul8/O6HC/2Z0mnqXPiclZJtrMG
+	 4jYwAUHDHICPSCztZf6CKgCJBc46ED1bxbbGpoyBRteyGcCr2tC1Xip/eSPhk2DVVnCT6
+	 e5nyewIrsfMRj3Vr55PNdPLX9mvXOpocrc0da8DG79g59jOtb0s5tC/Uwt/AbYsS+jUFj
+	 jBb63H+9mkwmC0pFCvaspUl35XH0ARYj0gwCrWUSNKIFgUa44wuNtgfpkLIckAXq3Kg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794522813;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794524281;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
-	 X-Spam-Flag;
-	bh=LEELu306Q2h7ZAApNcQ7qOEkmwN+zAlQIXhcc2dRmJc=;
-	b=Q/vCdKJm/5zVokDAp5eNLgmSBVEXtroTSeQSlBeuv3VnPcDcNa7373JPXwqfvWMcD7wg
-	 nTARmZMXFnFaNvZYUpON0+ZZzejJoHz8kTDGeP0otciyshA/JOnTqYhXipRFLQ7CcxWqK
-	 wMv6mn5XKiJlWSa7U5a7M+sz+vwpYS9vp+964yb6LjMHoLAzZHnjvFjnxwyOQDXNJfMQN
-	 NQIELRu5DKp7/qQGkt2n7zuusm8GeH6xV9pdBxi/zRobOZQIxKBSw26JU7+j++MhjXX+u
-	 AB2Ra83B0DChG0S6k6E3YkRWUXmDXZGspuFUqneopdgfaf8bgcpaS4dz3/runusCOsA==
+	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
+	b=cRGAR6TkPxjZYBwzP9p+LUQhTwiVm9BXc/CTQ388QK6+/ABbO1cjH9JeJCIowxeHYpj6
+	 FNGuYKjQmx0tu1AQ4jAnX5rInAixCWBdc3sRkTs+Nmx5YpftIkmgY4lzfjIJEqxnHxrEN
+	 yT0vfkHfd2qfH9ZC4hmvronl37V4ySKZC/CTHnOMOUKa4izhzq3zi3/Y4LXyqd5PSzOBo
+	 hnWGjKORV/iwLvE2/T9J66f54EehrnXx90XSr/Kzg3kEi1e9IcRq5Whhu7+G6Eu9lM2wW
+	 PN0gHqvYf/SNqxFarAlgwrTcSEtKqWmf9jonSpUUp8NmgV+wW68eqA8jL9uX8qm0YDQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rqG7JwXM;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Eq2d9RCw;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C118F606A321
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 22:33:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C118F606A321
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 41272606A31C
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 22:58:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 41272606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=rqG7JwXM;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Eq2d9RCw
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id D54E122229;
-	Thu, 12 Nov 2026 22:33:30 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 0B8B51FD10;
+	Thu, 12 Nov 2026 22:57:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794522811; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1794524279; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LEELu306Q2h7ZAApNcQ7qOEkmwN+zAlQIXhcc2dRmJc=;
-	b=rqG7JwXMc08KJYaf0y+8Ds2yANcE0Zuw85LBmcRhhboWugoIOOSouqQY+wsxo9AkJ/TBLf
-	I8NY0A683TPMvoYBZN8w3BSvEqvJBFMJxtkqrgttt1T8tkt2gGzYCpmWZMNu4KV1uxNNyI
-	U0b1fh0jRUEOvW8G9kZmurhCv+4ZnW4=
-Authentication-Results: smtp-out1.suse.de;
+	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
+	b=Tayo85Nn8hS1z1IW8Dlu7Byzb71FgDR6WdsiSHsQ0W8w5lErl67w9BQL9m+RR/Yb3UofpG
+	XKsN+52MDoWQN8geUfhX1vIs+HZg0xy7lB3rBrXOtpOCzSISe54r4l3HmW9Rl3KvdupCHb
+	fBBSyN9SpXnCxGvlJkkeo/gMLic96Kk=
+Authentication-Results: smtp-out2.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794522810; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	t=1794524279; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=LEELu306Q2h7ZAApNcQ7qOEkmwN+zAlQIXhcc2dRmJc=;
-	b=Eq2d9RCwbDJbwtTadHcjHbyR9wjis9w4A+uLDN5DG4sQhBkKSaHUXxRcC9mvvSTI+J6sLH
-	hXdndhELvqHfHK5Ao4qPznnzFjSC+weLFlYu9f2/McO2QZXvKy20x/PWv2HEGWmyOQZP7u
-	vv5O09dXxpik78GCI2K+u58rf6Szf94=
+	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
+	b=Tayo85Nn8hS1z1IW8Dlu7Byzb71FgDR6WdsiSHsQ0W8w5lErl67w9BQL9m+RR/Yb3UofpG
+	XKsN+52MDoWQN8geUfhX1vIs+HZg0xy7lB3rBrXOtpOCzSISe54r4l3HmW9Rl3KvdupCHb
+	fBBSyN9SpXnCxGvlJkkeo/gMLic96Kk=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 528F713432;
-	Thu, 12 Nov 2026 22:33:28 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 646B213432;
+	Thu, 12 Nov 2026 22:57:57 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id GrVXJrg+9mqELwAAD6G6ig
-	(envelope-from <wqu@suse.com>); Thu, 12 Nov 2026 22:33:28 +0000
+	id 25MtK3RE9mpgSAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Thu, 12 Nov 2026 22:57:57 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Sashiko <sashiko-bot@kernel.org>
-Subject: [PATCH] btrfs: props: validate property values loaded from disk
-Date: Fri, 13 Nov 2026 09:03:10 +1030
-Message-ID: <27eb729ab79e98927812e0e1df9e699716df6036.1794522787.git.wqu@suse.com>
+Subject: [PATCH] btrfs: do not unwind a committed device in btrfs_init_new_device()
+Date: Fri, 13 Nov 2026 09:27:38 +1030
+Message-ID: <02d1a8fbadb25335495cdcf147785216b5cd8934.1794524252.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
@@ -85,6 +85,8 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Spam-Flag: NO
+X-Spam-Level: 
 X-Spamd-Result: default: False [-11.80 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -93,7 +95,7 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	R_MISSING_CHARSET(0.50)[];
 	NEURAL_HAM_SHORT(-0.20)[-0.999];
 	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,sashiko.dev:url];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,sashiko.dev:url,imap1.dmz-prg2.suse.org:helo];
 	ARC_NA(0.00)[];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	FROM_HAS_DN(0.00)[];
@@ -106,60 +108,83 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	TO_DN_SOME(0.00)[];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
 
-Sashiko reported an out-of-bounds read during prop_compression_apply().
-It only checks the length for "no" and "none", but not for "lzo", "zlib"
-and "zstd". A crafted or corrupted image with a short value such as "lz"
-makes strncmp() read past the end of the buffer.
+Sashiko reported an use-after-free bug during error handling of
+btrfs_init_new_device(), that error from btrfs_attach_transaction() can
+cause use-after-free:
 
-Normally a prop is validated before applying, but that only applies to
-set and inherit paths, not the loading-from-disk path.
+ btrfs_init_new_device()
+ |-btrfs_commit_transaction()
+ | ^^^ device is now in the chunk tree, chunks are allocated on it
+ |     and the fsid is changed
+ |
+ |-mutex_unlock(&uuid_mutex);
+ | ^^^ uuid_mutext unlocked.
+ |
+ |-btrfs_attach_transaction()
+ | ^^^ fails with -ENOMEM for allocation failure or -EROFS for
+ |     aborted transaction.
+ |
+ \-goto error_sysfs
+   |-btrfs_sysfs_remove_device()
+   |-list_del_rcu(&device->dev_list)
+   |
+   |-btrfs_rollback_sprout()
+   | ^^^ asserts uuid_mutex, which is not held anymore
+   |
+   \-btrfs_free_device()
+     ^^^ chunk maps still point to the freed device
 
-Hardening the behavior by calling handler->validate() for non-empty values
-before applying them, the same as the set and inherit paths do. Invalid
-values are skipped with a warning.
+Since the device can not be unwound once committed, do not go through
+the unwind path. We have no transaction handle to abort, so call
+btrfs_handle_fs_error() to force the fs read-only (a no-op if it
+already is), release the freeze protection and return the error.
 
-This may cause a behavior change: validate also rejects compression on
-inodes that cannot be compressed (NODATACOW or NODATASUM). Such an inode
-with an existing compression xattr, e.g. one set before "chattr +C" on
-an empty file, used to get BTRFS_INODE_COMPRESS applied on load. Now the
-property is skipped with a warning.
+Also let the -ENOENT and attach failure exits run btrfs_forget_devices()
+and update_dev_time() like the success path, as the device is committed.
 
 Reported-by: Sashiko <sashiko-bot@kernel.org>
-Link: https://sashiko.dev/#/bug/linux-c5d0a07b-d18d-495f-96b7-9dadef420b95
+Link: https://sashiko.dev/#/bug/linux-c339b137-b739-4f8d-8cc5-0960dee662ee
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/props.c | 15 +++++++++++++++
- 1 file changed, 15 insertions(+)
+ fs/btrfs/volumes.c | 19 +++++++++++++------
+ 1 file changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index 7cc82366a1df..271f169aa5b0 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -273,6 +273,21 @@ static void inode_prop_iterator(void *ctx,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f2b4664b5fd4..8b94c509b85d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3165,17 +3165,24 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
+ 				    "Failed to relocate sys chunks after device initialization. This can be fixed using the \"btrfs balance\" command.");
+ 		trans = btrfs_attach_transaction(root);
+ 		if (IS_ERR(trans)) {
+-			if (PTR_ERR(trans) == -ENOENT) {
+-				bdev_allow_freeze(file_bdev(bdev_file));
+-				return 0;
+-			}
+ 			ret = PTR_ERR(trans);
+-			trans = NULL;
+-			goto error_sysfs;
++			if (ret == -ENOENT) {
++				ret = 0;
++				goto device_added;
++			}
++			/*
++			 * The new device is already committed and in use, we
++			 * can not unwind it anymore. There is no transaction
++			 * handle to abort, so force the fs read-only instead.
++			 */
++			btrfs_handle_fs_error(fs_info, ret,
++	"Failed to attach transaction after device initialization");
++			goto device_added;
+ 		}
+ 		ret = btrfs_commit_transaction(trans);
+ 	}
  
-+	/*
-+	 * The value comes from disk and is not trustworthy, nor NUL terminated.
-+	 * An empty value is valid and just resets the property to defaults.
-+	 */
-+	if (len > 0) {
-+		ret = handler->validate(BTRFS_I(inode), value, len);
-+		if (unlikely(ret)) {
-+			btrfs_warn(root->fs_info,
-+				   "invalid prop %s for ino %llu (root %llu): %d",
-+				   handler->xattr_name, btrfs_ino(BTRFS_I(inode)),
-+				   btrfs_root_id(root), ret);
-+			return;
-+		}
-+	}
-+
- 	ret = handler->apply(BTRFS_I(inode), value, len);
- 	if (unlikely(ret))
- 		btrfs_warn(root->fs_info,
++device_added:
+ 	/*
+ 	 * Now that we have written a new super block to this device, check all
+ 	 * other fs_devices list if device_path alienates any other scanned
 -- 
 2.56.0
 

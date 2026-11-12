@@ -1,48 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=174.142.148.226
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794464111;
-	b=4FAHDjV53mZd8hRyVvaYCkm6LC8Wtw1Mb1Yr89l6pKCt+HR42uF6h5+Pkb3W+0iN3oaM
-	 2244vsC29BXHsCkgW8sWNCjKmOnH48hG/IKR2lrTfs/7dqJ1lhJbUTrFJ5yYAM+p4YVR1
-	 EFWACUiSdHRthsvE/NinXfGZuJ/UVlF95nmPPDvGtyH7zIvwzUhmmWzevcK2d04HjTshU
-	 FdXqT23SintAjxhiv51hB+PoVHWePdqFRaE8G/NZPGVwQyhWXNnOwwZFTh4YZXRZshQNi
-	 MNRUQzt51ZCciOck9tJWS0dADSe+BA79W1r1Ps0OsGxKldyL1UqEc1MgAihq25Tnp3Q==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794464111;
-	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
-	 MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=BHQpga73EjDTxLR8w3Ak9ObnoV8jrlpHl+BtnwgUHTQ=;
-	b=RU/ET/I6dVjRDzuOpxmUsfuIH/dGNyoLsiPXyutJRrabjsVRlWJ67PR51ayWQ8kJcsVv
-	 OQx2tqoPVTJBA3E7PzF+ZkvhTiBNRQwthsFEDMjoVuUM/5gIpmw2g6TMcvA7S9JgQX7sR
-	 DOokInbGk5PzKq5rbbFtgf5gEmhoE82hwD94UC+40beQV4lc/gP5V46Ho/+DV1JOFeMg0
-	 v+zm02rHUzVxbRJFNuQjlBKPZVGCcOVoTlf8V6EFSTcVYMm9vYLMEnQX+i5muWeUxEIPj
-	 mihHBMZrIiOm/vS+wKwE2yUXMVa31fRBw7YHhD5loLd3i86ZARMlWtR+5G1eSjrsNVQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=furryterror.org;
-	spf=pass smtp.mailfrom=furryterror.org;
-	arc=none smtp.remote-ip=174.142.148.226
-Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id C843D606A331
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 06:15:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C843D606A331
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=furryterror.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=furryterror.org
-Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
-	id 037491CC941E; Thu, 12 Nov 2026 01:15:03 -0500 (EST)
-Date: Thu, 12 Nov 2026 01:15:03 -0500
-From: Zygo Blaxell <zblaxell@furryterror.org>
-To: koraynilay <koray.fra@gmail.com>
-Cc: Sterling Windmill <sterling@ampx.net>, linux-btrfs@vger.kernel.org,
-	David Sterba <dsterba@suse.com>
-Subject: Re: [RFC] btrfs: forcing compression per inode via the compression
- property?
-Message-ID: <avVZZ-u8kmaDyaSb@hungrycats.org>
-References: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
- <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
- <5225511a-c66f-40e5-b9d6-31ff572496da@app.fastmail.com>
- <DMQYN0GE281B.1PW8AIHGLUNDF@gmail.com>
- <bebe248b-8eb5-48f3-8dc7-ddaf8e4a09c4@app.fastmail.com>
- <DMRFBAXJM4OA.CV6LZNBPYR7J@gmail.com>
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.43
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794469374;
+	b=TrcLndcZkc5hZvxxXp3wuOy5ANbzh4pXIDGoUViYMxL2DU2dwQQEM6waqkBMRifQlcVu
+	 z5KOQhCC6LAM14SoPlAJoRZa0pLbfv6mTV8OfvfMN3QKMYK5FuGGHf2Ptxl+rqav0COH6
+	 1pO3J6c2QyODEig9rvnk9eG3OJILXecLF2x4a0xkk6QZgHkLFQTea2VUh/7LuUbQ0tKZm
+	 79GvITcEtwmaeEd5kNViV1ADEKFY6R2usnfboJ3ogB9qmSYF6LIisDSZY/Rp6jigPR9tq
+	 o+Y6iZbB9iYMbh4qtdQ2WCI9C0Igf1IhtfJYY1bBuOxpnyO4cvfoQ0ZwyRgzGwMhPMw==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794469374;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
+	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=c9potHSopAhDs6JHnKq+9TFBn3kUX6VriieMObcMjAo=;
+	b=ZmNBZqK8yQinWNnYtUPBytSmQ1eONvrq70qPJ6OzD1KFBkDz6EarBUgGz/HKopOGtuqI
+	 kXCn8lxVrHLhDdZhW07z4CQ8VT7gbzakZLw9DjeiM4yJnlHra8Z40fwMkvKULzF9YcCGX
+	 8YwDFsYxILwgRUT5Yyc7D3+GNmALJB1BVBbh7aDc178VtnFFWU2n6RDTfYnVTtdT48L6v
+	 iRK1mSkYVDjrwALkj4FJgBokI1AlaSiZndntFoT1zahjAMb6uRiUqtep7OTp2w/YJTO4h
+	 nz6QUWAJ0ok3rXcrh6/8N9lL5O9mrnJAmwOMBsmlYDvEgRZ8dAbZJWXf6zz9L6kpZwg==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=RoHMEBAY;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.43
+Received: from mail-wm1-f43.google.com (mail-wm1-f43.google.com [209.85.128.43])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EAF46606A33B
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 07:42:53 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EAF46606A33B
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=RoHMEBAY
+Received: by mail-wm1-f43.google.com with SMTP id 5b1f17b1804b1-4ac95761c85so29308185e9.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 23:42:53 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794469372; cv=none;
+        d=google.com; s=arc-20260327;
+        b=IuK1HyLIu+lCyevQbh5WVs+MBZIW0qdWQOFKpasDJ8Bp5hbfuK4vVMrJFYoV9Jy4hN
+         2NctmxrTtrDp+gSi/knS44oTNxXz3OboIJzFmX37Djy4izddQQW+63/DZqCqvOccrxfC
+         QjlVHrsHoBi7OmPCquMvOpF0E8OJYEOq+gTQiX+Xz6pHJXN6b/KwBKg/HGwXuF3SrsmM
+         TjA09QxkEFrghUkILVaM0HhTIoN1EmoY2wAHNDRV4oPsNVwmSPJUpwiAdJvll0s9rjGb
+         U0pScSGi7SjByBwGACQJtZyfkRViC9Fwjb36/Qp6qpeXnqGKkX69cGqJLO0vGXT31fqw
+         nt7w==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=c9potHSopAhDs6JHnKq+9TFBn3kUX6VriieMObcMjAo=;
+        fh=RhFuKwp73/x8KksFPnzjZEYxDQ9t3rFtnoJ8q5GIsWE=;
+        b=bRHnJbZAEZxWvgiraF90FPSVtOUwnda9CtsVOd+jFOp5b4EC06z33GpUaUa+45yOcO
+         k5efsoQq9ybdYW48gTgsGZrgQKZHit5ifewEf/rDRkEylo1O53uVpcJ0D8ywvmQr/seE
+         Rko47q9JN2QlJma4MdS3Qv3wQjd0zT/dJgDNRWYywlzpq11tNkAooFDfaDaEp24pb7F1
+         KSdWhEz/LSo5w9+N2R8S+UUIEyQlXIvvp77DPpn7wJ5j5uShI4v+M0gB3921lj6aYoSw
+         xRdm/NAIzkskvmm6VxMxRdVcqUraiiFKa6l6xEjXMtEhMt2c0kq7ro34MkjAQskKU+JP
+         Hf6g==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1794469372; x=1795074172; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=c9potHSopAhDs6JHnKq+9TFBn3kUX6VriieMObcMjAo=;
+        b=RoHMEBAYSjYr4ndU1mCGE5oZA+mngFxDmwFuKOOf45mn+dTOEp+hdEn+Vor4yvT1lM
+         UsWlPHFzuEtvYyzRPvUOUSmyHMsZq4mpH6OkO2rQ3GrR+PodzcA21z7+TQWZJUlNOVmG
+         Srl4fzj3vMBbyvdYb6Us1AhkSqgoQJ1gepUwnnr4cHqn8jBOu7VKYiz90ohIu9z1ctAi
+         f668gB/wARxT80IykHF08A8c9kBvoV2ZEaUtzZ0jtnO9/gToA+JmTqd9hV4LazQ0GLvp
+         103BRE5ERerPNLbVGE71+/EQVdKrVAKcRmBfV0cw4vUZEcfPVEzNWwi8C9b7sktGUMY+
+         VVqQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794469372; x=1795074172;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=c9potHSopAhDs6JHnKq+9TFBn3kUX6VriieMObcMjAo=;
+        b=xPNh09kUlzH2YTnQh6ZjoAdgKT6CCM8Lzsupk7ea0fTTRNxigF7HAffebtUrs+vmZr
+         SmI1/9RgMTPMEV2nMQi5vwo1svkBQaUt5O/m1GngvP65aRXRzyZ9GxjPqERJrTO7NSAy
+         rt5gSMuAZE0QqWn/gNhx1PHvMlK6qYNYQytdEqpEcepkSGyOQvsJCdsvXQQKKnV7xKAI
+         ru3WVue54dz7ca/Y4vrWPiMZaRIlRuv5mvX6qFRiHihioXPxLx07WiHZ+ec6FK2hPpZc
+         rskLnNq9sf4GvoxGEyyz7rQX5/VpZob+U4VuUEmKuwYzk8Ab0W14k831itXCuYaCVn46
+         QPUg==
+X-Gm-Message-State: APuU4Z+GhoKGkIC183G1WObA1+tXciPMU55ZLDAqDi6+gTZhcdbe3AK+
+	Tx21lWLCOXAUiH+8VfjcrFVCJ0cxcr9aInrV+A0KzBFsYBi6V9fWTNlRcUI+hbLSxQiP/G2/mJJ
+	A1TTTvUPueLZXyXOJOiPCkPo1Pdo9p/lnMfXmplWTdJ9lAghJkgl433yPpg==
+X-Gm-Gg: AYBFou22eopj6oT7UErWpUb1jDPw+Pfo20FD862vjnY+6EEkVg8ftsA3Jx7ut9rEVsv
+	RZfLKE6xNpw4ctOKaSlsYawdaYo8FjMH8+wS6gPmFMZyaY+lCTgQn+dxFQkfxmq6lDVyYcOU3/w
+	dunnCcwLrvUqHCvjPCbH73RwSCfaMqLIE3Bn1WMWETNEBThXIksbNUbHQxa3/R5xIs703m6Z6FK
+	inSAmN+s4aDqKmvrVj2m5tDtdj+wU1jTnZIB1sxkyJKHC28Phtdu2Z+EaoCDZy4Kaz1maGLM20b
+	kazmrA1VjxJBpaVa8ENxDP3/WejSmIV3yu5+fL3BsiU2k3wsDnLpJoUA4YGYmlwxx+igy6NnIuT
+	fyt5LgP9cVmWo/QsyvjW4V60BhoyS0MenT4AKWkYMcu7UsjPWPEsjj8g1IDblC/fcqyw0mZ4dno
+	kRgT3MTLRncAtsvvWmrzLO3mr6u6K43VoACQ==
+X-Received: by 2002:a05:600c:620e:b0:4a2:1a:a11d with SMTP id
+ 5b1f17b1804b1-4ba091aacf9mr81876735e9.0.1794469372145; Wed, 11 Nov 2026
+ 23:42:52 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -52,194 +103,285 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: 8bit
-In-Reply-To: <DMRFBAXJM4OA.CV6LZNBPYR7J@gmail.com>
+References: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
+ <7523a44da9b8504e6cbc65b9f5388c07a7aaa645.1794426971.git.fdmanana@suse.com>
+In-Reply-To: <7523a44da9b8504e6cbc65b9f5388c07a7aaa645.1794426971.git.fdmanana@suse.com>
+From: Daniel Vacek <neelx@suse.com>
+Date: Thu, 12 Nov 2026 08:42:41 +0100
+X-Gm-Features: AclHuK_ccE3vmU8VVFHUQP9NKfsEQv6Y8l_SkREDdOG3gsfqoWuJHIPbTwx2Cjs
+Message-ID: <CAPjX3Ffhw3z0xqNRWwxDQg3n0qnuGY+rzSZAHZBZyOrKMrgmqw@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Tue, Nov 10, 2026 at 10:29:16AM +0100, koraynilay wrote:
-> On Tue Nov 10, 2026 at 3:50 AM CET, Sterling Windmill wrote:
-> >> I read the code a bit (and bounced some ideas with gemini) and I think a
-> >> "force:algo:level" would work well.
-> >>
-> >> This, compared to "algo:level:force", would also allow a "force" value
-> >> (handled like "none" is already handled), that lets the user set *only*
-> >> the compress-force, without having to specify algo:level, so inheriting
-> >> from -o compress=, and the parsing would be as simple as if ("force")
-> >> str += 6, where str is the xattr string that gets then parsed by the
-> >> rest of the code (in compression_apply()).
-> >
-> > Thanks, a bare "force" value is a nice thing to have, and I agree the
-> > separate property isn't worth it.
+On Wed, 11 Nov 2026 at 21:08, <fdmanana@kernel.org> wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> We are using a RCU read section but then we call btrfs_find_device() which
+> iterates the device lists using a plain list_for_each_entry() and that is
+> not safe it can result in loading uninitialized or torn pointers, leading
+> to arbitrary memory dereferences, use-after-free conditions, and kernel
+> panics.
+>
+> We can't just update btrfs_find_device() to use list_for_each_entry_rcu()
+> instead, because all other callers are not in a RCU read section and they
+> ensure protection from concurrent list changes by either holding the
+> device_list_mutex, uuid_mutex, under an exclusive operation or simply
+> being called in a context where concurrency can not happen (like during
 
-There is a symmetric gap to be filled here:  currently, there is no way
-for individual files to opt out of a compress-force mount.  The force
-mount option is checked first, so a compression attribute that says "none"
-(or chattr +m) is ignored, and the file is compressed anyway (along with
-all the side-effects that come with force, like 512K maximum uncompressed
-extent size).
+I guess you missed that list_for_each_entry_rcu() has an api where you
+can provide an optional lockdep condition in case it's being used
+outside the rcu_read section. Using that there is no need to clone the
+function.
 
-> > From reading the code only, a few things stand out for the bare
-> > "force" case, where prop_compress would stay 0:
-> >
-> > - compress_file_range() starts from fs_info->compress_type, so on a
-> > filesystem mounted without compress= there is no algorithm to use.
-> > It needs a defined behaviour, such as falling back to zlib as the
-> > chattr +c path does, or having no effect.
-> >
-> > - The check at mark_incompressible only looks at FORCE_COMPRESS and
-> > prop_compress, so a failed attempt would set NOCOMPRESS and leave
-> > it behind after force is removed.
-> >
-> > - btrfs_compress_typelevel2str() returns NULL when prop_compress is
-> > 0, so children wouldn't inherit it and btrfs_fileattr_set() would
-> > fall back to the mount algorithm. That helper would also need to
-> > emit "force" in whichever form we choose.
-> 
-> Ah yes, these would all need to be changed (but only small changes
-> AFAICT) for a "force" patch to work.
+I'd say something like this is the clean way to use it:
 
-It might be nice to refactor all of those, so one parser gives you
-a struct with compress type, level, and force, or gives a complete
-string with all of those written out.  It would also get rid of
-the "none" special case, which can't accept a suffix.
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2313,7 +2313,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+  if (ret)
+  return ret;
 
-Doing it piecemeal means that someone's going to forget a parameter
-somewhere, especially if it's extended over time, which is how we got
-into the current mess of partial implementation everywhere.
+- device = btrfs_find_device(fs_info->fs_devices, args);
++ device = btrfs_find_device_rcu(fs_info->fs_devices, args, true);
+  if (!device) {
+  if (args->missing)
+  ret = BTRFS_ERROR_DEV_MISSING_NOT_FOUND;
+@@ -7307,23 +7307,26 @@ static bool dev_args_match_device(const struct
+btrfs_dev_lookup_args *args,
+  * If devid and uuid are both specified, the match must be exact, otherwise
+  * only devid is used.
+  */
+-struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices
+*fs_devices,
+-       const struct btrfs_dev_lookup_args *args)
++struct btrfs_device *btrfs_find_device_rcu(const struct
+btrfs_fs_devices *fs_devices,
++   const struct btrfs_dev_lookup_args *args,
++   bool cond)
+ {
+  struct btrfs_device *device;
+  struct btrfs_fs_devices *seed_devs;
 
-> > One thing I should have mentioned: Qu pointed out on v1 that older
-> > kernels ignore an appended ":<level>" because apply only compares the
-> > leading bytes. "zstd:3:force" would keep that property, with older
-> > kernels treating it as plain zstd, while "force:zstd:3" and a bare
-> > "force" would get -EINVAL from both validate and apply. Is bare
-> > "force" worth that trade-off, or would the suffix be better?
-> 
-> I think it's a worth trade-off, and my patch series already will break
-> some setups where users had "zstd:random_text" (which would be
-> semantically invalid anyway).
++ cond ||= lock_is_held(&fs_devices->device_list_mutex) ||
+lock_is_held(&uuid_mutex);
++
+  if (dev_args_match_fs_devices(args, fs_devices)) {
+- list_for_each_entry(device, &fs_devices->devices, dev_list) {
++ list_for_each_entry_rcu(device, &fs_devices->devices, dev_list, cond) {
+  if (dev_args_match_device(args, device))
+  return device;
+  }
+  }
 
-Putting force first is more consistent with the mount option.
-"compress-force=zstd:5" becomes "force:zstd:5" on the inode, almost
-exactly the same string.  The mount option prefix for negation is "no", so
-overriding compress-force might look like "noforce:zstd:5" on the inode.
-So there's a compelling argument to put force first.
+- list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
++ list_for_each_entry_rcu(seed_devs, &fs_devices->seed_list, seed_list, cond) {
+  if (!dev_args_match_fs_devices(args, seed_devs))
+  continue;
+- list_for_each_entry(device, &seed_devs->devices, dev_list) {
++ list_for_each_entry_rcu(device, &seed_devs->devices, dev_list, cond) {
+  if (dev_args_match_device(args, device))
+  return device;
+  }
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 0082c166af91..c2a7b76343e5 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -764,8 +764,13 @@ void __exit btrfs_cleanup_fs_uuids(void);
+ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len);
+ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+       struct btrfs_device *device, u64 new_size);
+-struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices
+*fs_devices,
+-       const struct btrfs_dev_lookup_args *args);
++struct btrfs_device *btrfs_find_device_rcu(const struct
+btrfs_fs_devices *fs_devices,
++   const struct btrfs_dev_lookup_args *args,
++   bool cond);
++static inline struct btrfs_device *btrfs_find_device(const struct
+btrfs_fs_devices *fs_devices,
++     const struct btrfs_dev_lookup_args *args) {
++ btrfs_find_device_rcu(fs_devices, args, false);
++}
+ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
+ int btrfs_balance(struct btrfs_fs_info *fs_info,
 
-That said, I think compatibility is more important.  On an old kernel,
-a file with a force prefix won't be compressed at all if the user
-had set up inode attributes without mounting with a compress= option.
-With a force suffix, an old kernel still gets some compression, and
-also avoids possibly getting the wrong type of compression, like the
-slower zlib algorithm instead of zstd.
+Note, explicit btrfs_find_device_rcu() is only used here in the case
+where no concurency protection is needed. All the other users keep
+using btrfs_find_device() as before.
 
-The prefix form breaks a convention that has been present since the
-attributes were introduced.  Compression type is the first argument,
-which has been there since the beginning.  The next part of the string
-is the level. Fedora’s documentation, among others, already describes
-it that way. Those docs were wrong, but people have read them,
-and some users have already filled in those strings believing they
-have an effect.  Extensions using the same attribute name should go
-after the parts of the string that are already defined and in use.
-Those constraints together prefer "zstd:3:force" and "zstd:3:noforce"
-over "force:zstd:3" and "noforce:zstd:3".
+And sorry about the broken formatting (Gmail).
 
-"none" rears its head here:  it uses an exact match, so "none:extension"
-is not currently accepted by kernels, and "none:noforce" would mean
-"use mount option compression" on an old kernel.  So that's a point in
-favor of a separate attribute.
+--nX
 
-> > If we go with the prefix, the match probably needs to be exactly
-> > "force:", in both validate and apply, and "force:none" should be
-> > rejected.
-
-I agree with rejecting "force:none" (or "none:force"--I'll use the
-prefix form here to match the text I'm replying to), although that
-agreement is conditional on using a single string attribute (see
-alternatives below).
-
-"noforce:none" would mean "don't compress this file, even if
-compress-force is set in the mount options."  A user might expect
-"force:none" to mean "behave like compress-force with chattr +m"
-(i.e. exactly the same as noforce:none), but the current compress-force
-mount option behavior doesn't honor chattr +m, and "force:none" would
-have to replicate what is arguably a bug to be consistent with what the
-existing flags and options do.
-
-> Yes, my current thinking is handling "force" exactly like "none"/"no" is
-> handled right now, with an additional else if for "force:" which moves
-> the string pointer to +6, which gets then passed to the rest of the
-> checks as they are in my patch series.
-
-If the all-in-one-attribute-string path is taken, now is the time to
-lock down whether these strings have a fixed order, or if it's a set of
-strings that can be present or absent.  e.g. is "3:force:zstd" valid?
-If there's a compression algorithm called "shiny" with a flag "fast", is
-"shiny:7:fast:force" valid, or only "shiny:7:force:fast", or do we make
-every compression algorithm squeeze all of its parameters into a single
-integer level?  Or will it be a free-for-all, with any order accepted on
-input, and all fields optional, so "noforce" by itself is a valid string,
-and a user can write "7:force:zstd" or even "5"?
-
-A separate attribute avoids the parsing problem, but trades it for
-an ordering problem.
-
-"btrfs.force-compression" could be "yes", "no", or unset (for "look up
-the mount option").  A new attribute gets a new name and doesn't touch
-the old string parser.  Each of the force strings means something to
-a kernel that knows the attribute name.  They are ignored by a kernel
-that doesn't know the attribute name, and old kernels can still use the
-attributes they do recognize.  Applications work the same way, using
-the attributes they know and ignoring the ones they don't.
-
-But a separate attribute forces us to reconsider combining "force" with
-"none".  Order of attribute sets matters if they conflict:  a file with
-force-compression=yes and compression=zstd, under a rejection rule, could
-not be changed to compression=none by setting only btrfs.compression.
-An application written before this patch is accepted would not know it
-has to do that, so it may fail after a kernel upgrade.
-
-The better option is to document that "force" combined with "none"
-just means the same thing as "noforce" combined with "none", so all
-combinations are valid.  That allows two attributes (or more extensions
-in future) to be added or changed in any order without having to deal
-with surprise -EINVALs, and without all the parsing issues.
-
-For a cautionary tale about rejecting invalid option combinations,
-look at what happened with conflicting combinations of chattr +C, +c,
-and +m rejected by a patch in 2020 (f37c563bab42 "btrfs: add missing
-check for nocow and compression inode flags").  These checks are _still_
-broken in 2026, accepting invalid combinations of options while rejecting
-valid ones, and requiring multiple steps to transition from one valid
-flag combination to another.
-
-> >> It should probably be a separate patch, but it'd depend on my patch
-> >> series, so not sure if I should just make a v7 with that or not.
-> >
-> > I'd lean towards a separate patch on top rather than a v7, since this
-> > is a new feature that may need its own discussion, and it shouldn't
-> > hold up your series.
-> 
-> I think adding a force patch to my series wouldn't be a problem, as my
-> series has been finalized since september, so I doubt it will change
-> much in merging time.
-> 
-> > David, do you have a preference? And if the series isn't likely to
-> > land soon, would you rather see force as a small standalone patch?
-> >
-> > I'm happy to write the force patch on top, or to test yours on the
-> > images from my table, whichever you prefer.
-> 
-> Yes, please test mine and also write a patch on top of my series, I'll
-> be happy to test that on my end as well.
-> After that we can decide if it's better to include it in a v7 or send it
-> as a standalone patch with references to my v6.
-> 
-> Thanks,
-> koraynilay
-> 
-> > Thanks,
-> > Sterling
-> 
-> 
-
-
+> mount). So use a macro to generate both a RCU and a non-RCU variant of
+> the function and make btrfs_ioctl_dev_info() use the RCU variant. We also
+> have manipulation of the devices and seed_list lists that is not RCU
+> safe, in btrfs_init_dev_replace_tgtdev(), btrfs_rm_device(),
+> btrfs_setup_sprout() and btrfs_rollback_sprout(), so update those places
+> to use RCU list manipulation variants instead and take the uuid_mutex
+> in btrfs_rm_device() before deleting from the seed_list list as well as
+> synchronizing RCU after unlocking.
+>
+> Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f6070f
+> Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>
+> V2: Fix other existing RCU issues pointed by Sashiko.
+>
+>  fs/btrfs/dev-replace.c |  2 +-
+>  fs/btrfs/ioctl.c       |  2 +-
+>  fs/btrfs/volumes.c     | 67 +++++++++++++++++++++++++++---------------
+>  fs/btrfs/volumes.h     |  2 ++
+>  4 files changed, 47 insertions(+), 26 deletions(-)
+>
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 3c48cc714fef..6f04d0a49d86 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -319,7 +319,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>                 goto error;
+>
+>         mutex_lock(&fs_devices->device_list_mutex);
+> -       list_add(&device->dev_list, &fs_devices->devices);
+> +       list_add_rcu(&device->dev_list, &fs_devices->devices);
+>         fs_devices->num_devices++;
+>         fs_devices->open_devices++;
+>         mutex_unlock(&fs_devices->device_list_mutex);
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 651a780dd7b1..3fc30649d01a 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2791,7 +2791,7 @@ static long btrfs_ioctl_dev_info(const struct btrfs_fs_info *fs_info,
+>                 args.uuid = di_args->uuid;
+>
+>         rcu_read_lock();
+> -       dev = btrfs_find_device(fs_info->fs_devices, &args);
+> +       dev = btrfs_find_device_rcu(fs_info->fs_devices, &args);
+>         if (!dev) {
+>                 ret = -ENODEV;
+>                 goto out;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a494c913ad12..89951666d5fa 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2515,9 +2515,12 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>          * remove it from our list and free the fs_devices.
+>          */
+>         if (cur_devices->num_devices == 0) {
+> -               list_del_init(&cur_devices->seed_list);
+> +               mutex_lock(&uuid_mutex);
+> +               list_del_rcu(&cur_devices->seed_list);
+>                 ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
+>                 cur_devices->opened--;
+> +               mutex_unlock(&uuid_mutex);
+> +               synchronize_rcu();
+>                 free_fs_devices(cur_devices);
+>         }
+>
+> @@ -2799,7 +2802,7 @@ static void btrfs_setup_sprout(struct btrfs_fs_info *fs_info,
+>         fs_devices->open_devices = 0;
+>         fs_devices->missing_devices = 0;
+>         fs_devices->rotating = false;
+> -       list_add(&seed_devices->seed_list, &fs_devices->seed_list);
+> +       list_add_rcu(&seed_devices->seed_list, &fs_devices->seed_list);
+>
+>         generate_random_uuid(fs_devices->fsid);
+>         memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
+> @@ -2821,7 +2824,7 @@ static void btrfs_rollback_sprout(struct btrfs_fs_info *fs_info,
+>         lockdep_assert_held(&uuid_mutex);
+>         lockdep_assert_held(&fs_devices->device_list_mutex);
+>
+> -       list_del_init(&seed_devices->seed_list);
+> +       list_del_rcu(&seed_devices->seed_list);
+>         list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
+>         list_for_each_entry(device, &fs_devices->devices, dev_list) {
+>                 device->fs_devices = fs_devices;
+> @@ -7549,30 +7552,46 @@ static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
+>   * If devid and uuid are both specified, the match must be exact, otherwise
+>   * only devid is used.
+>   */
+> -struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
+> -                                      const struct btrfs_dev_lookup_args *args)
+> -{
+> -       struct btrfs_device *device;
+> -       struct btrfs_fs_devices *seed_devs;
+> +#define BTRFS_GENERATE_FIND_DEVICE(func_name, iter_macro)                      \
+> +struct btrfs_device *func_name(const struct btrfs_fs_devices *fs_devices,      \
+> +                              const struct btrfs_dev_lookup_args *args)        \
+> +{                                                                              \
+> +       struct btrfs_device *device;                                            \
+> +       struct btrfs_fs_devices *seed_devs;                                     \
+> +                                                                               \
+> +       if (dev_args_match_fs_devices(args, fs_devices)) {                      \
+> +               iter_macro(device, &fs_devices->devices, dev_list) {            \
+> +                       if (dev_args_match_device(args, device))                \
+> +                               return device;                                  \
+> +               }                                                               \
+> +       }                                                                       \
+> +                                                                               \
+> +       iter_macro(seed_devs, &fs_devices->seed_list, seed_list) {              \
+> +               if (!dev_args_match_fs_devices(args, seed_devs))                \
+> +                       continue;                                               \
+> +               iter_macro(device, &seed_devs->devices, dev_list) {             \
+> +                       if (dev_args_match_device(args, device))                \
+> +                               return device;                                  \
+> +               }                                                               \
+> +       }                                                                       \
+> +                                                                               \
+> +       return NULL;                                                            \
+> +}
+>
+> -       if (dev_args_match_fs_devices(args, fs_devices)) {
+> -               list_for_each_entry(device, &fs_devices->devices, dev_list) {
+> -                       if (dev_args_match_device(args, device))
+> -                               return device;
+> -               }
+> -       }
+> +/*
+> + * Instantiate the non-RCU version.
+> + * Callers must hold device_list_mutex, or uuid_mutex, under an exclusive
+> + * operation or be in a context where the lists can not be changed concurrently.
+> + */
+> +BTRFS_GENERATE_FIND_DEVICE(btrfs_find_device, list_for_each_entry)
+>
+> -       list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
+> -               if (!dev_args_match_fs_devices(args, seed_devs))
+> -                       continue;
+> -               list_for_each_entry(device, &seed_devs->devices, dev_list) {
+> -                       if (dev_args_match_device(args, device))
+> -                               return device;
+> -               }
+> -       }
+> +/*
+> + * Instantiate the RCU version.
+> + * Callers must hold rcu_read_lock().
+> + */
+> +BTRFS_GENERATE_FIND_DEVICE(btrfs_find_device_rcu, list_for_each_entry_rcu)
+>
+> -       return NULL;
+> -}
+> +#undef BTRFS_GENERATE_FIND_DEVICE
+>
+>  static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
+>                                             u64 devid, u8 *dev_uuid)
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 891bc2432870..2319789635a3 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -773,6 +773,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
+>                       struct btrfs_device *device, u64 new_size);
+>  struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
+>                                        const struct btrfs_dev_lookup_args *args);
+> +struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
+> +                                          const struct btrfs_dev_lookup_args *args);
+>  int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+>  int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
+>  struct file *btrfs_open_device_deny_freeze(struct btrfs_fs_info *fs_info,
+> --
+> 2.53.0
+>
+>

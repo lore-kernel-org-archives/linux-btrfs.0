@@ -1,63 +1,60 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=178.154.239.223
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794489665;
-	b=r4/y09Y2V67qI+fvpyDaSffrCmwLQz6YeLUoxdKM+gh10n2qf3YFMEWHYe6vwJvlPrRY
-	 wrT8Xu2LvKxuA0rW5gv4o9d8PXLur9WsEv4ovA+AGfBABY9U7qK+1S6vh3jlALtef3cjK
-	 DC5FgoKxHKOFynv9LwsOovbgcu3GPVMhr8Hvz3+criX48oshWcH+QWvE+h1V+ESwlACro
-	 eIPK+j32lU9cXcHVoGvF6Q20tS0b7qAGzrAF4TEWAaaJuUEl1NAOAvh3aA1lj5x9RKOsI
-	 9ui4Y+1KSnMyOGJhAsouTXF7cudH7oIr7orpzefYuMU5/fPcJTdYVXXMvJiOgrQhKLw==
+	t=1794491237;
+	b=aVuSrS3d3T4lo3OODjPSzl0G5h4izFA0mINzjVm0AVKVABOb0Mvj8Zzw8KgTvoTV/cBs
+	 2zvgXqBre8OfXaM2V4JkDDsLabx1gdjiaxubk23wEOKwNB7IJRYASAWSmwDj7+jD1ytpl
+	 qt6zSFV8xM5EeY1WSayfPeKMs5VpTVx+nc4T1Rr0rDzA2XxClqIJk3y0C00WZ9MkczVQs
+	 5SpnDjc9gn+ux8fUR8rpExULhHAvryS0RELhs517MAmKjdMjbPrZENXtbgeL1US2qD5Kg
+	 L/Sg0xPISp93ohurNQmLP9RFEEm9ZQVC5R7ID7+Wv1zXyhKC4IWZMFUf6Og3QayBDkA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794489665;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=2TVb8qDZ4KT/CTu1G3B1wlWvG0RXp8XP3qjnuNYzjOg=;
-	b=u700fACwqvVEU56bLfh8WQT77aVbb9Za0mlXenYTObhpIcmBSILWk40+I6+1h1NmC+RF
-	 huz/poklpHrmwoDwgjybIIh0AmKpa0U41NrHSPjR8+IclCi5MfsGF61glld/l+Eowd+Ki
-	 NqG1oKHSm1vx2uyvO6EJ/DOtfSZ46Y10owoeHL3UDF4vTu/MzdlaIRy+UIEMb00dQuWcQ
-	 q4pMD/AEwkxECTtg575SYulwVJEOw2SllwI0Sy4Wzr54DvYBG+SRV88Wi+4gPevbxGbzR
-	 ppOKyqwrSFE/arHyDwL3EpG1mFzRmJmrxXYkQG2GLtEBORkFaP1qaC15uaT2hEzc9rg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794491237;
+	h=DMARC-Filter:Received:Received:X-Yandex-Fwd:DKIM-Signature:From:To:
+	 Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:Reply-To:
+	 Content-Transfer-Encoding;
+	bh=Rrp1X1YWSNAMJWln65D+arV/W5RD4l1c8EBUA/LakV8=;
+	b=ud/pbLU1BsIdUK8qfy2Ei1h8eZpWNcZCqSvF7EQf60+D8OAV23C90A+VFhbXUlezu1Ux
+	 gFTrVPgnT7IbaDFjyicGDkCzMscqQATjAL2PiHx6MNMxlz2sYcbDd6nHPAWCn/ybDYuFu
+	 n3rnXm3OsOqGxQuXEeJnQuUG5UEZtXllkCd/3sZMtU6k6DiI2KY0UP/8vUD0zikAlCY4T
+	 RG66kkv7llYYTn2Mu4XK7whKxBsKCuO/C8ugJMuSwfHXQCP71I72eCbRO3WtbkIL3Z2kk
+	 nlHvdPlSy+ADt0n6K2uvfKpr87vLCfmbxOtL0QkAigLkuhO5z/qkpSWPvuErPFEFggw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=MmvF84R0;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=yandex.ru;
+	spf=pass smtp.mailfrom=yandex.ru;
+	dkim=pass header.d=yandex.ru header.i=@yandex.ru header.a=rsa-sha256 header.s=mail header.b=mIvxLHIf;
+	arc=none smtp.remote-ip=178.154.239.223
+Received: from forward400d.mail.yandex.net (forward400d.mail.yandex.net [178.154.239.223])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 08BC2606A330;
-	Thu, 12 Nov 2026 13:21:04 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0ED13606A32D;
+	Thu, 12 Nov 2026 13:47:14 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 0ED13606A32D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=yandex.ru
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=yandex.ru
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=MmvF84R0
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A0D581F00A05;
-	Thu, 12 Nov 2026 13:21:00 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794489664;
-	bh=2TVb8qDZ4KT/CTu1G3B1wlWvG0RXp8XP3qjnuNYzjOg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=MmvF84R0gtLndw24gzSFT3ub5yJmtlvjtQewwlBkOj3aPXQTksQ4drEzrc46OvL/z
-	 wo9GRa3UsS1F1xzmaEOQVjwk+tWBf2XT/7mCHBb8HSswe2CPaa8KtfXoHjL9Y0GbyO
-	 1efF5XqnKzznSG9DEGEO7OMYE2iaaSETCJ8OFamxUwQlBUJWVpDt1tjvUs4hkM1QL2
-	 IWFg+ih4NX2foIqjeWjsniqTNNlHAD8H5+koYNsWz+ArokDl49tjta/Dn88XnGLkGJ
-	 3S6OKico8mJafJNwprIMppBt+ZwOOYREUSFE9sMr0CwvZQk9NrRSiDsIISSMrUCwF/
-	 4a2UthzwC3fuQ==
-Date: Thu, 12 Nov 2026 14:20:58 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: Jan Kara <jack@suse.cz>
-Cc: linux-fsdevel@vger.kernel.org, Jan Kara <jack@suse.com>, 
-	Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, 
-	linux-mm@kvack.org, ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, 
-	linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev, linux-efi@vger.kernel.org, 
-	linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org, 
-	Karl Mehltretter <kmehltretter@gmail.com>, Dave Kleikamp <shaggy@kernel.org>
-Subject: Re: [PATCH v2 04/34] ext2: don't set SB_RDONLY after filesystem
- errors
-Message-ID: <20261112-besorgen-nobel-handschuhe-fb3373259b5f@brauner>
-References: <20261029-work-fs-sb_rdonly-v2-0-2f44f64f0b66@kernel.org>
- <20261029-work-fs-sb_rdonly-v2-4-2f44f64f0b66@kernel.org>
- <5qefa4mracb3x2z4vsdejmkyyfrhdcrixmmnooz4rzwcdfoejm@mqkvixj6afwp>
- <20261110-kargheit-impfen-pausieren-881763d28b19@brauner>
- <za33axmgzmuzsj3zmfeh43fkphtcsqtkhhrauwuvs7aiftelgp@dzl6z322st5f>
- <20261112-wohncontainer-saurier-wonnen-91f30c3b3ae2@brauner>
+	dkim=pass (1024-bit key, unprotected) header.d=yandex.ru header.i=@yandex.ru header.a=rsa-sha256 header.s=mail header.b=mIvxLHIf
+Received: from mail-nwsmtp-smtp-production-canary-28 (mail-nwsmtp-smtp-production-canary-28.yp-c.yandex.net)
+	by forward400d.mail.yandex.net (postfix) with ESMTPS id B5287815E4;
+	Thu, 12 Nov 2026 16:47:06 +0300 (MSK)
+Received: by mail-nwsmtp-smtp-production-canary-28 with ESMTPSA id 3lUfioFgImI0-IKTDfIHj;
+	Thu, 12 Nov 2026 16:47:06 +0300
+X-Yandex-Fwd: 1
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=yandex.ru; s=mail;
+	t=1794491226; bh=Rrp1X1YWSNAMJWln65D+arV/W5RD4l1c8EBUA/LakV8=;
+	h=Reply-To:Message-ID:Date:Cc:Subject:To:From;
+	b=mIvxLHIfbDhcpa8dUYw6GMzmW0xnPjrJCnYqM0/05cLkWZPkdS5eaf4osOn3D6iad
+	 faUkGwS+7+eaA8R8awD3+CORNDSv4F389dk6dpleoeVDUjcPkL6EHDFlHuShzbjmQ0
+	 UpclMu36cXSC7rtuGTwAxU7BQxZAnEIVG7F1/IEk=
+Authentication-Results: mail-nwsmtp-smtp-production-canary-28; dkim=pass header.i=@yandex.ru
+From: Alexey Kuznetsov <nondet@yandex.ru>
+To: linux-btrfs@vger.kernel.org
+Cc: linux-block@vger.kernel.org,
+	dm-devel@lists.linux.dev,
+	Alexey Kuznetsov <axet@me.com>
+Subject: [RFC PATCH 0/1] btrfs: hybrid physical bad-block handling
+Date: Thu, 12 Nov 2026 08:47:02 -0500
+Message-ID: <20261112134703.38510-1-nondet@yandex.ru>
+X-Mailer: git-send-email 2.47.3
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -67,46 +64,181 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20261112-wohncontainer-saurier-wonnen-91f30c3b3ae2@brauner>
+Reply-To: Alexey Kuznetsov <axet@me.com>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Nov 12, 2026 at 01:01:34PM +0100, Christian Brauner wrote:
-> Fwiw, this leaks the inode's anonymous tlocks. They're from TxLock which
-> is shared by all jfs mounts. txLock() also sets mp->lid and pinned the
-> metapages with metapage_nohomeok().
->
-> So the helper would have to tear all of that down like txAbort() does
-> and drop the pins. Doable, I guess not sure if this belongs into the
-> series.
+From: Alexey Kuznetsov <axet@me.com>
 
-So ok, I tried to do this in a vm. With jfs.nTxLock=256 three rounds of
-error + umount leaked 163 tlocks and the next writer on a fresh jfs hung
-in txBeginAnon().
+This is an RFC for physical bad-block handling in btrfs: a design
+proposal plus a loop-device prototype.  It is not a submission candidate.
 
-I think txAbort() might be the wrong model. It only drops the pin when
-mp->lsn is set and doesn't free linelocks. So this would need a helper
-modelled on txUnlock().
+Why the existing layers are not enough
+--------------------------------------
+Bad-block handling today lives either below the filesystem (dm-linear,
+dm-quarantine, md, drive firmware) or in a logical structure such as
+ext4's bad-block inode.  Neither knows which physical copy of a mirrored
+logical extent failed.  As a result:
 
-Fwiw, the BUG_ON() also triggers without this series. The error sets
-SB_RDONLY, sync_filesystem() bails at umount and nothing commits the
-anonymous tlocks. This series fixes that as a side effect because
-sync_filesystem() keeps running.
+  - a filesystem cannot use its own redundancy to distinguish "this copy
+    is bad" from "this logical extent is lost";
+  - it cannot relocate only the data that lives in the bad physical
+    range;
+  - it cannot stop the allocator from reusing that range, and
+  - it cannot report which files are affected instead of only which LBA
+    failed.
 
-> All the check
-> does is make syncfs() return without writing anything and make unmount
-> drop whatever the flusher hasn't gotten to yet. Which might be the goal
-> you're after?
+The prototype keeps the layer split:
 
-I tried that too on fat and ext2. With the check and an umount right
-after the error new files are gone on both. If the flusher ran first
-nothing is lost. That's exactly what happens without this series. If
-writeback is allowed to finish nothing is lost either way.
+  block layer   physical remap/quarantine, no filesystem knowledge
+  btrfs         detection, mirror salvage, relocation, reporting
+  userspace     scanning, persistence, policy, initramfs
 
-Skipping these superblocks in the flusher is no better. ext4
-effectively does that in its emergency state (ext4_writepages() bails)
-and the stuck dirty pages throttle everyone else from testing. with 1.4G
-stuck on ext4 a dd to ext2 on another disk crawled at ~1MB/s until ext4
-was unmounted (cf. [1]).
+Bad extents are tracked per device as physical byte ranges, not as a
+filesystem-wide logical list and not as an ext4-style inode.
 
-[1]: https://lore.kernel.org/r/ZEnb7KuOWmu5P+V9@ovpn-8-24.pek2.redhat.com
+What the prototype does
+-----------------------
+The series is against 6.12.  It adds fs/btrfs/bad-extents.c and hooks
+scrub, the read path, the write path, the allocator, the device tree, and
+the ioctl surface:
+
+  - scrub records the physical range of every initially failed sector.
+    An I/O error becomes "confirmed"; a checksum, header, or generation
+    failure becomes "suspect".  Adjacent ranges coalesce and a second
+    observation upgrades suspect to confirmed.
+
+  - A read that overlaps a confirmed range fails before device I/O.  The
+    failure goes through the normal read completion path, so btrfs retries
+    another mirror and returns -EIO only when no copy is left.  Suspect
+    ranges are read normally so they can still be verified and repaired.
+
+  - Repair writes into a confirmed range are dropped, so repair cannot
+    recreate a copy in known-bad media.
+
+  - find_free_dev_extent() trims confirmed ranges out of candidate holes.
+    New chunks never land there.  Suspect ranges remain allocatable.
+    Zoned devices are intentionally untouched.
+
+  - Ranges persist in the device tree as
+    (devid, BTRFS_DEV_BAD_EXTENT_KEY, physical_start) items holding
+    length, last logical offset, generation, state, and observation
+    count, under a new incompat bit.  Mount loads them after device
+    stats; add/remove/clear write through; SYNC commits a scrub report.
+    Removing the last range clears the bit in the same transaction.
+
+  - On RAID1/RAID1C3/RAID1C4/DUP/RAID10, an ordinary write whose stripe
+    falls in a confirmed range is aliased to a healthy mirror of the same
+    logical range inside btrfs_map_block().  All copies are still
+    submitted, so the healthy copy is updated and the bad sector is never
+    written.  If every copy is confirmed bad the write fails with -EIO.
+    Device replace is excluded because it manages its own stripe
+    duplication.  With the experimental raid-stripe-tree feature, the
+    existing ordered-extent completion path records the aliased stripe;
+    without RST the alias is per-write and reads rely on the existing
+    mirror retry.
+
+  - Data-relocation reads are exempt from fast-fail, because relocation
+    is exactly the operation that has to read the old copy before moving
+    it.
+
+  - A userspace command, dmq btrfs-relocate, coalesces the reported
+    ranges and drives BTRFS_IOC_BALANCE_V2 with
+    BTRFS_BALANCE_ARGS_DEVID | BTRFS_BALANCE_ARGS_DRANGE.  That selects
+    only chunks with a stripe on the affected device inside the bad
+    physical range.  It works without btrfs-progs knowing the new
+    incompat bit.  A companion userspace package also scans and persists
+    a sector map and feeds dm-linear/dm-quarantine for the non-btrfs and
+    boot paths.
+
+Test results
+------------
+On 6.12.116 with loop devices, the prototype passes:
+
+  - ioctl add/coalesce/upgrade/split/remove/clear;
+  - persistence across unmount/remount and the incompat bit lifecycle;
+  - scrub detection of a deliberately corrupted data sector, exact
+    physical offset, SYNC, remount;
+  - dmq import into a checksummed map and mount through dm-linear with
+    EIO for the bad range;
+  - fast-fail on a confirmed range, normal reads for a suspect range;
+  - RAID1 fallback, skipped repair write, and EIO when both copies are
+    confirmed;
+  - allocator exclusion of a 176 MiB confirmed range (ENOSPC for a
+    100 MiB write) with a suspect-range control;
+  - a RAID1 in-place NODATACOW rewrite against a dm-quarantine poison
+    range: the target's write counter stays at zero, the healthy mirror
+    holds the new data, and a control write after clearing the extent
+    does reach the poisoned range;
+  - targeted relocation: BTRFS_IOC_BALANCE_V2 completes, the payload is
+    unchanged, and a new copy appears outside the confirmed range.
+
+The userspace test suite (62 tests) covers the ioctl ABI, balance ABI
+packing, map import, and CLI behaviour.
+
+Known limitations / why this is an RFC
+--------------------------------------
+  - The on-disk format and the ioctl ABI are placeholders.
+  - btrfs-progs 6.14 does not know the incompat bit (btrfs check reports
+    unsupported features 0x8000) and does not expose raid-stripe-tree
+    (mkfs.btrfs -O list-all omits it), so the RST alias path could not be
+    exercised on loop devices.
+  - Fast-fail is whole-bio/chunk granular; more data than the bad sector
+    may be failed and retried on another mirror.
+  - Relocation is manual and chunk-granular.  It is not invoked from
+    scrub.
+  - Persisted items for a removed devid are not cleaned up.  Devids are
+    not reused, so they are ignored.
+  - Write redirection only covers mirror profiles.  Single-profile data
+    and metadata still fail; reallocating a single-profile write through
+    RST is a larger project.
+  - Boot-chain and LBA-0 handling are discussed in the userspace design,
+    not implemented here.
+
+Questions for the list
+----------------------
+  - Is a per-device physical extent list in the device tree the right
+    on-disk representation, or should this extend the raid-stripe tree or
+    use a dedicated tree?
+  - Should read fast-fail be per-sector instead of per-bio/chunk, and
+    should the I/O path record errors automatically or only scrub and
+    userspace imports?
+  - Is an incompat bit appropriate for a feature that changes read
+    semantics, or is a mount option / read-only toggle preferable?
+  - How should this interact with device replace and balance?  The
+    prototype excludes dev-replace writes and uses balance as the
+    relocation engine.
+  - What is the right policy for upgrading suspect to confirmed, and how
+    should transient errors be excluded?
+  - Is RST the right persistence mechanism for the write alias, or should
+    there be a separate logical-to-physical indirection?
+
+The userspace prototype and design notes, including the LBA-0 and
+bootloader discussion, are at:
+  https://gitlab.com/axet/kernel-badblocks
+
+The patch follows.
+
+Alexey Kuznetsov (1):
+  btrfs: track physical bad extents, fast-fail, persist, and relocate
+
+ fs/btrfs/Makefile               |   2 +-
+ fs/btrfs/accessors.h            |  12 +
+ fs/btrfs/bad-extents.c          | 825 ++++++++++++++++++++++++++++++++
+ fs/btrfs/bad-extents.h          |  46 ++
+ fs/btrfs/bio.c                  |  38 +-
+ fs/btrfs/disk-io.c              |   8 +
+ fs/btrfs/fs.h                   |   4 +
+ fs/btrfs/ioctl.c                |  96 ++++
+ fs/btrfs/scrub.c                |  32 ++
+ fs/btrfs/sysfs.c                |   2 +
+ fs/btrfs/volumes.c              |  29 ++
+ fs/btrfs/volumes.h              |   5 +
+ include/uapi/linux/btrfs.h      |  40 ++
+ include/uapi/linux/btrfs_tree.h |  22 +
+ 14 files changed, 1159 insertions(+), 2 deletions(-)
+ create mode 100644 fs/btrfs/bad-extents.c
+ create mode 100644 fs/btrfs/bad-extents.h
+
+-- 
+2.47.3
+

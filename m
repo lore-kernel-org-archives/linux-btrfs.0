@@ -1,52 +1,95 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794503169;
-	b=d8XglW7AUgQoXiPi2Ivie8aK7W4RXWgf/zSmyfPAhWZgm+Bze4fScczweR7cgOej2eW4
-	 44vTRt2JSOgijo4hvCmgwmanoOfakATDQoGDgRXrouOxQ7Yic1Kv/6mlIqes/FpetOIK0
-	 59hAxAFGwkcldoZ/wgImgKZVkFAmEhLK+NCEs4A7l+JOMAzK5jb/RKyIwPw3fVO2v3puw
-	 h62NHEXMvanG3ETlnsRApqNIKiBDAEjbVBUxsTioyAKd6Z7TVMlSRn8ZOjINMdpAxuu61
-	 rVjWAFy+FguCuDZNsZeuf49LbM7mNISqvyuHLZzACc9cOPYbXx/AE7eFa6KH1JmT0Yw==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794503169;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=saMY5Dx4exB1plzXqVIjUtKTOoE6NinPtORnwuQlSg0=;
-	b=toTyKZlNNVaBYH5My65X2kao8VMSTy8Mgz9HelY+iAuZFdaU8QSwpK/LyDvm2gcrbVgq
-	 uW7C0cmnHUF1IxmYHT8oG3JLY6HkN1K+gxKs5PIYubMgnzGIKHTyJmp1ykvjvwOKGGlI2
-	 ZSUjylv5bo3GmK93GxJSO8rKTYM6En9UYKs8HutsROu5x4HfjF9v9GT7E7x6Dp9UttWZN
-	 OXc5C4zzwRQwMAQ+HdrIi0iGXpQXV53ljIAI2RHkKt8v8ABvR9pYx2afCBMt03QvMhal5
-	 7gnOa+TDnJnCjP7kIlJDzql7lRXqTpzrWfm+LWyOBEK0+oWrkiF+iV8B8yt8RL7dG6g==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZNCrh3H5;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.230.70
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794503505;
+	b=Z+NxscsP9DLqJ+6mNzWwMFDEJGJXoIJXzZTZ4y3ukJWsUJY6TJzHCpChpjG2tYb+fxKb
+	 sA0eFJObIywRp4MJmHuyp6MVkzq+/w/fY9bswY9AE2tnAUTtXbbZZJHO/oPtDViQmXOjb
+	 eVVcIngJkm8jJWR4HBUenf2T51qtuss7nFn93xB5RswsVd4A6mJdzs1hWXVLJNdb3Ys6Q
+	 0jdMzzXWNzd580zO5ZLfmrRNM24HA+TG9tvfJmkLvRtEevpJnFzARoykdoZOZSiO793C8
+	 3wdWxIWY+sUF626RFG1K1QpXVa8GyjibzWJUgyN8j1symJHuPGw2Md6eOCIlZ6leroQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794503505;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:From:Date:
+	 X-Gm-Features:Message-ID:Subject:To:Cc:Content-Type;
+	bh=QGM2cpFz0ONu2Q6+DFk5sCSFJML/TOmusE4o2JQDKh8=;
+	b=pR4DhpnAhH573oVtHvCTOJEpwiduH+ZwB5vpPPmd8K36sT/wagjBO0mz1drGNhzrI22x
+	 FN5x48liIy4BtTAuCzkVkTYdy4tSLksmcXqDN9XPDt52j8AcnC7gyVTq7UnH9UP5nh8Wh
+	 Cepxxs17lbttSo9YnMhh/nSjBoVbhpz4BnN0JNF+fjBk5TW031Vo+rhZo+c33xr4TxKOr
+	 qjC4scEmh7uiPAE/+B8O8jiyzuNNotocOpv/62Q0xbmfNYhAlSi8DWiHxlPGlPIlQw9dv
+	 ZJAEt8f5j6jgSOpP+U82SMKEfIj+pPixGguuBRESim3OnfTm8XE2MMhwhglwtGhUmaQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=PBU3qQcP;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=74.125.230.70
+Received: from mail-lr2-f6.google.com (mail-lr2-f6.google.com [74.125.230.70])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82A3F606A323
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 17:06:09 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D0A19606A330
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 17:11:44 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D0A19606A330
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZNCrh3H5
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8FCE11F000C4
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 17:06:08 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794503169;
-	bh=saMY5Dx4exB1plzXqVIjUtKTOoE6NinPtORnwuQlSg0=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=ZNCrh3H5n+oDAzYR/VXdnqwLP/JF1KHN5KLiynhL/jFK7SeVgZfWqU4SfFuR9Kud7
-	 ZZrXHBO6Zq+AgemOuz1qiMOgnmmGE91ng93taPLnDcMyrdjhwpX+9NFl3OtNDFI6Zl
-	 IgLwqYj7n+sWKZg/Yq7gN3Bu/8KlN/ak6TYwMOqiJGwG7ezERXNaIyyImbmYDZ+tro
-	 xjgxqrFLgTewPu/pR4DJtl3R6rCHSg2CX0SZcOFNWyUOM2Y3eVtDWB9IPBR+HhWtMb
-	 4GouFG87Kf5aOBczSn9ZX4wnMh74mGF7FRkAKbj1xOiLlY57kc5Tp7yt5de1X0PPlp
-	 UKt+HB4ziO4Vg==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v4] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
-Date: Thu, 12 Nov 2026 17:06:02 +0000
-Message-ID: <70526c96c1d0dbcf1f251f3ca40a55ec902cfe6b.1794502890.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
-References: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=PBU3qQcP
+Received: by mail-lr2-f6.google.com with SMTP id 38308e7fff4ca-3ab1bfd1373so3479101fa.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 09:11:44 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794503503; cv=none;
+        d=google.com; s=arc-20260327;
+        b=RkVYjox12o8tsPq4osHh3T3EJPRpbHVloOhXMcQXyRbR/YW2fMJmq84B0WH5nj2TI4
+         PjXJAyg7v4gdf8GsIpO4lKE5JLa9g9F4mFHfzuFBpIWyaV8WyB9KAk/xBkCPoqaJa8x/
+         cKn74/U8wTHKZUlH2nmGqjMKLtTBK6YzHFDAz+X+kP6aayuGM2JhWuQhYbJDt3vd366s
+         i2WGd+2ts+69fXamt9dQFcxsGDeU5gBraWpjfFilm/lsZrQ2TRYKytARctixojqTB6j0
+         iV7+mmDayz8jE/ud1oJHF5GcYO9AGbCDQHU7h2ZXI5CxqWkfmHNL9jpyBo+dmPmJmnEz
+         e58g==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=QGM2cpFz0ONu2Q6+DFk5sCSFJML/TOmusE4o2JQDKh8=;
+        fh=52HGdZoijDY46FnnDRkX1tDbZWbiUCWYGXtp7PBSqEk=;
+        b=CZq0PaMnx1UDmujDaLscJQ7YIJKujLVR0LYPywVb9qpqLZIQ695LR1KjBk2j8iplcQ
+         T1CBQwIvlKz7+SU5QxSUcD6zkL/qfEuCWrXZOF0v0DdbLQWGom7QOZGmHPuBRQ2mNdWc
+         NX2Nsk7DD7Ma3T8RtRy9q3sbRL9M0vIyDQEqimrlSIhUswHqTaWt1o+24lbDPNKOLjhg
+         CKCkwTAkJKS6qMgsSBJyqop0HIoGgQV/w1AWz7pTchIofSh2Q7BK0YpHkB9n9GjF5Agp
+         Io2PC23gj7uhn6T6765bQans42xV64dXmupfRxbgxO963AlqJshmkWZjRSliHCI/Jq+T
+         zk1g==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1794503503; x=1795108303; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=QGM2cpFz0ONu2Q6+DFk5sCSFJML/TOmusE4o2JQDKh8=;
+        b=PBU3qQcPICdCX2BOC920SXPe/sSx0C2alUCGIt1HsS525PS2an9pkXG9/al6Xwv80Y
+         nJkMbjAWY1z5bEjiVIPriF/4DTJem3DPM75erT/71g99DW9PuZQWD1hJC6jppblOvt2O
+         HhrMq7KvY86NllFNPf+jBXudIKf4mZq+IkmYHsD81eQcjza3MVCK/8nj1qjUZAFlzcMO
+         Ubgd9YEIBkw6Z0IEM2iDw61EV5FYo2hslC2IYI9LMWbPe5kKqs0z9Df8Tdqk7+jikgtB
+         hFfEOZLpJ4XNYx9mG6u8QJq5YEAAXzNOTshUdqsVAnI6NABB/jQ43LUAYuOgkk4A9CJO
+         lp/A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794503503; x=1795108303;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=QGM2cpFz0ONu2Q6+DFk5sCSFJML/TOmusE4o2JQDKh8=;
+        b=CvpltwMEttEgJYwhpCKDibVfU+CWIbxevYgUDhI+0ZoUJUsjt5rb4NrbAs1GqZPtVp
+         jJJTZDABvdFp74zt0hwyas2hNadRGESuTQQevtWdO296e1yNA3atZMsNZ5sjBdtH8BM9
+         81Rw1n4RC7x6nEa6Bpw+GtD654PsLxEr8/Cm3ezGP4fArr+/o6lItYkmK73NfvhT+OtM
+         jVvvgaKaajZx3hqHZxSCPp0ysFges/hkiwztYNXFhIOVlw/88qBDNDsouk6aUHU4EoLE
+         1GABi5oK9viaEBD2pCbEctq8asHcvxK2QVeGiI39gYxrw4xHz4OPtZo0uhpb+mYRL5sn
+         bkqQ==
+X-Gm-Message-State: APuU4Z/LJv++5VX9RbbioxedzU3Ov1fLVEom91uvdshiTG1qPAcbtOd3
+	P2vdI27xbWT0BBdI00tmW0Nw3dsNpsMsyKeCgHefc70evyE6BDkGuytxmte2IwGCBpVareG0sCV
+	E9wHz9mUlZfIdujgEl7tK4kNlsknPMFZy1H1LEq9/XQ5v
+X-Gm-Gg: AYBFou3qM6w9ZrvOvqrmhL2QDDwK9deENiJRuILGAizAJUBv+AlM5oErvHPcEQvs4zT
+	OuFQ1wYhoKpGfrjOE3hNHLlybosNmL08hJ57wAobtjwP6uKKGbuKlW4YTvFJ7VIPcfnh5qmiOMu
+	UJWZQYUQjVrV8sOm4zI/oV09DpPyoZLgULhmAt1YtJGd3/jcRFtFV9maJYgmJE6kFZYN27Yark8
+	C4NDcMhpg8NYQewGdBuaY/r4Z1kmB/sNyOrON7ZR1NI2qntP+6cfYJ/xoNBJ/bYg5uFVapzflp7
+	gj1fAKdPTI62eD5biOIUSFu/XRGMwAz5ARfpbR4PP4hw7QNsh5z88ehwWHz/H8B1wyq3FgPFsiZ
+	D+ddW7iBrwD19DkJpz9ELB2hrzk6v9gKpbmuec3OZib/M4uYG02E82kvUeRSz1wJrMoK/
+X-Received: by 2002:a2e:9a14:0:b0:3a9:87c0:7737 with SMTP id
+ 38308e7fff4ca-3ae2b524911mr639101fa.21.1794503502596; Thu, 12 Nov 2026
+ 09:11:42 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -56,244 +99,92 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+From: =?UTF-8?B?6ZOu?= <fengaojigui88@gmail.com>
+Date: Fri, 13 Nov 2026 01:11:29 +0800
+X-Gm-Features: AclHuK_uUOvBnl5Iir1Aop6fKG622tVucuN8UbTKKfWEXFSQatCBOfFt44PLafE
+Message-ID: <CAO-4RZ2FQ5EaMV0H1016JZXzV_+57bro9=iwRmQtctR1s=fpsw@mail.gmail.com>
+Subject: [BUG] btrfs: WARNING in btrfs_create_pending_block_groups
+ (fs/btrfs/block-group.c:2929, v7.4-rc2)
+To: dsterba@suse.com
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi David,
 
-We are using a RCU read section but then we call btrfs_find_device() which
-iterates the device lists using a plain list_for_each_entry() and that is
-not safe it can result in loading uninitialized or torn pointers, leading
-to arbitrary memory dereferences, use-after-free conditions, and kernel
-panics.
+We observed a reproducible warning in btrfs_create_pending_block_groups()
+while processing pending block groups on v7.4-rc2:
 
-Update btrfs_find_device() to use list_for_each_entry_rcu().
-We also have manipulations of the devices and seed_list lists that are not
-RCU safe, in btrfs_init_dev_replace_tgtdev(), btrfs_rm_device(),
-btrfs_setup_sprout() and btrfs_rollback_sprout(), so update those places
-to use proper RCU list manipulation variants.
+  BTRFS info (device loop5): balance: start -f -sstripes=0..7
+  btrfs_abort_should_print_stack(__error)
+  WARNING: fs/btrfs/block-group.c:2929 at
+btrfs_create_pending_block_groups+0x1044/0x1810, CPU#3: syz.5.22/21682
+  RIP: 0010:btrfs_create_pending_block_groups+0x1044/0x1810
 
-Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f6070f
-Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+The warning is generated by btrfs_abort_transaction(trans, ret) at
+fs/btrfs/block-group.c:2929, which fired after insert_block_group_item()
+returned an error during btrfs_create_pending_block_groups(). The
+btrfs_abort_transaction macro (fs/btrfs/transaction.h) expands to a
+WARN_ON(btrfs_abort_should_print_stack(__error)) on first abort. Our
+guest runs with panic_on_warn=1, which escalates this warning to a
+kernel panic. We have verified with faddr2line that
+btrfs_create_pending_block_groups+0x1044/0x1810 maps to
+fs/btrfs/block-group.c:2929 in the v7.4-rc2 source (no local
+modifications to this file).
 
-V4: Update stale changelog and fix a use-after-free on a device after
-    removing it (both identified by Sashiko).
+Kernel/config: 7.4.0-rc2-kernsight-kasan #1, built from v7.4-rc2 with
+CONFIG_KASAN=y, CONFIG_BTRFS_FS=y, booted with oops=panic and
+panic_on_warn=1.
 
-V3: Fix some more RCU related issues pointed by Sashiko.
+Note: syzbot has an upstream report for the same function (open, with
+a history of BTRFS: Transaction aborted (error -28) via
+btrfs_inc_block_group_ro() and balance-related functions):
 
-V2: Fix other existing RCU issues pointed by Sashiko.
+  https://syzkaller.appspot.com/bug?extid=c14787f64c14bb933980
 
+Our crash also goes through btrfs_abort_transaction() in
+btrfs_create_pending_block_groups(), but we have not confirmed whether
+the error code and the calling context match the syzbot report. We are
+reporting our independent reproduction on v7.4-rc2 as supplementary
+evidence.
 
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/ioctl.c       |  2 +-
- fs/btrfs/volumes.c     | 93 +++++++++++++++++++++++++++++++-----------
- fs/btrfs/volumes.h     |  2 +
- 4 files changed, 73 insertions(+), 26 deletions(-)
+The crash depends on btrfs state built up by preceding operations. The
+reproducer is a multi-program syzkaller execution log (63 programs):
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 3c48cc714fef..6f04d0a49d86 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -319,7 +319,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 		goto error;
- 
- 	mutex_lock(&fs_devices->device_list_mutex);
--	list_add(&device->dev_list, &fs_devices->devices);
-+	list_add_rcu(&device->dev_list, &fs_devices->devices);
- 	fs_devices->num_devices++;
- 	fs_devices->open_devices++;
- 	mutex_unlock(&fs_devices->device_list_mutex);
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 651a780dd7b1..3fc30649d01a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2791,7 +2791,7 @@ static long btrfs_ioctl_dev_info(const struct btrfs_fs_info *fs_info,
- 		args.uuid = di_args->uuid;
- 
- 	rcu_read_lock();
--	dev = btrfs_find_device(fs_info->fs_devices, &args);
-+	dev = btrfs_find_device_rcu(fs_info->fs_devices, &args);
- 	if (!dev) {
- 		ret = -ENODEV;
- 		goto out;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a494c913ad12..b9504b637068 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2358,6 +2358,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	u64 num_devices;
- 	int ret = 0;
-+	bool free_cur_devices = false;
- 
- 	if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2)) {
- 		btrfs_err(fs_info, "device remove not supported on extent tree v2 yet");
-@@ -2483,8 +2484,25 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
- 
- 	num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
- 	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
-+
-+	/*
-+	 * This can happen if cur_devices is the private seed devices list.  We
-+	 * cannot call close_fs_devices() here because it expects the uuid_mutex
-+	 * to be held, but in fact we don't need that for the private
-+	 * seed_devices, we can simply decrement cur_devices->opened and then
-+	 * remove it from our list and free the fs_devices.
-+	 */
-+	if (cur_devices->num_devices == 0) {
-+		list_del_rcu(&cur_devices->seed_list);
-+		ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
-+		cur_devices->opened--;
-+		free_cur_devices = true;
-+	}
-+
- 	mutex_unlock(&fs_devices->device_list_mutex);
- 
-+	*bdev_file = device->bdev_file;
-+
- 	/*
- 	 * At this point, the device is zero sized and detached from the
- 	 * devices list.  All that's left is to zero out the old supers and
-@@ -2503,23 +2521,10 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
- 		}
- 	}
- 
--	*bdev_file = device->bdev_file;
- 	synchronize_rcu();
- 	btrfs_free_device(device);
--
--	/*
--	 * This can happen if cur_devices is the private seed devices list.  We
--	 * cannot call close_fs_devices() here because it expects the uuid_mutex
--	 * to be held, but in fact we don't need that for the private
--	 * seed_devices, we can simply decrement cur_devices->opened and then
--	 * remove it from our list and free the fs_devices.
--	 */
--	if (cur_devices->num_devices == 0) {
--		list_del_init(&cur_devices->seed_list);
--		ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
--		cur_devices->opened--;
-+	if (free_cur_devices)
- 		free_fs_devices(cur_devices);
--	}
- 
- 	return btrfs_commit_transaction(trans);
- 
-@@ -2799,7 +2804,7 @@ static void btrfs_setup_sprout(struct btrfs_fs_info *fs_info,
- 	fs_devices->open_devices = 0;
- 	fs_devices->missing_devices = 0;
- 	fs_devices->rotating = false;
--	list_add(&seed_devices->seed_list, &fs_devices->seed_list);
-+	list_add_rcu(&seed_devices->seed_list, &fs_devices->seed_list);
- 
- 	generate_random_uuid(fs_devices->fsid);
- 	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
-@@ -2821,11 +2826,15 @@ static void btrfs_rollback_sprout(struct btrfs_fs_info *fs_info,
- 	lockdep_assert_held(&uuid_mutex);
- 	lockdep_assert_held(&fs_devices->device_list_mutex);
- 
--	list_del_init(&seed_devices->seed_list);
--	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
--	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+	list_del_rcu(&seed_devices->seed_list);
-+	/*
-+	 * Before splicing seed_devices, update the fs_devices of each seed
-+	 * device, otherwise a concurrent RCU reader could get a use-after-free
-+	 * on device->fs_devices still pointing to seed_devices.
-+	 */
-+	list_for_each_entry(device, &seed_devices->devices, dev_list)
- 		device->fs_devices = fs_devices;
--	}
-+	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
- 
- 	fs_devices->seeding = true;
- 	fs_devices->num_devices = seed_devices->num_devices;
-@@ -7549,23 +7558,47 @@ static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
-  * If devid and uuid are both specified, the match must be exact, otherwise
-  * only devid is used.
-  */
--struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
--				       const struct btrfs_dev_lookup_args *args)
-+static struct btrfs_device *btrfs_find_device_int(
-+				  const struct btrfs_fs_devices *fs_devices,
-+				  const struct btrfs_dev_lookup_args *args,
-+				  bool in_rcu)
- {
- 	struct btrfs_device *device;
- 	struct btrfs_fs_devices *seed_devs;
-+	/* If !CONFIG_PROVE_RCU_LIST we get variable unused warning. */
-+	bool rcu_cond __maybe_unused;
-+
-+	/*
-+	 * We are called in several contextes, sometimes protected by the
-+	 * device_list_mutex, by being in an exclusive operation, in a context
-+	 * where no concurrency can happen (so without any locking) or while
-+	 * under an RCU read section.
-+	 */
-+	if (in_rcu) {
-+		/*
-+		 * rcu_read_lock_held() always returns true when
-+		 * CONFIG_DEBUG_LOCK_ALLOC is not enabled.
-+		 */
-+		ASSERT(rcu_read_lock_held());
-+		rcu_cond = false;
-+	} else {
-+		rcu_cond = true;
-+	}
- 
- 	if (dev_args_match_fs_devices(args, fs_devices)) {
--		list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+		list_for_each_entry_rcu(device, &fs_devices->devices, dev_list,
-+					rcu_cond) {
- 			if (dev_args_match_device(args, device))
- 				return device;
- 		}
- 	}
- 
--	list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
-+	list_for_each_entry_rcu(seed_devs, &fs_devices->seed_list, seed_list,
-+				rcu_cond) {
- 		if (!dev_args_match_fs_devices(args, seed_devs))
- 			continue;
--		list_for_each_entry(device, &seed_devs->devices, dev_list) {
-+		list_for_each_entry_rcu(device, &seed_devs->devices, dev_list,
-+					rcu_cond) {
- 			if (dev_args_match_device(args, device))
- 				return device;
- 		}
-@@ -7574,6 +7607,18 @@ struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices
- 	return NULL;
- }
- 
-+struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
-+				       const struct btrfs_dev_lookup_args *args)
-+{
-+	return btrfs_find_device_int(fs_devices, args, false);
-+}
-+
-+struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
-+					   const struct btrfs_dev_lookup_args *args)
-+{
-+	return btrfs_find_device_int(fs_devices, args, true);
-+}
-+
- static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
- 					    u64 devid, u8 *dev_uuid)
- {
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 891bc2432870..2319789635a3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -773,6 +773,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
- 		      struct btrfs_device *device, u64 new_size);
- struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
- 				       const struct btrfs_dev_lookup_args *args);
-+struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
-+					   const struct btrfs_dev_lookup_args *args);
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
- struct file *btrfs_open_device_deny_freeze(struct btrfs_fs_info *fs_info,
--- 
-2.53.0
+  syz-execprog -procs=8 -threaded -repeat=0 -executor ./syz-executor
+repro.kernsight.prog
 
+The programs are replayed repeatedly with 8 parallel workers (-repeat=0);
+the execution order is not guaranteed to be strictly serial. The balance
+operation that triggers the abort is visible in the console just before
+the warning.
+
+In our fuzzing pipeline this reproducer was verified on a fresh VM
+(reproducer pipeline outcome: confirmed=true, status=verified).
+
+A full write-up, the reproducer and the crash artifacts are available at:
+
+  https://github.com/Zheng-zheng-codes/btrfs-create-pending-block-groups-warning
+
+Repository contents:
+  - README.md                      full bug report: phenomenon, stack trace,
+                                   mechanism status, reproduction steps
+  - reproducer/repro.kernsight.prog
+                                   pipeline-verified reproducer (63-program
+                                   multi-program execution log)
+  - reproducer/repro.prog          pipeline-extracted program; not a standalone
+                                   reproducer
+  - reproducer/repro.priming.prog  state-priming program set (pipeline recipe)
+  - kernel.config                  kernel configuration used
+  - environment.txt                kernel image info (sha256), QEMU command
+                                   line, syzkaller commit, reproducer command
+  - logs/log-*.txt, logs/report-*.txt
+                                   original syzkaller execution logs and crash
+                                   reports from the fuzzing pipeline
+  - logs/machineInfo-*.txt, logs/title-stat.json
+                                   guest environment info and title statistics
+
+Happy to provide the kernel image, the crafted image, additional crash
+instances or raw artifacts if useful.
+
+Best regards,
+Zheng Zheng

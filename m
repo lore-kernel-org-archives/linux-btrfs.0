@@ -1,87 +1,48 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.50
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=174.142.148.226
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794462201;
-	b=Y9/JlPFAJ+Qh85tyg24XHiTQOB+3jFz5OUDcMWlAV8zzRyPp9c39lc/FSygwpUiecTmf
-	 m9WoqsP4BbXDRWUWqDtY6BckXB2bebvMwzRi9z4hVIJBvdFB+w/df9e1yF/tLdPWPdYsA
-	 9UyONN2lnxuhkZC+60antu92B4OHa12kyGZtMyXsytaOh1pdy64uWujGtrBdcKKoIyHed
-	 nL+groBjsF5sTnsTFmKoK3/S4Rwhk1z40GNZPFoP7LxxbK/jjCqmyfPJ0E/OxrK3eSH4e
-	 afsdLLoD/N7N7d04gde+MM3JB44JH0XJNy9AZMjhM/P3Dd+6td4H/alxUHEhzsS8QAQ==
+	t=1794464111;
+	b=4FAHDjV53mZd8hRyVvaYCkm6LC8Wtw1Mb1Yr89l6pKCt+HR42uF6h5+Pkb3W+0iN3oaM
+	 2244vsC29BXHsCkgW8sWNCjKmOnH48hG/IKR2lrTfs/7dqJ1lhJbUTrFJ5yYAM+p4YVR1
+	 EFWACUiSdHRthsvE/NinXfGZuJ/UVlF95nmPPDvGtyH7zIvwzUhmmWzevcK2d04HjTshU
+	 FdXqT23SintAjxhiv51hB+PoVHWePdqFRaE8G/NZPGVwQyhWXNnOwwZFTh4YZXRZshQNi
+	 MNRUQzt51ZCciOck9tJWS0dADSe+BA79W1r1Ps0OsGxKldyL1UqEc1MgAihq25Tnp3Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794462201;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
-	b=5mExMQLnSXCcUxQ78+8Rrdj0ADYfHRvMOukPLXTrozxEgld5qqgW7Lm4HjvtwJUPQUMI
-	 /a+SuKLwz6f0/7vb5VcKVWtI3yQZPPLAkHkxJAupmz91wzILAUacXp5dPCke7lHluKVPq
-	 CkD8qJakIMjVZIygo/apogI9JcJAydMw9lbEBXeZkk+15P9vXYPdyKB6dV4Shhlm8U6Gz
-	 Re/LTVHHwxmKPlfLbozrIFjgUD6CMuCD/fvjCjJW7h1ARFhlfMABCVxifn1OPxxqrgi01
-	 US+gmSyh3auzyvQMHP/6V9mdVB9SAnqt+/EpnFOgrkaglx23ElXqzenaWSWLkXb2+RA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794464111;
+	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
+	 MIME-Version:Content-Type:Content-Disposition:
+	 Content-Transfer-Encoding:In-Reply-To;
+	bh=BHQpga73EjDTxLR8w3Ak9ObnoV8jrlpHl+BtnwgUHTQ=;
+	b=RU/ET/I6dVjRDzuOpxmUsfuIH/dGNyoLsiPXyutJRrabjsVRlWJ67PR51ayWQ8kJcsVv
+	 OQx2tqoPVTJBA3E7PzF+ZkvhTiBNRQwthsFEDMjoVuUM/5gIpmw2g6TMcvA7S9JgQX7sR
+	 DOokInbGk5PzKq5rbbFtgf5gEmhoE82hwD94UC+40beQV4lc/gP5V46Ho/+DV1JOFeMg0
+	 v+zm02rHUzVxbRJFNuQjlBKPZVGCcOVoTlf8V6EFSTcVYMm9vYLMEnQX+i5muWeUxEIPj
+	 mihHBMZrIiOm/vS+wKwE2yUXMVa31fRBw7YHhD5loLd3i86ZARMlWtR+5G1eSjrsNVQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=IUi4Sr6O;
-	arc=none smtp.remote-ip=209.85.218.50
-Received: from mail-ej1-f50.google.com (mail-ej1-f50.google.com [209.85.218.50])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6884C606A323
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 05:43:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6884C606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=IUi4Sr6O
-Received: by mail-ej1-f50.google.com with SMTP id a640c23a62f3a-c4c9abc1824so542689666b.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2026 21:43:21 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794462200; x=1795067000; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
-        b=IUi4Sr6OJLSxsf7172IrJjYS452TUyDWo9Sa8QRwLrCli61GVQIDtniOC7L67wB+XZ
-         7YfjhTS74jEyagjz3p5KILUccQg7lVTjqPa+oKHW4I8avHW4DXmeZOEZ6cwVLWsoH1fh
-         ksbCBbkpy3wOGXexSDTj+keWxFCDH01rIBJNgbX1W/dmlTYvy1a2zJvP04gEBgJ5O0fr
-         gc1jKM7vw9HOlw/Ptm0GyHdLRTkvF7zbwlu9E5/PMGh3oPpFwDMLuYIzIXyPp3k0q4Fz
-         MJnVQFeEmlOFoqjn7tiY3G8zHXpca8imb22B9X++ceHj+BK7c/ge6I1Lh8S7tzCYkop+
-         bncg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794462200; x=1795067000;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=uSpdnwCCcl5s3VxxBaMPEQo56m+gTuRSQb5w+gs0FcM=;
-        b=JVSqLr1E3VPorUhaZD2SK1HcJ95FNnmR4QTwTR0ZLtBSPTOJiivaACMlZMaJmiWVb4
-         bEQfVzUywH/jDk4itq6CXP7muQ0pdQBgnPnUHZzt/Vf22VokSA/L7K4cjiUy+hklxPLw
-         X43ngdbadGO5hynFHRfdVzMXaUp8sEr+gPHBA9B+dznTYAZ98oaFPDSFWTQ9GyKZF1li
-         fQxrFpCkk9pPqWIC2dE6dF0NbsSVfJ4+PBm2fIL5fNnjV7mR6+5Y3e4E7pAIkqOBG2ob
-         VzDXDqt5mG5OutYaWV0waN1tDtdBuXdRtonNIPoO2+rrJzrGibWueKM8WvJErqDPKgIJ
-         S8aw==
-X-Forwarded-Encrypted: i=1; AL+hErGITvTNqr0EyfSHa88lgkYGHvW6+9L/vC36Ip/0S4o5gj2lzmBdlApScR4aDi4x779ewNjO0k0equzyCg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/z+o6ABJIa1HVqWeYx990gWpQGRVG0tLyDRYY/kJLW0Sv94GGU
-	uCyjcfxc/MMGq0DFlJO2ZTsaWV6Z5ENW0uChUX8e5gtJR/kUoZkUSfIrI8cTBc2itkQ=
-X-Gm-Gg: AYBFou0PWAyG5kJ+wQiuYQkmVKYUHVd4xUxAfptTtN2FOyJjTJDuvk02UWPVcvo9g+w
-	nonezD/TdnGnyPmVglRKxwKjTEX/xYeAshl01NX0HvM1VTA8/dzX92rdHmLMwzJNqj2jpBYqZ5Q
-	tc159kWNeIGpYTsuCmkkrAVzE89hgmIkevgjdlXykUSdLW5MZLV9HUaKckZ5M3HrSwJojkzylDx
-	FQ5DKU+89BWFn1Wb3w+Di2ici2rZc7c/NwuL/I822CaZ308uuiCXVW6PTIrq9Ue468dQ97BfAzj
-	jblU8HzwOGrpSfxIitf+euH/9gha38P6EH6Tw34e6jl59OojiQUGwjsP9SjWxcKCkVet0PSedt6
-	0lemFqDXYdU4QWYyR5TqVoW72TXOtqv0FBU3fssgwV3jbrvlMclKQhTlJBHX+w7pnETdEcy8lR1
-	K5vfv5wRnCr3M/GG3+iP6Tbo+8pLPpLN2rVzxxuIo5VnnXygjrGgam5otnu0H1m1URhCOyWF8XO
-	nUjO6AYe+iUn3Pr8M/1PYygId7biYBhVoUk0JE+F18ykKoFCsw5Ik1mZ2ugGQydpflIkJ8CMf5l
-	4VOvT3+4IOd4Se5QgGMplg==
-X-Received: by 2002:a17:907:2d2c:b0:c46:7ec3:fde7 with SMTP id a640c23a62f3a-c5066b32327mr351480666b.31.1794462199671;
-        Wed, 11 Nov 2026 21:43:19 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2edb6d4b12esm28552285ad.21.2026.11.11.21.43.16
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 11 Nov 2026 21:43:18 -0800 (PST)
-Message-ID: <bb7bfec5-eb4a-4f8b-9dc6-d5eabdec9bc7@suse.com>
-Date: Thu, 12 Nov 2026 16:13:14 +1030
+	dmarc=none header.from=furryterror.org;
+	spf=pass smtp.mailfrom=furryterror.org;
+	arc=none smtp.remote-ip=174.142.148.226
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id C843D606A331
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 06:15:10 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C843D606A331
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=furryterror.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=furryterror.org
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+	id 037491CC941E; Thu, 12 Nov 2026 01:15:03 -0500 (EST)
+Date: Thu, 12 Nov 2026 01:15:03 -0500
+From: Zygo Blaxell <zblaxell@furryterror.org>
+To: koraynilay <koray.fra@gmail.com>
+Cc: Sterling Windmill <sterling@ampx.net>, linux-btrfs@vger.kernel.org,
+	David Sterba <dsterba@suse.com>
+Subject: Re: [RFC] btrfs: forcing compression per inode via the compression
+ property?
+Message-ID: <avVZZ-u8kmaDyaSb@hungrycats.org>
+References: <557fae4a-3c08-43cc-924c-89d1f0f3896d@app.fastmail.com>
+ <DMQQG1D324U7.2945KG0ANDDJZ@gmail.com>
+ <5225511a-c66f-40e5-b9d6-31ff572496da@app.fastmail.com>
+ <DMQYN0GE281B.1PW8AIHGLUNDF@gmail.com>
+ <bebe248b-8eb5-48f3-8dc7-ddaf8e4a09c4@app.fastmail.com>
+ <DMRFBAXJM4OA.CV6LZNBPYR7J@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,105 +52,194 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix block group ref leak when scrub races with
- unused bg deletion
-To: Boris Burkov <boris@bur.io>, linux-btrfs@vger.kernel.org,
- kernel-team@fb.com
-References: <52f2ee4b5d0879b99ea8c863ee40403bb06c5345.1794441990.git.boris@bur.io>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <52f2ee4b5d0879b99ea8c863ee40403bb06c5345.1794441990.git.boris@bur.io>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
+In-Reply-To: <DMRFBAXJM4OA.CV6LZNBPYR7J@gmail.com>
 
+On Tue, Nov 10, 2026 at 10:29:16AM +0100, koraynilay wrote:
+> On Tue Nov 10, 2026 at 3:50 AM CET, Sterling Windmill wrote:
+> >> I read the code a bit (and bounced some ideas with gemini) and I think a
+> >> "force:algo:level" would work well.
+> >>
+> >> This, compared to "algo:level:force", would also allow a "force" value
+> >> (handled like "none" is already handled), that lets the user set *only*
+> >> the compress-force, without having to specify algo:level, so inheriting
+> >> from -o compress=, and the parsing would be as simple as if ("force")
+> >> str += 6, where str is the xattr string that gets then parsed by the
+> >> rest of the code (in compression_apply()).
+> >
+> > Thanks, a bare "force" value is a nice thing to have, and I agree the
+> > separate property isn't worth it.
 
+There is a symmetric gap to be filled here:  currently, there is no way
+for individual files to opt out of a compress-force mount.  The force
+mount option is checked first, so a compression attribute that says "none"
+(or chattr +m) is ignored, and the file is compressed anyway (along with
+all the side-effects that come with force, like 512K maximum uncompressed
+extent size).
 
-在 2026/11/12 10:38, Boris Burkov 写道:
-> btrfs_delete_unused_bgs() takes a block group off fs_info->unused_bgs
-> with list_del_init() and, when discard is on, later moves it onto the
-> transaction's deleted_bgs list and takes a reference for that list
-> membership. Meanwhile, it is possible for scrub to add it back to the
-> unused block groups list:
+> > From reading the code only, a few things stand out for the bare
+> > "force" case, where prop_compress would stay 0:
+> >
+> > - compress_file_range() starts from fs_info->compress_type, so on a
+> > filesystem mounted without compress= there is no algorithm to use.
+> > It needs a defined behaviour, such as falling back to zlib as the
+> > chattr +c path does, or having no effect.
+> >
+> > - The check at mark_incompressible only looks at FORCE_COMPRESS and
+> > prop_compress, so a failed attempt would set NOCOMPRESS and leave
+> > it behind after force is removed.
+> >
+> > - btrfs_compress_typelevel2str() returns NULL when prop_compress is
+> > 0, so children wouldn't inherit it and btrfs_fileattr_set() would
+> > fall back to the mount algorithm. That helper would also need to
+> > emit "force" in whichever form we choose.
 > 
->           CLEANER                               SCRUB
->    btrfs_delete_unused_bgs()
->      list_del_init(&bg->bg_list)
->                                          scrub_enumerate_chunks()
->                                            btrfs_mark_bg_unused(bg)
->                                              if (list_empty(&bg->bg_list))
->                                                btrfs_get_block_group(bg)
->                                                list_add_tail(unused_bgs)
->      list_move(&bg->bg_list, deleted_bgs)
->      btrfs_get_block_group(bg)
-> 
-> Other users of list_move() for bg->bg_list (like btrfs_mark_bg_unused
-> itself) ensure that the list was empty under the bg spin lock to decide
-> whether it merits a fresh reference for being linked to the list, and
-> we need to apply that pattern here as well.
-> 
-> Note that this is not abstracted to a helper function because some of
-> the callers have additional logic deciding whether to link it or not and
-> I think a twice used, twice unused helper would be more confusing than it
-> would be helpful.
-> 
-> Reported-by: Sashiko <sashiko-bot@kernel.org>
-> Link: https://sashiko.dev/#/bug/linux-821034ac-556f-4d72-af2c-d04468879af8
-> Signed-off-by: Boris Burkov <boris@bur.io>
+> Ah yes, these would all need to be changed (but only small changes
+> AFAICT) for a "force" patch to work.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+It might be nice to refactor all of those, so one parser gives you
+a struct with compress type, level, and force, or gives a complete
+string with all of those written out.  It would also get rid of
+the "none" special case, which can't accept a suffix.
 
-Thanks,
-Qu
+Doing it piecemeal means that someone's going to forget a parameter
+somewhere, especially if it's extended over time, which is how we got
+into the current mess of partial implementation everywhere.
 
-> ---
->   fs/btrfs/block-group.c | 7 +++++--
->   1 file changed, 5 insertions(+), 2 deletions(-)
+> > One thing I should have mentioned: Qu pointed out on v1 that older
+> > kernels ignore an appended ":<level>" because apply only compares the
+> > leading bytes. "zstd:3:force" would keep that property, with older
+> > kernels treating it as plain zstd, while "force:zstd:3" and a bare
+> > "force" would get -EINVAL from both validate and apply. Is bare
+> > "force" worth that trade-off, or would the suffix be better?
 > 
-> diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-> index 027830a53f7d..0b3b8843d221 100644
-> --- a/fs/btrfs/block-group.c
-> +++ b/fs/btrfs/block-group.c
-> @@ -1830,12 +1830,15 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->   			/*
->   			 * A concurrent scrub might have added us to the list
->   			 * fs_info->unused_bgs, so use a list_move operation
-> -			 * to add the block group to the deleted_bgs list.
-> +			 * to add the block group to the deleted_bgs list. In
-> +			 * that case the list reference moves along with it,
-> +			 * so only take a new one if we were not on any list.
->   			 */
-> +			if (list_empty(&block_group->bg_list))
-> +				btrfs_get_block_group(block_group);
->   			list_move(&block_group->bg_list,
->   				  &trans->transaction->deleted_bgs);
->   			spin_unlock(&fs_info->unused_bgs_lock);
-> -			btrfs_get_block_group(block_group);
->   		}
->   end_trans:
->   		/*
+> I think it's a worth trade-off, and my patch series already will break
+> some setups where users had "zstd:random_text" (which would be
+> semantically invalid anyway).
+
+Putting force first is more consistent with the mount option.
+"compress-force=zstd:5" becomes "force:zstd:5" on the inode, almost
+exactly the same string.  The mount option prefix for negation is "no", so
+overriding compress-force might look like "noforce:zstd:5" on the inode.
+So there's a compelling argument to put force first.
+
+That said, I think compatibility is more important.  On an old kernel,
+a file with a force prefix won't be compressed at all if the user
+had set up inode attributes without mounting with a compress= option.
+With a force suffix, an old kernel still gets some compression, and
+also avoids possibly getting the wrong type of compression, like the
+slower zlib algorithm instead of zstd.
+
+The prefix form breaks a convention that has been present since the
+attributes were introduced.  Compression type is the first argument,
+which has been there since the beginning.  The next part of the string
+is the level. Fedora’s documentation, among others, already describes
+it that way. Those docs were wrong, but people have read them,
+and some users have already filled in those strings believing they
+have an effect.  Extensions using the same attribute name should go
+after the parts of the string that are already defined and in use.
+Those constraints together prefer "zstd:3:force" and "zstd:3:noforce"
+over "force:zstd:3" and "noforce:zstd:3".
+
+"none" rears its head here:  it uses an exact match, so "none:extension"
+is not currently accepted by kernels, and "none:noforce" would mean
+"use mount option compression" on an old kernel.  So that's a point in
+favor of a separate attribute.
+
+> > If we go with the prefix, the match probably needs to be exactly
+> > "force:", in both validate and apply, and "force:none" should be
+> > rejected.
+
+I agree with rejecting "force:none" (or "none:force"--I'll use the
+prefix form here to match the text I'm replying to), although that
+agreement is conditional on using a single string attribute (see
+alternatives below).
+
+"noforce:none" would mean "don't compress this file, even if
+compress-force is set in the mount options."  A user might expect
+"force:none" to mean "behave like compress-force with chattr +m"
+(i.e. exactly the same as noforce:none), but the current compress-force
+mount option behavior doesn't honor chattr +m, and "force:none" would
+have to replicate what is arguably a bug to be consistent with what the
+existing flags and options do.
+
+> Yes, my current thinking is handling "force" exactly like "none"/"no" is
+> handled right now, with an additional else if for "force:" which moves
+> the string pointer to +6, which gets then passed to the rest of the
+> checks as they are in my patch series.
+
+If the all-in-one-attribute-string path is taken, now is the time to
+lock down whether these strings have a fixed order, or if it's a set of
+strings that can be present or absent.  e.g. is "3:force:zstd" valid?
+If there's a compression algorithm called "shiny" with a flag "fast", is
+"shiny:7:fast:force" valid, or only "shiny:7:force:fast", or do we make
+every compression algorithm squeeze all of its parameters into a single
+integer level?  Or will it be a free-for-all, with any order accepted on
+input, and all fields optional, so "noforce" by itself is a valid string,
+and a user can write "7:force:zstd" or even "5"?
+
+A separate attribute avoids the parsing problem, but trades it for
+an ordering problem.
+
+"btrfs.force-compression" could be "yes", "no", or unset (for "look up
+the mount option").  A new attribute gets a new name and doesn't touch
+the old string parser.  Each of the force strings means something to
+a kernel that knows the attribute name.  They are ignored by a kernel
+that doesn't know the attribute name, and old kernels can still use the
+attributes they do recognize.  Applications work the same way, using
+the attributes they know and ignoring the ones they don't.
+
+But a separate attribute forces us to reconsider combining "force" with
+"none".  Order of attribute sets matters if they conflict:  a file with
+force-compression=yes and compression=zstd, under a rejection rule, could
+not be changed to compression=none by setting only btrfs.compression.
+An application written before this patch is accepted would not know it
+has to do that, so it may fail after a kernel upgrade.
+
+The better option is to document that "force" combined with "none"
+just means the same thing as "noforce" combined with "none", so all
+combinations are valid.  That allows two attributes (or more extensions
+in future) to be added or changed in any order without having to deal
+with surprise -EINVALs, and without all the parsing issues.
+
+For a cautionary tale about rejecting invalid option combinations,
+look at what happened with conflicting combinations of chattr +C, +c,
+and +m rejected by a patch in 2020 (f37c563bab42 "btrfs: add missing
+check for nocow and compression inode flags").  These checks are _still_
+broken in 2026, accepting invalid combinations of options while rejecting
+valid ones, and requiring multiple steps to transition from one valid
+flag combination to another.
+
+> >> It should probably be a separate patch, but it'd depend on my patch
+> >> series, so not sure if I should just make a v7 with that or not.
+> >
+> > I'd lean towards a separate patch on top rather than a v7, since this
+> > is a new feature that may need its own discussion, and it shouldn't
+> > hold up your series.
+> 
+> I think adding a force patch to my series wouldn't be a problem, as my
+> series has been finalized since september, so I doubt it will change
+> much in merging time.
+> 
+> > David, do you have a preference? And if the series isn't likely to
+> > land soon, would you rather see force as a small standalone patch?
+> >
+> > I'm happy to write the force patch on top, or to test yours on the
+> > images from my table, whichever you prefer.
+> 
+> Yes, please test mine and also write a patch on top of my series, I'll
+> be happy to test that on my end as well.
+> After that we can decide if it's better to include it in a v7 or send it
+> as a standalone patch with references to my v6.
+> 
+> Thanks,
+> koraynilay
+> 
+> > Thanks,
+> > Sterling
+> 
+> 
+
 

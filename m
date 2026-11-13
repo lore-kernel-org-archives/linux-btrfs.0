@@ -1,99 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.41
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1794580162;
-	b=eP05ufUf16Pr3qhIY2bSyDPr1mO+Xo+Fu+LRubqAj8QsQdQEOfJlXo1by8yNxu5tDK8W
-	 ePnSnbNtiNNdPrpxB+v//PdpQrIlkuFAeed1GT2+LrJZ0BGk+7Vb+dknaMAUnYe8C+3uz
-	 +mwKgMp3sMpDuK8KqdvcD8rpYr/1yDBrAIaAgLrKEoRPNEt7CTmijEUzUc9MPaaQvbrYY
-	 FZBc9656TnqQb9zn38aZKGejlvpqobL7LIq24ATuvRcCMv4LVp6vbfOCYYe805K9o0LcJ
-	 K0Fo0zcsHJEH4e6M6vvTVPd14EZk2RI6vSE9BGNBBgOJyj1BDoe8uWrcWwRl7M96RmQ==
+	t=1794580966;
+	b=C5Ep+BmW3CFzI1GEH8KMP5BmMWAPBdyX0mIazVqXjEQaqVewTWYq1Y/8m3plNc3WW6NK
+	 RB0RfIAS0yCSqs8nEziny9T9uovEKHhvabUajkG+jpSI5QdQLosVU/r/+E4jK16fE/+sS
+	 TW1R7LhTuWlmlohnQ8x8AAInewoe3WO08J1r/N57mA+pC0nhZI9syGAcjotXHDJMKfrfB
+	 yFXPapQRczo1DPL0f3tIAAkkHDLxsb1kJ/AnTBS+0/NNv6ZLgkPAORVDv0EBx0pV0Og48
+	 ymLF8WjWp375JCRj92K1NseQP40r1gpERqGBe5t9zg2PwvRaL5PFPRV5noN2IlPiDMw==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794580162;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
-	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type;
-	bh=eff/JjwhOv2bXxzs5qei19A6x00WqMi0DUYpqKxITDg=;
-	b=kPaCO8+QFUzZUVqVTm5QiV0DO17iuC705FP5mxaWL0OuGpulMnGBI1nLHgtXEHAeKsWT
-	 LbijxJL1JZ7vTT9hTnY+hkZzJae7iRECH3KyvtqxzANkhS4nU/bb/fmzsmUPdjIYA0qEd
-	 d9llp+JVm+E3nJoCKuy7GeD1YG6ISQ7OcAtZ5wT6mixVL38P2DFehj8Dh6oGgqgrBytst
-	 U5yRr2BR+c/Kb6l3xwk+wa7GjJWwG2eCKxgMelUonfiVuWm2prz46ms9NAKu29KJ/81qF
-	 2d3ji4jWziRK8J5DXrAngwL1FZDAMhsYitKeOHsjw2Tz58+PZBh+J1O9GBHWEWhTchg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794580966;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:From:To:Cc:
+	 Subject:Date:Message-ID:X-Mailer:Content-Transfer-Encoding:
+	 Content-Type:X-ClientProxiedBy:MIME-Version:X-MS-PublicTrafficType:
+	 X-MS-TrafficTypeDiagnostic:X-MS-Office365-Filtering-Correlation-Id:
+	 WDCIPOUTBOUND:X-MS-Exchange-SenderADCheck:
+	 X-MS-Exchange-AntiSpam-Relay:X-Microsoft-Antispam:
+	 X-Microsoft-Antispam-Message-Info:X-Forefront-Antispam-Report:
+	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-MessageData-0:
+	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
+	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
+	 X-MS-Exchange-CrossTenant-Network-Message-Id:
+	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
+	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
+	 X-MS-Exchange-CrossTenant-FromEntityHeader:
+	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
+	 X-MS-Exchange-CrossTenant-UserPrincipalName:
+	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
+	bh=rXSs09QVnHsjbamkgdEI1iPyU2e4lbAS5j99UOKJKXo=;
+	b=4iSeCuZ+K1OwEcAcjlYf7mhaHz9pyTOsbJyC9QF+zkpU+MmZw567OBiMPKbCir8n1f1l
+	 0dVLLILY/OpI7sJ+IYqTQZ+SQifKorqhRBbF/TqW9vti+EZp28x6/Iy217YDrAt0paDWr
+	 n0A93QeBExhQL8g7tC9U5Dm1GgPTnoH5JccZxH3MGP0j8RlnpMaosQ4GXVyfeuFFRO0l4
+	 3hLceaCCvcEYv6fqXAik/X6cuiFMc+daEpaIKd70zmkVZKRQMsl0XoJxbfzT4ybN7u34x
+	 Uzx8A4ay7ADbauGh9g3HCOfcc9W3hHyu6HqgxdTGcDjyuRDAJ76klFixDWoZz7n5TiA==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=UcxuWOIm;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.41
-Received: from mail-ej1-f41.google.com (mail-ej1-f41.google.com [209.85.218.41])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=wdc.com;
+	spf=pass smtp.mailfrom=wdc.com;
+	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=kNBzpjsn;
+	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=j+ItvXUB;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
+Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 44576606A8A8
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 14:29:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 44576606A8A8
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C28F606A327
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 14:42:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8C28F606A327
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=UcxuWOIm
-Received: by mail-ej1-f41.google.com with SMTP id a640c23a62f3a-c40f29667e6so245685666b.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 06:29:22 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1794580160; cv=none;
-        d=google.com; s=arc-20260327;
-        b=GoNqonWGTJzKtKpAPL+WN9YekIo3+ap9fRRzAleZxv3r1vLHK+ltXLbeL8AHoJ/6Sd
-         Qr332tO7HWYkM6pHAPSlU65j65zeo/d38Hm6bscjaJYZX52ikMzdOsDroLEYBLPM1Qzn
-         JRAKv+WEqklKMKrwyEy0e6pCd2F20hWujDe6clg7wHswTGvmZkCuqfULEMO9hTXZgIe5
-         10oC5MSk/mCqoMunHsNu15Ak0eJ3CenA6+6Yx/Y2xjAH1YK6iAxybFUkHvvhxM3sJOX6
-         PcE4rDUpq4AaMtRyMmmr4z+UlsHmfJ60SnSmiLGeuWzqHsBo6DCYRJGop/fK9p4Y4cMP
-         2o2A==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=cc:to:subject:message-id:date:from:in-reply-to:references
-         :mime-version:dkim-signature;
-        bh=eff/JjwhOv2bXxzs5qei19A6x00WqMi0DUYpqKxITDg=;
-        fh=RhFuKwp73/x8KksFPnzjZEYxDQ9t3rFtnoJ8q5GIsWE=;
-        b=Lmm6aio2QgbfX8IaWfWLZpwSiog59eNiEZadzfe5yroqSlUuZ3vpnUvbKGhMRnPs/e
-         1e64dUHu5Ky7XNhvaVT5vQwU9SrZsk8mbRCPqcmPRacmwhSQMwjkZ14M/QRtzwXKOomu
-         aQnvCwhyeh0YiLj1Gxc90bL7Fr6Fi2t1Y8IkOa/QDL2+JQ1KpUhyjxlev+PwxhMsK9DO
-         u79tt+2pRKGbQZvZqwpwNAsiHZhKIUSlj+tc24W5UkR3FyxVrzfagqvZPcDPouj98FDZ
-         +kunxHV22AtfC9SJxXNOJtH3Kal2jQ6zQDkwlD/ZkWcU770ieTfuUzndli2Cuwu6D9oc
-         tsBw==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	dkim=pass (2048-bit key, unprotected) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=kNBzpjsn;
+	dkim=pass (1024-bit key, unprotected) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=j+ItvXUB
+DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
+  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
+  t=1794580965; x=1826116965;
+  h=from:to:cc:subject:date:message-id:
+   content-transfer-encoding:mime-version;
+  bh=J12+WIKiUxH+Z3d645tch+2ZCMik0mQdF5IlQaYo0js=;
+  b=kNBzpjsnZILr/Isg3ugQHxGb6iV6lQumerBog+jNmLbIXY5AUa+eGh7I
+   z3SCjc8R744LSg/3IUQdrwbLzLijJIlz7ZlzsMjUGC4syjpSKXIamSZCQ
+   Cl0Ar6zxj6/SNyqr6ImWHdPHyG59mEaZFx46get5eO4tz1YsxJO6OqzrQ
+   KlocEnDBCZo63xMnkH31dYBDauBbfsW71CI5Q9wSO7A0l8qTfwdVVhISD
+   w4zeunFn/U1xw+TjpfLk5G9Rr2eB76B6Urscw9EYetNGowlIdt7Gg48C1
+   6sxnjivKGOSTrEinYdgBiWQ9dYpKYviE7TQuUmvPoCSHYpcqDtjyU7I54
+   g==;
+X-CSE-ConnectionGUID: /moXHK95Q8G4LAiHFgTNkg==
+X-CSE-MsgGUID: +/qNw29kTGCrVuM5G41YdQ==
+X-IronPort-AV: E=Sophos;i="6.27,211,1786982400"; 
+   d="scan'208";a="156575363"
+Received: from mail-southcentralusazon11013028.outbound.protection.outlook.com (HELO SA9PR02CU001.outbound.protection.outlook.com) ([40.93.196.28])
+  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 13 Nov 2026 22:42:37 +0800
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=YtYFYqstqGYSzV7gLzJfZEuE2l06SHFKz6hRnKYtpMK6sLjNRn3KMizWMHmLxYDewPNXgZwrRODpr2jsTcE5HtiVeD/hdwsoE2YF4Zu/TmutPpBnUOe0OJkGJL5Jxa5JuYjHjdnHpib4lf0NtY8JGOt/fT7uspnrY3PcjKYgzddOx5psLCoNE1dEVvI6yYI4ePlS4EKvNOLcwzQJNTwb7AeLS6n6Pw32Gaz/LeLNNEZq1O2bzGzCqpBzYqJmQIpKrdWRhUJPnOF5Y/r+jviSrcZb/ruyFTiie3WIv/drcj0D4UJRdr179G+GQqccrm/8mHgrRB7EkaK4hwpzdOljsg==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=rXSs09QVnHsjbamkgdEI1iPyU2e4lbAS5j99UOKJKXo=;
+ b=V/DccqTCdSfFNZ5scWqk92fDPon/aWPWexOG113+k3SlkR4MdY/jKcH5qeWuL8xNUwCsYicV6fiRJX6tW7oZsaTkAVsxVdTPhGEw8jpUXPStoKlzDE6KsIvfPJDme/mwhdS6TdXoOmxMRKM2aIwVDRxcN2t8+j1MQVgHfuXpt9sYCL+oSPtRa+83OjLjQyy/doXD6sK/GBBvgWiyjDIFIApy1RKovHBKOXjAG6FvxWVNpfdCQ0+YVB6lYsFMXMGjiKjCR9MxrNhZfHqh+iHFWEgmEnBKNXfHu/rLaMdQxT7FEC8wCHRRQ2hWAWwqUZI/rYCpshYEqVhrc9hAM2eGcg==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
+ header.d=wdc.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794580160; x=1795184960; darn=vger.kernel.org;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=eff/JjwhOv2bXxzs5qei19A6x00WqMi0DUYpqKxITDg=;
-        b=UcxuWOImbkqBkdKsZZhIbicydsz+fKsSwgeExUS2N1QfZjCd3UQUHUuqdO+DwSQSvN
-         V1SDxZ7qslIlr3HCO8hUKCHGHXeqrVPZXzueXc3ZSrSN4jFySpFrujFatyK6KS7FPwbd
-         AQM+bm6Ndj/UheJDdfT5upi4A+ukWmQJnKpwiLlO9j51hiiM6cqStVBjfMsnxCfgHJWE
-         ljq4Hv9Y1ByQgcmhazAOEazTiDNsAW4tDyKkvNHtxx/JnwxRXM+35e/S7+LbmuXyJIJJ
-         DrK2uHDLHbZWlxA5sHFzig7bu5Bg1bu14dY1S31dTuySS1Ccz1NcZVdrPPDfT5CjsDkX
-         dthw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794580160; x=1795184960;
-        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
-         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=eff/JjwhOv2bXxzs5qei19A6x00WqMi0DUYpqKxITDg=;
-        b=JgDYIMlfHM22hsqvphoTQUqCBMO4XqGl8OqLkvg6Tg9p4tPse9x/bZYiTLBGpuRitQ
-         dL/V1XzC0v3vIFYwaTH1KUlIzlVHFubQOycumIeZkHUfAH6nsRMxtC5e5YBjFYH51DrM
-         yt9pANJJtSqr/YhOdTAf9CShIerD/DV3174a/6P5Abh5PFF5Otd09+Wk6XjzOm4hRgPU
-         u6qqy/unTqMnS8d1I2HWu74T2FF0+OjEJWewEMTECwr217kxvNrvbBK3Kz0JtpMu+aY9
-         2Dl24pNsCHiC5HS42T1lAxKf+bg333MJhJ6FiccxwuoltqYuNhXq+OS+yrsSmI0D9lmE
-         oKCA==
-X-Gm-Message-State: APuU4Z8Yvvg98ck6h4TuizUBEvN7efP6SXvzWRuf837tBg253joQy0RG
-	fKbbJtQGad02/iW6AoenTDEJk65GosmRV4uD8ike0w17Dkjclb7tNot0McSBODM6hvzJtFJmW1t
-	vICq7+krr0TOa/rwdP9aBM5sIqPPSXcThYoHVk3kKdthz2R04uGQTO8zt2g==
-X-Gm-Gg: AYBFou3PYtOmgYS5azNTOz8OHKfLpXwkUNAj0WK+jI7VGc0U+ZddL9woP0YH4UIuXdf
-	w+qZHAr1ss/TUJ1lkDdzsIPYw3tMtJz3NWY6DrQaQIrbXs+n1s6/tWJPMElV9Lq9ueHRZtHu9a/
-	8i78LttPbnlTJ5AaYEJ1cmWdnAAmd/ScIWoux+1kOZf6P7KhCXdBBjANyUKdGzfOlji3y0m0IcU
-	kdHlLIlmZL2Z15DcuIM19WB1lSE055+AamSHYOMMGtQcyZpnbd8YGJH+0W5XQtPrJ2fLTj3xxTe
-	guQ0w27xKsFoPQlEsTdKyOcPzOacTvyck3OBc3sPm3JzN97hnoSWWLWYtyLVawbmzHucmMt5EoI
-	b78oCTZLQsJMPZMlIfbLHADoPVyBZvTHGG4VwfCI5pily7IdnpMzylENg146S1Dy2ZuW/0DdApV
-	XAVTUuGWx9LHNcxDNFZIu+iE8A23XEUsWaHbdyb46orIk3z9Eo7bi2fY4=
-X-Received: by 2002:a17:906:dc8c:b0:c46:ba0d:3728 with SMTP id
- a640c23a62f3a-c50963cb4aamr236541866b.18.1794580160468; Fri, 13 Nov 2026
- 06:29:20 -0800 (PST)
+ d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
+ bh=rXSs09QVnHsjbamkgdEI1iPyU2e4lbAS5j99UOKJKXo=;
+ b=j+ItvXUBFTcLdN0UoTr6aNQjAX4aQnlIVA9zzbZpAQyy30kigRhqbn2vk4dM6lw8S/PwRRVKJzTlvcjItyRNB16zih489JaFpFSgPMPYEeXq5g2lg8l5POVQik3BxFEde2gLjsEfLEH/iQxVCqra2Ri85FDxrbRfgTH3dhEyq+w=
+Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=wdc.com;
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
+ by CO6PR04MB7779.namprd04.prod.outlook.com (2603:10b6:303:13d::10) with
+ Microsoft SMTP Server (version=TLS1_2,
+ cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.615.9; Fri, 13 Nov
+ 2026 14:42:34 +0000
+Received: from SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
+ ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0615.009; Fri, 13 Nov 2026
+ 14:42:34 +0000
+From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Naohiro Aota <naohiro.aota@wdc.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	David Sterba <dsterba@suse.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: [PATCH v4] btrfs: zoned: don't release active zone reservations for conventional zones
+Date: Fri, 13 Nov 2026 15:42:15 +0100
+Message-ID: <20261113144215.3277479-1-johannes.thumshirn@wdc.com>
+X-Mailer: git-send-email 2.56.0
+Content-Transfer-Encoding: 8bit
+Content-Type: text/plain
+X-ClientProxiedBy: AM0PR10CA0026.EURPRD10.PROD.OUTLOOK.COM
+ (2603:10a6:208:17c::36) To SA6PR04MB9447.namprd04.prod.outlook.com
+ (2603:10b6:806:436::21)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,273 +120,111 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
- <70526c96c1d0dbcf1f251f3ca40a55ec902cfe6b.1794502890.git.fdmanana@suse.com>
-In-Reply-To: <70526c96c1d0dbcf1f251f3ca40a55ec902cfe6b.1794502890.git.fdmanana@suse.com>
-From: Daniel Vacek <neelx@suse.com>
-Date: Fri, 13 Nov 2026 15:29:09 +0100
-X-Gm-Features: AclHuK8ThKaM-lDPKqtkZIjztxh3RL5yR4DXi3TXzUNnZHee0yESJsi5IOlfDX0
-Message-ID: <CAPjX3FekA6cHKqOaR=EDPKo1qPKJ2JbozuZA9X54yehS74E9LA@mail.gmail.com>
-Subject: Re: [PATCH v4] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+X-MS-PublicTrafficType: Email
+X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|CO6PR04MB7779:EE_
+X-MS-Office365-Filtering-Correlation-Id: b0ac3511-db4c-4ac8-61ae-08df41945abb
+WDCIPOUTBOUND: EOP-TRUE
+X-MS-Exchange-SenderADCheck: 1
+X-MS-Exchange-AntiSpam-Relay: 0
+X-Microsoft-Antispam:
+	BCL:0;ARA:13230040|23010399003|19092799006|10070799003|376014|366016|1800799024|11063799006|56012099006|261026140227099003|261009223027099003|261021123027099003|261028144727099003|261022105027099003|261021121427099003|261102123227099003|10067099003|18002099003;
+X-Microsoft-Antispam-Message-Info:
+	gB9HrXy8vTdtiyWfAY82FkAE4sUbK+rIs1d+3bhnhOvjzEJb/EEfHeWR7GRaDZ2xbMJWdRG3KAAwJTcN0VM34/5KLlaNKOokxba+RInE/fc8zISKVU1crRa215jwjcgmlw11iNikqw4Ik+kfZaaZ+g5LHCwgWkCh8WHKH54XjMMJoFyDnQTR4gweaexR+JBEtLRhs9vt8+aMTGMMJKlq2g4uRbFs32wITZ6J+PBN70kBHyjuKL1i5lJxAf05j7YvKPpH/JJ3m7AjMmdsC1lLncYllFVPwiniTx+WaWXR1MzuTdjO4L+uPICKfIXOpoIRh6OISl2FliPLKGMBuwSWkdKlvv2bLwEexwJkij38NJIE4V79Rm/vBTSXpakfp7REsZirDrfk00laeZqM5aqJhLYRj3eDmNp++V2zqklY5Dju7SoTBzTkRna0Ldds/EJDHMvhmG/6iYr37MRhEmlFd26JU7heEplmco/wppjCmH8W2dyDe1Cdkn+uGr3TXHjLrP0birpRFzyCw4gv9njmbZVkHISJ76X5V5bHDXFz5zSXcUwWo+LJ+5AZCRU7yMOd8P3FbnjyemYqhhR4iwSdP0/kGgDasFKHhcKTmZTGWN7Kq+RHjdN4icW3IbA2G2tH00BadhBpqK6PpfBDCNd928YcFW62mOo8pq3cfYONeBc=
+X-Forefront-Antispam-Report:
+	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(19092799006)(10070799003)(376014)(366016)(1800799024)(11063799006)(56012099006)(261026140227099003)(261009223027099003)(261021123027099003)(261028144727099003)(261022105027099003)(261021121427099003)(261102123227099003)(10067099003)(18002099003);DIR:OUT;SFP:1101;
+X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
+X-MS-Exchange-AntiSpam-MessageData-0:
+	=?us-ascii?Q?SGcmsn2phRHg9RR9I1lpZNeM4yrHVOvTfALjxGKw46b2XpTyD7kfrwxpZwlk?=
+ =?us-ascii?Q?P7+lcbTnx6lOKtQAhDey1wrhXf/aVutzXs0HgXiRz0PPoCQPzd8qw5z2FiBH?=
+ =?us-ascii?Q?GiyIVKptBbCAz2+qMvZPBHX0ZnmRe5unO9QqvnQdfXG+mmKcdmK9SV9sc2jF?=
+ =?us-ascii?Q?P3A3Z2lO2+0gJh6tn/FqeBE1Sc9WKevJfGvNn+Pvw7zIHPUAMfUEPYAoE6I4?=
+ =?us-ascii?Q?qKcsuCK58cr8hQBAG76UzLhheQuwuS0TRD5DNsqOy+/TJoYqAHOpGhwD6jYu?=
+ =?us-ascii?Q?9rRp+8gid8nrE8M2C2IPWs+6Lb7pcuazUQ2b1HytIx8F4Pj6pQYB2y6wsGSl?=
+ =?us-ascii?Q?MOvjn8Oyxu0qbyC77dS9h9KIBkWnVDtOEnLxaBJNLfCbERJeIzKY7EjskJXX?=
+ =?us-ascii?Q?2KJlxq9gt6yi4NMnO0BU9WJbmr/4blltVL8QtNnysT97jZoldEDK74/MFriz?=
+ =?us-ascii?Q?nbVT99148UfpxxbfudbEKSNzAlJkBTEcvJ+V+PfZx1VG4xXrgGVi0B+P4WDT?=
+ =?us-ascii?Q?HIUdS8tPRWwg/SkJrxKLBxcD6JADWOitZiG6/SAweEvbHqHdH+a4BYUU3vE8?=
+ =?us-ascii?Q?IO51WqXH7kkbmWwh3XQNAShJh7XYripTIegqUJWqRLKGaN5MfSJittQBnlNN?=
+ =?us-ascii?Q?gjjCXylewsfmWVaY7Jg/+tSdtcIr5iOsAiKZwJHuafa+E5GSk0c14/dbvqFn?=
+ =?us-ascii?Q?72wgdMaBnp5eAn8BkM0PdIp/ZVGQ/c0KXHS+Kg8ZYMQpgfHSPiNoiuM7yVrY?=
+ =?us-ascii?Q?nqmwxUfkFXmYC7y4vWzEFh9/doHCSo1NUfJxqK6vU0XkCNmTUYNgPPgIDn13?=
+ =?us-ascii?Q?l9UNCKW0qT8JJuNuy2fe9PEDa5HPk0c6jGUBOpeDzJ/qP6fj+uM8IF3byfm2?=
+ =?us-ascii?Q?th3IP5yZjoz/74ipfAiJJrlYqLDSQlFS3Jwu9K3C+rNeHuTxLiAedSnlgOsr?=
+ =?us-ascii?Q?A20rz326fO/jLreTHOaJPsTdttal44KkiTFnGkljQSwWODIbIFX0DnppJ62U?=
+ =?us-ascii?Q?tLwvIlXbCqpFfmPMau8siSEA6939tC4em25vj6Pht8kGkLUq0IvSp0xsGcHg?=
+ =?us-ascii?Q?/r34QFoXeF80rJE2aYWEjK0UPvaQ3CU0fTnGc78YehPZTviNqh9aZ0F+gopL?=
+ =?us-ascii?Q?NH1R+CbHFXrG+z0GTe6VtKwPGqSq5j1HmS860bITNhkpPcFaaPCL3Y5GKfTE?=
+ =?us-ascii?Q?TcARIDb+rdIfgVYPR6/NCkLgKvvvAMH2zQw5MC1OO0H8wsRvdrQjsiUKOkLK?=
+ =?us-ascii?Q?XzbVNJbxgT2I6IEIxTPFDjSF93YBrrF7q6yHzj7H7k7vkMiANHHAmtcU8n8f?=
+ =?us-ascii?Q?powtEsiJ+1T0xFZArasFP/c8sVa1SWm1MZJpoJFYc/oVia57SL5hoaFHOwPM?=
+ =?us-ascii?Q?49R+F2gDwqerYlmIpqS4d0cKUdT+Ytd8/Fp2J/o+K9HADTdGE8gAyOoLmOdv?=
+ =?us-ascii?Q?TJP+u0vL13uh4nd6KwJ0xrEVtf4uBPZR7y+MUSTwij5SksfvHMdP2BPRkvqa?=
+ =?us-ascii?Q?VuBVrEh1NI46w54TDxGF8OMtWb0jQEDiqU0IwAeTMB07Pz0a6eEpbT0DBC8u?=
+ =?us-ascii?Q?zHjGmSL4VySHh2+IWLj58BOkrtkVn2g+63+JEbGiGo4GRSkdLediy6ZSVq23?=
+ =?us-ascii?Q?0KWERv5nPuuriz0N2+TK/WqCZciZTVMlcQUzE18LWZO+oBy4oYO5/2/vpFDr?=
+ =?us-ascii?Q?N/tvysBZMFO5e7HQMmwEBkPdrCg7YqazaHl6GibfSY48VaZWJGKiY27XxSWr?=
+ =?us-ascii?Q?ruFOpBgdphwcpIsOZDNl1cS2bzFAQnYCgonSo8mZaMIjD2yHVJpR633A9Dro?=
+X-MS-Exchange-AntiSpam-MessageData-1: 5JeCGAxTVzsN1rTGj8k80+L4Z2FhsQwWweM=
+X-Exchange-RoutingPolicyChecked:
+	RMLEzk38rus4mMqPbtQDm8dvb/gGcOP/sE20i7TUzcQM4FMO36lEsPLSJVeTz+X3FrKGbgKquzfrgdgq/ilRYPgX1JUjhK9/Gt8DzMY55Cj3HydxARiyHDsehzSepi+Aq2Uh0zOcvcQfjRQV53O/3Hab7Tvb/+euiaE6u2mijpu+6YRXJkAuWSYmPbP6kwbqxaBZUunM5VIyOkjvMoVjbLbpRBVvtGkzCTLORIAtu6tCUqIZw8xdEWF45b2CFNalM06FrAysqVOXDzazYxBC62ehsESTonaZT+Ru63AQmAV7+4Z7feZkWVaWBt+wIuq23wpLXg2gcgG3RIP3IyAM/g==
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
+X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
+	4WewNfA6myLVqFItNYAxIRG+VSmnik5JVCFMrj8yyT3LlY0mBU2PgCw0QUSHZ+p1VSJ4wBYm0gT/jb45E8qQuRDvCJ1dPlOgQa6wJrcZ+UJ/dqBX6tGZQiZ5ieq+MsAlzSZbM26+bXUUBP3HNOsTKkwp2sYLf4k9/62cFDIkjLoaOKIvH02WJtthou4i/pDt/XlpKTCed3cRlMzDDrSANkFPZmTezOoviCXCvrDkZfvcgDT32W3sp91qC+twzzeZb82/MkyQH8qbiECWs6gQ5L4ckcmBx18OEmX7+b/7z9KFRTM1W6oZ6gbXPagN4KFNTGiIaTumNYJKyufmATbPX3F3cb7NocHPufkweSmdttcTmhCwDmiuOIVFDvk0mw1DI6FC9aipcs4qi9j5SiZObQIJmQRclUlTrORS6OVwHEqMX8HCMvN4k1lXX3uSJ6MQJqlzMqRO47ptwh4Og6PDIiCtUvdHO+AogTN60UVpsVgZ3lb3DZLbYdQIGos2jMHV2w2kigi9oaqPMeij1QLBbupHmf4QeLBegC1qdLLhElg3sr4g5+UFAUJcOt3EJ3+p13MNyp2xCjTMcRcaGDMs0qk4VekTrAAiFZ/DNq6kxOkL1+pPnL8fr8YVp+BsKAmw
+X-OriginatorOrg: wdc.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: b0ac3511-db4c-4ac8-61ae-08df41945abb
+X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-OriginalArrivalTime: 13 Nov 2026 14:42:34.4511
+ (UTC)
+X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
+X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
+X-MS-Exchange-CrossTenant-MailboxType: HOSTED
+X-MS-Exchange-CrossTenant-UserPrincipalName: 0DB+S4hvWTVHYk9vhbhaz7OaaLlKQdqJxRb4e/c+E+aTM986bjEn8Vym5+49hR2vzF/z3OrHg3gPPjqG0hRclwAlgtS3sQvWOg+VZpswAtw=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CO6PR04MB7779
 
-On Thu, 12 Nov 2026 at 18:09, <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> We are using a RCU read section but then we call btrfs_find_device() which
-> iterates the device lists using a plain list_for_each_entry() and that is
-> not safe it can result in loading uninitialized or torn pointers, leading
-> to arbitrary memory dereferences, use-after-free conditions, and kernel
-> panics.
->
-> Update btrfs_find_device() to use list_for_each_entry_rcu().
-> We also have manipulations of the devices and seed_list lists that are not
-> RCU safe, in btrfs_init_dev_replace_tgtdev(), btrfs_rm_device(),
-> btrfs_setup_sprout() and btrfs_rollback_sprout(), so update those places
-> to use proper RCU list manipulation variants.
->
-> Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f6070f
-> Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs_ioctl_dev_info")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->
-> V4: Update stale changelog and fix a use-after-free on a device after
->     removing it (both identified by Sashiko).
->
-> V3: Fix some more RCU related issues pointed by Sashiko.
->
-> V2: Fix other existing RCU issues pointed by Sashiko.
->
->
->  fs/btrfs/dev-replace.c |  2 +-
->  fs/btrfs/ioctl.c       |  2 +-
->  fs/btrfs/volumes.c     | 93 +++++++++++++++++++++++++++++++-----------
->  fs/btrfs/volumes.h     |  2 +
->  4 files changed, 73 insertions(+), 26 deletions(-)
->
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 3c48cc714fef..6f04d0a49d86 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -319,7 +319,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
->                 goto error;
->
->         mutex_lock(&fs_devices->device_list_mutex);
-> -       list_add(&device->dev_list, &fs_devices->devices);
-> +       list_add_rcu(&device->dev_list, &fs_devices->devices);
->         fs_devices->num_devices++;
->         fs_devices->open_devices++;
->         mutex_unlock(&fs_devices->device_list_mutex);
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 651a780dd7b1..3fc30649d01a 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2791,7 +2791,7 @@ static long btrfs_ioctl_dev_info(const struct btrfs_fs_info *fs_info,
->                 args.uuid = di_args->uuid;
->
->         rcu_read_lock();
-> -       dev = btrfs_find_device(fs_info->fs_devices, &args);
-> +       dev = btrfs_find_device_rcu(fs_info->fs_devices, &args);
->         if (!dev) {
->                 ret = -ENODEV;
->                 goto out;
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index a494c913ad12..b9504b637068 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2358,6 +2358,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
->         struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
->         u64 num_devices;
->         int ret = 0;
-> +       bool free_cur_devices = false;
->
->         if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2)) {
->                 btrfs_err(fs_info, "device remove not supported on extent tree v2 yet");
-> @@ -2483,8 +2484,25 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
->
->         num_devices = btrfs_super_num_devices(fs_info->super_copy) - 1;
->         btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
-> +
-> +       /*
-> +        * This can happen if cur_devices is the private seed devices list.  We
-> +        * cannot call close_fs_devices() here because it expects the uuid_mutex
-> +        * to be held, but in fact we don't need that for the private
-> +        * seed_devices, we can simply decrement cur_devices->opened and then
-> +        * remove it from our list and free the fs_devices.
-> +        */
-> +       if (cur_devices->num_devices == 0) {
-> +               list_del_rcu(&cur_devices->seed_list);
-> +               ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
-> +               cur_devices->opened--;
-> +               free_cur_devices = true;
-> +       }
-> +
->         mutex_unlock(&fs_devices->device_list_mutex);
->
-> +       *bdev_file = device->bdev_file;
-> +
->         /*
->          * At this point, the device is zero sized and detached from the
->          * devices list.  All that's left is to zero out the old supers and
-> @@ -2503,23 +2521,10 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
->                 }
->         }
->
-> -       *bdev_file = device->bdev_file;
->         synchronize_rcu();
->         btrfs_free_device(device);
-> -
-> -       /*
-> -        * This can happen if cur_devices is the private seed devices list.  We
-> -        * cannot call close_fs_devices() here because it expects the uuid_mutex
-> -        * to be held, but in fact we don't need that for the private
-> -        * seed_devices, we can simply decrement cur_devices->opened and then
-> -        * remove it from our list and free the fs_devices.
-> -        */
-> -       if (cur_devices->num_devices == 0) {
-> -               list_del_init(&cur_devices->seed_list);
-> -               ASSERT(cur_devices->opened == 1, "opened=%d", cur_devices->opened);
-> -               cur_devices->opened--;
-> +       if (free_cur_devices)
->                 free_fs_devices(cur_devices);
-> -       }
->
->         return btrfs_commit_transaction(trans);
->
-> @@ -2799,7 +2804,7 @@ static void btrfs_setup_sprout(struct btrfs_fs_info *fs_info,
->         fs_devices->open_devices = 0;
->         fs_devices->missing_devices = 0;
->         fs_devices->rotating = false;
-> -       list_add(&seed_devices->seed_list, &fs_devices->seed_list);
-> +       list_add_rcu(&seed_devices->seed_list, &fs_devices->seed_list);
->
->         generate_random_uuid(fs_devices->fsid);
->         memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
-> @@ -2821,11 +2826,15 @@ static void btrfs_rollback_sprout(struct btrfs_fs_info *fs_info,
->         lockdep_assert_held(&uuid_mutex);
->         lockdep_assert_held(&fs_devices->device_list_mutex);
->
-> -       list_del_init(&seed_devices->seed_list);
-> -       list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
-> -       list_for_each_entry(device, &fs_devices->devices, dev_list) {
-> +       list_del_rcu(&seed_devices->seed_list);
-> +       /*
-> +        * Before splicing seed_devices, update the fs_devices of each seed
-> +        * device, otherwise a concurrent RCU reader could get a use-after-free
-> +        * on device->fs_devices still pointing to seed_devices.
-> +        */
-> +       list_for_each_entry(device, &seed_devices->devices, dev_list)
->                 device->fs_devices = fs_devices;
-> -       }
-> +       list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, synchronize_rcu);
->
->         fs_devices->seeding = true;
->         fs_devices->num_devices = seed_devices->num_devices;
-> @@ -7549,23 +7558,47 @@ static bool dev_args_match_device(const struct btrfs_dev_lookup_args *args,
->   * If devid and uuid are both specified, the match must be exact, otherwise
->   * only devid is used.
->   */
-> -struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
-> -                                      const struct btrfs_dev_lookup_args *args)
-> +static struct btrfs_device *btrfs_find_device_int(
-> +                                 const struct btrfs_fs_devices *fs_devices,
-> +                                 const struct btrfs_dev_lookup_args *args,
-> +                                 bool in_rcu)
->  {
->         struct btrfs_device *device;
->         struct btrfs_fs_devices *seed_devs;
-> +       /* If !CONFIG_PROVE_RCU_LIST we get variable unused warning. */
-> +       bool rcu_cond __maybe_unused;
-> +
-> +       /*
-> +        * We are called in several contextes, sometimes protected by the
-> +        * device_list_mutex, by being in an exclusive operation, in a context
-> +        * where no concurrency can happen (so without any locking) or while
-> +        * under an RCU read section.
-> +        */
-> +       if (in_rcu) {
-> +               /*
-> +                * rcu_read_lock_held() always returns true when
-> +                * CONFIG_DEBUG_LOCK_ALLOC is not enabled.
-> +                */
-> +               ASSERT(rcu_read_lock_held());
-> +               rcu_cond = false;
-> +       } else {
-> +               rcu_cond = true;
+On mount, btrfs_check_active_zone_reservation() releases a reserved
+active zone for each stripe of an active metadata or system block-group.
+Stripes on conventional zones usually hold no active zone on the device,
+so they use up the reservation. Once metadata moves to a sequential
+block-group, its activation fails and the transaction commit aborts
+with -EAGAIN.
 
-This is very wrong and dangerous! Hardwiring `true` is just bypassing
-the protection.
-This really needs to be
+Only release reservations for stripes holding an active zone, matching
+what finishing the zone gives back.
 
-rcu_cond = lock_is_held(&fs_devices->device_list_mutex) ||
-lock_is_held(&uuid_mutex);
+Fixes: a7e1ac7bdc5a ("btrfs: zoned: reserve zones for an active metadata/system block group")
+Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+---
 
-as I suggested before. The API is designed so that you have to
-annotate which locks protect the structure outside of RCU. And it's
-also a good documentation by itself.
+It's not the bug that was reported, but a problem anyways and I have
+submitted a fstest for it to prove it, so I think it is still worthwhile
+to merge.
 
-Moreover this monster is not exactly nice. The one-liner I suggested
-before looked much cleaner.
+ fs/btrfs/zoned.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
 
---nX
+diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+index 3192b86669b9..81489fa4a42d 100644
+--- a/fs/btrfs/zoned.c
++++ b/fs/btrfs/zoned.c
+@@ -3115,8 +3115,15 @@ void btrfs_check_active_zone_reservation(struct btrfs_fs_info *fs_info)
+ 		      (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYSTEM)))
+ 			continue;
+ 
+-		for (int i = 0; i < map->num_stripes; i++)
+-			map->stripes[i].dev->zone_info->reserved_active_zones--;
++		for (int i = 0; i < map->num_stripes; i++) {
++			struct btrfs_zoned_device_info *zinfo = map->stripes[i].dev->zone_info;
++			u64 physical = map->stripes[i].physical;
++
++			if (!test_bit(physical >> zinfo->zone_size_shift, zinfo->active_zones))
++				continue;
++
++			zinfo->reserved_active_zones--;
++		}
+ 	}
+ 	spin_unlock(&fs_info->zone_active_bgs_lock);
+ }
+-- 
+2.56.0
 
-> +       }
->
->         if (dev_args_match_fs_devices(args, fs_devices)) {
-> -               list_for_each_entry(device, &fs_devices->devices, dev_list) {
-> +               list_for_each_entry_rcu(device, &fs_devices->devices, dev_list,
-> +                                       rcu_cond) {
->                         if (dev_args_match_device(args, device))
->                                 return device;
->                 }
->         }
->
-> -       list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
-> +       list_for_each_entry_rcu(seed_devs, &fs_devices->seed_list, seed_list,
-> +                               rcu_cond) {
->                 if (!dev_args_match_fs_devices(args, seed_devs))
->                         continue;
-> -               list_for_each_entry(device, &seed_devs->devices, dev_list) {
-> +               list_for_each_entry_rcu(device, &seed_devs->devices, dev_list,
-> +                                       rcu_cond) {
->                         if (dev_args_match_device(args, device))
->                                 return device;
->                 }
-> @@ -7574,6 +7607,18 @@ struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices
->         return NULL;
->  }
->
-> +struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
-> +                                      const struct btrfs_dev_lookup_args *args)
-> +{
-> +       return btrfs_find_device_int(fs_devices, args, false);
-> +}
-> +
-> +struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
-> +                                          const struct btrfs_dev_lookup_args *args)
-> +{
-> +       return btrfs_find_device_int(fs_devices, args, true);
-> +}
-> +
->  static struct btrfs_device *add_missing_dev(struct btrfs_fs_devices *fs_devices,
->                                             u64 devid, u8 *dev_uuid)
->  {
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 891bc2432870..2319789635a3 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -773,6 +773,8 @@ int btrfs_grow_device(struct btrfs_trans_handle *trans,
->                       struct btrfs_device *device, u64 new_size);
->  struct btrfs_device *btrfs_find_device(const struct btrfs_fs_devices *fs_devices,
->                                        const struct btrfs_dev_lookup_args *args);
-> +struct btrfs_device *btrfs_find_device_rcu(const struct btrfs_fs_devices *fs_devices,
-> +                                          const struct btrfs_dev_lookup_args *args);
->  int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
->  int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *path);
->  struct file *btrfs_open_device_deny_freeze(struct btrfs_fs_info *fs_info,
-> --
-> 2.53.0
->
->

@@ -1,77 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.15.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.143
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794607371;
-	b=1DuGVI2LbgKhMVMU90L9yqscVSPFwWvnIi5USiyHxROVGJ+J17ySucxR/hmNWDDKZYbD
-	 +z+0fUene6ZQ3qqlQy3yWo/wFl3XQ/pLr7BnqS51slCuf4wfCVDVPKnLUkXBgf2ed1T9q
-	 Rnjv+I+L0NLhGNb0g/9FRir8kmsODu43S8XyVC4+PVY4zW9yN94X8xozs+OeJ2s/zkrFi
-	 7Cl+g60loZeexkBWiIlO61GWKU/bYaHoMdO7k3FUP2PutUL7S5m/9gKhE3RIEQyyWk0NY
-	 s4WdiyRP+PZZUZlQNJvheGVbGppfBXk3D4Anru9pdKj2O2RuYHhmVt8xpY2VqUYI6SQ==
+	t=1794611360;
+	b=NXHcXJG5davGtlIlaqUjgiiq/fMlqSAun2pqECdVlaxJfayRTominfhgxN1X8S7mInkm
+	 6LiiZsaOtwEoo+anSNjICkumj98gUmpCOyDvJxcMzpItzwmJnuvB4WnPapsMztIQnUrUq
+	 FBlxp7n5YcZqJHAPDovmcoQN49JuKA5nWTGvHN2PY2pd5LtDlm2MQ13H49iSVqXN+OSJO
+	 8FcsjGxucAdS286ebdTGKIcH/1VR5p/z3N11VARZth/ksgwbLYvx7k3R/O8BdnikvW2XT
+	 BQoB9Hu82gW0Jd/0BYBc9LAqOGUrlVSk9adnocZAlEP5xwpVVytjVKXCtgAjc0qAhnQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794607371;
-	h=DMARC-Filter:DKIM2-Signature:Message-Instance:DKIM-Signature:
-	 X-UI-Sender-Class:Received:Message-ID:Date:MIME-Version:User-Agent:
-	 Subject:To:References:Content-Language:From:Autocrypt:In-Reply-To:
-	 Content-Type:Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:
-	 UI-OutboundReport;
-	bh=SEdm9uB4346nrHTDRE8U92VgXmTecBIZTdDYRshbo+o=;
-	b=xeAlbok/d7GZAzVRWbE/guHTMRnT6gGO9MLTnFIkOVxWLU6IS6+ahYW6//2rDOKEPlOI
-	 b0OrDGo51MGCU3BBlklCRgS+3Uw+VTsbDjSwN8K47JbgWQgVAZL85RfuNTjI4KGrDBOz5
-	 YeDMJmxs0h26Q/Zsf+aoVn/DrDlKzswtjKnkQyol4GqY1KHaXfOgifNvMwpexcdth+JhQ
-	 bsrMmf08foaETepKFKjoNKyNzDY0vnaDDq2T7I1JvlWFGAskbxjuEiRaN1V81JxoyMYIT
-	 1t1+WBBOeT2Kxwl6OOVf2jCh2JD5+Oi7+ejJky4vWlg4NaCPH3ubKLNflF3wrDdDPLw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794611360;
+	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
+	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
+	 X-ME-Sender:X-ME-Received:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=dXUVmClAerQStwMRhr7jHkDQDMrDs46ErUYnzXeENmA=;
+	b=L1KPLG4vtRbYdBYT2l6xrqr+AYdZttwPPV3a/x81En6hkJ84d/IyK2MHz/g9op94OoVT
+	 9+95aPQe0M8NbA48icpNyDP24kX7pogbJyPDJ6Gy4QRIYvy4iEPymr4K7eMa8hobSJH3S
+	 9MIK1DfzuXTd12RqJukKVZyXrPaDoTnBFdYu86h9bdidySCI450NL0adNVIfvBPhncEvu
+	 5LwVpd2a++hV/aaIX/3VvkUOakPBuxVhP9X4670TV1/t1q7JsLpe9qc86ALtULUDyHJpm
+	 cdEjfjG7xB463YXawy2n9kWWkOFuH5xN3PWzdd21bDoHOZn8t15vOsNH4mH+dRCOcUQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmx.com;
-	spf=pass smtp.mailfrom=gmx.com;
-	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=hvfm+4Xi;
-	arc=none smtp.remote-ip=212.227.15.18
-Received: from mout.gmx.net (mout.gmx.net [212.227.15.18])
+	dmarc=none header.from=bur.io;
+	spf=pass smtp.mailfrom=bur.io;
+	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=G6NYG45c;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=uCcs5AfI;
+	arc=none smtp.remote-ip=103.168.172.143
+Received: from flow-a8-smtp.messagingengine.com (flow-a8-smtp.messagingengine.com [103.168.172.143])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6AD2A606A329
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 22:02:50 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6AD2A606A329
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7CEC1606A32D
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 23:09:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7CEC1606A32D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=hvfm+4Xi
-DKIM2-Signature:  i=1; m=1; t=1794607368;
- mf=PHF1d2VucnVvLmJ0cmZzQGdteC5jb20+;
- rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
- d=gmx.com;
- s=s31663417:rsa-sha256:Ivdv/0GZLcmssA1qhxe7BJwTxk0f
-   7/8i97U2UHVmjX9xwHGI5wNkQ5V8aS5cd901i0+b2BmKKl+y8FnmMIiMA3yoQopfX713q17WQ0H
-   24LM0Rts4E9kP9QvZbhkUPT9P7jooslXQYr3lAUficFLr46zn7fKDwWaVBJ043L4HzQrJLpxqpi
-   hdcLsF7c39Frcbvto5rRUBgGxGaPpKsg4dxqKm+MH1Ht/zXgS26y9AbGS0FzsjVyd0zC+9+9viV
-   pskmwi/rFKmJTHbYhoWVOY9hsPJFo6yrJJEuijEI4SBfEuQ+EuqdbF0N5958X8owgIvgdzoI30Y
-   HLVp0lb7bS4ZFA==;
-Message-Instance:  m=1;
- h=sha256:
-   fN5AtVnNGpptj2jl4bPVFuGiO6KQHnVqSexjNE4RkAg=:
-   vowA67nVK2ycYMJsYDRCxffFnoYAMp16o1KNXGby7BM=,
-  sha512:
-   K1g6Yv40mwtGUbcOqnCXSA1l7w4YQSeDVp08pUj/iLhy2gc92r6jmtfqMR5E5a7kBZHvM2ovY55irPFddBZulQ==:
-   3G8x0gQ96kUBJcwZLiuuixo+AMR/Bgz1e5oRsv5xT/18Zzm9IYIMPB4pG6dpGInpwG1bJ39nLn+JPfnuZpglgg==;
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1794607364; x=1795212164; i=quwenruo.btrfs@gmx.com;
-	bh=SEdm9uB4346nrHTDRE8U92VgXmTecBIZTdDYRshbo+o=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=hvfm+4XiFcXlqUoJjgykPFG/ezpeLKPQf4IBtZXN4f4tUD+uzsSCDWmP7e9N9nGt
-	 xs3HARZN8xkuAQvu2AKI+1/MzHfkOXWNstkHwQsfVI5wyITAikKSiehI4Ogd5ipoV
-	 6xRbweScDa0OteKTNOp/5E4voGwDHABtkIgvKCpCJVbWtg7Cv78qSV8Aj8cmS2cdL
-	 0BDt9b6Jmt7lzf1KNqDTMKxjnkAqP/SkMsbMs4JP1ciqeF9cl6rz57HB/VhQ1jOUD
-	 +c7rNvxUoTsR10GyBnlI1SmBmmn+e7q85EwJz6IbddstppV99V5aDJKgCykN+EcpX
-	 XxLf8oRcV4fg5KMCPw==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
- [212.227.17.184]) with ESMTPSA (Nemesis) id 1MKbkM-1xBYQy1G0K-00M80w; Fri, 13
- Nov 2026 23:02:44 +0100
-Message-ID: <46865601-47bc-4663-a579-fe2a742906ee@gmx.com>
-Date: Sat, 14 Nov 2026 08:32:42 +1030
+	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=G6NYG45c;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=uCcs5AfI
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailflow.phl.internal (Postfix) with ESMTP id AE88B138146E
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 18:09:18 -0500 (EST)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-05.internal (MEProxy); Fri, 13 Nov 2026 18:09:18 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm1; t=1794611358; x=1794618558; bh=dXUVmClAerQStwMRhr7jH
+	kDQDMrDs46ErUYnzXeENmA=; b=G6NYG45c/ecapqTIdpd1zIeU5dxYWFdj2DPkd
+	NuIaVLmeGjVSrGdHyHxoPd33cjEWtKd2L6aBzqyqmvLQaVzgP2d7zl03eJrr04xU
+	/kXQy+OXyUwkI6kU4bVmE7H/moh9iLc6v5x8NorF9qktY7LUF0vU+iZg5qwg1WjK
+	1L3Rk+nZLkpqMXBPmNg7sJ1kJHHDktlTgNImoOLPiWfMmPHip01+KmrG0WWduzL4
+	4DkEoZUG15M5zW4TLHHt2GQFaSh7DuCGAhpgRBthv7QM2vCsk2hx8uzfVwtnMHpF
+	AzSeIOVbDIFz6vfvkOhCJn6+ADxapd4rhJSQBYKBOuHEbqv7g==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1794611358; x=1794618558; bh=dXUVmClAerQStwMRhr7jHkDQDMrDs46ErUY
+	nzXeENmA=; b=uCcs5AfITL5/QOX/iH4lAX9R0nmenWh47H8ivYKjCBHg6Jux58p
+	I55ABCnRqf5lblrChI9fAarUIQWI0YewtkxmrRhGV2w2fvwIFx5E+/+hT/Bz9Bak
+	w75DfiC5RRIbyP6KUPKfA9AYx7WiOTavUxDT/R9ALoodPKnW92Tdpw87wIPE6vkF
+	f+3j47gQlNnE8TlH8oEymDzPyKdLk6dUyEQilJ8djDC5gDOGHgZkq4GTWzlTQrWa
+	T/iZKYPNWyU2VG9XxTyIyxyRU52Xw4ywBPLp4baotb03S8kv5HAeBmDXcM8CbIBN
+	jKms016/00rsfy/LHUPx7HTmZSCJX2VZWVA==
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=sign d=bur.io a=rsa-sha256;
+DKIM2-Signature: i=1; m=1; t=1794611358; d=bur.io;
+	mf=PGJvcmlzQGJ1ci5pbz4=;
+	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
+	s=fm1:rsa-sha256:M5c2fNSuGzNo8irloI8pIa0AA7W/A6wJe6c+CgEsZUeAcXT
+	jZQElkQKuIxsplOC9VrF8pS2iI0ONDVpqy3ehCjYO0GrB6eln14C//yR+peAcjx6
+	VvWy3D620SmibfFDO3zA9OWc5nWprTtTpxbZ2L4xaxI+AhX2Qg07ZbljBvVpFEOR
+	53gs1hxbVzCf30pErFSO9JH6J9s3MGBS4O0jkg4gx/ErcvQPWXROuEPbNWl7TGWb
+	n3aZHnijQSZlJxpxMpGvpfpy0T5fgnBV3R0M40aj+YwTgg5+Dh+B3egK0+IFCv6V
+	iXcDp1+HI5tVgtZRpW1gvVuV6GdfWrJ0wAnpF8A==;
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=mi-m=1; hc=8;
+	hn=content-transfer-encoding,date,feedback-id,from,message-id,
+	mime-version,subject,to;
+Message-Instance: m=1; h=sha256:JPswH+IWwLk3DLxo+AQ+9yV8dvp6dlDJV/KBLBaNwBE=:Jek1CESGgGvXtdFOxxkz/VgH/LnSYPkYl83gjBoF5UY=;
+X-ME-Sender: <xms:npj3aud_tyTb3_axbhHVQFSxNz4BlDLcGy1nJd8Q8dF84KpXvY8yOg>
+    <xme:npj3auOekpIA167Ucr8JKIvbJwl1lULsBGIUoWYF37tMpomCgw0PBIxD-_ryq3YU9
+    CjMInOhv-vjc7ZAfiQhyes8tGq1DC6chK7p9nPrLEOMWSt-YFHDV7tf>
+X-ME-Received: <xmr:npj3atKOuqp_Too9qX8E85MmrYy2-t_v7D7sGvtfEOFZwkDlb9CDWjKi>
+X-ME-Proxy-Cause: dmFkZTEJn7Nx+5IAa4dkhN4x/AA7KJoxoDt9mTAbk3l32yJ4JRTRmg3eIdCNkqVe3vKCN1
+    HtXiVXekDaZWVmLQeRO4MI0JsQbxlTP1jXyG2uZqP/W2Trvi/OSDMnz9rZGKp8Sfs2dKrr
+    gutKtaIDFsTptnQfmRjOsCTUBmssgr+lyr8Rzvh/FHXjqrhVJSHJRDdxYM5ywl1v88RoAS
+    h0r9+XidrWaAjMA7G2h4J+C2BwBt0CTLz7R9uhCB2IIMAzwDmWVpn2ejoz6UrOGZcwkyKA
+    1UDGkhsiSca0rQnBud7qOTwsC9VkJnlUcIPF0QkQE4n5M+q9QFBL+a+tyrNl+N7RCY4eAW
+    ZiguyYoZhk0KGCKzKMDGSDLy+xgLk2Dg3UlMsrEeok+97237cKuKpc0Zg6mOiQhLFP1ErS
+    WV5aNzdrIrzUXtIqUp60e8lIFoGOmndfqTI8JgGowF7kz/Unxf9pnFoRxJT9JFHQxtm/aT
+    XyPxSYIAOuVO3MAxslgA/lkMHF7xDJNwbRn/7ELZj6xfwtZRjP46QPqt9eX5rKfv8sfVbm
+    gPrIojMDsteoaHifXQ4072cVtCS7EWr41UcOEGaWPjsETOfeAAAjUE6x7G0WYyzhrLt1wf
+    prMfRFMTZ7IWpPxHiAFwHOJvMGnuwENNBTcJfyVtXOt8jiwtv64dZXirldsA
+X-ME-Proxy: <xmx:npj3anHEMTv41UBwmHJMPM3bO2U0ulb5IdJBkE2xKdPSWP_WWQ6ziA>
+    <xmx:npj3atSnoOrLDKnHR964okx0hU3o64Zta_JlyVVx9jWnj5aKWsoPNA>
+    <xmx:npj3arHYN2raq8o9IqjKiFgjH0JTK2LmMgIInzmkIsgayW0vRVNopw>
+    <xmx:npj3ah_8NoNbmFBaKprScTcc5Jyv1ZeiJVUjRiP-F3QA8MH2VnJUog>
+    <xmx:npj3av08KzMK-UsfJipWtBggcqH5fRguSY1Ago6VIOyXFtQm1mu9odTU>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Fri,
+ 13 Nov 2026 18:09:18 -0500 (EST)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH] btrfs: fix double release of data space on failed direct IO COW write
+Date: Fri, 13 Nov 2026 15:09:19 -0800
+Message-ID: <07cff240bcc00f2c18128d339ca6f1544871cdd1.1794611345.git.boris@bur.io>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -81,183 +120,103 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix incorrect task accounting on error during
- io_uring read
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <f032850d8109d8a1291c2a6ddf87e78b7a5be337.1794606967.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7o8gUJFKS8
- OQAKCRDCPZHzoSX+qAogB/9C5ErH7KGAGpcLPte3Wcfdt3acCkGAuMpCjqOt8BVw30mX0kmF
- SRo2nODjz8YsYhWR1T8L3ylANAS/IGIJ64idBmObaqGHQn845nXLIvG33LqMsAGXmOJdRgTT
- BnBA+QFCEIZpo7L9Qt1dOQdHSpHT31Ta1kKsbDm582KPVBl6KRcJJBnjudIerOA1/L/zEyDa
- YjIfHIcvuM3Xm8AS00iBpsmc151QgCPljqnSRXBiup9C1oMgVlaROhY1iDam4UIQB6glkHQs
- LZhUmFDNimX5LxfOzi2pFJSjJvPclRZVX7Sq6XhK/OFb6IvswN7i0nUYZMQfuGDNqGn70ic3
- AQImzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7pCgUJFMw7KQAK
- CRDCPZHzoSX+qEjbB/9crFFjips2NKxkt2XUutUIKjBoUlg/xCeFIj8PsTuJePhrV9HzgKsa
- rJgSqo3t78oQWmeaP9WPoDYjfhOkQXEs+G9UwHe/LENm70+Q1jrwY3nlcR3YrkDCJ+EvMZOW
- ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
- 9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
- 3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
-In-Reply-To: <f032850d8109d8a1291c2a6ddf87e78b7a5be337.1794606967.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:k2P/lBAScBWTMqVglujnY38IZK8icOhj/4tQCJqnKc29JS+MpTG
- w2AzgONfEIQcKnA027PJbx/4U12yvbfVekPsvLxet0lMMPAY3D5QmS6jxBEDHKn2Jy5F0eF
- qDUoCGdzLaahDpd9cpNuDYwR2ngqRydt+B3VmfSpOzZyPSYxb5XJ9DDBLqhxH6OPGuXjumu
- +aI/g+dJtFdq7nICwVVgw==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:pJPPeIEsw+E=;QQ49CzNwAvJr3iCAbL45B0ZcH7X
- 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
- FeVPN/Ccfy3rUZiJz5UR8E+Mjomsnk=
+Content-Transfer-Encoding: 8bit
 
+btrfs_dio_iomap_begin() reserves data space for the whole range
+(data_alloc_len) before locking it. For a COW write,
+btrfs_new_extent_direct() then converts len of that reservation into a
+reserved extent: btrfs_reserve_extent() -> btrfs_add_reserved_bytes()
+moves it from bytes_may_use to bytes_reserved. If
+btrfs_create_dio_extent() fails after that (ENOMEM allocating the extent
+map or the ordered extent), btrfs_new_extent_direct() frees the reserved
+extent, which only drops bytes_reserved, and the error propagates to the
+err label of btrfs_dio_iomap_begin(), which releases all of
+data_alloc_len from bytes_may_use. The len the extent consumed is
+released twice.
 
+The success path knows the extent consumed len and releases only
+data_alloc_len - len. Make the error path do the same: record in
+dio_data how much btrfs_reserve_extent() consumed and release only the
+rest from bytes_may_use. The qgroup reservation is still freed for the
+whole range: alloc_ordered_extent() either had not released it yet, or
+released it and freed it on its own error path, and
+btrfs_qgroup_free_data() frees only what is still reserved.
 
-=E5=9C=A8 2026/11/14 08:26, fdmanana@kernel.org =E5=86=99=E9=81=93:
-> From: Filipe Manana <fdmanana@suse.com>
->=20
-> We are passing 'ret' to add_rchar() under the 'out' label, which is mean=
-t
-> to take a byte count for accounting, however if we got an error we pass
-> it to add_rchar() too, which is just wrong. Fix thing by passing 'ret'
-> only when it's not an error.
->=20
-> Fixes: 34310c442e17 ("btrfs: add io_uring command for encoded reads (ENC=
-ODED_READ ioctl)")
-> Link: https://sashiko.dev/#/bug/linux-beb0369e-eb47-41d3-86c1-e79cdc2de1=
-57
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+On an otherwise idle filesystem the second release underflows
+bytes_may_use at once and btrfs_space_info_update_bytes_may_use() warns
+and clamps it to zero. With other reservations outstanding nothing
+underflows; the extra release takes len out of another reservation and
+the deficit surfaces only when that one is released.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Reproduced with fail_function injecting -ENOMEM into
+btrfs_alloc_ordered_extent() for one O_DIRECT 1M write to a new file on
+a fresh filesystem, where data bytes_may_use is 0 before the write:
 
-Thanks,
-Qu> ---
->   fs/btrfs/ioctl.c | 3 ++-
->   1 file changed, 2 insertions(+), 1 deletion(-)
->=20
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 6cd12f586423..a4de331c46a5 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -4660,7 +4660,8 @@ static void btrfs_uring_read_finished(struct io_tw=
-_req tw_req, io_tw_token_t tw)
->   	btrfs_inode_unlock(inode, BTRFS_ILOCK_SHARED);
->  =20
->   	io_uring_cmd_done(cmd, ret, IO_URING_CMD_TASK_WORK_ISSUE_FLAGS);
-> -	add_rchar(current, ret);
-> +	if (ret > 0)
-> +		add_rchar(current, ret);
->  =20
->   	for (index =3D 0; index < priv->nr_pages; index++)
->   		__free_page(priv->pages[index]);
+  WARNING: fs/btrfs/space-info.h:282 at btrfs_free_reserved_data_space_noquota+0x218/0x290 [btrfs]
+  Call Trace:
+   btrfs_free_reserved_data_space+0x47/0x70 [btrfs]
+   btrfs_dio_iomap_next+0x7f7/0xd80 [btrfs]
+   iomap_iter+0x57/0x3f0
+   __iomap_dio_rw+0x24b/0x930
+   btrfs_direct_write+0x258/0x530 [btrfs]
+
+The error path this patch changes was rewritten in v5.19 by
+commit f5585f4f0ef5 ("btrfs: fix deadlock between concurrent dio writes when low on free data space")
+so this patch can apply to stable kernels later than that.
+
+I was inspired to notice this by:
+Link: https://lore.kernel.org/linux-btrfs/20261113170926.1468850-1-vlad.wing@gmail.com/T/#u
+
+Fixes: 18513091af94 ("btrfs: update btrfs_space_info's bytes_may_use timely")
+CC: stable@vger.kernel.org # 6.1+
+Signed-off-by: Boris Burkov <boris@bur.io>
+---
+ fs/btrfs/direct-io.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/direct-io.c b/fs/btrfs/direct-io.c
+index 45197d1e0d82..be850dfe22c1 100644
+--- a/fs/btrfs/direct-io.c
++++ b/fs/btrfs/direct-io.c
+@@ -12,11 +12,13 @@
+ #include "volumes.h"
+ #include "bio.h"
+ #include "ordered-data.h"
++#include "qgroup.h"
+ 
+ struct btrfs_dio_data {
+ 	loff_t old_isize;
+ 	struct extent_changeset *data_reserved;
+ 	struct btrfs_ordered_extent *ordered;
++	u64 data_space_consumed;
+ 	bool data_space_reserved;
+ 	bool nocow_done;
+ 	bool updated_isize;
+@@ -195,6 +197,7 @@ static struct extent_map *btrfs_new_extent_direct(struct btrfs_inode *inode,
+ 	}
+ 	if (ret)
+ 		return ERR_PTR(ret);
++	dio_data->data_space_consumed = ins.offset;
+ 
+ 	file_extent.disk_bytenr = ins.objectid;
+ 	file_extent.disk_num_bytes = ins.offset;
+@@ -610,9 +613,13 @@ static int btrfs_dio_iomap_begin(struct inode *inode, loff_t start,
+ 			       EXTENT_LOCKED | EXTENT_DIO_LOCKED, &cached_state);
+ err:
+ 	if (dio_data->data_space_reserved) {
+-		btrfs_free_reserved_data_space(BTRFS_I(inode),
+-					       dio_data->data_reserved,
+-					       start, data_alloc_len);
++		const u64 consumed = dio_data->data_space_consumed;
++
++		if (consumed < data_alloc_len)
++			btrfs_free_reserved_data_space_noquota(BTRFS_I(inode),
++						data_alloc_len - consumed);
++		btrfs_qgroup_free_data(BTRFS_I(inode), dio_data->data_reserved,
++				       start, data_alloc_len, NULL);
+ 		extent_changeset_free(dio_data->data_reserved);
+ 	}
+ 
+-- 
+2.56.0
 

@@ -1,58 +1,80 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.224
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794535692;
-	b=p+OCAdGyQTluAMXM2IMjhPqoDssF3k0v9cXs1PByJ8sQNTntlLl32u9gYFwRGQxoMsuF
-	 FpPG/uNtz8O8rMCukKoRuiXR90YdYwVEEHfhh616wlsW0OR8aRmepRvL3T0vJ7Oe+/PoU
-	 4h70MG50RqjBv4F69D6wB4lIn6PTxbuH6sLiTBTRz4YpwRIpEBaGqe7Y3kjI0ldcuXT2y
-	 RE7GRQphiYobnV4CB8aXdO9qtkyzxFSD4zKhKBTSTYrGSWn8nrhPQ784N5tWBWXnkSx6L
-	 cm/ce2LhWJlRj8jWTXMnlBy6cZxSt34FRzAUDB4jMReP09fSxH6cKHxxTMlSsaXEyKQ==
+	t=1794538489;
+	b=QUe4T6BdpUZ6fW5alN40L4WgCKAMqvlEdd/q/4C8iK0ixKYmy8S8FhRKkiF7GCEyr9Sy
+	 Hh3/SBlaD9P0bWCO1scK4/O2SRTJOi4OHG6ICEEvMbCC3p/hYReg15AtMq5PRhHb+gz5N
+	 +0JyM94qUdRXdiO2zlVJAZDfbcGFsfs4wPl5GCT8qazpuuenkfllkFAnxCg4kv5TgUmZE
+	 4dUwaAEuNWA7HrUPC8v6zcM3HuzofTucsRNOfkoS1Y17czKRtRxqezbqMmGgQqQmjCLu5
+	 AhvitVqf9qModbAY/DGG00Cdyt+fN6pfqbCI6Eti5s3mWkc6cMTSfaRHSASrxU3brHA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794535692;
-	h=DMARC-Filter:dkim-signature:Received:Received:Received:Message-ID:
-	 Date:MIME-Version:User-Agent:Subject:To:CC:References:
-	 Content-Language:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:X-Originating-IP:X-ClientProxiedBy;
-	bh=fRlFnEwOyhCsf6bntFNWmv0q3cjwumqt5gvXEY0j99s=;
-	b=h/zV89+qLgaCReHEGqt6Yz7QuMFLau76PrUC64xyupskVtNCPQ+nmxOMNmYpHzOqslFo
-	 kgKw5ZY2wbzhJd0lF+zjKrlPUCmjb5IgsUFtoQqhIVm9cnGfBBQV27Zmw0SOuawfTJrqj
-	 COUDeteeu91XQma3e/4ndW4VEdrl3CeyYA6qLcmmNoBHr88AeGjUDrznix08ey7CkL7dN
-	 ATYbiJ85jaQA4TqrEF0OxrluHBWYxqRn9fPvtPMnNG9q6tAJkXdtwGsMyPUdrjdmiatZM
-	 Nm2oKKg5nghW9PZOToKPGBNxCtDI6DTaPEoBLZidyMqSogmB9o3taotFsdyv1n5vU6w==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794538489;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
+	 X-Spam-Flag;
+	bh=ZGJ8x4RIIEQHk3b07Ecp9/HVOj5NdirMWwnNx0GsiiU=;
+	b=H7CGbVSB4ZfbxIeAqvPYAfEcBqiXIyy1NpE5tvOr16T+Ei5WnUp1I/y2bxIV3ZPQ3OUy
+	 G0XVvjY8NzXUgNEWKUr16gkykVtoqspItQwUH06kJIMkjaK7OEnYZpMrBYAzzm/1hdcYP
+	 0zcp6XQ0DEhVrbAQwg8Z5WqsVHuyQzdg5IPeLAXmybs9m6C5u7K9baR1vULMzI8JaRnau
+	 MBTYTt8cA9v8m0mhgkdIOXAFNpQDTSpQKpQrVyIxptQPNT3mAJFjJhcN9AbQF4/PXGkp/
+	 79R4SNQq75tGcJab4E9aYCAM52IoXOSr5e7M6yzyq+Qt4fQTzVq90jldhTFWYFj7E2w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=huawei.com;
-	spf=pass smtp.mailfrom=huawei.com;
-	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=tgB76D+u;
-	arc=none smtp.remote-ip=113.46.200.224
-Received: from canpmsgout09.his.huawei.com (canpmsgout09.his.huawei.com [113.46.200.224])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QfF6PTK3;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="Q/NujWUB";
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 81167606A31C;
-	Fri, 13 Nov 2026 02:08:10 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 81167606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C35DC606A323
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 02:54:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C35DC606A323
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=tgB76D+u
-dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
-	c=relaxed/relaxed; q=dns/txt;
-	h=From;
-	bh=fRlFnEwOyhCsf6bntFNWmv0q3cjwumqt5gvXEY0j99s=;
-	b=tgB76D+uPHT+xoP/MsIq5QT99tPRFyjCjYAa5bPvS0n/BLMW7GmhAJphWd0AaFaCXwNcxc4Ka
-	dPjWkV3Gm+TFWMTFawukI93MmREL5xwGs2ILp3CVZdJ2RNXEKTgDHIK4mZDlwgvononmGVpnLul
-	eI6cXevbd8zNABceS1BMSf4=
-Received: from mail.maildlp.com (unknown [172.19.163.127])
-	by canpmsgout09.his.huawei.com (SkyGuard) with ESMTPS id 4jQgdL6LlBz1cyTG;
-	Fri, 13 Nov 2026 10:07:50 +0800 (CST)
-Received: from whupemk100010.china.huawei.com (unknown [7.152.184.41])
-	by mail.maildlp.com (Postfix) with ESMTPS id 63B8C40572;
-	Fri, 13 Nov 2026 10:08:07 +0800 (CST)
-Received: from [10.67.110.140] (10.67.110.140) by
- whupemk100010.china.huawei.com (7.152.184.41) with Microsoft SMTP Server
- (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.2562.45; Fri, 13 Nov 2026 10:08:00 +0800
-Message-ID: <2dbd365b-eac5-448b-b6c2-4ed8754551a7@huawei.com>
-Date: Fri, 13 Nov 2026 10:07:59 +0800
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QfF6PTK3;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Q/NujWUB
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id CACFB2210D;
+	Fri, 13 Nov 2026 02:54:46 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794538487; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=ZGJ8x4RIIEQHk3b07Ecp9/HVOj5NdirMWwnNx0GsiiU=;
+	b=QfF6PTK3T/ToMUB7fhvxvuOIQyLod75c+0SXj5LgbDqBH4A5jsxqKhvHg6gc1s4lgoKh02
+	LMaCckfqmxRgd3Igqmf0wNZexb/qhKPeOFvfCR2YIKqItl2LN2Au6/eqIfFraCmIVwoUI+
+	GSkmq9X8+8LdfxNJBOYohvlWucX6oBY=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794538486; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=ZGJ8x4RIIEQHk3b07Ecp9/HVOj5NdirMWwnNx0GsiiU=;
+	b=Q/NujWUBe6oXqj1LNalWdj3aaG1sf7L0J2F2KqsI+dRq6inBrTJJ1gWR+Blbz3X7Wp2L6N
+	NoCzvWg7RxK4ns5ChveZhPEQhtG8xxxC1sIbp8zsBQwOFZzaors42R2ShYMxmBtdAf9yry
+	5xhSqHJA8uUVjDXbtpVkjJiKpju3ouU=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 344F4134C3;
+	Fri, 13 Nov 2026 02:54:44 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id a8ohH/R79moDNgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Fri, 13 Nov 2026 02:54:44 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Sashiko <sashiko-bot@kernel.org>
+Subject: [PATCH] btrfs: handle errors of btrfs_next_leaf() in create_remap_tree_entries()
+Date: Fri, 13 Nov 2026 13:24:26 +1030
+Message-ID: <f07172047d96c93a23d74289dc9dc5b00092feed.1794538460.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,95 +84,63 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3 -next 00/18] landlock: Add READ_METADATA and
- WRITE_METADATA access rights
-To: Christian Brauner <brauner@kernel.org>
-CC: <mic@digikod.net>, <gnoack@google.com>, <paul@paul-moore.com>,
-	<jmorris@namei.org>, <serge@hallyn.com>, <corbet@lwn.net>,
-	<skhan@linuxfoundation.org>, <utilityemal77@gmail.com>, <ast@kernel.org>,
-	<daniel@iogearbox.net>, <andrii@kernel.org>, <eddyz87@gmail.com>,
-	<memxor@gmail.com>, <martin.lau@linux.dev>, <song@kernel.org>,
-	<yonghong.song@linux.dev>, <jolsa@kernel.org>, <emil@etsalapatis.com>,
-	<ihor.solodrai@linux.dev>, <rdunlap@infradead.org>,
-	<gregkh@linuxfoundation.org>, <rafael@kernel.org>, <dakr@kernel.org>,
-	<johan@kernel.org>, <dlemoal@kernel.org>, <hch@lst.de>, <axboe@kernel.dk>,
-	<viro@zeniv.linux.org.uk>, <jack@suse.cz>, <dhowells@redhat.com>,
-	<code@tyhicks.com>, <linkinjeon@kernel.org>, <sj1557.seo@samsung.com>,
-	<yuezhang.mo@sony.com>, <hirofumi@mail.parknet.co.jp>, <cel@kernel.org>,
-	<jlayton@kernel.org>, <neil@brown.name>, <okorniev@redhat.com>,
-	<Dai.Ngo@oracle.com>, <tom@talpey.com>, <hyc.lee@gmail.com>,
-	<miklos@szeredi.hu>, <amir73il@gmail.com>, <senozhatsky@chromium.org>,
-	<chenxiaosong@chenxiaosong.com>, <dsterba@suse.com>, <mason@kernel.org>,
-	<kpsingh@kernel.org>, <matt@bobrowski.net>, <rostedt@goodmis.org>,
-	<mhiramat@kernel.org>, <mathieu.desnoyers@efficios.com>,
-	<john.johansen@canonical.com>, <georgia.garcia@canonical.com>,
-	<zohar@linux.ibm.com>, <roberto.sassu@huawei.com>,
-	<dmitry.kasatkin@gmail.com>, <eric.snowberg@oracle.com>,
-	<stephen.smalley.work@gmail.com>, <omosnacek@gmail.com>,
-	<casey@schaufler-ca.com>, <takedakn@nttdata.co.jp>,
-	<penguin-kernel@i-love.sakura.ne.jp>, <xiujianfeng@huawei.com>,
-	<nanx95726@gmail.com>, <djwong@kernel.org>, <lujialin4@huawei.com>,
-	<bpf@vger.kernel.org>, <linux-doc@vger.kernel.org>,
-	<linux-kernel@vger.kernel.org>, <linux-security-module@vger.kernel.org>,
-	<driver-core@lists.linux.dev>, <linux-block@vger.kernel.org>,
-	<linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
-	<netfs@lists.linux.dev>, <ecryptfs@vger.kernel.org>, <exfat@lists.linux.dev>,
-	<linux-nfs@vger.kernel.org>, <ntfs@lists.linux.dev>,
-	<linux-unionfs@vger.kernel.org>, <linux-cifs@vger.kernel.org>,
-	<linux-trace-kernel@vger.kernel.org>, <apparmor@lists.ubuntu.com>,
-	<linux-integrity@vger.kernel.org>, <selinux@vger.kernel.org>,
-	<linux-kselftest@vger.kernel.org>
-References: <20261027121151.1887650-1-caixinchen1@huawei.com>
- <20261110-rekonstruieren-erbfolge-vollversammlung-26be74966211@brauner>
-Content-Language: en-US
-From: Cai Xinchen <caixinchen1@huawei.com>
-In-Reply-To: <20261110-rekonstruieren-erbfolge-vollversammlung-26be74966211@brauner>
-Content-Type: text/plain; charset="UTF-8"; format=flowed
 Content-Transfer-Encoding: 8bit
-X-ClientProxiedBy: kwepems500002.china.huawei.com (7.221.188.17) To
- whupemk100010.china.huawei.com (7.152.184.41)
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	ARC_NA(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	URIBL_BLOCKED(0.00)[suse.com:email,sashiko.dev:url];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	TO_DN_SOME(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,suse.com:email];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-You are right, and thanks for catching it.
+In create_remap_tree_entries(), if the btrfs_next_leaf() returned an
+error, it only breaks the loop iterating the free space tree.
 
-I have been working on these modifications over the past two weeks and 
-have deployed sashiko locally. However, my current changes are still 
-being flagged for some bugs by my local sashiko, and I am still in the 
-process of fixing them. I expect to release v4 in a few days. Regarding 
-these issues, my current fixes are as follows: - AT_EMPTY_PATH: v4 will 
-use CLASS(fd_raw, f)(dfd), the   same lookup path_init() does for an 
-empty path, so O_PATH descriptors   work again.  do_utimes_fd() 
-(futimens(2)) intentionally keeps   CLASS(fd, f), matching 
-fchmod(2)/fchown(2); AT_EMPTY_PATH returns   -EINVAL there anyway.  The 
-same patch rejects a NULL pathname with   -EFAULT before 
-CLASS(filename_maybe_null) can turn it into an empty   path relative to 
-AT_FDCWD, and adds the missing audit_file() on the   do_utimes_path() fd 
-branch. - __nullable (patches 5-9, 11-13): v4 will extend 
-kernel/bpf/bpf_lsm_proto.c (the existing   strong-override file used for 
-mmap_file) with strong definitions for   all 11 hooks that gained a file 
-argument, each declared   file__nullable, so the verifier sees 
-PTR_MAYBE_NULL and a program must   check before dereferencing. - ntfs 
-named stream setattr (patch 1): v3 forwarded with   
-__notify_change(idmap, base_dentry, ...).  v4 will use   
-notify_change_target(idmap, attr->ia_path, base_dentry, ...), so the   
-hook is checked against the path the syscall used while the attributes   
-still land on the base inode. - overlayfs fileattr (patch 8): v3 removed 
-the ovl_security_fileattr()   workaround but then called the unchecked 
-__vfs_fileattr_get()/_set()   on the real dentry, which bypasses the 
-hooks.  v4 will call the checked   vfs_fileattr_get()/_set() with the 
-real upper/lower path, so the hooks   also run for the underlying layer; 
-ecryptfs is switched the same way.
+Later we call "ret = add_remap_tree_entries();", which will overwrite
+the existing error code, silently hide the error.
 
-Best regards.
+Fix it by adding a "if (ret < 0) goto out;" check after the free space
+tree iteration is finished, so the error can be caught and abort the
+transaction.
 
-Cai
+Fixes: b56f35560b82 ("btrfs: handle setting up relocation of block group with remap-tree")
+Reported-by: Sashiko <sashiko-bot@kernel.org>
+Link: https://sashiko.dev/#/bug/linux-93f4c09d-07d1-4919-b201-2d46f70adf3d
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/relocation.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-On 11/11/2026 12:52 AM, Christian Brauner wrote:
-> This regresses AT_EMPTY_PATH. fchmodat2(), fchownat() and utimensat()
-> with an empty path now go through CLASS(fd) which is fdget() and that
-> refuses O_PATH file descriptors. IOW, this is very very broken.
->
-> Please also go through Sashiko's review of v3 (cf. [1]). The new struct
-> file arguments need __nullable or bpf programs can dereference NULL,
-> and the ntfs3 stream setattr and overlayfs fileattr paths that bypass
-> the hooks need treatment.
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 94eda599b97b..2b5f5e7705cf 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4661,6 +4661,8 @@ static int create_remap_tree_entries(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	btrfs_release_path(path);
++	if (ret < 0)
++		goto out;
+ 
+ 	mutex_unlock(&bg->free_space_lock);
+ 
+-- 
+2.56.0
+

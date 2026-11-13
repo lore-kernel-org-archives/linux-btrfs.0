@@ -1,80 +1,47 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=49.212.13.37
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794524281;
-	b=dQYEA0pHSbL+AL9hmev+LUTaJN6rPNmhHfEpT40NMywO2QW0yhUoPRYPFksT4K+v/1uk
-	 Xh1Mrz2zDvKoG9XulAq3T/4fdGSajaHYGrtiXCwfGChul8/O6HC/2Z0mnqXPiclZJtrMG
-	 4jYwAUHDHICPSCztZf6CKgCJBc46ED1bxbbGpoyBRteyGcCr2tC1Xip/eSPhk2DVVnCT6
-	 e5nyewIrsfMRj3Vr55PNdPLX9mvXOpocrc0da8DG79g59jOtb0s5tC/Uwt/AbYsS+jUFj
-	 jBb63H+9mkwmC0pFCvaspUl35XH0ARYj0gwCrWUSNKIFgUa44wuNtgfpkLIckAXq3Kg==
+	t=1794529543;
+	b=uee/Lt0ZDkLDZeFFmrpUJ05HgK2BCHwsfZJCVRUKNxGEKgQqTKWdRbRT0KdGK7hWTqIm
+	 uzXJ+ToWRFsjOoOsqz6TyfI4oAUAv94DhWb3yxXbTV7nT9zasUzRYDZ9pa7yfY3HF0qfn
+	 mCGkPI3YLpnqLopLJZmXZwu5IBmle3KEkbGvxXwsMWKTs0bDB1BHQlQiFsD/ENDBJgnND
+	 qiHdYWCRnoWVFVWwx05fy5jHyuFPrjPO7S1FJKefBDUh0nRFH4A+5xtCIR+jJ1KgfGMhe
+	 uF6TRvlC+ztosuAggReHZ2zwwI1W3XfUDaEAAfjus3GKwm5+H3zFg+Mza4hJQvH2NYw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794524281;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
-	b=cRGAR6TkPxjZYBwzP9p+LUQhTwiVm9BXc/CTQ388QK6+/ABbO1cjH9JeJCIowxeHYpj6
-	 FNGuYKjQmx0tu1AQ4jAnX5rInAixCWBdc3sRkTs+Nmx5YpftIkmgY4lzfjIJEqxnHxrEN
-	 yT0vfkHfd2qfH9ZC4hmvronl37V4ySKZC/CTHnOMOUKa4izhzq3zi3/Y4LXyqd5PSzOBo
-	 hnWGjKORV/iwLvE2/T9J66f54EehrnXx90XSr/Kzg3kEi1e9IcRq5Whhu7+G6Eu9lM2wW
-	 PN0gHqvYf/SNqxFarAlgwrTcSEtKqWmf9jonSpUUp8NmgV+wW68eqA8jL9uX8qm0YDQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794529543;
+	h=DMARC-Filter:Received:DKIM-Filter:To:From:X-Ip:X-Ip-source:
+	 Precedence:List-Unsubscribe:List-Unsubscribe-Post:Subject:
+	 Mime-Version:Content-Type:Content-Transfer-Encoding:X-MagazineId:
+	 X-uId:X-Sender:X-Url:Message-Id:Date;
+	bh=NOfNgTyd0uEr6RzFm0WGakXbVq4eVhUqaBjZ/gzkpPY=;
+	b=oq1Rpqz5DccSRSYWg6Cp0FkRmGs7nZNKyz+5DSS9JlhPZFnECXCGfgnHKrhjRWRNOZ9E
+	 DPM/qxzUs5Zwo71+zZrnfRmKPugNRRrrfD31wQ/YZ8x360PAGUkebWVCSi53i2hg//DGm
+	 fxiT+WlvJxf80bizFs/l78zGyy8qA3Sjtieog2jlNHOXWBV7ENLlJTs5rssAOMlJWD9cN
+	 nXTQm90tcFevm+KZyb1tGLB165zEYl3pjAgfDIfHtUf/aYVB05YEowJ0NsRuX2f5B/sYT
+	 mjt2uCENCExRc0JqA33Eo8QODONay5nFgGP49Kd5DZPRVHu+nQn7AkjG7qiHyA1k6mw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=none header.from=knowledgelink-corp.jp;
+	spf=pass smtp.mailfrom=magerr.combzmail.jp;
+	arc=none smtp.remote-ip=49.212.13.37
+Received: from r9133.ps.combzmail.jp (r9133.ps.combzmail.jp [49.212.13.37])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 41272606A31C
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2026 22:58:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 41272606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Tayo85Nn
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 0B8B51FD10;
-	Thu, 12 Nov 2026 22:57:59 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794524279; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
-	b=Tayo85Nn8hS1z1IW8Dlu7Byzb71FgDR6WdsiSHsQ0W8w5lErl67w9BQL9m+RR/Yb3UofpG
-	XKsN+52MDoWQN8geUfhX1vIs+HZg0xy7lB3rBrXOtpOCzSISe54r4l3HmW9Rl3KvdupCHb
-	fBBSyN9SpXnCxGvlJkkeo/gMLic96Kk=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794524279; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=Za+nUij785zqzjEWD8nnl+yZPGcA+Zq8SZ2a6rDQL0k=;
-	b=Tayo85Nn8hS1z1IW8Dlu7Byzb71FgDR6WdsiSHsQ0W8w5lErl67w9BQL9m+RR/Yb3UofpG
-	XKsN+52MDoWQN8geUfhX1vIs+HZg0xy7lB3rBrXOtpOCzSISe54r4l3HmW9Rl3KvdupCHb
-	fBBSyN9SpXnCxGvlJkkeo/gMLic96Kk=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 646B213432;
-	Thu, 12 Nov 2026 22:57:57 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 25MtK3RE9mpgSAAAD6G6ig
-	(envelope-from <wqu@suse.com>); Thu, 12 Nov 2026 22:57:57 +0000
-From: Qu Wenruo <wqu@suse.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 211E9606A31C
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 00:25:42 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 211E9606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=knowledgelink-corp.jp
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=magerr.combzmail.jp
+Received: by r9133.ps.combzmail.jp (Postfix, from userid 99)
+	id 355058901E; Fri, 13 Nov 2026 09:23:43 +0900 (JST)
+DKIM-Filter: OpenDKIM Filter v2.11.0 r9133.ps.combzmail.jp 355058901E
 To: linux-btrfs@vger.kernel.org
-Cc: Sashiko <sashiko-bot@kernel.org>
-Subject: [PATCH] btrfs: do not unwind a committed device in btrfs_init_new_device()
-Date: Fri, 13 Nov 2026 09:27:38 +1030
-Message-ID: <02d1a8fbadb25335495cdcf147785216b5cd8934.1794524252.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
+From: =?ISO-2022-JP?B?GyRCP0BFRCFDMGxITDxSQ0RLIT9NJUolbCVDJTglaiVzJS8bKEI=?= <info@knowledgelink-corp.jp>
+X-Ip: 7189651268118417
+X-Ip-source: k85gj72848dnsad1u0p6gd
+Precedence: bulk
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+Subject: =?ISO-2022-JP?B?GyRCPFJEOSROMnE8UiROIVYlKCE8JTkhVyEiGyhC?=
+ =?ISO-2022-JP?B?GyRCJCQkRDwtJGEkXiQ5JCshKSFaN1AxRDxUOEJEaiU7GyhC?=
+ =?ISO-2022-JP?B?GyRCJV8lSiE8IVsbKEI=?=
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -83,108 +50,88 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.999];
-	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,sashiko.dev:url,imap1.dmz-prg2.suse.org:helo];
-	ARC_NA(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
-	RCVD_COUNT_TWO(0.00)[2];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	TO_DN_SOME(0.00)[];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-2022-jp
+Content-Transfer-Encoding: 7bit
+X-MagazineId: 28d1
+X-uId: 6764325137486067654956401034
+X-Sender: CombzMailSender
+X-Url: http://www.combzmail.jp/
+Message-Id: <20261113002441.355058901E@r9133.ps.combzmail.jp>
+Date: Fri, 13 Nov 2026 09:23:43 +0900 (JST)
 
-Sashiko reported an use-after-free bug during error handling of
-btrfs_init_new_device(), that error from btrfs_attach_transaction() can
-cause use-after-free:
+　
+　ルールを決めたら、社員は辞めるどころか
+　「迷わなく」なった。
+　
+　これまでに4,800社以上への支援から分かった
+　
+　“凡人”を常勝集団に変える
+　ルールのつくり方を
+　
+　次の朝礼から実践できる形で
+　分かりやすく丁寧にお伝えします。
 
- btrfs_init_new_device()
- |-btrfs_commit_transaction()
- | ^^^ device is now in the chunk tree, chunks are allocated on it
- |     and the fsid is changed
- |
- |-mutex_unlock(&uuid_mutex);
- | ^^^ uuid_mutext unlocked.
- |
- |-btrfs_attach_transaction()
- | ^^^ fails with -ENOMEM for allocation failure or -EROFS for
- |     aborted transaction.
- |
- \-goto error_sysfs
-   |-btrfs_sysfs_remove_device()
-   |-list_del_rcu(&device->dev_list)
-   |
-   |-btrfs_rollback_sprout()
-   | ^^^ asserts uuid_mutex, which is not held anymore
-   |
-   \-btrfs_free_device()
-     ^^^ chunk maps still point to the freed device
+┏… Overview …………………………………………┓
+　
+　「あいつが辞めたら、うちは回るのか？」
+　
+　　エースに頼らず“凡人”を
+　　常勝集団に変えるルールのつくり方
 
-Since the device can not be unwound once committed, do not go through
-the unwind path. We have no transaction handle to abort, so call
-btrfs_handle_fs_error() to force the fs read-only (a no-op if it
-already is), release the freeze protection and return the error.
+　　　　　　　　―――
+　　日　時　11月24日（火）13:00-15:00
+　
+　　会　場　Zoom無料開催／定員100名
+　　事務局　ナレッジリンクセミナー窓口
+　
+　　詳細はこちら
+　　https://knowledge-co.jp/rule/
 
-Also let the -ENOENT and attach failure exits run btrfs_forget_devices()
-and update_dev_time() like the success path, as the device is committed.
+┗……………………………………………………………┛
+　
+　
+　多くの社長とお話しする中で
+　このようなお悩みをよく伺います。
+　
+　　・エースが辞めたら、売上が大きく落ちる
+　　・朝礼に遅れてくる社員がいても、誰も何も言わない
+　　・同じミスに、毎回説教。その後、自己嫌悪になる
 
-Reported-by: Sashiko <sashiko-bot@kernel.org>
-Link: https://sashiko.dev/#/bug/linux-c339b137-b739-4f8d-8cc5-0960dee662ee
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/volumes.c | 19 +++++++++++++------
- 1 file changed, 13 insertions(+), 6 deletions(-)
+　研修も、クレドも、評価制度も試した。
+　それでも改善は続かず「結局は人次第なのか」と感じている。
+　
+　
+　そんなお悩みを解決し、成果を生み出す会社に一変させる
+　本質をついた、ルールづくりをお伝えします。
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f2b4664b5fd4..8b94c509b85d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3165,17 +3165,24 @@ int btrfs_init_new_device(struct btrfs_fs_info *fs_info, const char *device_path
- 				    "Failed to relocate sys chunks after device initialization. This can be fixed using the \"btrfs balance\" command.");
- 		trans = btrfs_attach_transaction(root);
- 		if (IS_ERR(trans)) {
--			if (PTR_ERR(trans) == -ENOENT) {
--				bdev_allow_freeze(file_bdev(bdev_file));
--				return 0;
--			}
- 			ret = PTR_ERR(trans);
--			trans = NULL;
--			goto error_sysfs;
-+			if (ret == -ENOENT) {
-+				ret = 0;
-+				goto device_added;
-+			}
-+			/*
-+			 * The new device is already committed and in use, we
-+			 * can not unwind it anymore. There is no transaction
-+			 * handle to abort, so force the fs read-only instead.
-+			 */
-+			btrfs_handle_fs_error(fs_info, ret,
-+	"Failed to attach transaction after device initialization");
-+			goto device_added;
- 		}
- 		ret = btrfs_commit_transaction(trans);
- 	}
- 
-+device_added:
- 	/*
- 	 * Now that we have written a new super block to this device, check all
- 	 * other fs_devices list if device_path alienates any other scanned
--- 
-2.56.0
+　
+― セミナーで得られること ―
 
+　・ルールを増やすと社員は辞めるのか？への答え
+　・「姿勢のルール」の決め方
+　・「完全結果」の指示に書き換える方法
+　・エラー時に上司がかける「一言」
+　
+　
+　いずれも、翌日の朝礼から試していただける内容です。
+　
+　自社の組織に希望を持つための気づきを得られる
+　内容となっておりますので、ぜひご視聴ください。　
+　
+　
+_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+
+　一般社団法人ナレッジリンク
+　東京都千代田区神田小川町1-8-3
+　セミナー窓口：03-5256-7638
+
+……………………………………………………………………
+　メール案内が不要な方にはご迷惑をお掛けしまして
+　大変申し訳ございません。
+　お手数ですが下記URLより手続きをお願い致します。
+　
+　配信の解除依頼はこちら
+　https://fc-knowledgelink-corp.jp/mail/
+
+_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/

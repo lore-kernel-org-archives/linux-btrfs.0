@@ -1,77 +1,77 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.21
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.20
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794539432;
-	b=P+b4sjZ/ExNpKLra6Z1bwmImfS4xuo23ijV2t3Qsz11a+XKXSYJw9q5hrM5MOeLM72Fs
-	 AxKrVvrpkfbYjpIuS2MH5XEYN5GIyZt8nf9KlBrA4VY0ckGy9pNA7p1QPLlE9kkdcMkEF
-	 yliKRfIJgZ0vgZXqLbSG62yh9hwNAtAEGvqfo/I+ndmEI4hkoEs8/e5vVfSEA1yO6rq9H
-	 GVrg2Pl5LfIZEo+fBXh7bjcSVTunq4czBNB8B4UBdpmfn6BTS5xYu3FGpVGWST0IjnZjN
-	 2iB0wmEOo+pRJ3d34znK/cKY8UEFbdO4z9kkM76i/dRqvpVT27Zn5N+2bPDmiRjBQ0Q==
+	t=1794539631;
+	b=vXnb1kBt09ujLSLHxxKptXlsZKd/J5ZbLuxRLf5VKH5rSxvyoyKCd8BBJ2B4J2po2Ort
+	 HhwskgKmgvZ+Y3bbCOvs3AMpZJTFBivksNR1Os7+juJGaoNYz8UtVFvkC7DEV2jBln3jo
+	 6YCPsgHtrneMIXZYI3TxSS/z20wk4GJllbXwn7cB1NNLYsOmcaSglkg1xS0H09a101SsV
+	 d8lXWfWT/xMpCx75IUvtFrkwTqz9+zEIjD5sRjgZ42hykRhQqmTAwekP28ra+eqWfgT+F
+	 d8AhjRzCdDeL2+LE6G01VKYoPttZnVwKroa8RxAdCGmA7FYEWl6aAW5VYvLlobvg4rQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794539432;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794539631;
 	h=DMARC-Filter:DKIM2-Signature:Message-Instance:DKIM-Signature:
 	 X-UI-Sender-Class:Received:Message-ID:Date:MIME-Version:User-Agent:
 	 Subject:To:References:Content-Language:From:Autocrypt:In-Reply-To:
 	 Content-Type:Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:
 	 UI-OutboundReport;
-	bh=7TTWdwN6Dc2y0fLRLjEzGOVMqQCeMfRgf+2qYgDnFzs=;
-	b=UyD+umx/yZqWPv/g9mxHvg37TA46xJuFDdonsPbB6S1iMjMXZseZDR1wo9kEzMg+ZCQQ
-	 rGEi9kcb1mWg2to/9UYiTOwGqGK2hK7uoMs6eH7x5TA/orjbCzOmsav3Uffi17RSHpItr
-	 i5F3bMnWTixZ1rvZUMd2revNZpbPYSNEX/vWVXKWJImP7ab6TqQA4bcAeqvBJRIhWPMaQ
-	 y6fqyFZeT4E0a7wgrF6yUOdmAa+pFY3tWruYymXQk1IEwIl2rORO4v3uA6/dLo6s+OXx+
-	 bhKaWmsyylgte+K6Xl7nAm2OofGD3oXfGfJxT1iGVcCYiyzy5xHgTGKENQa3fbbP6MA==
+	bh=XHKU0Ne7pUS7jNU5Y/0TnEppXP8hVjYRsCtTo9RheA8=;
+	b=ur40RgTydT3q4WvCD2la6Ivo5YwZwexWbNYPgpQk5GV71QS/H5BRTEGQp9fcEzGqIL6k
+	 Z2QBwSNLvswfxTJrW3lbBmYBeupph2izAGYCMEkvDtb9zK18u1uDClGJCAqJZw4Lp13Wl
+	 aUFXQ6vbqs++URScyWUAnbi5EidgcD6knPbW2UVa+lBZc6zhfDCnHavW5L/rilvjQk28J
+	 ERiw+MKkGVE+fyRMW7BavBBKcc3pFCifQ75dQ/QSXL4R0r/cAVhKt1v9DFN6qgFRtSiKN
+	 hDEPS5X0LSaC/igvPRzTiD5jo0wy5JIUHLWxMtRAnWv5j/xD683d3YWqUDgmDKTONEA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmx.com;
 	spf=pass smtp.mailfrom=gmx.com;
-	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=KqQUSPFO;
-	arc=none smtp.remote-ip=212.227.17.21
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b="Wrj0YbK/";
+	arc=none smtp.remote-ip=212.227.17.20
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01929606A31C
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 03:10:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 01929606A31C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBFC4606A323
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 03:13:50 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BBFC4606A323
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=KqQUSPFO
-DKIM2-Signature:  i=1; m=1; t=1794539428;
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=Wrj0YbK/
+DKIM2-Signature:  i=1; m=1; t=1794539628;
  mf=PHF1d2VucnVvLmJ0cmZzQGdteC5jb20+;
  rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
  d=gmx.com;
- s=s31663417:rsa-sha256:i0MrRpE22wydM1mDbQEOKs9dyH+V
-   6+FUr9BCg3BdIshX5OLahmH/tHpJPgQHid++D1S2irMXL2T9cyLSbQXHUbU0lRz9iJaoJe+Cj/R
-   RhiVZbAq8qLD3qlFLXY/l6u8ydYlajIFDkDJRUJRmgCLq9Ca/oiDrQzLQy8MMx0APQvyhOjwdCh
-   56amFZpJbAxe3ipe7RFYZQKsiBUE7XT/IXxG1+4/eEmtUp5ch8DGftLG0jPPYWc6VIUoXgovloJ
-   Oc8GQPEM00yb39n/Iiz+qfhqbg6B8bJeP4+msVR3Z7DHoVAm+vT3qlZGAsRfwhZJ9TY67SIQiIL
-   avd+fS1xK8NjvA==;
+ s=s31663417:rsa-sha256:eyhsvQMHFLNi8DrBJYGsp5GJ6Hig
+   NaDhXIzi1VgGKK/ojY51jxwzHCyr4+TwMkMYZ0Ajw+SazpMd1U+4n3cQ1T+A6+7f6KADPNLq8LP
+   /PDEWFKBKprkeQ3UePxIJpUy7uLGiwUjYdSnPcqqiibzxVKRJETriLeCQzVk8/yW6cx+cNFkyzw
+   nzzd/QJN5y2awIhR1qBiAmLuPtGWBJOEWkBDjOR/uIfCKIu9i0n6Yz12nzyPQ47RMm6tW0p6DmU
+   f8zc0Q+KD2EtJ8eqswEsAQJ4+JwRby9y0FgaDbbU5ECGPy1iCIq/rS6eSBJ2uwnz5PZpQ54GITV
+   qfFV8xIm5G+rhg==;
 Message-Instance:  m=1;
  h=sha256:
-   5oK4GScSsF35oPjdVQdSIvLzaYBkSg0izNhIlaT5TR8=:
-   Jnlkk4IWJES6seh3FFJDjzdYmwIOdMi/OpF0tNYdyU8=,
+   KpNk3ytzDguPlThkr60YTd+3FphqQS3mwc1BNuooccg=:
+   MlxKMuaJ3OhCG2HXa9HOZNxcfkVZ+Q7DnrT+dXZcLIs=,
   sha512:
-   bd7EIPQ4KHsGTzXlLMtsZ3Z3fmlIbFVL/LFo9B9ifn2shvrqit/CervSCZS+o67ZDpnD8rwsXxiuRPL8kIm3iw==:
-   /Cwp0LK3nCPO8JbclKBMikqznv4xcX0Aw7zDqmyLyuA36okJUbW1ZBbtQwaixa4ydA5//7IAiDzL5L6l5FCBmw==;
+   JUtjU+R50kZacXMpVf9kpdVn4l13F+JpVM9G8LKqph4IxRiUeES56MoS4+kS7cIZS6o/gHl3150L8YBZUnBTHg==:
+   aXNWmu0GWwv1h4VK4fzW+sUrIrKsGdYSC1s26VibK/GdJePpa+nvzSqXt0NYQnfB6VK2lE1KuUKgfY6DJJheDw==;
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1794539428; x=1795144228; i=quwenruo.btrfs@gmx.com;
-	bh=7TTWdwN6Dc2y0fLRLjEzGOVMqQCeMfRgf+2qYgDnFzs=;
+	s=s31663417; t=1794539628; x=1795144428; i=quwenruo.btrfs@gmx.com;
+	bh=XHKU0Ne7pUS7jNU5Y/0TnEppXP8hVjYRsCtTo9RheA8=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=KqQUSPFOjtk3xQuOWY53GN+S93RkIPc3045JOdsxedZX8Xj4hZ0WKHvHNR0NvUtZ
-	 gSqJzlGqR84qvOMJV/LICFr6Ozz8ibZL6P/Pl4pSd59PLyM7oUroR4XQbL40qAyBt
-	 0Wo3AMZl0H0nx/FY1LXEYOx8EbNvvb5vcrHEyBK47hQG+2GW0TJFMEOeGGa06wtL7
-	 PlK+c//noVLHu5e3tH1loXFDySD1Z0y669NfrN81/p16VpKOASiR9AXw/WZlqvbRq
-	 aXajAj0q8yprG56xy17IRSbDlFajk6pIL6uIyfOFQ5X+UkewqfzHKb2IkA4p422JE
-	 ac4UC6EkUw8csLS1og==
+	b=Wrj0YbK/xbvG4OKlNe0AsF9wHpPBM59SKsIpiKD1koRcscBD6P6qX9PCK2jdsjAV
+	 p5K6YhD8mf0sAlHPoz7D2vXq9AR6vxWO1MW5KrvXmsqgXpxY1O7q4/k9IaK40RXlx
+	 oXSo2S+GUJ1AnAPS3l1ykeGoH1WxhiilzEJdXlByMCdc+39fLkClcnS4ZxD+koSeB
+	 3HhJXq+WeByTNgu8XWjiNakrZBt4CdMovtU8NILLzdw90uxDKMPXEIO58q7bZ8K+T
+	 UkKtkamKKZik7voWfWFQHw+4+JW/3uXCr3xtfHtoB99qcGKbt+BVlhoV7jU/gEW1f
+	 HLFp0k1ginJ66MYHvw==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MLiCu-1xA2J21AXY-00JDDc; Fri, 13
- Nov 2026 04:10:28 +0100
-Message-ID: <a66e8165-c819-4748-adc1-6c82bdcc6c9f@gmx.com>
-Date: Fri, 13 Nov 2026 13:40:25 +1030
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1Mj8qj-1wnASH0QwX-00kR4G; Fri, 13
+ Nov 2026 04:13:48 +0100
+Message-ID: <cc63fc94-e99a-42e9-965c-6b138b0760b2@gmx.com>
+Date: Fri, 13 Nov 2026 13:43:45 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -82,11 +82,10 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: send: fix invalid access to inline extents in
- clone_range()
+Subject: Re: [PATCH] btrfs: fiemap: deal with inline extent in
+ fiemap_find_last_extent_offset()
 To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <a8f80de0fd18699ffc6f9fbbdfa794e80e9a1fe1.1794504038.git.fdmanana@suse.com>
- <3a9994c5325a0d6687798909f9d02688420aad83.1794505101.git.fdmanana@suse.com>
+References: <dc3e7e3972a3d82ad871c53418a646498204400d.1794504751.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -113,138 +112,132 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
  9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
  3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
-In-Reply-To: <3a9994c5325a0d6687798909f9d02688420aad83.1794505101.git.fdmanana@suse.com>
+In-Reply-To: <dc3e7e3972a3d82ad871c53418a646498204400d.1794504751.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:/WXJNdAKh9XehfqWnGgIcVDUPHyzCt/RL6bRM4bphbzi0d4Dxkj
- FUP3hqPu2lLWdfVpbldEAyzbXngmhXirXLLKgs722bTF6MhSfchV0ZK35sNSFwHgtIX6YTq
- Ar4Ngd1ykmKJ3uHR6MDj35YHZtE45/CeMfL8FR5PH8PhuDeb+4q7aHJQDYpHaWtjFDb8XV9
- H3+obW1SaRQDn188PAd4w==
+X-Provags-ID: V03:K1:igek2vzbmtIzH0E0zyllAalrdTOclQmc8TBhymlB2k5GGSh7O9T
+ HJE3NQWT9zmAebO4P6dO9UJhZM/R6sukHDM3niNGQgACl6jlfUjqO+9Bp6A2R/Ndm1L7SR/
+ jx6btZV6pq438f94nq0bgrIAtVm4hzHs0GRoHdiDNiOnN9z8atyrQZlUYmMQs1Q0a5zKcnb
+ OKySdatd9Y61HIJ9X3W9Q==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:+tsxhZFKai0=;6/vDVRnsaZpPpAc/tZjYDc06DLP
- 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
- Wk4yv3Ip0JCYp57
+UI-OutboundReport: notjunk:1;M01:P0:NnuhkuL+r3M=;JS5dfB4KIzfE74syYrFq5v5Udtg
+ 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
 
 
 
-=E5=9C=A8 2026/11/13 04:09, fdmanana@kernel.org =E5=86=99=E9=81=93:
+=E5=9C=A8 2026/11/13 04:03, fdmanana@kernel.org =E5=86=99=E9=81=93:
 > From: Filipe Manana <fdmanana@suse.com>
 >=20
-> We can't access the disk_bytenr and offset fields of a file extent item
-> that represents an inline extent, since the extent's data starts at the
-> offset of the disk_bytenr field and the offset field is after that, so
-> both fields point either to inline data or beyond the file extent item
-> in case the data is too small.
+> In the while loop that finds the first file extent item, counting from t=
+he
+> end of the file, that is not a hole, we are accessing the disk_bytenr
+> field of each file extent item, which is wrong in case we have an item
+> that represents an inline extent. In that case the inline data starts at
+> the disk_bytenr offset and therefore we are reading user data or in case
+> the inline data is less than 8 bytes, we are accessing another region of
+> the leaf or even beyond the leaf boundaries in case it's the last item.
 >=20
-> Fix this by not reading the disk_bytenr and offset fields if we are
-> dealing with an inline extent.
+> This should be a very rare case, as it implies having an inline extent
+> followed by a hole file extent item (the no-holes feature is not used).
 >=20
-> Link: https://sashiko.dev/#/bug/linux-b662b951-0491-465b-a262-f01a108d81=
-46
-> Fixes: 040ee6120cb6 ("Btrfs: send, improve clone range")
-> Fixes: d906d49fc5f4 ("Btrfs: send, fix file corruption due to incorrect =
-cloning operations")
+> Fixes: ac3c0d36a2a2 ("btrfs: make fiemap more efficient and accurate rep=
+orting extent sharedness")
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
@@ -253,64 +246,21 @@ Thanks,
 Qu
 
 > ---
+>   fs/btrfs/fiemap.c | 2 ++
+>   1 file changed, 2 insertions(+)
 >=20
-> V2: Fix a missing extent item offset access.
->=20
->   fs/btrfs/send.c | 29 ++++++++++++++++-------------
->   1 file changed, 16 insertions(+), 13 deletions(-)
->=20
-> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 1b903e75cec0..3cc7749f0452 100644
-> --- a/fs/btrfs/send.c
-> +++ b/fs/btrfs/send.c
-> @@ -5842,7 +5842,7 @@ static int clone_range(struct send_ctx *sctx, stru=
-ct btrfs_path *dst_path,
->   		u8 type;
->   		u64 ext_len;
->   		u64 clone_len;
-> -		u64 clone_data_offset;
-> +		u64 clone_data_offset =3D 0;
->   		bool crossed_src_i_size =3D false;
+> diff --git a/fs/btrfs/fiemap.c b/fs/btrfs/fiemap.c
+> index 817171028413..285398eb36dc 100644
+> --- a/fs/btrfs/fiemap.c
+> +++ b/fs/btrfs/fiemap.c
+> @@ -621,6 +621,8 @@ static int fiemap_find_last_extent_offset(struct btr=
+fs_inode *inode,
+>   		leaf =3D path->nodes[0];
+>   		ei =3D btrfs_item_ptr(leaf, path->slots[0],
+>   				    struct btrfs_file_extent_item);
+> +		if (btrfs_file_extent_type(leaf, ei) =3D=3D BTRFS_FILE_EXTENT_INLINE)
+> +			break;
+>   		disk_bytenr =3D btrfs_file_extent_disk_bytenr(leaf, ei);
+>   	}
 >  =20
->   		if (slot >=3D btrfs_header_nritems(leaf)) {
-> @@ -5906,23 +5906,26 @@ static int clone_range(struct send_ctx *sctx, st=
-ruct btrfs_path *dst_path,
->   			crossed_src_i_size =3D true;
->   		}
->  =20
-> -		clone_data_offset =3D btrfs_file_extent_offset(leaf, ei);
-> -		if (btrfs_file_extent_disk_bytenr(leaf, ei) =3D=3D disk_byte) {
-> -			clone_root->offset =3D key.offset;
-> -			if (clone_data_offset < data_offset &&
-> -				clone_data_offset + ext_len > data_offset) {
-> -				u64 extent_offset;
-> -
-> -				extent_offset =3D data_offset - clone_data_offset;
-> -				ext_len -=3D extent_offset;
-> -				clone_data_offset +=3D extent_offset;
-> -				clone_root->offset +=3D extent_offset;
-> +		if (type !=3D BTRFS_FILE_EXTENT_INLINE) {
-> +			clone_data_offset =3D btrfs_file_extent_offset(leaf, ei);
-> +			if (btrfs_file_extent_disk_bytenr(leaf, ei) =3D=3D disk_byte) {
-> +				clone_root->offset =3D key.offset;
-> +				if (clone_data_offset < data_offset &&
-> +				    clone_data_offset + ext_len > data_offset) {
-> +					u64 extent_offset;
-> +
-> +					extent_offset =3D data_offset - clone_data_offset;
-> +					ext_len -=3D extent_offset;
-> +					clone_data_offset +=3D extent_offset;
-> +					clone_root->offset +=3D extent_offset;
-> +				}
->   			}
->   		}
->  =20
->   		clone_len =3D min_t(u64, ext_len, len);
->  =20
-> -		if (btrfs_file_extent_disk_bytenr(leaf, ei) =3D=3D disk_byte &&
-> +		if (type !=3D BTRFS_FILE_EXTENT_INLINE &&
-> +		    btrfs_file_extent_disk_bytenr(leaf, ei) =3D=3D disk_byte &&
->   		    clone_data_offset =3D=3D data_offset) {
->   			const u64 src_end =3D clone_root->offset + clone_len;
->   			const u64 sectorsize =3D SZ_64K;
 

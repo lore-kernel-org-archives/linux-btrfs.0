@@ -1,66 +1,48 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.127.231.50
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794562715;
-	b=ArSFkwWTkA5eSH8iJOCpOT+tzFQIQvM84vOhCNgTvjEeGWXy024Wd9CH52JCHXmYksdA
-	 HxoIJP6CGIUKfJlqJ6Y9vC13Lh13l4XcnvFj6HxR88PszCzyo+Y4iaxDK0kftPSkJWs/9
-	 4PHxHrH1vS8f+4uqQjZdLx919ryL11vw3NOwHXrXPzNovjpKWikls7+4Er64t3/Un8OlI
-	 etwmNko7D5VKHsWE3UqTcQ5gYPyTcBZej11I8aem3fJ/vjBT76Wgms4cBc7bRo+TV4Xfs
-	 BnBzZv0MztodyDq7IRu7y01mHr8tImBWLEju5HpsskUmZJiqXq0CSklmlciBtcNg5+A==
+	t=1794564602;
+	b=CM30nBGcX+KXXg0MyARuCmmvXtHuyfHjbJzCzTkViqpHBUEyqYYCGhFpLQOd/4SfKg/h
+	 LIo7ertHIkoLUSgvLUthmJB1okY44LSf2SV8PwAlMHtDPjlVGQM62L9f4aKx2kLwyfFTa
+	 g26TYHVVWI9oYt6jvBf2ZgET/Z8wIgZV6ReKjD2fUn4MhB6haLM70ol5W0Bd8sVs45s1V
+	 5cN19s3l/t+xaonY3OcXT7kAaxslgx69PRyzZ48/AHExyZ9rOno3epavtm6q443Wr/06L
+	 yzpWxehCnFXoO8SrMit2pVD2wMki+b+rKt/0k5bfXRfr9mNlxhdWCthL0VjdEbDvAsw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794562715;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=cyYiEXj4r2TdfxUYkpb5oOHA+dMqnC/KnZCWbHMkenQ=;
-	b=JX4S6gyYbzsiSWQW4KbGL+o+bG5BZ1kHrpqtfjm1gZQKvyySj1siKm+TLw3oOKSyNmir
-	 yMhFvhEn6hoRuQHuDvIKW2iYEJQ023PlaTAg5SllPRsBamEqmcgznZsCeW+C7XI5sdok+
-	 AFHyigqjIQQCuqIYbBlEkpyQ/ae/8cZdC/NYubbyD6znGQV2z9VmpLB9zidKMoNeyubJK
-	 QROF2RPnRxVVZpljL+yp6OilrnqsbaVWs7FcbXW4b9+jYj2Kj6wkETwmVrlY7cpb0gk+C
-	 SXDDPr8Hk0vyAyhPZaEZHYlI4GSZQmfUZYmIFQjdPRM3cYdz03lEq0IJi984BoeCGYw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794564602;
+	h=DMARC-Filter:DKIM-Signature:Mime-Version:X-Lms-Return-Path:
+	 X-Original-From:Subject:Message-Id:Content-Type:In-Reply-To:To:Date:
+	 Received:From:Content-Transfer-Encoding:References:User-Agent:Cc;
+	bh=uynRIm37wzoV6Kx2+swAeIUBoBBHcfIwqA79t/cYmnA=;
+	b=TsNFfk50ZH4T/dgQqXLV5s1ej8aBCiidMuYDe2M2R8Xu0xhql5zT60/1a3q9c6pEl5/k
+	 YjlNVcsjCGhq0IchL5QHT8v7/F9VcCdeju83JeFOcctkhZLNWiJ0BOKOke85X9/t+m13c
+	 y9k1FYcxhU/PInhBQTSzUuZSTkLacT/8V+0oQz41r8OP6GCYQ0MHmbaGFiyN6VsLb34qC
+	 1A7n44rgpW7fdN+gkqewUIkt52f/+YM3mw+IyywBs8vzu9CwUSIp9D1XrYbrcsMJiNsI/
+	 XYaKPmkpNqK5UOcjEd4y/pS3m1NKuVXcbQjQ5jA0UAVIH6dp7qvaNEAMPZDd6v+5PoA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=G0aoPaWB;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=fygo.io;
+	spf=pass smtp.mailfrom=fygo.io;
+	dkim=pass header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=Ns5ukICB;
+	arc=none smtp.remote-ip=209.127.231.50
+Received: from va-2-50.ptr.blmpb.com (va-2-50.ptr.blmpb.com [209.127.231.50])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 98344606A334;
-	Fri, 13 Nov 2026 09:38:35 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7B0AE606A331
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 10:10:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7B0AE606A331
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=G0aoPaWB
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 33F321F000C4;
-	Fri, 13 Nov 2026 09:38:31 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794562715;
-	bh=cyYiEXj4r2TdfxUYkpb5oOHA+dMqnC/KnZCWbHMkenQ=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=G0aoPaWBd72jNdaUejL1FLrAnRK3dBg7nKImNWeUFNW4z4PCgCfYTdQz1fkRwVHmb
-	 KMUT4o1pv98YTq4+sOb0DRnY5NA9AhSY9muPozYtlPKP7GITGIWVyqxlT2Lbe4gDgh
-	 DUKeiVG6uBVTl5/xgukvDHNaOL5j36fa2FQ4TKuu/sqZvneH+k7Y9Kkvsr58uzYShF
-	 m6liZNx7Yn9oUKVS6OG22zQht8IfiDOTOY2ocG2nLZ33OCWigHMStPuFGS8jRrcEDg
-	 HPmsR3svBeIaC1O1WZTEBFOuB731AaPpyqUmnt9jeKGaFcyRTBKxm1yOv1bk0r5wv1
-	 n093Q7JztiiYw==
-Date: Fri, 13 Nov 2026 10:38:28 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: Jan Kara <jack@suse.cz>
-Cc: linux-fsdevel@vger.kernel.org, Jan Kara <jack@suse.com>, 
-	Al Viro <viro@zeniv.linux.org.uk>, ecryptfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
-	jfs-discussion@lists.sourceforge.net, linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, 
-	linux-mm@kvack.org, ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, 
-	linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev, linux-efi@vger.kernel.org, 
-	linux-mtd@lists.infradead.org, linux-xfs@vger.kernel.org, 
-	Karl Mehltretter <kmehltretter@gmail.com>, Dave Kleikamp <shaggy@kernel.org>
-Subject: Re: [PATCH v2 04/34] ext2: don't set SB_RDONLY after filesystem
- errors
-Message-ID: <20261113-hermachen-qualvoll-porzellan-adc585bf14d1@brauner>
-References: <20261029-work-fs-sb_rdonly-v2-0-2f44f64f0b66@kernel.org>
- <20261029-work-fs-sb_rdonly-v2-4-2f44f64f0b66@kernel.org>
- <5qefa4mracb3x2z4vsdejmkyyfrhdcrixmmnooz4rzwcdfoejm@mqkvixj6afwp>
- <20261110-kargheit-impfen-pausieren-881763d28b19@brauner>
- <za33axmgzmuzsj3zmfeh43fkphtcsqtkhhrauwuvs7aiftelgp@dzl6z322st5f>
- <20261112-wohncontainer-saurier-wonnen-91f30c3b3ae2@brauner>
- <20261112-besorgen-nobel-handschuhe-fb3373259b5f@brauner>
- <20261112-aktivieren-datteln-assimilieren-062b8257ed49@brauner>
- <7rm43pfkasky5th4fs65qdt4l2d6j3togha56idrqhs4524qca@u7socb57rg3v>
+	dkim=pass (2048-bit key, unprotected) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=Ns5ukICB
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1794564593;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=uynRIm37wzoV6Kx2+swAeIUBoBBHcfIwqA79t/cYmnA=;
+ b=Ns5ukICBBWkSxKiC95WNKwuSRwfMIRY4oNvqNWcYebqyDvEMoauu5NE0VY1z2monJ2X3y3
+ qLwZHSTqEi1Fy7TCzKxKFWOg7eb1pyZUKaouVJSHcQSJlnydOvgREn/lmW5B0mYtziAvdn
+ q9V1DfP56P1tSdgUpp0RQVVSaiWiYPuih9aAt0ELlW0YGIYMIGXPM21HUhCTKeEGTW8LEX
+ VkqSWIukAwfcbF1K2LsMm/16wNx/lz1gh0U6M38oCT9W7xDbMKCT5wBBat+piwca4GOO62
+ 0yYDPP2m3FwzD2+z3mWog6BMJrvyODYT+oi2CfTjlRJiZf6qfIoycg/bgQK7XA==
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -69,58 +51,41 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <7rm43pfkasky5th4fs65qdt4l2d6j3togha56idrqhs4524qca@u7socb57rg3v>
+Mime-Version: 1.0
+X-Lms-Return-Path: <lba+26af6e1f0+d0678f+vger.kernel.org+zhudongjiang@fygo.io>
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+Subject: Re: [PATCH v3] btrfs: zoned: don't release active zone reservations for conventional zones
+Message-Id: <914ceff5-cce8-4716-8763-34e4e4a9b49f@fygo.io>
+Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAD=K2o8OvHTxo5o9ZNavnbzchtLqwFT2W6YiuKLMNux9qMRt6A@mail.gmail.com>
+To: "Jochen Philipp" <a2jphilipp@gmail.com>, 
+	"Johannes Thumshirn" <johannes.thumshirn@wdc.com>
+Date: Fri, 13 Nov 2026 18:09:48 +0800
+Received: from [192.168.8.64] ([183.34.170.77]) by smtp.larksuite.com with ESMTPS; Fri, 13 Nov 2026 10:09:52 +0000
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+Content-Transfer-Encoding: quoted-printable
+References: <20261110080932.1205332-1-johannes.thumshirn@wdc.com> <CAD=K2o8OvHTxo5o9ZNavnbzchtLqwFT2W6YiuKLMNux9qMRt6A@mail.gmail.com>
+User-Agent: Mozilla Thunderbird
+Cc: <linux-btrfs@vger.kernel.org>, "David Sterba" <dsterba@suse.com>, 
+	"Naohiro Aota" <naohiro.aota@wdc.com>
 
-On Thu, Nov 12, 2026 at 07:27:45PM +0100, Jan Kara wrote:
-> On Thu 12-11-26 18:03:55, Christian Brauner wrote:
-> > Ok, so if I understood you correctly the changes below should be
-> > implementing what you ask, @Jan.
-> > 
-> > It's a diff against v2:
-> > 
-> > - jfs: free the anonymous tlocks when evicting an inode the way
-> >   txUnlock() does. That's also a mainline fix.
-> > 
-> > - fs: sync_filesystem() and sync(2) skip a superblock in the emergency
-> >   state. syncfs(2) and Q_SYNC return EROFS.
-> > 
-> > - fs: refuse to freeze a superblock in the emergency state. Otherwise
-> >   freeze doesn't sync anything anymore and the flusher keeps writing to
-> >   the frozen filesystem.
-> > 
-> >   That means, FIFREEZE and dm suspend with lockfs now fail with EROFS on
-> >   an errored ext2, fat etc. I think you said that you expect freeze to
-> >   fail anyway. I think that's right.
-> > 
-> >   The exfat, ntfs, btrfs and ext4 shutdown ioctls then have to skip the
-> >   freeze after an error.
-> > 
-> > - ext2, fat, affs, ufs and hfs: drop the ->write_inode() refusals.
-> >   Otherwise the flusher writes data and bitmaps but never the inodes.
-> > 
-> > - ext2, jfs, nilfs2, ocfs2 and ubifs: their ->sync_fs() checks are dead
-> >   now and go.
-> > 
-> > - ubifs: drop dirty folios and inodes after an error. Without the sync
-> >   at remount the flusher otherwise hits ubifs' asserts after a remount
-> >   to read-only.
-> > 
-> > With that nothing is synced on request after an error anymore.
-> > 
-> > syncfs, fsync and Q_SYNC return EROFS without writing anything and
-> > sync(2) and umount skip the filesystem's own sync.
-> > 
-> > The flusher and the block device flushes in sync(2) and
-> > kill_block_super() still write. So what ends up on disk is the same as
-> > on mainline today:
-> > 
-> > Is that what you had in mind?
-> 
-> Wow, that was quick! Indeed this looks like what I had in mind and I like
-> the result. Thanks for implementing it so quickly.
+=E5=9C=A8 2026/11/10 23:08, Jochen Philipp =E5=86=99=E9=81=93:
+>=20
+> [...]
+>=20
+> Since you only tested patch 2 of Dongjiang's series: should I try
+> his full zoned-fixes-testing branch next, maybe together with
+> your fix? Or is there anything else you'd like me to collect
+> first?
 
-No problem. We're paying off technical debt, big time... So I my motto
-is "let's go", so we can focus on the fun things again.
+Hi Jochen,
+
+Could you give the full series a try?
+
+https://github.com/pdzhu/btrfs-linux/tree/zoned-fixes-testing
+
+Patch 1 of my series also addresses the conventional-zone accounting issue,=
+ so there's no need to apply Johannes's fix separately.
+
+Thanks,
+Dongjiang

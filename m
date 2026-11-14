@@ -1,58 +1,80 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794691299;
-	b=C5ekNo542CI/67yBMW6ufyUUO2GPAETZ1REpkkxwr0JU2olBIBZLV8qQ7TsJeDckGbN6
-	 wYQcaO0JPBupoXFVGBiv3DmNSjU4MMwRtJpAhYEWnF1qha6GM6Z2t7LwrtXI9ojGOHzvG
-	 jaViZUzisihkGuuT1uqIZEWmMbJS5k5mCDFlvGw0VRHtaiC5l9uDutxd8mxD0zuN8qbzl
-	 V4G2b/gUVDDWj8WV3TaiLh3KPSPh0trFWh4+8J3gyexmGnrUyxxfnDrd4oFPHl5pI8m5g
-	 9Md5lnpaOOfF2UvuDRi+A/0rW8reJnzL98JUgsSRTpR37+nS9P/dn+uQWbKk21pgppA==
+	t=1794697429;
+	b=r4MuGYvQX275v+fPAlnCiHjtdnxgXDXuGUngctWqfiP6e0wNAtiBO56nHOmJF+ih3t9l
+	 c0sKXtOm+PaPN8FMMfuRnwpngtRgbGhksSAAbm53aWwk145q6Vdb4B/uOwNnXDY/rV2dy
+	 zcuh8nE6BwfIGGScdiTrGvUFsf1gDvgZij8+dz6iKCMbMeFgKctQM8He6KzvxNSuWwT9s
+	 WRIY7nk22XX3r/+xylmDwf6YSpmITmQWBiSYEJzJYvYjc8RSclZQ+ia88Q7comIH4V5Ah
+	 8xFYmMjlMr4CEp4R+qA2ERBjLmyD2fG7Fa7O89xf9UAoVuGtsGl27gVBaGEo1yNfITA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794691299;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 Mail-Followup-To:References:MIME-Version:Content-Type:
-	 Content-Disposition:Content-Transfer-Encoding:In-Reply-To;
-	bh=9ZuyfI8WkgRbBjR5eKXmMTqwvLagRhNhdq+B2h7eXsM=;
-	b=opauw1fvuV/ZSTPIOANkjVyuLnCd1KefnAPzfnUghKOueJdKDgMDxzb2fB5VSA4zRi8T
-	 ZJEgRPXTiWR2M+8NVvlBqz3I08M7IvclHQO7MfaXgf8Z4UtKN6jQ0heZV8GbsxHMStBWq
-	 AEhblDwPNaOa4/pQOPb9rVaFb9JLFLmCjKtnOH0lnTXvzLH8swoiz4trm7V1d3STxw0s6
-	 tqOvTmYdr2zn8oZL5LmpaKn7Z+VfjZFWdB21IXxu8pti2ThdKduIvPisDjJ+aYoFZHAYg
-	 Ln4WCbAqI8eKfTtB5yT788zgp2LgE04/2ECSUOo4SfB0vAbXzPzQPvl/nkquDSVXg7Q==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794697429;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
+	 X-Spam-Flag;
+	bh=RWxd7BozEcMLFhrYsXmE2oTpPeFxyIo4x1Sm4u2WBsc=;
+	b=X3mVCgzQgMGmCFp5WegxXaF67GRZEYotd92KoL9/qIfqAWa2wBL3Z/Wh9fo0YKEnoUVX
+	 /IANX8YLv3tBno6LK+pe5zEDk0VhqzpeSaMcNGor0W2aHe6Pn1HOknRI8zpXNASW1IWpX
+	 YUK6cgVqIP0mJKlsYiVQozxgqV0wzFjmFGeFVRnkpDnc29/3M0kW9Oog+3AYlmIFXXyID
+	 gFAgk+rxe2Yf/a5JHKbn+n450+wlwi0ck2Efr35CS9KHCx4cfHyqHsRg5lmKkJ7ZOe1MY
+	 hnSWNY1CW2v7FXTDL0E/3H0RyknQhja4cNSnxt0cqVTACm26X1j5YrAwHno+w7IT5bw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hl2qXjvy;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AwoIf1iF;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AwoIf1iF;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1A2C3606A323;
-	Sat, 14 Nov 2026 21:21:38 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 17991606A327
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:48 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 17991606A327
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hl2qXjvy
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 3A1DE1F000C4;
-	Sat, 14 Nov 2026 21:21:34 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794691298;
-	bh=9ZuyfI8WkgRbBjR5eKXmMTqwvLagRhNhdq+B2h7eXsM=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=hl2qXjvyTPbgveEoOYYSLcMi9XViHfZ8y+dP6GiiCm27R0EiaDvMkEhJEJa3QzLtZ
-	 olNOLDYswLR7Zh3Vydegv3MZl9W54nXROrvQ2gNVCgNWBj2ah+sY5CHDWlrajh1R7W
-	 jo3+jG+BUdPLAjyIQV5TL4sz7GWZV74mc8GemyoEwaXoHHIthTh1+aV8va5RCCClKU
-	 5QwMKzyDjJNGebdG4UnFZT8FPdRtpGm/PMIurxEQOHy+BxG4J0tIVOQNbxklBmR5E3
-	 4We2fIfihWd2ycyIh9e9uNSmYIh6KyzzhFUsNWmLZlh7ZxxqN7IZMWOe3tNFIPbw1f
-	 x2uKDXzoaCe3A==
-Date: Sun, 15 Nov 2026 05:21:30 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: test an incremental send scenario with hole
- punching
-Message-ID: <avjP-YcABrnO5RZ1@zlang-mailbox>
-Mail-Followup-To: Filipe Manana <fdmanana@kernel.org>, 
-	fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-References: <233845be4bd0fd12b4c62b5ca5243ec1ef4d44f8.1792613768.git.fdmanana@suse.com>
- <avh4IU-M5jYkc1uE@zlang-mailbox>
- <CAL3q7H4KZ-xerun6qOCxQDd4GPPj=B6KLZwa16rNQEVUKjAYDA@mail.gmail.com>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AwoIf1iF;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=AwoIf1iF
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3FFD721FDB
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794697421; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RWxd7BozEcMLFhrYsXmE2oTpPeFxyIo4x1Sm4u2WBsc=;
+	b=AwoIf1iFN9kqu1a/1IVngJGREf/0j2/BDWOLDxi5vH/K/BQS7wOcSilFUY2Gd+lILzDZob
+	EEiB0VFX84FPlkfv2LhNkNJdj3t4g9NoM5BkzVmZyzQ7rLY/Kd3s3F+ESEt/nUOyITpFh4
+	dCi++AS6A7gwebFYz5u1dan4NI7/qHM=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794697421; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=RWxd7BozEcMLFhrYsXmE2oTpPeFxyIo4x1Sm4u2WBsc=;
+	b=AwoIf1iFN9kqu1a/1IVngJGREf/0j2/BDWOLDxi5vH/K/BQS7wOcSilFUY2Gd+lILzDZob
+	EEiB0VFX84FPlkfv2LhNkNJdj3t4g9NoM5BkzVmZyzQ7rLY/Kd3s3F+ESEt/nUOyITpFh4
+	dCi++AS6A7gwebFYz5u1dan4NI7/qHM=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id E1C3613408
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:39 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Sn6dDcvo+Go0GAAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:39 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs-progs: tests: fix false alerts on github CI
+Date: Sun, 15 Nov 2026 09:33:19 +1030
+Message-ID: <cover.1794697359.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,166 +84,51 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <CAL3q7H4KZ-xerun6qOCxQDd4GPPj=B6KLZwa16rNQEVUKjAYDA@mail.gmail.com>
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	RCPT_COUNT_ONE(0.00)[1];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-On Sat, Nov 14, 2026 at 04:51:27PM +0000, Filipe Manana wrote:
-> On Sat, Nov 14, 2026 at 3:05 PM Zorro Lang <zlang@kernel.org> wrote:
-> >
-> > On Wed, Oct 21, 2026 at 09:17:25PM +0100, fdmanana@kernel.org wrote:
-> > > From: Filipe Manana <fdmanana@suse.com>
-> > >
-> > > Test an incremental send scenario where we punched a hole into a tail
-> > > section of a file extent item that is the last item in a leaf and the
-> > > next leaf in the subvolume tree was not changed (remains shared between
-> > > the parent and send snapshots).
-> > >
-> > > This currently fails and is fixed by the following kernel patch:
-> > >
-> > >   btrfs: send: fix missing hole punching during incremental send
-> > >
-> > > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > > ---
-> > >  tests/btrfs/362     | 84 +++++++++++++++++++++++++++++++++++++++++++++
-> > >  tests/btrfs/362.out |  7 ++++
-> > >  2 files changed, 91 insertions(+)
-> > >  create mode 100755 tests/btrfs/362
-> > >  create mode 100644 tests/btrfs/362.out
-> > >
-> > > diff --git a/tests/btrfs/362 b/tests/btrfs/362
-> > > new file mode 100755
-> > > index 00000000..aca56540
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/362
-> > > @@ -0,0 +1,84 @@
-> > > +#! /bin/bash
-> > > +# SPDX-License-Identifier: GPL-2.0
-> > > +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> > > +#
-> > > +# FS QA Test 362
-> > > +#
-> > > +# Test an incremental send scenario where we punched a hole into a tail section
-> > > +# of a file extent item that is the last item in a leaf and the next leaf in the
-> > > +# subvolume tree was not changed (remains shared between the parent and send
-> > > +# snapshots).
-> > > +#
-> > > +. ./common/preamble
-> > > +_begin_fstest auto quick send
-> > > +
-> > > +_cleanup()
-> > > +{
-> > > +     cd /
-> > > +     rm -fr $tmp.*
-> > > +     rm -fr $send_files_dir
-> > > +}
-> > > +
-> > > +. ./common/filter
-> > > +
-> > > +_require_test
-> > > +_require_scratch
-> > > +_require_btrfs_support_sectorsize 4096
-> > > +_require_xfs_io_command "fpunch"
-> > > +
-> > > +_fixed_by_kernel_commit xxxxxxxxxx \
-> > > +     "btrfs: send: fix missing hole punching during incremental send"
-> > > +
-> > > +send_files_dir=$TEST_DIR/btrfs-test-$seq
-> > > +
-> > > +rm -fr $send_files_dir
-> > > +mkdir $send_files_dir
-> > > +
-> > > +first_stream="$send_files_dir/1.send"
-> > > +second_stream="$send_files_dir/2.send"
-> > > +
-> > > +# We need a very specific leaf layout where we punch a hole in the last file
-> > > +# extent item of a leaf and the next leaf was not modified in the send snapshot,
-> > > +# so we set a fixed size of 16K.
-> > > +_scratch_mkfs -n 16K >> $seqres.full 2>&1 || _fail "first mkfs failed"
-> > > +_scratch_mount
-> > > +
-> > > +touch $SCRATCH_MNT/foo
-> > > +# 205 extents of 64K each with a 64K hole between them.
-> > > +for ((i = 0; i < 410; i += 2)); do
-> > > +     offset=$((i * 64 * 1024))
-> > > +     $XFS_IO_PROG -c "pwrite -b 64K -S 0xab $offset 64K" \
-> > > +             $SCRATCH_MNT/foo > /dev/null
-> > > +done
-> > > +
-> > > +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1
-> > > +
-> > > +# Punch a hole in the last 16K of the last file extent item of the first leaf,
-> > > +# which starts at file offset 12845056, so 12845056 + 64K - 16K = 12894208.
-> > > +# This does not cause any change in the second leaf of the fs tree, so it will
-> > > +# be shared between the snapshots.
-> > > +$XFS_IO_PROG -c "fpunch 12894208 16K" $SCRATCH_MNT/foo
-> > > +
-> > > +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2
-> > > +
-> > > +echo "File digest in the original fs: $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
-> > > +
-> > > +_btrfs send -f $first_stream $SCRATCH_MNT/snap1
-> > > +_btrfs send -f $second_stream -p $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2
-> > > +
-> > > +# Create a new fs and apply both send streams.
-> > > +_scratch_unmount
-> > > +_scratch_mkfs >> $seqres.full 2>&1 || _fail "second mkfs failed"
-> > > +_scratch_mount
-> > > +
-> > > +_btrfs receive -f $first_stream $SCRATCH_MNT
-> > > +_btrfs receive -f $second_stream $SCRATCH_MNT
-> > > +
-> > > +echo "File digest in the new fs:      $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
-> > > +
-> > > +# Check the region we punched a hole is full of zeroes.
-> > > +echo "Hole data:"
-> > > +od -A d -t x1 -j 12894208 -N $((16 * 1024)) $SCRATCH_MNT/snap2/foo
-> >
-> >
-> > Can this be replaced with common helper: _hexdump ?
-> 
-> I don't have a strong objection to that, but honestly I prefer it as
-> it is because it prints the addresses in decimal format, which is more
-> human readable and directly matches the value passed to the hole
-> punching operation above, making it easier to read.
-> 
-> Do you want to make the change yourself, or should I send a new
-> version just for that?
+After the CI workers updated to ubuntu 26.04, there are several new fail tests cases:
 
-If I were to change it, I'd have to merge the kernel patch above, rebuild and
-install the kernel, run the tests, and then update the .out file.
-Never mind, just using od works fine too, since the _hexdump helper was
-originally introduced to replace the widespread use of the hexdump command
-anyway. Anyway, no need to send a new version. If I find some time, I'll
-make the change myself, or merging it directly :)
+- convert/017
+  There is not enough metadata space to support a convert.
+  This test relies on both the mkfs.ext4 behavior and kernel ext4 write behavior.
+  Change the test case to skip the run if there is not enough space left.
 
-Thanks,
-Zorro
+- mkfs/037
+  There is no '/usr/lib/lib*` files anymore there on ubuntu 26.04.
+  Use generated data instead.
 
-> 
-> >
-> > Thanks,
-> > Zorro
-> >
-> > > +
-> > > +# success, all done
-> > > +_exit 0
-> > > diff --git a/tests/btrfs/362.out b/tests/btrfs/362.out
-> > > new file mode 100644
-> > > index 00000000..789abb53
-> > > --- /dev/null
-> > > +++ b/tests/btrfs/362.out
-> > > @@ -0,0 +1,7 @@
-> > > +QA output created by 362
-> > > +File digest in the original fs: a5a06694d9f7fc3245afb2f391636e44
-> > > +File digest in the new fs:      a5a06694d9f7fc3245afb2f391636e44
-> > > +Hole data:
-> > > +12894208 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> > > +*
-> > > +12910592
-> > > --
-> > > 2.53.0
-> > >
-> > >
-> 
+Qu Wenruo (2):
+  btrfs-progs: tests: fix false alerts on convert/017
+  btrfs-progs: tests: fix github CI failure on mkfs/037
+
+ tests/convert-tests/017-fs-near-full/test.sh  | 12 +++++--
+ .../mkfs-tests/037-basic-compression/test.sh  | 31 +++++++++----------
+ 2 files changed, 24 insertions(+), 19 deletions(-)
+
+--
+2.56.0
+

@@ -1,89 +1,73 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.208.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.225
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794616869;
-	b=PDZjB18RDghySorEotNmXqudwxX5dqdvDqtsW5UciwAMiqSagU1oi3CGqwkkDYxQXcEd
-	 pXJ2zMyhQrLSP/xGfVVam3O+vvD7CtH58NH5pF1uF8uFh3chfMB4ODnxo/Qf+jy/+N7f8
-	 wJ1ggaovZY+/YoRpc8OkPy+63Q45WZY8cZf0upbw8GtTCCRxK+LK8NEf+s80HBmNYOsx/
-	 kUPUsZFScXpaVSyb65IIQIoxg5d2L1X3YTvKQOaUqxyYpsaugkdDDyENvvZLibptecgXK
-	 LpZqEIBWZSHxffzEQRGJcPj6tmfnq3cOPl7IbNDebi/wNUkSVrpm2JvVDGUGKS7INzA==
+	t=1794622646;
+	b=OG53jzqQ3f9OPJ2c2tR5XejNnQ0BLSWaI6GcV+IEIrq6h0EuXsm7OhyhEeGnTlhrOVeh
+	 3pdI5/KmBbf853tu7cWmRk67RoPU1cytgJGEb+Y8lhmYkgOTh8JXPllb9/fd/yeQv+Gbs
+	 yOQbFgJnwEuA5jLduvwVVDee+rU0MMV2qKT/dj6+h90ogLrfLNvPyUdSaYmgD6TPInLgt
+	 6iN4VUj6WlDkPw7UUSbBjyH1cHbWlEm8R7k8OESWAd6ifU05keeydydP41dfiZgVylgNu
+	 da6CEcs32U9Aixut2/e3UtTepezy3oeVFxhqlSF0jekB3fIDLjZG3XmYxyHQxL0rVNw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794616869;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:From:To:Cc:References:
-	 Content-Language:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=Tc+uMj0q8pptwp2lc327ujdvBLHLZyfh+PplobvAzTI=;
-	b=sXAmcPRsPwDVTm/M94A7yWcRnjr/1d8Via7N547aHuzM2DvDRGYO6rJbDLYkMnI309+I
-	 9MNG4WrAwOdcG2aYJZly5oEryAUwtXtiQE4IcF1P9zBr6cMVoiqEyp5Qq9xQ+QEiD75bj
-	 UCV86yeKiQE6OCOf/HSVeyGYPTTqUHgKrMMG35nqC2KPuVeaJYhU2/hvf07YF0MrcXUW3
-	 xM+JHGgHfodDBhj45b+W5VGPeIh5O+BmGpuDOSq3LzGoOFaVFLSFR/fmZjPHSx2RzXEU6
-	 rXAFuoMAmJp4Thg9YHXTkUniHj/5sPdB4fQrA9S6L7Dn2MbkLh4ckfFMQzlaC2P36Ig==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794622646;
+	h=DMARC-Filter:dkim-signature:Received:Received:Received:Subject:To:CC:
+	 References:From:Message-ID:Date:User-Agent:MIME-Version:In-Reply-To:
+	 Content-Type:Content-Transfer-Encoding:X-Originating-IP:
+	 X-ClientProxiedBy;
+	bh=lamjSy1jct+Y32LWUG/7mqOA0l+lzlvT/xdWWaLZFKQ=;
+	b=N2bc503U/mCw2zrPZsKSPq3WYDTgWGDpRhDOTuWt7pSGYpbLNBUylCXXnJi0m29yAEUJ
+	 uUEjGURasXuJRFllIuEWl6/guO6JdaPUeZal9g2BJP4f9A//zSy0Fdd0oB1bO3JK0sqZu
+	 B5P32BOFhY+y219dLdOCr84Eilm+kPRn44Td1y9OkLhXkWmxoqiZ/DGxPbRKzJ/eQuX3F
+	 yBbLDO10hzrQvRYOFoujp4Fm/gCay+i7aOAa1NxqMWpyAADSwAn2TNpIsO7qSUpHKaXV1
+	 B0EpOYLKKqkfnRZ8egqK0tbZSR5GyFQ+Y0hRgRbQyfJzgMYf/0NT1g09+PTjtOAvtxg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=W2q7uhX1;
-	arc=none smtp.remote-ip=209.85.208.53
-Received: from mail-ed1-f53.google.com (mail-ed1-f53.google.com [209.85.208.53])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=huawei.com;
+	spf=pass smtp.mailfrom=huawei.com;
+	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=dmJo6jxo;
+	arc=none smtp.remote-ip=113.46.200.225
+Received: from canpmsgout10.his.huawei.com (canpmsgout10.his.huawei.com [113.46.200.225])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DAEE606A339
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 00:41:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2DAEE606A339
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3843A606A327;
+	Sat, 14 Nov 2026 02:17:23 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3843A606A327
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=W2q7uhX1
-Received: by mail-ed1-f53.google.com with SMTP id 4fb4d7f45d1cf-6b547d6c07bso2734933a12.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2026 16:41:08 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794616867; x=1795221667; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=Tc+uMj0q8pptwp2lc327ujdvBLHLZyfh+PplobvAzTI=;
-        b=W2q7uhX10WEXSFrOKKSYYjBexJx+dM8IvKrNw/s7tlOtAcT9nSUsGEBgG/dziJaw6U
-         kGvnZbpFHa46HhhehCcglIZcaxhrLvaIjnOXmsXbr242Ak0MbRMSnGH/N+8kF51Hr9VA
-         Wdjxt3HAhlRDOEDQljduHqxbArRnbdsJd1ogQxGy+7vqUw2e16OC8s+zlzud3q4SxcZG
-         f43d9cqQe5va3U13wjucAxvpeJ8Rpd2KUpR85lUywbfBXRD+vlQVhmynD2XsIJ/HZFY4
-         iCT49vFl/HSNlEtpH+OL+LhqjveCl6z0n5e7lAdpmNWK+1jRU5slvL6whMgvHXO2JiOR
-         MpCg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794616867; x=1795221667;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt
-         :content-language:references:cc:to:from:subject:user-agent
-         :mime-version:date:message-id:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=Tc+uMj0q8pptwp2lc327ujdvBLHLZyfh+PplobvAzTI=;
-        b=dHq+bkuf5Y0APC2WMtZ/vtf6ptJ1vOPdXDr7xdCHNZxBi3xmcwk4RG/hpUTgj4iHtu
-         CxKoS9gxsyuAnsKokRTIcUCFqA3n07/HoYRduaOBPgPTIJyEwRgRHGESTRiZqX+03ifS
-         8J/b71oHrDbggnVwpp5EmhC9ZDQrtzWjqCqO06OAswBGsPrHe5hFwwr0OuNeVktuiE9b
-         y+J4+Wt3ddPHJu11N0jvw54sPuwtpaJTQxvm8qq4hh4ikIB8ZqkCayxuae6Qav3CohTX
-         siZk6sYNBNut3F8xp3k+BTw+IgsvH9AjaIiGk7yK8pQn+gX4ZQp8bno6RCok/aq+3jTT
-         t9MQ==
-X-Forwarded-Encrypted: i=1; AL+hErEg3+ua8Q4FelIMmVvUePQclwVoL20Y/9Zab7gfcKfEuaccuHcMq8yhSNOyN/rW2PI6duVzNbeliLGMiw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/Dp/1RAl34tZqwaBvx+qIBmZunsoR0DH9bMYl3mF5ou21HANQ0
-	gXlr8B/B8/z5hdQF63M0leFIewLYWvwv4RSqq3xUSN+ZkZ2/t/nArkht4TR2pUdw7W3F5n4ocaB
-	bwjQkCno=
-X-Gm-Gg: AYBFou2Cvm9H/bmTNdihsjO3285Iis3LCMVEDsRNW6nejKTfh09xtpDfJVehMYxV0OU
-	D0NCghBi97dpi3vrOaG+fHHt2pQSks99u/i3Q6kfEtkX9ZK3RqQuXfl3UMIcAR1oueogliVeq4V
-	Rax0/7cTDolCU0RGt85UUsyMuifYf/3Dmzsm3DarVMI2M93NqreQcbA9kCeoiPBsZv6tW7VjMpD
-	C4gBEGePY1zsZrGrUXKiOvwv7bgjqQZV/C9iGscG5/UkJR1d/KmE9OFzQF9qRh77++pQoVDJe+P
-	rzp9/snVq3biKGX5eYTNXfmnPwj44FOa19vwMS9VCmZXXDM0k1CkUA37tmEGY4YVo9H4vZX4SIS
-	rahBgm7cuIArh34rVSV70jqGBEZC20/rnD7a5mTL+2FaSuuYFUvJjcZEKn5CtxxYYDpCVdrPMH5
-	+/g8BZ+mAgKepLZH5gK6QZa4PI74SwJiOO7h38WbF1SQg+6tJi9wMd/UTucDUbdaSRb8Qc23lD9
-	f6O/JnDyClxnySoXUHTozKjbtHHwEpwjF0sI2Xr4Q8b8+i64hwjVRMg/1dxSCregIBXP1OGf+V3
-	JgZsHGgFKzCW83rlzDVXiw==
-X-Received: by 2002:a05:6402:23d1:b0:6b1:ca87:c588 with SMTP id 4fb4d7f45d1cf-6b7c0d03742mr2969868a12.37.1794616867372;
-        Fri, 13 Nov 2026 16:41:07 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b1b3b708adsm2853328a91.4.2026.11.13.16.41.03
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 13 Nov 2026 16:41:06 -0800 (PST)
-Message-ID: <50cfbe7d-e925-447d-9131-bfd019bf97ea@suse.com>
-Date: Sat, 14 Nov 2026 11:11:01 +1030
+	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=dmJo6jxo
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=lamjSy1jct+Y32LWUG/7mqOA0l+lzlvT/xdWWaLZFKQ=;
+	b=dmJo6jxorxqj/soF5hgiJAk0L/VbZ+b6NQ150G77AKdiKykroxkSgy9jha28sMjYHaadv7xU4
+	gX5qGcCNkavMkbqMIDp0Pr2diskt5hVLJa0+T41ntlJJoc8GUBBS7KeBABGtvyISA72TUzk8pOV
+	JKQ3g1KA+Ky1blIGX4Su+70=
+Received: from mail.maildlp.com (unknown [172.19.163.163])
+	by canpmsgout10.his.huawei.com (SkyGuard) with ESMTPS id 4jRHnX4bKrz1K98l;
+	Sat, 14 Nov 2026 10:17:04 +0800 (CST)
+Received: from whupemo200011.china.huawei.com (unknown [7.152.185.179])
+	by mail.maildlp.com (Postfix) with ESMTPS id 8F8174048B;
+	Sat, 14 Nov 2026 10:17:15 +0800 (CST)
+Received: from [10.174.178.46] (10.174.178.46) by
+ whupemo200011.china.huawei.com (7.152.185.179) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.45; Sat, 14 Nov 2026 10:17:13 +0800
+Subject: Re: [PATCH v3 30/33] ubifs: don't set SB_RDONLY after errors
+To: Christian Brauner <brauner@kernel.org>, <linux-fsdevel@vger.kernel.org>,
+	Jan Kara <jack@suse.com>
+CC: Al Viro <viro@zeniv.linux.org.uk>, <ecryptfs@vger.kernel.org>,
+	<linux-ext4@vger.kernel.org>, <jfs-discussion@lists.sourceforge.net>,
+	<linux-nilfs@vger.kernel.org>, <exfat@lists.linux.dev>, <linux-mm@kvack.org>,
+	<ntfs@lists.linux.dev>, <ocfs2-devel@lists.linux.dev>,
+	<linux-btrfs@vger.kernel.org>, <gfs2@lists.linux.dev>,
+	<linux-efi@vger.kernel.org>, <linux-mtd@lists.infradead.org>,
+	<linux-xfs@vger.kernel.org>
+References: <20261113-work-fs-sb_rdonly-v3-0-0be92bb73709@kernel.org>
+ <20261113-work-fs-sb_rdonly-v3-30-0be92bb73709@kernel.org>
+From: Zhihao Cheng <chengzhihao1@huawei.com>
+Message-ID: <17287026-cccc-f56c-15a3-029b9a2c38c9@huawei.com>
+Date: Sat, 14 Nov 2026 10:17:12 +0800
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:68.0) Gecko/20100101
+ Thunderbird/68.5.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,217 +77,209 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: speed up steal_from_bitmap_to_front() with a
- backward word scan
-From: Qu Wenruo <wqu@suse.com>
-To: Elias Jernberg <eliasjernberg@gmail.com>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Filipe Manana <fdmanana@suse.com>,
- Chris Mason <mason@kernel.org>
-References: <20261114000234.339513-1-eliasjernberg@gmail.com>
- <d829648c-3fc2-4f6e-ad07-ffce8be579a8@suse.com>
-Content-Language: en-US
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <d829648c-3fc2-4f6e-ad07-ffce8be579a8@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <20261113-work-fs-sb_rdonly-v3-30-0be92bb73709@kernel.org>
+Content-Type: text/plain; charset="gbk"; format=flowed
 Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: kwepems100001.china.huawei.com (7.221.188.238) To
+ whupemo200011.china.huawei.com (7.152.185.179)
 
-
-
-在 2026/11/14 10:55, Qu Wenruo 写道:
+�� 2026/11/13 19:59, Christian Brauner д��:
+> ubifs_ro_mode() sets c->ro_error and SB_RDONLY from whatever context hit
+> the error, e.g. a failing write, and without holding s_umount. UBIFS
+> can't be frozen but that still races with everyone else changing
+> sb->s_flags. And c->ro_error alone already makes every write fail with
+> EROFS.
 > 
+> So call sb_set_emergency_ro() instead. The background thread can hit
+> the error before SB_BORN but doesn't hold s_umount either. The xattr
+> setters check c->ro_error as well because ecryptfs calls them without
+> write access on the lower mount and they change the inode in memory
+> first.
 > 
-> 在 2026/11/14 10:32, Elias Jernberg 写道:
-> [...]
->>
->> Fixes: 200055239604 ("Btrfs: improve free space cache management and 
->> space allocation")
->> Signed-off-by: Elias Jernberg <eliasjernberg@gmail.com>
->> ---
->>
->> Notes:
->>      - The numbers above come from a 7.3-based tree (aurora-silicon/ 
->> linux,
->>        Apple M5 MacBook Pro, 16K pages) carrying this change in an
->>        equivalent form. This version was build-tested on btrfs for-next
->>        (3aefd67f08f8) as x86_64 UML with W=1, no new warnings, and the 
->> btrfs
->>        self-tests pass (CONFIG_BTRFS_FS_RUN_SANITY_TESTS, including the
->>        bitmap stealing tests).
->>      - On x86_64 with 4K pages I could not reproduce a clear stall 
->> with the
->>        similar fragmenting workload (sync after the delete took 
->> 0.4-1.9 s), so the
->>        effect looks tied to the larger bitmaps of 16K and 64K pages.
+> So far a remount to read-only after an error was refused and a remount
+> to read-write went through and cleared SB_RDONLY again because
+> c->ro_mount was never set. Now going read-only works. Nothing is synced
+> for it in that state and ubifs_remount_ro() skips the write-buffer syncs
+> and the master node like ubifs_put_super() does and only cancels the
+> write-buffer timers. Going read-write after that is refused by the VFS.
 > 
-> I'm more interested on the page size bounding part.
+> The flusher still gets to the folios and inodes that were dirty before
+> the error, also after the remount which sets c->ro_mount and frees the
+> write reserve buffer. Every journal write fails with EROFS after an
+> error anyway. So do_writepage() and ubifs_write_inode() drop them
+> without going near the journal. Otherwise reserve_space() trips its
+> !c->ro_mount assert for every folio after the remount.
 > 
-> As btrfs_free_space_bitmap_cachep is using fixed PAGE_SIZE for the 
-> allocation, it's causing the behavior difference in the first place.
+> Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+> ---
+>   fs/ubifs/file.c  | 12 ++++++++++++
+>   fs/ubifs/io.c    |  6 +++++-
+>   fs/ubifs/super.c | 40 ++++++++++++++++++++++++++--------------
+>   fs/ubifs/xattr.c |  6 ++++++
+>   4 files changed, 49 insertions(+), 15 deletions(-)
+
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
 > 
-> I'm wondering if we should make the bitmap size not bounded to 
-> PAGE_SIZE, but the sectorsize of each filesystem.
-> 
-> Have you tried 16K page size with 16K sector size? (along with changed 
-> blocksize in the fio)
-> Did that can reproduce the same latency?
-
-My bad, that won't change the bitmap size.
-
-Instead what about the following change? Would it resolve the latency 
-problem on 16K page sized systems?
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index bff6e5b372d6..4250792a3b9c 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -29,7 +29,7 @@
-  #include "super.h"
-  #include "relocation.h"
-
--#define BITS_PER_BITMAP                (PAGE_SIZE * 8UL)
-+#define BITS_PER_BITMAP                (SZ_4K * 8UL)
-  #define MAX_CACHE_BYTES_PER_GIG        SZ_64K
-  #define FORCE_EXTENT_THRESHOLD SZ_1M
-
-@@ -279,7 +279,7 @@ static void recalculate_thresholds(struct 
-btrfs_free_space_ctl *ctl)
-         else
-                 max_bytes = MAX_CACHE_BYTES_PER_GIG * div_u64(size, SZ_1G);
-
--       bitmap_bytes = ctl->total_bitmaps * unit;
-+       bitmap_bytes = ctl->total_bitmaps * SZ_4K;
-
-         /*
-          * we want the extent entry threshold to always be at most 1/2 
-the max
-@@ -2910,7 +2910,7 @@ int __init btrfs_free_space_init(void)
-                 return -ENOMEM;
-
-         btrfs_free_space_bitmap_cachep = 
-kmem_cache_create("btrfs_free_space_bitmap",
--                                                       PAGE_SIZE, 
-PAGE_SIZE,
-+                                                       SZ_4K, SZ_4K,
-                                                         0, NULL);
-         if (!btrfs_free_space_bitmap_cachep) {
-                 kmem_cache_destroy(btrfs_free_space_cachep);
-
-> 
-> Thanks,
-> Qu
-> 
->>      - Reproducer (fio, run on the btrfs filesystem under test):
->>          fio --name=a --filename=f --rw=write --bs=1M --direct=1 -- 
->> size=4G --end_fsync=1
->>          fio --name=r --filename=f --rw=randwrite --bs=4k -- 
->> ioengine=libaio --iodepth=32 \
->>              --direct=1 --size=4G --time_based --runtime=15 --end_fsync=1
->>          fio --name=s --filename=f --rw=write --bs=4k --direct=1 -- 
->> size=4G \
->>              --time_based --runtime=15 --fsync=1
->>          rm f
->>          fio --name=b --filename=f --rw=write --bs=1M --size=4G -- 
->> end_fsync=1
->>        The last job takes 29-36 s without this patch and under 1 s 
->> with it.
->>      - Prior art: Yun Levi suggested replacing this loop in December 
->> 2020 on
->>        LKML, as a user of a proposed find_prev_zero_bit()
->>        (https://www.mail-archive.com/linux-kernel@vger.kernel.org/ 
->> msg2402457.html).
->>        That helper was never added and the loop is unchanged in for-next.
->>        This version keeps the backward scan local to free-space-cache.c.
->>      - Tool use: the stall was profiled, the fix written and the 
->> changelog
->>        drafted with an LLM coding assistant (Claude). I have reviewed the
->>        change; the equivalence test and the measurements were run on my
->>        machine.
->>
->>   fs/btrfs/free-space-cache.c | 30 ++++++++++++++++++++++--------
->>   1 file changed, 22 insertions(+), 8 deletions(-)
->>
->> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
->> index bff6e5b372d6..c599a8f25821 100644
->> --- a/fs/btrfs/free-space-cache.c
->> +++ b/fs/btrfs/free-space-cache.c
->> @@ -1269,6 +1269,26 @@ static bool steal_from_bitmap_to_end(struct 
->> btrfs_free_space_ctl *ctl,
->>       return true;
->>   }
->> +/*
->> + * Return the index of the last clear bit at or below @bit, or 
->> ULONG_MAX if
->> + * bits 0 to @bit are all set.  Scan backwards a word at a time, so 
->> the cost
->> + * follows the length of the run of set bits that ends at @bit rather 
->> than the
->> + * number of clear bits below it.
->> + */
->> +static unsigned long find_last_clear_bit_upto(const unsigned long 
->> *bitmap,
->> +                          unsigned long bit)
->> +{
->> +    unsigned long idx = BIT_WORD(bit);
->> +    unsigned long word = ~bitmap[idx] & BITMAP_LAST_WORD_MASK(bit + 1);
->> +
->> +    while (!word) {
->> +        if (idx == 0)
->> +            return ULONG_MAX;
->> +        word = ~bitmap[--idx];
->> +    }
->> +    return idx * BITS_PER_LONG + __fls(word);
->> +}
->> +
->>   static bool steal_from_bitmap_to_front(struct btrfs_free_space_ctl 
->> *ctl,
->>                          struct btrfs_free_space *info,
->>                          bool update_stat)
->> @@ -1277,7 +1297,6 @@ static bool steal_from_bitmap_to_front(struct 
->> btrfs_free_space_ctl *ctl,
->>       struct btrfs_free_space *bitmap;
->>       u64 bitmap_offset;
->>       unsigned long i;
->> -    unsigned long j;
->>       unsigned long prev_j;
->>       u64 bytes;
->> @@ -1294,13 +1313,8 @@ static bool steal_from_bitmap_to_front(struct 
->> btrfs_free_space_ctl *ctl,
->>           return false;
->>       i = offset_to_bit(bitmap->offset, unit, info->offset) - 1;
->> -    j = 0;
->> -    prev_j = (unsigned long)-1;
->> -    for_each_clear_bit_from(j, bitmap->bitmap, BITS_PER_BITMAP) {
->> -        if (j > i)
->> -            break;
->> -        prev_j = j;
->> -    }
->> +    prev_j = find_last_clear_bit_upto(bitmap->bitmap,
->> +                      min(i, BITS_PER_BITMAP - 1));
->>       if (prev_j == i)
->>           return false;
+> diff --git a/fs/ubifs/file.c b/fs/ubifs/file.c
+> index 99dd52715eee9..4eae6c2ae2eea 100644
+> --- a/fs/ubifs/file.c
+> +++ b/fs/ubifs/file.c
+> @@ -898,6 +898,13 @@ static int do_writepage(struct folio *folio, size_t len)
+>   
+>   	folio_start_writeback(folio);
+>   
+> +	/* Nothing gets written after an error, drop the folio. */
+> +	if (unlikely(c->ro_error)) {
+> +		err = -EROFS;
+> +		mapping_set_error(folio->mapping, err);
+> +		goto out;
+> +	}
+> +
+>   	block = folio->index << UBIFS_BLOCKS_PER_PAGE_SHIFT;
+>   	for (;;) {
+>   		blen = min_t(size_t, len, UBIFS_BLOCK_SIZE);
+> @@ -918,6 +925,7 @@ static int do_writepage(struct folio *folio, size_t len)
+>   		ubifs_ro_mode(c, err);
+>   	}
+>   
+> +out:
+>   	ubifs_assert(c, folio->private != NULL);
+>   	if (folio_test_checked(folio))
+>   		release_new_page_budget(c);
+> @@ -997,6 +1005,10 @@ static int ubifs_writepage(struct folio *folio, struct writeback_control *wbc)
+>   		goto out_unlock;
+>   	}
+>   
+> +	/* After an error do_writepage() drops the folio. */
+> +	if (unlikely(c->ro_error))
+> +		return do_writepage(folio, len);
+> +
+>   	spin_lock(&ui->ui_lock);
+>   	synced_i_size = ui->synced_i_size;
+>   	spin_unlock(&ui->ui_lock);
+> diff --git a/fs/ubifs/io.c b/fs/ubifs/io.c
+> index 6c6d682427793..931a88329b5f5 100644
+> --- a/fs/ubifs/io.c
+> +++ b/fs/ubifs/io.c
+> @@ -72,7 +72,11 @@ void ubifs_ro_mode(struct ubifs_info *c, int err)
+>   	if (!c->ro_error) {
+>   		c->ro_error = 1;
+>   		c->no_chk_data_crc = 0;
+> -		c->vfs_sb->s_flags |= SB_RDONLY;
+> +		/*
+> +		 * SB_RDONLY needs s_umount, see sb_set_emergency_ro(). The
+> +		 * background thread runs before SB_BORN already.
+> +		 */
+> +		sb_set_emergency_ro(c->vfs_sb);
+>   		ubifs_warn(c, "switched to read-only mode, error %d", err);
+>   		dump_stack();
+>   	}
+> diff --git a/fs/ubifs/super.c b/fs/ubifs/super.c
+> index 38972786817e7..2d71274e89ad0 100644
+> --- a/fs/ubifs/super.c
+> +++ b/fs/ubifs/super.c
+> @@ -312,6 +312,12 @@ static int ubifs_write_inode(struct inode *inode, struct writeback_control *wbc)
+>   		return 0;
+>   	}
+>   
+> +	/* Nothing gets written after an error, drop the change. */
+> +	if (unlikely(c->ro_error)) {
+> +		err = -EROFS;
+> +		goto out;
+> +	}
+> +
+>   	/*
+>   	 * As an optimization, do not write orphan inodes to the media just
+>   	 * because this is not needed.
+> @@ -327,6 +333,7 @@ static int ubifs_write_inode(struct inode *inode, struct writeback_control *wbc)
+>   			err = dbg_check_inode_size(c, inode, ui->ui_size);
+>   	}
+>   
+> +out:
+>   	ui->dirty = 0;
+>   	mutex_unlock(&ui->ui_mutex);
+>   	ubifs_release_dirty_inode_budget(c, ui);
+> @@ -1839,19 +1846,26 @@ static void ubifs_remount_ro(struct ubifs_info *c)
+>   
+>   	dbg_save_space_info(c);
+>   
+> -	for (i = 0; i < c->jhead_cnt; i++) {
+> -		err = ubifs_wbuf_sync(&c->jheads[i].wbuf);
+> +	/* Like ubifs_put_super(), don't write anything after an error. */
+> +	if (!c->ro_error) {
+> +		for (i = 0; i < c->jhead_cnt; i++) {
+> +			err = ubifs_wbuf_sync(&c->jheads[i].wbuf);
+> +			if (err)
+> +				ubifs_ro_mode(c, err);
+> +		}
+> +
+> +		c->mst_node->flags &= ~cpu_to_le32(UBIFS_MST_DIRTY);
+> +		c->mst_node->flags |= cpu_to_le32(UBIFS_MST_NO_ORPHS);
+> +		c->mst_node->gc_lnum = cpu_to_le32(c->gc_lnum);
+> +		err = ubifs_write_master(c);
+>   		if (err)
+>   			ubifs_ro_mode(c, err);
+> +	} else {
+> +		/* Syncing the write-buffers would have canceled them. */
+> +		for (i = 0; i < c->jhead_cnt; i++)
+> +			hrtimer_cancel(&c->jheads[i].wbuf.timer);
+>   	}
+>   
+> -	c->mst_node->flags &= ~cpu_to_le32(UBIFS_MST_DIRTY);
+> -	c->mst_node->flags |= cpu_to_le32(UBIFS_MST_NO_ORPHS);
+> -	c->mst_node->gc_lnum = cpu_to_le32(c->gc_lnum);
+> -	err = ubifs_write_master(c);
+> -	if (err)
+> -		ubifs_ro_mode(c, err);
+> -
+>   	vfree(c->orph_buf);
+>   	c->orph_buf = NULL;
+>   	kfree(c->write_reserve_buf);
+> @@ -1977,10 +1991,7 @@ static int ubifs_reconfigure(struct fs_context *fc)
+>   		if (err)
+>   			return err;
+>   	} else if (!c->ro_mount && (fc->sb_flags & SB_RDONLY)) {
+> -		if (c->ro_error) {
+> -			ubifs_msg(c, "cannot re-mount R/O due to prior errors");
+> -			return -EROFS;
+> -		}
+> +		/* After an error ubifs_remount_ro() can't write but still works. */
+>   		ubifs_remount_ro(c);
+>   	}
+>   
+> @@ -1994,7 +2005,8 @@ static int ubifs_reconfigure(struct fs_context *fc)
+>   		mutex_unlock(&c->bu_mutex);
+>   	}
+>   
+> -	if (!c->need_recovery)
+> +	/* Only valid without a media failure, see ubifs_put_super(). */
+> +	if (!c->need_recovery && !c->ro_error)
+>   		ubifs_assert(c, c->lst.taken_empty_lebs > 0);
+>   
+>   	return 0;
+> diff --git a/fs/ubifs/xattr.c b/fs/ubifs/xattr.c
+> index 3b0e8a270f594..572f6f3e52ad3 100644
+> --- a/fs/ubifs/xattr.c
+> +++ b/fs/ubifs/xattr.c
+> @@ -260,6 +260,9 @@ int ubifs_xattr_set(struct inode *host, const char *name, const void *value,
+>   	if (check_lock)
+>   		ubifs_assert(c, inode_is_locked(host));
+>   
+> +	if (c->ro_error)
+> +		return -EROFS;
+> +
+>   	if (size > UBIFS_MAX_INO_DATA)
+>   		return -ERANGE;
+>   
+> @@ -564,6 +567,9 @@ static int ubifs_xattr_remove(struct inode *host, const char *name)
+>   
+>   	ubifs_assert(c, inode_is_locked(host));
+>   
+> +	if (c->ro_error)
+> +		return -EROFS;
+> +
+>   	if (fname_len(&nm) > UBIFS_MAX_NLEN)
+>   		return -ENAMETOOLONG;
+>   
 > 
 

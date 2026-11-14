@@ -1,56 +1,97 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.170
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794668736;
-	b=Cc3Lcsg+ZATbO/RmptNKuW1u0M7/mp+HbUu8u4Uha/0qad/zilw7P8+Yjjy7PfEG3cEA
-	 L+j1n9ahOpzj1LRWDSQcqsR/thmBBxE9nYfJVAzpGhEUgiaiw8oLg7RkX2OdSq/Fjo8N+
-	 x67Drqx9C7zTqxiyCT/Iq9O5PHBizRJ/Po4/bxaFqxjgBKo+tJmjtKZ5n+xGLQ7pFsc/w
-	 f3Cq4FDp2XcOQwAmKdK66oXGgN/7LLxclcQZKMrd5Utdv4dywjgx/vFgNxwblJYgFON2Z
-	 vaPn44Jj4jAQNKrnMu/HswKxIxRIuT3zokXEwk7xaGsAA6zibO5V6Nq1rm/PjIcB1GA==
+	t=1794670940;
+	b=AJsPXd/BZdOU1Xjnr+zFN0R7XCPlBBFlq2QG4ajQzRtB+ll0++tU2iYGq4pjAeL3+uXj
+	 iuamav63+DOooRWySEaXucTfMxBO+RvO80jtKDIfQO8NUY82OVVf8QioDcJ6TlLJF06WM
+	 Kz/qz0E+95MESfnunEwD6R4entTWHXyr1YaTGbnkvYz8+0rLsftm7bzSwuq1niWk1BjOO
+	 hXzY7YwTTeGeCcxLfRDOCFJN80+WG5LFpwj8hKrLiacA8NeVYlDQAT13T0+Cwt3YjzL0F
+	 GIAFtpOyn4F9VDLp984dYZFT3xEH2jpIovRfX7dacZfwUDRAHsSXCN3j0tlVa5NpYwA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794668736;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 Mail-Followup-To:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To;
-	bh=GyeTWfkZrMQUnHO467sddftYprVJmoiVwBI8RKGHnRg=;
-	b=fddDpZ7nT5I15lRu4FgyhqSnD7tsRIRpSVSEenaIjdWkLSN9bSyS8twz/RGYhekX88PU
-	 2LcztrYDQTMWAeE32N+xEOa2kA7enV56jhZPugxEhOIxr7q1wND4PvZGMb1dTsXlJwe9s
-	 k/qmpRZ+tUJ2C4Lpmx3c+8UpOZvQYgJ9h9faeSTdvxRBS869F71DoSfV9rwJayMOYYC8U
-	 ZCtDaZ4MHIRD8jNB2nZruoRyWUwIOir7JKZqnSpRXhBUZ7HV0Vmz9CmVjyCJKscZMyYET
-	 XmD2pxFyH2q+PQKvxQdzq+KR1uSOqcQcA3n869jdWlnXlaU8ffFOR5XkxvX8zRyxvtw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794670940;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=D/QDiWJcNeIF083+fu+YVL4kUJSlCNjsA1ag+QXac8Y=;
+	b=bo8Gn0Xv5GXsr2IUzQSG8plvLisk6USJ/OZBciwo9geww8IAQfQ8D9delH18qgh3SJew
+	 2pBa+Sr/iI3ViQl4GP0qKtx96ZuPFHDM9+bKh2UxrwPRdvc59ZDnG6JOJ0ok6rpxlAIjd
+	 2LldgpwjxbuC7mNw+qPW1Pz8n3gAlxYwzamu9AFm5KMntGv+86zNa3fdglhtpwelcFv95
+	 XAiW9fTj5bKQC7GYQKDIkVFG3PewMrScuV4A/QcWLZOXCskJzyz8WsQaP4R6IB2NgsbvH
+	 Bt5n1mjzcS5Fvvg2jfn8aKNdisxkoprlGpN9B8whWosSOc4MJsjf4OqpKa/EW1EVeow==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lbNy832f;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=IcSdNqlU;
+	arc=none smtp.remote-ip=74.125.82.170
+Received: from mail-dy1-f170.google.com (mail-dy1-f170.google.com [74.125.82.170])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 94AA1606A329;
-	Sat, 14 Nov 2026 15:05:36 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1978606A329
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 15:42:19 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E1978606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lbNy832f
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4F90D1F000C4;
-	Sat, 14 Nov 2026 15:05:32 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794668736;
-	bh=GyeTWfkZrMQUnHO467sddftYprVJmoiVwBI8RKGHnRg=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=lbNy832fX03/me3XRMYXQ2cxGbGkbC4kqhIsQ37rQkpHXlLvskrAKUtCxfRjs04iJ
-	 JsRIqtcvePPmN3xai+6eeOVsu5q47Cv6UNw0e3dtGFno+EezQETBajXwPGUUyDxbn8
-	 cDnhintfnLhmdkIxcC4uV4IARsemsXE5e3/dF2n4smvOsRf9aMZQSCAEB294c+/jnF
-	 0h2EGSFKRtgs3K9lzaX+g1DxNWbOvqdwYPVL0gVZHJtfgv2B3ORyg81EemlHC0E1j/
-	 Ijd3SEEjXrm7cTK0TvvF+XG7DuEx+lRlyK9vTjJEDXOvU1Mh9kbVuZEJoDk6xfRq6Q
-	 cHZEzwNSSYRXw==
-Date: Sat, 14 Nov 2026 23:05:25 +0800
-From: Zorro Lang <zlang@kernel.org>
-To: fdmanana@kernel.org
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: test an incremental send scenario with hole
- punching
-Message-ID: <avh4IU-M5jYkc1uE@zlang-mailbox>
-Mail-Followup-To: fdmanana@kernel.org, fstests@vger.kernel.org, 
-	linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-References: <233845be4bd0fd12b4c62b5ca5243ec1ef4d44f8.1792613768.git.fdmanana@suse.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=IcSdNqlU
+Received: by mail-dy1-f170.google.com with SMTP id 5a478bee46e88-36eb1cb7aabso2537684eec.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 07:42:19 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1794670939; x=1795275739; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=D/QDiWJcNeIF083+fu+YVL4kUJSlCNjsA1ag+QXac8Y=;
+        b=IcSdNqlUjf0OorbJES0XjlyGT7niWbOtnCZUo8OtZ7MMNlC5PKahUlKpx9dfH+dbO1
+         bI5qcsNiDqPqjkf1jreC2o3fRnu9Ml4lfqsl151YLyTpUfS9BePZRolC+1blq1XWe/95
+         d52x+e3Nl5M4DmP1ooF4yCxAz7yyEeutCWvlwxqsvc25/f3a8veGdV6oh6o0cutNAA1Z
+         uOGw3xpYLHBzAWwrSLo2b9yNKrQcu/5oa7uYMTr+pK0YGMrj43e2SV5fcgsTHGr+cOqU
+         jjSdqrbT3cUGOTYxMAx0MjhDMkH49Axzg+xU4gxrgEcHr5P5P3xojYJ6MOCHn36QNvt/
+         yceg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794670939; x=1795275739;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=D/QDiWJcNeIF083+fu+YVL4kUJSlCNjsA1ag+QXac8Y=;
+        b=NM3oP2Vryicx4z+re2dmbOE06ny/ZyYo8I7+N9rpYJBOe31ct/EzsUnUcdFVEnB8O5
+         lKtiLusbk+7743rRwBhqL1QFHssmzJauBl6ytwi4fIf9McJtz9yTMat6wt1F+J98ZzkY
+         +aHOHvWSP+2OKmfjNqSrE2Q0nkkBdvOn2s0lx+p4IM4IHCzZYMD2L6ET7vlkKsCXYzLs
+         aPIiu4KSsndDkLL7WIljcK+DzIkk2XN6P+Rm1L9GAyqk6G2r1JcZvRLxXU3oJi6rxTUm
+         hhaB3i7FRcoUidvMZmjU9XdefIAvSAu+oaaqRD0yt8kvZL3E7lbHo4JPLvda22Obz64S
+         QA/w==
+X-Forwarded-Encrypted: i=1; AL+hErE1QWSRmypdExMGDOm7hFKZLx0HO3P0T+vNuCL+Jj+voewojYWcxiX/u1Icp1ksKnX+f8Pbdg6jt1cP6Q==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+F+/w0HHTzxMs+7l1LwNxL60l2tCIN0Axrc3PW3ojkpChbv+Jg
+	VUW82Gp3HanSOuuZ/S5sKmm3wCObhAE0zpc84t4322aK3CXDTkjTodJTHQwnGw==
+X-Gm-Gg: AYBFou2F1Ic4AzmItbPRWNrJd1qoo30LkPyFuWx5JZ7rcttq6+5eJctS8/fOL/M8zqP
+	DQ00Z0eAythcQxUL7xceRhEA0qbXhO6FOcjufSJf1ybz7GCelvX1F7JPrx6B87vrK2YDMX8dYy2
+	97Si2fmCtd8V6hcY8S4huRFBnL2OeMHSg+P1mz60Z09vfOBgav9S0K0zg60//Xs7VBq604uXarb
+	B+zg14ErjQeOhJdDyIAaYSEG3YdxP+w6/sLBR4vmcFHySwXN1OwTHmFxhCZvfuEu46P4v/j6F1g
+	4rafNV7uJ6ruKg2qNwUVNp6Igm0/fBaHifKM+dA//XB+97ZTAVM5ItDrtBop+mos92AGuS+Mglx
+	iOB1T4HLq6Bqxpk//IEdQwCnSk8oA9g5PvaTF/jYIR2W1VsSxckiwPW6lrTpp/TqhH6yBfB0NeQ
+	QyKVjwKRkwe+b1xH8UkanUq7V0wxLFeOmNyPhyBQwszpE/PU3StdnGLUcdDSqqeZgbdl1Oiv8Jy
+	BG3m8McYBm8uOn+j26cDmYqHGHUH8G6Y/tnqVepcP6kWa+z5YCVweGwUc3SGAJtvxbAAFjNzh7w
+	SOpoIQk/+QyrQ77CmvRurwtKCoMU9c7CWlKJC6Zc7NspyB5tJgKinHFeYA==
+X-Received: by 2002:a05:7301:fa3:b0:376:37a2:87f3 with SMTP id 5a478bee46e88-37967dd733dmr5109847eec.31.1794670938852;
+        Sat, 14 Nov 2026 07:42:18 -0800 (PST)
+Received: from user.. ([2405:201:c052:b00b:9eff:399:c292:54cc])
+        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-3795591f4f8sm18037395eec.13.2026.11.14.07.42.14
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sat, 14 Nov 2026 07:42:18 -0800 (PST)
+From: pavankumaryalagada@gmail.com
+To: dsterba@suse.com
+Cc: mason@kernel.org,
+	fdmanana@suse.com,
+	josef@toxicpanda.com,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	skhan@linuxfoundation.org,
+	quwenruo.btrfs@gmx.com,
+	Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>,
+	syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
+Subject: [PATCH v2] btrfs: Clean up delayed inode items on transaction abort
+Date: Sat, 14 Nov 2026 21:12:07 +0530
+Message-ID: <20261114154207.73644-1-pavankumaryalagada@gmail.com>
+X-Mailer: git-send-email 2.43.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -60,141 +101,61 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <233845be4bd0fd12b4c62b5ca5243ec1ef4d44f8.1792613768.git.fdmanana@suse.com>
+Content-Transfer-Encoding: 8bit
 
-On Wed, Oct 21, 2026 at 09:17:25PM +0100, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Test an incremental send scenario where we punched a hole into a tail
-> section of a file extent item that is the last item in a leaf and the
-> next leaf in the subvolume tree was not changed (remains shared between
-> the parent and send snapshots).
-> 
-> This currently fails and is fixed by the following kernel patch:
-> 
->   btrfs: send: fix missing hole punching during incremental send
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->  tests/btrfs/362     | 84 +++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/362.out |  7 ++++
->  2 files changed, 91 insertions(+)
->  create mode 100755 tests/btrfs/362
->  create mode 100644 tests/btrfs/362.out
-> 
-> diff --git a/tests/btrfs/362 b/tests/btrfs/362
-> new file mode 100755
-> index 00000000..aca56540
-> --- /dev/null
-> +++ b/tests/btrfs/362
-> @@ -0,0 +1,84 @@
-> +#! /bin/bash
-> +# SPDX-License-Identifier: GPL-2.0
-> +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> +#
-> +# FS QA Test 362
-> +#
-> +# Test an incremental send scenario where we punched a hole into a tail section
-> +# of a file extent item that is the last item in a leaf and the next leaf in the
-> +# subvolume tree was not changed (remains shared between the parent and send
-> +# snapshots).
-> +#
-> +. ./common/preamble
-> +_begin_fstest auto quick send
-> +
-> +_cleanup()
-> +{
-> +	cd /
-> +	rm -fr $tmp.*
-> +	rm -fr $send_files_dir
-> +}
-> +
-> +. ./common/filter
-> +
-> +_require_test
-> +_require_scratch
-> +_require_btrfs_support_sectorsize 4096
-> +_require_xfs_io_command "fpunch"
-> +
-> +_fixed_by_kernel_commit xxxxxxxxxx \
-> +	"btrfs: send: fix missing hole punching during incremental send"
-> +
-> +send_files_dir=$TEST_DIR/btrfs-test-$seq
-> +
-> +rm -fr $send_files_dir
-> +mkdir $send_files_dir
-> +
-> +first_stream="$send_files_dir/1.send"
-> +second_stream="$send_files_dir/2.send"
-> +
-> +# We need a very specific leaf layout where we punch a hole in the last file
-> +# extent item of a leaf and the next leaf was not modified in the send snapshot,
-> +# so we set a fixed size of 16K.
-> +_scratch_mkfs -n 16K >> $seqres.full 2>&1 || _fail "first mkfs failed"
-> +_scratch_mount
-> +
-> +touch $SCRATCH_MNT/foo
-> +# 205 extents of 64K each with a 64K hole between them.
-> +for ((i = 0; i < 410; i += 2)); do
-> +	offset=$((i * 64 * 1024))
-> +	$XFS_IO_PROG -c "pwrite -b 64K -S 0xab $offset 64K" \
-> +		$SCRATCH_MNT/foo > /dev/null
-> +done
-> +
-> +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1
-> +
-> +# Punch a hole in the last 16K of the last file extent item of the first leaf,
-> +# which starts at file offset 12845056, so 12845056 + 64K - 16K = 12894208.
-> +# This does not cause any change in the second leaf of the fs tree, so it will
-> +# be shared between the snapshots.
-> +$XFS_IO_PROG -c "fpunch 12894208 16K" $SCRATCH_MNT/foo
-> +
-> +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2
-> +
-> +echo "File digest in the original fs: $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
-> +
-> +_btrfs send -f $first_stream $SCRATCH_MNT/snap1
-> +_btrfs send -f $second_stream -p $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2
-> +
-> +# Create a new fs and apply both send streams.
-> +_scratch_unmount
-> +_scratch_mkfs >> $seqres.full 2>&1 || _fail "second mkfs failed"
-> +_scratch_mount
-> +
-> +_btrfs receive -f $first_stream $SCRATCH_MNT
-> +_btrfs receive -f $second_stream $SCRATCH_MNT
-> +
-> +echo "File digest in the new fs:      $(_md5_checksum $SCRATCH_MNT/snap2/foo)"
-> +
-> +# Check the region we punched a hole is full of zeroes.
-> +echo "Hole data:"
-> +od -A d -t x1 -j 12894208 -N $((16 * 1024)) $SCRATCH_MNT/snap2/foo
+From: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
 
+When a transaction is aborted, btrfs_commit_inode_delayed_inode()
+fails because btrfs_join_transaction() returns an error. This makes
+btrfs_evict_inode() skip btrfs_kill_delayed_inode_items(), leaving
+pending items in the delayed node.
 
-Can this be replaced with common helper: _hexdump ?
+Clean up delayed inode items when the transaction is aborted, even
+if btrfs_commit_inode_delayed_inode() returns an error.
 
-Thanks,
-Zorro
+Reported-by: syzbot+55d1814e49f1fc0ba542@syzkaller.appspotmail.com
+Link: https://lore.kernel.org/all/6af131f2.44d55313.247daf.0001.GAE@google.com/T/
+Fixes: 2adc75d61203 ("btrfs: move btrfs_kill_delayed_inode_items into evict")
+Signed-off-by: Yalagada Pavan Kumar <pavankumaryalagada@gmail.com>
+---
+v2:
+- Add a condition to call btrfs_kill_delayed_inode_items() when the
+  transaction is aborted, even if the inode update fails.
 
-> +
-> +# success, all done
-> +_exit 0
-> diff --git a/tests/btrfs/362.out b/tests/btrfs/362.out
-> new file mode 100644
-> index 00000000..789abb53
-> --- /dev/null
-> +++ b/tests/btrfs/362.out
-> @@ -0,0 +1,7 @@
-> +QA output created by 362
-> +File digest in the original fs: a5a06694d9f7fc3245afb2f391636e44
-> +File digest in the new fs:      a5a06694d9f7fc3245afb2f391636e44
-> +Hole data:
-> +12894208 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> +*
-> +12910592
-> -- 
-> 2.53.0
-> 
-> 
+v1: https://lore.kernel.org/linux-btrfs/avMkGGHSH2scfa0t@user/T/#t
+---
+ fs/btrfs/inode.c | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index abaa33471456..b3a33541b8c8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5623,16 +5623,21 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * the inode update is released.
+ 	 */
+ 	ret = btrfs_commit_inode_delayed_inode(BTRFS_I(inode));
+-	if (ret)
+-		goto out;
+ 
+ 	/*
+ 	 * This drops any pending insert or delete operations we have for this
+ 	 * inode.  We could have a delayed dir index deletion queued up, but
+ 	 * we're removing the inode completely so that'll be taken care of in
+ 	 * the truncate.
++	 *
++	 * We must also clean up delayed inode items when the transaction is
++	 * aborted.
+ 	 */
+-	btrfs_kill_delayed_inode_items(BTRFS_I(inode));
++	if (!ret || test_bit(BTRFS_FS_STATE_TRANS_ABORTED, &fs_info->fs_state))
++		btrfs_kill_delayed_inode_items(BTRFS_I(inode));
++
++	if (ret)
++		goto out;
+ 
+ 	btrfs_init_metadata_block_rsv(fs_info, &rsv, BTRFS_BLOCK_RSV_TEMP);
+ 	rsv.size = btrfs_calc_metadata_size(fs_info, 1);
+-- 
+2.43.0
+

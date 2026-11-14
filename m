@@ -1,55 +1,54 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794675126;
-	b=N9EjY7BLJ3olHqS1tkCxBYVkg48f0rPVrx0fGp6OH54bViMewVLzvuStoteEoVdU1i7B
-	 JH7PFOkm8Iv2Iu0KHnOXTWH3yfF+MnAfpfYz9hWRjZZa9eoX2862pI9zNFe0mV+fcI96S
-	 PFk4jra3qX+O6oSwYjF9hCN/5xwb3vPALC92WVG13lJ1uEBkCBsImmByP/uYdRj85rOoy
-	 etTpX/tw9WSrcf+qIe7WQL5I8rOxJCMqsd6VrOPKwvK2duDcstNvp5TVq5rOyBIT8OMfF
-	 E3EyMd0VJulr6Qzipnoqa4R6jxCPkrohmzEUDyjo4aY1T9ep/msxz+CNgsEZjFNBcTg==
+	t=1794678967;
+	b=mC3uXvZT7clbg2DO75NQdsp6AxRc0bR4a37wVkAKgmTRrPj/GzJlR63IxIsOy9T26WD0
+	 2/ulD2Fweucd6Gd/5la1iq/NSgPS0eeJY1kjTPjbEzPBco+zdRXcXy/TNhkIOAsL+tfW/
+	 YrUG40Eq5HLUpSS2qC/C/sUBOsimuF+xhbkxOF/2HpLW+3BBa1d3u3xD4R17KAHFYO9sK
+	 pbQ3pWF9NB8XA3bjNT1oYY9N/uE5X8YU1wR9RYR5EaHmQGRuGeJb6rFWDx5movoya6/7Q
+	 oxRVihPHNlKEYYnZq/YodQ+JYXkvCTRx8M3vaQhrMfNAVIBaEskjMGPGs4FHD6s7RRA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794675126;
-	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
-	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
-	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
-	 Subject:To:Content-Type:Content-Transfer-Encoding;
-	bh=0lqPMoLckk3hk/311uwxxNzds097FyRJTNyo3yq7jD8=;
-	b=Foy/HmQ6hh+S1sKFuzfUlv51F8NpQ9ScskgHqL61gRfMpC/A5rph7Ki5Ujz14UBtEPNO
-	 RIE3HiP4qfp9boQmKZq6bjfpCOWoUiv8fBEjXSCpSiUmNSg0X2l/JCP23yCxWuzW7EIFk
-	 v4cPZ/d6y3SysgwJU/1ObrQtm3zccx1hL4O9JGYgr8M/4yIcFdZrW1Y/ckFSttNZhyB18
-	 tODbJPBHUb7uCDwWsGDUi3zO0N4JDi//uFqCkpNpAC8yKm854A8HhSLyJWQbLnqDP904m
-	 e4dHGQktKTF+6W+TdawbkF1MsmeoHXDp++z8ac+EEgep7/3bEfWPi4sxctJHFcUnC2A==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794678967;
+	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:
+	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=ZZGPtoFQkHPw8qXSIFOSJXaZROeyGgYFMRCEsoazu+8=;
+	b=A0Vcw/ZCfALmj7MozMj9EQIi2ZCbvB5VJIyoreyi7kL1Omckdhs3DF3gxhTtkHcJcdOW
+	 HIzQU//e9n0IQIgS3u+K+aiPpXvfldwsa7X8WMmcXIyZlMq20myPNJT0M6ta2Jm5jN9/s
+	 7TggCD8NLaGXoTajIC/nbqxL81jF7fmM+Vz0gnYYzQBTyEHuyqTNaIx92UVTCKnxCJn0G
+	 lXHLlE4iktYA+DZ+XA7ex32Zw6RJU9jczTC7CdcSYYUFn2yjrOsLXqNTsFAdnBlEm6Pfe
+	 DWDD2ZuHrtWTDmCpn5HL4ctJJa61a4ZSgKNN0xP05mJzlssS3O6Z8kVmdkTBsR4JZ8A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZtbqYbVx;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=QGC+eSIn;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 166CB606A335
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 16:52:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2502F606A323
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 17:56:06 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ZtbqYbVx
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9FD7E1F000C4
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 16:52:05 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=QGC+eSIn
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id AFDAC1F000C4
+	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 17:56:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794675125;
-	bh=0lqPMoLckk3hk/311uwxxNzds097FyRJTNyo3yq7jD8=;
-	h=References:In-Reply-To:From:Date:Subject:To;
-	b=ZtbqYbVxoeri4zNJQ3dyD7gG+iev/MsFY9pFTaGD1NEb/jhJjrjC4k4wZEozkjT5j
-	 gK0qHBxwddmlJYb4fyjsjJ7R6NMdJFu/6AsZoBmOPV0U3WPzeMCLcAiNsOSnnY15G/
-	 6IGqPL5/HxUMChyrfcBhPHpCYnGpDCJi3nTq3sBXZj2XYwK6svJkLdBUS45w4ogOcd
-	 Ro87Qde6s28KkYpSZTxC7zFNZfLH63yXO2obrjow1jQoufAfBP4a3MoxYHGX9SnLZj
-	 anQDWZOHGySKT61xdJX7ghrrgmBrJNdd73nPp909M61knyzCGwkQqBRbm1AcV5Phzy
-	 XrKI/lyJnuKQw==
-Received: by mail-vs1-f51.google.com with SMTP id ada2fe7eead31-7d2e14babc8so2356491137.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 08:52:05 -0800 (PST)
-X-Forwarded-Encrypted: i=1; AL+hErEFK8eY+k8fxpw2rgWqgITB5M3l+nCTKalWSEGBLcPF0em1NKKsxCEJCOneyrsD1dWeG05pg5dsLpqsPg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/r4kOMw1lP3nbrC0uJpIGiYAPXnAyPka3o/YsiPbzVovpeb3qN
-	CYraluXtB7pXfTWk7o4XFAv5TFhe7Wlzmm3UzwgaVdKh/r7ajPvTzx0h1vfA7fbTqMahWdcLSdk
-	CqKukLluMvNhO8IMr60n3yoABGf0+KNk=
-X-Received: by 2002:a05:6102:510f:b0:7cc:3246:3095 with SMTP id
- ada2fe7eead31-7d64d8b73cbmr2413814137.34.1794675124824; Sat, 14 Nov 2026
- 08:52:04 -0800 (PST)
+	s=k20260515; t=1794678966;
+	bh=ZZGPtoFQkHPw8qXSIFOSJXaZROeyGgYFMRCEsoazu+8=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=QGC+eSInfmz8JYW2KFchwPBmzqow/cWjnIjgPURsokDy45UOiVPiILXlGmzs4d6VV
+	 oLJBLi0MG8HisIrodu/Kio+qoHeFlSIACPPBmPCKgHwuzFEoivyzMI2R18Jkqr5r9i
+	 PNfWhT8BK11zfCyEeuBioHftYIMoaQMB0JNQoXrP+hq4n+0fuoqtbggLSe6e0R+fGQ
+	 lsSrIkHSquhFT0thg0PFeNH8vmqkyA9NXm365wsYO0aG0gEa+vdKMwd03SLEDJThnd
+	 /Q3x7H0gDEdUehNItg3WoC1DKItgT4NZfQH4O5wSLS1p7Cukb2asbYqUnM294v7ygI
+	 8Q558dE/L2mQg==
+Received: by mail-vk1-f182.google.com with SMTP id 71dfb90a1353d-5c9e7731b34so2782522e0c.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 09:56:06 -0800 (PST)
+X-Gm-Message-State: APuU4Z/XHle250WTZuZ13evWrNfBBfVj2g5L20oUTpZED/j3GxfhXdDK
+	02RqQqW2REDJO+0yW5k03w2tWOANZhdHldwpi2EDLN7bOxoYuCb0lmmvh39VS33xe59GLMB86IP
+	JrkZINU5kAJgwmesubvmDg3zq+vUNZoI=
+X-Received: by 2002:a05:6102:4455:b0:7d2:b199:6710 with SMTP id
+ ada2fe7eead31-7d64d76b330mr1595249137.15.1794678965911; Sat, 14 Nov 2026
+ 09:56:05 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,173 +58,183 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <233845be4bd0fd12b4c62b5ca5243ec1ef4d44f8.1792613768.git.fdmanana@suse.com>
- <avh4IU-M5jYkc1uE@zlang-mailbox>
-In-Reply-To: <avh4IU-M5jYkc1uE@zlang-mailbox>
+References: <20261114000234.339513-1-eliasjernberg@gmail.com>
+In-Reply-To: <20261114000234.339513-1-eliasjernberg@gmail.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Sat, 14 Nov 2026 16:51:27 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H4KZ-xerun6qOCxQDd4GPPj=B6KLZwa16rNQEVUKjAYDA@mail.gmail.com>
-X-Gm-Features: AclHuK_pjttSZdxaRuKwogb5U38Qh2cC2BIZzwWFoyRfxpeZ7SVPYpG_nYw45pA
-Message-ID: <CAL3q7H4KZ-xerun6qOCxQDd4GPPj=B6KLZwa16rNQEVUKjAYDA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: test an incremental send scenario with hole punching
-To: fdmanana@kernel.org, fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	Filipe Manana <fdmanana@suse.com>
+Date: Sat, 14 Nov 2026 17:55:29 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H5i1AopXwa8xDuuBKqsTyUAkajysNxYZMLmiGVXBf9paw@mail.gmail.com>
+X-Gm-Features: AclHuK9BeAO7g08Z3c79J6pMdHzvGqakgW-9xh3IirLSz7Uyy1BqTyp_ZI7jCw4
+Message-ID: <CAL3q7H5i1AopXwa8xDuuBKqsTyUAkajysNxYZMLmiGVXBf9paw@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: speed up steal_from_bitmap_to_front() with a
+ backward word scan
+To: Elias Jernberg <eliasjernberg@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>, 
+	Filipe Manana <fdmanana@suse.com>, Chris Mason <mason@kernel.org>
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, Nov 14, 2026 at 3:05=E2=80=AFPM Zorro Lang <zlang@kernel.org> wrote=
-:
+On Sat, Nov 14, 2026 at 12:03=E2=80=AFAM Elias Jernberg <eliasjernberg@gmai=
+l.com> wrote:
 >
-> On Wed, Oct 21, 2026 at 09:17:25PM +0100, fdmanana@kernel.org wrote:
-> > From: Filipe Manana <fdmanana@suse.com>
-> >
-> > Test an incremental send scenario where we punched a hole into a tail
-> > section of a file extent item that is the last item in a leaf and the
-> > next leaf in the subvolume tree was not changed (remains shared between
-> > the parent and send snapshots).
-> >
-> > This currently fails and is fixed by the following kernel patch:
-> >
-> >   btrfs: send: fix missing hole punching during incremental send
-> >
-> > Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> > ---
-> >  tests/btrfs/362     | 84 +++++++++++++++++++++++++++++++++++++++++++++
-> >  tests/btrfs/362.out |  7 ++++
-> >  2 files changed, 91 insertions(+)
-> >  create mode 100755 tests/btrfs/362
-> >  create mode 100644 tests/btrfs/362.out
-> >
-> > diff --git a/tests/btrfs/362 b/tests/btrfs/362
-> > new file mode 100755
-> > index 00000000..aca56540
-> > --- /dev/null
-> > +++ b/tests/btrfs/362
-> > @@ -0,0 +1,84 @@
-> > +#! /bin/bash
-> > +# SPDX-License-Identifier: GPL-2.0
-> > +# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
-> > +#
-> > +# FS QA Test 362
-> > +#
-> > +# Test an incremental send scenario where we punched a hole into a tai=
-l section
-> > +# of a file extent item that is the last item in a leaf and the next l=
-eaf in the
-> > +# subvolume tree was not changed (remains shared between the parent an=
-d send
-> > +# snapshots).
-> > +#
-> > +. ./common/preamble
-> > +_begin_fstest auto quick send
-> > +
-> > +_cleanup()
-> > +{
-> > +     cd /
-> > +     rm -fr $tmp.*
-> > +     rm -fr $send_files_dir
-> > +}
-> > +
-> > +. ./common/filter
-> > +
-> > +_require_test
-> > +_require_scratch
-> > +_require_btrfs_support_sectorsize 4096
-> > +_require_xfs_io_command "fpunch"
-> > +
-> > +_fixed_by_kernel_commit xxxxxxxxxx \
-> > +     "btrfs: send: fix missing hole punching during incremental send"
-> > +
-> > +send_files_dir=3D$TEST_DIR/btrfs-test-$seq
-> > +
-> > +rm -fr $send_files_dir
-> > +mkdir $send_files_dir
-> > +
-> > +first_stream=3D"$send_files_dir/1.send"
-> > +second_stream=3D"$send_files_dir/2.send"
-> > +
-> > +# We need a very specific leaf layout where we punch a hole in the las=
-t file
-> > +# extent item of a leaf and the next leaf was not modified in the send=
- snapshot,
-> > +# so we set a fixed size of 16K.
-> > +_scratch_mkfs -n 16K >> $seqres.full 2>&1 || _fail "first mkfs failed"
-> > +_scratch_mount
-> > +
-> > +touch $SCRATCH_MNT/foo
-> > +# 205 extents of 64K each with a 64K hole between them.
-> > +for ((i =3D 0; i < 410; i +=3D 2)); do
-> > +     offset=3D$((i * 64 * 1024))
-> > +     $XFS_IO_PROG -c "pwrite -b 64K -S 0xab $offset 64K" \
-> > +             $SCRATCH_MNT/foo > /dev/null
-> > +done
-> > +
-> > +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap1
-> > +
-> > +# Punch a hole in the last 16K of the last file extent item of the fir=
-st leaf,
-> > +# which starts at file offset 12845056, so 12845056 + 64K - 16K =3D 12=
-894208.
-> > +# This does not cause any change in the second leaf of the fs tree, so=
- it will
-> > +# be shared between the snapshots.
-> > +$XFS_IO_PROG -c "fpunch 12894208 16K" $SCRATCH_MNT/foo
-> > +
-> > +_btrfs subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/snap2
-> > +
-> > +echo "File digest in the original fs: $(_md5_checksum $SCRATCH_MNT/sna=
-p2/foo)"
-> > +
-> > +_btrfs send -f $first_stream $SCRATCH_MNT/snap1
-> > +_btrfs send -f $second_stream -p $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2
-> > +
-> > +# Create a new fs and apply both send streams.
-> > +_scratch_unmount
-> > +_scratch_mkfs >> $seqres.full 2>&1 || _fail "second mkfs failed"
-> > +_scratch_mount
-> > +
-> > +_btrfs receive -f $first_stream $SCRATCH_MNT
-> > +_btrfs receive -f $second_stream $SCRATCH_MNT
-> > +
-> > +echo "File digest in the new fs:      $(_md5_checksum $SCRATCH_MNT/sna=
-p2/foo)"
-> > +
-> > +# Check the region we punched a hole is full of zeroes.
-> > +echo "Hole data:"
-> > +od -A d -t x1 -j 12894208 -N $((16 * 1024)) $SCRATCH_MNT/snap2/foo
+> steal_from_bitmap_to_front() looks for the last clear bit below the new
+> extent entry by walking every clear bit of the bitmap from bit 0 with
+> for_each_clear_bit_from(). In a bitmap that is mostly allocated that is
+> one find_next_zero_bit() call per allocated sector below the entry, and
+> it is done for every free space entry added next to a bitmap.
 >
+> With 16K pages a bitmap has 131072 bits. On an arm64 machine with 16K
+> pages (Apple M5, 4K sectorsize, discard=3Dasync, compression on),
+> deleting a 4 GiB file of about one million 4K extents, after scattered
+> 4K rewrites had put the block group's free space into bitmaps, made the
+> next fsync take 29 to 36 seconds of CPU. Three sysrq-l samples taken
+> during the stall all showed:
 >
-> Can this be replaced with common helper: _hexdump ?
+>   _find_next_zero_bit
+>   __btrfs_add_free_space
+>   unpin_extent_range
+>   btrfs_finish_extent_commit
+>   btrfs_commit_transaction
+>   btrfs_sync_file
+>
+> A buffered 4 GiB write with end_fsync right after the delete ran at
 
-I don't have a strong objection to that, but honestly I prefer it as
-it is because it prints the addresses in decimal format, which is more
-human readable and directly matches the value passed to the hole
-punching operation above, making it easier to read.
+What is end_fsync? Do you mean writing all data, deleting the file
+while there's an open fd on it and then calling fsync() on the fd?
+Please be clear in the changelog, I can't tell what "end_fsync" is.
 
-Do you want to make the change yourself, or should I send a new
-version just for that?
+> 119-147 MB/s instead of about 4.7 GB/s.
+>
+> Scan backwards from the bit below the entry one word at a time instead,
+> so the cost follows the run of free sectors that ends there and not the
+> number of allocated sectors below it. The result is the same for every
+> index: a userspace copy of both versions agreed in about 11 million
+> cases (bitmaps of 256, 32768 and 131072 bits, empty, full, random and
+> long runs, word boundaries and the last bit). The index is still
+> limited to BITS_PER_BITMAP - 1, as the old loop was.
+>
+> With the change the same sequence ran the buffered write in 0.8-0.9 s
+> (4613 and 5238 MB/s).
+>
+> Fixes: 200055239604 ("Btrfs: improve free space cache management and spac=
+e allocation")
+> Signed-off-by: Elias Jernberg <eliasjernberg@gmail.com>
+> ---
+>
+> Notes:
+>     - The numbers above come from a 7.3-based tree (aurora-silicon/linux,
+>       Apple M5 MacBook Pro, 16K pages) carrying this change in an
+>       equivalent form. This version was build-tested on btrfs for-next
+>       (3aefd67f08f8) as x86_64 UML with W=3D1, no new warnings, and the b=
+trfs
+>       self-tests pass (CONFIG_BTRFS_FS_RUN_SANITY_TESTS, including the
+>       bitmap stealing tests).
+>     - On x86_64 with 4K pages I could not reproduce a clear stall with th=
+e
+>       similar fragmenting workload (sync after the delete took 0.4-1.9 s)=
+, so the
+>       effect looks tied to the larger bitmaps of 16K and 64K pages.
+>     - Reproducer (fio, run on the btrfs filesystem under test):
+>         fio --name=3Da --filename=3Df --rw=3Dwrite --bs=3D1M --direct=3D1=
+ --size=3D4G --end_fsync=3D1
+>         fio --name=3Dr --filename=3Df --rw=3Drandwrite --bs=3D4k --ioengi=
+ne=3Dlibaio --iodepth=3D32 \
+>             --direct=3D1 --size=3D4G --time_based --runtime=3D15 --end_fs=
+ync=3D1
+>         fio --name=3Ds --filename=3Df --rw=3Dwrite --bs=3D4k --direct=3D1=
+ --size=3D4G \
+>             --time_based --runtime=3D15 --fsync=3D1
+>         rm f
+>         fio --name=3Db --filename=3Df --rw=3Dwrite --bs=3D1M --size=3D4G =
+--end_fsync=3D1
+>       The last job takes 29-36 s without this patch and under 1 s with it=
+.
 
+The test used to measure performance, and the results, should be in
+the changelog, not below the --- line.
+It's useful information to have in the changelog.
+
+The change itself looks good, thanks.
+
+
+>     - Prior art: Yun Levi suggested replacing this loop in December 2020 =
+on
+>       LKML, as a user of a proposed find_prev_zero_bit()
+>       (https://www.mail-archive.com/linux-kernel@vger.kernel.org/msg24024=
+57.html).
+>       That helper was never added and the loop is unchanged in for-next.
+>       This version keeps the backward scan local to free-space-cache.c.
+>     - Tool use: the stall was profiled, the fix written and the changelog
+>       drafted with an LLM coding assistant (Claude). I have reviewed the
+>       change; the equivalence test and the measurements were run on my
+>       machine.
 >
-> Thanks,
-> Zorro
+>  fs/btrfs/free-space-cache.c | 30 ++++++++++++++++++++++--------
+>  1 file changed, 22 insertions(+), 8 deletions(-)
 >
-> > +
-> > +# success, all done
-> > +_exit 0
-> > diff --git a/tests/btrfs/362.out b/tests/btrfs/362.out
-> > new file mode 100644
-> > index 00000000..789abb53
-> > --- /dev/null
-> > +++ b/tests/btrfs/362.out
-> > @@ -0,0 +1,7 @@
-> > +QA output created by 362
-> > +File digest in the original fs: a5a06694d9f7fc3245afb2f391636e44
-> > +File digest in the new fs:      a5a06694d9f7fc3245afb2f391636e44
-> > +Hole data:
-> > +12894208 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> > +*
-> > +12910592
-> > --
-> > 2.53.0
-> >
-> >
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index bff6e5b372d6..c599a8f25821 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -1269,6 +1269,26 @@ static bool steal_from_bitmap_to_end(struct btrfs_=
+free_space_ctl *ctl,
+>         return true;
+>  }
+>
+> +/*
+> + * Return the index of the last clear bit at or below @bit, or ULONG_MAX=
+ if
+> + * bits 0 to @bit are all set.  Scan backwards a word at a time, so the =
+cost
+> + * follows the length of the run of set bits that ends at @bit rather th=
+an the
+> + * number of clear bits below it.
+> + */
+> +static unsigned long find_last_clear_bit_upto(const unsigned long *bitma=
+p,
+> +                                             unsigned long bit)
+> +{
+> +       unsigned long idx =3D BIT_WORD(bit);
+> +       unsigned long word =3D ~bitmap[idx] & BITMAP_LAST_WORD_MASK(bit +=
+ 1);
+> +
+> +       while (!word) {
+> +               if (idx =3D=3D 0)
+> +                       return ULONG_MAX;
+> +               word =3D ~bitmap[--idx];
+> +       }
+> +       return idx * BITS_PER_LONG + __fls(word);
+> +}
+> +
+>  static bool steal_from_bitmap_to_front(struct btrfs_free_space_ctl *ctl,
+>                                        struct btrfs_free_space *info,
+>                                        bool update_stat)
+> @@ -1277,7 +1297,6 @@ static bool steal_from_bitmap_to_front(struct btrfs=
+_free_space_ctl *ctl,
+>         struct btrfs_free_space *bitmap;
+>         u64 bitmap_offset;
+>         unsigned long i;
+> -       unsigned long j;
+>         unsigned long prev_j;
+>         u64 bytes;
+>
+> @@ -1294,13 +1313,8 @@ static bool steal_from_bitmap_to_front(struct btrf=
+s_free_space_ctl *ctl,
+>                 return false;
+>
+>         i =3D offset_to_bit(bitmap->offset, unit, info->offset) - 1;
+> -       j =3D 0;
+> -       prev_j =3D (unsigned long)-1;
+> -       for_each_clear_bit_from(j, bitmap->bitmap, BITS_PER_BITMAP) {
+> -               if (j > i)
+> -                       break;
+> -               prev_j =3D j;
+> -       }
+> +       prev_j =3D find_last_clear_bit_upto(bitmap->bitmap,
+> +                                         min(i, BITS_PER_BITMAP - 1));
+>         if (prev_j =3D=3D i)
+>                 return false;
+>
+> --
+> 2.56.1
+>
+>

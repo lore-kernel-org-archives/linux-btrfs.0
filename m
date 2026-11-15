@@ -1,128 +1,89 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.50
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794765864;
-	b=D8K9aAyYV8vNv9+BCQOpZrXwpdQ2MeZNCbpQt+aR6g3Ndwj0XCs588QDgp4ZdcHiFexQ
-	 ruq7/E+9IG4OlD07xWAbrF725vxeJQV0V71MRDHCaC63zNROhxRRlzRC0NOIj8JqVNDQP
-	 CVYffkb5z7K5wlOFXFKYCEwp1AI7a8pawasFklDGRmTKa4hJUTnjVyv00DXgidb1st3I8
-	 sYlzWvWgZNaH70fLJUUXAXJPmuKAhb644KKwI+a/+Riz404b54lBjKsxIAggf2ADl6LXz
-	 VUoVTHlJCW67Wh4MIP7emVExBo8F0Phb9oKeAWTVsVTwY3FraYgcPdEmzL07jA+E9HQ==
+	t=1794776479;
+	b=L5T3ctqcz7QUIavLi2ljAcTxu6GXgxCenWyCmk5Bp6A/ifwKOCFTBJQ96jg/B3Q4bewX
+	 ThVVzo1DWhaGmYPrAggYoXZwufyeFmIf9Ra/BDj24gaygWdAKYAZ8CVjOYv5mq8K7KVyH
+	 tQuaPpp/hag6kz/f0x04hFtHLoNEyfXHrrfYQJyAnwgmM6F8WlYIdM5xwPhjjxinJHpLe
+	 TrqCeT2QuxEY2jgDeRdrJN409ElBuF4YvrHJx9rax1YKlA8OPnCfybP0bktHUCnvpaosr
+	 0vqyMNU8a2XviqOCPQUrzIYc6MBxalLsxx30yaIocALAHNlXNFB662oW2Rc6/OCAXOg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794765864;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794776479;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=lxukKPljbLBMj2KQ1RVi2fh6LR+mPswpZnw+yWTHXAg=;
-	b=FI7vV4AEcHDfZeUxvW9fvO9AObjJj9DhgNfYY2mf3I4HICyxjM/XtkeSEYoVDtwt+o6B
-	 x4FTUeKELis/tU2v8eVCjVU5OrJXmxYgJnS+aBhyFaVmkpKVH/eA3mNKlGh9qMEV6+CX7
-	 GqVJgO2rdzTsgz1UxK+bj+YxxfPjikm1xGqeUyLKICLmXQ+FllQpvgiiwOG0TAjw8aN/e
-	 lHLfVVZo+cqC8bQhbXM2BlbVul1potyJcQtOHD5c6A8DS2ZbYlexjytiQYXEs7hjtZhLt
-	 PFD81uy6UCSephxTQf5s0HU0CBREionB/oinvRNBmxzeBOQnGn+Li1CKIPsbwI0/FHw==
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=bNjov9LgQsesTZjepT2rkVQQ9qOJHCw/ioD8k3rWQj0=;
+	b=YDqR2D1IzG4wPMk1KT9+oLVKD3OLXIH7lZP8s3kgmLLvFEHzMUjqAdMoXS1cR+xMjjvN
+	 QV/tCAsp5qXHADNI7+kfsIZrypckYnMnkJ3EBB1Gs2ZQGNiHNesRR7IOuLm5JFHO5DRtE
+	 YEg90F0OtsD2Q4OdTQXLfa1Hbg6/CpWbVDNINksTxEbguCnFYY2VFvCwId2qWJL92jxaf
+	 SaIM4bekT/UVb+vV3n3M5agdQIsv+CWsiiwzc4BfKpbfTvAqRpvIR37WLPZV1/M/FHxpp
+	 /06vAQiBR6BxAH5B0KwesSIK8E0ttQIa6BAVnL2pFReIhPSmmz6RrbC7zJHT7M6083g==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=DOC6fRFx;
-	arc=none smtp.remote-ip=209.85.221.50
-Received: from mail-wr1-f50.google.com (mail-wr1-f50.google.com [209.85.221.50])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=HxDp9y+l;
+	arc=none smtp.remote-ip=209.85.128.54
+Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2EDE3606BAF4
-	for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 18:04:23 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 2EDE3606BAF4
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D6E90606A32C
+	for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 21:01:18 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D6E90606A32C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=DOC6fRFx
-Received: by mail-wr1-f50.google.com with SMTP id ffacd0b85a97d-48dee593f18so2930452f8f.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 10:04:23 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=HxDp9y+l
+Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4bb69f5b161so3773605e9.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 13:01:18 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794765861; x=1795370661; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=lxukKPljbLBMj2KQ1RVi2fh6LR+mPswpZnw+yWTHXAg=;
-        b=DOC6fRFxtVO3+ChQZzvIui929ReJBuZRd50VNbS4+FpLPzHiYUk0WUdqprK6YJ0H9P
-         stgxUdPJV/firlryJZiPgcjbYfkVubXUmYUllYeWbRbQj0/cU5mkXT5om3kdyMQmazN9
-         rSzbjQkUbitjYgmgKsWufTocTnMfvmkDAI3Oxgjdc/MAagWI/qQz5Ra6UjVwmcaHZeVm
-         RH2isjXoghK2pAMewo3C0p+jKCU0hHuAnA5pmR6eYCj9i2rADSzBqE9st7UzJZGd+ArT
-         tNWRMhr+eF01OpI7T/wIq6nvVSPeZcy8RRet4KfN8DcM1geWKJD9t7OMvDUoWoupSPqc
-         /XLg==
+        d=suse.com; s=google; t=1794776477; x=1795381277; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=bNjov9LgQsesTZjepT2rkVQQ9qOJHCw/ioD8k3rWQj0=;
+        b=HxDp9y+ldGKCrbWNufbbvjRtOnzXim2uY22rMrHfM5gfW77JufqsBtmH21ju59HkCC
+         a3fIKiFpb6wGlOrx/xAcK4enZ4bRtivCQsv+cjpoJyJa4mQ149GlDgbqA38EQ6ostZEi
+         pebHsKzx5gSj4oNfycHty7rrp8akA9ZzIsyMJOHhvPpiuZNM/MNf4LVszXct+f1YtGAj
+         b0yIlUmLyrRhAohPDNHESgncXZvPl/7wsIjQ0aBZxJEWJPzdDtsTVV0YXp0dJZb/LLbc
+         5ZtfzYZ7I65BJs52+ngI/W2MrmHXtiRMbMHce3bEaTTfjc2baLo2yy4tXGiDpB5g9AgI
+         Tt5A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794765861; x=1795370661;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=lxukKPljbLBMj2KQ1RVi2fh6LR+mPswpZnw+yWTHXAg=;
-        b=QRHjFas6StiAGkamaUbHL0KkLYMZWhHa3VeDVXJgjhXxiMMhlKi2KK4ylPu1e7HIlA
-         oNlWK0dFeX4z17+fENo1xSXdDmrDxtchJRnMOBdnZBkVBQPCuIcqJ2Q/vqmbf48aRAdD
-         2xbXghxPdGLS/HvYz2gcn5qbkssnKQ3gkMTWPE4tV6sPeyKhT1fY0aNmvI5F5F5bcYRd
-         ukCq/J4cPA/OGdVuK7sQ1EqgJkfvEKI/pzAkA5qKWImLsSTanG/46q+hXp30AQRakLp2
-         8xtyrA+8OpBJqLymg+9t+ZCOixIYm0AGFyH4a7IMPmqAT95pkiqq/Ge+uEyrluyvJ+vc
-         Issw==
-X-Forwarded-Encrypted: i=1; AL+hErG6b4gFOpWbrPHGELjaMAMT4OABKPFO/ZaTnb1PbiPII/YUn7wzy/sojpDS2v23ruwzKKgLXPA3c403/w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z8zCihF8P4t9yxhDHMtHuHAZvhposuLnmxD8xXSgBlqKYSiL1vf
-	uwuh5+s6pIF01ROhqr7zfAGIFD6BdNFxB6wZPSzy/sHVb59dziKG+EEa
-X-Gm-Gg: AYBFou1wM7PZWAkKGZBeFJLO43vy03eipfLC2SfrJ/pgNU5z6DkSCaNmCSDdMZera0S
-	Mp1gq3uWZDg0UBtMrqCBQ4Q0lULht8wQE4DdxhPSQcgiuYD3+B944FTEjfh6/XquxHR7IIltL+m
-	qL4RbLUO+AM5ehD51k0Kcyf24nacaM1gJy/a9WzaOFHCLQkWGJ7jq5aud0nTqUzlZZm2uaJNcrL
-	AqoAeVNujwUnoBa5/fFZ95Pn1Adg5NmOTo06a0eBDoYFb3Jw0ZoBaZhFXudJ7MOsObm4Ft71xpz
-	Y46Sc6nM4m6IrHwSFzAvMCD9DZSJoCqnocIaf48T/tDHzu+dWuc3i/jpqwE9PxXinXwks8VzLOB
-	++e/sOxblyq1dZpJlNbYu7LLHYmCF2MEY6Mw/598YxH7hQgn2VJkt/jNJNSizGLTiqG7fWSZkFZ
-	kLXTaovQ1/qgDANcszyr2xGEds4O/Qb/2xpi41hxwx+HmyRnY+N+HY6pipUI9K4X9dM4n5FUjaf
-	oNErTKQCQMRLl116vJarO17J3Oefkk6nrqFcZTNB3N84sViITVum3W86k4OtI63WOE8o0Dv0bVo
-	RKz9vnhksw4I0hW01bjbHb02V6zhqXcf21oCZinJGtUv1w==
-X-Received: by 2002:a05:6000:461b:b0:48d:f7c0:97c0 with SMTP id ffacd0b85a97d-49c71b5c656mr18500790f8f.50.1794765861443;
-        Sun, 15 Nov 2026 10:04:21 -0800 (PST)
-Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c60f8c248sm17980448f8f.58.2026.11.15.10.04.18
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 15 Nov 2026 10:04:20 -0800 (PST)
-From: koraynilay <koray.fra@gmail.com>
-To: David Sterba <dsterba@suse.com>,
-	Namjae Jeon <linkinjeon@kernel.org>,
-	Sungjong Seo <sj1557.seo@samsung.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>,
-	Trond Myklebust <trondmy@kernel.org>,
-	Anna Schumaker <anna@kernel.org>,
-	Chuck Lever <cel@kernel.org>,
-	Jeff Layton <jlayton@kernel.org>,
-	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>,
-	Paulo Alcantara <pc@manguebit.org>
-Cc: Chris Mason <mason@kernel.org>,
-	Yuezhang Mo <yuezhang.mo@sony.com>,
-	Jan Kara <jack@suse.cz>,
-	NeilBrown <neil@brown.name>,
-	Olga Kornievskaia <okorniev@redhat.com>,
-	Dai Ngo <Dai.Ngo@oracle.com>,
-	Tom Talpey <tom@talpey.com>,
-	Ronnie Sahlberg <ronniesahlberg@gmail.com>,
-	Shyam Prasad N <sprasad@microsoft.com>,
-	Bharath SM <bharathsm@microsoft.com>,
-	Sergey Senozhatsky <senozhatsky@chromium.org>,
-	ChenXiaoSong <chenxiaosong@chenxiaosong.com>,
-	"Darrick J . Wong" <djwong@kernel.org>,
-	Sean Smith <defendthedisabled@gmail.com>,
-	Andrey Albershteyn <aalbersh@kernel.org>,
-	Pedro Falcato <pfalcato@suse.de>,
-	Amir Goldstein <amir73il@gmail.com>,
-	=?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org,
-	exfat@lists.linux.dev,
-	ntfs3@lists.linux.dev,
-	linux-cifs@vger.kernel.org,
-	linux-nfs@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	koraynilay <koray.fra@gmail.com>
-Subject: [RFC PATCH v4 10/10] cifs: add provenance time (ptime) and map it to SMB's CreationTime
-Date: Sun, 15 Nov 2026 19:03:43 +0100
-Message-ID: <20261115180343.576773-11-koray.fra@gmail.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261115180343.576773-1-koray.fra@gmail.com>
-References: <20261115180343.576773-1-koray.fra@gmail.com>
+        d=1e100.net; s=20260707; t=1794776477; x=1795381277;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=bNjov9LgQsesTZjepT2rkVQQ9qOJHCw/ioD8k3rWQj0=;
+        b=ntnTzV5hHJ2mfAn7STL39XO2beLrXnC+4wVoRTMkgn8bla5+tZFle4nEemfuW9QZn2
+         lJ3lMylC+FBhi5z4Kh68RfUD67ZpeGUQYSNaBNblD26rDerZnm6oYspzwdhVa993Na/t
+         gvj1UezguuK3Q7fuvlz1ER7f5Qi1igCY65YsHttO0Nj4UW+TbC/vo+yU/re1CgY2MkNO
+         QDvCExPLQZYxKmMbFpYyFFm/HONokDtANsCYF3Gu1TOZ2PAO2wKVjDK0n7Q3UsrKcREt
+         PHOSnlrKV/7EtJhOqKBM6eZsWyDvgm18W8jfUr/CdHMm/Qkg5ut5LrPYLgI2pdl+CW3l
+         8Rtg==
+X-Forwarded-Encrypted: i=1; AL+hErEJn3mKA5ENn8K9BlNrvilVlEALmGTVYWZoBGM+A5EGb5fsphjah/1P0JUDzfRPXsfDHa4prKTlGdLuNw==@vger.kernel.org
+X-Gm-Message-State: APuU4Z81pkJHcKiQ61lqHB0ORFi42ZnBNQ8TnpLmzXBPSjC1pKPkKbyB
+	+PvFud2fQ+sKR3Ztm0xoEIRKccszTvsZGRmqaU+TDye6BNE+gKmDgBfZfMbdsXPsjAsDMwLPtNF
+	7m3GSO6g=
+X-Gm-Gg: AYBFou1Wx7HLVRdmx4k+1S3PsmNPTKVHlWvw8dg/Y0RIPyAtgJxdO3/McAh1vEFXu9E
+	7HHOClj+SrYZzBDz0PztnVviocsuQlFj1UBDD4zyFmgYZGvA5a0hgDSzhHyPeR3nRmh0mQUK6Cq
+	1t85lj3Js83Oc64iDOaNvt/KzjESSHpZgaTHXsSlE3pc1MoJyDL/L+r98JDAoRp/aLCvu1FBfgj
+	nJOU477ZQyRLQHD4+Qw5MfwNF3cZQl1pY1p42E+XcyJNDkN1q+dC+/PK+hePgVVeDMmHXAhhyt7
+	T/YPPmyNUBylta2J76q1PypLFC1ilCI1Uv1XcibHQ5sw1KYh2k5A1QFoetWF+EXkK2p1uw5fmJv
+	Y9VHw3ePEkfZZARYZxPT+5/t4sipChxemLUb5sg94xMaXQqeG/uVCW80t+Ct4y2kfBbZegUrmMj
+	kWUg35iGbyxeUwGheyjWlNhm/lNG1NFFMVrHVFkQvi9K/iXHqoMEsRwUVoyNt0fN/9jsny/kvCB
+	LI8YwoIL4S8w4GJAasUTZlNFl1KjGqRcLyfEJTaRZ/LNxjBH6tQQBPx2K/X3Qqk9xy7XgMcoym9
+	0xSqrbU5qoHQOSzXZXmyJL6A78Fop877PqVyU8pQtek=
+X-Received: by 2002:a05:600c:b99:b0:4a8:cb23:f71b with SMTP id 5b1f17b1804b1-4bb55a92e7fmr180864905e9.18.1794776477011;
+        Sun, 15 Nov 2026 13:01:17 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id a92af1059eb24-1b50319d40asm25468560c88.11.2026.11.15.13.01.13
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Sun, 15 Nov 2026 13:01:15 -0800 (PST)
+Message-ID: <500890f2-46f0-4ba6-877a-10ad7a171347@suse.com>
+Date: Mon, 16 Nov 2026 07:31:10 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -132,221 +93,133 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [BUG] btrfs: oversized compressed disk_num_bytes is not rejected
+To: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20261115163724.226922-1-teel4res@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <20261115163724.226922-1-teel4res@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-Implement provenance time (ptime) in cifs, as introduced in a
-previous commit ("vfs: add provenance time (ptime)").
 
-Map it to SMB's CreationTime, making it settable from userspace and
-propagating it to the SMB server via FILE_BASIC_INFO.
 
-Support reading ptime via statx(2) and fileattr_get() from the cached
-CreationTime.
+在 2026/11/16 03:07, Cheng Yongkang 写道:
+> Hi David,
+> 
+> I hit a corner case with crafted images. It needs a compressed file
+> extent whose disk_num_bytes is far above what btrfs ever writes, so it
+> may not matter much in practice. I found two consequences of the same
+> missing check.
+> 
+> check_extent_data_item() only checks that disk_num_bytes is sector
+> aligned, and the zlib read path does not limit its input to
+> BTRFS_MAX_COMPRESSED the way lzo_decompress_bio() does. Both cases
+> below are on v7.3.
+> 
+> 1) disk_num_bytes == 0x100000000
+> 
+> After mounting with rescue=all and reading the file,
+> btrfs_submit_compressed_read() stores em->disk_num_bytes in an
+> unsigned int compressed_len, which becomes 0. No folio is added, and
+> the zero-length bio hits the assertion in btrfs_submit_bbio() (seen
+> with CONFIG_BTRFS_ASSERT=y):
+> 
+>    assertion failed: IS_ALIGNED(logical, blocksize) &&
+>    IS_ALIGNED(length, blocksize) && length != 0, in fs/btrfs/bio.c:895
+>    (root=5 inode=257 logical=9437184 length=0)
+>    kernel BUG at fs/btrfs/bio.c:895!
+>     btrfs_submit_compressed_read
+>     btrfs_readahead
+> 
+> 2) zlib extent with disk_num_bytes == 4 MiB
+> 
+> With num_bytes == ram_bytes == 0x100002000 and a zlib stream that
+> inflates to about 4.3 GB, reading the page at file offset 0xFFFFF000
+> makes bvec_offset + bv_len wrap to 0 in the u32 arithmetic of
+> btrfs_decompress_buf2page(). copy_len is then computed from the
+> wrapped value, and memcpy() reads past the 4 KiB zlib workspace
+> buffer:
+> 
+>    BUG: KASAN: slab-out-of-bounds in btrfs_decompress_buf2page+0x3e0/0x650
+>    Read of size 4096 at addr ffff8881114049f8 by task kworker/u8:2/41
+>     __asan_memcpy
+>     btrfs_decompress_buf2page
+>     zlib_decompress_bio
+>     end_bbio_compressed_read
+>     btrfs_check_read_bio
+>    Allocated by task 9375:
+>     zlib_alloc_workspace
+>    The buggy address is located 2552 bytes inside of
+>     allocated 4096-byte region [ffff888111404000, ffff888111405000)
+> 
+> The 4 MiB compressed bio only fit into its 32 vecs when the pages were
+> physically contiguous, so before reading I filled 16 pipes with 1 MiB
+> each. Without that the read failed with -EIO or SIGBUS instead.
+> 
+> Both paths are unchanged in next-20261113. zstd no longer calls
+> btrfs_decompress_buf2page() there, but zlib and lzo still do.
+> 
+> Compression and encoded writes never create a compressed extent larger
+> than BTRFS_MAX_COMPRESSED, so the tree checker could reject such an
+> extent for all compression types, which stops both cases:
+> 
+>    +	if (unlikely(btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE &&
+>    +		     btrfs_file_extent_disk_num_bytes(leaf, fi) > BTRFS_MAX_COMPRESSED)) {
+>    +		file_extent_err(leaf, slot,
+>    +	"invalid disk_num_bytes for compressed file extent, have %llu expect <= %u",
+>    +				btrfs_file_extent_disk_num_bytes(leaf, fi),
+>    +				BTRFS_MAX_COMPRESSED);
+>    +		return -EUCLEAN;
+>    +	}
 
-Update cifs_fileattr_set() to check xflags instead of only legacy flags
-and add the cifs_set_file_crtime() helper to wrap the RPC call to the
-SMB server.
+IIRC I didn't add that max extent size for both compressed (128K) and 
+uncompressed (256M) because we might enlarge those values in the future.
 
-Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.7
-Signed-off-by: koraynilay <koray.fra@gmail.com>
----
- fs/smb/client/cifsfs.c |   8 +++
- fs/smb/client/inode.c  |   7 ++-
- fs/smb/client/ioctl.c  | 109 ++++++++++++++++++++++++++++++-----------
- 3 files changed, 94 insertions(+), 30 deletions(-)
+But considering LZO is already rejecting based on MAX_COMPRESSED, I 
+think it's time to add such tree-checker.
 
-diff --git a/fs/smb/client/cifsfs.c b/fs/smb/client/cifsfs.c
-index 8cff7857b450..c2f557e406d3 100644
---- a/fs/smb/client/cifsfs.c
-+++ b/fs/smb/client/cifsfs.c
-@@ -1307,6 +1307,14 @@ int cifs_fileattr_get(struct dentry *dentry, struct file_kattr *fa)
- 	if (READ_ONCE(CIFS_I(inode)->cifsAttrs) & ATTR_COMPRESSED)
- 		fa->flags |= FS_COMPR_FL;
- 
-+	/* Report provenance time (ptime) to userspace */
-+	if (CIFS_I(inode)->createtime) {
-+		fa->fsx_xflags |= FS_XFLAG_PTIME;
-+		fa->fsx_xflags_mask |= FS_XFLAG_PTIME;
-+		fa->fsx_ptime =
-+		      cifs_NTtimeToUnix(cpu_to_le64(CIFS_I(inode)->createtime));
-+	}
-+
- 	/*
- 	 * FS_CASEFOLD_FL is defined by UAPI as a folder attribute,
- 	 * and userspace tools (e.g., lsattr) display it only on
-diff --git a/fs/smb/client/inode.c b/fs/smb/client/inode.c
-index 2647785ec1e4..f0b20a72b9c2 100644
---- a/fs/smb/client/inode.c
-+++ b/fs/smb/client/inode.c
-@@ -222,6 +222,7 @@ cifs_fattr_to_inode(struct inode *inode, struct cifs_fattr *fattr,
- 
- 	cifs_i->cifsAttrs = fattr->cf_cifsattrs;
- 	cifs_i->reparse_tag = fattr->cf_cifstag;
-+	cifs_i->createtime = fattr->cf_createtime;
- 
- 	if (fattr->cf_flags & CIFS_FATTR_NEED_REVAL)
- 		cifs_i->time = 0;
-@@ -2958,7 +2959,8 @@ int cifs_getattr(const struct mnt_idmap *idmap, const struct path *path,
- 	 * We need to be sure that all dirty pages are written and the server
- 	 * has actual ctime, mtime and file length.
- 	 */
--	if ((request_mask & (STATX_CTIME | STATX_MTIME | STATX_SIZE | STATX_BLOCKS)) &&
-+	if ((request_mask & (STATX_CTIME | STATX_MTIME | STATX_PTIME
-+			     | STATX_SIZE | STATX_BLOCKS)) &&
- 	    !CIFS_CACHE_READ(CIFS_I(inode)) &&
- 	    inode->i_mapping && inode->i_mapping->nrpages != 0) {
- 		rc = filemap_fdatawait(inode->i_mapping);
-@@ -2992,6 +2994,9 @@ int cifs_getattr(const struct mnt_idmap *idmap, const struct path *path,
- 		stat->result_mask |= STATX_BTIME;
- 		stat->btime =
- 		      cifs_NTtimeToUnix(cpu_to_le64(CIFS_I(inode)->createtime));
-+		stat->result_mask |= STATX_PTIME;
-+		stat->ptime =
-+		      cifs_NTtimeToUnix(cpu_to_le64(CIFS_I(inode)->createtime));
- 	}
- 
- 	stat->attributes_mask |= (STATX_ATTR_COMPRESSED | STATX_ATTR_ENCRYPTED);
-diff --git a/fs/smb/client/ioctl.c b/fs/smb/client/ioctl.c
-index bb8808289a46..19a9556d39b4 100644
---- a/fs/smb/client/ioctl.c
-+++ b/fs/smb/client/ioctl.c
-@@ -181,6 +181,41 @@ static int cifs_set_compression(unsigned int xid, struct dentry *dentry,
- 					    compression_state);
- }
- 
-+static int cifs_set_file_crtime(unsigned int xid, struct dentry *dentry,
-+				struct cifs_tcon *tcon, u64 crtime)
-+{
-+	struct inode *inode = d_inode(dentry);
-+	struct TCP_Server_Info *server = tcon->ses->server;
-+	FILE_BASIC_INFO	info_buf = {};
-+	const char *full_path;
-+	void *page;
-+	int rc;
-+
-+	if (!server->ops->set_file_info)
-+		return -EOPNOTSUPP;
-+
-+	info_buf.CreationTime = cpu_to_le64(crtime);
-+
-+	page = alloc_dentry_path();
-+	full_path = build_path_from_dentry(dentry, page);
-+	if (IS_ERR(full_path)) {
-+		rc = PTR_ERR(full_path);
-+		goto out;
-+	}
-+
-+	rc = server->ops->set_file_info(inode, full_path, &info_buf, xid);
-+	if (rc == 0) {
-+		CIFS_I(inode)->createtime = crtime;
-+		CIFS_I(inode)->time = 0;
-+		inode_set_ctime_current(inode);
-+	}
-+
-+out:
-+	free_dentry_path(page);
-+	return rc;
-+}
-+
-+#define CIFS_SUPPORTED_XFLAGS (FS_XFLAG_PTIME)
- int cifs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
- 		      struct file_kattr *fa)
- {
-@@ -193,49 +228,65 @@ int cifs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
- 	bool enable_compression;
- 	struct cifs_tcon *tcon;
- 	unsigned int xid;
--	int rc;
-+	int rc = 0;
- 
--	if (!fa->flags_valid)
-+	if (fileattr_has_fsx_mask(fa, CIFS_SUPPORTED_XFLAGS))
- 		return -EOPNOTSUPP;
- 
--	/*
--	 * chattr writes back all flags returned by fileattr_get(). Accept
--	 * FS_CASEFOLD_FL only when it reflects the share's casefold state.
--	 */
--	if (fa->flags & FS_CASEFOLD_FL) {
--		rc = cifs_fileattr_get(dentry, &current_fa);
--		if (rc)
--			return rc;
--		if (current_fa.flags & FS_CASEFOLD_FL)
--			allowed |= FS_CASEFOLD_FL;
--	}
--	if (fa->flags & ~allowed)
-+	if (fa->fsx_xflags_mask & ~CIFS_SUPPORTED_XFLAGS)
- 		return -EOPNOTSUPP;
- 
--	enable_compression = fa->flags & FS_COMPR_FL;
--	compression_state = enable_compression ? COMPRESSION_FORMAT_DEFAULT :
--						 COMPRESSION_FORMAT_NONE;
-+	if (fa->flags_valid) {
-+		/*
-+		 * chattr writes back all flags returned by fileattr_get(). Accept
-+		 * FS_CASEFOLD_FL only when it reflects the share's casefold state.
-+		 */
-+		if (fa->flags & FS_CASEFOLD_FL) {
-+			rc = cifs_fileattr_get(dentry, &current_fa);
-+			if (rc)
-+				return rc;
-+			if (current_fa.flags & FS_CASEFOLD_FL)
-+				allowed |= FS_CASEFOLD_FL;
-+		}
-+		if (fa->flags & ~allowed)
-+			return -EOPNOTSUPP;
-+	}
- 
- 	tlink = cifs_sb_tlink(cifs_sb);
- 	if (IS_ERR(tlink))
- 		return PTR_ERR(tlink);
- 	tcon = tlink_tcon(tlink);
--
- 	xid = get_xid();
--	rc = cifs_set_compression(xid, dentry, tcon, NULL, compression_state);
--	free_xid(xid);
--	cifs_put_tlink(tlink);
- 
--	if (!rc) {
--		spin_lock(&inode->i_lock);
--		if (enable_compression)
--			CIFS_I(inode)->cifsAttrs |= FILE_ATTRIBUTE_COMPRESSED;
--		else
--			CIFS_I(inode)->cifsAttrs &= ~FILE_ATTRIBUTE_COMPRESSED;
--		spin_unlock(&inode->i_lock);
-+	/* modern xflags */
-+	if (fa->fsx_valid) {
-+		if (fa->fsx_xflags_mask & FS_XFLAG_PTIME) {
-+			rc = cifs_set_file_crtime(xid, dentry, tcon,
-+						  cifs_UnixTimeToNT(fa->fsx_ptime));
-+			if (rc)
-+				goto out;
-+		}
-+	} else if (fa->flags_valid) { /* legacy flags */
-+		enable_compression = fa->flags & FS_COMPR_FL;
-+		compression_state = enable_compression ? COMPRESSION_FORMAT_DEFAULT :
-+							 COMPRESSION_FORMAT_NONE;
-+
-+		rc = cifs_set_compression(xid, dentry, tcon, NULL, compression_state);
-+
-+		if (!rc) {
-+			spin_lock(&inode->i_lock);
-+			if (enable_compression)
-+				CIFS_I(inode)->cifsAttrs |= FILE_ATTRIBUTE_COMPRESSED;
-+			else
-+				CIFS_I(inode)->cifsAttrs &= ~FILE_ATTRIBUTE_COMPRESSED;
-+			spin_unlock(&inode->i_lock);
-+		}
-+		cifs_dbg(FYI, "set compress flag rc %d\n", rc);
- 	}
- 
--	cifs_dbg(FYI, "set compress flag rc %d\n", rc);
-+out:
-+	free_xid(xid);
-+	cifs_put_tlink(tlink);
- 	return rc;
- }
- 
--- 
-2.56.0
+Please send out the tree-checker patch, not only checking against the 
+max compressed size, but also uncompressed ones.
+
+> 
+> With this change the tree checker reports the leaf of the first image
+> as corrupt and the mount fails with -EIO, and normal zstd, zlib and
+> lzo files still read back correctly. I have not run the second image
+> on it; its disk_num_bytes is 4 MiB, above the limit. Separately, the
+> u32 arithmetic in btrfs_decompress_buf2page() could be done in u64 as
+> hardening. I can send patches if you want them.
+
+I prefer not to use u64 for length. With tree-checker it should be enough.
+
+> 
+> Thanks,
+> Cheng Yongkang
 

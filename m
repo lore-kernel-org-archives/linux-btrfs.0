@@ -1,86 +1,43 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=174.142.148.226
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794697432;
-	b=rxI+48BOwVAlXXKew5/o0YyDtJ+mQpUi+Wf/JDB4KiGaHLRDu0hVXp+RgzKGPAD4vZ3P
-	 3goBXcRhH7mWCOm5zgW50LwvNZKNloen+s6ZCqvYOBVzlpvo3kEWY7U/SE9AgkiWKiP0i
-	 V9JwNQMAzK9u90WYPPYC9hweoa+XEw8u/bxkuFhO35brPJs6UTxmFEW6tzM6Bys6bhUOi
-	 VGoFEpVR8k30iMyrtp8lJsIKgH//NjwMiZlkBtszGSXCE379e2lNbrPm/5AbiiuPtSq47
-	 gV+kcizRCFPrP47xguTridzvpeTsk53GKlUOqE/rXg6AOYTu5PnbGm67RVPO8DaiUtQ==
+	t=1794738955;
+	b=Q5bQv22khR5WECIZWcJQK7V6rdDnzJICYyasrLIU/KZZok/e9LDosmko9yOczFXP0Aya
+	 aN0Mpc8mAFK16XSmztlZSTdk3FWXHvkVd7gWaiO+nH1QsWokPnnqQlxYPL5GA0uoFek2v
+	 Eo7lE05blJM4nQOSWsfUytP6eeI8PexAkE4/UAnlAgbdPf32Wnx64BZooxnCM3SZ2piLY
+	 emAKT5yWMTQ7X+Q/mv58v/D4kLyH2/wPwpCnZmqb1YlkB3zwto3zH7WGIx+76TbWVGnL8
+	 t/GXvfuMT51+PDRJNlC4drGYvG51dEOyCK3WSrdUzrXoKnEBXy8N3Bla1p+GY1cMFXA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794697432;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=2KMAF1f9SoKI+GlPgoQgdnoLD+XqoV2wbXAF58l/q5k=;
-	b=reEzxoQlytsyASMo9CqWkRtULxbQEINpdSjCTgmmVdAnl0DcLuqqySfAIAGzfRX9Bzzm
-	 oW5+qt1X93yCiEDuirxDruvp+wVSsOUy61N8C6Tn7xjouy1ZAA3tWK37BbNBepTQ1kaGV
-	 DV4Qpf6rLsgF7nRrtLpEvYzJwEBI4W+YxgtMgEIUtdz0eC02DBp6MNhgIX1mX0EP+qCJq
-	 tXiYXdHm00nCV+cd2FHABwpp3xuFAIYqq7FKhSX6eCHi/R64WQPdlQcXFC/1rdYpNJ3ub
-	 dkjYqk2LjNK/7JAC3NaGhOhGgKX3m+yJ4ZiiDe881W8N2YSRYy1mLKfOGpe61RwdYyQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794738955;
+	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
+	 MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=Nhl2t4L6TkxzXfInRClWp4avrcdnLduLOcL5y1yZrzU=;
+	b=2V6GgGdEojRMDBfM+BSIVvPdMFFkjnxQvI9gpLLoecjvKMqpMX9e+atAG5N94BNwEUOF
+	 FdNr1GsqwrkyWLFf0omrEl4vkGN4rVwHZBYxB7jr+m3C306+RIrDoOu7qxjFuy2fhv0Mm
+	 gixGqwFW9Ouv0Ki2xupuoeEJNhJrSO08ECZQn8r9oO6zlHT0nJh0SVYzJB8A1iU+3/Gn2
+	 3+xSGwQ07wuNB1NTmFYYHevI9OvAUg4OLp1vL5PnYzYABFb2vWfjfTan9y5SD5xJVGEMp
+	 KrYd2QX9lkDyzxPsZdiqIQhIxSL7VVRtWYuTN9tGGDwV03/oPXvaJMpq615rUcrDsRg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ISI4oDS6;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ISI4oDS6;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3C658606A337
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3C658606A337
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ISI4oDS6;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ISI4oDS6
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 71DDA1F745
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:44 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794697424; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2KMAF1f9SoKI+GlPgoQgdnoLD+XqoV2wbXAF58l/q5k=;
-	b=ISI4oDS6L05PQUsqPELCiq1C4jLRK0u1/fWuFb73DSpINIKWIGmp1hh14sTzNBq5wiB1wU
-	6mUXiP4QYPkyrHIn0Js18RFegMSYSFWPOyZjwID/qKxVG9jyNwbEIY9nPXIJksjw/jlX4f
-	qmVswC8QyRYJUuGTcruz7KYQmG8cRnA=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794697424; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2KMAF1f9SoKI+GlPgoQgdnoLD+XqoV2wbXAF58l/q5k=;
-	b=ISI4oDS6L05PQUsqPELCiq1C4jLRK0u1/fWuFb73DSpINIKWIGmp1hh14sTzNBq5wiB1wU
-	6mUXiP4QYPkyrHIn0Js18RFegMSYSFWPOyZjwID/qKxVG9jyNwbEIY9nPXIJksjw/jlX4f
-	qmVswC8QyRYJUuGTcruz7KYQmG8cRnA=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 52E8513408
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:43 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id Sn6dDcvo+Go0GAAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2026 23:03:43 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: tests: fix github CI failure on mkfs/037
-Date: Sun, 15 Nov 2026 09:33:21 +1030
-Message-ID: <d6e25547f5c310a861969339e64ae213751d9257.1794697359.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1794697359.git.wqu@suse.com>
-References: <cover.1794697359.git.wqu@suse.com>
+	dmarc=none header.from=umail.furryterror.org;
+	spf=pass smtp.mailfrom=drax.hungrycats.org;
+	arc=none smtp.remote-ip=174.142.148.226
+Received: from drax.kayaks.hungrycats.org (drax.kayaks.hungrycats.org [174.142.148.226])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id C820E606A31E;
+	Sun, 15 Nov 2026 10:35:54 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C820E606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=umail.furryterror.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=drax.hungrycats.org
+Received: by drax.kayaks.hungrycats.org (Postfix, from userid 1002)
+	id CE9EE1CD7E13; Sun, 15 Nov 2026 05:35:47 -0500 (EST)
+Date: Sun, 15 Nov 2026 05:35:47 -0500
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Alexey Kuznetsov <axet@me.com>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org,
+	dm-devel@lists.linux.dev
+Subject: Re: [RFC PATCH 1/1] btrfs: track physical bad extents, fast-fail,
+ persist, and relocate
+Message-ID: <avmLAy52vfyJ5qze@hungrycats.org>
+References: <20261112134703.38510-1-nondet@yandex.ru>
+ <20261112134703.38510-2-nondet@yandex.ru>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -90,89 +47,181 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261112134703.38510-2-nondet@yandex.ru>
 
-The github CI fails with the mkfs/037 due to changed `/usr/lib` layout:
+On Thu, Nov 12, 2026 at 08:47:03AM -0500, Alexey Kuznetsov wrote:
+> Feedback wanted on: on-disk representation (device-tree items vs a
+> dedicated tree vs extending RST), per-sector vs per-bio failure, whether
+> the I/O path should record errors or only scrub/userspace, how to
+> coordinate with device replace and balance, and whether an incompat bit
+> is the right compatibility mechanism for a feature that changes read
+> semantics.
 
- failed: cp -axf --update --no-preserve=ownership,context /usr/lib*/lib[abcdef]* /tmp/btrfs-progs-mkfs-rootdir.Ivn4QL
+Thanks for putting this together.  I'm not sure why btrfs needs to be
+involved at all, though.
 
-We should never rely on the host to populate the rootdir at all.
-So use generated data instead, which also improves the coverage, as now
-we have both compressible, incompressible and partial compressible
-files.
+The btrfs error-handling model already assumes a drive that remaps bad
+sectors in firmware.  A read hits a bad sector and gets EIO (or a csum
+mismatch), btrfs reads another copy, and writes the good data back to
+the failed location.  That write is where the drive moves the sector to
+a spare.  From then on the LBA is good again, and the filesystem never
+needs to know where the bad media is.  The model breaks only when the
+drive can't remap anymore, because its spares are used up or because
+its firmware won't do it.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- .../mkfs-tests/037-basic-compression/test.sh  | 31 +++++++++----------
- 1 file changed, 15 insertions(+), 16 deletions(-)
+So the missing piece is exactly a device that behaves like that firmware
+when the real firmware doesn't.  Put stock btrfs on top of it and nothing
+in btrfs has to change.  It also works for every other filesystem, swap,
+and raw users, which an in-btrfs list can't do.
 
-diff --git a/tests/mkfs-tests/037-basic-compression/test.sh b/tests/mkfs-tests/037-basic-compression/test.sh
-index bb1653cf3074..6c2cf9023e5d 100755
---- a/tests/mkfs-tests/037-basic-compression/test.sh
-+++ b/tests/mkfs-tests/037-basic-compression/test.sh
-@@ -12,23 +12,22 @@ setup_root_helper
- prepare_test_dev
- 
- tmp=$(_mktemp_dir mkfs-rootdir)
--limit=$((128*1024*1024))
- 
--# Create dataset of approximate size 256M so the repeated compression does not take that long
--for file in /usr/bin/[gx]*; do
--	run_check cp -axf --update --no-preserve=ownership,context "$file" "$tmp"
--	size=$(du -sb "$tmp" | awk '{print $1}')
--	if [ "$size" -gt "$limit" ]; then
--		break
--	fi
--done
--
--for file in /usr/lib*/lib[abcdef]*; do
--	run_check cp -axf --update --no-preserve=ownership,context "$file" "$tmp"
--	size=$(du -sb "$tmp" | awk '{print $1}')
--	if [ "$size" -gt "$limit" ]; then
--		break
--	fi
-+# Create dataset of approximate size 256M so the repeated compression does not
-+# take that long.
-+# Mix compressible, incompressible and partially compressible files.
-+for i in $(seq 1 25); do
-+	# Compressible: zeros
-+	run_check dd if=/dev/zero of="$tmp/zero_$i" bs=1M count=4 status=none
-+	# Incompressible: random data
-+	run_check dd if=/dev/urandom of="$tmp/random_$i" bs=1M count=4 status=none
-+	# Partially compressible: 64K of random data alternating with 64K of
-+	# zeros, so a compressed extent (max 128K) contains both
-+	run_check dd if=/dev/zero of="$tmp/mixed_$i" bs=1M count=2 status=none
-+	for j in $(seq 0 15); do
-+		run_check dd if=/dev/urandom of="$tmp/mixed_$i" bs=64K count=1 \
-+			seek=$((j * 2)) conv=notrunc status=none
-+	done
- done
- 
- run_check du -sh "$tmp"
--- 
-2.56.0
+The patch shows how hard it is to do this inside the filesystem.  I had
+a LLM read it against v6.12 (I haven't run it, because it has problems
+too severe to be worth testing), and the mirror redirect, read fast-fail
+and persistence all have problems that come from btrfs trying to remap
+underneath itself.  The LLM found:
 
+  - The write redirect in btrfs_map_block() tests the bad list against
+    *length, which at that point is the distance to the end of the
+    chunk.  For RAID1/RAID1C3/RAID1C4/DUP, one confirmed sector diverts
+    every write below it in the chunk.  The read check uses the real
+    bio length, so the diverted copy keeps old data that reads can
+    still reach.  On nodatasum files that's stale data returned
+    without an error.  The filesystem still believes those blocks are
+    mirrored.
+
+  - btrfs_map_repair_block() goes through the same redirect, so repair
+    writes land on the healthy copy, and the "skip repair write" checks
+    never see the bad device.
+
+  - Fast-fail returns true after a bio split, so the remainder of the
+    bbio is never submitted and the reader hangs.  Every fast-fail also
+    increments read_io_errs without doing any I/O.
+
+  - Device replace reuses the devid, so the new disk inherits the old
+    disk's bad ranges at the next mount.  The incompat bit is cleared
+    when one device's list empties, even if other devices still have
+    ranges.
+
+  - The existing test doesn't detect the bugs.  It only writes at the
+    bad offset, and it compares the file right after sync, so it reads
+    the page cache rather than either disk copy.
+
+  - There are inaccuracies on free space tracking for metadata (with
+    remapped blocks removed) that can cause a filesystem abort.
+
+  - The LLM found more issues, but I'll stop here.
+
+While these problems could be fixed, none of these problems exist if
+the remapping happens below the filesystem and supports existing btrfs
+write error handling.
+
+Currently only CMR spinning drives support badblocks-style LBA-based
+remap lists.  Other storage types don't have stable LBA-to-physical
+mappings, and a badblock-style remap list doesn't work on these devices.
+Users with healthy CMR drives that have not exhausted their remap sectors
+also gain nothing from this patch.  By doing the sector remapping in
+the dm layer, the runtime cost is paid only by those who use the layer.
+
+What I'd want from a dm-quarantine kernel target:
+
+The target detects failures on the lower device itself, and keeps the
+remap table on the device.  There are two kinds of failure to handle,
+because a drive with no spares left often accepts the write and fails
+on the read:
+
+  - A write fails on the lower device: allocate a reserve block, write
+    the data there, add the mapping, and complete the bio successfully.
+
+  - A read fails on the lower device: mark the block pending and return
+    EIO.  The next write to a pending block goes straight to a new
+    reserve block.  A later successful read of a pending block removes
+    it from the pending list, since the error was never confirmed.
+
+That's the same thing drives do with their pending sector list, and with
+btrfs on top, the next write is the repair write from the good copy.
+
+Because a block is only remapped when it is written, the reserve copy
+always holds data the filesystem wrote.  That avoids the problem of
+remapping an in-use sector to a reserve block full of garbage, and
+nothing needs to be salvaged first.
+
+The remap unit should be the lower device's logical block size, so
+there's never a read-modify-write through a bad sector.
+
+The table has to be crash-consistent with the data.  A remapped write must
+not be reported durable before its mapping is.  Committing table changes
+on FLUSH/FUA, the way dm-thin and dm-cache do with dm-persistent-data,
+gives the right semantics.  Keep two copies of the table so that a bad
+sector under it isn't fatal.
+
+Reserve allocations never move.  New defects should take the next
+free reserve block, and existing mappings stay put.  The current dmq
+build_table() doesn't do this.  It assigns reserve offsets in sorted
+order every time the table is rebuilt, and the map file doesn't record
+them, so adding a bad range below an existing one silently points every
+later remap at different reserve sectors.  That needs fixing even in
+the userspace-only dm-linear version.
+
+The target's header goes at the start of the lower device, with the
+reserved sectors at the end, making the upper device shorter than
+the lower device by the size of the reserved area.  The filesystem's
+superblock locations are remapped like bad sectors, with the superblocks
+copied to the upper device, and zeroed out on the lower device.  Then udev
+and btrfs device scan find the filesystem only on the dm device and never
+through the raw device, so they won't bypass the remap.  The current dmq
+doesn't hide the lower device's superblocks.  The same trick converts
+an existing filesystem in place, as discussed in the GitHub issue.
+
+Modern drives ship with tens of thousands of spare sectors.  Anyone who
+wants to keep using a drive whose own remap table is full has already
+grown more defects than that, so a reasonable default reserve size is
+about 256 MiB.
+
+When the remap table is full, failing the write with EIO is the only
+option.  That's what drive firmware does too.  It's not harmless on
+btrfs: when a write error hits an ordered extent and no write to a
+mirror or parity stripe succeeded, the ordered extent is silently
+deleted, and data that write(2) already reported as written is lost.
+The difference from firmware is that a kernel module can add more
+reserve.  Shrink the upper device and take more space from the top end
+of the lower device, so the reserve area grows downward.  The target
+should raise an event when free reserve drops below a threshold, like
+dm-thin's low_water_mark, so userspace can shrink the filesystem and
+extend the reserve before the table fills.
+
+The table should be a log that userspace can read and act on, not just
+a private mapping.  Every remap, pending entry and failure is recorded,
+and the admin can intervene: inspect the entries, clear a pending
+block, force a remap ahead of time from a badblocks scan, or retire a
+remap.  Counters for remapped, pending and failed blocks cover the
+summary.
+
+btrfs scrub does need a different approach to error reporting, but
+not the one in the patch.  Scrub can't write errors to the device
+tree on a read-only filesystem, especially on a filesystem that goes
+read-only because of its write errors.  dmesg isn't a substitute either:
+it's rate-limited, so a scratch on the disk yields only a fraction
+of the affected files per scrub run.  I outlined another method in
+btrfs-progs#836 [1]: btrfs collects error events (physical address, error
+type, repair result, block type) in ring buffers that userspace fetches
+through a sysfs file, with blocking reads so a daemon can listen all
+the time.  Userspace resolves the addresses to files, and can feed the
+same events into the dm target's bad block remapping table.  Nothing is
+written to the filesystem, so it works on a read-only mount, and it
+catches errors outside of scrub too.  If the buffer overruns, the reader
+should be told how many events were lost, so it knows to scrub again.
+
+dm-quarantine as posted is mostly dm-linear plus dm-error with runtime
+messages, and the messages are a problem.  dmq reloads it as suspend,
+load an empty table, resume, then send the ranges, so for a moment a
+mounted filesystem sees no remaps.  Messages are fine as the
+intervention interface, as long as they change the on-device log
+rather than a table that only exists until the next reload.
+
+So my suggestion is to drop the btrfs patch, fix at least the two
+dmq issues above for the dm-linear version, and put the effort into a
+remapping target with an on-device table.
+
+[1] https://github.com/kdave/btrfs-progs/issues/836

@@ -1,83 +1,83 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.45
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794765850;
-	b=3KcLLs/ouh/+iPEmFwZMHG+wQ0OkWzDWqh+kflieVY4WFlD+ouJwNXV63nnYHPA/6FWl
-	 YuRT5/ZwpC9sGuZE5skoF/IsMEwK4tF0Tlfcurr8ogFG2K8MZwhT5FuAmjkS3b7po7wRL
-	 n587rzvhLwFPvg849kp1sJD5WSbMLdyHPOPW2kMIj7nJD80sYDX3XYNy+8+JCqfYuGjuh
-	 Xumj7/5uoAfZYbDM6YWEDp/29F+2qvFLOc0kjLsVwMVjL84BQywn+2FZPdPxKVVwQPjXG
-	 8MeUdbM3XC1CyWTjvTev5dpCKSZi/KN3ljYCms4dtWOJn5/8LAGL5Lk+1vL2V4I/EPQ==
+	t=1794765857;
+	b=NNasJDxY6zMjnIEUREPC/1huZu4lZ/g8kMRHb9IWenyvqzRRXB9fXBltzSaxhSopUlDL
+	 c7JE68+Tingf5hCalLzkPGIQr2CHZ6QKVKVryD+b0hvw9C+SZIj+SHMhFckcrQroNASaE
+	 3T+cVBYSpSqrMrnzZXYsQffWPkRaV1h+deN8N116Nu9Nvl7ra6abQ7thEgra5sU5n1BZD
+	 md5sdfMRk5Wyz/WYaXkip8IDc9SBeVlZ1aSuOcfYOmH+N49LGtLaQa3ES4DWv2Iy5PDpT
+	 fRYtzFwQycDaCx1dFh4XNql1UHPdhKa+6FCY29ECNz1uBII2N/8xtVGF4lRbeNFJkLw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794765850;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794765857;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
 	 MIME-Version:Content-Transfer-Encoding;
-	bh=UA38+n7c+RqbQlIN4Q8phpqWE0RWPQHALE9HzRQmyvE=;
-	b=fozenav3R/VVPHEbSOxAxoHkhWuF544AeeYIBc28MhmBXxEBo3tEiqmHb7ims7PxCdOW
-	 2BMw//RdXmzZl23MCH0MZ1w89x/2fD5DmhChcgtVK0O0FGx7cnMTfgfXNU9aDCTjIYBY/
-	 wFvhQQUEkYqPFnKZ8jzOcik1arolTLPtXekipA9o5+0ChRXGfTZoCdzVQLr6+/dCbNtvb
-	 aue1RYz0AV6+wx4evFJYLknK1ukT+936bohTT2KABBcMy1nkNUcueFXuN3v7M0y5bfEzn
-	 ALpdQTfuSXcOcUbXCLQwenm1egKEuY+rB0Xf7bT+pkITKcULeBjp3v691GU3xobUQcQ==
+	bh=xB0aGae+0N7Qh6IxNBA7KeNJxluraojMhTHNGzXsPds=;
+	b=Sq1NFeciQGjeezk1P2QDooisqY36zn8v3uWxsHcyocjdcxjpyT9paIF5Wu8IdCqJjToV
+	 5KNdJEo/tkjV7CsmwLsRc769IgeHWGod5iOU6vcLSsRE0DDOPx05uQTuMJoSn6WrUR8G4
+	 iy15hWFv67DQbHh09lWf33DUpaanvPidbf9kG403OlX/Y8itqCB9Ad9k+akJZblMuGuTb
+	 a6v3KZFRe1WQG/LReHNMk82QXJ8YOE/7lwZ1w3k2QmU50Wf/HGN/GdDMePwx6/DFWxpYy
+	 I5qPW6hlXCa+mEKXNhP1VVZRuvzp2uYBZtRFens2GXefPdFQtVXYo+cuJk8MDtuTSpw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vWsT5qNH;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=BaP5GLCO;
 	arc=none smtp.remote-ip=209.85.221.45
 Received: from mail-wr1-f45.google.com (mail-wr1-f45.google.com [209.85.221.45])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DA52560A3801
-	for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 18:04:09 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DA52560A3801
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4777C60A5BE7
+	for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 18:04:16 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4777C60A5BE7
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vWsT5qNH
-Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-4922523d1afso1289659f8f.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 10:04:09 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=BaP5GLCO
+Received: by mail-wr1-f45.google.com with SMTP id ffacd0b85a97d-492f0a1b685so1962213f8f.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 15 Nov 2026 10:04:16 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794765848; x=1795370648; darn=vger.kernel.org;
+        d=gmail.com; s=20260707; t=1794765855; x=1795370655; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=UA38+n7c+RqbQlIN4Q8phpqWE0RWPQHALE9HzRQmyvE=;
-        b=vWsT5qNHBHS1DVwii+PWCaUBbHAppQCmj2gOj682zzeHiV/k+DiOVZTV4Zl2ufwliV
-         XcMy5JwYQTOOTrflDWHklMKFP0ooIAzTXmcrljZcbXEBcGgQJ8AuhPrA2Kdo4FY+A5sq
-         RFhUdhdmB/HnkpDHfaoEqGopcQTyaUw/BkwbFNx/miBcx95zanVxTEo04YAIEeC/HESP
-         VTbUAbTYu4JhjZfi4+Q1P2yCrswvDMacYAFanAg5eyigD2bOBBTTJke+hK+xYQgFlnL9
-         BoGEzGfJ3RScREWw+h4ers02dYcW83csAclxW+91LVfFDsMDpf8UySKYC2UjgIBdPzYJ
-         P8PA==
+        bh=xB0aGae+0N7Qh6IxNBA7KeNJxluraojMhTHNGzXsPds=;
+        b=BaP5GLCOzZs6hrpMCjo6a/iFP3AhAS9vV6ZBcuz5EHHTRGZk1uUFDljCWDlo9MVxn9
+         UYJvbEa8R7HIndjUFJ3j0ZDsVx2xCpBgdHvpYmYmWXKWuRdXVw3wJ8rOaASPso9uGk8v
+         IDJJIxaKcUnTuOfjP49Iv6Z885rhJl2eJhR6Y95L8RE8Cb9RYGHFiS5a00kX40wfzgk8
+         HEE5WD84/qx62WDedaX4VvT2eSJZgtfrI1dRYI8q64jg2KnZQx3I6xVGyQITD9+fiZo+
+         lZlKXI3a+n3CpDd5okvNK/t0O3p6HEOj+PmzLxoY1qyy3r4G9cIR1IR9yk7o9qKY32WT
+         lGmA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794765848; x=1795370648;
+        d=1e100.net; s=20260707; t=1794765855; x=1795370655;
         h=content-transfer-encoding:mime-version:references:in-reply-to
          :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
          :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=UA38+n7c+RqbQlIN4Q8phpqWE0RWPQHALE9HzRQmyvE=;
-        b=claoMT3as+24b0IBWeO7hWm2xkCM5Sp+4Sfh82zNIhLb/yvc8kh50XbPI0/rHjv2Dh
-         SSYHp8YvXqyRJAKxruqRggOVwy8EzTjnGxk7byHCYQwk6E5vBiwmG084Eq+2TNcmIuln
-         krRRoPuFafTllDqAXnXkU0bjARow+0LoDUY1tW9WwFaqVAf6Wk7zLjdaC2als0oIEkjF
-         vOeSkUnow8iiRXE71KHhO6NTL1lohr0WcyNYhreZwuqPpEdSgHWMiyoUXjnY2oqYfZc3
-         MkuzsJw+RjQMGp3aEd1+NNWhFZn+B0Wn/4GDwF1ZMBvLoIjjfmFkLEb3vWv0+x7VKovG
-         LmHQ==
-X-Forwarded-Encrypted: i=1; AL+hErEltM+l2YmePf56ZUDB4zQcpi8kG64BPCeMdH9ZehvfjFVu9qDnWl2+ZR/6tPnwIeGR16Hs09Nm6JVPGQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+2dGE6yG3Vqug/1IzQ9fLr2oyNj+lrc+8ZkctzmfYscbMoGlSl
-	hKVLw13uByr5nL1jHZCNGu0+GJlvvxUJQybOuZnl3inki9smzw78fmdq
-X-Gm-Gg: AYBFou3bMY21+CQ5HMXTyNqHjaklA8Ge97H3oUfSd1xJHsg62nHsdCDoN17y0ciVH6E
-	jKlT7lw+/X0smVl8LG6OOBosoyJiLFAcaXGefrIjDL3B9bT7YCeV/BhmIL3hWv7J7HMj8BkET/C
-	lb55E5vXMc9mbRRncY1h8HFdAzvd1i1JFlDYEJ/w1em9hFY5BlixxvNEY3HvmGE26rDAxhZ0Wlm
-	oAIV3ZNKcc4AFFkUB3X0FkBDHivruDu8SUbwywd/JOIWMF+3ZBPZ/oamc2itACMBqvbB0HvGdRg
-	8kzQgbB1du6wZEXs1sXR5HQqdR2h21XLZ2TnXxRmVyUAjC4g7bSm7hkwenc/eXCT3Vnx79jmRmx
-	rOeW6u7OeCnSNVQydykGaV7+3OA3IFjIMX7n+k09GbpW9uZvj582s0sCcWQpHccX55eymX0D+r6
-	ilZzlCwMHXS7jYVMBG5+9ocdhHKVlRnbI8/JzbL9lviclpiG+V1xZKJXzI/DLV56DImImQkuY5K
-	RW244BN20DLuUiTHXZGfizI6OXj4cznt8mQ4mDVv1qjN+KoHhXMTYrKjrPk1hAFodecz7DCH1R3
-	sG5BMB45WzOhc967Ld/hG7HAAkzAcjJe4+m55yk6RrluUQ==
-X-Received: by 2002:a05:6000:455c:b0:48f:bcf0:2026 with SMTP id ffacd0b85a97d-49c73259e6bmr12985016f8f.13.1794765848134;
-        Sun, 15 Nov 2026 10:04:08 -0800 (PST)
+        bh=xB0aGae+0N7Qh6IxNBA7KeNJxluraojMhTHNGzXsPds=;
+        b=oqs+99xJSViTsEYPM2QNo0EeWL6jBLyzHi1ftZ4E6VwTzyTTw1PQ+rbCwTBjBpQvgk
+         zQBvpXjEqPnTIu0C0VIEAm6X/nZ9MsA50hW9AZBTH7KdYtGjh4rNfabX67KqlOfJ9mZb
+         fNyhdiS+a1aon7dUy9nTwpefR4MPv3F+kbSFK63+vPAMd8MMCecSx3efIMpRfghuOerB
+         Hjc4OsbEMseP9nHbxiM3PdUsKg4+pNUJMbtna3u3ugZP6waVV1PuTdk8GjLzR/B6XPLP
+         aAMvWzI+u5Io9sX3eofyOCp+Z8sUYmg5HIKaydglCkQDKRRZYfCyr4oz7Bc0Yex9LrFD
+         6Wlw==
+X-Forwarded-Encrypted: i=1; AL+hErHpvI2uh100ZbT4GkYwrrD7/pZXQy/sxD/9vdjokqNysMRRdRhkzUcWfU9cT0+9bobk3p3eXkz8+5LWoA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+q1Gm49/FuDBhKVpgATTRsrt3cSYtx2nabIXkZ2EpO9AAShbMH
+	OIo2snCI4MjhRYb8SAx2ikwDw/fvHHprLgDnrnB7sVSes4nmYZ5JcU/F
+X-Gm-Gg: AYBFou2Nh3Ttjj9k3TSmiNxJgmJNK2WWFiaC3Gtb1QxpvloyKy2jn0sP/DX9IxJtmJM
+	k/u0I15QUstTpmKMyc98M4kZYVq4ghbP2r7eT6wVoFxQW5VRlmrpeEV7iRbJ35klOVdqmo+tKot
+	bp6PJm1wUL03Mwj3np35Yn5UofwgPFc19NGF9ur4QYWa56frbKitSXX9wouveN310xw5Q+HvKpY
+	R35uivBhGQmUfTHg8unF8rq21Y0TqFVtSKV+3hoO+Qt78WkZtirfPiSiJbiYTKyRDij7UCoMjRT
+	opM/XW4lHmcSOBQEEtjfnMyK/t3YxPLQHtfkdRkWT8SCIr43GvXP4E9eCutAWx/RMu/0M8jAdLJ
+	1g8sJiwbOT5qHeJiD8m1ALc3l8hMtaZIvyuFAa6qsWQvSTUXCvCKAjenYKpBcJtgW2cb5QKMKsR
+	LlbZx6MdHxURO1jD2t/kedBJT9wrAqqHkHm2qZc91YbaVORgt+5O/eojoX+ViuO83SBTJd2JLuo
+	prAmhNOHpKLC3cf4/B091Qz7Vl+j8mzMlEgVWEEKfcPux/iinbh+wvlRZQCq3hev1AusgMJpkst
+	y9oyluRfTQPC2RKWyaJTGsi9MiZfceYiWZktT18VQ/IZkg==
+X-Received: by 2002:a5d:5f90:0:b0:48e:7e15:406d with SMTP id ffacd0b85a97d-49c70de3563mr18264821f8f.11.1794765854474;
+        Sun, 15 Nov 2026 10:04:14 -0800 (PST)
 Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c60f8c248sm17980448f8f.58.2026.11.15.10.04.06
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c60f8c248sm17980448f8f.58.2026.11.15.10.04.12
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sun, 15 Nov 2026 10:04:07 -0800 (PST)
+        Sun, 15 Nov 2026 10:04:13 -0800 (PST)
 From: koraynilay <koray.fra@gmail.com>
 To: David Sterba <dsterba@suse.com>,
 	Namjae Jeon <linkinjeon@kernel.org>,
@@ -117,9 +117,9 @@ Cc: Chris Mason <mason@kernel.org>,
 	linux-nfs@vger.kernel.org,
 	linux-api@vger.kernel.org,
 	koraynilay <koray.fra@gmail.com>
-Subject: [RFC PATCH v4 04/10] exfat: make crtime user-settable using ptime
-Date: Sun, 15 Nov 2026 19:03:37 +0100
-Message-ID: <20261115180343.576773-5-koray.fra@gmail.com>
+Subject: [RFC PATCH v4 07/10] nfsd: add provenance time (ptime) via FATTR4_TIME_CREATE
+Date: Sun, 15 Nov 2026 19:03:40 +0100
+Message-ID: <20261115180343.576773-8-koray.fra@gmail.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <20261115180343.576773-1-koray.fra@gmail.com>
 References: <20261115180343.576773-1-koray.fra@gmail.com>
@@ -134,129 +134,257 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Since exFAT supports user-settable file creation timestamps, map
-provenance time (ptime) to exFAT file creation time (crtime) using the
-newly introduced ptime API (in commit "vfs: add provenance time
-(ptime)").
+Implement provenance time (ptime) in NFSD, as introduced in a
+previous commit ("vfs: add provenance time (ptime)").
 
-To do this, implement exfat_fileattr_set(), set .fileattr_set to it for
-both file_inode and dir_inode operations and update exfat_fileattr_get()
-and exfat_getattr().
+Map ptime to FATTR4_TIME_CREATE, allowing clients to set it across
+CREATE, OPEN and SETATTR compounds.
 
-The timestamp is now retrievable by using file_getattr() or statx(), and
-is settable by using file_setattr() with the FS_XFLAG_PTIME flag.
+If the underlying filesystem supports it, use __vfs_fileattr_set_locked()
+to set it, returning -EOPNOTSUPP in case it's not supported (i.e. when
+__vfs_fileattr_set_locked() returns -ENOIOCTLCMD).
 
-Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.4.7
+When querying FATTR4_TIME_CREATE, request both STATX_PTIME and
+STATX_BTIME, preferring ptime over btime if available, and advertise
+FATTR4_TIME_CREATE support if either ptime or btime is available.
+
+Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.7
 Signed-off-by: koraynilay <koray.fra@gmail.com>
 ---
- fs/exfat/exfat_fs.h |  2 ++
- fs/exfat/file.c     | 42 +++++++++++++++++++++++++++++++++++++++++-
- fs/exfat/namei.c    |  1 +
- 3 files changed, 44 insertions(+), 1 deletion(-)
+ fs/nfsd/nfs4proc.c |  9 +++++++++
+ fs/nfsd/nfs4xdr.c  | 40 +++++++++++++++++++++++++---------------
+ fs/nfsd/vfs.c      | 17 +++++++++++++++++
+ fs/nfsd/vfs.h      |  4 +++-
+ fs/nfsd/xdr4.h     |  3 +++
+ 5 files changed, 57 insertions(+), 16 deletions(-)
 
-diff --git a/fs/exfat/exfat_fs.h b/fs/exfat/exfat_fs.h
-index eee573d1697c..aff96afa258a 100644
---- a/fs/exfat/exfat_fs.h
-+++ b/fs/exfat/exfat_fs.h
-@@ -619,6 +619,8 @@ int exfat_getattr(const struct mnt_idmap *idmap, const struct path *path,
- 		  unsigned int query_flags);
- struct file_kattr;
- int exfat_fileattr_get(struct dentry *dentry, struct file_kattr *fa);
-+int exfat_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
-+		       struct file_kattr *fa);
- int exfat_file_fsync(struct file *file, loff_t start, loff_t end, int datasync);
- long exfat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
- long exfat_compat_ioctl(struct file *filp, unsigned int cmd,
-diff --git a/fs/exfat/file.c b/fs/exfat/file.c
-index 435bbef288b8..02390b03eecd 100644
---- a/fs/exfat/file.c
-+++ b/fs/exfat/file.c
-@@ -384,15 +384,22 @@ int exfat_getattr(const struct mnt_idmap *idmap, const struct path *path,
+diff --git a/fs/nfsd/nfs4proc.c b/fs/nfsd/nfs4proc.c
+index 3a82af381a8d..06074a7f213e 100644
+--- a/fs/nfsd/nfs4proc.c
++++ b/fs/nfsd/nfs4proc.c
+@@ -322,6 +322,9 @@ nfsd4_create_file(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	__be32 status, create_status;
+ 	int want_write_err;
  
- 	generic_fillattr(idmap, request_mask, inode, stat);
- 	exfat_truncate_atime(&stat->atime);
--	stat->result_mask |= STATX_BTIME;
-+	stat->result_mask |= (STATX_BTIME | STATX_PTIME);
- 	stat->btime.tv_sec = ei->i_crtime.tv_sec;
- 	stat->btime.tv_nsec = ei->i_crtime.tv_nsec;
-+	stat->ptime.tv_sec = ei->i_crtime.tv_sec;
-+	stat->ptime.tv_nsec = ei->i_crtime.tv_nsec;
- 	stat->blksize = EXFAT_SB(inode->i_sb)->cluster_size;
- 	return 0;
- }
- 
-+#define EXFAT_SUPPORTED_XFLAGS		(FS_XFLAG_PTIME)
++	if (open->op_bmval[1] & FATTR4_WORD1_TIME_CREATE)
++		attrs.na_time_create = &open->op_time_create;
 +
- int exfat_fileattr_get(struct dentry *dentry, struct file_kattr *fa)
+ 	if (name_is_dot_dotdot(open->op_fname, open->op_fnamelen))
+ 		return nfserr_exist;
+ 	if (!(iap->ia_valid & ATTR_MODE))
+@@ -929,6 +932,9 @@ nfsd4_create(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	__be32 status;
+ 	dev_t rdev;
+ 
++	if (create->cr_bmval[1] & FATTR4_WORD1_TIME_CREATE)
++		attrs.na_time_create = &create->cr_time_create;
++
+ 	fh_init(&resfh, NFS4_FHSIZE);
+ 
+ 	status = fh_verify(rqstp, &cstate->current_fh, S_IFDIR, NFSD_MAY_NOP);
+@@ -1347,6 +1353,9 @@ nfsd4_setattr(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	__be32 status = nfs_ok;
+ 	int err;
+ 
++	if (setattr->sa_bmval[1] & FATTR4_WORD1_TIME_CREATE)
++		attrs.na_time_create = &setattr->sa_time_create;
++
+ 	deleg_attrs = setattr->sa_bmval[2] & (FATTR4_WORD2_TIME_DELEG_ACCESS |
+ 					      FATTR4_WORD2_TIME_DELEG_MODIFY);
+ 
+diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
+index 84161dbecd1c..faca3b9b58b8 100644
+--- a/fs/nfsd/nfs4xdr.c
++++ b/fs/nfsd/nfs4xdr.c
+@@ -509,7 +509,8 @@ static __be32
+ nfsd4_decode_fattr4(struct nfsd4_compoundargs *argp, u32 *bmval, u32 bmlen,
+ 		    struct iattr *iattr, struct nfs4_acl **acl,
+ 		    struct xdr_netobj *label, int *umask,
+-		    struct posix_acl **dpaclp, struct posix_acl **paclp)
++		    struct posix_acl **dpaclp, struct posix_acl **paclp,
++		    struct timespec64 *time_create)
  {
-+	struct inode *inode = d_backing_inode(dentry);
-+	struct exfat_inode_info *ei = EXFAT_I(inode);
-+
- 	/*
- 	 * exFAT compares filenames through an upcase table, so lookup
- 	 * is always case-insensitive. Long names are stored in UTF-16
-@@ -400,6 +407,12 @@ int exfat_fileattr_get(struct dentry *dentry, struct file_kattr *fa)
- 	 */
- 	fa->fsx_xflags |= FS_XFLAG_CASEFOLD;
- 	fa->flags |= FS_CASEFOLD_FL;
-+
-+	fa->fsx_ptime.tv_sec = ei->i_crtime.tv_sec;
-+	fa->fsx_ptime.tv_nsec = ei->i_crtime.tv_nsec;
-+	fa->fsx_xflags |= FS_XFLAG_PTIME;
-+	fa->fsx_xflags_mask |= FS_XFLAG_PTIME;
-+
- 	return 0;
+ 	unsigned int starting_pos;
+ 	u32 attrlist4_count;
+@@ -603,11 +604,10 @@ nfsd4_decode_fattr4(struct nfsd4_compoundargs *argp, u32 *bmval, u32 bmlen,
+ 		}
+ 	}
+ 	if (bmval[1] & FATTR4_WORD1_TIME_CREATE) {
+-		struct timespec64 ts;
++		if (!time_create)
++			return nfserr_bad_xdr;
+ 
+-		/* No Linux filesystem supports setting this attribute. */
+-		bmval[1] &= ~FATTR4_WORD1_TIME_CREATE;
+-		status = nfsd4_decode_nfstime4(argp, &ts);
++		status = nfsd4_decode_nfstime4(argp, time_create);
+ 		if (status)
+ 			return status;
+ 	}
+@@ -1013,7 +1013,8 @@ nfsd4_decode_create(struct nfsd4_compoundargs *argp, union nfsd4_op_u *u)
+ 				    ARRAY_SIZE(create->cr_bmval),
+ 				    &create->cr_iattr, &create->cr_acl,
+ 				    &create->cr_label, &create->cr_umask,
+-				    &create->cr_dpacl, &create->cr_pacl);
++				    &create->cr_dpacl, &create->cr_pacl,
++				    &create->cr_time_create);
+ 	if (status)
+ 		return status;
+ 
+@@ -1165,7 +1166,8 @@ nfsd4_decode_createhow4(struct nfsd4_compoundargs *argp, struct nfsd4_open *open
+ 					     ARRAY_SIZE(open->op_bmval),
+ 					     &open->op_iattr, &open->op_acl,
+ 					     &open->op_label, &open->op_umask,
+-					     &open->op_dpacl, &open->op_pacl);
++					     &open->op_dpacl, &open->op_pacl,
++					     &open->op_time_create);
+ 		if (status)
+ 			return status;
+ 		break;
+@@ -1184,7 +1186,8 @@ nfsd4_decode_createhow4(struct nfsd4_compoundargs *argp, struct nfsd4_open *open
+ 					     ARRAY_SIZE(open->op_bmval),
+ 					     &open->op_iattr, &open->op_acl,
+ 					     &open->op_label, &open->op_umask,
+-					     &open->op_dpacl, &open->op_pacl);
++					     &open->op_dpacl, &open->op_pacl,
++					     &open->op_time_create);
+ 		if (status)
+ 			return status;
+ 		break;
+@@ -1512,7 +1515,7 @@ nfsd4_decode_setattr(struct nfsd4_compoundargs *argp, union nfsd4_op_u *u)
+ 				   ARRAY_SIZE(setattr->sa_bmval),
+ 				   &setattr->sa_iattr, &setattr->sa_acl,
+ 				   &setattr->sa_label, NULL, &setattr->sa_dpacl,
+-				   &setattr->sa_pacl);
++				   &setattr->sa_pacl, &setattr->sa_time_create);
  }
  
-@@ -485,6 +498,32 @@ int exfat_setattr(const struct mnt_idmap *idmap, struct dentry *dentry,
- 	return error;
+ static __be32
+@@ -3646,7 +3649,14 @@ static __be32 nfsd4_encode_fattr4_time_access(struct xdr_stream *xdr,
+ static __be32 nfsd4_encode_fattr4_time_create(struct xdr_stream *xdr,
+ 					      const struct nfsd4_fattr_args *args)
+ {
+-	return nfsd4_encode_nfstime4(xdr, &args->stat.btime);
++	const struct timespec64 *ts;
++
++	if (args->stat.result_mask & STATX_PTIME)
++		ts = &args->stat.ptime;
++	else
++		ts = &args->stat.btime;
++
++	return nfsd4_encode_nfstime4(xdr, ts);
  }
  
-+int exfat_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
-+		      struct file_kattr *fa)
-+{
-+	struct inode *inode = d_backing_inode(dentry);
-+	struct exfat_inode_info *ei = EXFAT_I(inode);
+ /*
+@@ -4089,8 +4099,8 @@ nfsd4_encode_fattr4(struct svc_rqst *rqstp, struct xdr_stream *xdr,
+ 	}
+ 
+ 	err = vfs_getattr(&path, &args.stat,
+-			  STATX_BASIC_STATS | STATX_BTIME | STATX_CHANGE_COOKIE,
+-			  AT_STATX_SYNC_AS_STAT);
++			  STATX_BASIC_STATS | STATX_BTIME | STATX_PTIME |
++			  STATX_CHANGE_COOKIE, AT_STATX_SYNC_AS_STAT);
+ 	if (dp) {
+ 		struct nfs4_cb_fattr *ncf = &dp->dl_cb_fattr;
+ 
+@@ -4113,8 +4123,8 @@ nfsd4_encode_fattr4(struct svc_rqst *rqstp, struct xdr_stream *xdr,
+ 	if (err)
+ 		goto out_nfserr;
+ 
+-	if (!(args.stat.result_mask & STATX_BTIME))
+-		/* underlying FS does not offer btime so we can't share it */
++	if (!(args.stat.result_mask & (STATX_BTIME | STATX_PTIME)))
++		/* underlying FS does not offer ptime or btime so we can't share it */
+ 		attrmask[1] &= ~FATTR4_WORD1_TIME_CREATE;
+ 	if ((attrmask[0] & (FATTR4_WORD0_FILES_AVAIL | FATTR4_WORD0_FILES_FREE |
+ 			FATTR4_WORD0_FILES_TOTAL | FATTR4_WORD0_MAXNAME)) ||
+@@ -4434,7 +4444,7 @@ nfsd4_setup_notify_entry4(struct notify_entry4 *ne, struct xdr_stream *xdr,
+ 		if (!setup_notify_fhandle(dentry, dp, nf, &args))
+ 			attrmask[0] &= ~FATTR4_WORD0_FILEHANDLE;
+ 
+-		if (!(args.stat.result_mask & STATX_BTIME))
++		if (!(args.stat.result_mask & (STATX_PTIME | STATX_BTIME)))
+ 			attrmask[1] &= ~FATTR4_WORD1_TIME_CREATE;
+ 	}
+ 	attrmask[2] = 0;
+diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
+index 56c49b5bc5bb..286ed7c98d91 100644
+--- a/fs/nfsd/vfs.c
++++ b/fs/nfsd/vfs.c
+@@ -621,6 +621,23 @@ nfsd_setattr(struct svc_rqst *rqstp, struct svc_fh *fhp,
+ 	if (attr->na_seclabel && attr->na_seclabel->len)
+ 		attr->na_labelerr = security_inode_setsecctx(dentry,
+ 			attr->na_seclabel->data, attr->na_seclabel->len);
 +
-+	if (fileattr_has_fsx_mask(fa, EXFAT_SUPPORTED_XFLAGS))
-+		return -EOPNOTSUPP;
++	if (attr->na_time_create) {
++		struct file_kattr fa = {
++			.fsx_valid = true,
++			.fsx_xflags = FS_XFLAG_PTIME,
++			.fsx_xflags_mask = FS_XFLAG_PTIME,
++			.fsx_ptime = *attr->na_time_create,
++		};
 +
-+	if (fa->fsx_xflags_mask & ~EXFAT_SUPPORTED_XFLAGS)
-+		return -EOPNOTSUPP;
-+
-+	if (fa->flags & ~FS_CASEFOLD_FL)
-+		return -EOPNOTSUPP;
-+
-+	if (fa->fsx_xflags_mask & FS_XFLAG_PTIME) {
-+		ei->i_crtime.tv_sec = fa->fsx_ptime.tv_sec;
-+		ei->i_crtime.tv_nsec = fa->fsx_ptime.tv_nsec;
++		host_err = __vfs_fileattr_set_locked(&nop_mnt_idmap, dentry, &fa);
++		if (host_err) {
++			if (host_err == -ENOIOCTLCMD)
++				host_err = -EOPNOTSUPP;
++			goto out_fill_attrs;
++		}
 +	}
 +
-+	inode_set_ctime_current(inode);
-+	mark_inode_dirty(inode);
-+
-+	return 0;
-+}
-+
- /*
-  * modified ioctls from fat/file.c by Welmer Almesberger
-  */
-@@ -1110,4 +1149,5 @@ const struct inode_operations exfat_file_inode_operations = {
- 	.setattr	= exfat_setattr,
- 	.getattr	= exfat_getattr,
- 	.fileattr_get	= exfat_fileattr_get,
-+	.fileattr_set	= exfat_fileattr_set,
+ 	if (IS_ENABLED(CONFIG_FS_POSIX_ACL) && attr->na_dpacl) {
+ 		if (!S_ISDIR(inode->i_mode))
+ 			attr->na_dpaclerr = -EINVAL;
+diff --git a/fs/nfsd/vfs.h b/fs/nfsd/vfs.h
+index 38f7d36bd4da..24c2c22b3e72 100644
+--- a/fs/nfsd/vfs.h
++++ b/fs/nfsd/vfs.h
+@@ -100,6 +100,7 @@ struct nfsd_attrs {
+ 	struct xdr_netobj	*na_seclabel;	/* input */
+ 	struct posix_acl	*na_pacl;	/* input */
+ 	struct posix_acl	*na_dpacl;	/* input */
++	struct timespec64	*na_time_create; /* input */
+ 
+ 	int			na_labelerr;	/* output */
+ 	int			na_dpaclerr;	/* output */
+@@ -118,7 +119,8 @@ static inline bool nfsd_attrs_valid(struct nfsd_attrs *attrs)
+ 
+ 	return (iap->ia_valid || (attrs->na_seclabel &&
+ 		attrs->na_seclabel->len) ||
+-		attrs->na_pacl || attrs->na_dpacl);
++		attrs->na_pacl || attrs->na_dpacl ||
++		attrs->na_time_create);
+ }
+ 
+ struct nfsd_net;
+diff --git a/fs/nfsd/xdr4.h b/fs/nfsd/xdr4.h
+index ec198993429e..a495a20e5889 100644
+--- a/fs/nfsd/xdr4.h
++++ b/fs/nfsd/xdr4.h
+@@ -123,6 +123,7 @@ struct nfsd4_create {
+ 	struct posix_acl *cr_dpacl;
+ 	struct posix_acl *cr_pacl;
+ 	struct xdr_netobj cr_label;
++	struct timespec64 cr_time_create;
  };
-diff --git a/fs/exfat/namei.c b/fs/exfat/namei.c
-index 68ddb9c5504f..15ec7f1942c8 100644
---- a/fs/exfat/namei.c
-+++ b/fs/exfat/namei.c
-@@ -1349,4 +1349,5 @@ const struct inode_operations exfat_dir_inode_operations = {
- 	.setattr	= exfat_setattr,
- 	.getattr	= exfat_getattr,
- 	.fileattr_get	= exfat_fileattr_get,
-+	.fileattr_set	= exfat_fileattr_set,
+ #define cr_datalen	u.link.datalen
+ #define cr_data		u.link.data
+@@ -277,6 +278,7 @@ struct nfsd4_open {
+ 	struct posix_acl *op_dpacl;
+ 	struct posix_acl *op_pacl;
+ 	struct xdr_netobj op_label;
++	struct timespec64 op_time_create;
+ 	struct svc_rqst *op_rqstp;
  };
+ 
+@@ -378,6 +380,7 @@ struct nfsd4_setattr {
+ 	struct xdr_netobj sa_label;
+ 	struct posix_acl *sa_dpacl;
+ 	struct posix_acl *sa_pacl;
++	struct timespec64 sa_time_create;
+ };
+ 
+ struct nfsd4_setclientid {
 -- 
 2.56.0
 

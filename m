@@ -1,88 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.43
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794863789;
-	b=HGTGwN9F51vGcuSA3QjERLS8BMJYIqoMnXy/zqfnV9WXy3JaCJXynsYz2TFWm2Yqpc49
-	 ZkNiFiPALpH4VpfA778VGPCShAkTxgBigVfM4M1TUL3h7cBq/8GCDclwRyh8tJUjWo5/c
-	 CMAf+pWt/C+VxPHfcKAyALkTyfGqhm6/L6FEzDb3e4h/S/qslmGBiGrMHiI5cWnlt6eYW
-	 54JWdZQrPNFZuPbaZ5bpKg3hxNswGM/GOSuTKt0RHcvYoajxXHGorzM3B9lN9p2wTbpRc
-	 jF9sO+wU+XFJamOVYKaNDIBiMd7qqwtfBDZKA67MlJAogoQkXfIcxqmjPOZHLOUdPcQ==
+	t=1794864575;
+	b=1OPAPxQhqa9YREyaJutjP6MQTpljOSx/xVYxycKSlgIe8edl1Au8C0GVCPDvl/hHp49f
+	 kwOef5rRA2ZJIkROxArE8Je4Hb5lt+dVTnvqyZdPCMp15WWlDCPbdC6P31Vu3Db4d8Dqe
+	 r0RARyjQlYvUC43C9/9Y5cOGp49EyA1jVdcqG7lBfpCHc1hirv4l5+cg5JGzoLAulQusH
+	 nuRpIlypZ68G85FORR/1vK6+mVNOdBe48gWZ0NdiY/mO9RNU3zp/+bQm1sazcx6/YGPLV
+	 Gv3yAJrzLky7J5OFt8RARtqJHqrmN1CulP5WS2XudCK4MeV2uKXBdDre+hUSpx7OBRQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794863789;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=df83JBfuahJAVUG4U/tuP+END5bVlv22R/rPjFaLrto=;
-	b=dyNY0jL89zZOBhnTNwXOYyomRwXCJ+hDym5hfn4iZ+VLm63ZoVNB4dxp3i6d76qkJgPv
-	 mH6LDFkxg/5uut2G9OcKJcF5jHx0+/mQZ02O4NhjBCubrZGbutXStqKUBNxzQG1iNebDS
-	 ggMv0FC+m8Q4quqBfrME2Emd07ZO8kccmHrbqmPm7npCTU9Ti8m097ZS/84NDr9KPSYig
-	 aYAGpVlDwQN94SitrklfkL5mmoM4POUgYE/xtE4IqNPcsGe1M/mUSkBM/M48BH+sxeTp4
-	 uRM8QQnaRzXIoTmD0cemChyEwWxb1Ffm1hSSmX2jvUMSfptuyJQ+q6sdE0fOt9P/CWA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794864575;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
+	 X-Rspamd-Queue-Id;
+	bh=1WYyvX2W1x0xQPUmVUadny3bxiCgfPvc4jySt5QMvFY=;
+	b=eoABdGBXU3RiLVAlZuTJeKMusA4+QhgF1QPXdK6v5dh7iCuSsZ8prC5KBYmZ0MIVwfU5
+	 X3kbsvMXX2O1rWAfZYN2HsiqgMLrjFr01KAV2rfDO88T6dMhzdFnkDNJIquMqwzYbdQLy
+	 7gvDl/YoAsO9yc0+uR0c9Gxcgt3S2tUHdxJPmwn4cGVGpVB/Uv9gN03RrniGKRYs2I3Cc
+	 9CZBxk+7DsFy2wjKxFZSPuKn8rNSIcH5aTgyRwe71mXPHOAST1kdkB64Y4xJ/f6lzjk6M
+	 HwNs4zA6zBlHusRlvZhZAkVue6jJlTJbtQNqhTpleUjMIWToBF1ytAA6Z8zgm1P9Kew==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=MD0MCASE;
-	arc=none smtp.remote-ip=209.85.218.43
-Received: from mail-ej1-f43.google.com (mail-ej1-f43.google.com [209.85.218.43])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UdhgAsVB;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UdhgAsVB;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A42CC606A32C
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:16:28 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A42CC606A32C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97BF1606A31C
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:29:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 97BF1606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=MD0MCASE
-Received: by mail-ej1-f43.google.com with SMTP id a640c23a62f3a-c505186727fso174937766b.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 13:16:28 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794863787; x=1795468587; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=df83JBfuahJAVUG4U/tuP+END5bVlv22R/rPjFaLrto=;
-        b=MD0MCASEmyYZ42MxkDfzyN+27I4rW6l+lAfgFdPp4MOUlel+qaFlthEQYVsnzl5Vob
-         vWFoZjgUYxk1apC/DkWy/BjTX9jflSuQKO4PEHnN/b0oLgC6e0hvFel1h21R/PPhXy9G
-         qNFahXliHOeQDW6dhVUmUPP7H36Fahf1wYlBWGGL5ITP0Fzyvp2RMMpvZCvXGHd3F3Dj
-         ZA/m0o+oSCIrKBzJFuEdAqTqakiitnVeYCqCS9/Lf2wxjF5RwHxslRSDtC2d5rdz7XAC
-         inBrRjzPt4YAvNOqOLsf29eBKj59dMegXhGHMDljydfAwAA/9pqQX6fgkDxkeTsnDYID
-         o1QA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794863787; x=1795468587;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=df83JBfuahJAVUG4U/tuP+END5bVlv22R/rPjFaLrto=;
-        b=ugSqLvwV3oX6cqjixd4mWq0CtpHe8crrmYhAcb5u/1+LQVMCBIMnOyLheqYnddrEp4
-         S3KyHeWqBDxEDcB8YI7WY9LAJ1P884qL4xvzdm4mo34onPqQByhCPDF28jIWsnB3DB8+
-         C0Z3o1Z3yd3G/ny1B3STrmCtTFxEVBs6Jk7w57FVvysrpH/U+67NzNp/aQkUK3V9MQd/
-         tw3M78NgzX6Rb8ZJUfRm0VHKlcuOjVD8Yvj/rCYdd6UhXxUbctxI/QZyr8ZVeRQUTW5P
-         0U6nmZC1ZMIu/KFUwx33jhw5ERZ6W9rqIFfBRCq+UqSGw+URBBqES9TZ+ZywanqdZAKj
-         3PYg==
-X-Forwarded-Encrypted: i=1; AL+hErFLnUqZezqmFVWHJPTdtTActrFcACZ0ubLRqZWl4GObMdYdOULtU8ZZ3M2N3WofZK7r3gapxik7Aqcl1Q==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/tl/18prHSrPXnjV1zPY7P9pdl+Uc3neL8rEFLg2SUfsCiiuqG
-	PTyuJWKtX5rL+lPiP+tMSCAIzkIdtDrLFwBAiTSFDwgi2JBohuDTO8GDEwKz35njv1kRfYDb8Sd
-	uYXuNOKNvHw==
-X-Gm-Gg: AYBFou3SpfQ5YgkbUGzfTKUAcRQI6vGuqD5VLlxFl5ntTuISpUN9km46PmiuPs4kmPM
-	iSAP9zu5hHgQG0P13b4ob/U+/IU6ReV3huj/I6Qlxak+YtS72OvF3vxhXIjdlcCIM8ymqpkWzdT
-	/xwv+7ahhGEoHe+GghwJe6XSSFBtBfpexjRu76Ta79mVeWoNT7O61IbYbuZW3ISlZy+dK5xr34p
-	RGt2MLWywYW4RQBQ1TWirsFT1GH6kfxLZV83+Ml36Cw7qMnTPOiCjr2SeV9QSqLTWEvPIzZDbPs
-	6dQ50SclxDSkz7QCnYN9EArzH62VerbxZl/Ltv8rAqGF4NaHOmuHDDG7QDn4uT4pkEJPt1cTWXA
-	U5L4gmkYzCvEy+qRNrwYen3SCrhv3eo7QSJ3zjwC1Ufd6MtBPkwtsx5Zfs9YAiWKZnv6FwXmj8v
-	zSuanstxM+T+IMUSxmjIRjpwJDYcihOP9SxAE4T4Kkk6B6CvxQZcXYXGmf8lE08vOkEm+vdBwhC
-	GCBGLF7Xg70NtkaVqFQ+1Tf0iNSspOxpYm7UZCSKIT5mEyg/Cac71yCgXbcLrpc0emmqRdkuyoN
-	4kiEb3B+Ot/mLHOoDZvF5Q==
-X-Received: by 2002:a17:907:608f:b0:c46:ca2b:84bd with SMTP id a640c23a62f3a-c50963972dbmr928210466b.30.1794863786988;
-        Mon, 16 Nov 2026 13:16:26 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b3abd063e8sm791480a91.8.2026.11.16.13.16.24
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 16 Nov 2026 13:16:26 -0800 (PST)
-Message-ID: <16bce0fb-85de-4db6-a6f7-61d478a1169f@suse.com>
-Date: Tue, 17 Nov 2026 07:46:22 +1030
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UdhgAsVB;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UdhgAsVB
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 9A7261F461
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:29:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794864572; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=1WYyvX2W1x0xQPUmVUadny3bxiCgfPvc4jySt5QMvFY=;
+	b=UdhgAsVBdELDYMkKzWw1XGQ3akcHvH3JiBjEH+xwpULyGXd4Ev5dGgtcNcSRhu/9qXWdIL
+	Gg5ioMss9aOaHth1ATDGF9CmOOvVBFUhw1yzG9sc3L2vmaB2tN6D3mmEB6bw0hlOymkTfQ
+	1pofmmH7Wb177ec390HjYJP7UsjKfVo=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=UdhgAsVB
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794864572; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=1WYyvX2W1x0xQPUmVUadny3bxiCgfPvc4jySt5QMvFY=;
+	b=UdhgAsVBdELDYMkKzWw1XGQ3akcHvH3JiBjEH+xwpULyGXd4Ev5dGgtcNcSRhu/9qXWdIL
+	Gg5ioMss9aOaHth1ATDGF9CmOOvVBFUhw1yzG9sc3L2vmaB2tN6D3mmEB6bw0hlOymkTfQ
+	1pofmmH7Wb177ec390HjYJP7UsjKfVo=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 4C9AB13408
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:29:30 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id ugL8Jbp1+2oUJgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:29:30 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: defrag related to corncer case handling
+Date: Tue, 17 Nov 2026 07:59:02 +1030
+Message-ID: <cover.1794864101.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,121 +85,56 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix race between getting device stats and removing
- device
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <ad13663d72d23c941b0655ed7b7b46fd7541293d.1794342214.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <ad13663d72d23c941b0655ed7b7b46fd7541293d.1794342214.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim];
+	RCPT_COUNT_ONE(0.00)[1];
+	DKIM_TRACE(0.00)[suse.com:+];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -12.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 9A7261F461
 
+The first one is a Sashiko report that we can step into the next inode
+and continue looping unnecessarily. Fix it by re-ordering the checks.
 
+The second one is another minor corner case where if the defrag range
+starts inside the last extent, we may skip a valid defrag target.
+Fix it by doing the backward search properly.
 
-在 2026/11/11 06:55, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> When getting device stats we lock the device list mutex, get the device,
-> unlock it and then use the device - but after we unlock the device we can
-> have a concurrent device remove operation free the device while we are
-> still using it in the device stats task, resulting in a use-after-free on
-> the device:
-> 
->    CPU 0 (BTRFS_IOC_GET_DEV_STATS)     CPU 1 (btrfs_rm_device)
->    -------------------------------     -----------------------
->    btrfs_get_dev_stats()
->      mutex_lock(&device_list_mutex);
->      dev = btrfs_find_device(...);
->      mutex_unlock(&device_list_mutex);
->                                         mutex_lock(&device_list_mutex);
->                                         list_del_rcu(&device->dev_list);
->                                         mutex_unlock(&device_list_mutex);
->                                         synchronize_rcu();
->                                         btrfs_free_device(device); // kfree
->      if (!dev->dev_stats_valid) // UAF
->      btrfs_dev_stat_read_and_reset() // UAF
->      btrfs_dev_stat_set() // UAF
->      btrfs_dev_stat_read() // UAF
-> 
-> Fix this by holding the device list mutex while accessing the device in
-> btrfs_get_dev_stats(), which is safe since btrfs_rm_device() deletes the
-> device from the list while holding that mutex.
-> 
-> Link: https://sashiko.dev/#/bug/linux-1ac8d72d-3ab5-4feb-b957-c4862ba1d15b
-> Fixes: c11d2c236cc2 ("Btrfs: add ioctl to get and reset the device stats")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Qu Wenruo (2):
+  btrfs: defrag: break the loop early in defrag_get_extent()
+  btrfs: defrag: fix missed extent when the lookup lands on the next
+    inode
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+ fs/btrfs/defrag.c | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
 
-Thanks,
-Qu
-
-> ---
->   fs/btrfs/volumes.c | 14 +++++++++++---
->   1 file changed, 11 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3d4ef6725de0..9e37aee00824 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -8658,15 +8658,20 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
->   	mutex_lock(&fs_devices->device_list_mutex);
->   	args.devid = stats->devid;
->   	dev = btrfs_find_device(fs_info->fs_devices, &args);
-> -	mutex_unlock(&fs_devices->device_list_mutex);
->   
->   	if (!dev) {
-> +		mutex_unlock(&fs_devices->device_list_mutex);
->   		btrfs_warn(fs_info, "get dev_stats failed, device not found");
->   		return -ENODEV;
-> -	} else if (!dev->dev_stats_valid) {
-> +	}
-> +
-> +	if (!dev->dev_stats_valid) {
-> +		mutex_unlock(&fs_devices->device_list_mutex);
->   		btrfs_warn(fs_info, "get dev_stats failed, not yet valid");
->   		return -ENODEV;
-> -	} else if (stats->flags & BTRFS_DEV_STATS_RESET) {
-> +	}
-> +
-> +	if (stats->flags & BTRFS_DEV_STATS_RESET) {
->   		for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++) {
->   			if (stats->nr_items > i)
->   				stats->values[i] =
-> @@ -8681,6 +8686,9 @@ int btrfs_get_dev_stats(struct btrfs_fs_info *fs_info,
->   			if (stats->nr_items > i)
->   				stats->values[i] = btrfs_dev_stat_read(dev, i);
->   	}
-> +
-> +	mutex_unlock(&fs_devices->device_list_mutex);
-> +
->   	if (stats->nr_items > BTRFS_DEV_STAT_VALUES_MAX)
->   		stats->nr_items = BTRFS_DEV_STAT_VALUES_MAX;
->   	return 0;
+-- 
+2.56.0
 

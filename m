@@ -1,50 +1,101 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794833300;
-	b=eAPiuXajN6iLgQgrSx+bsbpxqJ+4gQw5MiXlOI/xt2vww2dbv4gF34EhqgAYqk5vxcCa
-	 NEJXI44FdIsUtuNfH122I9tSLeJBM/rlW4AgsOfYTAl2/bfcZmZ6Qa/59EN6mpARiBbMA
-	 PbFBzA1A3Chfj8sHdk/aFTcv8oPMw/lqhV/DbOLFE6ItMdl2O/Hd/6vO2kemLYPDNKN24
-	 T9lfTyWYetDzKhAHnOO9GdMdrcpWX2XJGwtJZiJCv0kAfgi0543deErLpnxzzxPuMohlB
-	 3Oul23hXcD4931DQAfqOAL3GLz2C+eRneHs1chqWwyKLB93QEDOh87GE3ccEC0Is85w==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794833300;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=agYUkA7wmbp4Lg5U9FpfwG8NB5pa66bxeh/7aJrjuIE=;
-	b=qGk+eMI4CWt7E92i1ka0GiKuIStcTC5IIxd0ILdueF0dX2FWFQC6Q29XN1cYfYawF4nI
-	 gYkgq6Tq82fGIo5qiLbIiFoz1UL1dvlXRvKQRDwl16OPaNLvr9Wazi07rkawyoc6VGot0
-	 Iqit4RLK+IvNC4ggIyxmnkp+fgrbr/YLxj9qtek6Sg/oKhqviZf4YVwIV9XceGXXVOZK3
-	 LF1MaiD4VGGUklbqhx/kQiwANGkFS6/8BN49ho8afRcsKQ4iPpS6qNUJ3rvxZmR61drqj
-	 exUrB4XegWQ8LdUQUtPWC/WXgdjtPd/vG7XksvF0xXiu9UOD8+uXzxFAr8vgPG4EllQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=dqQEfiZE;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.47
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794837181;
+	b=3TIV+mfJpZAt1kRBV0FPiOEx75HQlRnue36hLHK5TnaVxvLZspoMEsviQHZWzZmDBqnu
+	 8nqOVu1mgH1cfHaWrsrjs4WPlJt5/J7XuApT3vEukhSaUJY7NgSsTt+zwfudTE0Fvmmqw
+	 xOu1ISXZsOp5wUV7vlnaiqN9tsLnoLDHJNHmnMkZzuu4rp/nvcTDK4iGPIwFBRbJlGBu1
+	 eOBItPCn2QuSgPjCDZaY/wSu/v5sE+s12AeO639s0a0A1gA9Kt1Ut6LKQ9syABSB9qn7U
+	 6aoAea9r7e6pqyGhPKjhtkrRePVDA+IiN8f67szbvG3urqLMX5KfiIfZvscsbuTOOww==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794837181;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=yjMfJPlhmwgFldHvOAN6a+VpaF8LquFmHlpLZaL46tQ=;
+	b=dFpXlfsH9kFuHuP8FttTEPy1Ce8F9/A91p6zOF8Vt5JCJPLjcKppLVQUuwXDRb8+iZ9p
+	 yzdyxrYoRXJ9KIyTJlLPzICnzZ19DgfMs/CZQFAGJMe4FkFyAg7auyrv0/EWbGWaJzMUA
+	 g60h90rq2k4mL2DsHLHbxKR/x/a0KqlLYR+8FXjPzg+MKrnR1Dq7/cHP5Y/zjc8U/l5YG
+	 vbnK4sVBYoO3b5RGKoguZ8NSzHYLTTW386MtRBFMp+yZKKuGWtElKGDHhtxmlrEpw7AdT
+	 Hs/Q/OeftvkWdY7rpRA7bBH5oyPVkEVrKaELDhQ77E5yMnUPux+OezLJTpo0trjaiGA==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b="dK/KA/kv";
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.47
+Received: from mail-ed1-f47.google.com (mail-ed1-f47.google.com [209.85.208.47])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B7589606A329
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 12:48:20 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 83A80606A32C
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 13:53:00 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 83A80606A32C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=dqQEfiZE
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E07E31F000C4
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 12:48:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794833300;
-	bh=agYUkA7wmbp4Lg5U9FpfwG8NB5pa66bxeh/7aJrjuIE=;
-	h=From:To:Subject:Date;
-	b=dqQEfiZEDEnvz+3xs6G9PPZX5aOyS8l8njQTsxW/XaUrSYj7ThuXk2Vxum4AjhCZf
-	 tCfq2E9AGmuWxyFhVS6gR+6QYD7FgLqDVlqTiBIQdC5jU5bWPzR2IqSccqmr2F6tll
-	 kU6RHMyP675GdnHy9/xLGubcQLNbxBN8snBe2GcMnjQhzxCi4KnCgcf6A6WDk7GCmC
-	 g/7cGBSXBvyzwtNoDu1DRtsiJeJZ17V3BUaRXOo9TdU+uMJeQjsaJ+1LxoYl+sls/q
-	 au3NTXbUr0d4Z5oyHF/QPhNfx10G7dO0twqIZCUZFOVPnvJnJCgGe3Q82+Ms65ZpU3
-	 aGNotM4d/MdJA==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: add missing unlikely tag to branches leading to transaction aborts
-Date: Mon, 16 Nov 2026 12:48:17 +0000
-Message-ID: <df971dad64e73d71fe7e9bd9188efe5f22e9bea4.1794833257.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=dK/KA/kv
+Received: by mail-ed1-f47.google.com with SMTP id 4fb4d7f45d1cf-6b47c1a3c74so5146266a12.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 05:53:00 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794837179; cv=none;
+        d=google.com; s=arc-20260327;
+        b=Bzui8IAJVxlYSpvP69UrFSJ68uHlTqCgETCeJF/RdWMMemFQhIpJX348mWuQX5JtYl
+         0RCtMKikqQgQoeaK/BIIcUkMt9/n82fExIbZUOqUA2wAKwcR+uW17DYNlYr1kBnbGzlE
+         q/D2R0tjSHJkRZc9YED/puagxLWcUaJ7avGI4Wcucl7OewZDevTccqpu/hlWEVI6ov/1
+         4P6ZV48ryBOd4sD4tfe6RRmtYqJyeZiq9VC4KCJikKnvHthwJoFmZpJBxtK6Lle5C+Tn
+         e+dfsJcXMeEwQluc6AXe/UqSqi0vB7RyJ53Kz0/5MUOIr+Fus98lNUXAMd0UD13weAUU
+         OCPA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=yjMfJPlhmwgFldHvOAN6a+VpaF8LquFmHlpLZaL46tQ=;
+        fh=IQd4hzGLxbDMGQvnVPECeqMyrWNhZ6vjDcdGr0az6KA=;
+        b=PKHKeNrMwY0t7Iu0+qORnB/PFkHRLJHEMN6QPsJ3CEj6ttW7/15tnfexI0nu44jM+X
+         4CyFIpGWOdiclGzd1kG1RGaJYUXjjQJa3bCcKy+KV9WnBdYAGDBS73+bLnJLsFNtMhM9
+         3uqw09TJHsGS74yeqI+anaQbT8BIwpxN5iChz2NU16kq7ZoXHxhbHDXJU11mF+P89uax
+         UigIU5fEMYJ3dxTrTbMVNQ+dio+U3uMouUrmE5Fgh8t/zMTrC4Kl9dWmSP8psfsbsIi1
+         GIsvFbDBGoNifzzOCX5hQblrFW2nJFkVDRQgYhAc2CYqgia5EIchhYXbpMMPWVqePNLN
+         sfrw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1794837179; x=1795441979; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=yjMfJPlhmwgFldHvOAN6a+VpaF8LquFmHlpLZaL46tQ=;
+        b=dK/KA/kvNf02H9lgvhJ9SX+K6MYeWK9M1fnYgWdH0M9139sPFVZ2MSJBb+KvARkYDp
+         +llJl5308g7eiJ577RRpidL75pEbAwYLzuKEfLU8jiwVJitm0j1keV+ZnLweDyDJqGiw
+         o+h0sgYST7P6Klkrz/KNkKuiOQJ2W0H/+1nWjuTpkbE9Sa4OhHYjpGZRCW97CHyOQO/o
+         d47FcrMXj6zFKTboDVyKDCq5AQh6sy/dr41qvT2En5S0oLxlZ0d6ROvg8WuKj3Sum1JE
+         0/iDbhFDfPBrZWJzc9jA6TIgZkrc51YDcHlH5luO/i1DVaM1PScPohVfeo9sxhJKe6Er
+         X+TA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794837179; x=1795441979;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=yjMfJPlhmwgFldHvOAN6a+VpaF8LquFmHlpLZaL46tQ=;
+        b=LfmzZ7bpxxi2OHDWLs53cjbwNAfMQcvoi7lJxhLWxfqkYO+kovTK8D0Bd6rZO6GGb0
+         B7UvGbhPYaHW+u3RXAX87gFhAJla62I+rllef80y0sY9jHLJ5MQun0m6zCWIU8nPMFy0
+         03iA7rBQjanKnTaKcDCqyeycl5AoQn9Q+AZGFOCDLBdwWijwbPCiu8tPYjkyGuTk5ip5
+         h26b8Smh6V4juL8vYzR/SN7Z/vc3zbwWwTIgUlEFXDbwrExpB9jBgBpEXPtaz0WhJcWR
+         dJJHVeONYXneZM9yTDRGccV9pTdIU4cdRQCBtcPfwvNQgSFYUaxZAiYL8TJ5eIv2nj5Z
+         OI8w==
+X-Forwarded-Encrypted: i=1; AL+hErGyCYJGXEnEmTBcch4IPAeFeKVpUaogdU4E6Dr0HEE+huvgMboNkPevvBVAVF7lAwmmMOrupPQKtwbu2g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z85OX6OHP9BmMjW9IvaMQqdBBtR9BQamJlYgBPnvQz6Iso26xx9
+	DtZRwu7HfpUzLGolL7utKvivdAcc+bU5yQZXcPxaNfbVWFSryQoKdvgTy2raMITqzHDNUKDhLhe
+	mfbP8plrkV0w4t6xNvZe3AhT8Vjf6ihU=
+X-Gm-Gg: AYBFou18tmeDCW8WvMqMfZxyXji1t3tNElRAqeghbt17K5NRJJITEJI+XhVvRYaqjou
+	drfy4gzCYU/tGbgZvk9bwval82tFKIhB2ka8jKE5zIGaJ63xlQnoTsY4b7yuDt1bEpHQipa6Apr
+	aS3CEiurv6Glmh6R1XhjX8TTgtftmOhX238h+ZhJ43bqXn53Bn+dW9/NltZr+orauts50StVqt6
+	F9FHgzhTZSnQl4rwqKjAXzRKbLRENvsPgyAV+8qxH+ZRWPytbnFPKbCgtaU6XV8kSRrk5Bt/anf
+	zpeZ7cXHwKIhFE01nFLomrbjhYvtVLM3MeEIph6/TAcO7r0bWPwQqPrEqz2bLI4ks5tOrNBiDQC
+	S5LoMPOOxZABFLETYz4a9bHmeKp6Nxce/vYT467mbmWnuZdqajVYBQ1eLRc0csnG/4GY7JgG+QR
+	Hq+lcT9WjlFLdrOj8=
+X-Received: by 2002:a05:6402:1948:b0:6b7:a180:61da with SMTP id
+ 4fb4d7f45d1cf-6b7c0c6fc36mr8419375a12.28.1794837178579; Mon, 16 Nov 2026
+ 05:52:58 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -54,457 +105,250 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <20261115180343.576773-1-koray.fra@gmail.com> <20261115180343.576773-7-koray.fra@gmail.com>
+In-Reply-To: <20261115180343.576773-7-koray.fra@gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Mon, 16 Nov 2026 14:52:46 +0100
+X-Gm-Features: AclHuK-FBjjEu-Z1sMzcEnpiCJ9rezp8HfxV_QrUdctxQDdJI-5IhWzN560a-40
+Message-ID: <CAOQ4uxgm+JEu2MGnqQrJ00nTJ45S2ECQ7CBOC2QrgniOfkLYAQ@mail.gmail.com>
+Subject: Re: [RFC PATCH v4 06/10] vfs: add __vfs_fileattr_set_locked() for
+ inode_lock()'d callers
+To: koraynilay <koray.fra@gmail.com>
+Cc: David Sterba <dsterba@suse.com>, Namjae Jeon <linkinjeon@kernel.org>, 
+	Sungjong Seo <sj1557.seo@samsung.com>, Alexander Viro <viro@zeniv.linux.org.uk>, 
+	Christian Brauner <brauner@kernel.org>, Trond Myklebust <trondmy@kernel.org>, 
+	Anna Schumaker <anna@kernel.org>, Chuck Lever <cel@kernel.org>, Jeff Layton <jlayton@kernel.org>, 
+	Konstantin Komarov <almaz.alexandrovich@paragon-software.com>, 
+	Paulo Alcantara <pc@manguebit.org>, Chris Mason <mason@kernel.org>, Yuezhang Mo <yuezhang.mo@sony.com>, 
+	Jan Kara <jack@suse.cz>, NeilBrown <neil@brown.name>, Olga Kornievskaia <okorniev@redhat.com>, 
+	Dai Ngo <Dai.Ngo@oracle.com>, Tom Talpey <tom@talpey.com>, 
+	Ronnie Sahlberg <ronniesahlberg@gmail.com>, Shyam Prasad N <sprasad@microsoft.com>, 
+	Bharath SM <bharathsm@microsoft.com>, Sergey Senozhatsky <senozhatsky@chromium.org>, 
+	ChenXiaoSong <chenxiaosong@chenxiaosong.com>, "Darrick J . Wong" <djwong@kernel.org>, 
+	Sean Smith <defendthedisabled@gmail.com>, Andrey Albershteyn <aalbersh@kernel.org>, 
+	Pedro Falcato <pfalcato@suse.de>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>, 
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, exfat@lists.linux.dev, ntfs3@lists.linux.dev, 
+	linux-cifs@vger.kernel.org, linux-nfs@vger.kernel.org, 
+	linux-api@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sun, Nov 15, 2026 at 7:04=E2=80=AFPM koraynilay <koray.fra@gmail.com> wr=
+ote:
+>
+> Currently there is no way for a caller to invoke vfs_fileattr_set()
+> while holding an inode lock without having the kernel go into deadlock.
+>
+> Fix this by moving the vfs_fileattr_set() logic into
+> __vfs_fileattr_set_locked() and making vfs_fileattr_set() a simple
+> wrapper that only handles the inode lock.
+>
+> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.7
+> Signed-off-by: koraynilay <koray.fra@gmail.com>
+> ---
+>  fs/file_attr.c           | 139 +++++++++++++++++++++++----------------
+>  include/linux/fileattr.h |   2 +
+>  2 files changed, 86 insertions(+), 55 deletions(-)
+>
+> diff --git a/fs/file_attr.c b/fs/file_attr.c
+> index 12610fb6a751..063c81fbfa6a 100644
+> --- a/fs/file_attr.c
+> +++ b/fs/file_attr.c
+> @@ -288,6 +288,89 @@ static int fileattr_set_prepare(struct inode *inode,
+>         return 0;
+>  }
+>
+> +/**
+> + * __vfs_fileattr_set_locked - change miscellaneous file attributes whil=
+e
+> + * holding the inode lock
+> + *
+> + * @idmap:     idmap of the mount
+> + * @dentry:    the object to change
+> + * @fa:                fileattr pointer
+> + *
+> + * Same as vfs_fileattr_set(), but caller must hold the inode lock.
+> + *
+> + * Return: 0 on success, or a negative error on failure.
+> + */
+> +int __vfs_fileattr_set_locked(const struct mnt_idmap *idmap, struct dent=
+ry *dentry,
+> +                             struct file_kattr *fa)
+> +{
+> +       struct inode *inode =3D d_inode(dentry);
+> +       struct file_kattr old_ma =3D {};
+> +       int err;
+> +
+> +       if (!inode->i_op->fileattr_set)
+> +               return -ENOIOCTLCMD;
+> +
+> +       if (!inode_owner_or_capable(idmap, inode))
+> +               return -EPERM;
+> +
+> +       err =3D vfs_fileattr_get(dentry, &old_ma);
+> +       if (err)
+> +               return err;
+> +
+> +       /* initialize missing bits from old_ma */
+> +       if (fa->flags_valid) {
+> +               /* FS_IOC_SETFLAGS */
+> +               fa->fsx_xflags |=3D (old_ma.fsx_xflags & FS_XFLAGS_MASK) =
+&
+> +                                 ~FS_XFLAG_COMMON;
+> +               fa->fsx_extsize =3D old_ma.fsx_extsize;
+> +               fa->fsx_nextents =3D old_ma.fsx_nextents;
+> +               fa->fsx_projid =3D old_ma.fsx_projid;
+> +               fa->fsx_cowextsize =3D old_ma.fsx_cowextsize;
+> +               fa->fsx_ptime =3D old_ma.fsx_ptime;
+> +       } else {
+> +               /*
+> +                * Preserve unmasked xflags when running file_setattr()
+> +                * with a mask, which doesn't need a read-modify-write
+> +                * so these attributes would be set to 0.
+> +                *
+> +                * With FS_IOC_FSSETXATTR or mask =3D=3D 0 (legacy mode)
+> +                * this is not needed as userspace does
+> +                * read-modify-write already.
+> +                */
+> +               if (fa->fsx_xflags_mask) {
+> +                       fa->fsx_xflags |=3D old_ma.fsx_xflags &
+> +                                         ~fa->fsx_xflags_mask;
+> +                       fileattr_fill_xflags(fa, fa->fsx_xflags &
+> +                                            ~FS_XFLAG_RDONLY_MASK);
+> +                       if (!(fa->fsx_xflags_mask & FS_XFLAG_EXTSIZE))
+> +                               fa->fsx_extsize =3D old_ma.fsx_extsize;
+> +                       if (!(fa->fsx_xflags_mask & FS_XFLAG_PROJID))
+> +                               fa->fsx_projid =3D old_ma.fsx_projid;
+> +                       if (!(fa->fsx_xflags_mask & FS_XFLAG_COWEXTSIZE))
+> +                               fa->fsx_cowextsize =3D old_ma.fsx_cowexts=
+ize;
+> +               }
+> +               fa->flags |=3D old_ma.flags & ~FS_COMMON_FL;
+> +
+> +               /* xflags not present in fsxattr */
+> +               if (!(fa->fsx_xflags_mask & FS_XFLAG_PTIME))
+> +                       fa->fsx_ptime =3D old_ma.fsx_ptime;
+> +       }
+> +
+> +       err =3D fileattr_set_prepare(inode, &old_ma, fa);
+> +       if (err)
+> +               return err;
+> +       err =3D security_inode_file_setattr(dentry, fa);
+> +       if (err)
+> +               return err;
+> +       err =3D inode->i_op->fileattr_set(idmap, dentry, fa);
+> +       if (err)
+> +               return err;
+> +       fsnotify_xattr(dentry);
+> +
+> +       return 0;
+> +}
+> +EXPORT_SYMBOL(__vfs_fileattr_set_locked);
+> +
+>  /**
+>   * vfs_fileattr_set - change miscellaneous file attributes
+>   * @idmap:     idmap of the mount
+> @@ -308,7 +391,6 @@ int vfs_fileattr_set(const struct mnt_idmap *idmap, s=
+truct dentry *dentry,
+>                      struct file_kattr *fa)
+>  {
+>         struct inode *inode =3D d_inode(dentry);
+> -       struct file_kattr old_ma =3D {};
+>         int err;
+>
+>         if (!inode->i_op->fileattr_set)
+> @@ -318,60 +400,7 @@ int vfs_fileattr_set(const struct mnt_idmap *idmap, =
+struct dentry *dentry,
+>                 return -EPERM;
+>
+>         inode_lock(inode);
+> -       err =3D vfs_fileattr_get(dentry, &old_ma);
+> -       if (!err) {
+> -               /* initialize missing bits from old_ma */
+> -               if (fa->flags_valid) {
+> -                       /* FS_IOC_SETFLAGS */
+> -                       fa->fsx_xflags |=3D (old_ma.fsx_xflags & FS_XFLAG=
+S_MASK) &
+> -                                         ~FS_XFLAG_COMMON;
+> -                       fa->fsx_extsize =3D old_ma.fsx_extsize;
+> -                       fa->fsx_nextents =3D old_ma.fsx_nextents;
+> -                       fa->fsx_projid =3D old_ma.fsx_projid;
+> -                       fa->fsx_cowextsize =3D old_ma.fsx_cowextsize;
+> -                       fa->fsx_ptime =3D old_ma.fsx_ptime;
+> -               } else {
+> -                       /*
+> -                        * Preserve unmasked xflags when running file_set=
+attr()
+> -                        * with a mask, which doesn't need a read-modify-=
+write
+> -                        * so these attributes would be set to 0.
+> -                        *
+> -                        * With FS_IOC_FSSETXATTR or mask =3D=3D 0 (legac=
+y mode)
+> -                        * this is not needed as userspace does
+> -                        * read-modify-write already.
+> -                        */
+> -                       if (fa->fsx_xflags_mask) {
+> -                               fa->fsx_xflags |=3D old_ma.fsx_xflags &
+> -                                                 ~fa->fsx_xflags_mask;
+> -                               fileattr_fill_xflags(fa, fa->fsx_xflags &
+> -                                                    ~FS_XFLAG_RDONLY_MAS=
+K);
+> -                               if (!(fa->fsx_xflags_mask & FS_XFLAG_EXTS=
+IZE))
+> -                                       fa->fsx_extsize =3D old_ma.fsx_ex=
+tsize;
+> -                               if (!(fa->fsx_xflags_mask & FS_XFLAG_PROJ=
+ID))
+> -                                       fa->fsx_projid =3D old_ma.fsx_pro=
+jid;
+> -                               if (!(fa->fsx_xflags_mask & FS_XFLAG_COWE=
+XTSIZE))
+> -                                       fa->fsx_cowextsize =3D old_ma.fsx=
+_cowextsize;
+> -                       }
+> -                       fa->flags |=3D old_ma.flags & ~FS_COMMON_FL;
+> -
+> -                       /* xflags not present in fsxattr */
+> -                       if (!(fa->fsx_xflags_mask & FS_XFLAG_PTIME))
+> -                               fa->fsx_ptime =3D old_ma.fsx_ptime;
+> -               }
+> -
+> -               err =3D fileattr_set_prepare(inode, &old_ma, fa);
+> -               if (err)
+> -                       goto out;
+> -               err =3D security_inode_file_setattr(dentry, fa);
+> -               if (err)
+> -                       goto out;
+> -               err =3D inode->i_op->fileattr_set(idmap, dentry, fa);
+> -               if (err)
+> -                       goto out;
+> -               fsnotify_xattr(dentry);
+> -       }
+> -
+> -out:
+> +       err =3D __vfs_fileattr_set_locked(idmap, dentry, fa);
+>         inode_unlock(inode);
+>         return err;
+>  }
+> diff --git a/include/linux/fileattr.h b/include/linux/fileattr.h
+> index ba7ed3b387d8..7ff62ee27e58 100644
+> --- a/include/linux/fileattr.h
+> +++ b/include/linux/fileattr.h
+> @@ -97,6 +97,8 @@ static inline bool fileattr_has_fsx(const struct file_k=
+attr *fa)
+>  int vfs_fileattr_get(struct dentry *dentry, struct file_kattr *fa);
+>  int vfs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentr=
+y,
+>                      struct file_kattr *fa);
+> +int __vfs_fileattr_set_locked(const struct mnt_idmap *idmap, struct dent=
+ry *dentry,
+> +                             struct file_kattr *fa);
 
-We have a few branches that lead to transaction aborts that are missing
-the unlikely tag, so add it to them as these are unexpected scenarios.
+There is no reason for __ prefix here and I think it should be discouraged =
+for
+global scope if possible.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/block-group.c      | 10 +++++-----
- fs/btrfs/ctree.c            |  2 +-
- fs/btrfs/delayed-inode.c    |  2 +-
- fs/btrfs/extent-tree.c      | 10 +++++-----
- fs/btrfs/file.c             |  6 +++---
- fs/btrfs/free-space-cache.c |  2 +-
- fs/btrfs/free-space-tree.c  |  6 +++---
- fs/btrfs/inode.c            | 14 +++++++-------
- fs/btrfs/qgroup.c           |  4 ++--
- fs/btrfs/raid-stripe-tree.c |  4 ++--
- fs/btrfs/relocation.c       | 14 +++++++-------
- fs/btrfs/tree-log.c         | 10 +++++-----
- fs/btrfs/xattr.c            |  4 ++--
- 13 files changed, 44 insertions(+), 44 deletions(-)
-
-diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index 0b3b8843d221..a40eedc65dd2 100644
---- a/fs/btrfs/block-group.c
-+++ b/fs/btrfs/block-group.c
-@@ -2929,19 +2929,19 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans)
- 		index = btrfs_bg_flags_to_raid_index(block_group->flags);
- 
- 		ret = insert_block_group_item(trans, block_group);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 		if (!test_bit(BLOCK_GROUP_FLAG_CHUNK_ITEM_INSERTED,
- 			      &block_group->runtime_flags)) {
- 			mutex_lock(&fs_info->chunk_mutex);
- 			ret = btrfs_chunk_alloc_add_chunk_item(trans, block_group);
- 			mutex_unlock(&fs_info->chunk_mutex);
--			if (ret)
-+			if (unlikely(ret))
- 				btrfs_abort_transaction(trans, ret);
- 		}
- 		ret = insert_dev_extents(trans, block_group->start,
- 					 block_group->length);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 		btrfs_add_block_group_free_space(trans, block_group);
- 
-@@ -3443,7 +3443,7 @@ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans)
- 				drop_reserve = false;
- 			}
- 			spin_unlock(&cur_trans->dirty_bgs_lock);
--		} else if (ret) {
-+		} else if (unlikely(ret)) {
- 			btrfs_abort_transaction(trans, ret);
- 		}
- 
-@@ -3513,7 +3513,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
- 			ret = btrfs_run_delayed_refs(trans, U64_MAX);
- 		if (!ret) {
- 			ret = update_block_group_item(trans, path, cache);
--			if (ret)
-+			if (unlikely(ret))
- 				btrfs_abort_transaction(trans, ret);
- 		}
- 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index fef0e49dd918..a70860bfd109 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -4468,7 +4468,7 @@ static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
- 	refcount_inc(&leaf->refs);
- 	ret = btrfs_free_tree_block(trans, btrfs_root_id(root), leaf, 0, 1);
- 	free_extent_buffer_stale(leaf);
--	if (ret < 0)
-+	if (unlikely(ret < 0))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	return ret;
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 295329d67b21..36efeda1644a 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -1076,7 +1076,7 @@ static int __btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
- 	 * in the same item doesn't exist.
- 	 */
- 	ret = btrfs_del_item(trans, root, path);
--	if (ret < 0)
-+	if (unlikely(ret < 0))
- 		btrfs_abort_transaction(trans, ret);
- out:
- 	btrfs_release_delayed_iref(node);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9b0a5c6b96f3..0008cbc12412 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1568,11 +1568,11 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	/* now insert the actual backref */
- 	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
- 		ret = insert_tree_block_ref(trans, path, node, bytenr);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 	} else {
- 		ret = insert_extent_data_ref(trans, path, node, bytenr);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 	}
- 
-@@ -3192,7 +3192,7 @@ static int do_free_extent_accounting(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = btrfs_update_block_group(trans, bytenr, num_bytes, false);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	return ret;
-@@ -4387,7 +4387,7 @@ static int find_free_extent_update_loop(struct btrfs_fs_info *fs_info,
- 		if (ret == -ENOSPC) {
- 			ret = 0;
- 			ffe_ctl->loop++;
--		} else if (ret < 0) {
-+		} else if (unlikely(ret < 0)) {
- 			btrfs_abort_transaction(trans, ret);
- 		} else {
- 			ret = 0;
-@@ -6123,7 +6123,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
- 
- 	ret = btrfs_free_tree_block(trans, btrfs_root_id(root), eb, parent,
- 				    wc->refs[level] == 1);
--	if (ret < 0)
-+	if (unlikely(ret < 0))
- 		btrfs_abort_transaction(trans, ret);
- out:
- 	wc->refs[level] = 0;
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 83804dc454b8..78af88168f18 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -450,7 +450,7 @@ int btrfs_drop_extents(struct btrfs_trans_handle *trans,
- 		 */
- 		path->slots[0] = del_slot;
- 		ret = btrfs_del_items(trans, root, path, del_slot, del_nr);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 	}
- 
-@@ -773,7 +773,7 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
- 
- mark_dirty:
- 	ret = btrfs_inode_set_file_extent_range(inode, start, end - start);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	return ret;
-@@ -2121,7 +2121,7 @@ static int fill_holes(struct btrfs_trans_handle *trans,
- 		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 		if (del_slot >= 0) {
- 			ret = btrfs_del_items(trans, root, path, del_slot, 1);
--			if (ret) {
-+			if (unlikely(ret)) {
- 				btrfs_abort_transaction(trans, ret);
- 				btrfs_release_path(path);
- 				return ret;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index bff6e5b372d6..c90ba5f6a8bb 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -241,7 +241,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_trans_handle *trans,
- 	ret = btrfs_update_inode(trans, inode);
- 
- fail:
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	return ret;
-diff --git a/fs/btrfs/free-space-tree.c b/fs/btrfs/free-space-tree.c
-index b7a4a6ade30f..1b5e3d5e8fef 100644
---- a/fs/btrfs/free-space-tree.c
-+++ b/fs/btrfs/free-space-tree.c
-@@ -865,7 +865,7 @@ int btrfs_remove_from_free_space_tree(struct btrfs_trans_handle *trans,
- 	mutex_lock(&block_group->free_space_lock);
- 	ret = __btrfs_remove_from_free_space_tree(trans, block_group, path, start, size);
- 	mutex_unlock(&block_group->free_space_lock);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	btrfs_put_block_group(block_group);
-@@ -1046,7 +1046,7 @@ int btrfs_add_to_free_space_tree(struct btrfs_trans_handle *trans,
- 	mutex_lock(&block_group->free_space_lock);
- 	ret = __btrfs_add_to_free_space_tree(trans, block_group, path, start, size);
- 	mutex_unlock(&block_group->free_space_lock);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- 	btrfs_put_block_group(block_group);
-@@ -1449,7 +1449,7 @@ static int __add_block_group_free_space(struct btrfs_trans_handle *trans,
- 
- 	ret = __btrfs_add_to_free_space_tree(trans, block_group, path,
- 					     block_group->start, block_group->length);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 
- out:
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e68c9871ee1e..4b29b82eb180 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4607,7 +4607,7 @@ static int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
- 	inode_inc_iversion(&dir->vfs_inode);
- 	inode_set_mtime_to_ts(&dir->vfs_inode, inode_set_ctime_current(&dir->vfs_inode));
- 	ret = btrfs_update_inode_fallback(trans, dir);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- out:
- 	fscrypt_free_filename(&fname);
-@@ -5213,7 +5213,7 @@ static int maybe_insert_hole(struct btrfs_inode *inode, u64 offset, u64 len)
- 	}
- 
- 	ret = btrfs_insert_hole_extent(trans, root, btrfs_ino(inode), offset, len);
--	if (ret) {
-+	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 	} else {
- 		btrfs_update_inode_bytes(inode, 0, drop_args.bytes_found);
-@@ -6826,7 +6826,7 @@ int btrfs_create_new_inode(struct btrfs_trans_handle *trans,
- 			if (ret)
- 				goto discard;
- 			ret = btrfs_update_inode(trans, BTRFS_I(inode));
--			if (ret) {
-+			if (unlikely(ret)) {
- 				btrfs_abort_transaction(trans, ret);
- 				goto discard;
- 			}
-@@ -6910,7 +6910,7 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 	update_time_after_link_or_unlink(parent_inode);
- 
- 	ret = btrfs_update_inode(trans, parent_inode);
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- 	return ret;
- 
-@@ -6921,13 +6921,13 @@ int btrfs_add_link(struct btrfs_trans_handle *trans,
- 
- 		ret2 = btrfs_del_root_ref(trans, key.objectid, btrfs_root_id(root),
- 					  parent_ino, &local_index, name);
--		if (ret2)
-+		if (unlikely(ret2))
- 			btrfs_abort_transaction(trans, ret2);
- 	} else if (add_backref) {
- 		int ret2;
- 
- 		ret2 = btrfs_del_inode_ref(trans, root, name, ino, parent_ino, NULL);
--		if (ret2)
-+		if (unlikely(ret2))
- 			btrfs_abort_transaction(trans, ret2);
- 	}
- 
-@@ -9280,7 +9280,7 @@ int btrfs_prealloc_file_range(struct inode *inode, int mode,
- 			range_end = round_up(i_size, fs_info->sectorsize);
- 			ret = btrfs_inode_set_file_extent_range(BTRFS_I(inode),
- 					range_start, range_end - range_start);
--			if (ret) {
-+			if (unlikely(ret)) {
- 				btrfs_abort_transaction(trans, ret);
- 				btrfs_end_transaction(trans);
- 				break;
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index baef546fa213..3127d3fcab31 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1446,7 +1446,7 @@ int btrfs_quota_disable(struct btrfs_fs_info *fs_info)
- 	ret = btrfs_free_tree_block(trans, btrfs_root_id(quota_root),
- 				    quota_root->node, 0, 1);
- 
--	if (ret < 0)
-+	if (unlikely(ret < 0))
- 		btrfs_abort_transaction(trans, ret);
- 
- out:
-@@ -1631,7 +1631,7 @@ int btrfs_add_qgroup_relation(struct btrfs_trans_handle *trans, u64 src, u64 dst
- 		int ret2;
- 
- 		ret2 = del_qgroup_relation_item(trans, src, dst);
--		if (ret2 < 0)
-+		if (unlikely(ret2 < 0))
- 			btrfs_abort_transaction(trans, ret);
- 		goto out;
- 	}
-diff --git a/fs/btrfs/raid-stripe-tree.c b/fs/btrfs/raid-stripe-tree.c
-index d9e660447205..1d3d1fa40b20 100644
---- a/fs/btrfs/raid-stripe-tree.c
-+++ b/fs/btrfs/raid-stripe-tree.c
-@@ -362,9 +362,9 @@ int btrfs_insert_one_raid_extent(struct btrfs_trans_handle *trans,
- 	if (ret == -EEXIST) {
- 		ret = update_raid_extent_item(trans, &stripe_key, stripe_extent,
- 					      item_size);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
--	} else if (ret) {
-+	} else if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 	}
- 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 0ccb558daf0c..cdbbf4ba968d 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1760,7 +1760,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
- 
- 	if (ret == 0) {
- 		ret = insert_dirty_subvol(trans, rc, root);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 	}
- 
-@@ -3834,7 +3834,7 @@ static void delete_orphan_inode(struct btrfs_trans_handle *trans,
- 	}
- 	ret = btrfs_del_item(trans, root, path);
- out:
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- }
- 
-@@ -4445,7 +4445,7 @@ static int move_existing_remap(struct btrfs_fs_info *fs_info,
- 	if (unlikely(ret)) {
- 		btrfs_free_reserved_extent(fs_info, dest_addr, dest_length, 0);
- 
--		if (trans) {
-+		if (unlikely(trans)) {
- 			btrfs_abort_transaction(trans, ret);
- 			btrfs_end_transaction(trans);
- 		}
-@@ -5158,26 +5158,26 @@ static int do_remap_reloc_trans(struct btrfs_fs_info *fs_info,
- 
- 	if (bg_needs_free_space) {
- 		ret = btrfs_add_block_group_free_space(trans, dest_bg);
--		if (ret) {
-+		if (unlikely(ret)) {
- 			btrfs_abort_transaction(trans, ret);
- 			goto fail;
- 		}
- 	}
- 
- 	ret = copy_remapped_data(fs_info, start, new_addr, length);
--	if (ret) {
-+	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
- 	}
- 
- 	ret = btrfs_remove_from_free_space_tree(trans, new_addr, length);
--	if (ret) {
-+	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
- 	}
- 
- 	ret = add_remap_entry(trans, path, src_bg, start, new_addr, length);
--	if (ret) {
-+	if (unlikely(ret)) {
- 		btrfs_abort_transaction(trans, ret);
- 		goto fail;
- 	}
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 399414ae67c8..763487114f85 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -434,7 +434,7 @@ static int process_one_buffer(struct extent_buffer *eb,
- 
- 		if (btrfs_buffer_uptodate(eb, gen, NULL) && level == 0) {
- 			ret = btrfs_exclude_logged_extents(eb);
--			if (ret)
-+			if (unlikely(ret))
- 				btrfs_abort_transaction(trans, ret);
- 		}
- 	}
-@@ -2943,7 +2943,7 @@ static int clean_log_buffer(struct btrfs_trans_handle *trans,
- 		int ret;
- 
- 		ret = btrfs_pin_reserved_extent(trans, eb);
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 		return ret;
- 	}
-@@ -3019,7 +3019,7 @@ static noinline int walk_down_log_tree(struct btrfs_path *path, int *level,
- 			path->slots[*level]++;
- 			if (wc->free) {
- 				ret = btrfs_read_extent_buffer(next, &check);
--				if (ret) {
-+				if (unlikely(ret)) {
- 					free_extent_buffer(next);
- 					if (trans)
- 						btrfs_abort_transaction(trans, ret);
-@@ -3038,7 +3038,7 @@ static noinline int walk_down_log_tree(struct btrfs_path *path, int *level,
- 			continue;
- 		}
- 		ret = btrfs_read_extent_buffer(next, &check);
--		if (ret) {
-+		if (unlikely(ret)) {
- 			free_extent_buffer(next);
- 			if (trans)
- 				btrfs_abort_transaction(trans, ret);
-@@ -3617,7 +3617,7 @@ static void free_log_tree(struct btrfs_trans_handle *trans,
- 
- 	if (log->node) {
- 		ret = walk_log_tree(&wc);
--		if (ret) {
-+		if (unlikely(ret)) {
- 			/*
- 			 * We weren't able to traverse the entire log tree, the
- 			 * typical scenario is getting an -EIO when reading an
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index cbee10b6b49a..1a71a1472c27 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -260,7 +260,7 @@ int btrfs_setxattr_trans(struct inode *inode, const char *name,
- 	inode_inc_iversion(inode);
- 	inode_set_ctime_current(inode);
- 	ret = btrfs_update_inode(trans, BTRFS_I(inode));
--	if (ret)
-+	if (unlikely(ret))
- 		btrfs_abort_transaction(trans, ret);
- out:
- 	if (start_trans)
-@@ -446,7 +446,7 @@ static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
- 		inode_inc_iversion(inode);
- 		inode_set_ctime_current(inode);
- 		ret = btrfs_update_inode(trans, BTRFS_I(inode));
--		if (ret)
-+		if (unlikely(ret))
- 			btrfs_abort_transaction(trans, ret);
- 	}
- 
--- 
-2.53.0
-
+Thanks,
+Amir.

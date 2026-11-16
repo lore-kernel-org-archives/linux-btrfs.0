@@ -1,84 +1,84 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
 	t=1794868483;
-	b=cTpufeQ+IJ1wIMaejQ6Q52z/F14yeSERnPHl26eGjTdK8cAKqv0wcR9lvRBKhY15YnRp
-	 UK4V5Yhsb/ivzBnWk0PZp5YgxO0vdavuzD3s8101iQn9KOU8kY9rOBXw0pj/zqRD4wZyw
-	 c/vatwE+VoBV8WrfNVCIrnlDh4uvwnuqSbERRXqxUl63GsskqclXUziXGqmfEbf/p3+5o
-	 UGNBx9qECPs2wLY4i5yC2d8Sh+SP8gdZCsk1rAbZGvVGMF4orBO5w7PuBSIIFt0w6enNv
-	 2FLcWiIxZGI4dk6RitA8va0SFmCFRRaj2RJewRmk2O9a1d07L7dHI5J6ggFn3qgfzbg==
+	b=vyPk8an3M1rDrah49w6wVqgGQ56n0CvjqpBi2v4SqzjwSDGn9Q4WhLYi7qBl4/ClaRYX
+	 cD7gLZEH8ehaMv1gLY1bB54jU30hhYvpDMCmdq09ZMLeJHoovwD8A1YXSxRqCCkcu03TX
+	 xboCnsLlDyJJrop7YJXWjPPduDRllDLGTetBzPASZWbQLc8xGYFpBPbr58WAk/wE5Ptnl
+	 S7n28AXPdkKp7dyIWZqkAbe22/13rShfjlUPl3KZED8aKnPmz8D4Ol7JRswzqycPbDvCd
+	 acxesWO+l5CCUptz6P9U1yPN6piJUz5jvUn3nNy0iIa/sjJ+3cxzkJPU7Bx8qmMEj1g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1794868483;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
 	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spamd-Result:
-	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
-	 X-Rspamd-Queue-Id;
-	bh=UTNhy5iFBHI+tzAhRcUhCEvQNqj8C5CPchIyrNxDSBU=;
-	b=bOtazveFhJyoVoUuF00l2EOY3bGTDLItNDQ9frcHNzmdBsypCWfqWoS5f5CEy6AAWl9I
-	 2Ty1IJkEFTNddPgixvLaD6VjtM4pG6RKLZD2SYiZ73k930cjGXa2aiawU2fnybjwgOVYE
-	 2oGz/EDWUhfPFlDHwy3TKxR5T2ObVN3KnGVL+nv+6nioGfYlPegrzGwaToDIIWJoSYMuV
-	 X8N/hHL36nYZMvFH+dnNIDrLhJY2BdxXUjaKIRhQdTmTv7jtDgchLtpVcK2v+peVdjslt
-	 jKCsHP7nkMLiYmcHuJWzmsAjUTyP8IqanvvxamMbgPGubH/iz2Q+4FHR6K1aNl1qj/A==
+	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
+	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
+	 X-Spamd-Result:X-Spam-Score;
+	bh=1nsdcP6EWm98cPheGtN2mzwCS7JvRHvEaxSnDwHM7VM=;
+	b=SYORvh0JWc9gBRBySgmRHOxFS9CddVyC3c7Xc2tegFu5x3G6SqxWpzJR5ALfn7oRW6YQ
+	 qTEBszpTjGl2ww1+8yUVEgtLNJYHSi0yHmD5hQUcmF5e55We3tLfnsOI9GWydxcc//R6G
+	 /w1lb7iPSFx8oyQu0/lygwhVXm81NQciD+OylbKm7e6CWWi51tCXp8fdDrR5J6RqMKk76
+	 NDEebV1CMUeYiq0TEXe4/QGsQMlhFPGifLqP4LBRreA5NaIGpcr57uwpXzrpWyMg6Bde9
+	 ZZeNVBVbmkyO34aE+3LxHAl7AbxGmgblpmDkFTZ1afirHOnQaJtQi4w2vF4pQG/Dd1w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Rbtb1x0j;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=sotOQ+ud;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=X9cwObg0;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=XG9kP77s;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3492606A337;
-	Mon, 16 Nov 2026 22:34:42 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A3492606A337
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BBCA1606A33E;
+	Mon, 16 Nov 2026 22:34:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BBCA1606A33E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Rbtb1x0j;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=sotOQ+ud
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=X9cwObg0;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=XG9kP77s
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id EA5DB1F899;
-	Mon, 16 Nov 2026 22:34:40 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1794868481; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=UTNhy5iFBHI+tzAhRcUhCEvQNqj8C5CPchIyrNxDSBU=;
-	b=Rbtb1x0jd1Z11ItSkipeh5FBUSEo+UQsh9kdpTsnSIxAx5Sh/8nmq5ANsfqXkzjATUdtzG
-	s8xXAvTUk2SJ3rJPjz4Dhb70a9U4aovMkoaihTn7NWNfF+/Z94h163W4dS52vJwweoexaF
-	oPYsuVQ3w0fms4BjwxuN5zBNxWWcjUc=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=sotOQ+ud
+	by smtp-out1.suse.de (Postfix) with ESMTPS id F05742228A;
+	Mon, 16 Nov 2026 22:34:38 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
 	t=1794868480; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
 	 mime-version:mime-version:
 	 content-transfer-encoding:content-transfer-encoding:
 	 in-reply-to:in-reply-to:references:references;
-	bh=UTNhy5iFBHI+tzAhRcUhCEvQNqj8C5CPchIyrNxDSBU=;
-	b=sotOQ+udbPLhmcj4esfO2ZEqQEX5vFBjXTPvDWMn7l22axFXFWqgOt4Bqn+i0RwVsbKRX8
-	WCwSPwmgruJTMXfnE5oPpgXJ5+I0ENmhRzJ8nDyGPI+VwRpp5lcuu2dNiTwYYhPb8MpXuC
-	x/B39xjNySkwx9Tf9co+FLuAaJDn70Y=
+	bh=1nsdcP6EWm98cPheGtN2mzwCS7JvRHvEaxSnDwHM7VM=;
+	b=X9cwObg05/yO4YqUYvyz/yAZWWHAPqQMhpLX2AyhrqNdEiG2fEC92jyS98N9rHo/FbzuZu
+	QeHDoFZlo83mOXM3r0uRaZkvDoLQDRiRErbhLGCgWyvdpOCKB0BT0JkEgXSAmLdmwAduSO
+	7w+0mqcoQEbpfu1gM8txZF251ntgLHc=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=XG9kP77s
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794868478; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=1nsdcP6EWm98cPheGtN2mzwCS7JvRHvEaxSnDwHM7VM=;
+	b=XG9kP77sskZok96gbA+UdagRzLlETjoCmaJbxeJL32ZkD46fTcKoutoZXMqwWyErK/xR59
+	pLX4o5h0u5HqMDtBF5YM4Io2H23HfatBFJ87MBLJeC6UgdmN1+pB2TCxfzHN2aGpqXe52g
+	GMU3z+xNMCp6St3ZwHDp4AwWnxsmPg0=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7E089134B8;
-	Mon, 16 Nov 2026 22:34:39 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 805AB1334C;
+	Mon, 16 Nov 2026 22:34:37 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id tMNxC/uE+2p2ZwAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>); Mon, 16 Nov 2026 22:34:39 +0000
+	id tMNxC/uE+2p2ZwAAD6G6ig:T2
+	(envelope-from <wqu@suse.com>); Mon, 16 Nov 2026 22:34:37 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: stable@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: scrub: fix use-after-free when waking up the stripe I/O waiter
-Date: Tue, 17 Nov 2026 09:04:17 +1030
-Message-ID: <51527ea5f9f456a7ebe70b7fcaf626fac3dab945.1794867985.git.wqu@suse.com>
+Subject: [PATCH 1/2] btrfs: scrub: fix use-after-free when waking up the repair waiter
+Date: Tue, 17 Nov 2026 09:04:16 +1030
+Message-ID: <217e66b15e1646812cc86be582be67b7e558b270.1794867985.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1794867985.git.wqu@suse.com>
 References: <cover.1794867985.git.wqu@suse.com>
@@ -92,6 +92,11 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: F05742228A
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
@@ -102,310 +107,142 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
 	MX_GOOD(-0.01)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	URIBL_BLOCKED(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:email,suse.com:dkim];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
-	RCPT_COUNT_TWO(0.00)[2];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCPT_COUNT_TWO(0.00)[2];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
 	RCVD_TLS_ALL(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
 	MIME_TRACE(0.00)[0:+];
 	RCVD_COUNT_TWO(0.00)[2];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
+	URIBL_BLOCKED(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo];
+	DKIM_TRACE(0.00)[suse.com:+]
 X-Spam-Score: -12.01
-X-Spam-Level: 
-X-Rspamd-Queue-Id: EA5DB1F899
 
-The scrub_write_endio() can race with scrub finishing, which can lead to
-use-after-free:
+The read-repair worker of a scrub_stripe can race with stripe freeing:
 
- CPU0 (write endio)                  CPU1 (scrub)
- scrub_write_endio()                 flush_scrub_stripes()
- |                                   |-wait_scrub_stripe_io()
- |                                   | \-wait_event()
- |                                   |   ^^^ checks the condition without
- |                                   |       taking io_wait.lock
- |-atomic_dec_and_test()             |
- | ^^^ pending_io hits 0             |
- |                                   | ^^^ sees 0, doesn't sleep
+ CPU0 (repair worker)                CPU1 (scrub)
+ scrub_stripe_read_repair_worker()   scrub_raid56_parity_stripe()
+ |                                   |-wait_event()
+ |                                   | ^^^ checks the condition without
+ |                                   |     taking repair_wait.lock
+ |-set_bit(REPAIR_DONE)              |
+ | ^^^ the waiter can see it now     | ^^^ sees the bit, doesn't sleep
  |                                   |
- |                                   btrfs_scrub_dev()
- |                                   \-scrub_put_ctx()
- |                                     \-scrub_free_ctx()
- |                                       ^^^ stripe freed
+ |                                   \-scrub_simple_mirror()
+ |                                     \-...
+ |                                   scrub_stripe()
+ |                                   |-release_scrub_stripe()
+ |                                   \-kfree(sctx->raid56_data_stripes)
+ |                                     ^^^ stripe freed
  |
  \-wake_up()
    \-_raw_spin_lock_irqsave()
-     ^^^ io_wait.lock is in freed memory
-         Too late.
+     ^^^ repair_wait.lock is in freed memory
+     Too late.
+
+The same applies to flush_scrub_stripes(), where the stripes are freed by
+scrub_free_ctx() at the end of the scrub.
 
 Fix it by waiting with a completion instead. complete_all() wakes the
 waiter under the completion's lock and does not touch it afterwards, and
-wait_for_completion_io() returns only after taking that lock, so the
-stripe can be freed as soon as the wait returns.
+wait_for_completion() returns only after taking that lock, so the stripe
+can be freed as soon as the wait returns.
 
-There are locations that we submit multiple bios in one go, with extra
-care the pending_io can reach 0 during the submission, to address it:
-
-- Re-arm the completion when the first pending_io ref is taken, in
-  scrub_stripe_get_io(). Any previous round of IO is waited for before the
-  next one starts.
-
-- Hold one extra ref for batched submission
-  This includes:
-  * scrub_write_sectors()
-  * scrub_stripe_submit_repair_read() for non-zoned cases
-
-  This is the same pattern used in other scrub path.
-
-The completion is initialized as completed, so waiting on a stripe without
-any pending IO returns immediately as before.
+The completion is re-armed by scrub_reset_stripe(), which is called
+before every refill of a stripe, i.e. after the previous waiter has
+returned. The SCRUB_STRIPE_FLAG_REPAIR_DONE flag has no user left, remove
+it.
 
 This is the same problem fixed for the RAID56 rbio in commit
 26eb4d70f96d ("btrfs: raid56: fix use-after-free when waking up the rbio
 I/O waiter").
 
 Fixes: 9ecb5ef543d3 ("btrfs: scrub: introduce the main read repair worker for scrub_stripe")
-Fixes: 058e09e6fe7c ("btrfs: scrub: introduce a writeback helper for scrub_stripe")
 Cc: stable@vger.kernel.org # 6.4+
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/scrub.c | 97 ++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 69 insertions(+), 28 deletions(-)
+ fs/btrfs/scrub.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4b37ae143f61..a8c62a3aea0c 100644
+index 98362c91bce4..4b37ae143f61 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -149,7 +149,9 @@ struct scrub_stripe {
- 	atomic_t pending_io;
+@@ -80,9 +80,6 @@ enum scrub_stripe_flags {
+ 	/* Set when @mirror_num, @dev, @physical and @logical are set. */
+ 	SCRUB_STRIPE_FLAG_INITIALIZED,
+ 
+-	/* Set when the read-repair is finished. */
+-	SCRUB_STRIPE_FLAG_REPAIR_DONE,
+-
+ 	/*
+ 	 * Set for data stripes if it's triggered from P/Q stripe.
+ 	 * During such scrub, we should not report errors in data stripes, nor
+@@ -153,7 +150,9 @@ struct scrub_stripe {
  	/* From btrfs_chunk_map::stripe_len. Should not exceed BTRFS_STRIPE_LEN. */
  	u32 stripe_len;
--	wait_queue_head_t io_wait;
+ 	wait_queue_head_t io_wait;
+-	wait_queue_head_t repair_wait;
 +
-+	/* Completed by the last endio when pending_io drops to zero. */
-+	struct completion io_done;
- 
- 	/* Completed when the read-repair is finished. */
- 	struct completion repair_done;
-@@ -357,9 +359,11 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
- 	stripe->stripe_len = BTRFS_STRIPE_LEN;
- 	stripe->state = 0;
- 
--	init_waitqueue_head(&stripe->io_wait);
- 	init_completion(&stripe->repair_done);
-+	init_completion(&stripe->io_done);
- 	atomic_set(&stripe->pending_io, 0);
-+	/* No pending IO by default, thus nothing to wait. */
-+	complete_all(&stripe->io_done);
- 	spin_lock_init(&stripe->write_error_lock);
- 
- 	stripe->buffer = kvmalloc(BTRFS_STRIPE_LEN, GFP_KERNEL);
-@@ -381,9 +385,25 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
- 	return -ENOMEM;
- }
- 
-+static void scrub_stripe_get_io(struct scrub_stripe *stripe)
-+{
-+	/* The first pending IO re-arms the completion. */
-+	if (atomic_inc_return(&stripe->pending_io) == 1)
-+		reinit_completion(&stripe->io_done);
-+}
-+
-+/* Drop one pending IO, return true if it was the last one. */
-+static bool scrub_stripe_put_io(struct scrub_stripe *stripe)
-+{
-+	if (!atomic_dec_and_test(&stripe->pending_io))
-+		return false;
-+	complete_all(&stripe->io_done);
-+	return true;
-+}
-+
- static void wait_scrub_stripe_io(struct scrub_stripe *stripe)
- {
--	wait_event(stripe->io_wait, atomic_read(&stripe->pending_io) == 0);
-+	wait_for_completion_io(&stripe->io_done);
- }
- 
- static void scrub_put_ctx(struct scrub_ctx *sctx);
-@@ -891,8 +911,7 @@ static void scrub_repair_read_endio(struct btrfs_bio *bbio)
- 
- 	scrub_read_endio_common(bbio);
- 
--	if (atomic_dec_and_test(&stripe->pending_io))
--		wake_up(&stripe->io_wait);
-+	scrub_stripe_put_io(stripe);
- }
- 
- static int calc_next_mirror(int mirror, int num_copies)
-@@ -941,6 +960,18 @@ static struct btrfs_bio *alloc_scrub_bbio(struct btrfs_fs_info *fs_info,
- 	return bbio;
- }
- 
-+static void scrub_submit_repair_read_bio(struct scrub_stripe *stripe,
-+					 struct btrfs_bio *bbio, int mirror,
-+					 bool wait)
-+{
-+	ASSERT(bbio->bio.bi_iter.bi_size);
-+
-+	scrub_stripe_get_io(stripe);
-+	btrfs_submit_bbio(bbio, mirror);
-+	if (wait)
-+		wait_scrub_stripe_io(stripe);
-+}
-+
- static void scrub_stripe_submit_repair_read(struct scrub_stripe *stripe,
- 					    int mirror, int blocksize, bool wait)
- {
-@@ -953,15 +984,19 @@ static void scrub_stripe_submit_repair_read(struct scrub_stripe *stripe,
- 	ASSERT(atomic_read(&stripe->pending_io) == 0,
- 	       "atomic_read(&stripe->pending_io)=%d", atomic_read(&stripe->pending_io));
- 
-+	/*
-+	 * Hold an extra ref during submission, so the IO can not be reported as
-+	 * finished before all bios are submitted.
-+	 * If we wait for every bio, no extra ref as it would block the wait.
-+	 */
-+	if (!wait)
-+		scrub_stripe_get_io(stripe);
-+
- 	for_each_set_bit(i, &old_error_bitmap, stripe->nr_sectors) {
- 		/* The current sector cannot be merged, submit the bio. */
- 		if (bbio && ((i > 0 && !test_bit(i - 1, &old_error_bitmap)) ||
- 			     bbio->bio.bi_iter.bi_size >= blocksize)) {
--			ASSERT(bbio->bio.bi_iter.bi_size);
--			atomic_inc(&stripe->pending_io);
--			btrfs_submit_bbio(bbio, mirror);
--			if (wait)
--				wait_scrub_stripe_io(stripe);
-+			scrub_submit_repair_read_bio(stripe, bbio, mirror, wait);
- 			bbio = NULL;
- 		}
- 
-@@ -973,13 +1008,10 @@ static void scrub_stripe_submit_repair_read(struct scrub_stripe *stripe,
- 
- 		scrub_bio_add_sector(bbio, stripe, i);
- 	}
--	if (bbio) {
--		ASSERT(bbio->bio.bi_iter.bi_size);
--		atomic_inc(&stripe->pending_io);
--		btrfs_submit_bbio(bbio, mirror);
--		if (wait)
--			wait_scrub_stripe_io(stripe);
--	}
-+	if (bbio)
-+		scrub_submit_repair_read_bio(stripe, bbio, mirror, wait);
-+	if (!wait)
-+		scrub_stripe_put_io(stripe);
- }
- 
- static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
-@@ -1242,8 +1274,7 @@ static void scrub_read_endio(struct btrfs_bio *bbio)
- 
- 	scrub_read_endio_common(bbio);
- 
--	if (atomic_dec_and_test(&stripe->pending_io)) {
--		wake_up(&stripe->io_wait);
-+	if (scrub_stripe_put_io(stripe)) {
- 		INIT_WORK(&stripe->work, scrub_stripe_read_repair_worker);
- 		queue_work(stripe->bg->fs_info->scrub_workers, &stripe->work);
- 	}
-@@ -1269,8 +1300,7 @@ static void scrub_write_endio(struct btrfs_bio *bbio)
- 	}
- 	bio_put(&bbio->bio);
- 
--	if (atomic_dec_and_test(&stripe->pending_io))
--		wake_up(&stripe->io_wait);
-+	scrub_stripe_put_io(stripe);
- }
- 
- static void scrub_submit_write_bio(struct scrub_ctx *sctx,
-@@ -1283,7 +1313,7 @@ static void scrub_submit_write_bio(struct scrub_ctx *sctx,
- 		      stripe->logical;
- 
- 	fill_writer_pointer_gap(sctx, stripe->physical + bio_off);
--	atomic_inc(&stripe->pending_io);
-+	scrub_stripe_get_io(stripe);
- 	btrfs_submit_repair_write(bbio, stripe->mirror_num, dev_replace);
- 	if (!btrfs_is_zoned(fs_info))
- 		return;
-@@ -1322,6 +1352,15 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
- 	struct btrfs_bio *bbio = NULL;
- 	int sector_nr;
- 
-+	/*
-+	 * Hold an extra ref during submission, so the IO can not be reported as
-+	 * finished before all bios are submitted.
-+	 * For zoned, we wait for every bio, no extra ref as it would block the
-+	 * wait.
-+	 */
-+	if (!btrfs_is_zoned(fs_info))
-+		scrub_stripe_get_io(stripe);
-+
- 	for_each_set_bit(sector_nr, &write_bitmap, stripe->nr_sectors) {
- 		/* We should only writeback sectors covered by an extent. */
- 		ASSERT(scrub_bitmap_test_bit_has_extent(stripe, sector_nr));
-@@ -1340,6 +1379,8 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
- 	}
- 	if (bbio)
- 		scrub_submit_write_bio(sctx, stripe, bbio, dev_replace);
-+	if (!btrfs_is_zoned(fs_info))
-+		scrub_stripe_put_io(stripe);
- }
- 
- /*
-@@ -1786,7 +1827,8 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
- 	int mirror = stripe->mirror_num;
- 	int i;
- 
--	atomic_inc(&stripe->pending_io);
-+	/* The extra ref is dropped after all bios are submitted. */
-+	scrub_stripe_get_io(stripe);
- 
- 	for_each_set_bit(i, &has_extent, stripe->nr_sectors) {
- 		/* We're beyond the chunk boundary, no need to read anymore. */
-@@ -1798,7 +1840,7 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
- 		    ((i > 0 && !test_bit(i - 1, &has_extent)) ||
- 		     bbio->bio.bi_iter.bi_size >= stripe_len)) {
- 			ASSERT(bbio->bio.bi_iter.bi_size);
--			atomic_inc(&stripe->pending_io);
-+			scrub_stripe_get_io(stripe);
- 			btrfs_submit_bbio(bbio, mirror);
- 			bbio = NULL;
- 		}
-@@ -1844,12 +1886,11 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
- 
- 	if (bbio) {
- 		ASSERT(bbio->bio.bi_iter.bi_size);
--		atomic_inc(&stripe->pending_io);
-+		scrub_stripe_get_io(stripe);
- 		btrfs_submit_bbio(bbio, mirror);
- 	}
- 
--	if (atomic_dec_and_test(&stripe->pending_io)) {
--		wake_up(&stripe->io_wait);
-+	if (scrub_stripe_put_io(stripe)) {
- 		INIT_WORK(&stripe->work, scrub_stripe_read_repair_worker);
- 		queue_work(stripe->bg->fs_info->scrub_workers, &stripe->work);
- 	}
-@@ -1877,7 +1918,7 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
- 	/* Read the whole range inside the chunk boundary. */
- 	for (unsigned int cur = 0; cur < nr_sectors; cur++)
- 		scrub_bio_add_sector(bbio, stripe, cur);
--	atomic_inc(&stripe->pending_io);
-+	scrub_stripe_get_io(stripe);
++	/* Completed when the read-repair is finished. */
++	struct completion repair_done;
  
  	/*
- 	 * For dev-replace, either user asks to avoid the source dev, or
+ 	 * Indicate the states of the stripe.  Bits are defined in
+@@ -359,7 +358,7 @@ static int init_scrub_stripe(struct btrfs_fs_info *fs_info,
+ 	stripe->state = 0;
+ 
+ 	init_waitqueue_head(&stripe->io_wait);
+-	init_waitqueue_head(&stripe->repair_wait);
++	init_completion(&stripe->repair_done);
+ 	atomic_set(&stripe->pending_io, 0);
+ 	spin_lock_init(&stripe->write_error_lock);
+ 
+@@ -1234,8 +1233,7 @@ static void scrub_stripe_read_repair_worker(struct work_struct *work)
+ 	}
+ 
+ 	scrub_stripe_report_errors(sctx, stripe, &errors);
+-	set_bit(SCRUB_STRIPE_FLAG_REPAIR_DONE, &stripe->state);
+-	wake_up(&stripe->repair_wait);
++	complete_all(&stripe->repair_done);
+ }
+ 
+ static void scrub_read_endio(struct btrfs_bio *bbio)
+@@ -1762,6 +1760,7 @@ static void scrub_reset_stripe(struct scrub_stripe *stripe)
+ 	stripe->nr_meta_extents = 0;
+ 	stripe->nr_data_extents = 0;
+ 	stripe->state = 0;
++	reinit_completion(&stripe->repair_done);
+ 
+ 	for (int i = 0; i < stripe->nr_sectors; i++) {
+ 		stripe->sectors[i].csum = NULL;
+@@ -1960,8 +1959,7 @@ static int flush_scrub_stripes(struct scrub_ctx *sctx)
+ 	for (int i = 0; i < nr_stripes; i++) {
+ 		stripe = &sctx->stripes[i];
+ 
+-		wait_event(stripe->repair_wait,
+-			   test_bit(SCRUB_STRIPE_FLAG_REPAIR_DONE, &stripe->state));
++		wait_for_completion(&stripe->repair_done);
+ 	}
+ 
+ 	/* Submit for dev-replace. */
+@@ -2236,8 +2234,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+ 	for (int i = 0; i < data_stripes; i++) {
+ 		stripe = &sctx->raid56_data_stripes[i];
+ 
+-		wait_event(stripe->repair_wait,
+-			   test_bit(SCRUB_STRIPE_FLAG_REPAIR_DONE, &stripe->state));
++		wait_for_completion(&stripe->repair_done);
+ 	}
+ 	/* For now, no zoned support for RAID56. */
+ 	ASSERT(!btrfs_is_zoned(sctx->fs_info));
 -- 
 2.56.0
 

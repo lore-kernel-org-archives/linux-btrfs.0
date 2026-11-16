@@ -1,59 +1,49 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.127.231.51
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794819417;
-	b=oF9MljniGZUm+4DV3ZFIMViES2UmYXhHKHEyfBUnYROrN5Kfo5rzRln3xMjghhyFjJ+k
-	 PmbsdFsEEy57h6ueaCgxKF3etX39fdmBz7Sw33lyC7iOMt2f0yHoJ/NAwfUIdiJ7jAWTC
-	 GqrmlObtqDaO9dSR9+uQe3Zfa0ii8Pr5oL8o51UoPqdpA5Os6Ll+MSlS77NWuEG1FuPUI
-	 6cjNnotfx4MCwERN2mtBJwWGsABCIjEY9nM0yvbD48INXFeGMabzRw3ANxsFxdte3nbJq
-	 VuHcYVtvOlVoGTpd2DvVbzYpphFSOBOJ1DyondD+9BR/5CRpFyGXZSMy7uLNWMeaDBw==
+	t=1794822662;
+	b=ZPQ+6CCZU5+C8W7QRERrUWVmAMKbMpSTjNWnxfBgQ71sTBwVLLOPihzTI8+2QHfaXSyT
+	 xbCtMzsei30NPh/wOac1UkJDleK1tZz75cdwr9S44aW01oe69Zxdr41HJckEslaTWQh9G
+	 QyyRLVSw2Oy3yTHSLT4NJt4wg3iqLJPjvyHGvRVMoA+aIufWk0gvE20+ZYEcDrk84eH+d
+	 lKju4ajpcqjL4IaHbi7r20YBIiSnmb0tZXOuUDF+jW7IWONtwXxuhjyERe6GMHTrQ76qN
+	 conCdS4FuF3bwLodk9q+k+2QGgKsgkEaL5GZGZ7dmwcOuT0NVRS7t1G6RmqBqLtof8g==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794819417;
-	h=DMARC-Filter:DKIM-Signature:Cc:User-Agent:References:In-Reply-To:To:
-	 Subject:Received:Date:Mime-Version:Content-Type:X-Lms-Return-Path:
-	 X-Original-From:From:Message-Id:Content-Transfer-Encoding;
-	bh=qMN6Gy99ku6X7bmf1HLvDwK1SCbZB7fU4lGsGsyiAE8=;
-	b=YRb5zHjikVHaWZOAHaezsLcZS3T7y9C+fRFY9lffY+yZXkqyVFq4GvDDQ+kAkbQATkob
-	 pEoKZpUOP5w+C3A/6T1rVZpg4lgroaah6s/RYespIQBcarEd6fCcAdYzcFFvCN8UHTzk+
-	 uHrvJLz8vwVjPJzCn98HkJeufi/2QilgBG3NSoHm3lTJFu27zQ//3cexKbnBaaxmCmuni
-	 9nOkmQgs2ljaPNmsvImVtdXOeg3C5dONPRJve/SagbD3VVQ4W9hIGN4jxENnHvbBDbLFm
-	 rZDMzy+tuaUAED5oWnB7xhDRniXJgE6AjiCPzAu0RIoMXfN4WrOXIubRdbTXxpbAP+g==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794822662;
+	h=Received:DKIM-Signature:From:Subject:Date:Message-Id:MIME-Version:
+	 Content-Type:Content-Transfer-Encoding:X-B4-Tracking:X-Change-ID:To:
+	 Cc:X-Mailer:X-Developer-Signature:X-Developer-Key;
+	bh=8aRGBcpvx8xM7mxQtHaidBWPdNvahzYjZNEX0jkJ1yE=;
+	b=AUrbPjzgtiJkIiQW5UyWbqc3vElwrUqFRgzM+ZY6TBSKyWfJnOHvWoPG9mIzihpnPD5W
+	 y1FSQqwPly9nPWi4MJwgN9TiEEmq0/Vq7qNvvHDpMPg3gYC01fpg4U0up3zZDTPE5v7Ei
+	 pXnFXmRXyKszyGpdnrghF9wVvKIXNcnDqP9xRgj6lIQbqDv7KVTmOQwvV/NXOpDESWa+4
+	 v6SVAasxcdHcxXKOd8Qu2ZGUx7hq0D4kC+iSOPHgOO18M2nCgkvPeC7mNJVB/31MVWtkO
+	 p4gDysvRMYSV9PEt67gatrbm7A8Oo/fujSfwBxTteo0aFyXUrSJ7fJ43qXr2MTOv/hA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=fygo.io;
-	spf=pass smtp.mailfrom=fygo.io;
-	dkim=pass header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=LaFVMLUr;
-	arc=none smtp.remote-ip=209.127.231.51
-Received: from va-2-51.ptr.blmpb.com (va-2-51.ptr.blmpb.com [209.127.231.51])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=K2+7tRLz;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F01A9606A31C
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 08:56:55 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F01A9606A31C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3F7E5606A31C;
+	Mon, 16 Nov 2026 09:51:02 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=LaFVMLUr
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
- s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1794819409;
-  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
- reply-to:content-type:mime-version:in-reply-to:message-id;
- bh=qMN6Gy99ku6X7bmf1HLvDwK1SCbZB7fU4lGsGsyiAE8=;
- b=LaFVMLUrlcQel/QYGB9DJHR8e0Gy1Bd4QzmJCK570+TZV32J0J5bQl6G1c2cS4XTmln3pg
- M8ODQ6sMxErBJr5BOcVoy7I15S7c6EuJZwWvlsYHVWBUZ157gBPXRZQ3RGJWefX3SHxZHZ
- IdYNWbuizUktTFFFO6iwENhPPG3dB+XvTSeYh3TPeteEzx3XF9/FuRneUxZKJQ432Drxtx
- +Gebu3MErc4mygLHBtDkVsJNPqkhRxFNJhClyOzv3FiNOzIB04esBdYc6ZAyaYP4hmiMa7
- f1jhtSpkZDwlXezXGM1c5Poio+hFfvoYgLbzOAZFY6JCpfZL2F1+Z+HgbrGZEw==
-Cc: <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>, 
-	<naohiro.aota@wdc.com>
-User-Agent: Mozilla Thunderbird
-References: <20261110080932.1205332-1-johannes.thumshirn@wdc.com> <e3261fe5-4b98-47e6-ae66-d4af05caa621@gmail.com> <CAD=K2o8W085XSBeTYXjvaTRxgnx6y0_fVrNRH18-At=EUtWOUg@mail.gmail.com> <18ce5468-92c5-4247-aad0-bbea25d8ef70@wdc.com>
-In-Reply-To: <18ce5468-92c5-4247-aad0-bbea25d8ef70@wdc.com>
-To: "Johannes Thumshirn" <johannes.thumshirn@wdc.com>, 
-	"Jochen Philipp" <a2jphilipp@gmail.com>, 
-	=?utf-8?q?Martin_=C5=A0koda?= <mar.skoda@gmail.com>
-Subject: Re: [PATCH v3] btrfs: zoned: don't release active zone reservations for conventional zones
-Received: from [192.168.8.64] ([183.34.162.5]) by smtp.larksuite.com with ESMTPS; Mon, 16 Nov 2026 08:56:48 +0000
-Date: Mon, 16 Nov 2026 16:56:41 +0800
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=K2+7tRLz
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 609D61F000C4;
+	Mon, 16 Nov 2026 09:50:58 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1794822662;
+	bh=8aRGBcpvx8xM7mxQtHaidBWPdNvahzYjZNEX0jkJ1yE=;
+	h=From:Subject:Date:To:Cc;
+	b=K2+7tRLzUA1vHpSh9Z4eYxrLSWLfx3VxiAtV+I2wsfPNb9ufsZBXDAGRXgVgW5eVT
+	 7EPd2127puPa6m8jR0gUbbLngHeCTt0SNmH9jNftFfvciTpnZOwt9ZFB8xaifyNx5I
+	 6T4/eGhfCJ4f1ugyPqE8JW8/pgNBj81vq/a0P4QMlvX9rDmpcnRbSLEfn3OZwjS09o
+	 Ffj8QthI/KmMMkRMsxQrY2bpnNRJNH0bSetX/pu6Ptvz0r4Eeu9O8UNelZBCix0Dko
+	 77WqR1fbWuPXsEef+M7YM+E7QUpfT9xgzJUFuXdxSrgNBt3AgthI6/SanCUbgR5X4y
+	 DYCuvs09giVyg==
+From: Christian Brauner <brauner@kernel.org>
+Subject: [PATCH 0/3] fs: pre-existing fixes for the SB_RDONLY series
+Date: Mon, 16 Nov 2026 10:28:29 +0100
+Message-Id: <20261116-work-fs-sb_rdonly-fixes-v1-0-95a25ce917ad@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,50 +52,64 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-X-Lms-Return-Path: <lba+26afac551+73b858+vger.kernel.org+zhudongjiang@fygo.io>
-X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
-From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
-Message-Id: <80ecdc9f-9604-4314-ae26-4d6a879671ad@fygo.io>
-Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIAAAAAAAC/z2M2QrCMBBFf6XMsxOaoK36KyKSZWKjksqMK6X/b
+ qLg47nLmUCIEwlsmwmYHknSmAvoRQN+sPlImEJhMK3ptNYdPkc+YxQUd+Aw5ssbY3qRYOiXfmP
+ 6uG7dCsr7yvQtynm3/7Hc3Yn8rerqwlkhdGyzH2pUxSqK+otVHcA8fwDm31WGpAAAAA==
+X-Change-ID: 20261116-work-fs-sb_rdonly-fixes-d74c927f80b5
+To: linux-fsdevel@vger.kernel.org
+Cc: Jan Kara <jack@suse.com>, ecryptfs@vger.kernel.org, 
+ linux-ext4@vger.kernel.org, jfs-discussion@lists.sourceforge.net, 
+ linux-nilfs@vger.kernel.org, exfat@lists.linux.dev, linux-mm@kvack.org, 
+ ntfs@lists.linux.dev, ocfs2-devel@lists.linux.dev, 
+ linux-btrfs@vger.kernel.org, gfs2@lists.linux.dev, 
+ linux-efi@vger.kernel.org, linux-mtd@lists.infradead.org, 
+ linux-xfs@vger.kernel.org, 
+ "Christian Brauner (Amutable)" <brauner@kernel.org>, stable@vger.kernel.org
+X-Mailer: b4 0.17-dev-ce4c1
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1425; i=brauner@kernel.org;
+ h=from:subject:message-id; bh=jeCsQzF34oL0Arvs8F9B2uJQSCX+EzbT3qRU+Rbsju8=;
+ b=owGbwMvMwCU28Zj0gdSKO4sYT6slMWT9uvi7fE9w7bmpcv5J82/1za9S4FUrcTJtdFY06i+ct
+ 14hJSyuo5SFQYyLQVZMkcWh3SRcbjlPxWajTA2YOaxMIEMYuDgFYCLiSxn+p61423H1yuqphyNy
+ CypNQ07uYf2rs/yuFLtD9f/+bZMLtzEyTOL9teBm7yq3mqbpzbY+BsIR898sTkj0CjXjaTy2tLW
+ IFQA=
+X-Developer-Key: i=brauner@kernel.org; a=openpgp;
+ fpr=4880B8C9BD0E5106FC070F4F7B3C391EFEA93624
 
-=E5=9C=A8 2026/11/16 14:59, Johannes Thumshirn =E5=86=99=E9=81=93:
-> On 11/13/26 6:13 PM, Jochen Philipp wrote:
->> Hi all,
->>
->> results of the larger write test with Dongjiang's
->> zoned-fixes-testing branch (7.4.0-rc1-zhu+, untainted):
->>
->> - ~2.3 TB written via rsync in ~3 hours (~200 MB/s), fs now
->> =C2=A0=C2=A0 holds 6.7 TB total (the first abort back in October happene=
-d
->> =C2=A0=C2=A0 at ~4.3 TB written)
->> - no btrfs messages at all during the run
->> - closed zones: still 5 after the run (124 before the first
->> =C2=A0=C2=A0 mount with this branch, 128 on the broken fs)
->> - clean unmount, no "unable to release extent buffer" warnings
->> - btrfs check --readonly: no error found
->> - mounted again, stays rw
->>
->> So for me the series fixes both the broken on-disk state and the
->> problem itself. If it helps, feel free to add:
->>
->> Tested-by: Jochen Philipp <a2jphilipp@gmail.com>
->>
->> Johannes, I'm happy to test your patches as well once they're
->> out.
->=20
-> This sound very good.=C2=A0 Martin, can you also test Dongjiang's patches=
-?
->=20
-> Dongjiang can you resend the patches in your branch?
+Three fixes for pre-existing bugs that came up during review of the
+SB_RDONLY series (cf. [1]). They don't depend on it and are all tagged
+for stable. I'll put them in front of the series in vfs-7.5.super.
 
-Hi Jochen, Johannes,
+- gfs2 hits the BUG_ON() in gfs2_quota_cleanup() on a remount to
+  read-only after a withdraw during mount. The withdraw work was never
+  queued so SDF_JOURNAL_LIVE stays set.
 
-Jochen, thank you very much for all your testing!
+- exfat marks the volume clean at umount or on a remount to read-only
+  after a shutdown with EXFAT_GOING_DOWN_NOSYNC although it may be
+  inconsistent.
 
-Johannes, sure. I'll get the patches ready and send out v4 soon.
+- jfs takes a negative inode size from disk as is. A symlink with one
+  is treated as a fast symlink and jfs_iget() writes out of bounds.
 
-Thanks,
-Dongjiang
+[1]: https://patch.msgid.link/20261113-work-fs-sb_rdonly-v3-0-0be92bb73709@kernel.org
+
+Signed-off-by: Christian Brauner (Amutable) <brauner@kernel.org>
+---
+Christian Brauner (3):
+      gfs2: don't BUG when remounting read-only after a withdraw during mount
+      exfat: keep the volume marked dirty after a shutdown
+      jfs: refuse inodes with a negative size
+
+ fs/exfat/super.c     | 3 ++-
+ fs/gfs2/incore.h     | 1 +
+ fs/gfs2/ops_fstype.c | 5 +++++
+ fs/gfs2/util.c       | 9 ++++++++-
+ fs/gfs2/util.h       | 1 +
+ fs/jfs/jfs_imap.c    | 4 ++++
+ 6 files changed, 21 insertions(+), 2 deletions(-)
+---
+base-commit: c339f4010dea8b0d754f84ace70cd1b089878ef8
+change-id: 20261116-work-fs-sb_rdonly-fixes-d74c927f80b5
+

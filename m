@@ -1,83 +1,54 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794862438;
-	b=Y6WESNZ4NKpGgUQ1YtiIzgN4ARuwfmyZPCMCHn/1fuzJNQytKh8i0oiybUwnrMdCK7lb
-	 /HQTK8hxT1r8emRXSTTReM7xfzf7A+MutUAKQZRyLmr7lao40HEMvJDH5zxhqWQwT3qCo
-	 ZNlSl7c7MZiAE6ONAn22Q4PsPjJB/g4W47rE8Pg7IJzUYaZCdS8+TwLvQIqhm9YwBZ/XW
-	 H5/6QaqTYBO4vOTCmFWPlYI+oHS1qZ1BvfnEMurmKystwVyOZQHn2iRafn4JnVRNijTFy
-	 Cuo8LpBXBNc24HdBgDM4HXQAFaKAO/6p5irWcz+fvn7AfMBFxTI7BrzbAA+rXqCQFWA==
+	t=1794862586;
+	b=JPezInYtGZxle581/NzYkJIxLRW3aIrzZBJivuDJnXGr9xg5VoAt7LgYGUmXqjageRoQ
+	 7X6dPiaPn8fF6uA59WHzUaiwM+vo5HFP2lezrKdq27edGx0kZViUPJ3KSlfvdi+Bf6wE1
+	 GOJMuo+KyVSCOMs3z3Z8TJ6TkrSQDnpqrO3r5CjYVa954D10M2TDn73gdqzpEZRouOeQ8
+	 oQBv0AQXosTGJ6H+PcMvsjFkLbaPdM6Rx+StZc5sAAenP3vgX20XCqAKzoNSyR0OXFJFK
+	 1I+meWPy6w1KIi3cAxmiMkqva6vACoWwPPkLXBq8nCPyyIWPASipNlz41TxiFcNyJPw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794862438;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:X-Mailer:
-	 References:In-Reply-To;
-	bh=tzdH03fxvdHG/WP+ISnD29s1t0jRH5uKJ+YnULP8Tr0=;
-	b=MInTyLxT4fxsqZ2t/Ljx1sQT/JD3932S4e80CPJ0Dn8MdJiTuGO21x7HQMKb+dhanvHh
-	 +L1LLTxbSC+m5/5adSFgtNIGNDfKuE/Nj7cYeFTXDjshniuEYrBVbsAs3/D29zRtDbLMC
-	 3yx1zYVjxLK0w7uLXyrdlz/mO2EXIYW6qdfOk2Sd6uePXiIgct/QcuV14sY2goxNJD4rd
-	 iH1F/9DvFkLe4GtplDcbFZdN96XMNJIs2DC3B9SMf/irtiZ/Syi8icGxXpwyNX6gQEjQj
-	 asSGBsatmbAs6G0qecDAUo90hK6vsLBDc3PhW//e0fmuSr8NoyMgx8yquSvf7xEqcGA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794862586;
+	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:
+	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=D73DjqogkESMjU6bHHqSAyDwHwVVP+XQYvOpfbkrps0=;
+	b=gGYU5YiFlK0rJfRdPMECxzEWFdTjEae5yqYq35eUsO6528eH6+uPkM7p0xheBS0OhNmt
+	 tSJ885ZSA5ZgEJw2XTr2Y1DNwbX/shqNEhIQrb8GYH9/s1L//xbmtRWt+oM/b3DccRCl6
+	 eGQ6od133m9HJdq02jrPva+9O++4XARWvquf11IcXvIQniAVA7oGjsAtEIPfrRJQXDLgK
+	 jBZiOao0FU2/Qti9oBY+wkpMhgMxCHgvxmVy5OBGnq8E3+Rxprt5Wjs+g1hpnI00Ddx3p
+	 V7B0NBbHjh+oIqDQHeJeAyT0nKB0GnoT0+7jaGQkjSmR9/VY54yUmLSO0e0I1TpBAjg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=L5sm9T50;
-	arc=none smtp.remote-ip=209.85.128.54
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hiJ3JIm7;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D9AB1606A8AA
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 20:53:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D9AB1606A8AA
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E202D606A323
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 20:56:25 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=L5sm9T50
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4bb72b44a97so9679065e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 12:53:57 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794862436; x=1795467236; darn=vger.kernel.org;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=tzdH03fxvdHG/WP+ISnD29s1t0jRH5uKJ+YnULP8Tr0=;
-        b=L5sm9T50a7sqt8w6n5QqMCx2guZ/ceCCaSawY3J0jxqzahZ/LN4bt26KoGHp/uxFmk
-         WolNlyKBnyZ1ec/7ZBJ64TpLAMa5GpOCqE5CcwXsF6xR2eT/T77xWEVoGtvYUuScpPgN
-         oz4iIqpqxQDYdqVGkZ6S56sYlTHUsvde9FjQULBdQwu+w/8a71UaoF3qQ3EF1S6gzVuf
-         dgE0P/WOfZoYnPuKsQQ5Jt//NJN4mC5iRbQCozXEE4yB0v0DbLjq7YCnC1TvPdkKeY89
-         THDwEB3iExsY9Ok3aiSiUawJk00aXtPKjGcx+g+wp9cCLgujF5NkMGxtzDgjbUuRcBOa
-         A6iw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794862436; x=1795467236;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=tzdH03fxvdHG/WP+ISnD29s1t0jRH5uKJ+YnULP8Tr0=;
-        b=d+kNxKzvg0TqjkmSrw1DOHyNnSovf9OZPd6a6nDaYTLxr8VUG4N762YIYhMPXyavkY
-         sFa3WGu8p2nzRP+2+TVCXTZGPlMXPsCuJ6EWbAYAzrcBBjEi71psstEROfy3ctXDafhh
-         /q4ptQsZocF9RN/G7sscFK2X6vh9R1P1km5+POquskj5wF+EQ6UtVGB/nP6VDLkaSoYt
-         f19ksS4JP1oslOft8wIfTVrVMtZo+b9dEiac+FwwziQTosD6Nr/qjwaZEtAeeKXeAlrV
-         uwrVJTqU32yJqyjF7RIupHGwEQKO6GA5so9/6Jf2pDztr9IEOiVtkQQAIiApGKL+qtqk
-         vTCw==
-X-Forwarded-Encrypted: i=1; AL+hErGrwYFbHwd2yoG3rlP3jHMG5AFZA5Z6VGF+yisDGn+GQykQU8JD0mYzCcXkEysJHTyZqZXS1RGbkcDI/A==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/O23/Ie4AMnCChJzdQDcOrcku7s+UYaYyRH8p6JjyV5ybyf/x5
-	3EgH4fKQiOdys3d/LOKnAQ9sQAWMaKOR/Ba8HdQA/PxM1646XGjyxvnA
-X-Gm-Gg: AYBFou2/Qj7qnSmcviIiv8Zp884dOUOzjoypatJpMWlYhhVFqa2jVkkIO/mEOsKiHi7
-	SqyHmywJ6aX9R/OEOti5QRoboTThKkty5GJy0IEqHpcCxMNnBvAkbTR2CsUq7mG8Q4XlXds+xeX
-	s0M14W+9caDrBeCKe6Gmsku4aBTOEXc0xWkKDE8YoGQ10DaMsDNRFkNvEd6dipT0sJ84tv7Ph3Z
-	PaEsF+gOSz9gEfzA4PnsE7C6z5387PsOZzQWEA+xq2o0GtSUmJ4uOJAo3tYMVT3LcZcIvcaV53e
-	LChznR3A1rY/VnzQrjBLi7i2/VcPz/TTGg0opHvaZgGth97kC25cDBtZhk5s/4D8g6L2gGmBVl/
-	VgU2L0OzKN87mG9tzWQQ9WeV9zN+FfCZkZ1XaC6vRX+1PKl5/SPdj4O7W21lzKM+RCYMcVfCUx1
-	RXSxy6ftYU4HKz7uBTosQqoUAFicBhhXx8KM+rARAmAX0j5dQ+ndYUuzm28leMeNsWQfAht4yYz
-	Cd6ptmL9dYI/XIBKCKt7xd4zvhK6RT6NR1ZaItSjqJjDbIlPq8chDvFCeN+sDvkga477KJHvtHc
-	jx5n70OT0zgtTmE/gHP1TKJ+LA==
-X-Received: by 2002:a05:600c:3b2a:b0:4a8:9a2f:d27 with SMTP id 5b1f17b1804b1-4bb55aabdf9mr263187925e9.25.1794862436065;
-        Mon, 16 Nov 2026 12:53:56 -0800 (PST)
-Received: from localhost ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-49c5d22394esm24799165f8f.3.2026.11.16.12.53.53
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 16 Nov 2026 12:53:55 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=hiJ3JIm7
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7EDE71F000C4
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 20:56:25 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1794862585;
+	bh=D73DjqogkESMjU6bHHqSAyDwHwVVP+XQYvOpfbkrps0=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=hiJ3JIm7sFb4HP2CgdS5nGgOBJb8KY/ML4rfsiik7Fl3cnkrWAj2nVQJx3EUeRXsW
+	 FIVa1cxpxisd9gm2Z0x2WDImnLIThm8ut+mYkWSNJmPP6qbH4aa54DP6glbWX4c2x2
+	 GJBSO5ZGE7+pGQTLz5rdJm5fqrd8I3spjTVvRRqSZb5As9ckgVxxgw+U+J6fGplsDr
+	 o6m5gxsSES9MRj5inlkqrKbWQbQx0UwvMH1xO25V68VSIkk61Nf1Ax7cBb79e2FkmY
+	 +HiSuXrEJ78SRZPbnwTSMHuqfI7wQfIjyqkXCF4nXcJACNdLab0Uj+ya79rbZRJlSZ
+	 Tcwb9O5TXVKZg==
+Received: by mail-vs1-f46.google.com with SMTP id ada2fe7eead31-7cc0e865dd1so1202966137.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 12:56:25 -0800 (PST)
+X-Gm-Message-State: APuU4Z8X+meQYxhy2Cwx9953E2YIvdD6Xzm0FoUR8oQ3P6fcqgzPe2z2
+	W8z/j+KQGU4dRl1CDUjHf3e6G2pqW7KK8BsDl5q4b/38wf/tJ9/+1xFAzzK59CGDdnq7XzJKd3Y
+	nYw6CSjl13k+YhB2PQsaoYjlzOqNZn+U=
+X-Received: by 2002:a05:6102:54a8:b0:7ce:8505:9848 with SMTP id
+ ada2fe7eead31-7d64d8abe12mr4279430137.31.1794862584795; Mon, 16 Nov 2026
+ 12:56:24 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,299 +57,80 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=37fc961d2ca56be80f03ddce209a59446815f2f70d142ce639c6d949d73f;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Mon, 16 Nov 2026 21:53:49 +0100
-Message-Id: <DMWXMP61YXEH.1W32ZFF7A7Y5H@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>, "Namjae Jeon"
- <linkinjeon@kernel.org>, "Sungjong Seo" <sj1557.seo@samsung.com>,
- "Alexander Viro" <viro@zeniv.linux.org.uk>, "Christian Brauner"
- <brauner@kernel.org>, "Trond Myklebust" <trondmy@kernel.org>, "Anna
- Schumaker" <anna@kernel.org>, "Chuck Lever" <cel@kernel.org>, "Jeff Layton"
- <jlayton@kernel.org>, "Konstantin Komarov"
- <almaz.alexandrovich@paragon-software.com>, "Paulo Alcantara"
- <pc@manguebit.org>, "Chris Mason" <mason@kernel.org>, "Yuezhang Mo"
- <yuezhang.mo@sony.com>, "Jan Kara" <jack@suse.cz>, "NeilBrown"
- <neil@brown.name>, "Olga Kornievskaia" <okorniev@redhat.com>, "Dai Ngo"
- <Dai.Ngo@oracle.com>, "Tom Talpey" <tom@talpey.com>, "Ronnie Sahlberg"
- <ronniesahlberg@gmail.com>, "Shyam Prasad N" <sprasad@microsoft.com>,
- "Bharath SM" <bharathsm@microsoft.com>, "Sergey Senozhatsky"
- <senozhatsky@chromium.org>, "ChenXiaoSong" <chenxiaosong@chenxiaosong.com>,
- "Darrick J . Wong" <djwong@kernel.org>, "Sean Smith"
- <defendthedisabled@gmail.com>, "Andrey Albershteyn" <aalbersh@kernel.org>,
- "Pedro Falcato" <pfalcato@suse.de>, =?utf-8?q?Pali_Roh=C3=A1r?=
- <pali@kernel.org>, <linux-btrfs@vger.kernel.org>,
- <linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
- <exfat@lists.linux.dev>, <ntfs3@lists.linux.dev>,
- <linux-cifs@vger.kernel.org>, <linux-nfs@vger.kernel.org>,
- <linux-api@vger.kernel.org>
-Subject: Re: [RFC PATCH v4 01/10] vfs: add provenance time (ptime)
-From: "koraynilay" <koray.fra@gmail.com>
-To: "Amir Goldstein" <amir73il@gmail.com>, "koraynilay"
- <koray.fra@gmail.com>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
-References: <20261115180343.576773-1-koray.fra@gmail.com>
- <20261115180343.576773-2-koray.fra@gmail.com>
- <CAOQ4uxi+50NU8qzg+Owvr8gFZ4vYF5FqWg4Hr9vB6ONUpPsFwg@mail.gmail.com>
-In-Reply-To: <CAOQ4uxi+50NU8qzg+Owvr8gFZ4vYF5FqWg4Hr9vB6ONUpPsFwg@mail.gmail.com>
-
---37fc961d2ca56be80f03ddce209a59446815f2f70d142ce639c6d949d73f
+MIME-Version: 1.0
+References: <20261113144215.3277479-1-johannes.thumshirn@wdc.com>
+In-Reply-To: <20261113144215.3277479-1-johannes.thumshirn@wdc.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Mon, 16 Nov 2026 20:55:48 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H61fhyVuomNYmgPzomOeoWCP2K6k-KCcrv47+MxHbRHZg@mail.gmail.com>
+X-Gm-Features: Aa3M54oCDsB6fKPI2bjcbC_vNkIPCiQ9KuXxiSBOVzh2ILTiztWygouTuLS4DKc
+Message-ID: <CAL3q7H61fhyVuomNYmgPzomOeoWCP2K6k-KCcrv47+MxHbRHZg@mail.gmail.com>
+Subject: Re: [PATCH v4] btrfs: zoned: don't release active zone reservations
+ for conventional zones
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Naohiro Aota <naohiro.aota@wdc.com>, 
+	Damien Le Moal <dlemoal@kernel.org>, David Sterba <dsterba@suse.com>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
 
-On Mon Nov 16, 2026 at 9:10 PM CET, Amir Goldstein wrote:
-> On Sun, Nov 15, 2026 at 7:04=E2=80=AFPM koraynilay <koray.fra@gmail.com> =
-wrote:
->>
->> Add provenance time (ptime), indicating the time when a file or
->> directory was created. This is user-settable via file_setattr() and
->> retrievable via statx(2) (using STATX_PTIME) or file_getattr().
->>
->> The semantics of when to preserve this new timestamp are the same as
->> mtime, the idea being that there is a correspondence like this:
->>
->> ctime <-> btime
->> mtime <-> ptime
->>
->> so every operation (copying, moving, ...) that currently preserves mtime
->> should also preserve ptime.
->>
->> Also add fa_xflags_mask to struct file_attr (and equivalent
+On Fri, Nov 13, 2026 at 8:33=E2=80=AFPM Johannes Thumshirn
+<johannes.thumshirn@wdc.com> wrote:
 >
-> That is a very big "Also" part
-> This is a significant UAPI change that needs to be delivered and
-> explained with a patch on its own.
-
-Right, that definitely makes more sense, I didn't think of that lol.
-
->> fsx_xflags_mask to struct file_kattr) to let the filesystems advertise
->> their support for specific xflags and users advertise what they want to
->> change, behaving like statx.stx_attributes_mask:
->> - on GET (file_getattr): each filesystem fills the mask according to
->>   their supported xflags, e.g. FS_XFLAG_PTIME or FS_XFLAG_COWEXTSIZE,
->>   and provides the values in the corresponding struct fields;
->> - on SET (file_setattr): userspace fills the mask according to which
->>   xflags it wants to change, VFS validates this and preserves xflags
->>   that were not specified in the mask;
->> - if xflags_mask =3D=3D 0, use legacy full-struct replacement to keep
->>   compatibility with older programs.
->>
->> Furthermore, in order to avoid the legacy FS_IOC_FSSETXATTR accepting
->> FS_XFLAG_PTIME, add an FS_FILE_ATTR_XFLAGS_MASK mask to support new
->> xflags and use it in fileattr_to_file_attr()/file_attr_to_fileattr() to
->> validate that the xflags passed in xflags and xflags_mask fields are
->> valid.
->>
->> Finally, add the missing FS_XFLAG_PROJID flag, to allow userspace to set
->> the projid using file_[sg]etattr().
+> On mount, btrfs_check_active_zone_reservation() releases a reserved
+> active zone for each stripe of an active metadata or system block-group.
+> Stripes on conventional zones usually hold no active zone on the device,
+> so they use up the reservation. Once metadata moves to a sequential
+> block-group, its activation fails and the transaction commit aborts
+> with -EAGAIN.
 >
-> This part also belongs with the xflags_mask patch
-
-Ok.
-
->>
->> [ This is a re-implementation of the initial patch[1] by Sean Smith
->>   <defendthedisabled@gmail.com>, following the advice[2] from Darrick J.
->>   Wong <djwong@kernel.org> of using file_setattr() instead of updating
->>   utimensat() ]
->>
->> [1]: https://lore.kernel.org/20260405195007.1306-2-DefendTheDisabled@gma=
-il.com
->> [2]: https://lore.kernel.org/20260407014129.GC6192@frogsfrogsfrogs
->>
->> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.4.7
->> Signed-off-by: koraynilay <koray.fra@gmail.com>
->> ---
->>  fs/file_attr.c            | 75 +++++++++++++++++++++++++++++++++++++--
->>  fs/stat.c                 |  2 ++
->>  include/linux/fileattr.h  |  6 ++++
->>  include/linux/stat.h      |  1 +
->>  include/uapi/linux/fs.h   |  9 ++++-
->>  include/uapi/linux/stat.h |  7 +++-
->>  6 files changed, 95 insertions(+), 5 deletions(-)
->>
->> diff --git a/fs/file_attr.c b/fs/file_attr.c
->> index 833e03810b24..12610fb6a751 100644
->> --- a/fs/file_attr.c
->> +++ b/fs/file_attr.c
->> @@ -102,14 +102,23 @@ EXPORT_SYMBOL(vfs_fileattr_get);
->>  static void fileattr_to_file_attr(const struct file_kattr *fa,
->>                                   struct file_attr *fattr)
->>  {
->> -       __u32 mask =3D FS_XFLAGS_MASK;
->> +       /*
->> +        * fsx_xflags_mask contains only flags added after the
->> +        * file_[gs]etattr() API, so we need to tell userspace the files=
-ystem
->> +        * actually supports all legacy and new advertised flags
->> +        */
->> +       __u32 mask =3D (FS_XFLAGS_MASK | fa->fsx_xflags_mask) &
->> +                    FS_FILE_ATTR_XFLAGS_MASK;
->>
->>         memset(fattr, 0, sizeof(struct file_attr));
->>         fattr->fa_xflags =3D fa->fsx_xflags & mask;
->> +       fattr->fa_xflags_mask =3D mask;
->>         fattr->fa_extsize =3D fa->fsx_extsize;
->>         fattr->fa_nextents =3D fa->fsx_nextents;
->>         fattr->fa_projid =3D fa->fsx_projid;
->>         fattr->fa_cowextsize =3D fa->fsx_cowextsize;
->> +       fattr->fa_ptime_sec =3D fa->fsx_ptime.tv_sec;
->> +       fattr->fa_ptime_nsec =3D fa->fsx_ptime.tv_nsec;
->>  }
->>
->>  /**
->> @@ -141,15 +150,23 @@ EXPORT_SYMBOL(copy_fsxattr_to_user);
->>  static int file_attr_to_fileattr(const struct file_attr *fattr,
->>                                  struct file_kattr *fa)
->>  {
->> -       __u64 mask =3D FS_XFLAGS_MASK;
->> +       __u64 mask =3D fattr->fa_xflags_mask ?: FS_XFLAGS_MASK;
->> +
->> +       if (fattr->fa_xflags_mask & ~FS_FILE_ATTR_XFLAGS_MASK)
->> +               return -EINVAL;
->>
->>         if (fattr->fa_xflags & ~mask)
->>                 return -EINVAL;
->>
->>         fileattr_fill_xflags(fa, fattr->fa_xflags & ~FS_XFLAG_RDONLY_MAS=
-K);
->> +       fa->fsx_xflags_mask =3D fattr->fa_xflags_mask;
->>         fa->fsx_extsize =3D fattr->fa_extsize;
->>         fa->fsx_projid =3D fattr->fa_projid;
->>         fa->fsx_cowextsize =3D fattr->fa_cowextsize;
->> +       if (fattr->fa_xflags_mask & FS_XFLAG_PTIME) {
->> +               fa->fsx_ptime.tv_sec =3D fattr->fa_ptime_sec;
->> +               fa->fsx_ptime.tv_nsec =3D fattr->fa_ptime_nsec;
->> +       }
->>
->>         return 0;
->>  }
->> @@ -232,6 +249,23 @@ static int fileattr_set_prepare(struct inode *inode=
-,
->>             !S_ISREG(inode->i_mode) && !S_ISDIR(inode->i_mode))
->>                 return -EINVAL;
->>
->> +       if (fa->fsx_xflags_mask & FS_XFLAG_PTIME) {
->> +               if (!(old_ma->fsx_xflags_mask & FS_XFLAG_PTIME))
->> +                       return -EOPNOTSUPP;
->> +
->> +               if (!(fa->fsx_xflags & FS_XFLAG_PTIME))
->> +                       return -EINVAL;
->> +
->> +               if ((unsigned long)fa->fsx_ptime.tv_nsec >=3D NSEC_PER_S=
-EC)
->> +                       return -EINVAL;
->> +
->> +               fa->fsx_ptime =3D timestamp_truncate(fa->fsx_ptime, inod=
-e);
->> +
->> +               if (!timespec64_equal(&old_ma->fsx_ptime, &fa->fsx_ptime=
-) &&
->> +                   (fa->flags & old_ma->flags) & (FS_APPEND_FL | FS_IMM=
-UTABLE_FL))
->> +                       return -EPERM;
+> Only release reservations for stripes holding an active zone, matching
+> what finishing the zone gives back.
 >
-> I don't know what this is but it looks strange.
+> Fixes: a7e1ac7bdc5a ("btrfs: zoned: reserve zones for an active metadata/=
+system block group")
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 
-That's for preserv- ok nevermind it's probably not needed anymore
-since adding fsx_xflags_mask. I'll check that too for v5.
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
+Looks good, thanks.
+
+> ---
 >
->> +       }
->> +
->>         /*
->>          * It is only valid to set the DAX flag on regular files and
->>          * directories on filesystems.
->> @@ -288,13 +322,41 @@ int vfs_fileattr_set(const struct mnt_idmap *idmap=
-, struct dentry *dentry,
->>         if (!err) {
->>                 /* initialize missing bits from old_ma */
->>                 if (fa->flags_valid) {
->> -                       fa->fsx_xflags |=3D old_ma.fsx_xflags & ~FS_XFLA=
-G_COMMON;
->> +                       /* FS_IOC_SETFLAGS */
->> +                       fa->fsx_xflags |=3D (old_ma.fsx_xflags & FS_XFLA=
-GS_MASK) &
->> +                                         ~FS_XFLAG_COMMON;
->>                         fa->fsx_extsize =3D old_ma.fsx_extsize;
->>                         fa->fsx_nextents =3D old_ma.fsx_nextents;
->>                         fa->fsx_projid =3D old_ma.fsx_projid;
->>                         fa->fsx_cowextsize =3D old_ma.fsx_cowextsize;
->> +                       fa->fsx_ptime =3D old_ma.fsx_ptime;
->>                 } else {
->> +                       /*
->> +                        * Preserve unmasked xflags when running file_se=
-tattr()
->> +                        * with a mask, which doesn't need a read-modify=
--write
->> +                        * so these attributes would be set to 0.
->> +                        *
->> +                        * With FS_IOC_FSSETXATTR or mask =3D=3D 0 (lega=
-cy mode)
->> +                        * this is not needed as userspace does
->> +                        * read-modify-write already.
->> +                        */
->> +                       if (fa->fsx_xflags_mask) {
->> +                               fa->fsx_xflags |=3D old_ma.fsx_xflags &
->> +                                                 ~fa->fsx_xflags_mask;
->> +                               fileattr_fill_xflags(fa, fa->fsx_xflags =
-&
->> +                                                    ~FS_XFLAG_RDONLY_MA=
-SK);
->> +                               if (!(fa->fsx_xflags_mask & FS_XFLAG_EXT=
-SIZE))
->> +                                       fa->fsx_extsize =3D old_ma.fsx_e=
-xtsize;
->> +                               if (!(fa->fsx_xflags_mask & FS_XFLAG_PRO=
-JID))
->> +                                       fa->fsx_projid =3D old_ma.fsx_pr=
-ojid;
->> +                               if (!(fa->fsx_xflags_mask & FS_XFLAG_COW=
-EXTSIZE))
->> +                                       fa->fsx_cowextsize =3D old_ma.fs=
-x_cowextsize;
->> +                       }
->>                         fa->flags |=3D old_ma.flags & ~FS_COMMON_FL;
->> +
->> +                       /* xflags not present in fsxattr */
->> +                       if (!(fa->fsx_xflags_mask & FS_XFLAG_PTIME))
->> +                               fa->fsx_ptime =3D old_ma.fsx_ptime;
->>                 }
->>
+> It's not the bug that was reported, but a problem anyways and I have
+> submitted a fstest for it to prove it, so I think it is still worthwhile
+> to merge.
 >
-> This whole flags/xflags duality needs a closer look
-> This looks a bit too complicated right now.
-
-Yes, I agree.
-
-> I don't have time to do the full review so wanted to give you the
-> main feedback first.
+>  fs/btrfs/zoned.c | 11 +++++++++--
+>  1 file changed, 9 insertions(+), 2 deletions(-)
 >
-> I'll try to get to it this week.
-
-Of course, no problem, I also still have a few kinda unrelated patches
-to work on and a fairly long list of bugs to fix (found by sashiko), so
-v5 will probably be ready this weekend/next week anyway.
-
-Thank you again very much.
-
-Best,
-koraynilay
-
-> Thanks,
-> Amir.
-
---37fc961d2ca56be80f03ddce209a59446815f2f70d142ce639c6d949d73f
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCavttXQAKCRDmj22qf5IG
-XLKyAQDUbIPDnr/fz9a76CKxleC/LzaQMjyuAgz3koP+G7YFrwD/QwnPpap95GR9
-4QZordaDbvLNae5E2c5s96XsV/AKmAA=
-=1jPB
------END PGP SIGNATURE-----
-
---37fc961d2ca56be80f03ddce209a59446815f2f70d142ce639c6d949d73f--
+> diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
+> index 3192b86669b9..81489fa4a42d 100644
+> --- a/fs/btrfs/zoned.c
+> +++ b/fs/btrfs/zoned.c
+> @@ -3115,8 +3115,15 @@ void btrfs_check_active_zone_reservation(struct bt=
+rfs_fs_info *fs_info)
+>                       (BTRFS_BLOCK_GROUP_METADATA | BTRFS_BLOCK_GROUP_SYS=
+TEM)))
+>                         continue;
+>
+> -               for (int i =3D 0; i < map->num_stripes; i++)
+> -                       map->stripes[i].dev->zone_info->reserved_active_z=
+ones--;
+> +               for (int i =3D 0; i < map->num_stripes; i++) {
+> +                       struct btrfs_zoned_device_info *zinfo =3D map->st=
+ripes[i].dev->zone_info;
+> +                       u64 physical =3D map->stripes[i].physical;
+> +
+> +                       if (!test_bit(physical >> zinfo->zone_size_shift,=
+ zinfo->active_zones))
+> +                               continue;
+> +
+> +                       zinfo->reserved_active_zones--;
+> +               }
+>         }
+>         spin_unlock(&fs_info->zone_active_bgs_lock);
+>  }
+> --
+> 2.56.0
+>
+>

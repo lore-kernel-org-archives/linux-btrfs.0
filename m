@@ -1,93 +1,99 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.53
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794841722;
-	b=FC1FS/Re2mXNsdET5PkLxREW+CbClyR+98wIyNNqJxvbDxc+7yWyWwDnsWaHbrSt/629
-	 7TM1uwIFdLddiWyuxOWQMOPV8reGt16kL0lIjriyD6uao5vbuNAyzTT7WMzma4u6hYvV2
-	 s3CUbDT0PiNJdSkMrpwFxrW5w6JNVj4gocMNxOpF/pgUCI015i3BF76QJeBuRrLsuEODD
-	 c6POJAvNyVBy1qBbTNppJWKcTNhegLzIrOSOeEqwh0XCe5oybs92TXzXSW5mHk/SXIces
-	 vCBeCV9nk/h+ezySPtyA3Eu4SqRrFWRCdY3tgJNhzfCcjXarz5jl8mnnCCh+Qx04jBA==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794841722;
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.44
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1794843159;
+	b=x0NSpCKsqh8IRqHu4/f0xAbs7b1g5sx2TPZxLgVLPkuYBANHDU4kzeB/MifAH/crlJVD
+	 vtriXCv6wus4k3EFNJ0behgUP1SP9uT0WjpDvUCxd0PYijs4P2N4DSc9PHwTZ05tySy05
+	 6JiIgBgGX5infQ8caMKVy1aPOW56u7pZ+MmEU2ED00elF3yDKnC3PVDlcval19rWHASvS
+	 W9ad8FQYGpmVZ5EznIqmofn5TZcseHwb0owHFkDye6i6eulRx4GKYLNXme40uJbb712GH
+	 XgQN8EoCJDPOBinuLKvLTchWYgFCTfONJ5r8AFYwvTbrZobN1+ShUp4n0BGPqCnkSSQ==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794843159;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Date:From:To:Cc:Subject:In-Reply-To:References:Message-ID:
-	 MIME-Version:Content-Type:Content-Transfer-Encoding;
-	bh=Ug5xDFYIkWGptx33tDEj6m7ef1KHZR3gigplh2zd0js=;
-	b=ZYBULZYCy/ZLJ4VhxMeobavsFqDuquLHkqoAws1plHA0M96FFdsJyYeB3zpHwhfYRQUA
-	 FrAg4yiCWKUbm67DhRpmdyHRn8RRJ5u44G2PaueWGt/1OO8L5i3kStp9ULKI78JaL1HPI
-	 3pZcRfmpZRc52BQeepU6sZZCLOleG4rT0XlVCvVA6DIJfML5MS+CGDLbgdkkfjFUBRx40
-	 qgj/VRrIL9/13omObw3F7sH9HLLtb4yZryVhb7Vz0L3UkT0p1TLHBAVqh8qzWhugrlmSh
-	 SqkZQEX1nLoKDGGn4qU/Hg7BGkSbnckBNlaCeXAqsDQuvLdX0/DwB69S9ZqNJeAmWYQ==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:MIME-Version:References:
+	 In-Reply-To:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=UZfjUUdOGV4n+muBluIHHduUrTQ0oRHWELrphw0Vc24=;
+	b=e1CmmcmTxVpjmDTLl5GK8q9Is2HfyGfq+qFXLCsr+TYcccZ/IH0bJTqcnz+ysk+Ot5BO
+	 0DUQ9pEAMITThNUs1iOA8jBtnJD01efsi4NoRuy5Aul8WOIt2jdInJHZAWDcEossgs2e1
+	 1hDXne5KoCucxhFuWxRxB9hDYsCLdNbxb/JZuXLBIt62mbYmVdL0dFEtf3p13+wICk0PT
+	 n9K9mX5Hi3gI+DtZ2Nh+BVE6+dAff73OensBWkarKn8YVenDjvY2pSFxYfbmvpoFVBliz
+	 8nojUSXSsfnDMY4OKHRQqN1u4ywo44zk1i1POvmKUtbIvQBNIK9/NBmgGgWLAFZphcQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b="b17TS/OL";
-	arc=none smtp.remote-ip=209.85.128.53
-Received: from mail-wm1-f53.google.com (mail-wm1-f53.google.com [209.85.128.53])
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vJiYISSE;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.44
+Received: from mail-qv1-f44.google.com (mail-qv1-f44.google.com [209.85.219.44])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E57C0606A323
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 15:08:41 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E57C0606A323
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F0B07606A323
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 15:32:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F0B07606A323
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=b17TS/OL
-Received: by mail-wm1-f53.google.com with SMTP id 5b1f17b1804b1-4bb69f5b161so8809585e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 07:08:41 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vJiYISSE
+Received: by mail-qv1-f44.google.com with SMTP id 6a1803df08f44-91eb449364cso54458806d6.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 07:32:38 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1794843158; cv=none;
+        d=google.com; s=arc-20260327;
+        b=d0Piiz/gQLTTBD1zFWBVUjFoVQ5TMS0rcXkNvY31Z0mB8Q5asivejnM/ViKA7udjx6
+         YontnSWI2DyeHmADoZ16qdkg89xJl3+6s83qwPvyi7fMHO8Ld/3xsqbd6edho+7zMgLz
+         MQKiCcXtS2MNQ8rCf2hyGxjEfGGk0yVJ1BIfXTEBPX8RUh8dMHhZ5pTPwg9vF8dZxz6s
+         vWQxmKGlKJ/bgWH7/6XcQxP7BCRjhf/iz7T5Fb7nwNHyw4FsqwbT5i4QarHrmpoE6kUJ
+         UTovNry3DbaodZErAYGg703inerrvhWZbMjtDF7lBJZHYfv9wTgtSBLJB1z3IXa+bSpj
+         OK1Q==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:in-reply-to:references
+         :mime-version:dkim-signature;
+        bh=UZfjUUdOGV4n+muBluIHHduUrTQ0oRHWELrphw0Vc24=;
+        fh=/2b45s7nlwFageWJU0cAbd2POIUeN71GraIEsBgXNMQ=;
+        b=aeE78waGy18E/gGLsFYYRzE1XY7N1pnuJEVm4Avz8h753w2IPhwnOTbsgpqe2WU6LY
+         IAerIFfQwioJOZJpaD2okuDvb31Gt2cR+qtkK4LwVwzNRiw0H/l8w8FXyhQoTWX1qBQe
+         giPR0tJ4RwBOHfy0x4FWtO9VpzWNbLc+BOmMNA0ZepAKfZ3xvBKyY3XIGfAdIoFv2/m5
+         Xlv1kxKY+7kAdAUymsyN3vxu/UQPScb79/OoXDaeLXfNy0riveAohZBNmdljWOtu9fa7
+         iKssRm3iUijxe0HWZNWzR/62OF2+cy0QWiE3vOnA2tGlP9oDLDk0lTHNGy0+TMssqyNX
+         /+PA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794841720; x=1795446520; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:mime-version:message-id
-         :references:in-reply-to:subject:cc:to:from:date:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=Ug5xDFYIkWGptx33tDEj6m7ef1KHZR3gigplh2zd0js=;
-        b=b17TS/OLhkVE03S1uoRWx4KJx4egoURpFsI+R1LzS4VgyzDayW79sYeUrNhU99VT61
-         SElRwcQuEoVqmHmjNem7zEshJDbuNpb/fOrEmMc0L7B4lpXnJgqHyODEsHDo6+DMuR7f
-         bXMJWvRS0iHClOEDE6yfwAa9985MDKOILDoc/DYr/0vXsSPgPF/2qygmT63T478knhGy
-         +/wT+kCNTeDlf3KiMJ8yOui/7h6IKRlQhapai5hJhENTaA4y92I8zmufBNgnpN9JoK1c
-         aw17E3cAN++FeiQ0BkkTO6pci/S0iODLl5OFUtGQoHkhMlyxKtaDBYzTMJlUfrtliXeb
-         vPQg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794841720; x=1795446520;
-        h=content-transfer-encoding:content-type:mime-version:message-id
-         :references:in-reply-to:subject:cc:to:from:date:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+        d=gmail.com; s=20260707; t=1794843158; x=1795447958; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=Ug5xDFYIkWGptx33tDEj6m7ef1KHZR3gigplh2zd0js=;
-        b=FW+DFiRHKXzrqi0aMp59sxQCw+Rhatul7SpKndoZ1tuLkNA5ylrP/FgrB2D5q8Lh55
-         avxtcpmf/1mqg6BWWnyQEr704NSS/DYmjJFZVlyxrmQbh5u5XjGFnRkFIaifE69DCcOv
-         rkCq4MA+FJ2y+JenUTgqyLb1EwN+XF5XZdj98nquq/dwm7EqZsI+70EpwtPcpOKNS8f+
-         mtqVWQA13Fgsi5cnyF3PVleSH90k/BPwTE+VcLFpyFWVcvK7iqx0oisDrQ6J9HOeHvbs
-         aS1KSM79FWA7sf2xY4s5hZSSBkKQ8satRgnLyYmKPKr2Z17Bgg/qj7++s4g4sfc6cPnI
-         GDIQ==
-X-Forwarded-Encrypted: i=1; AL+hErEM9O4SCUtWjcFN+Tj7UOv9gQrCBvvpLWZdzSGdvN0qPWP5wK36tthroBWZM3YyA2rguDjj+WPGD84tSA==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+aKaQ3XQrWIZa10vDZgLaW9dIx98Tc6BD3zWQkWRS33zFa1j06
-	q9UjR91Sa75k3Q6oXb/EMSRPuiW+MBIFDqoa8mL0d5o6csvZzSYlSY37
-X-Gm-Gg: AYBFou2j80yBVWrsE1ttpoMQlemn8b4wtn3Fc4eSQH0ezT1Z+jK67gSf4GFeocRnrnS
-	bjgqM6c+GgzTCYEe2h47KhwJos2/uvtTArrOAfJi5IxufOEqjMZYOw9XcCc1OqGwxBqKG4MJZBT
-	va17grLDrOr5TUy/yqv1smZLv4mKqNg1GQk91SkleHHkufyP9mybgIR9RnWgbRxYXwNddPGf2y2
-	xRSAEk53v8mS4sZM0jTGXkCsz5lJfWASYC377cORtkSUwmHB60ELVtHkNZCXa/uWY5SoCJiEJU4
-	OIaVyfPED68l8CVluxRhlTljABdnWALUWa0C5NbWaLYR0Jtb4wT+WahZCuxFqPqFXgzP3CCzP37
-	IjzvwPHY8/yfnXMcI5IZbtsqDQns/JQTxTojEeIthhRMO5MXoYzqK8cCewHk0Ybm3JSmNyjQ3fe
-	tBWyqmhnUrjlIAaTsoKtQtFnMn9G+CcvO9YXO/UC+g6c46M7fw14VMz1k6QHaBYoHnvVtlZE5bd
-	jDa1aGLpRxvnSl+bQpkrTp5TY86z8bmU8sHUQ5kkKZxLvPDvdN3mB2il2Q8x+jcUfwjoCBnNwjj
-	DYMPwSuJ707gc/Cd27csFBfYSt8zjz/IoSnggp0qcYberRxIKtM/OwEGCrNJ3ThJzoRmexIy5Vt
-	MnyxKiOBKLY4MvunvRnS7Whv2AJLCnOQktgE=
-X-Received: by 2002:a05:600c:46d5:b0:4a3:5991:718 with SMTP id 5b1f17b1804b1-4bb55a82b16mr230330235e9.16.1794841720043;
-        Mon, 16 Nov 2026 07:08:40 -0800 (PST)
-Received: from localhost ([46.36.23.99])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb62d5ec30sm316168175e9.15.2026.11.16.07.08.38
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 Nov 2026 07:08:39 -0800 (PST)
-Date: Mon, 16 Nov 2026 20:08:37 +0500
-From: Mark Korenberg <socketpair@gmail.com>
-To: =?utf-8?q?Martin_=C5=A0koda?= <mar.skoda@gmail.com>
-Cc: johannes.thumshirn@wdc.com, a2jphilipp@gmail.com, dsterba@suse.com, linux-btrfs@vger.kernel.org, naohiro.aota@wdc.com, zhudongjiang@fygo.io
-Subject: Re: [PATCH v3] btrfs: zoned: don't release active zone reservations for conventional zones
-In-Reply-To: <e3261fe5-4b98-47e6-ae66-d4af05caa621@gmail.com>
-References: <20261110080932.1205332-1-johannes.thumshirn@wdc.com> <e3261fe5-4b98-47e6-ae66-d4af05caa621@gmail.com>
-Message-ID: <d8a44fc376348da4febd9bef5d279fb1@gmail.com>
+        bh=UZfjUUdOGV4n+muBluIHHduUrTQ0oRHWELrphw0Vc24=;
+        b=vJiYISSEW85hJMCPpfsyCN3ZkSJKg0MWSYEXXGl1KGF8rw9JNmPK3TazqOtdRKHN5o
+         LVaxVKgv8fFDR6iFvvanbAkKpFTnsG/f17IrYDvhp0N3oOsyOAj1D0EII5U1fMwXWvw+
+         cFO2hOKT6kOyZ/buLAbuFZBU5eAHCZd4Pnk8mGb2QXHKBjXX4osgIvYSLSoq3HHBYKQU
+         q2LSf2rGBAgADwC6pg/0gLDdyHv37OZ285IfJ7soH8NiE6Ij5SThvWgN91odFNR6dr9J
+         Z7T8RJ+4EsCLA1Il9n85LOTVDE7kgahkDvvJ66NAUujuut7iVbpynvNz5r/zT8hXmbYp
+         hjKQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794843158; x=1795447958;
+        h=content-type:cc:to:subject:message-id:date:from:in-reply-to
+         :references:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=UZfjUUdOGV4n+muBluIHHduUrTQ0oRHWELrphw0Vc24=;
+        b=D4HD5BUt4x5ApYbQfgVk/5AEL7dbyssG6S1bsnufsXJJkLzGxlkscShsir/th16SBO
+         Mx57RDX+38du0NelpbcM+ia77LnA6EX32E6KMZeJZJrRhHrW2e2ZDcF82RCncslIsJ+M
+         D+HOXP2b/pE6Y/fx5p1k5prBJ5cr4zXB7tWMtJHPQlLoA+ZZ2iniHsdGmdJzgEMLULL0
+         BGGS7B8OOXXZxHhv+rqQzGV36LfVgE78rGNmPvHAh4KNRNjr8H+qQflNRTX9e3ZVFnns
+         uRw7HC3WfHkJ784ERtk4NgjXQmWiDeSQ5HjNz5eXmTnT8p+00Kr1Ph2yluVBDgq7Aovb
+         8Rlg==
+X-Gm-Message-State: APuU4Z8ORtkudNbTcpEVVoh8jYDsXva2p7ktdF15xOZSjJYk2AJCeGzW
+	OhFrnbwqs88e4wC7zkG4U3prCDFY0DJ90r8GVlL9ZAnKrj1F/GqldDpzXWdHag4AhTmPrBo9OY+
+	eQFeJFV7Vtvx9WPVOxgPuxNnuIUTEs295Po+B0F7P4g==
+X-Gm-Gg: AZFdTZcmH52pnxwlvjmsL14pInSTx9EJzJA8aAuCJFABBf2mhQl8+0QAJk6bHBiONoK
+	TtxiZH7hOHxLTpWZ/SrGul02Sjw6Q5Tqm3ALyLV0kvEEp2yqaPZNpmvqNzaX2C6gVzWj/Ro/Mh4
+	OP2IggMbA3/5Aynpw2VJ5Iz9SLDeO7glsOaqXeYE4MLeLsvyVUnQzVZuVSuwPK7OHZmzkmkoyud
+	jLHRsqP8ndQJDpZ7UPGu9PVgZC3miGYn47dVhcLI/GcR0CLK7gAiziiwYTBn32iqHpuJfQQIrb6
+	Jy6MOiAUGYya9Tb/f/YQqQ/ktaMUqJegXa0Xvme6vqSMYJ2wy6ohyZxKLZ7k1tqWzphpoKqtpb0
+	zr4V3eOeGoc0Jxc0LIA71LZwiumavodxxlXwHnsKp9q63oHhG6+xSB4g7K8V/pU4O3YhU43rmSw
+	FjYQc=
+X-Received: by 2002:a05:6214:c6f:b0:91c:133d:4916 with SMTP id
+ 6a1803df08f44-91f24258d3bmr175963246d6.57.1794843157790; Mon, 16 Nov 2026
+ 07:32:37 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -97,52 +103,104 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
+References: <20261112134703.38510-1-nondet@yandex.ru> <20261112134703.38510-2-nondet@yandex.ru>
+ <avmLAy52vfyJ5qze@hungrycats.org>
+In-Reply-To: <avmLAy52vfyJ5qze@hungrycats.org>
+From: Alexey Kuznetsov <kuznetsov.alexey@gmail.com>
+Date: Mon, 16 Nov 2026 15:31:59 +0000
+X-Gm-Features: Aa3M54oeRpvY83d0nLazjOVqW7eXFFClTJV0uMrGDZK8xguOz0qojD8xIBRH0QU
+Message-ID: <CAO1Zr+q5hhK5oPJtQu8v3oh=-AfB9FuPF2VQA=zpSGA0afB-FQ@mail.gmail.com>
+Subject: Re: [RFC PATCH 1/1] btrfs: track physical bad extents, fast-fail,
+ persist, and relocate
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: linux-btrfs@vger.kernel.org, linux-block@vger.kernel.org, 
+	dm-devel@lists.linux.dev
+Content-Type: text/plain; charset="UTF-8"
 
-On Fri, Nov 13, 2026 at 05:16:50PM +0100, Martin Škoda wrote:
-> On kernel 7.0.0-42, writing large media files repeatedly produced:
->
-> BTRFS error (device sdg): cow_file_range failed ...: -28
-> BTRFS error (device sdg): failed to run delalloc range ...: -28
->
-> These errors occurred despite several TiB of free space being
-> reported.
+Hi Zygo,
 
-Note that these two messages mean lost data, not just a failed write:
-cow_file_range() ends the writeback of the range without writing it
-and only sets an error on the mapping. write() and close() succeed,
-and only the next fsync() or syncfs() returns -ENOSPC. Files written
-around the time of the messages can differ on disk even if they read
-back fine while their pages are still cached, so it is worth comparing
-them with their sources after "echo 3 > /proc/sys/vm/drop_caches".
+Thanks for the detailed review. It changed the design, not just the patch.
 
-On zoned btrfs we hit exactly this when reserved_active_zones goes
-negative. btrfs_can_activate_zone() then reports a free active zone
-for data although none is left, so the allocator neither finishes a
-zone nor waits for one, and find_free_extent() returns -ENOSPC. The
-conventional zone accounting fixed by this patch and by Dongjiang's
-series is one way for the reservation to go negative; relocating a
-metadata or system block group with balance is another one.
+I agree with the core point: physical bad-sector handling belongs below the
+filesystem. A drive with spare sectors already does the useful part in
+firmware: the filesystem sees EIO or a checksum mismatch, retries another
+copy, and rewrites the good data to the failed LBA. That rewrite is what makes
+the drive move the sector to a spare. We only need a block-layer replacement
+when the drive can no longer remap, because the spares are exhausted or the
+firmware refuses.
 
-I posted a series for this:
+I also accept the consequences you spelled out: the remap unit has to be the
+lower device's logical block size; reserve allocations must never move; and
+the table has to be crash-consistent with the data, with FLUSH/FUA committing
+table changes and two copies protecting the metadata. btrfs should not
+intercept physical I/O for this.
 
-https://lore.kernel.org/r/20261104-btrfs-zoned-active-zone-leak-v2-0-0cee2ef72171@gmail.com
+Verified defects
+----------------
 
-Patch 2 treats a negative reservation as zero for data, so writeback
-finishes a zone or waits instead of failing, whatever made the
-reservation negative. Patch 1 fixes the leak by balance. Both are
-marked for stable 7.0 and later. They apply without conflicts on
-current for-next and on top of Dongjiang's zoned-fixes-testing branch;
-that branch fixes other sources of the negative reservation, but not
-the one from balance, and doesn't change the check for data.
+I checked each point against 6.12 and I am not disputing any of them:
 
-> Could you confirm whether these symptoms match the active-zone
-> reservation/accounting issue addressed by this patch series?
+- the write redirect used the chunk/map length, not the bio length;
+- repair writes went through the redirect as well;
+- fast-fail after a split dropped the remainder;
+- fast-fail inflated read_io_errs without doing I/O;
+- device replace reused the old devid, so persisted ranges followed it;
+- the incompat bit was cleared when one device's list emptied, not when the
+  filesystem had no ranges left;
+- the mirror-collapse test could pass from the page cache;
+- dmq renumbered reserve offsets on every rebuild;
+- dmq reloaded the table and only then installed the ranges, leaving a window
+  with no remaps.
 
-For the -ENOSPC in writeback I think so, but from here I can't tell
-which of the sources above made the reservation negative on your
-filesystem.
+The last two are already fixed in the userspace side. The map schema now
+stores a per-range reserve_start and the allocator cursor; reconciliation
+keeps existing offsets and only allocates new gaps. Live updates diff the
+target's range list and send incremental add_bad/remove_bad messages, so a
+range-only change does not reload the table at all. Geometry changes are
+refused while the mapped device is mounted. The userspace suite covers
+add-below, remove-middle, idempotent re-apply, split boundaries,
+poison-to-redirect, and reserve exhaustion.
 
-Thanks,
-Mark
+Status of the btrfs patch
+-------------------------
+
+The btrfs patch is withdrawn from upstream consideration and kept as an
+experiment in the branch. I will not resend it and I am not preparing a
+btrfs v2. Scrub reporting and targeted relocation may still be useful, but as
+filesystem features that feed the block layer, not as I/O interception.
+
+Proposed dm-first staging
+-------------------------
+
+I am not claiming crash-safe redirect yet. For a first submission I would
+like the target to do detection, keep a pending list, and poison confirmed
+ranges (return EIO, never stale or zero data). The volatile table would be
+restored by userspace before mount, but nothing would move data to a reserve,
+so no acknowledged write can outlive a lost mapping. Redirect would arrive
+with the persistent log: a small self-checksummed area at the end of the
+device, two copies, a generation number, and the mapping committed before the
+remapped write is reported durable.
+
+Does that split make sense as a first submission, or would you rather see
+redirect and the persistent table in one series?
+
+Two smaller decisions:
+
+- Geometry. I plan to require the lower device to be a partition by default.
+  Whole-disk ownership, including LBA 0, becomes an explicit mode with a
+  documented recovery path (initramfs or rescue media), because the target
+  has to own the partition table and the boot loader's sectors too. Is the
+  partition requirement reasonable, or is whole-disk the more useful default?
+- Reserve. User-specified size with a documented default, not a hardcoded
+  constant; new defects take the next free block and existing mappings never
+  move. Any preference on the default or on whether the pool may grow?
+
+I am rejecting zoned-device support for v1.
+
+I will post the dm design and the on-disk format as a separate RFC once the
+format and crash-ordering rules are written down. If you are willing to look
+at the format before there is code, that is the review that would save the
+most time.
+
+Thanks again,
+Alexey

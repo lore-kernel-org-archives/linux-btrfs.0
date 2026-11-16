@@ -1,47 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=46.30.189.100
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.46
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794869024;
-	b=vxMH/tkCy3B7XI+k+5CWtu0sXCDo1CrU8gWZid6Zz2gtM0zMsaXTpJb/YV2aQUQP2y4x
-	 ga+E4C2OCVrKhgJmSfnrWUSBRvawib3KugBBdkRJtOWrMvr1h5MotGSzfB2AYsYlAyiWO
-	 5iVs9utjnCJ2CN5uUYFajm8mw06QRYsZdPMlkQjDg8gw1SnCOJ5fAPCp7MnFL3/edjm/g
-	 9RUVPo9X5aXLI/yppfIVdlsNhJIDmha2vO5CHA9F7ZjOGiHR/ynBqkudJNPdR3IXVyJDa
-	 1/DAfYy+v3RrI4y2Bf4rorI1UX3NpX0VaJu2CvMV1hWW9sydhQFKn15BRqD6EW0JUhQ==
+	t=1794869287;
+	b=z4lFTemPfzcOyvUHtZ4+x4xH8GZrC9Zpe1fmFpVEBxcNSrSMYARbb3pGej+BROADlbg1
+	 Dy8tcrHR4lg85/drWdJTeoSbJEyy4W9TpudV7s7KcnDBA7wSyntXHYkhkbj6mMj7TWQt7
+	 skFEcEa92AXIZOul6UfMexp171blNfeSoiQozQL7iayP14r3xb6AonA7NWZPIfHNbJYlu
+	 qNZb8or7754XhYYPXuoucITBhJMrThcyhVFcVfxdVZIX+5ygqEWFhKi92+1LmsM26WFj6
+	 wYzr3cdK4TFfSNo4hRLmp+x7x9aAYsn1EbhJaDjQqm7HhyN2UWgrQ8qOXI0bKN5PVXA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794869024;
-	h=DMARC-Filter:Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=qNq0idV0dNzzRJQOmqJRbNk/KK/u8smoSzf2hOz+AHA=;
-	b=EEDcYkmPa+WjKgp7jiii/hOksZRqQ5Yi7YJxSPdvAW5dQu8s6VljzOF5wUJ4En7M5+Zy
-	 nEa6YwaGy3TcqmiNbDjuZraz2OoC9x7FIu5vbZ7p5bLu0epnWP87unTbzywsagqxOgUT5
-	 Bj8jj46f1uP4tEdQzb8ZTs5o/hUFdbdNPOuPyGem2e7YBjbG7jLkV6XAU+esmHWPwuHZj
-	 TlXToQsM2Oze7CugnDznc+FUdnqfiulKwnEYkJXECPmKVwD+eh9EEo6MJItpYKE4pHaqv
-	 5HuBp7D9RLF2biyd5SjNh68M5d6f6aSKXWKF7vD7wPSKFj2gGPGZkNer0VhEpEX3ylQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794869287;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
+	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding;
+	bh=sU4YqyP5FNgmymeEWSjJc6o+Mj6OkOMdTqnGg7f2My8=;
+	b=u4tLHTD1jHvhXN8KwYftgt+nZUNMLYqNlppYhv1eJC6Y2Zs/Rp0oCkpgoCj9B3/ajWm3
+	 LWuTK5cP216R+MCp6K9w0Hpv7TCAV1WEje63pKBKmegRnkAbQilIbw7gXrZhWZ64j1E90
+	 7SezHIN/Nwc5nMNQyb5CnwYXItZW8Dk/MqUPbrpaFoxT6CKoc0DMgugpLPMGmTJummmz0
+	 3K54EBJmGtzn1dQGEvuDmK/o87S4cZYkiO5MX9kUqbHnjMuZaFYEB00NwPqNYUngYXbTS
+	 guraSNZkqu15FS7jBD9mcZi+6z+drMvsqocyUtqh6NbNaFPpE1ZmsMYBGHmnu4UTtcQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=iodev.co.uk;
-	spf=pass smtp.mailfrom=iodev.co.uk;
-	arc=none smtp.remote-ip=46.30.189.100
-Received: from iodev.co.uk (iodev.co.uk [46.30.189.100])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 4D84C606A8A3;
-	Mon, 16 Nov 2026 22:43:44 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4D84C606A8A3
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=iodev.co.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=iodev.co.uk
-Received: from localhost (unknown [79.116.217.174])
-	by iodev.co.uk (Postfix) with ESMTPSA id 917B95E22E3;
-	Mon, 16 Nov 2026 23:43:43 +0100 (CET)
-From: Ismael Luceno <ismael@iodev.co.uk>
-To: linux-kernel@vger.kernel.org
-Cc: Ismael Luceno <ismael@iodev.co.uk>,
-	Ismael Luceno <iluceno@suse.de>,
-	David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>,
-	linux-btrfs@vger.kernel.org (open list:BTRFS FILE SYSTEM)
-Subject: [PATCH 8/8] btrfs: resolve root=UUID= and root=LABEL=
-Date: Mon, 16 Nov 2026 23:43:24 +0100
-Message-ID: <20261116224316.11237-18-ismael@iodev.co.uk>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261116224316.11237-10-ismael@iodev.co.uk>
-References: <20261116224316.11237-10-ismael@iodev.co.uk>
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Tqij0Ls3;
+	arc=none smtp.remote-ip=209.85.218.46
+Received: from mail-ej1-f46.google.com (mail-ej1-f46.google.com [209.85.218.46])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2879606A329
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 22:48:06 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E2879606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Tqij0Ls3
+Received: by mail-ej1-f46.google.com with SMTP id a640c23a62f3a-c4395d31228so644891766b.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 14:48:06 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=suse.com; s=google; t=1794869285; x=1795474085; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=sU4YqyP5FNgmymeEWSjJc6o+Mj6OkOMdTqnGg7f2My8=;
+        b=Tqij0Ls35duQSpJgBlkattHZ1rYqD9vGHGegODAx8s5c5oMLV4IOyuCS8Z6dPD3lqx
+         hnPC/oaLUWmq2Bhym/evt6pCXSSYhj/o8zOSuKVhBJAk8TIb/sl96q+MHvypsbkNrCuS
+         MDToM6G5jI7l91xIOAVpvhvPWCmPDLCTuEVYl2i4WfaeNFHl4iODJlLcvyVMaP0lr+KK
+         mkz8OtB4dDfysZtBSV4HTKvQr1tTgE68/ad4cdHaG1TIkUgDPs1SNpIcR/5dM5CfrAKQ
+         VojX2sPoNxUO2wwKkLqTeRAJFHqa0p2ThcwxbNYlxZ3E9ELytvnrUCNZNW8mJ9BuVqlA
+         3xcg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1794869285; x=1795474085;
+        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
+         :content-language:references:cc:to:subject:user-agent:mime-version
+         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=sU4YqyP5FNgmymeEWSjJc6o+Mj6OkOMdTqnGg7f2My8=;
+        b=Lz6wKbHUVQnnSZ3EW7c1Sb+qC1Ptk6LlpoIUGk5F0ztLDdOBDPjhcvxmqhwihlprtY
+         Of6L98FPqt3WJRPVAo5ZBUOu7ktTmOtk96AjFCi0XpvUp1og7WPefFsv0xHbYzZ/ys9A
+         tVmjexTpeKsgR1StsRhLOJNg2R8STfrbD43Gjk85yogMwrTzbs/bjcZfxsfsMaMx+m2O
+         D/ezTDNn0Xw5k1obf9OYkQMA4yEfEA+RQo78LY1zCmwxq25SP8vW03rwjrNH4Fe8//KX
+         OV5cHqZOTpo20K9paXTESQZSMjMK9+a6pHvWQW/L+xYVdXLOAPjnEZDQhzGKtQywpeXo
+         nuUQ==
+X-Forwarded-Encrypted: i=1; AL+hErHl88V09Ngt4nENeIphLKdwZdc+Fh8OXCVniEIM9N/xG7IloelGCvHM5ByLJQQH8Z4o4m5fLvX19puTDQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8O0L4D04kaFHeZak1QIkShaaSgdy9xTsphEhQ9QQ2dgjEK6Sf4
+	IKp5uUAv9v+FjI1OOcgydbpuVMrarHf+YxgUTazFjfZctRb4HTnqaYZuTogV+QKScfQ=
+X-Gm-Gg: AYBFou1YOB98VSFiHRI8fOFOpxZh4sdtZxOhZjQyu0OOHaJVr1iUzXnao1cK2KV4FJJ
+	nSqr51b318GQPdriDULFc4XtgupID5AG35nWk6yM/e+yDqdI/GQCRVv6sPspa/2tXzGOfZ+JSBg
+	TO/F1B1XkM/Uve59YYguvj3ZkVP0Ofm0aU+jN7ecXjzmfU6dQyDwMM6nSl7ojafKgQgQa5IXNy3
+	34j56LOsnK5TjzvuZIsqwKrQHO5e0vmiBhq7u3fF+EkmYXFPDcJoWaQLxgH4j8h1WY7EoM/cdMA
+	sKteJcaZAHPRptpa5KxRLFXL2P12TH0uBycPy1m3/xhkIqa8HfBQiptjyN7B6NRwDY0VsBftPWW
+	W1JJ7lbX9b61AFo+aTjBP75bzFYl50aqpJcjBqgdSNfbJETT5v8lRZRqW2cSxLao/NX32K+bELN
+	A+lB+qB3CklYbWXCQ0tTrN6rxYdgDnu55Sk2A0M2tUw/k8iLhirC6y00/dhj4U5QGSAj/eCWle4
+	LfI+NKiGqCxhkMcpgBMP2kpYmJPKYOS6vlqT2CNyQ2WSpPjhZYRUZAAdIq7JHOcWman0TYMFURi
+	qwuimh0lJIZiSZwy9bFl5w==
+X-Received: by 2002:a17:906:794f:b0:c50:4b7a:de71 with SMTP id a640c23a62f3a-c5096371337mr1005561066b.28.1794869285237;
+        Mon, 16 Nov 2026 14:48:05 -0800 (PST)
+Received: from [172.16.0.229] ([159.196.52.54])
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2efd7a5835bsm4661905ad.41.2026.11.16.14.48.02
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 16 Nov 2026 14:48:04 -0800 (PST)
+Message-ID: <6263b557-1f52-407b-90b6-30af6ad3e3c9@suse.com>
+Date: Tue, 17 Nov 2026 09:17:59 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -51,176 +92,129 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH v2] btrfs: tree-checker: reject file extents with
+ oversized disk_num_bytes
+To: Cheng Yongkang <teel4res@gmail.com>, David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>, linux-btrfs@vger.kernel.org,
+ linux-kernel@vger.kernel.org
+References: <20261116050922.310476-1-teel4res@gmail.com>
+Content-Language: en-US
+From: Qu Wenruo <wqu@suse.com>
+Autocrypt: addr=wqu@suse.com; keydata=
+ xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
+ 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
+ 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
+ 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
+ gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
+ AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
+ FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
+ Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
+ +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
+ WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
+ /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
+ qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
+ rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
+ Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
+ E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
+ vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
+ g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
+ AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
+ SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
+ Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
+ 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
+ os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
+ UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
+In-Reply-To: <20261116050922.310476-1-teel4res@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
-A btrfs filesystem UUID and label are in its superblock, so the block
-layer cannot resolve them the way it resolves PARTUUID= and PARTLABEL=:
-root=UUID=... reaches parse_root_device() as something that is not a
-device name, and the mount fails with a message that gives no hint that
-a filesystem UUID was what was being asked for.
 
-Walk the block devices the way the device scan does and offer each one
-its filesystem UUID or label.  Whole disks without partitions and the
-partitions themselves are both candidates, since a btrfs filesystem is
-usually on a partition and the disks are then passed over.
 
-btrfs_can_scan_disk() is built regardless of CONFIG_BTRFS_ROOT_SCAN,
-since this lookup needs it too.  The lookup does not depend on devtmpfs, so
-it is not gated by that option.
+在 2026/11/16 15:39, Cheng Yongkang 写道:
+> check_extent_data_item() only checks that disk_num_bytes of a regular or
+> preallocated file extent is sector aligned. A crafted image can have a
+> compressed extent far larger than anything btrfs writes, and reading it
+> goes wrong in different ways:
+> 
+> - With disk_num_bytes == 4GiB, btrfs_submit_compressed_read() truncates
+>    it to a zero compressed_len and submits an empty bio:
+> 
+>      assertion failed: IS_ALIGNED(logical, blocksize) &&
+>      IS_ALIGNED(length, blocksize) && length != 0, in fs/btrfs/bio.c:895
+> 
+> - With a 4MiB zlib extent whose num_bytes and ram_bytes are above 4GiB,
+>    bvec_offset + bv_len wraps in btrfs_decompress_buf2page() and memcpy()
+>    reads past the zlib workspace buffer:
+> 
+>      BUG: KASAN: slab-out-of-bounds in btrfs_decompress_buf2page+0x3e0/0x650
+> 
+> Compression and encoded writes never create a compressed extent larger
+> than BTRFS_MAX_COMPRESSED. An uncompressed extent is at most
+> BTRFS_MAX_EXTENT_SIZE for a regular write and 256MiB for preallocation.
+> 
+> Reject a file extent whose disk_num_bytes is above BTRFS_MAX_COMPRESSED
+> if it is compressed, or above 256MiB otherwise.
+> 
+> Suggested-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+> ---
+> Changes in v2:
+> - Use SZ_256M directly instead of adding a new macro, and leave
+>    inode.c alone.
+> - Shorten the comment.
+> 
+> Note that kernels before v3.9, without 24542bf7ea5e ("btrfs: limit
+> fallocate extent reservation to 256MB"), could create preallocated
+> extents larger than 256MiB. If such old extents should still be
+> accepted, the uncompressed limit needs to be looser.
 
-Signed-off-by: Ismael Luceno <ismael@iodev.co.uk>
-Signed-off-by: Ismael Luceno <iluceno@suse.de>
----
- fs/btrfs/super.c   |  1 +
- fs/btrfs/volumes.c | 92 +++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/volumes.h |  1 +
- 3 files changed, 88 insertions(+), 6 deletions(-)
+This is indeed a problem. I think you can limit the disk_num_bytes check 
+for uncompressed extents to U32_MAX, just to be extra safe.
+The U32_MAX limit should never be reached, but we can still catch 
+obviously too large members.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index fb407361bbaf..a9f07e06f6ae 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -2379,6 +2379,7 @@ #define btrfs_info_if_unset(fs_info, old_ctx, opt, fmt, args...)	\
- 	.owner			= THIS_MODULE,
- 	.name			= "btrfs",
- 	.init_fs_context	= btrfs_init_fs_context,
-+	.find_by_spec		= btrfs_find_dev_by_spec,
- 	.parameters		= btrfs_fs_parameters,
- 	.kill_sb		= btrfs_kill_super,
- 	.fs_flags		= FS_REQUIRES_DEV | FS_BINARY_MOUNTDATA |
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9eedf6ef1383..12d9dd6d0737 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1531,7 +1531,6 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
- 	return device;
- }
- 
--#ifdef CONFIG_BTRFS_ROOT_SCAN
- /*
-  * Return true if @disk is worth handing to btrfs_scan_one_device().
-  *
-@@ -1562,6 +1561,7 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
- 	return true;
- }
- 
-+#ifdef CONFIG_BTRFS_ROOT_SCAN
- /*
-  * Register every block device that holds a btrfs superblock.
-  *
-@@ -1592,11 +1592,10 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
- 	memset(res, 0, sizeof(*res));
- 
- 	/*
--	 * Every block device, not just whole disks: partitions are registered
--	 * with part_type rather than disk_type, and a btrfs filesystem usually
--	 * lives on one, so a type filter here would skip exactly the devices
--	 * we are looking for.  A disk that has partitions is filtered out by
--	 * btrfs_can_scan_disk() below, which can say why.
-+	 * Iterate every block device, not just whole disks: partitions are
-+	 * registered with part_type rather than disk_type, and a btrfs
-+	 * filesystem usually lives on one, so filtering on disk_type here
-+	 * would skip exactly the devices we are looking for.
- 	 */
- 	class_dev_iter_init(&iter, &block_class, NULL, NULL);
- 	while ((dev = class_dev_iter_next(&iter))) {
-@@ -1647,6 +1646,87 @@ btrfs_get_bdev_and_sb(const char *device_path, blk_mode_t flags, void *holder,
- 
- #endif /* CONFIG_BTRFS_ROOT_SCAN */
- 
-+/*
-+ * Format the filesystem UUID of a disk superblock, in the same textual form
-+ * blkid and the rest of btrfs print it as.
-+ */
-+static const char *btrfs_sb_uuid_string(struct btrfs_super_block *disk_super)
-+{
-+	static char buf[UUID_STRING_LEN + 1];
-+
-+	/* The fsid is stored in the same layout a uuid_t is printed from. */
-+	snprintf(buf, sizeof(buf), "%pU", (uuid_t *)disk_super->fsid);
-+	return buf;
-+}
-+
-+/*
-+ * Read the primary superblock of @bdev and compare the field named by @key
-+ * against @value.  @value is in the usual textual form: a UUID, or a label.
-+ *
-+ * Return 0 on a match, -ENOENT if the device is not btrfs or does not match,
-+ * or an error.
-+ */
-+static int btrfs_dev_spec_matches(struct block_device *bdev, const char *key,
-+				  const char *value)
-+{
-+	struct btrfs_super_block *disk_super;
-+	bool matches;
-+	int ret;
-+
-+	disk_super = btrfs_read_disk_super(bdev, 0, false);
-+	if (IS_ERR(disk_super))
-+		return PTR_ERR(disk_super);
-+
-+	if (!strcmp(key, "UUID"))
-+		matches = !strcasecmp(value, btrfs_sb_uuid_string(disk_super));
-+	else
-+		matches = !strncmp(value, disk_super->label,
-+				   BTRFS_LABEL_SIZE);
-+
-+	ret = matches ? 0 : -ENOENT;
-+
-+	btrfs_release_disk_super(disk_super);
-+	return ret;
-+}
-+
-+/*
-+ * Find the block device holding the btrfs filesystem identified by @key and
-+ * @value, for "root=UUID=" and "root=LABEL=".  Both are in the superblock
-+ * rather than in the partition table, so unlike PARTUUID= and PARTLABEL= they
-+ * can only be recognised by reading devices, and it has to be done by btrfs
-+ * rather than by init/.
-+ *
-+ * Return 0 and the dev_t on a match, -ENODEV if no device matches.
-+ */
-+int btrfs_find_dev_by_spec(const char *key, const char *value, dev_t *devt)
-+{
-+	struct class_dev_iter iter;
-+	struct device *dev;
-+	int ret = -ENODEV;
-+
-+	if (!key || !value || !value[0])
-+		return -EINVAL;
-+
-+	/* Every block device, disks and partitions alike: see the comment on
-+	 * btrfs_scan_all_devices() for why the type filter cannot be used. */
-+	class_dev_iter_init(&iter, &block_class, NULL, NULL);
-+	while ((dev = class_dev_iter_next(&iter))) {
-+		struct gendisk *disk = dev_to_disk(dev);
-+		struct block_device *bdev = dev_to_bdev(dev);
-+
-+		if (!btrfs_can_scan_disk(disk, bdev))
-+			continue;
-+		if (btrfs_dev_spec_matches(bdev, key, value) == 0) {
-+			*devt = bdev->bd_dev;
-+			ret = 0;
-+			break;
-+		}
-+	}
-+	class_dev_iter_exit(&iter);
-+
-+	return ret;
-+}
-+
- /*
-  * Find the first pending extent intersecting a range.
-  *
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 6f2cf43d1038..8b550a5a2d6f 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -768,6 +768,7 @@ #define BTRFS_DEV_LOOKUP_ARGS(name) \
- #ifdef CONFIG_BTRFS_ROOT_SCAN
- unsigned int btrfs_scan_all_devices(struct btrfs_scan_result *res);
- #endif
-+int btrfs_find_dev_by_spec(const char *key, const char *value, dev_t *devt);
- int btrfs_forget_devices(dev_t devt);
- void btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
- void btrfs_release_device_allow_freeze(struct file *bdev_file);
+On the other hand, you can add extra checks against the ram bytes too 
+for compressed extents. That ram bytes should not exceed the same limits.
+
+> 
+> v1: https://lore.kernel.org/linux-btrfs/20261116044543.282187-1-teel4res@gmail.com/
+> 
+>   fs/btrfs/tree-checker.c | 14 ++++++++++++++
+>   1 file changed, 14 insertions(+)
+> 
+> diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
+> index f021ac14babf..6bd1dfc58e7d 100644
+> --- a/fs/btrfs/tree-checker.c
+> +++ b/fs/btrfs/tree-checker.c
+> @@ -244,6 +244,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+>   	struct btrfs_file_extent_item *fi;
+>   	u32 sectorsize = fs_info->sectorsize;
+>   	u32 item_size = btrfs_item_size(leaf, slot);
+> +	u32 max_disk_num_bytes;
+>   	u64 extent_end;
+>   	u8 fi_type;
+>   
+> @@ -377,6 +378,19 @@ static int check_extent_data_item(struct extent_buffer *leaf,
+>   		     CHECK_FE_ALIGNED(leaf, slot, fi, num_bytes, sectorsize)))
+>   		return -EUCLEAN;
+>   
+> +	/* Compressed extents are at most 128K on disk, preallocated ones 256M. */
+> +	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE)
+> +		max_disk_num_bytes = BTRFS_MAX_COMPRESSED;
+> +	else
+> +		max_disk_num_bytes = SZ_256M;
+> +	if (unlikely(btrfs_file_extent_disk_num_bytes(leaf, fi) > max_disk_num_bytes)) {
+> +		file_extent_err(leaf, slot,
+> +		"invalid disk_num_bytes for file extent, have %llu expect <= %u",
+> +				btrfs_file_extent_disk_num_bytes(leaf, fi),
+> +				max_disk_num_bytes);
+> +		return -EUCLEAN;
+> +	}
+> +
+>   	/* Catch extent end overflow */
+>   	if (unlikely(check_add_overflow(btrfs_file_extent_num_bytes(leaf, fi),
+>   					key->offset, &extent_end))) {
+> 
+> base-commit: 3aefd67f08f8ed59ed0fa90619b25856df415031
+

@@ -1,93 +1,95 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.179
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.222.170
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794884638;
-	b=bHS8vXEeH+BLU+ILxyk24GgehK+3M0teMqxeQwq/Wk7KIbrOfX3AaawWErrtIqEkF6P4
-	 qoQEbPjTBXr0ta7lH85tBGmpSaa8nmtFLL+Z0DhF9Hze3EoHLRNC/mCzmry5Q/dZ+xJTL
-	 d2RZxzaxaWORyXen8xfhyIvqC7smF9a8toerJF20gj332cM4F2u9L1z71JHj3tKB6Tub3
-	 W6hK+7j6qPMWdev7MovJmHeBx1ZNAEFjIRXlkxLGnnshV1+LBRm0VlZgqiNUvZfP8meBt
-	 fC2nWO0YqMb45cazo5Edj+pYWv8vGfra42bnPSsK6aksJHvf5Gg3aFuYxFIG3TOJQrg==
+	t=1794887562;
+	b=yMnC86iKpGnOwkpsr62gIAWrL6jj+1WjeM8lgOR+3xFjV/RfZtcHH1mEFgC0GnotN21U
+	 8O4XsLb3/60HoJ3sJ5kHlhdGnCyELVOSQI5xd/PMnr/jS6Td3sCFsnyuAIsHYT0wpZP/S
+	 guH4gz0d36SUMHlBn+KkGukQT/rVRJoJegvxwaopN5pkzkYS6NLztCohlc+8njwTFDrWM
+	 XAXH4Cfl2MYhpAYJINKdd/t1NArBb8bsonySwxxV8qIG2jBlF2fBFigJ4uZxTz8ZrN2w6
+	 YVLWAtorAYZAZWEUEUOC9xGXNdSl1xEY/u8q5D5ppMDaInjw17cdL774VL7fpih7f0Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794884638;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794887562;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:MIME-Version:Content-Transfer-Encoding;
-	bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
-	b=W6pPl2k+1o2swSUXqkbNcAhjAPq5BErCVV00uUIfDHP/05jhDE9l1axlcS5fDHfJWrck
-	 9IrgpPNB4EuWzdSrKRG1GzOL1HddT8H53ME3XrNTXL5Z/kXeuis7/gcPISLE4WGUXfGUe
-	 9W6N/qPILflypL7ae2fiH5BWNTZzhinW705YsnjNB0T3C9pDHaXc/05C3c/zyBsq4bp40
-	 UUiyqnuO88QYx7XlNSOKCQroli3+VuN7TnF/FG5ZoYtyaOBgLOBC4EA2mQ2NBzqbREr2K
-	 yZJsEi32wZW40jUhzL2983DoXe8GWx9pX1b8P3l2OXwFbGCoPIFueKmvhlpXgOK1uOw==
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=98ojD7Yqgp4+QWlLYJvCdz0SkGgcS1ZlQwaV98NWAJc=;
+	b=TezuZpJOZ27LEXlrtFdu5Dt4G8unBgdezy/BnuhpXB61P1AVrVepsPnbzx5qfrsIE9+k
+	 vlj71TercLLRVxHOto+AkdT8o/yf8mJEQZK1mWEYDfPjKlIjMrXYb24QY+FeuwC3+GHWJ
+	 3mwURcLQXUPwm4K86V1gU6UBqohOPamA3UaaQmhRmr11RfcCwzk58M8PKkTq/e8eZ2wjD
+	 G7e2kYp1Ib/leLuKgbSiDzv8pbXuZ/100pmptSpjYIlg6833clZLwmYbLOPEwaqQ6wTtM
+	 CmntjoV+NEYJsPkwacFmQhXlVA6rIwN7A+dBgNxmSd1z4tLF7eaMLW82BpnGaqPnkHw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=cs.unc.edu;
-	spf=pass smtp.mailfrom=cs.unc.edu;
-	dkim=pass header.d=cs.unc.edu header.i=@cs.unc.edu header.a=rsa-sha256 header.s=google header.b=UPWM48sC;
-	arc=none smtp.remote-ip=209.85.128.179
-Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vAUMfgRT;
+	arc=none smtp.remote-ip=209.85.222.170
+Received: from mail-qk1-f170.google.com (mail-qk1-f170.google.com [209.85.222.170])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D764606A329
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 03:03:58 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8D764606A329
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AFFC2606A323
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 03:52:41 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org AFFC2606A323
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.a=rsa-sha256 header.s=google header.b=UPWM48sC
-Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-8b4d26094beso16675267b3.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 19:03:58 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=vAUMfgRT
+Received: by mail-qk1-f170.google.com with SMTP id af79cd13be357-945e6d9ceeaso437545785a.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 19:52:41 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=cs.unc.edu; s=google; t=1794884637; x=1795489437; darn=vger.kernel.org;
+        d=gmail.com; s=20260707; t=1794887560; x=1795492360; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
-        b=UPWM48sC5oymWjtmL5e4xI7owhXfoZezZn2RXAp8qjflD0A7ZVgU7zD8z/gcqRdyIk
-         9W9D4HtslpZaadRDTQF9HMVEixl+DEE3B4spBL01R1Lz7K6STQqqwzBgxbu9LWKYcAt2
-         GpU2IKgBbMC02NJGJDSngkfls5q1+6YGGkhAb/3/uPNWKa2xij4TT/3D0prYRM0Dd2c4
-         xJ1l7wkP9ARxvbIgHnv2fsRcSL1IWhPrLcByhtSbdfamnY6J5K4+uvM8iPFk7jbA87gW
-         R5QU0p6Nk5ZSKUiLVJayzcbAJgzS539HWZp+ubhCywupnOA/bLJ4yhyHlTmGBzcAC9q4
-         Es4A==
+        bh=98ojD7Yqgp4+QWlLYJvCdz0SkGgcS1ZlQwaV98NWAJc=;
+        b=vAUMfgRTe5L+FRb473+XUFiri9OlSQzM3Fwq2mGAYI/xsd0MceiGGUJcQ9xOa5PjfV
+         MdSdmceyC8DFmiY/IDttc2iRbooc5gFbbe7uM2JHXUIiVem/1A53TjNfMj66fIf15WM3
+         uBCuqJ892sii2nySQsGBZrHATcWI+f364XmPYEN+cvDRdsAZ/eteketmDA5hbuKJI8L1
+         Y9AFSbHYVWyDhw7bE10JHga2gzr/Gv+VWJ/sUf1ZNlyznH4fdFJA6ul9wxOyh602Y5II
+         t59+Wr+O/iFuuAW68ItNnWw/AfCuLPwWMO2xOpGVsCYj7jQXkAlS7zlm9OxVDRVx3Lxw
+         K3rg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794884637; x=1795489437;
+        d=1e100.net; s=20260707; t=1794887560; x=1795492360;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
-        b=ZGMqTPL0QhLB+zpT03cBbtloNMpOFciVQUOhhLxGphPdt1qE8QwyPb9WybsI1Tsw5K
-         VV8LucaMp7OjgNmfovS1Isq1WkH0uVGmVx2uSsDuN22sjBI5q+Gckq8q2QtquXT4D31u
-         s3ZtjzExjSV7TVbsVMARq13RUlPGehiFR8o9ck4rryWgPgVZT47YNIpcMAwL+uKKzgiY
-         5FsVkiz8SLm4ybjTpGHbCPsSarbfimMaulOjmTCP3gYJVrXuDLnlyWnn1JXZj2SuiBmK
-         FHuRPNWJ3zFk9NPNXGcPMUqz3ZogPaIWb5jDhLa1/Hw01sU/GNLWwaA3y1a1MRkHMSb9
-         EKlQ==
-X-Gm-Message-State: APuU4Z/Oik3XNoy1zF5n7q9Wj7AFbjQrwz9hmNJufiRG68j0MMKJCvVM
-	r6BihzcCU3OUeaxOEAkfG7Hl0GLdm4SjUSk/H8BBX7XNIipUnodFymhq+sqeBz0XCyd3xwPwnOx
-	5me8uZBJUjhwUgUarmSeRwaw+i7ff5J5Uk/7AuJA0FrydZfTeBslFZWtADjXh7gDDlfgva2obfz
-	k9vn+GzX6tSkIUV2PVS9tTSYW7Am36lRBv5Qhs/KuUSB4YkFg=
-X-Gm-Gg: AZFdTZcvH9yyYaBWJnSoQR2bBILayX5N5+6fk+QA+7ZdnVgzcTYAw4rBhqCHitgAVyr
-	YdXPG9aU0Mxl9k3KV/AFWJ4rslmlasGvwNr+mqUWGafDQDnt+uBeZjaNjUO4O1EpTC8XH/fx7l5
-	TzGyZkBLNl9ALathpXx1FJBFZTDeiELYnBwlsyS8xnXl1rucoOsFsbCh8ucBaoInegOhNhWmusI
-	6Usp+x01oFf/dwGi1/BiWHduAmAuB0bXg5v5EXGD5zto/UCtrwHVW9w3n0HanqfdA4YOz4BfbYC
-	8qkUFGm3TdFXduPWI/7hFmb/1IlrAyAYBKccd7W9Py8Ka+M9L2mtbnQFLDyID/B3nla/k+o15Jg
-	4QqOhjPr7eGFoyggF76Qgw1dmt36nI72JFjbJt67dJFbwMZIdfdfWYmpCdH6XPy9E2fq9UtaNGI
-	aI8DkO2uCTb4oonkLP+xcDaJUmj2mmXnx5NXWoRmqJRp515rNUIUeRhb1JRfIf5e4UJOmLxkKW3
-	68nLUTq2r8EDh34NzfcLOYZvlSsOFr8Qjz/f0+xGxH5SmO+2UtZTlygsej5zfs3Hiabdev/Ks8I
-	V7iCWg1xn2y4uanZOIIcdNax4MexcgWmDbgRfnYbDbOLN2wBNbc=
-X-Received: by 2002:a05:690c:7488:b0:8b4:c615:62fa with SMTP id 00721157ae682-8b4c6156634mr56285737b3.61.1794884637083;
-        Mon, 16 Nov 2026 19:03:57 -0800 (PST)
-Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
-        by smtp.gmail.com with ESMTPSA id 00721157ae682-8b4ec29d0b5sm14482677b3.35.2026.11.16.19.03.56
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 Nov 2026 19:03:56 -0800 (PST)
-From: Hengyu Liang <hengyul@cs.unc.edu>
-To: linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <wqu@suse.com>,
-	Boris Burkov <boris@bur.io>,
-	David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: remove "rescue=usebackuproot" from "rescue=all" shortcut
-Date: Mon, 16 Nov 2026 22:03:53 -0500
-Message-ID: <20261117030353.1738805-1-hengyul@cs.unc.edu>
-X-Mailer: git-send-email 2.53.0
+        bh=98ojD7Yqgp4+QWlLYJvCdz0SkGgcS1ZlQwaV98NWAJc=;
+        b=X0sahwl+Y9QueNMh/x4gjCF69FEKCXSzXjflhDzaVQIbA8zxm2M4A8ZwY8gUNZwXJA
+         EZYrG+W1rAJ9JWMIHu9z9Sq8aZcdqYVE+TOp4AIUPQdfzeQUVhWPppBOM732bW13JqDo
+         PkQXNDigOfJDAT22AK236eLTEx9Vt4SY89oHTD+fU/IVxqSkU2MI5cAs7Hhmhk8+WLTO
+         Fq7KUmS5z3ohVsjkq/OZ7dZL5kVdCnwwnx7Oixp3bwNcwGvFTRGuKnyGgvqf6UdgnGQD
+         0E0sh+ugA8sjrrd9zYBB5w1Ck62ETm1Gp4/f2EZYscnJ0tpWKDMRv+adc0o9WGczD8Lc
+         pdHA==
+X-Forwarded-Encrypted: i=1; AL+hErF4pvt3vsT7hvLMF4WZi0ocPAgQPfuH3fTBSeRNw4pKQULQDqqiGPlIglUXYLt4hS7glT+yK0nApdqqbg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/vA0dcnPkqHiGsjaV4T6yecsPl1yOqz4kvEpmvyddF8vakoD9T
+	w9JB9S1sMopaT1DrUlId542sfqbHvVF3krHMilFs32Xt4cI4eA6ZW5kf
+X-Gm-Gg: AYBFou2bPRBNxsOjnONip2zuRoIKLTVZ1TqB3Pf+9il9U9/VN1xi9P2esUX0nmiLvqC
+	qRZC0sXKnOSdg+J7b6HcUIcpepXATPbrYDrsoi9kbPLvTLFL4snQtuuoN3nnen7nML/ws4Bq4Z1
+	1hd9f+IxtyZct8JUxwYTuEtjUsK2IBV30xyxLuYR8kAu78wZpaH+gEzBVzu79f/VN4bx+389IBG
+	V/7srxfxGC+wXINz6VVYMZVjjJh/VmkfLdaCP4zKMxfgPMeoTaFPH6hwl7CRU6tojsdf3FIvibB
+	mZQqoe2tUaOmkMNt3nEo8+ornqrevZmA/mVwVXZZg7MuFNWitpz5CkdbpVz8h3aSZrgkVRz884V
+	6SOojUKCI61B2eanwr+lr6+2M+sA63MoVja3B2b3O7zR1Vz275hNERolTxatD8fFHXIXEAoT75f
+	objyEifKNCE/lSbTSNsZUWUtL0nMP+IMFI6uAQbMsuMHVmYtnlWjw5Nyoxz9eCaup914kkCRXn9
+	bNlvJFpV5r6kcw9bqOvKCYF1uYyFNU5vKd7UEfpPC91eHj40jp2nVj3VmgWO9ExfaSbyz3PHNb1
+	PjeAROt0Qf2UZ5Symj1pyMAwz6PFoELwoKnZNzP7gFb4xDIhSXhUDcBPIxSAaSMAgRH3bmIR8if
+	zjnvY3vNErDW6mEcdwWIFsGGJPKWS5IbTGt31R+2Gqib/HKTJ3Eg5CWhhB1k1ZnbVGwczP9m1
+X-Received: by 2002:a05:620a:6f01:b0:93e:653e:6981 with SMTP id af79cd13be357-9494ba5556bmr1927137885a.11.1794887560598;
+        Mon, 16 Nov 2026 19:52:40 -0800 (PST)
+Received: from localhost.localdomain (c-107-3-155-154.hsd1.ca.comcast.net. [107.3.155.154])
+        by smtp.gmail.com with ESMTPSA id 6a1803df08f44-91f23d70489sm100944006d6.21.2026.11.16.19.52.38
+        (version=TLS1_3 cipher=TLS_CHACHA20_POLY1305_SHA256 bits=256/256);
+        Mon, 16 Nov 2026 19:52:40 -0800 (PST)
+From: Yifan Feng <evanfengff@gmail.com>
+To: David Sterba <dsterba@suse.com>
+Cc: Chris Mason <mason@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	Yifan Feng <evanfengff@gmail.com>
+Subject: [PATCH] btrfs: tests: zoned: fix NULL check of the active bitmap
+Date: Mon, 16 Nov 2026 19:51:55 -0800
+Message-Id: <20261117035155.86323-1-evanfengff@gmail.com>
+X-Mailer: git-send-email 2.39.3 (Apple Git-146)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -99,81 +101,43 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-[BUG]
-Since commit c73eb6f72741 ("btrfs: always use the second newest slot for
-rescue=usebackuproot"), "mount -o ro,rescue=all" mounts the second
-newest backup root even when the newest roots are fine. As of now, the
-changes of the last transaction are not visible with "rescue=all".
+test_load_zone_info() allocates the active bitmap with bitmap_zalloc()
+but then tests zone_info, which was already checked a few lines above.
+A failed allocation is not detected, and the NULL bitmap is then used
+by __set_bit() and by btrfs_load_block_group_by_raid_type().
 
-The issue can be reproduced with a healthy filesystem:
+Check the active bitmap instead.
 
-    mkfs.btrfs -q -f /dev/vda
-    mount /dev/vda /mnt
-    echo old > /mnt/A
-    echo old > /mnt/C
-    sync
-    echo new > /mnt/A
-    echo new > /mnt/B
-    rm /mnt/C
-    umount /mnt
-    mount -o ro,rescue=all /dev/vda /mnt
-    ls /mnt
-    cat /mnt/A
+Tested in QEMU with the bitmap size temporarily changed to UINT_MAX so
+that the allocation fails. Without this patch the kernel oopses in
+btrfs_test_zoned() with a NULL pointer dereference. With it the test
+prints "cannot allocate active bitmap" and fails cleanly.
 
-Before that commit, the result is "A B" and "new". After that commit,
-the result is "A C" and "old".
+Found by searching for a NULL check that tests a different pointer than
+the one just allocated, with the help of an AI coding assistant
+(Claude).
 
-[CAUSE]
-Commit 2fd3f6a2711b ("btrfs: add "rescue=usebackuproot" into
-"rescue=all" shortcut") added USEBACKUPROOT to "rescue=all". At that
-time the option only fell back to a backup root when the newest roots
-failed to load. Now btrfs_parse_param() sets USEBACKUPROOT and
-use_backup_slot = 1 for "rescue=all", and init_tree_roots() calls
-read_backup_root(fs_info, 1) before it loads the tree root.
-
-[FIX]
-"rescue=usebackuproot" now selects a root instead of tolerating an
-error, so remove it from "rescue=all". With this change "rescue=all"
-never uses a backup root by itself. When the newest roots are damaged,
-"rescue=usebackuproot" has to be given in addition.
-
-Fixes: c73eb6f72741 ("btrfs: always use the second newest slot for rescue=usebackuproot")
-Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
+Fixes: 1ba19a6ea9f2 ("btrfs: tests: zoned: add tests cases for zoned code")
+Signed-off-by: Yifan Feng <evanfengff@gmail.com>
 ---
-This is new in 7.4-rc (v7.3 mounts the newest roots with "rescue=all"),
-so it can be judged before the release.
+ fs/btrfs/tests/zoned-tests.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-On a copy of a disk taken while the next transaction was running,
-"rescue=all" on v7.4-rc2 showed 30 of 60 files with the data of other
-files and no read error, as the space freed by the newest transaction
-was reused and data checksums are ignored.
+diff --git a/fs/btrfs/tests/zoned-tests.c b/fs/btrfs/tests/zoned-tests.c
+index 2bc3b14baa41..bb9969210444 100644
+--- a/fs/btrfs/tests/zoned-tests.c
++++ b/fs/btrfs/tests/zoned-tests.c
+@@ -65,7 +65,7 @@ static int test_load_zone_info(struct btrfs_fs_info *fs_info,
+ 	}
+ 
+ 	active = bitmap_zalloc(test->num_stripes, GFP_KERNEL);
+-	if (!zone_info) {
++	if (!active) {
+ 		test_err("cannot allocate active bitmap");
+ 		return -ENOMEM;
+ 	}
 
-If "rescue=all" should keep every rescue option, as btrfs-progs
-documents it, using slot 0 for it also shows the newest state, and I
-can send that instead.
-
-Tested on btrfs for-next (26eb4d70f96d) with clean mkfs.btrfs images:
-healthy, a damaged data block, a damaged extent, csum, fs or tree root
-block, and the disk copy above.
-
- fs/btrfs/super.c | 2 --
- 1 file changed, 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b424cc836bd4..d67d678451f6 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -624,8 +624,6 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
- 			btrfs_set_opt(ctx->mount_opt, IGNORESUPERFLAGS);
- 			btrfs_set_opt(ctx->mount_opt, IGNOREBADROOTS);
- 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
--			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
--			ctx->use_backup_slot = 1;
- 			break;
- 		default:
- 			btrfs_info(NULL, "unrecognized rescue option '%s'",
-
-base-commit: 26eb4d70f96d9bf99e87c2565d6234eb652f9c26
+base-commit: aebb7274476403040d582c61478df8f4a7bf9cd3
 -- 
-2.53.0
+2.39.3 (Apple Git-146)
 

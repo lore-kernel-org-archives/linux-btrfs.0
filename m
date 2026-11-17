@@ -1,47 +1,52 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=13.75.44.102
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794917030;
-	b=GE3QaDKAvfrIoDqlBklFkeYNz7KEZAdWf/yXeOQMe8E6PkZCud9COe/Q+LmI4f1c8PQt
-	 wLvjLBqXxtsIpICA4kMzEfYg/Veq9wQWK+k80rb4tfsdUgN9uoCHM2sRrKukU/zZ1YzBC
-	 DxD9VQMZNeB65BP45Cecu+7zBb1SxsucUkc206vO4WJrh2CK5t6/xAHFYB+suTUWaDoSe
-	 VdNMphwjlrFIi/zHYa9pM1aAokAlmCQjnrJdkjdKv+UGsLIE0/JUfNdM9KQIykNrKcyI7
-	 baHlEB2uLy0C0VYutAtDPXnlPnzVD1Rl8/UK4KsL8VtDM/lYU9ycpT28N+B1scjGrNw==
+	t=1794919112;
+	b=Ni2xkeu6gUNMwzCVTRDVvPXYpAPLFV03j+xPKAZTg0tEBzFGPP2xhGW3YlPLgPlB4biR
+	 srdr8OxwIM5wzJti5DbK1wsmVSFaNrZ1eYrAe8NCtUPefrvetLLdnGYWOG8z59jWY0Nr4
+	 MB3ix2kVF4p5owZvvF4qTxpSq3A5ukr8geOwGlpb6/zgLaDoVj+85HYws4qQdp8S2pH+X
+	 pJtw4E2Wegac1ARMXf4BuZYyKELjXjKAoefngeCAvIm8iEeisiPVTp/jPZxVeiZJAF4Q2
+	 d1V5mCZxZ8F3AmIX73tqUrjMhY/pr5Awn2jqoQqO6TQ32y8Yczzn9RwHZRM+2YSn7ag==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794917030;
-	h=Received:DKIM-Signature:Message-ID:Date:MIME-Version:User-Agent:
-	 Subject:To:Cc:References:Content-Language:From:Organization:
-	 In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	bh=mdbBWR1lFJ4T3AkQT6Xt9dH9cPm8FCVRpys9uxiY46w=;
-	b=Aer5hvQtGN9ODxZNmr9R+Jrf3k0hexEGRjHHo3a2Ip67I1bYjsBFDt+APB1M1LdRqC2F
-	 2K3ZnBqHzSU/Dh5nNGBBDAdrEWFDejzcrdzbTuqvd/aIi7DvSmnBkXyxi6z3aMLwT7ali
-	 gL65uCSTvlDhBkfu4EclylMF0xLbB9iLrNSFw5/s+D2Dc/TdLUKiFHZmEvQb5HfPAwH9+
-	 +pd/rIBgnss//L5EoSQ7yszvkXEl6N6Hhoipn/5q2jt38jpkHc765NvPPKPw9D9Y/8aha
-	 SfOwSQIMUTN0d6WVem1EmXfm4zAJGwi4CsmOIFpEMNOupH4Do3BwLBls1Jw20gcqKhg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794919112;
+	h=DMARC-Filter:Received:X-Originating-IP:Date:X-CM-HeaderCharset:From:
+	 To:Cc:Subject:X-Priority:X-Mailer:In-Reply-To:References:
+	 X-CM-CTRLMSGS:Content-Type:MIME-Version:Message-ID:X-Coremail-Locale:
+	 X-CM-TRANSID:X-CM-SenderInfo:X-Coremail-Antispam;
+	bh=hoX5EUwR1xfVm+1NE4i8lcvmNFpsZkVhYrWV8YCfb4k=;
+	b=dUDDFNrA89cAd3xr3Bl6GVOfdA2X7z6L6DLkS1pVebzGw1Y7T0rsEoLrWWCRwBHcNf1A
+	 BcTz/yTGGCkvRTwl3DpTF4lcidvnlN89zVOmMXcx6G6iK/WUHCD0PElYfxxKoaVr+MYGD
+	 RLfonkweSqGyyrcI8jO7huw5ktMQ9iKfA5Y7QDZd4Lepsvc/yUJPXSgde60z2t1iHHnZl
+	 sZkyNjnj3u0TGopy8iK0BVmixBziMyuZnqoT4lN580VDTkE73tMjamhGeX9My00mkQNXL
+	 7+4MhYuxwD/C9rwOKwHwhUIV1piR9oGmnFR1lMzXZg09U//XN/f7ir2RpJpkLgHt2DQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=G2aRtCP9;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
-	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 73D0F606A31C
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 12:03:50 +0000 (UTC)
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=G2aRtCP9
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 464331F000C4;
-	Tue, 17 Nov 2026 12:03:49 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794917030;
-	bh=mdbBWR1lFJ4T3AkQT6Xt9dH9cPm8FCVRpys9uxiY46w=;
-	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=G2aRtCP9ulfpEiUY7hgDXyNDoizFCGKhXGXoSRxcL6KYEcha+hrZbOGYMFq5EcLww
-	 7d2MdXlmZce8R/1GJqvBKjfkw8raO2DCy3pybbsiZLyPhWsTHeNmESBHhbsJ2yxZlV
-	 3/H3U9yIUKI1Tv3mrHva3X1amtpKS6sp6j8wteAiOsLK6HAF7BhuX7Eylq5m5ijiwE
-	 uDS6UMbn/RFlLUMlB/+9mdSTOVVje36KZudj0nBRm/aK5eWoC2BL5FPddkFAMbmkGP
-	 EjFdC9VXFajS50x2USB0k9p/VVuSsRxpE71yzaNTfDgEgs5L2T5zxO04ABexDJ2iUD
-	 wxBY6zYDeuTQQ==
-Message-ID: <99260fd7-796c-464b-8a9d-d13622945156@kernel.org>
-Date: Tue, 17 Nov 2026 04:03:48 -0800
+	dmarc=none header.from=hust.edu.cn;
+	spf=pass smtp.mailfrom=hust.edu.cn;
+	arc=none smtp.remote-ip=13.75.44.102
+Received: from azure-sdnproxy.icoremail.net (azure-sdnproxy.icoremail.net [13.75.44.102])
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 43A5D606A31C;
+	Tue, 17 Nov 2026 12:38:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 43A5D606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=hust.edu.cn
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=hust.edu.cn
+Received: from xuhx$hust.edu.cn ( [10.12.169.105] ) by ajax-webmail-app1
+ (Coremail) ; Tue, 17 Nov 2026 20:38:20 +0800 (GMT+08:00)
+Date: Tue, 17 Nov 2026 20:38:20 +0800 (GMT+08:00)
+X-CM-HeaderCharset: UTF-8
+From: =?UTF-8?B?5b6Q5pmX57+U?= <xuhx@hust.edu.cn>
+To: dsterba@suse.com
+Cc: linux-kernel@vger.kernel.org, mason@kernel.org,
+	linux-btrfs@vger.kernel.org
+Subject: btrfs: compression: data race on compr_pool.count between shrinker
+ scan and folio alloc/free (KCSAN data race)
+X-Priority: 3
+X-Mailer: Coremail Webmail Server Version 2025.3-cmXT6 build
+ 20260810(6c94e3b5) Copyright (c) 2002-2026 www.mailtech.cn hust
+In-Reply-To: <2026102727-data-sequel-ce41@gregkh>
+References: <4c7f9772.192e1.1a17d5c2ed5.Coremail.xuhx@hust.edu.cn>
+ <2026102727-data-sequel-ce41@gregkh>
+X-CM-CTRLMSGS: =?B?8I7TODiH6nJ5xwDR7hwMki1N8jM=
+Content-Type: multipart/mixed; 
+	boundary="----=_Part_560676_919460545.1794919100849"
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -51,102 +56,217 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 3/4] btrfs-progs: zoned: add btrfs_get_max_active_zones()
-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
- linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>,
- Qu Wenruo <wqu@suse.com>, Mark Korenberg <socketpair@gmail.com>,
- Dongjiang Zhu <zhudongjiang@fygo.io>
-References: <20261117084948.3848762-1-johannes.thumshirn@wdc.com>
- <20261117084948.3848762-4-johannes.thumshirn@wdc.com>
-Content-Language: en-US
-From: Damien Le Moal <dlemoal@kernel.org>
-Organization: Western Digital Research
-In-Reply-To: <20261117084948.3848762-4-johannes.thumshirn@wdc.com>
+Message-ID: <4cbd7a1f.28fd9.1a1e983f1b1.Coremail.xuhx@hust.edu.cn>
+X-Coremail-Locale: zh_CN
+X-CM-TRANSID:IAEQrMAm72q8SvxqXmtkAA--.19882W
+X-CM-SenderInfo: bgsqjkayqyjmo6kx23oohg3hdfq/1tbiAgIOB2r7LO+7XAAAs8
+X-Coremail-Antispam: 1Ur529EdanIXcx71UUUUU7IcSsGvfJ3iIAIbVAYjsxI4VWkKw
+	CS07vEb4IE77IF4wCS07vE1I0E4x80FVAKz4kxMIAIbVAFxVCaYxvI4VCIwcAKzIAtYxBI
+	daVFxhVjvjDU=
+
+------=_Part_560676_919460545.1794919100849
 Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Content-Transfer-Encoding: base64
 
-On 11/17/26 00:49, Johannes Thumshirn wrote:
-> Return the active zone limit the kernel uses for a device, the same as
-> btrfs_get_max_active_zones() there: the smaller non-zero of
-> max_active_zones and max_open_zones, a default otherwise, at least
-> BTRFS_MIN_ACTIVE_ZONES.
-> 
-> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-> ---
->  kernel-shared/zoned.c | 23 +++++++++++++++++++++++
->  kernel-shared/zoned.h |  1 +
->  2 files changed, 24 insertions(+)
-> 
-> diff --git a/kernel-shared/zoned.c b/kernel-shared/zoned.c
-> index 48313ccc..89ba544a 100644
-> --- a/kernel-shared/zoned.c
-> +++ b/kernel-shared/zoned.c
-> @@ -67,6 +67,7 @@ static u64 emulated_zone_size = DEFAULT_EMULATED_ZONE_SIZE;
->   * - 1 zone for relocation
->   */
->  #define BTRFS_MIN_ACTIVE_ZONES		(BTRFS_SUPER_MIRROR_MAX + 5)
-> +#define BTRFS_DEFAULT_MAX_ACTIVE_ZONES	128
->  
->  static int btrfs_get_dev_zone_info(struct btrfs_device *device);
->  
-> @@ -155,6 +156,28 @@ static unsigned int max_active_zone_count(const char *file)
->  	return strtoul((const char *)buf, NULL, 10);
->  }
->  
-> +/*
-> + * Same limit as btrfs_get_max_active_zones() in the kernel. Unlike the kernel
-> + * this returns it instead of setting zone_info->max_active_zones, which stays
-> + * the device's max_active_zones in progs.
-> + */
-> +unsigned int btrfs_get_max_active_zones(struct btrfs_device *device)
-> +{
-> +	unsigned int max_active_zones = max_active_zone_count(device->name);
-> +	unsigned int max_open_zones = 0;
-> +	char buf[32];
-> +
-> +	if (device_get_queue_param(device->name, "max_open_zones", buf, sizeof(buf)) > 0)
-> +		max_open_zones = strtoul(buf, NULL, 10);
-> +	if (!max_active_zones || (max_open_zones && max_open_zones < max_active_zones))
-> +		max_active_zones = max_open_zones;
-> +	if (max_active_zones == 0)
-> +		max_active_zones = min_t(u32, device->zone_info->nr_zones / 4,
-> +					 BTRFS_DEFAULT_MAX_ACTIVE_ZONES);
-> +
-> +	return max_t(unsigned int, max_active_zones, BTRFS_MIN_ACTIVE_ZONES);
+YnRyZnNfY29tcHJfcG9vbF9zY2FuKCkgcmVhZHMgY29tcHJfcG9vbC5jb3VudCBhdCBsaW5lIDE2
+MCBiZWZvcmUKdGFraW5nIGNvbXByX3Bvb2wubG9jaywgd2hpbGUgYnRyZnNfYWxsb2NfY29tcHJf
+Zm9saW8oKSAobGluZSAxOTUpIGFuZApidHJmc19mcmVlX2NvbXByX2ZvbGlvKCkgKGxpbmUgMjE5
+KSByZWFkLW1vZGlmeS13cml0ZSB0aGUgc2FtZSBpbnQKdW5kZXIgdGhhdCBsb2NrLiAgS0NTQU4g
+cmVwb3J0cyB0aGUgcmFjZS4gIFRoZSBwcmFjdGljYWwgZWZmZWN0IGlzCmxpbWl0ZWQ6IGEgc2hy
+aW5rZXIgcGFzcyBjYW4gb2JzZXJ2ZSAwIGF0IGxpbmUgMTYwIGJlZm9yZSBhIGNvbmN1cnJlbnQK
+ZnJlZSBpbmNyZW1lbnRzIHRoZSBjb3VudCwgcmV0dXJuIFNIUklOS19TVE9QLCBhbmQgbGVhdmUg
+YSBqdXN0LWZyZWVkCmZvbGlvIGluIHRoZSBwb29sIHVudGlsIHRoZSBuZXh0IHBhc3MuICBUaGUg
+cG9vbCBoYXMgYSBoYXJkIHVwcGVyIGJvdW5kCih0aHJlc2ggKyAxKSwgYW5kIEkgaGF2ZSBub3Qg
+Zm91bmQgYSBwYXRoIHRvIGxpc3QgY29ycnVwdGlvbiwgZG91YmxlCmZyZWUsIG9yIHVzZS1hZnRl
+ci1mcmVlLiAgVGhpcyBpcyBhIGxvdy1yaXNrIGRhdGEgcmFjZSwgbm90IGEgbWVtb3J5CnNhZmV0
+eSBidWcuCgpUaGUgZGV0YWlsZWQgZGVzY3JpcHRpb246CgoqIFRlc3QgZW52aXJvbm1lbnQgLyBh
+ZmZlY3RlZCB2ZXJzaW9uCgogIExpbnV4IHZlcnNpb24gNy4zLjAgKFVidW50dSBjbGFuZyAxOC4x
+LjMsIEdOVSBsZCAyLjQyKSAjMSBTTVAKICBQUkVFTVBUX0RZTkFNSUMsIGJ1aWx0IGZyb20gdGhl
+IHVubW9kaWZpZWQga2VybmVsLm9yZyA3LjMgdGFyYmFsbAogICh2ZXJpZmljYXRpb24vbGludXgt
+Ny4zKSwgUUVNVS9LVk0geDg2XzY0IGd1ZXN0LCAxNiB2Q1BVLCA0IEdpQiBSQU0uCiAgVGhlIGtl
+cm5lbCBpcyBhIEtDU0FOIGJ1aWxkIHdpdGggQlRSRlMgZW5hYmxlZDsgcmVsZXZhbnQgY29uZmln
+OgoKICAgICAgQ09ORklHX0tDU0FOPXkKICAgICAgQ09ORklHX0tDU0FOX0VBUkxZX0VOQUJMRT15
+CiAgICAgIENPTkZJR19LQ1NBTl9VREVMQVlfVEFTSz04MAogICAgICBDT05GSUdfS0NTQU5fU0tJ
+UF9XQVRDSD00MDAwCiAgICAgIENPTkZJR19LQ1NBTl9SRVBPUlRfT05DRV9JTl9NUz0zMDAwCiAg
+ICAgIENPTkZJR19CVFJGU19GUz15CiAgICAgIENPTkZJR19aTElCX0RFRkxBVEU9eQogICAgICBD
+T05GSUdfTFpPX0NPTVBSRVNTPXkKCiAgVGhlIHRlc3QgZmlsZXN5c3RlbSBpcyBhIDIgR2lCIGJ0
+cmZzIGltYWdlIG1hZGUgd2l0aCBidHJmcy1wcm9ncwogIDYuNi4zIChta2ZzLmJ0cmZzIC1mIC1k
+IHNpbmdsZSAtbSBzaW5nbGUgLUwgYnRyZnNyYWNlKSwgbW91bnRlZCBhcwoKICAgICAgbW91bnQg
+LXQgYnRyZnMgLW8gY29tcHJlc3MtZm9yY2U9emxpYiAvZGV2L3ZkYSAvbW50CgogIFRoZSBzb3Vy
+Y2UgdW5kZXIgdGVzdCBpcyB1bm1vZGlmaWVkLiAgQWxsIGxpbmUgbnVtYmVycyBhcmUgZnJvbSA3
+LjMuCgoqIE1lY2hhbmlzbQoKICBUaGUgcG9vbCBpcyBhIHNpbmdsZSBnbG9iYWwgb2JqZWN0IGlu
+IGZzL2J0cmZzL2NvbXByZXNzaW9uLmM6CgogICAgICA6MTMyICBzdGF0aWMgc3RydWN0IGJ0cmZz
+X2NvbXByX3Bvb2wgewogICAgICA6MTMzICAgICAgICAgIHN0cnVjdCBzaHJpbmtlciAqc2hyaW5r
+ZXI7CiAgICAgIDoxMzQgICAgICAgICAgc3BpbmxvY2tfdCBsb2NrOwogICAgICA6MTM1ICAgICAg
+ICAgIHN0cnVjdCBsaXN0X2hlYWQgbGlzdDsKICAgICAgOjEzNiAgICAgICAgICBpbnQgY291bnQ7
+CiAgICAgIDoxMzcgICAgICAgICAgaW50IHRocmVzaDsKICAgICAgOjEzOCAgfSBjb21wcl9wb29s
+OwoKICBUaGUgc2hyaW5rZXIncyBzY2FuIGNhbGxiYWNrIGNoZWNrcyB0aGUgY291bnQgd2l0aG91
+dCB0aGUgbG9jazoKCiAgICAgIDoxNTQgIHN0YXRpYyB1bnNpZ25lZCBsb25nIGJ0cmZzX2NvbXBy
+X3Bvb2xfc2NhbiguLi4pCiAgICAgIDoxNjAgICAgICAgICAgaWYgKGNvbXByX3Bvb2wuY291bnQg
+PT0gMCkKICAgICAgOjE2MSAgICAgICAgICAgICAgICAgIHJldHVybiBTSFJJTktfU1RPUDsKICAg
+ICAgOjE2NCAgICAgICAgICBzcGluX2xvY2soJmNvbXByX3Bvb2wubG9jayk7CiAgICAgIDoxNjUg
+ICAgICAgICAgbGlzdF9zcGxpY2VfaW5pdCgmY29tcHJfcG9vbC5saXN0LCAmcmVtb3ZlKTsKICAg
+ICAgOjE2NiAgICAgICAgICBmcmVlZCA9IGNvbXByX3Bvb2wuY291bnQ7CiAgICAgIDoxNjcgICAg
+ICAgICAgY29tcHJfcG9vbC5jb3VudCA9IDA7CiAgICAgIDoxNjggICAgICAgICAgc3Bpbl91bmxv
+Y2soJmNvbXByX3Bvb2wubG9jayk7CgogIEFsbG9jYXRpb24gYW5kIGZyZWUgdXBkYXRlIGNvdW50
+IG9ubHkgd2hpbGUgaG9sZGluZyBjb21wcl9wb29sLmxvY2s6CgogICAgICA6MTkxICAgICAgICAg
+IHNwaW5fbG9jaygmY29tcHJfcG9vbC5sb2NrKTsKICAgICAgOjE5MiAgICAgICAgICBpZiAoY29t
+cHJfcG9vbC5jb3VudCA+IDApIHsKICAgICAgOjE5MyAgICAgICAgICAgICAgICAgIGZvbGlvID0g
+bGlzdF9maXJzdF9lbnRyeSguLi4pOwogICAgICA6MTk0ICAgICAgICAgICAgICAgICAgbGlzdF9k
+ZWxfaW5pdCgmZm9saW8tPmxydSk7CiAgICAgIDoxOTUgICAgICAgICAgICAgICAgICBjb21wcl9w
+b29sLmNvdW50LS07CiAgICAgIDoxOTYgICAgICAgICAgfQogICAgICA6MTk3ICAgICAgICAgIHNw
+aW5fdW5sb2NrKCZjb21wcl9wb29sLmxvY2spOwoKICAgICAgOjIxNCAgICAgICAgICBzcGluX2xv
+Y2soJmNvbXByX3Bvb2wubG9jayk7CiAgICAgIDoyMTUgICAgICAgICAgaWYgKGNvbXByX3Bvb2wu
+Y291bnQgPiB0aHJlc2gpCiAgICAgIDoyMTYgICAgICAgICAgICAgICAgICBkb19mcmVlID0gdHJ1
+ZTsKICAgICAgOjIxNyAgICAgICAgICBlbHNlIHsKICAgICAgOjIxOCAgICAgICAgICAgICAgICAg
+IGxpc3RfYWRkKCZmb2xpby0+bHJ1LCAmY29tcHJfcG9vbC5saXN0KTsKICAgICAgOjIxOSAgICAg
+ICAgICAgICAgICAgIGNvbXByX3Bvb2wuY291bnQrKzsKICAgICAgOjIyMCAgICAgICAgICB9CiAg
+ICAgIDoyMjEgICAgICAgICAgc3Bpbl91bmxvY2soJmNvbXByX3Bvb2wubG9jayk7CgogIGJ0cmZz
+X2NvbXByX3Bvb2xfY291bnQoKSwgdGhlIHNocmlua2VyJ3MgY291bnRfb2JqZWN0cyBjYWxsYmFj
+aywKICByZXR1cm5zIGNvdW50IC0gdGhyZXNoIHdoZW4gdGhhdCBpcyBwb3NpdGl2ZS4gIHRocmVz
+aCBpcyBzZXQgdG8KICBCVFJGU19NQVhfQ09NUFJFU1NFRCAvIFBBR0VfU0laRSAqIDgsIGkuZS4g
+MjU2IGZvciA0IEtpQiBwYWdlcywgc28gdGhlCiAgY2FsbGJhY2sgcmV0dXJucyAxIGV4YWN0bHkg
+d2hlbiB0aGUgcG9vbCBoYXMgcmVhY2hlZCBpdHMgdXBwZXIgYm91bmQKICBvZiAyNTcgZm9saW9z
+LiAgZG9fc2hyaW5rX3NsYWIoKSB0aGVuIGNhbGxzIGJ0cmZzX2NvbXByX3Bvb2xfc2NhbigpCiAg
+d2l0aCBmcmVlYWJsZSA9PSAxLiAgVGhlIHNjYW4gY2FsbGJhY2sncyBsaW5lIDE2MCByZWFkIGlz
+IG91dHNpZGUKICBjb21wcl9wb29sLmxvY2ssIHNvIGl0IGNhbiBydW4gY29uY3VycmVudGx5IHdp
+dGggdGhlIGxpbmUgMTk1LzIxOQogIHJlYWQtbW9kaWZ5LXdyaXRlLgoKICBBZnRlciB0aGUgY291
+bnQgY2FsbGJhY2sgaGFzIHJldHVybmVkIDEgYXQgY291bnQgPT0gMjU3LCBjb25jdXJyZW50CiAg
+YWxsb2NhdG9ycyBjYW4gZHJhaW4gdGhlIHBvb2wgYmVmb3JlIGxpbmUgMTYwIGlzIGV4ZWN1dGVk
+LiAgSWYgbGluZQogIDE2MCB0aGVuIHJlYWRzIDAsIGFuZCBhIGZyZWUgaW5jcmVtZW50cyB0aGUg
+Y291bnQgaW1tZWRpYXRlbHkKICBhZnRlcndhcmRzLCB0aGUgc2NhbiByZXR1cm5zIFNIUklOS19T
+VE9QIHdpdGhvdXQgdGFraW5nIHRoZSBsb2NrOyB0aGUKICBmb2xpbyB0aGF0IHRoZSBmcmVlIGFk
+ZHMgc3RheXMgaW4gdGhlIHBvb2wgdW50aWwgYSBsYXRlciByZWNsYWltIHBhc3MuCiAgSWYgbGlu
+ZSAxNjAgcmVhZHMgYSBwb3NpdGl2ZSB2YWx1ZSwgdGhlIHNjYW4gdGFrZXMgdGhlIGxvY2ssIHNw
+bGljZXMKICB0aGUgd2hvbGUgbGlzdCBhbmQgcmVzZXRzIGNvdW50LCBzbyB0aGUgY291bnQvbGlz
+dCBpbnZhcmlhbnQgaXMKICBwcmVzZXJ2ZWQuICBUaGUgcmFjZSBpcyB0aGVyZWZvcmUgYSBtaXNz
+ZWQtcmVjbGFpbSB3aW5kb3csIG5vdCBhCiAgY29ycnVwdC1saXN0IHdpbmRvdy4KCiogS0NTQU4g
+ZXZpZGVuY2UKCiAgVGhlIGNvbnRyb2xsZWQgcnVuIHByb2R1Y2VkIDcgc2NhbiByZXBvcnRzLCA0
+OSBjb3VudC1jYWxsYmFjayByZXBvcnRzLAogIGFuZCA1NiBidHJmcyByZXBvcnRzIGluIHRvdGFs
+ICgxMTMgS0NTQU4gcmVwb3J0cyBvdmVyYWxsKS4gIFR3bwogIHJlcHJlc2VudGF0aXZlIGhlYWRl
+cnMgYXJlOgoKICAgICAgQlVHOiBLQ1NBTjogZGF0YS1yYWNlIGluIGJ0cmZzX2FsbG9jX2NvbXBy
+X2ZvbGlvIC8gYnRyZnNfY29tcHJfcG9vbF9zY2FuCiAgICAgIHJlYWQgYXQgYnRyZnNfY29tcHJf
+cG9vbF9zY2FuKzB4M2YvMHguLi4KICAgICAgcmVhZC13cml0ZSBhdCBidHJmc19hbGxvY19jb21w
+cl9mb2xpbysweGU1LzB4Li4uCgogICAgICBCVUc6IEtDU0FOOiBkYXRhLXJhY2UgaW4gYnRyZnNf
+Y29tcHJfcG9vbF9zY2FuIC8gYnRyZnNfZnJlZV9jb21wcl9mb2xpbwogICAgICByZWFkIGF0IGJ0
+cmZzX2NvbXByX3Bvb2xfc2NhbisweDNmLzB4Li4uCiAgICAgIHJlYWQtd3JpdGUgYXQgYnRyZnNf
+ZnJlZV9jb21wcl9mb2xpbysweDEwOS8weC4uLgoKICBEaXNhc3NlbWJseSBtYXBwaW5nOgoKICAg
+ICAgYnRyZnNfY29tcHJfcG9vbF9zY2FuKzB4M2YgICBjbXBsICQweDAsIGNvbXByX3Bvb2wuY291
+bnQgICA6MTYwCiAgICAgIGJ0cmZzX2FsbG9jX2NvbXByX2ZvbGlvKzB4ZTUgbW92IC4uLiwgY29t
+cHJfcG9vbC5jb3VudCAgICAgIDoxOTUKICAgICAgYnRyZnNfZnJlZV9jb21wcl9mb2xpbysweDEw
+OSBtb3YgLi4uLCBjb21wcl9wb29sLmNvdW50ICAgICAgOjIxOQoKICBUaGUgc2FtZSBydW4gYWxz
+byByZXBvcnRzIGJ0cmZzX2NvbXByX3Bvb2xfY291bnQrMHgxMSAodGhlIG1hcmtlZAogIFJFQURf
+T05DRSBhdCBsaW5lIDE0OSkgYWdhaW5zdCB0aGUgbGluZSAxOTUvMjE5IHdyaXRlcy4gIFJFQURf
+T05DRQogIHByZXZlbnRzIGNvbXBpbGVyIG1lcmdpbmcgYnV0IGRvZXMgbm90IHByb3ZpZGUgY3Jv
+c3MtQ1BVIG9yZGVyaW5nOwogIHRoZSBsaW5lIDE2MCBwbGFpbiBsb2FkIGlzIHRoZSBhY2Nlc3Mg
+dGhpcyByZXBvcnQgaXMgYWJvdXQuCgoqIFRyaWdnZXIgLyByZXByb2R1Y2VyCgogIFRoZSBhdHRh
+Y2hlZCBidHJmc19tcjAxX3JhY2UuYyBpcyBhbiBvdXQtb2YtdHJlZSB0cmlnZ2VyLiAgSXQgcmVz
+b2x2ZXMKICB0aGUgcmVhbCwgdW5leHBvcnRlZCBidHJmc19hbGxvY19jb21wcl9mb2xpbygpIGFu
+ZAogIGJ0cmZzX2ZyZWVfY29tcHJfZm9saW8oKSB3aXRoIGtwcm9iZXMsIHRha2VzIGZzX2luZm8g
+ZnJvbSBhIG1vdW50ZWQKICBidHJmcyBhdCAvbW50LCBmaWxscyB0aGUgcG9vbCB3aXRoIDMwMCBm
+b2xpb3MgYW5kIGZyZWVzIHRoZW0gKHRoZQogIGZpcnN0IDI1NiBhcmUgY2FjaGVkOyB0aGUgY291
+bnQgcmVhY2hlcyB0aGUgMjU3IHVwcGVyIGJvdW5kKSwgdGhlbgogIGtlZXBzIGFsbG9jL2ZyZWUg
+YWN0aXZpdHkgb24gdGhlIHBvb2wuICBBIHVzZXItc3BhY2UgbG9vcCBydW5zCiAgZHJvcF9jYWNo
+ZXMgdG8gaW52b2tlIHRoZSBzaHJpbmtlci4gIFRoZSBtb2R1bGUgZG9lcyBub3QgbW9kaWZ5CiAg
+a2VybmVsIHNvdXJjZSBvciB0aGUgYnRyZnMgb24tZGlzayBmb3JtYXQuCgogIEJ1aWxkIChhZ2Fp
+bnN0IHRoZSBLQ1NBTitCdHJmcyBidWlsZCB0cmVlKToKCiAgICAgIG1ha2UgLUMgPGtlcm5lbC1z
+cmM+IE89PGJ1aWxkLWRpcj4gTT0kUFdEIG1vZHVsZXMKICAgICAgaW5zbW9kIGJ0cmZzX21yMDFf
+cmFjZS5rbwoKICBUaGVuLCB3aXRoIC9tbnQgbW91bnRlZCBhcyBhYm92ZToKCiAgICAgIGk9MAog
+ICAgICB3aGlsZSBbICRpIC1sdCAzMDAgXTsgZG8KICAgICAgICAgICAgICBlY2hvIDIgPiAvcHJv
+Yy9zeXMvdm0vZHJvcF9jYWNoZXMKICAgICAgICAgICAgICB1c2xlZXAgMjAwMDAKICAgICAgICAg
+ICAgICBpPSQoKGkrMSkpCiAgICAgIGRvbmUKICAgICAgcm1tb2QgYnRyZnNfbXIwMV9yYWNlCgog
+IEtDU0FOIG11c3QgYmUgZW5hYmxlZCAoZGVidWdmcyBtb3VudGVkOyBlY2hvIG9uID4gL3N5cy9r
+ZXJuZWwvZGVidWcva2NzYW4pLgogIFRoZSBydW4gdXNlZCBza2lwX3dhdGNoPTMwIGFuZCB1ZGVs
+YXlfdGFzaz01MDAgdG8gd2lkZW4gdGhlIHdpbmRvdy4KICBJbiB0aGlzIGNvbnRyb2xsZWQgc2V0
+dXAgdGhlIG1vZHVsZSBwZXJmb3JtZWQgNDE1NTAwIGFsbG9jL2ZyZWUgcGFpcnMKICBpbiA4MzEg
+ZmlsbC9zaGFrZSBsb29wczsgdGhlIGZ1bGwgc2VyaWFsIGxvZyBpcyA0MDUyIGxpbmVzLgoKICBU
+aGlzIGlzIGEgY29udHJvbGxlZCB0cmlnZ2VyLCBub3QgYSBjbGFpbSBhYm91dCBwcm9kdWN0aW9u
+IGZyZXF1ZW5jeToKICBhIDc1LXNlY29uZCBuYXR1cmFsIHdvcmtsb2FkIHdpdGggMzIgd3JpdGVy
+cyB1bmRlciBjb21wcmVzcy1mb3JjZT16bGliCiAgZGlkIG5vdCBoaXQgdGhlIGNvdW50PT0yNTcg
+d2luZG93LCBhbmQgdGhlIGVhcmxpZXIgNS1zZWNvbmQga3Byb2JlIHJ1bgogIHNhdyBzY2FuPTAs
+IGFsbG9jPTMyLCBjb3VudD0xMDIuICBUaGUgdHJpZ2dlciBwcm92ZXMgdGhlIGxpbmUgMTYwIHJl
+YWQKICBhbmQgdGhlIGxpbmUgMTk1LzIxOSB3cml0ZXMgY2FuIG92ZXJsYXA7IGl0IGRvZXMgbm90
+IHByb3ZlIGEKICBwcm9kdWN0aW9uLXJhdGUgZmFpbHVyZS4KCgoKKiBTdWdnZXN0ZWQgZGlyZWN0
+aW9uIAoKICBSZWFkIHRoZSBjb3VudCB3aXRoIFJFQURfT05DRSgpIGF0IGxpbmUgMTYwOgoKICAg
+ICAgaWYgKFJFQURfT05DRShjb21wcl9wb29sLmNvdW50KSA9PSAwKQogICAgICAgICAgICAgIHJl
+dHVybiBTSFJJTktfU1RPUDsKCiAgb3IgbW92ZSB0aGUgemVybyBjaGVjayBpbnNpZGUgY29tcHJf
+cG9vbC5sb2NrIGlmIGFuIGV4YWN0IGRlY2lzaW9uIGlzCiAgcHJlZmVycmVkLiAgUkVBRF9PTkNF
+IGlzIHN1ZmZpY2llbnQgdG8gc2lsZW5jZSB0aGUgZGF0YSByYWNlIGFuZCB0bwogIG1ha2UgdGhl
+IGxvY2tsZXNzIHNuYXBzaG90IGludGVudGlvbmFsOyBpdCBkb2VzIG5vdCBieSBpdHNlbGYgbWFr
+ZQogIHRoZSByZWNsYWltIGRlY2lzaW9uIGF0b21pYywgd2hpY2ggaXMgYWNjZXB0YWJsZSBmb3Ig
+dGhpcyBiZXN0LWVmZm9ydAogIHNocmlua2VyLiAgUmVwb3J0LWZpcnN0OyBubyBwYXRjaCBhdHRh
+Y2hlZC4KCiAgQSBzZXBhcmF0ZSByZXBvcnQgY292ZXJzIHRoZSBmcmVlX3dzIHJhY2UgaW4gYnRy
+ZnNfZ2V0X3dvcmtzcGFjZSgpOwogIHBsZWFzZSBkbyBub3QgZm9sZCB0aGUgdHdvIGludG8gb25l
+IHBhdGNoLgoKICBQbGVhc2Uga2VlcCBtZSBpbiBDYzsgSSBhbSBub3Qgc3Vic2NyaWJlZCB0byB0
+aGUgbGlzdHMuCgpSZWdhcmRzLApIYW54aWFuZyBYdQp4dWh4QGh1c3QuZWR1LmNuCg==
+------=_Part_560676_919460545.1794919100849
+Content-Type: text/plain; name=btrfs_mr01_race.c
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="btrfs_mr01_race.c"
 
-I am confused here. If we endup with max_active_zones being lower than
-BTRFS_MIN_ACTIVE_ZONES, because the max open zone limit is lower or the drive
-indeed has a lower limit than 128, it seems to be very wrong to return the
-larger BTRFS_MIN_ACTIVE_ZONES...
+Ly8gU1BEWC1MaWNlbnNlLUlkZW50aWZpZXI6IEdQTC0yLjAKLyoKICogQ29udHJvbGxlZCB0cmln
+Z2VyIGZvciB0aGUgYnRyZnMgY29tcHJlc3Npb24gZm9saW8tcG9vbCByYWNlIChNUi0wMSk6CiAq
+IGJ0cmZzX2NvbXByX3Bvb2xfc2NhbigpJ3MgbG9ja2xlc3MgY291bnQgcmVhZCB2cyB0aGUgd3Nf
+bG9jay1wcm90ZWN0ZWQKICogY291bnQgdXBkYXRlcyBpbiBidHJmc19hbGxvY19jb21wcl9mb2xp
+bygpL2J0cmZzX2ZyZWVfY29tcHJfZm9saW8oKS4KICoKICogVGhlIG1vZHVsZSBvbmx5IGNhbGxz
+IHRoZSByZWFsLCB1bm1vZGlmaWVkIGJ0cmZzIGZ1bmN0aW9ucy4gIEl0IGZpbGxzIHRoZQogKiBn
+bG9iYWwgY29tcHJfcG9vbCB0byBpdHMgdXBwZXIgYm91bmQgKHRocmVzaCArIDEpLCB0aGVuIGtl
+ZXBzIGFsbG9jL2ZyZWUKICogYWN0aXZpdHkgb24gdGhlIHBvb2wgd2hpbGUgdGhlIHVzZXIgdHJp
+Z2dlcnMgdGhlIHNocmlua2VyIHZpYSBkcm9wX2NhY2hlcy4KICovCiNpbmNsdWRlIDxsaW51eC9t
+b2R1bGUuaD4KI2luY2x1ZGUgPGxpbnV4L2t0aHJlYWQuaD4KI2luY2x1ZGUgPGxpbnV4L2RlbGF5
+Lmg+CiNpbmNsdWRlIDxsaW51eC9uYW1laS5oPgojaW5jbHVkZSA8bGludXgvbWFnaWMuaD4KI2lu
+Y2x1ZGUgPGxpbnV4L2twcm9iZXMuaD4KI2luY2x1ZGUgPGxpbnV4L2F0b21pYy5oPgojaW5jbHVk
+ZSA8bGludXgvc2xhYi5oPgojaW5jbHVkZSA8bGludXgvbW0uaD4KI2luY2x1ZGUgPGxpbnV4L3Zt
+YWxsb2MuaD4KCiNkZWZpbmUgTlRIUkVBRFMgNAojZGVmaW5lIEZJTEwgMzAwCiNkZWZpbmUgU0hB
+S0UgMjAwCgp0eXBlZGVmIHZvaWQgKigqYWxsb2NfZm5fdCkodm9pZCAqZnNfaW5mbywgZ2ZwX3Qg
+Z2ZwKTsKdHlwZWRlZiB2b2lkICgqZnJlZV9mbl90KSh2b2lkICpmb2xpbyk7CgpzdGF0aWMgdW5z
+aWduZWQgbG9uZyBhbGxvY19hZGRyLCBmcmVlX2FkZHI7CnN0YXRpYyB2b2lkICpmc19pbmZvOwpz
+dGF0aWMgc3RydWN0IHRhc2tfc3RydWN0ICp0aHJlYWRzW05USFJFQURTXTsKc3RhdGljIGF0b21p
+Y190IHN0b3A7CnN0YXRpYyBhdG9taWM2NF90IGFsbG9jcywgZnJlZXMsIGxvb3BzOwoKc3RhdGlj
+IGludCBsb29rdXBfc3ltYm9sKGNvbnN0IGNoYXIgKm5hbWUsIHVuc2lnbmVkIGxvbmcgKmFkZHIp
+CnsKCXN0cnVjdCBrcHJvYmUga3AgPSB7IC5zeW1ib2xfbmFtZSA9IG5hbWUgfTsKCWludCByZXQ7
+CgoJcmV0ID0gcmVnaXN0ZXJfa3Byb2JlKCZrcCk7CglpZiAocmV0KQoJCXJldHVybiByZXQ7Cgkq
+YWRkciA9ICh1bnNpZ25lZCBsb25nKWtwLmFkZHI7Cgl1bnJlZ2lzdGVyX2twcm9iZSgma3ApOwoJ
+cmV0dXJuIDA7Cn0KCnN0YXRpYyBpbnQgZmlsbF9vbmNlKGFsbG9jX2ZuX3QgYWxsb2MsIGZyZWVf
+Zm5fdCBmcmVlKQp7Cgl2b2lkICoqdjsKCWludCBpLCBuID0gMDsKCgl2ID0ga3ZtYWxsb2NfYXJy
+YXkoRklMTCwgc2l6ZW9mKHZvaWQgKiksIEdGUF9LRVJORUwpOwoJaWYgKCF2KQoJCXJldHVybiAt
+RU5PTUVNOwoJZm9yIChpID0gMDsgaSA8IEZJTEw7IGkrKykgewoJCXZbaV0gPSBhbGxvYyhmc19p
+bmZvLCBHRlBfTk9GUyk7CgkJaWYgKCF2W2ldKQoJCQlicmVhazsKCQluKys7Cgl9Cglmb3IgKGkg
+PSAwOyBpIDwgbjsgaSsrKQoJCWZyZWUodltpXSk7CglrdmZyZWUodik7CglhdG9taWM2NF9hZGQo
+biwgJmFsbG9jcyk7CglhdG9taWM2NF9hZGQobiwgJmZyZWVzKTsKCXJldHVybiBuOwp9CgpzdGF0
+aWMgaW50IHdvcmtlcih2b2lkICphcmcpCnsKCWFsbG9jX2ZuX3QgYWxsb2MgPSAoYWxsb2NfZm5f
+dClhbGxvY19hZGRyOwoJZnJlZV9mbl90IGZyZWUgPSAoZnJlZV9mbl90KWZyZWVfYWRkcjsKCWlu
+dCBpOwoKCXdoaWxlICgha3RocmVhZF9zaG91bGRfc3RvcCgpICYmICFhdG9taWNfcmVhZCgmc3Rv
+cCkpIHsKCQlmaWxsX29uY2UoYWxsb2MsIGZyZWUpOwoJCS8qIEtlZXAgdGhlIHBvb2wgYXQgMjU3
+IGFuZCBjcmVhdGUgMTk1LzIxOSB3cml0ZXMuICovCgkJZm9yIChpID0gMDsgaSA8IFNIQUtFOyBp
+KyspIHsKCQkJdm9pZCAqZiA9IGFsbG9jKGZzX2luZm8sIEdGUF9OT0ZTKTsKCgkJCWlmICghZikK
+CQkJCWJyZWFrOwoJCQlhdG9taWM2NF9pbmMoJmFsbG9jcyk7CgkJCWZyZWUoZik7CgkJCWF0b21p
+YzY0X2luYygmZnJlZXMpOwoJCX0KCQlhdG9taWM2NF9pbmMoJmxvb3BzKTsKCQljb25kX3Jlc2No
+ZWQoKTsKCX0KCXJldHVybiAwOwp9CgpzdGF0aWMgaW50IF9faW5pdCBidHJmc19tcjAxX3JhY2Vf
+aW5pdCh2b2lkKQp7CglzdHJ1Y3QgcGF0aCBwYXRoOwoJc3RydWN0IHN1cGVyX2Jsb2NrICpzYjsK
+CWludCBpLCByZXQ7CgoJaWYgKGtlcm5fcGF0aCgiL21udCIsIExPT0tVUF9GT0xMT1csICZwYXRo
+KSkKCQlyZXR1cm4gLUVOT0VOVDsKCXNiID0gcGF0aC5kZW50cnktPmRfc2I7CglpZiAoc2ItPnNf
+bWFnaWMgIT0gQlRSRlNfU1VQRVJfTUFHSUMpIHsKCQlwYXRoX3B1dCgmcGF0aCk7CgkJcmV0dXJu
+IC1FSU5WQUw7Cgl9Cglmc19pbmZvID0gc2ItPnNfZnNfaW5mbzsKCXBhdGhfcHV0KCZwYXRoKTsK
+CglyZXQgPSBsb29rdXBfc3ltYm9sKCJidHJmc19hbGxvY19jb21wcl9mb2xpbyIsICZhbGxvY19h
+ZGRyKTsKCWlmIChyZXQpCgkJcmV0dXJuIHJldDsKCXJldCA9IGxvb2t1cF9zeW1ib2woImJ0cmZz
+X2ZyZWVfY29tcHJfZm9saW8iLCAmZnJlZV9hZGRyKTsKCWlmIChyZXQpCgkJcmV0dXJuIHJldDsK
+CglhdG9taWNfc2V0KCZzdG9wLCAwKTsKCWF0b21pYzY0X3NldCgmYWxsb2NzLCAwKTsKCWF0b21p
+YzY0X3NldCgmZnJlZXMsIDApOwoJYXRvbWljNjRfc2V0KCZsb29wcywgMCk7Cglmb3IgKGkgPSAw
+OyBpIDwgTlRIUkVBRFM7IGkrKykgewoJCXRocmVhZHNbaV0gPSBrdGhyZWFkX3J1bih3b3JrZXIs
+IE5VTEwsICJidHJmc19tcjAxLyVkIiwgaSk7CgkJaWYgKElTX0VSUih0aHJlYWRzW2ldKSkgewoJ
+CQlwcl9lcnIoIkJUUkZTTVIwMToga3RocmVhZF9ydW4gZmFpbGVkIGF0ICVkXG4iLCBpKTsKCQkJ
+dGhyZWFkc1tpXSA9IE5VTEw7CgkJCWJyZWFrOwoJCX0KCX0KCXByX2luZm8oIkJUUkZTTVIwMTog
+c3RhcnRlZCAlZCB3b3JrZXJzIGZzX2luZm89JXB4IGFsbG9jPSVweCBmcmVlPSVweFxuIiwKCQlp
+LCBmc19pbmZvLCAodm9pZCAqKWFsbG9jX2FkZHIsICh2b2lkICopZnJlZV9hZGRyKTsKCXJldHVy
+biAwOwp9CgpzdGF0aWMgdm9pZCBfX2V4aXQgYnRyZnNfbXIwMV9yYWNlX2V4aXQodm9pZCkKewoJ
+aW50IGk7CgoJYXRvbWljX3NldCgmc3RvcCwgMSk7Cglmb3IgKGkgPSAwOyBpIDwgTlRIUkVBRFM7
+IGkrKykgewoJCWlmICh0aHJlYWRzW2ldKQoJCQlrdGhyZWFkX3N0b3AodGhyZWFkc1tpXSk7Cgl9
+Cglwcl9pbmZvKCJCVFJGU01SMDE6IHN0b3BwZWQgYWxsb2NzPSVsbGQgZnJlZXM9JWxsZCBsb29w
+cz0lbGxkXG4iLAoJCWF0b21pYzY0X3JlYWQoJmFsbG9jcyksIGF0b21pYzY0X3JlYWQoJmZyZWVz
+KSwKCQlhdG9taWM2NF9yZWFkKCZsb29wcykpOwp9Cgptb2R1bGVfaW5pdChidHJmc19tcjAxX3Jh
+Y2VfaW5pdCk7Cm1vZHVsZV9leGl0KGJ0cmZzX21yMDFfcmFjZV9leGl0KTsKTU9EVUxFX0xJQ0VO
+U0UoIkdQTCIpOwpNT0RVTEVfREVTQ1JJUFRJT04oImJ0cmZzIGNvbXByZXNzaW9uIGZvbGlvLXBv
+b2wgcmFjZSB0cmlnZ2VyIik7Cg==
+------=_Part_560676_919460545.1794919100849--
 
-So shouldn't this be:
-
-	if (max_active_zones)
-		return max_active_zones;
-	return BTRFS_MIN_ACTIVE_ZONES;
-	
-
-> +}
-> +
->  #ifdef BTRFS_ZONED
->  /*
->   * Emulate blkdev_report_zones() for a non-zoned device. It slices up the block
-> diff --git a/kernel-shared/zoned.h b/kernel-shared/zoned.h
-> index 363ef4a7..e323baf1 100644
-> --- a/kernel-shared/zoned.h
-> +++ b/kernel-shared/zoned.h
-> @@ -99,6 +99,7 @@ static inline void btrfs_free_zoned_device_info(struct btrfs_zoned_device_info *
->  }
->  
->  int btrfs_get_dev_zone_info_all_devices(struct btrfs_fs_info *fs_info);
-> +unsigned int btrfs_get_max_active_zones(struct btrfs_device *device);
->  int btrfs_check_zoned_mode(struct btrfs_fs_info *fs_info);
->  
->  #ifdef BTRFS_ZONED
-
-
--- 
-Damien Le Moal
-Western Digital Research

@@ -1,92 +1,93 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=74.125.82.171
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.179
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794883128;
-	b=jz6dPUYsn2CXmC9hnEUtHYR6YkUsKlmFrOOU9SfLIRHqI3G4sHvFdKOlAiPzCpCcleTh
-	 /3fyTmsz9vUcSLdaE/EP063O++k+53gicvPdgC/6/4U80fTBFSfAxDrARxD4AgVlpBskW
-	 ql3F8cnkf0Tw7yZfZiGYrNK1NC69ZVE6yARN7olZz82wsL6NCdB7a2PVWWxFttNZ44UiZ
-	 uMI9GjcTpsrUTxDg1yJ23fyBOwD19LXkccPyqHiJDC/S+Qj9y+U5QXtfBIxW+ZOvZDWI6
-	 Oj2AFC44UU9zwuN6EMFSMpK8nEG/oAx8SSC08LAla0jQlTONX7ZfGOGJLCFjmLMWQWw==
+	t=1794884638;
+	b=bHS8vXEeH+BLU+ILxyk24GgehK+3M0teMqxeQwq/Wk7KIbrOfX3AaawWErrtIqEkF6P4
+	 qoQEbPjTBXr0ta7lH85tBGmpSaa8nmtFLL+Z0DhF9Hze3EoHLRNC/mCzmry5Q/dZ+xJTL
+	 d2RZxzaxaWORyXen8xfhyIvqC7smF9a8toerJF20gj332cM4F2u9L1z71JHj3tKB6Tub3
+	 W6hK+7j6qPMWdev7MovJmHeBx1ZNAEFjIRXlkxLGnnshV1+LBRm0VlZgqiNUvZfP8meBt
+	 fC2nWO0YqMb45cazo5Edj+pYWv8vGfra42bnPSsK6aksJHvf5Gg3aFuYxFIG3TOJQrg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794883128;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794884638;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-Id:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=K13RmILmom/RrxkaTM1q3j27D29seBkDnjVNn1mUC7o=;
-	b=jz6MJ2dS58PiBL2DVvCD7asi3eu1+/KcTxOhdcYraJtizw3dYS5QILWAIR9nAK70bvff
-	 ChPmqpWFjxbMaJy+zVDfHflcPr6XemkReIDhqEfM5iHSA3vJleOfVdeeyxVElXDTxUSCn
-	 8A7sV5DqN62esO2H5diojBfVq1s20OWCH+h0IQbdFH7eVj4v+r3iQalUoQtjSXtEXniDr
-	 JlwcwPR/yaMXuYbtPIao/KfCr6GZyrmqcsm36qWicLocwQGLqKEaEWs9Y0UwH2KUvRpMo
-	 FI6L19cUaS1cqT88/vtzM2mctI/rw58WW2nOrkN4W70ZbvTQhOjy40BJV8KS13s1ZhA==
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:To:Cc:Subject:
+	 Date:Message-ID:X-Mailer:MIME-Version:Content-Transfer-Encoding;
+	bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
+	b=W6pPl2k+1o2swSUXqkbNcAhjAPq5BErCVV00uUIfDHP/05jhDE9l1axlcS5fDHfJWrck
+	 9IrgpPNB4EuWzdSrKRG1GzOL1HddT8H53ME3XrNTXL5Z/kXeuis7/gcPISLE4WGUXfGUe
+	 9W6N/qPILflypL7ae2fiH5BWNTZzhinW705YsnjNB0T3C9pDHaXc/05C3c/zyBsq4bp40
+	 UUiyqnuO88QYx7XlNSOKCQroli3+VuN7TnF/FG5ZoYtyaOBgLOBC4EA2mQ2NBzqbREr2K
+	 yZJsEi32wZW40jUhzL2983DoXe8GWx9pX1b8P3l2OXwFbGCoPIFueKmvhlpXgOK1uOw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=WsNY8vmE;
-	arc=none smtp.remote-ip=74.125.82.171
-Received: from mail-dy1-f171.google.com (mail-dy1-f171.google.com [74.125.82.171])
+	dmarc=pass header.from=cs.unc.edu;
+	spf=pass smtp.mailfrom=cs.unc.edu;
+	dkim=pass header.d=cs.unc.edu header.i=@cs.unc.edu header.a=rsa-sha256 header.s=google header.b=UPWM48sC;
+	arc=none smtp.remote-ip=209.85.128.179
+Received: from mail-yw1-f179.google.com (mail-yw1-f179.google.com [209.85.128.179])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C7272606A323
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 02:38:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C7272606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8D764606A329
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 03:03:58 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8D764606A329
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=WsNY8vmE
-Received: by mail-dy1-f171.google.com with SMTP id 5a478bee46e88-36fc0a3fe93so7886928eec.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 18:38:47 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=cs.unc.edu header.i=@cs.unc.edu header.a=rsa-sha256 header.s=google header.b=UPWM48sC
+Received: by mail-yw1-f179.google.com with SMTP id 00721157ae682-8b4d26094beso16675267b3.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 19:03:58 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794883127; x=1795487927; darn=vger.kernel.org;
+        d=cs.unc.edu; s=google; t=1794884637; x=1795489437; darn=vger.kernel.org;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=K13RmILmom/RrxkaTM1q3j27D29seBkDnjVNn1mUC7o=;
-        b=WsNY8vmEneldOkBd4RphBF+JS9qgAPJ0O0VqBb71kwjMe8uuUZK+qOnhMsfyXeDKR1
-         w6RSMYgI764tQzPZ336Ok63c96B2i6IoBax7WbzlKBF7I3rL0M1ogAjvo4vx8u4qnn0j
-         2vpGdAQP73MVmGnlCz5rDbWWuAeNwUNZHAQdfYS6FRkuUJ56T8CcSm42fs/gipXb0bk2
-         WxYr/c3Xr4GxnNhJfy/Ts+05t+W0uTZIwb73rpQ5qlhlnt4MVIKlcJXRUZNqrezrY6RQ
-         PYELZJMxcNiekzn2XEb+lp9tHc1pHNQh7LAu1/L1TN1a73vDBlSdf5U/+QvYUxUcycAT
-         r5Yw==
+        bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
+        b=UPWM48sC5oymWjtmL5e4xI7owhXfoZezZn2RXAp8qjflD0A7ZVgU7zD8z/gcqRdyIk
+         9W9D4HtslpZaadRDTQF9HMVEixl+DEE3B4spBL01R1Lz7K6STQqqwzBgxbu9LWKYcAt2
+         GpU2IKgBbMC02NJGJDSngkfls5q1+6YGGkhAb/3/uPNWKa2xij4TT/3D0prYRM0Dd2c4
+         xJ1l7wkP9ARxvbIgHnv2fsRcSL1IWhPrLcByhtSbdfamnY6J5K4+uvM8iPFk7jbA87gW
+         R5QU0p6Nk5ZSKUiLVJayzcbAJgzS539HWZp+ubhCywupnOA/bLJ4yhyHlTmGBzcAC9q4
+         Es4A==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794883127; x=1795487927;
+        d=1e100.net; s=20260707; t=1794884637; x=1795489437;
         h=content-transfer-encoding:mime-version:message-id:date:subject:cc
          :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=K13RmILmom/RrxkaTM1q3j27D29seBkDnjVNn1mUC7o=;
-        b=s0mogVR+0B5zo9C+nqaYY17W2fBHHCJaDIVumWAXzDVDs2FfTLEjKhbDTZV9bs9AOG
-         yH6tAE9OtTvqHtpWI6Sz1GCtrjgZ0I53qt9IR6wAYhzfwE/dJLjRti5zQkgcHNDnZoT8
-         KJr48VcGYuZlQJxVcfWCuNSHeU8si/SGKI+8/oezBKJLyq2894buJcqxW1mGfhC7l6Oe
-         RKcSP/yRAafEUSM8SgsulGNgc9z3Wyzwch3JaK1PYfUe0xkiClXetyyTw9Re0SBMSoS7
-         GTXL+IJ7qF1jzFaD1GTbqEaJmNqdn6loCxiaxrwF2wxdP+deNtzKuV4cKKFzmx7G0d2J
-         y66Q==
-X-Forwarded-Encrypted: i=1; AL+hErG5Ddbtckpak+YMiLWi41Xo/Dn7cxgJK+tHs7V4rC9G3Jz/dEI5FFsnj4/w47/tUEfgOnCY9lMpbF9n9g==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/LVSNHQXik+++RI+FQiX8v2rgYcSpQqj/QWT81K3foD9C/Zqch
-	3kRZvgHwB4mudiCBPhi3AN+YP0q6Zy4HI05dEsSn6/9Wbhasx+tznUC+UcKScPEt
-X-Gm-Gg: AZFdTZdvzCplXi9/bE7de1TtrdwO/mp0sXbGtxSg9SrxceJDAYoP3orDMlFmTSCZHPF
-	QAl6PCrBPJbmo8y56W5u7nSnRW0g3zu3XvjwDNSGZxxMxfIH1vYvMa5GuYAJwxXlWrZG/nLcbgT
-	aNSkQednulukRTyFlAkuelHQQvj6710pigS+WBTLgBZyHdpjCBIKEHcRAiATTeu6kzjTWpbt+d7
-	T5eE4G/a78/ZA6SkwNXdhDyGOwEffp4GM3IbWaUpUMw0+FY5E3hvoHy64ITze3Ck3tHawlfsNtb
-	ZppMs0DuQkLkmKFh8OqEI+q91KCRhpgN8KqPYQKZ6XHJDPND8V9IIytuv8QQoRH3SG3ApVfXt8x
-	h0fgOwf6dIa6RUgrJFAUfAGlt8+kO51VX+j9ZRz6RLIioLQHoJRwQhc+Z07QhNkHCKzrUDHPlj+
-	0XAxrYajdNO/0CNp8DmW/rE9oHnFZI4QRn+fwNeRVw8aBQRg4EGjCrs9XU4dTB684a1vvCi30b4
-	3rJNbv5V5ViLaKpROnv2vdeqJLipFWarbzfAgweiePKfJglBkbOgKMFeYAkTCrQhsMEUxnBak0B
-	IN2vzThgeKJlQMtxmqAZWfNnrGVLSDWaMyRg/LVD5yhD2t3TtsOezsod22PPPgLl7gEy
-X-Received: by 2002:a05:7301:1625:b0:36e:aa5c:7851 with SMTP id 5a478bee46e88-37966d40c48mr13047282eec.27.1794883126757;
-        Mon, 16 Nov 2026 18:38:46 -0800 (PST)
-Received: from youngkk-vm.localdomain (67.216.200.102.16clouds.com. [67.216.200.102])
-        by smtp.gmail.com with ESMTPSA id 5a478bee46e88-37955a1c5c2sm39022023eec.14.2026.11.16.18.38.43
+        bh=59i9qNCywloB8yPnm+LVlMAqghoUzCqvi5ucPAFlF4U=;
+        b=ZGMqTPL0QhLB+zpT03cBbtloNMpOFciVQUOhhLxGphPdt1qE8QwyPb9WybsI1Tsw5K
+         VV8LucaMp7OjgNmfovS1Isq1WkH0uVGmVx2uSsDuN22sjBI5q+Gckq8q2QtquXT4D31u
+         s3ZtjzExjSV7TVbsVMARq13RUlPGehiFR8o9ck4rryWgPgVZT47YNIpcMAwL+uKKzgiY
+         5FsVkiz8SLm4ybjTpGHbCPsSarbfimMaulOjmTCP3gYJVrXuDLnlyWnn1JXZj2SuiBmK
+         FHuRPNWJ3zFk9NPNXGcPMUqz3ZogPaIWb5jDhLa1/Hw01sU/GNLWwaA3y1a1MRkHMSb9
+         EKlQ==
+X-Gm-Message-State: APuU4Z/Oik3XNoy1zF5n7q9Wj7AFbjQrwz9hmNJufiRG68j0MMKJCvVM
+	r6BihzcCU3OUeaxOEAkfG7Hl0GLdm4SjUSk/H8BBX7XNIipUnodFymhq+sqeBz0XCyd3xwPwnOx
+	5me8uZBJUjhwUgUarmSeRwaw+i7ff5J5Uk/7AuJA0FrydZfTeBslFZWtADjXh7gDDlfgva2obfz
+	k9vn+GzX6tSkIUV2PVS9tTSYW7Am36lRBv5Qhs/KuUSB4YkFg=
+X-Gm-Gg: AZFdTZcvH9yyYaBWJnSoQR2bBILayX5N5+6fk+QA+7ZdnVgzcTYAw4rBhqCHitgAVyr
+	YdXPG9aU0Mxl9k3KV/AFWJ4rslmlasGvwNr+mqUWGafDQDnt+uBeZjaNjUO4O1EpTC8XH/fx7l5
+	TzGyZkBLNl9ALathpXx1FJBFZTDeiELYnBwlsyS8xnXl1rucoOsFsbCh8ucBaoInegOhNhWmusI
+	6Usp+x01oFf/dwGi1/BiWHduAmAuB0bXg5v5EXGD5zto/UCtrwHVW9w3n0HanqfdA4YOz4BfbYC
+	8qkUFGm3TdFXduPWI/7hFmb/1IlrAyAYBKccd7W9Py8Ka+M9L2mtbnQFLDyID/B3nla/k+o15Jg
+	4QqOhjPr7eGFoyggF76Qgw1dmt36nI72JFjbJt67dJFbwMZIdfdfWYmpCdH6XPy9E2fq9UtaNGI
+	aI8DkO2uCTb4oonkLP+xcDaJUmj2mmXnx5NXWoRmqJRp515rNUIUeRhb1JRfIf5e4UJOmLxkKW3
+	68nLUTq2r8EDh34NzfcLOYZvlSsOFr8Qjz/f0+xGxH5SmO+2UtZTlygsej5zfs3Hiabdev/Ks8I
+	V7iCWg1xn2y4uanZOIIcdNax4MexcgWmDbgRfnYbDbOLN2wBNbc=
+X-Received: by 2002:a05:690c:7488:b0:8b4:c615:62fa with SMTP id 00721157ae682-8b4c6156634mr56285737b3.61.1794884637083;
+        Mon, 16 Nov 2026 19:03:57 -0800 (PST)
+Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-8b4ec29d0b5sm14482677b3.35.2026.11.16.19.03.56
         (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Mon, 16 Nov 2026 18:38:46 -0800 (PST)
-From: Cheng Yongkang <teel4res@gmail.com>
-To: David Sterba <dsterba@suse.com>
-Cc: Chris Mason <mason@kernel.org>,
-	Qu Wenruo <wqu@suse.com>,
-	linux-btrfs@vger.kernel.org,
+        Mon, 16 Nov 2026 19:03:56 -0800 (PST)
+From: Hengyu Liang <hengyul@cs.unc.edu>
+To: linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <wqu@suse.com>,
+	Boris Burkov <boris@bur.io>,
+	David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v3] btrfs: tree-checker: reject file extents with oversized disk_num_bytes
-Date: Mon, 16 Nov 2026 18:38:41 -0800
-Message-Id: <20261117023841.467366-1-teel4res@gmail.com>
-X-Mailer: git-send-email 2.34.1
+Subject: [PATCH] btrfs: remove "rescue=usebackuproot" from "rescue=all" shortcut
+Date: Mon, 16 Nov 2026 22:03:53 -0500
+Message-ID: <20261117030353.1738805-1-hengyul@cs.unc.edu>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -98,93 +99,81 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-check_extent_data_item() only checks that disk_num_bytes of a regular or
-preallocated file extent is sector aligned. A crafted image can have a
-compressed extent far larger than anything btrfs writes, and reading it
-goes wrong in different ways:
+[BUG]
+Since commit c73eb6f72741 ("btrfs: always use the second newest slot for
+rescue=usebackuproot"), "mount -o ro,rescue=all" mounts the second
+newest backup root even when the newest roots are fine. As of now, the
+changes of the last transaction are not visible with "rescue=all".
 
-- With disk_num_bytes == 4GiB, btrfs_submit_compressed_read() truncates
-  it to a zero compressed_len and submits an empty bio:
+The issue can be reproduced with a healthy filesystem:
 
-    assertion failed: IS_ALIGNED(logical, blocksize) &&
-    IS_ALIGNED(length, blocksize) && length != 0, in fs/btrfs/bio.c:895
+    mkfs.btrfs -q -f /dev/vda
+    mount /dev/vda /mnt
+    echo old > /mnt/A
+    echo old > /mnt/C
+    sync
+    echo new > /mnt/A
+    echo new > /mnt/B
+    rm /mnt/C
+    umount /mnt
+    mount -o ro,rescue=all /dev/vda /mnt
+    ls /mnt
+    cat /mnt/A
 
-- With a 4MiB zlib extent whose num_bytes and ram_bytes are above 4GiB,
-  bvec_offset + bv_len wraps in btrfs_decompress_buf2page() and memcpy()
-  reads past the zlib workspace buffer:
+Before that commit, the result is "A B" and "new". After that commit,
+the result is "A C" and "old".
 
-    BUG: KASAN: slab-out-of-bounds in btrfs_decompress_buf2page+0x3e0/0x650
+[CAUSE]
+Commit 2fd3f6a2711b ("btrfs: add "rescue=usebackuproot" into
+"rescue=all" shortcut") added USEBACKUPROOT to "rescue=all". At that
+time the option only fell back to a backup root when the newest roots
+failed to load. Now btrfs_parse_param() sets USEBACKUPROOT and
+use_backup_slot = 1 for "rescue=all", and init_tree_roots() calls
+read_backup_root(fs_info, 1) before it loads the tree root.
 
-Compression and encoded writes never create a compressed extent larger
-than BTRFS_MAX_COMPRESSED on disk or BTRFS_MAX_UNCOMPRESSED in memory.
-Uncompressed extents are limited to 256MiB since v3.9, but older kernels
-could create larger preallocated extents.
+[FIX]
+"rescue=usebackuproot" now selects a root instead of tolerating an
+error, so remove it from "rescue=all". With this change "rescue=all"
+never uses a backup root by itself. When the newest roots are damaged,
+"rescue=usebackuproot" has to be given in addition.
 
-Reject a compressed file extent whose ram_bytes is above
-BTRFS_MAX_UNCOMPRESSED or whose disk_num_bytes is above
-BTRFS_MAX_COMPRESSED. For an uncompressed extent, only reject a
-disk_num_bytes above U32_MAX, which should never be reached.
-
-Suggested-by: Qu Wenruo <wqu@suse.com>
-Signed-off-by: Cheng Yongkang <teel4res@gmail.com>
+Fixes: c73eb6f72741 ("btrfs: always use the second newest slot for rescue=usebackuproot")
+Signed-off-by: Hengyu Liang <hengyul@cs.unc.edu>
 ---
-Changes in v3:
-- Relax the uncompressed limit from 256MiB to U32_MAX, so preallocated
-  extents created before v3.9 are still accepted.
-- Also check ram_bytes of compressed extents against
-  BTRFS_MAX_UNCOMPRESSED.
+This is new in 7.4-rc (v7.3 mounts the newest roots with "rescue=all"),
+so it can be judged before the release.
 
-v2: https://lore.kernel.org/linux-btrfs/20261116050922.310476-1-teel4res@gmail.com/
-v1: https://lore.kernel.org/linux-btrfs/20261116044543.282187-1-teel4res@gmail.com/
+On a copy of a disk taken while the next transaction was running,
+"rescue=all" on v7.4-rc2 showed 30 of 60 files with the data of other
+files and no read error, as the space freed by the newest transaction
+was reused and data checksums are ignored.
 
- fs/btrfs/tree-checker.c | 25 +++++++++++++++++++++++++
- 1 file changed, 25 insertions(+)
+If "rescue=all" should keep every rescue option, as btrfs-progs
+documents it, using slot 0 for it also shows the newest state, and I
+can send that instead.
 
-diff --git a/fs/btrfs/tree-checker.c b/fs/btrfs/tree-checker.c
-index f021ac14babf..e5d17bf4051b 100644
---- a/fs/btrfs/tree-checker.c
-+++ b/fs/btrfs/tree-checker.c
-@@ -244,6 +244,7 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 	struct btrfs_file_extent_item *fi;
- 	u32 sectorsize = fs_info->sectorsize;
- 	u32 item_size = btrfs_item_size(leaf, slot);
-+	u32 max_disk_num_bytes;
- 	u64 extent_end;
- 	u8 fi_type;
- 
-@@ -377,6 +378,30 @@ static int check_extent_data_item(struct extent_buffer *leaf,
- 		     CHECK_FE_ALIGNED(leaf, slot, fi, num_bytes, sectorsize)))
- 		return -EUCLEAN;
- 
-+	/*
-+	 * Compressed extents are at most 128K both on disk and uncompressed.
-+	 * Uncompressed extents should never get close to U32_MAX.
-+	 */
-+	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE) {
-+		if (unlikely(btrfs_file_extent_ram_bytes(leaf, fi) > BTRFS_MAX_UNCOMPRESSED)) {
-+			file_extent_err(leaf, slot,
-+		"invalid ram_bytes for compressed file extent, have %llu expect <= %u",
-+					btrfs_file_extent_ram_bytes(leaf, fi),
-+					BTRFS_MAX_UNCOMPRESSED);
-+			return -EUCLEAN;
-+		}
-+		max_disk_num_bytes = BTRFS_MAX_COMPRESSED;
-+	} else {
-+		max_disk_num_bytes = U32_MAX;
-+	}
-+	if (unlikely(btrfs_file_extent_disk_num_bytes(leaf, fi) > max_disk_num_bytes)) {
-+		file_extent_err(leaf, slot,
-+		"invalid disk_num_bytes for file extent, have %llu expect <= %u",
-+				btrfs_file_extent_disk_num_bytes(leaf, fi),
-+				max_disk_num_bytes);
-+		return -EUCLEAN;
-+	}
-+
- 	/* Catch extent end overflow */
- 	if (unlikely(check_add_overflow(btrfs_file_extent_num_bytes(leaf, fi),
- 					key->offset, &extent_end))) {
+Tested on btrfs for-next (26eb4d70f96d) with clean mkfs.btrfs images:
+healthy, a damaged data block, a damaged extent, csum, fs or tree root
+block, and the disk copy above.
 
-base-commit: 3aefd67f08f8ed59ed0fa90619b25856df415031
+ fs/btrfs/super.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b424cc836bd4..d67d678451f6 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -624,8 +624,6 @@ static int btrfs_parse_param(struct fs_context *fc, struct fs_parameter *param)
+ 			btrfs_set_opt(ctx->mount_opt, IGNORESUPERFLAGS);
+ 			btrfs_set_opt(ctx->mount_opt, IGNOREBADROOTS);
+ 			btrfs_set_opt(ctx->mount_opt, NOLOGREPLAY);
+-			btrfs_set_opt(ctx->mount_opt, USEBACKUPROOT);
+-			ctx->use_backup_slot = 1;
+ 			break;
+ 		default:
+ 			btrfs_info(NULL, "unrecognized rescue option '%s'",
+
+base-commit: 26eb4d70f96d9bf99e87c2565d6234eb652f9c26
 -- 
-2.34.1
+2.53.0
 

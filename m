@@ -1,88 +1,82 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.41
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794893933;
-	b=V2pQn8uwo0aU8mC0/mGUC1S0oEcZ9wDRIF+3C+SKoJ5p6btnEnmF9sjA6dP+Xnsz34XA
-	 zoDbIIvcd7or6N2HZYP+6kUOLc8f4EjetsESTNDbmXuEAP8s1WI3If2Dpf2/AiV0PQlvD
-	 GtOKUR8Tm8r8t6XEctuFiOpFB+42lCqBV7iAiTHAskTKgvEdGE7FBWtAuLN9t03zufeA+
-	 jjOY7g5vac4HOkyPg+Q3qmSDp6Er38ZkpRJXC6NGQDU6rdNHLrdIgYW4PS8yNlQ2dBSXc
-	 h4GNQPuPhMB/o30e5MmUanR8Vg7xSIOP5dv6nQXB5TqwA87OZ4K5GOL54NrhPrzq2yA==
+	t=1794895128;
+	b=mGjHN+2KabErfTchL+Z2SLFTRoRf4TBi/kc30iQiXlcTzph5mjfeZOD0p/aVS2NyN2dA
+	 JWe1psj/F10pNbOHSMJu2YtpHVDyYm/kK6/hG3asEJ6qSyXSFCAKwVNCEM2NVL1tsIznK
+	 Eml2bI6OepkpP0dpMq5QENEPvcuXrlkmXjQAGsaplaUMEFGhgdmsTwAdC+GObwSI7jUEZ
+	 eAYuEokKfVkA1AsjfE4sLBIfxumQR5TeIFMDsMpLu+REqcdwG3F1CQsbxfbTJe67kenqZ
+	 IigQ7JVFapXrymuYLqnSfhaeN7QTfoFBMZr4+5rM/gOFS0aB3B1nIIOwGW5wNLZermA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794893933;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=i15R/H+wWlGr4uvJa/8sk/uao6pBpjxxY1UfQQh+R/I=;
-	b=SBa3G2PIBVqpuQJMxWTMifph1Sr/0CE5HQk5K7PerjSIXWP9qPfr87uKFClC4+cdkE3I
-	 rkOQZEx8TUC6+fr1k6sU+paemBg3S31nheXVEa17ujBEhm5M+h4c0+NCQk7ddiklKMSig
-	 jbkTEih5QuyPMg5CjFamOrK0pwbs1hUmM6F7Yw/17PsOk4692W+YBqpXwvOLIU9t3Vh4a
-	 yd1pSphsAtPEBmjcx3lggVdzjoxk+NPbUQAF2fixD5d+u26CYutTaUIk6Qpr3IC30/vud
-	 ka1e68iRsPp4h7ycmrcJZPhsxURBD9qM6GG8hoOD/2I1j8V97QG42fyyggojNtuf9Qw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794895128;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
+	 X-Spam-Flag;
+	bh=eWyiJtFXT9YSFf9KIFExZuZIeXWnvK+oaOE1JwdHLEk=;
+	b=v1XMqwNjJmYVxkKuGk2antfwvRauYKNy7yeGm4DmFSEkXrh8M5gEBQ4+Cc05D/yYG5S6
+	 Q6H9cfwcRCkElxT6WR3id94NLP/wCdzPy3AdqrCym8JmF5IE/zx6X5D45cbWAJZzoSvEm
+	 l5Wl1TEfBsXLd/raz4y2rPmdN+Vue24uupe+5J7jyh6T0rJnpMtpF0u7BbHdk2nK7+RfD
+	 SVqdi/bXf1O/xRkAbyHrYQ6MhWCcN/kBCKjOQZ7keaAxYTzB1Hl1t03HGgoQlLhc6zRkI
+	 0Vgv8dGEulFM/UqrHi2gZo7wTekjb7rVgXISazqzKWDqSRi1USjtOfdONDd3kGWIxxQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=JVk2bPKz;
-	arc=none smtp.remote-ip=209.85.128.41
-Received: from mail-wm1-f41.google.com (mail-wm1-f41.google.com [209.85.128.41])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OhhsPDYA;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OhhsPDYA;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2B2E606A323
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 05:38:52 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A2B2E606A323
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 52E93606A31C;
+	Tue, 17 Nov 2026 05:58:47 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 52E93606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=JVk2bPKz
-Received: by mail-wm1-f41.google.com with SMTP id 5b1f17b1804b1-4a2d6d01ecbso26650955e9.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2026 21:38:52 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1794893931; x=1795498731; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=i15R/H+wWlGr4uvJa/8sk/uao6pBpjxxY1UfQQh+R/I=;
-        b=JVk2bPKzzm2L+FNyLQRNLRhwhPaAea1yXiiDP4nIasQqxAx5idlF1H/E+K0d2+G2Sr
-         Zga3nTm470haf2t6k4++FZBxhe8n1fekXBlAknUDc3GemBbxemMkpeETpWFG+9f3JCSB
-         LJLibe7UpupFqbyqO/0h/xuA9PAuQn6O27ob6jC4kPtZlfvsPLH4+xqcwZwUH58YteW8
-         9iMwFJPH1nGDVBX8noI/GHKcfqi3+w4B8hJ/YZrLfjHzYYBGSjDb8I8qWdmplxweaeQB
-         6mlg6HQ6KqME+sY5n0icsDdZZerPLRttBO+rZGOnkLaHlmOJLR0iRJNfdk3bYd5nmo7V
-         eMzw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794893931; x=1795498731;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=i15R/H+wWlGr4uvJa/8sk/uao6pBpjxxY1UfQQh+R/I=;
-        b=Pz2eLAmiOthHNgEmL5Jj2U4x3AkeNG6QpBkhu0jJWM+hy53/ybYAJ3dmeI5hbuJUdC
-         BKgbbzuX8psggmBPqbm43XRuMLlDjuSlWiRSlzlv0cs9UQW6GIUpyJ58CL5Qm0O9efai
-         Ga02ZWYPzvPKsTVv2WIx8cU48EoHbx7LaNxhs6+qIow+4wtRCR/a4iYsjS12Tmdv8aaz
-         Tc4gaz17+WRLUY8s/jiPnlDZhYsV0R1L9brBKwirb9QDCTR5Y3RaZNZq4E9nay9HdRNn
-         dFURVnF9dtDVEf4K0vSfD+Z95+GQYi+rzopwUHYJu7q4FVVYIRYuRjJ2oSxJByolA+sL
-         T/pg==
-X-Forwarded-Encrypted: i=1; AL+hErHN/Mluf9hZidMmS59EmYi2SOq8bOa7lA2qNpgQzQ5i7WSiDTab0BdWB59E92lNVHeIbsh0RBoY/RfzYg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/GezWLn3J3jBtTtrbuqiN1q7fizVlBUdDSYrdlN4Dw9AX3p0rw
-	uaWUQtT1ztsSXNUkXdsSKlSUuCv+ah9zTtIpBs3aWtMKY5ciT5hXt99U1Pp7skbXh5A=
-X-Gm-Gg: AYBFou2amSczo5ZQzmE2YzyaRsp75VL699B5vpTnY66YATHcsEJReFsHC46cp3k8gvr
-	5B+HRCbYVOtBgvSHQCZKcYUJB7Zxxv7hxDG5ODRkLVujs6L+84AfUbY5XxAFT2Td+vHpZ+td+9x
-	wc5BKkgcm1eMC+czgea+OL7VzzwASpHHgX0NXhhsRTTgwrqp88eAql9DVngtG+L0VQRTh76I3jM
-	s9W2bpPvASC84XjbQg5GG/RZSvVxVi/lPQ4c6HCdlItJ20S5v+X6ItH1DvAsvEL1cpiSogbKSpn
-	jLaAdgyV3ilmrt6rfLh08kwEDdqHyCRGk55z6Y0fgBH3hngB0xrBxWOibo4hBYwiMKONmnXm2Yx
-	FuEKNT/ngttaIi+UZfzeO5/3ABQOtFKhjz6cfAULF0IDRDODddyQAihPIrn2EDaWV6bT5JcBg2u
-	HTylL7GlJokHTfdxO9Yh8i5/PiHNvQemAY5Tgmpvqz9lGpvvfkwICJoSKL44iKZrkG4uctpW/QH
-	3w967cMhqj3BY/IWnxVBKF7QMTvzAZM7i9jJpTnaNQdnP6aF0t6a1olAzy4MQPunSubqx2jaexN
-	64yVe3rsEe1B4y/0SFOiIQ==
-X-Received: by 2002:a05:600c:6092:b0:4a3:5aea:21e5 with SMTP id 5b1f17b1804b1-4bb55a42ff2mr246747625e9.9.1794893930858;
-        Mon, 16 Nov 2026 21:38:50 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d2e1a72fcca58-8bed263b354sm4377244b3a.47.2026.11.16.21.38.47
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Mon, 16 Nov 2026 21:38:49 -0800 (PST)
-Message-ID: <a6045455-5c90-4a79-85e8-06587f0b65db@suse.com>
-Date: Tue, 17 Nov 2026 16:08:45 +1030
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OhhsPDYA;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OhhsPDYA
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 4225022330;
+	Tue, 17 Nov 2026 05:58:39 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794895119; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=eWyiJtFXT9YSFf9KIFExZuZIeXWnvK+oaOE1JwdHLEk=;
+	b=OhhsPDYAo7Mob2DRKuNV08jQcslAIjY79md6KqZwpy7PW8YmLI8FeRQkAzTVzx8opOpSL4
+	djV+3piWkVn3hx8pNh1IQXC7b2v6ZDd73ztbu7M5NsyOlGIWbcBWh6ToTDhG7E6lYClEve
+	b3GuCtf7vcpku3fa43VfzRDzB+jSRSA=
+Authentication-Results: smtp-out1.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1794895119; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=eWyiJtFXT9YSFf9KIFExZuZIeXWnvK+oaOE1JwdHLEk=;
+	b=OhhsPDYAo7Mob2DRKuNV08jQcslAIjY79md6KqZwpy7PW8YmLI8FeRQkAzTVzx8opOpSL4
+	djV+3piWkVn3hx8pNh1IQXC7b2v6ZDd73ztbu7M5NsyOlGIWbcBWh6ToTDhG7E6lYClEve
+	b3GuCtf7vcpku3fa43VfzRDzB+jSRSA=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 23DF713302;
+	Tue, 17 Nov 2026 05:58:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id 0iMMHQzt+2piJwAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 17 Nov 2026 05:58:36 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	workflows@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-doc@vger.kernel.org
+Subject: [PATCH] btrfs: add a per-subsystem agent file
+Date: Tue, 17 Nov 2026 16:28:18 +1030
+Message-ID: <df1c1fa031ba7e66486348dc37d1a7be53c18e43.1794894953.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,78 +86,203 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3] btrfs: tree-checker: reject file extents with
- oversized disk_num_bytes
-To: Cheng Yongkang <teel4res@gmail.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-References: <20261117023841.467366-1-teel4res@gmail.com>
- <35bcaa47-55c5-4b2f-962a-c3168bdf52a5@suse.com>
- <20261117045725.606165-1-teel4res@gmail.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261117045725.606165-1-teel4res@gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.998];
+	MIME_GOOD(-0.10)[text/plain];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	ARC_NA(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,sashiko.dev:url,suse.com:email];
+	URIBL_BLOCKED(0.00)[suse.com:email,sashiko.dev:url,imap1.dmz-prg2.suse.org:helo];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[4];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
+I believe btrfs is not the most affected sub-system, but a lot of
+newbies without common senses are doing more harm than help.
+E.g. wasting a lot of human review time on very low value fixes, filled
+with long paragraphs and useless test steps/results.
 
+So it would be better to let those agents to stop being stupid and
+follow the more common practices here, and hopefully those newbies can
+build some common sense.
 
-在 2026/11/17 15:27, Cheng Yongkang 写道:
-> On 2026/11/17 15:01, Qu Wenruo wrote:
->> I don't know which agent you're using, but I have seen several ones (not
->> only from you) doing this linking-to-older-versions behavior.
->>
->> It doesn't make much sense.
-> [...]
->> And the full changelog would make more sense, other than letting the
->> reviewer to jump to your previous version for history.
-> 
-> The links came from Documentation/process/submitting-patches.rst, which
-> recommends adding lore links to previous versions after the "---" line.
-> Its example also lists the changes of every version, though, and I only
-> listed the v3 changes. That was my mistake.
-> 
-> I'll follow the btrfs style from now on: the full changelog of all
-> versions, without links to the older ones.
-> 
->> I think the ram bytes check should apply to both compressed and
->> uncompressed extents.
->>
->> For compressed, it's MAX_UNCOMPRESSED, and for uncompressed it's U32_MAX.
-> 
-> Will do in v4, with max_ram_bytes picked the same way as
-> max_disk_num_bytes.
+I hope the agent file is clear and short enough, that is not only
+readable for LLMs, but also for humans who want to be long term
+contributers.
 
-And Sashiko has some reviews too:
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Reason for RFC:
 
-  https://sashiko.dev/#/patchset/20261117023841.467366-1-teel4res%40gmail.com
+Some practices are my personal preferences, like prefer ASCII charts
+over long paragraphs, and short sentences/paragraphs.
 
-> 
-> Thanks,
-> Cheng Yongkang
+But I guess some of btrfs developers may not even agree on my
+preferences.
+
+Thus feed back from well known btrfs developers are always appreciated.
+---
+ fs/btrfs/AGENTS.md | 136 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 136 insertions(+)
+ create mode 100644 fs/btrfs/AGENTS.md
+
+diff --git a/fs/btrfs/AGENTS.md b/fs/btrfs/AGENTS.md
+new file mode 100644
+index 000000000000..d527b862d9bc
+--- /dev/null
++++ b/fs/btrfs/AGENTS.md
+@@ -0,0 +1,136 @@
++Btrfs patch guidelines
++======================
++
++These rules apply to any code, commit message or cover letter touching
++fs/btrfs. They come on top of the top-level AGENTS.md and
++Documentation/process/coding-assistants.rst.
++
++Code comments
++-------------
++
++* Add a comment only when the code is not obvious by itself, e.g. a locking
++  rule, an ordering requirement or a non-trivial reason for a workaround.
++* Keep it as short and simple as possible, but do not cut the reasoning a
++  reader needs, e.g. for locking rules or races.
++* Do not restate what the code does. Do not narrate the change, and do not
++  add comments like "fix for ..." or "new helper to ...".
++* Remove any comment that does not carry information, but only in the lines
++  being added or touched. Do not drop unrelated existing comments.
++* Add kernel-doc only for complex functions. Do not bother for simple helpers
++  whose function and parameter names are self-explaining.
++
++Commit messages and cover letters
++---------------------------------
++
++Human readability comes first. A reviewer should be able to understand the
++problem and the fix from the message.
++
++* Use short and simple sentences. One idea per sentence.
++* Skip filler and long background.
++* Prefer a small chart or call trace over a long paragraph, see "Visual aids"
++  below.
++* Drop any sentence the reviewer does not need to understand the change.
++* Do not use the [BUG], [CAUSE] and [FIX] section tags for simple bugs. Write
++  plain paragraphs instead. Keep the tags only for complex bugs, where the
++  symptom, the cause and the fix each need several paragraphs.
++* Follow the style of well-known btrfs developers:
++  * The subject starts with "btrfs: ", is lower case after that, and is
++    imperative and specific, e.g. "btrfs: fix use-after-free when ...".
++  * Keep lines within 75 columns. Quoted text (dmesg, error messages, stack
++    traces) has no limit and must not be folded.
++  * Check `git log -- fs/btrfs` for recent examples before drafting.
++
++Visual aids
++-----------
++
++Prefer anything that makes the message easier for a human to read. An ASCII
++chart is a good choice when it explains the problem faster than prose, e.g.:
++
++* A race. Show the race window, do not describe it in prose only.
++* An error handling bug in a function, seen from several call sites.
++* A call chain across layers, where the bug only shows on a certain path.
++* The order of steps in a transaction commit or a log replay.
++
++Chart rules:
++
++* Function names only, no file paths or line numbers.
++* Show only the functions that matter.
++* Describe a state or outcome with plain text under the function name.
++* For a race, use one column per racing context (CPU, task, endio), side by
++  side.
++
++Follow the style of the examples below.
++
++Example, a race:
++
++```
++ CPU0 (endio)                       CPU1 (fsync)
++ end_bbio_data_write()
++ |-btrfs_folio_clear_writeback()
++ |                                  btrfs_sync_file()
++ |                                  |-filemap_fdatawait_range()
++ |                                  | Returns after writeback finished
++ |                                  |
++ |                                  \-test_and_clear_bit(COW_WRITE_ERROR)
++ |                                    Still 0, skips waiting
++ \-set_bit(COW_WRITE_ERROR)
++   Too late.
++```
++
++Example, an error handling bug, from commit c9583ada8cc4. The callee cleans up
++on error, then the caller cleans up again:
++
++```
++ btrfs_do_readpage()
++ |-submit_extent_page()
++ | \-submit_one_bio()
++ |   \-btrfs_submit_data_bio()
++ |     \-bio_endio()
++ |       Calls end_page_read() and unlock_extent().
++ |
++ \-end_page_read() and unlock_extent()
++   Cleaned up again, the subpage reader count underflows.
++```
++
++Versioned patches
++-----------------
++
++* Always provide the full history, not only the changes of the last version.
++* List every version, newest first, e.g.:
++
++  ```
++  v3:
++  - Rename the helper to xxx()
++  - Add a missing lock in yyy()
++
++  v2:
++  - Fix the build failure on 32-bit
++  ```
++
++* Put the history in the cover letter, or after the "---" line for a single
++  patch. Do not put it in the commit message body.
++* For a series, keep the cover letter history complete. For a patch changed
++  in a later version, also keep that patch's own history after its "---" line.
++
++Sashiko review
++--------------
++
++Sashiko posts AI-generated review for patches sent to the mailing list. The
++btrfs list is at https://sashiko.dev/#/?list=org.kernel.vger.linux-btrfs
++
++* The submitter should check Sashiko for bug reports on the posted patches.
++* If a report is valid, address it in a newer version.
++* If a report is wrong, it can be ignored. A reply on the mailing list only
++  makes sense when the report is complex or the reason is not obvious.
++
++Testing steps
++-------------
++
++* For minor and simple bugs, there is no need to add any testing steps. This
++  applies to the commit message and to the text after the "---" line.
++* A minor bug is one that does not affect normal use cases, e.g. an
++  unlikely error path, a corner case that needs fault injection, a tracepoint
++  or a debug-only problem.
++* Testing steps are only appropriate for a complex bug that can be hit in
++  normal use or have a deep impact, and also when they help the reviewer to
++  reproduce it.
+-- 
+2.56.0
 

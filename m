@@ -1,50 +1,52 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794929066;
-	b=RS6vVgh1Aps0kdUg2vN1r6hq372IM0j7YittUgHrBDcOFqf+cWOybPKgqtfXrBPfZfqV
-	 QAyxgDlBxOhf0kZFd7maSVx1JX7Ri/IEl2b7h5J3bsIZAT2iYD6MgQamu6w+vYG5VC5Xl
-	 jYLXSIComFXRuuvKWnhyT1RiBVPLYRtNlj3+RwkVTaa3HaMT2MOCzWtGEKloUMimAkZEI
-	 5N2Tu+0cKChnlzLvLpe2wkTiGi9+tU61qW+fN2r8N6MkHI1VWVxuf6nRCbDg6FmsDDsKO
-	 VL2FXxY3bBAM47Cb1gsmN0t1M5jqDdxWXQb2h1lNUoR5MOsTZBuIV6SUcP+mV8G1mwQ==
+	t=1794930056;
+	b=O2bkZ7vdVRMLhY26yrWFkwF5dZWp0RHZcr/V3htbW09jXLhLgNrLRw0FtMiAgiyrHzUc
+	 ZboMNcuDnMXShlRZaTKlbsPiuyft4h2MYg3O1d1d2bhGPmdm3hGBRM0YghdtOnEH1Ogdy
+	 EV6yFcsr69A3p7RsPWcvogVRcLp69E1TPXXJjSJkR3Tn/SiYeS3lmHbLkkdqaszQJJy6f
+	 K+RqGQ8EqIuWykrK/31KTQxTLliBuM5H6dVQC63NXZSd/aDwhKDOMZigDbOex7HAgxNNY
+	 W5yhg4LoH6fJhFRNzpe6C8BsGEmTAzpuUNQHXUQ8LMR2Tjou/cAQrYOYoA2h2NjPETw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794929066;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794930056;
 	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=sdQmHzaa3ydsRR4SxPv+yY+/S7hzLgoxSsxUdK5eW44=;
-	b=BQY7kAxTPE6lUyVa0F7zYW/2vRCantBcbx/r1sBH68gO/MdnOrwOxvTW8riq7EFAU5gE
-	 5m341mSeHo5srHdjAk7Tc+Jx9pi4ESS/esVrR8nRi/FQGQrphuHdiMftsxgcpHjHBOzfr
-	 PJt2IRuIVn6ds/WJcVBnSCqEjUthsJb1+nk1ehSw3lJMHSEaK24zwzO1mbJP0YN2XGQnI
-	 HAwbcl8fOyjCM2UtE2O303u+STHIz2DnxsR5S5jvfYlBE6u+jxLFKEIAszVnwDin/UnDd
-	 9weYMpuNQNjYf67tvvJUqvcaI4s9c1CBsgaZ8bb/Lgz9bJ8epCtSYH7B0jeHMu6x3Sw==
+	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
+	bh=7rwoh9oph/0t4aDDNUQeG3OjDHiaRY1YYQRvzNAkADU=;
+	b=yQ16JUZqCkhcKM0M44vsmE4dvUMEqh7bqsgLVZerh1b+zvkylSLJvucOFd0Ch5GZBFYW
+	 g8RJe8pFwyYV9BSPNMIpFkNy3viJQoJScsB/tRoLX8pNGPvW6wjhG5RgSsalILQiXxRNZ
+	 mkhEJ+KMWvD52NoUKEamHi78MF5lMxun7qev1JodRuaxGh1aA8kCXzq4RDNz2x6cjpbCc
+	 SpxqT4bW/JsHaYtQ+Ap1YzAsye/f8qO2YdEZSM8mZBPcjXjqjbfv/hLtkYpomuVN1P3Xv
+	 Z4IUF00ilOR24UBc4oG4oVuaptUqacM8ewfdxy+X1GXqnIw0qtyuyioLWD9pwWMz1dw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PYXlpwkE;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="D/N36jQi";
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27C19606A31C
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 15:24:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 903BD606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 15:40:56 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PYXlpwkE
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 882371F000CC
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 15:24:25 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=D/N36jQi
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B2F921F000C4
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 15:40:55 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794929066;
-	bh=sdQmHzaa3ydsRR4SxPv+yY+/S7hzLgoxSsxUdK5eW44=;
-	h=From:To:Subject:Date;
-	b=PYXlpwkESbWr42kgNYpyX/Lxd0qXUbdYvJpB+Dpyn6tz7DuWY667Sj54nclfi+lRx
-	 fduseLImuv8nRqzZwh2e9ajmQAiK8usAVo5rD+1mJWFKGTjWjdoIAUdCN1OHtSEkge
-	 1XeH402ZqEs5l661/JGFdo93etGhwW0ONYpsXQMg8/vh1/fqkHwzcqsNq6O7rcmGsC
-	 py3Ad8A2/r6Lbb3pZ1PaRDCZI6X/DEViTIk6k0VtaaRCVooNDOmpnFdoRLV96tJ8i6
-	 yl5XV6cB/z4KDSEyNzSObqhY25bjKeg3GtbHZfosJ6CtZViYz5h642u1Hxu2qTcD0C
-	 v650By0IXB1Vg==
+	s=k20260515; t=1794930056;
+	bh=7rwoh9oph/0t4aDDNUQeG3OjDHiaRY1YYQRvzNAkADU=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=D/N36jQi9U0KcrbZy3IIWXB7tpBYh9npzFYaSW213Z3NTsAz8xMw8hs5rOMRjvjaK
+	 WOPBx/5hIXgd3Q5C8cjfRoJK+hES75sjqdu/b+MncvO9QZqaHrqZcozR8zStlMFgEo
+	 aYRj6dLak3Xh4SlxianTNWKh8OnE/QjnGcUoRzNY+1dEv70LSugWr1HspNqrn7uMGc
+	 qCImyXZbtkjyHOwXN12IPBwes4ikv/elN/f02576ds3xam82Y8F2cq6IRv8NN3ERmo
+	 C6F9l1/H0ss1kpaYpICWhBMODx6OwHdUkonbK/uIEQDYGdI+qeaPWZ9ksHLTi44oc1
+	 2PuV0OXKt2e+g==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: avoid copying too much memory in the logical to ino ioctl
-Date: Tue, 17 Nov 2026 15:24:22 +0000
-Message-ID: <d20ac8e45fe2df6dbfde223e4a786f2b542756b8.1794928978.git.fdmanana@suse.com>
+Subject: [PATCH v2] btrfs: avoid copying too much memory in the logical to ino ioctl
+Date: Tue, 17 Nov 2026 15:40:53 +0000
+Message-ID: <6340b0cbc797d7d9b3920aaac1e93dd85602b6e1.1794929971.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <d20ac8e45fe2df6dbfde223e4a786f2b542756b8.1794928978.git.fdmanana@suse.com>
+References: <d20ac8e45fe2df6dbfde223e4a786f2b542756b8.1794928978.git.fdmanana@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -67,30 +69,34 @@ Improve on this by copying only what we need.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ioctl.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+
+V2: Fix the byte count, it's actualy just elem_cnt * sizeof(u64), no need
+    to multiply by 3, and with with case where buffer size is less than
+    sizeof(*inodes).
+
+ fs/btrfs/ioctl.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a4de331c46a5..5635bc3891e1 100644
+index a4de331c46a5..4271f7a6d48a 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3343,8 +3343,15 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
+@@ -3343,6 +3343,15 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_fs_info *fs_info,
  	if (ret < 0)
  		return ret;
  
 +	/*
 +	 * Copy only what we found instead of the whole data container. If for
 +	 * example 'size' is 16M and we found only 1 inode, it's wasteful to
-+	 * copy 16M instead of sizeof(*inodes) + 1 * (3 * sizeof(u64)).
++	 * copy 16M instead of sizeof(*inodes) + 1 * sizeof(u64)).
 +	 * For each inode we find we add 3 elements to the inodes->val array:
 +	 * inode number, offset and root ID.
 +	 */
++	if (size > sizeof(*inodes))
++		size = sizeof(*inodes) + inodes->elem_cnt * sizeof(u64);
  	ret = copy_to_user((void __user *)(unsigned long)loi->inodes, inodes,
--			   size);
-+			   sizeof(*inodes) + inodes->elem_cnt * (3 * sizeof(u64)));
+ 			   size);
  	if (ret)
- 		ret = -EFAULT;
- 
 -- 
 2.53.0
 

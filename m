@@ -1,77 +1,77 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.22
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.15.15
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794946152;
-	b=PmlePOWMDViaTbRxXuwCN/54NfLu4IZifdLDVIA2V8HzadXblbI/eYHiqkkXLUftJtDi
-	 qt1HO35vd9h8dflzrcGLEd8jUH4/qDCyvCjzr77TSmg7YqZv93k8v1SSaLkWAHkUKxv2D
-	 SJi4JfHvdXeFpcIwgC/ivIRZueD6OfhSs37muVNy42DI4xFxjaxw2+e1vcYH+Yrbu9PXU
-	 15K/HsERVBeoVG/Am/rW0tc67nsQqXjUJTU78eb8hHTXFJoXafj8VRS20u/ugqvUD7yYZ
-	 /bpPA13pW6lFGZ2SS/7jHhx6U/JPLAMgf5raDMrvPNPGf/aWa8fbmS8AuTuFEuF9F8A==
+	t=1794948733;
+	b=CwvCUKKctRJ0mU9xj+FZhrWdbWbMkrLTFuOV+ZOvcuS1Vxyrd4aT7G9dcM+RQq+J630R
+	 bNDUhrlFiHkpaDA3wAsVxEwi7SeRdw/IYZ1SPp91hpsgRANY7OnbsLW8PFyb4/FENjh0B
+	 abY1xVj7E8bmhYm1jbFTGFGXRW0rOAs/F6zMRJD+HlV2z/DwGhjnHvEwAwRxrEBitn3Fa
+	 Gw+jZS4RWsjFhM2c+FeHZ+EWfHSfzRYez0J2zkIPj0Tebjo2gfOO7X6ws/TTMx57DIEu9
+	 4lCVV5vcGXdq3Pe90hB6Zv5AzlDE3T8rc3pH/ZWf7bSogM8ERXR/MEqLUIgTrBd8Bew==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794946152;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794948733;
 	h=DMARC-Filter:DKIM2-Signature:Message-Instance:DKIM-Signature:
 	 X-UI-Sender-Class:Received:Message-ID:Date:MIME-Version:User-Agent:
-	 Subject:To:Cc:References:Content-Language:From:Autocrypt:In-Reply-To:
+	 Subject:To:References:Content-Language:From:Autocrypt:In-Reply-To:
 	 Content-Type:Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:
 	 UI-OutboundReport;
-	bh=vhRkwIBHpROOFkb4CsfUQSbanvfE6Je9OSNy4Xq25ak=;
-	b=LlbgtXSmtXXCasLYp2/rQUgd1f1ENHBgLebFc46GN3tEzKspCRkQqwzRkh/8rNbv4Jlt
-	 5+YTLMmpujHmz0/yfg0XytFpaJ2aRfiw6JG0qPZzSjWxLdUkx8m9KK8jobC/3756u5XSs
-	 7esVpETk8BScPkppFvvEt0G28L5g3gkrQN4Ek2lgL1QKyznKwhKv8rtOm2JpNw1EW4bLz
-	 uWZVJNrxVqKt6audXXYWRRbKR1kCtxq/7iWluVnFNL7hlq0nhuhaWh1Ag7enas9zkz0zm
-	 1lEqUah0uq+7BXiaMtRwzr3/RiDoK3XgKnqzErS1khiDZS7nisLfMMx98MzaPsu3zbA==
+	bh=OMSdxoh4DEvIl1J3Hb9jcdWcPf4agMxrp6lywjep55s=;
+	b=K+lFHmN5qDqXci1Rct2agjM/o7i0zk19cjZx6ZUVyHccKsYonLxryQ+orUtbp4wPWWBK
+	 IV9ouY7Vf4p/bsGC+4HqByQZJsFm8L+ON2xdCcorqaPJ+X4/c6sy77UYoow4uYCKwhJkQ
+	 bmJOamNtP/RkYTejrcJt4DuVbjkNGJLxJceSZSha6LmqoTZv7RT2f9MUgACcMo6oK+abt
+	 B9Lift4pjbfxzG/sSE3ni/eXnTmWs8rCYuKSA7QEUGyKLUrTWbCixr9guj5sYuYxblNrO
+	 yRwg04MTrbRcdejl1ntmQo1DMsd4/ceRraOdPWfc2jvjMsj+N69xyyJyOaPwL3JFgHw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmx.com;
 	spf=pass smtp.mailfrom=gmx.com;
-	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=TUdtjiHN;
-	arc=none smtp.remote-ip=212.227.17.22
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.22])
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=lW9n9DO3;
+	arc=none smtp.remote-ip=212.227.15.15
+Received: from mout.gmx.net (mout.gmx.net [212.227.15.15])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97410606A31C
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 20:09:11 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 97410606A31C
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1DD0606A31C
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 20:52:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org D1DD0606A31C
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=TUdtjiHN
-DKIM2-Signature:  i=1; m=1; t=1794946149;
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=lW9n9DO3
+DKIM2-Signature:  i=1; m=1; t=1794948729;
  mf=PHF1d2VucnVvLmJ0cmZzQGdteC5jb20+;
  rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
  d=gmx.com;
- s=s31663417:rsa-sha256:GrhSpUtkn75Tn/SLgqrLpvEshr8Q
-   iTMTt7rr8wbRYFJS/x2ILdpMHQGtq1ELl7BxMuvDoRUqa1KX6MoCAHK+nHyAryuDwgWGUePlNXU
-   6OHW9NM+RevglyFiGY1C8kPP0zM2LFiIYz4rpm6ecDKJEkqjROoy3fg7dUmrgw34n+4hdedfnRK
-   Xa21pgtj5rI4o6lA1BZnguohkWZU2zc7B8bNWvpbxwXQWUlplQHxvttUPQXoGTZaaVBZRRj4Kcj
-   d/Iiw5CsGhZ2WuxLSBZWTogCF4oX/3o4mWceKHK35KOo7vc8rjOCprtAvgfP5SH+x17aOf5NFJA
-   a3huXv0awIXeIg==;
+ s=s31663417:rsa-sha256:G+cWREOJJWlnaxqxDp+Jm+3GrsQm
+   9ghdyTtxYl458Bech0AUITfUNjD479H/UNE3pndPA986y0j5BLPGSL+9dXUkkiWtlzldQCjQUuQ
+   4Jw+QdWwLSFD6C4f5rVuhFV2Jye/13g4CT1DdV5sWVVNntmFxQBuZt0J1zJUJmJ7+uzkoxMzIms
+   M0i1uRbqrWGZmS84m0PbBQKQnUd9XtaZL6dPRUqTC9S/aIaBM5AvWcpHPRyAwPW0WhqwLmceJHw
+   fqQkhsJCvlZfwjHwfwaLAd0SLPcNgc9Fnl7LNmlOhamDLKXnoYiP2qO+FDVOez9I+zaJ4pAZ7SW
+   G1rDo4pid3leiQ==;
 Message-Instance:  m=1;
  h=sha256:
-   diGkwzQgDK31d8LA0QPtxzynS8IipLE9yf0dKW1zi9E=:
-   GpB8CHl4lr0Woabpc87JzL8Caknn4pgnQ856APDy/FY=,
+   nEe52XYn0uwjDFbpWZvLCJKzc1mvynLlHUE1yTxeLVA=:
+   giT+kCzsTBLsiHBIHG02UAOTF2cLzOCwp5eUf+DRkbM=,
   sha512:
-   0n9DdVMAV3WOFXFMC5CofjXBj8/jQlUPDpTnR4p8jAu6Y9830tp8AgEC9/Vx/oj4QSVWaBhG7L1C/3lv+5yzUw==:
-   b2SxAtrhHB09wAK8aCBOfHM+/OGLJfxfdKbxygYmyDCE59a+VzLW8DE6e9jhpL2nXnuIodIXscDf/3w5bEJuUA==;
+   b6OvAPyudfqFb2jWq12sQytacIry1wzZh2QraNm2QgTabEg9smTbSQEP4r/PCxkl6Z9CyHMBdnduS0rDRbpzFw==:
+   ph/wzCRxE5jviIIvBKYyMviTUmnPC6Pa+fH+iroz6Q9hmAY6Q4gfmS93LDEFUyujdPZB5If/uis/8lmhK/q8Pg==;
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1794946149; x=1795550949; i=quwenruo.btrfs@gmx.com;
-	bh=vhRkwIBHpROOFkb4CsfUQSbanvfE6Je9OSNy4Xq25ak=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
+	s=s31663417; t=1794948729; x=1795553529; i=quwenruo.btrfs@gmx.com;
+	bh=OMSdxoh4DEvIl1J3Hb9jcdWcPf4agMxrp6lywjep55s=;
+	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=TUdtjiHND2DYOk8x5oJvfyqFfcUPg9sO5aWDHET6cwkSKrKnV1tf1tccpyoAO+Ff
-	 3ISuAxa2pRj1Ay60bUYeCDnVZQ/yFBBZiAHxWC3Bmu4ykIMoMmaOnDr29VsVkh5gQ
-	 MdmWjrJIdniqRkoK0R65sZmPzfw8nt+OlN9zZF0blPCKB1fG5A6Z7mtkg2BKVg6j7
-	 FXaUPh/B7fpe5TJlLUQMjzHBigMjiLt5tX6XM4AaLFUe8rj2TVEGvaoCdxB5WINE1
-	 AJQODkw4bYvwbpzZt3kF0dRaup8Vgww2LGjd8yCPjo3wyqla+J1XJoMycRA514my+
-	 gRRlQrrOjD8la5DBSA==
+	b=lW9n9DO3HwiElK2NwuL8ClRM++o9VcLKnZK985TGqCVxv43eGmgONyRxaKWnoArK
+	 Q/wP86fCPgDEIGh8SYSRiaLLateE5eJNHEm+aSvRANKU4pYogVrQ9NZpfT57sX2Yx
+	 H1yiFqn09Bkijj+gKnZytGfKZs6YRWPBTZ8X1GvqyMo8Y2jpep4q/5Ezn4YKPhwxB
+	 ZkeJlZk3a/k0gfmQ++XwLMoEXsx8QwYfb0Qfopq+ZdqpJutIMT76iHMH5wNW1jzXP
+	 YLcUnqpusCODz2f6bJHo+OlOuqibesGqFTVgZqOIG+SbhuGq2aQQErJc6GTd5PMbs
+	 yZZiOwSmOoRSbAbfCg==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MmUHp-1wlW9F20e1-00j9ne; Tue, 17
- Nov 2026 21:09:09 +0100
-Message-ID: <78f24a85-3080-476f-af47-c30b56bdd329@gmx.com>
-Date: Wed, 18 Nov 2026 06:39:05 +1030
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx005
+ [212.227.17.184]) with ESMTPSA (Nemesis) id 1MatRZ-1wshYw0mS3-00fjA2; Tue, 17
+ Nov 2026 21:52:09 +0100
+Message-ID: <82184da3-6426-4014-aca6-a173f592c914@gmx.com>
+Date: Wed, 18 Nov 2026 07:22:07 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -82,13 +82,10 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 2/2] btrfs: scrub: fix use-after-free when waking up the
- stripe I/O waiter
-To: Filipe Manana <fdmanana@kernel.org>, Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, stable@vger.kernel.org
-References: <cover.1794867985.git.wqu@suse.com>
- <51527ea5f9f456a7ebe70b7fcaf626fac3dab945.1794867985.git.wqu@suse.com>
- <CAL3q7H6xiDZVeWmS2K64KmKLLa=9yWBt9JTgk-BsfdASmqjrhg@mail.gmail.com>
+Subject: Re: [PATCH v5] btrfs: fix RCU usage in btrfs_ioctl_dev_info()
+To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
+References: <b9bd6d147c0e40d4f3c2d8df1bbd8f8f11f2ed31.1794419436.git.fdmanana@suse.com>
+ <036f030792d3b497db41f1e7e376e085e094d006.1794588939.git.fdmanana@suse.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -115,509 +112,335 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
  9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
  3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
-In-Reply-To: <CAL3q7H6xiDZVeWmS2K64KmKLLa=9yWBt9JTgk-BsfdASmqjrhg@mail.gmail.com>
+In-Reply-To: <036f030792d3b497db41f1e7e376e085e094d006.1794588939.git.fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:frTeLBI1IuYqnL5gGbL0eu+IX9/+W0tGbMu3RRw9OWkqSn5ECkx
- gxo6H7tVd6OVp4YqeAiHKg6GAKwA1G1zKVxE/g79ntflL4VsCGVHbMm91j/ugld+CgUqgoh
- Voc86s3Lq5kywxyfVsLFc4900SNm+ebAYHgcriREedTIBbIMGqj14NoHwaJZewpkm1yTW/d
- 2duj5VeyLyi9IYil/UZ5w==
+X-Provags-ID: V03:K1:/qCN/htDz4AKhRP1SRVkEly9lJ/EdVxl3wnr32vrQTSn2H4li+F
+ 98UWapBufJUUCgb/jdOHOcUmXUWNim+ko0MsONQ8HjFzIB9gWzmLCap+u3ZbPQQdBGYCUFG
+ gUifpZAMBCNSmF6gpQd02KyZh18/quiUD9LUpaoU88bjlSOo76/weEztOGIshy8HnCZxaEe
+ 53d673rSO2r89j81g3Pxw==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:HbzAoq5eogo=;sIPXQNE4knofRYis/3a9bUvfRZl
- 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
- ygIQrFOKRCpw9pTPhQQ==
+UI-OutboundReport: notjunk:1;M01:P0:h1PU/QwLI6w=;z1WFogriBYKTMgm3igtdcArKBWg
+ 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
 
 
 
-=E5=9C=A8 2026/11/18 03:19, Filipe Manana =E5=86=99=E9=81=93:
-> On Mon, Nov 16, 2026 at 10:34=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->>
->> The scrub_write_endio() can race with scrub finishing, which can lead t=
-o
->> use-after-free:
->>
->>   CPU0 (write endio)                  CPU1 (scrub)
->>   scrub_write_endio()                 flush_scrub_stripes()
->>   |                                   |-wait_scrub_stripe_io()
->>   |                                   | \-wait_event()
->>   |                                   |   ^^^ checks the condition with=
-out
->>   |                                   |       taking io_wait.lock
->>   |-atomic_dec_and_test()             |
->>   | ^^^ pending_io hits 0             |
->>   |                                   | ^^^ sees 0, doesn't sleep
->>   |                                   |
->>   |                                   btrfs_scrub_dev()
->>   |                                   \-scrub_put_ctx()
->>   |                                     \-scrub_free_ctx()
->>   |                                       ^^^ stripe freed
->>   |
->>   \-wake_up()
->>     \-_raw_spin_lock_irqsave()
->>       ^^^ io_wait.lock is in freed memory
->>           Too late.
+=E5=9C=A8 2026/11/14 03:26, fdmanana@kernel.org =E5=86=99=E9=81=93:
+> From: Filipe Manana <fdmanana@suse.com>
 >=20
-> I have the same comment here regarding the diagram.
-> It confuses me, it gives the wrong idea that flush_scrub_stripes()
-> either calls btrfs_scrub_dev() or that they are called from the same
-> function.
+> We are using a RCU read section but then we call btrfs_find_device() whi=
+ch
+> iterates the device lists using a plain list_for_each_entry() and that i=
+s
+> not safe it can result in loading uninitialized or torn pointers, leadin=
+g
+> to arbitrary memory dereferences, use-after-free conditions, and kernel
+> panics.
 >=20
-> This can be clearer by using indentation and not skipping functions in
-> the call chain:
+> Update btrfs_find_device() to use list_for_each_entry_rcu() and to alway=
+s
+> define a RCU read section, since we have several callers that don't lock
+> the device_list_mutex before calling it, either because they are within
+> an exclusive operation or because they are in a context where no
+> concurrency can happen (like during mount for example).
 >=20
-> btrfs_scrub_dev()
->     scrub_enumerate_chunks()
->        scrub_chunk()
->           scrub_stripe()
->              flush_scrub_stripes()
->                 wait_scrub_stripe_io()
->                    wait_event()
->                       (...)
+> We also have manipulations of the devices lists that are not RCU safe, i=
+n
+> btrfs_init_dev_replace_tgtdev(), btrfs_rm_device(), btrfs_setup_sprout()
+> and btrfs_rollback_sprout(), so update those places to use proper RCU li=
+st
+> manipulation variants.
+>=20
+> Link: https://sashiko.dev/#/bug/linux-96a9e36b-a712-491c-b210-91c8c4f607=
+0f
+> Fixes: c5593ca3c8a8 ("btrfs: switch to RCU for device traversal in btrfs=
+_ioctl_dev_info")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-The problem is, this takes up almost all space of a colum.
-And the indent is not that space efficient either.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-One space is not enough to distinguish them, and if you go two spaces,=20
-it's no different than using |- or \-, they also take up two spaces.
+Thanks,
+Qu
 
-To keep thing clears and leave enough space for comments, I'd prefer not=
-=20
-to include everything.
-
-Thus I'd prefer to skip the scrub_enumerate_chunks() and scrub_chunk()=20
-parts, only showing btrfs_scrub_dev() -> scrub_stripe() directly.
-
-But in this case, I'd say the btrfs_scrub_dev() part is not placed where=
-=20
-it should be.
-
+> ---
 >=20
->     scrub_put_ctx()
->        scrub_free_ctx()
+> V5: Simplify things by always creating a RCU read section within
+>      btrfs_find_device(), as many callers don't lock device_list_mutex.
 >=20
+> V4: Update stale changelog and fix a use-after-free on a device after
+>      removing it (both identified by Sashiko).
 >=20
->>
->> Fix it by waiting with a completion instead. complete_all() wakes the
->> waiter under the completion's lock and does not touch it afterwards, an=
-d
->> wait_for_completion_io() returns only after taking that lock, so the
->> stripe can be freed as soon as the wait returns.
->>
->> There are locations that we submit multiple bios in one go, with extra
->> care the pending_io can reach 0 during the submission, to address it:
->>
->> - Re-arm the completion when the first pending_io ref is taken, in
->>    scrub_stripe_get_io(). Any previous round of IO is waited for before=
- the
->>    next one starts.
->>
->> - Hold one extra ref for batched submission
->>    This includes:
->>    * scrub_write_sectors()
->>    * scrub_stripe_submit_repair_read() for non-zoned cases
->>
->>    This is the same pattern used in other scrub path.
->>
->> The completion is initialized as completed, so waiting on a stripe with=
-out
->> any pending IO returns immediately as before.
->>
->> This is the same problem fixed for the RAID56 rbio in commit
->> 26eb4d70f96d ("btrfs: raid56: fix use-after-free when waking up the rbi=
-o
->> I/O waiter").
+> V3: Fix some more RCU related issues pointed by Sashiko.
 >=20
-> Just like for the previous patch, I have the same comment regarding
-> the commit ID not being stable here; it can change after rebasing and
-> so on.
+> V2: Fix other existing RCU issues pointed by Sashiko.
 >=20
-> The code looks good.
-> Thanks.
+>   fs/btrfs/dev-replace.c |  2 +-
+>   fs/btrfs/volumes.c     | 69 +++++++++++++++++++++++++++---------------
+>   2 files changed, 46 insertions(+), 25 deletions(-)
 >=20
->>
->> Fixes: 9ecb5ef543d3 ("btrfs: scrub: introduce the main read repair work=
-er for scrub_stripe")
->> Fixes: 058e09e6fe7c ("btrfs: scrub: introduce a writeback helper for sc=
-rub_stripe")
->> Cc: stable@vger.kernel.org # 6.4+
->> Signed-off-by: Qu Wenruo <wqu@suse.com>
->> ---
->>   fs/btrfs/scrub.c | 97 ++++++++++++++++++++++++++++++++++-------------=
--
->>   1 file changed, 69 insertions(+), 28 deletions(-)
->>
->> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
->> index 4b37ae143f61..a8c62a3aea0c 100644
->> --- a/fs/btrfs/scrub.c
->> +++ b/fs/btrfs/scrub.c
->> @@ -149,7 +149,9 @@ struct scrub_stripe {
->>          atomic_t pending_io;
->>          /* From btrfs_chunk_map::stripe_len. Should not exceed BTRFS_S=
-TRIPE_LEN. */
->>          u32 stripe_len;
->> -       wait_queue_head_t io_wait;
->> +
->> +       /* Completed by the last endio when pending_io drops to zero. *=
-/
->> +       struct completion io_done;
->>
->>          /* Completed when the read-repair is finished. */
->>          struct completion repair_done;
->> @@ -357,9 +359,11 @@ static int init_scrub_stripe(struct btrfs_fs_info =
-*fs_info,
->>          stripe->stripe_len =3D BTRFS_STRIPE_LEN;
->>          stripe->state =3D 0;
->>
->> -       init_waitqueue_head(&stripe->io_wait);
->>          init_completion(&stripe->repair_done);
->> +       init_completion(&stripe->io_done);
->>          atomic_set(&stripe->pending_io, 0);
->> +       /* No pending IO by default, thus nothing to wait. */
->> +       complete_all(&stripe->io_done);
->>          spin_lock_init(&stripe->write_error_lock);
->>
->>          stripe->buffer =3D kvmalloc(BTRFS_STRIPE_LEN, GFP_KERNEL);
->> @@ -381,9 +385,25 @@ static int init_scrub_stripe(struct btrfs_fs_info =
-*fs_info,
->>          return -ENOMEM;
->>   }
->>
->> +static void scrub_stripe_get_io(struct scrub_stripe *stripe)
->> +{
->> +       /* The first pending IO re-arms the completion. */
->> +       if (atomic_inc_return(&stripe->pending_io) =3D=3D 1)
->> +               reinit_completion(&stripe->io_done);
->> +}
->> +
->> +/* Drop one pending IO, return true if it was the last one. */
->> +static bool scrub_stripe_put_io(struct scrub_stripe *stripe)
->> +{
->> +       if (!atomic_dec_and_test(&stripe->pending_io))
->> +               return false;
->> +       complete_all(&stripe->io_done);
->> +       return true;
->> +}
->> +
->>   static void wait_scrub_stripe_io(struct scrub_stripe *stripe)
->>   {
->> -       wait_event(stripe->io_wait, atomic_read(&stripe->pending_io) =
-=3D=3D 0);
->> +       wait_for_completion_io(&stripe->io_done);
->>   }
->>
->>   static void scrub_put_ctx(struct scrub_ctx *sctx);
->> @@ -891,8 +911,7 @@ static void scrub_repair_read_endio(struct btrfs_bi=
-o *bbio)
->>
->>          scrub_read_endio_common(bbio);
->>
->> -       if (atomic_dec_and_test(&stripe->pending_io))
->> -               wake_up(&stripe->io_wait);
->> +       scrub_stripe_put_io(stripe);
->>   }
->>
->>   static int calc_next_mirror(int mirror, int num_copies)
->> @@ -941,6 +960,18 @@ static struct btrfs_bio *alloc_scrub_bbio(struct b=
-trfs_fs_info *fs_info,
->>          return bbio;
->>   }
->>
->> +static void scrub_submit_repair_read_bio(struct scrub_stripe *stripe,
->> +                                        struct btrfs_bio *bbio, int mi=
-rror,
->> +                                        bool wait)
->> +{
->> +       ASSERT(bbio->bio.bi_iter.bi_size);
->> +
->> +       scrub_stripe_get_io(stripe);
->> +       btrfs_submit_bbio(bbio, mirror);
->> +       if (wait)
->> +               wait_scrub_stripe_io(stripe);
->> +}
->> +
->>   static void scrub_stripe_submit_repair_read(struct scrub_stripe *stri=
-pe,
->>                                              int mirror, int blocksize,=
- bool wait)
->>   {
->> @@ -953,15 +984,19 @@ static void scrub_stripe_submit_repair_read(struc=
-t scrub_stripe *stripe,
->>          ASSERT(atomic_read(&stripe->pending_io) =3D=3D 0,
->>                 "atomic_read(&stripe->pending_io)=3D%d", atomic_read(&s=
-tripe->pending_io));
->>
->> +       /*
->> +        * Hold an extra ref during submission, so the IO can not be re=
-ported as
->> +        * finished before all bios are submitted.
->> +        * If we wait for every bio, no extra ref as it would block the=
- wait.
->> +        */
->> +       if (!wait)
->> +               scrub_stripe_get_io(stripe);
->> +
->>          for_each_set_bit(i, &old_error_bitmap, stripe->nr_sectors) {
->>                  /* The current sector cannot be merged, submit the bio=
-. */
->>                  if (bbio && ((i > 0 && !test_bit(i - 1, &old_error_bit=
-map)) ||
->>                               bbio->bio.bi_iter.bi_size >=3D blocksize)=
-) {
->> -                       ASSERT(bbio->bio.bi_iter.bi_size);
->> -                       atomic_inc(&stripe->pending_io);
->> -                       btrfs_submit_bbio(bbio, mirror);
->> -                       if (wait)
->> -                               wait_scrub_stripe_io(stripe);
->> +                       scrub_submit_repair_read_bio(stripe, bbio, mirr=
-or, wait);
->>                          bbio =3D NULL;
->>                  }
->>
->> @@ -973,13 +1008,10 @@ static void scrub_stripe_submit_repair_read(stru=
-ct scrub_stripe *stripe,
->>
->>                  scrub_bio_add_sector(bbio, stripe, i);
->>          }
->> -       if (bbio) {
->> -               ASSERT(bbio->bio.bi_iter.bi_size);
->> -               atomic_inc(&stripe->pending_io);
->> -               btrfs_submit_bbio(bbio, mirror);
->> -               if (wait)
->> -                       wait_scrub_stripe_io(stripe);
->> -       }
->> +       if (bbio)
->> +               scrub_submit_repair_read_bio(stripe, bbio, mirror, wait=
-);
->> +       if (!wait)
->> +               scrub_stripe_put_io(stripe);
->>   }
->>
->>   static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
->> @@ -1242,8 +1274,7 @@ static void scrub_read_endio(struct btrfs_bio *bb=
-io)
->>
->>          scrub_read_endio_common(bbio);
->>
->> -       if (atomic_dec_and_test(&stripe->pending_io)) {
->> -               wake_up(&stripe->io_wait);
->> +       if (scrub_stripe_put_io(stripe)) {
->>                  INIT_WORK(&stripe->work, scrub_stripe_read_repair_work=
-er);
->>                  queue_work(stripe->bg->fs_info->scrub_workers, &stripe=
-->work);
->>          }
->> @@ -1269,8 +1300,7 @@ static void scrub_write_endio(struct btrfs_bio *b=
-bio)
->>          }
->>          bio_put(&bbio->bio);
->>
->> -       if (atomic_dec_and_test(&stripe->pending_io))
->> -               wake_up(&stripe->io_wait);
->> +       scrub_stripe_put_io(stripe);
->>   }
->>
->>   static void scrub_submit_write_bio(struct scrub_ctx *sctx,
->> @@ -1283,7 +1313,7 @@ static void scrub_submit_write_bio(struct scrub_c=
-tx *sctx,
->>                        stripe->logical;
->>
->>          fill_writer_pointer_gap(sctx, stripe->physical + bio_off);
->> -       atomic_inc(&stripe->pending_io);
->> +       scrub_stripe_get_io(stripe);
->>          btrfs_submit_repair_write(bbio, stripe->mirror_num, dev_replac=
-e);
->>          if (!btrfs_is_zoned(fs_info))
->>                  return;
->> @@ -1322,6 +1352,15 @@ static void scrub_write_sectors(struct scrub_ctx=
- *sctx, struct scrub_stripe *str
->>          struct btrfs_bio *bbio =3D NULL;
->>          int sector_nr;
->>
->> +       /*
->> +        * Hold an extra ref during submission, so the IO can not be re=
-ported as
->> +        * finished before all bios are submitted.
->> +        * For zoned, we wait for every bio, no extra ref as it would b=
-lock the
->> +        * wait.
->> +        */
->> +       if (!btrfs_is_zoned(fs_info))
->> +               scrub_stripe_get_io(stripe);
->> +
->>          for_each_set_bit(sector_nr, &write_bitmap, stripe->nr_sectors)=
- {
->>                  /* We should only writeback sectors covered by an exte=
-nt. */
->>                  ASSERT(scrub_bitmap_test_bit_has_extent(stripe, sector=
-_nr));
->> @@ -1340,6 +1379,8 @@ static void scrub_write_sectors(struct scrub_ctx =
-*sctx, struct scrub_stripe *str
->>          }
->>          if (bbio)
->>                  scrub_submit_write_bio(sctx, stripe, bbio, dev_replace=
-);
->> +       if (!btrfs_is_zoned(fs_info))
->> +               scrub_stripe_put_io(stripe);
->>   }
->>
->>   /*
->> @@ -1786,7 +1827,8 @@ static void scrub_submit_extent_sector_read(struc=
-t scrub_stripe *stripe)
->>          int mirror =3D stripe->mirror_num;
->>          int i;
->>
->> -       atomic_inc(&stripe->pending_io);
->> +       /* The extra ref is dropped after all bios are submitted. */
->> +       scrub_stripe_get_io(stripe);
->>
->>          for_each_set_bit(i, &has_extent, stripe->nr_sectors) {
->>                  /* We're beyond the chunk boundary, no need to read an=
-ymore. */
->> @@ -1798,7 +1840,7 @@ static void scrub_submit_extent_sector_read(struc=
-t scrub_stripe *stripe)
->>                      ((i > 0 && !test_bit(i - 1, &has_extent)) ||
->>                       bbio->bio.bi_iter.bi_size >=3D stripe_len)) {
->>                          ASSERT(bbio->bio.bi_iter.bi_size);
->> -                       atomic_inc(&stripe->pending_io);
->> +                       scrub_stripe_get_io(stripe);
->>                          btrfs_submit_bbio(bbio, mirror);
->>                          bbio =3D NULL;
->>                  }
->> @@ -1844,12 +1886,11 @@ static void scrub_submit_extent_sector_read(str=
-uct scrub_stripe *stripe)
->>
->>          if (bbio) {
->>                  ASSERT(bbio->bio.bi_iter.bi_size);
->> -               atomic_inc(&stripe->pending_io);
->> +               scrub_stripe_get_io(stripe);
->>                  btrfs_submit_bbio(bbio, mirror);
->>          }
->>
->> -       if (atomic_dec_and_test(&stripe->pending_io)) {
->> -               wake_up(&stripe->io_wait);
->> +       if (scrub_stripe_put_io(stripe)) {
->>                  INIT_WORK(&stripe->work, scrub_stripe_read_repair_work=
-er);
->>                  queue_work(stripe->bg->fs_info->scrub_workers, &stripe=
-->work);
->>          }
->> @@ -1877,7 +1918,7 @@ static void scrub_submit_initial_read(struct scru=
-b_ctx *sctx,
->>          /* Read the whole range inside the chunk boundary. */
->>          for (unsigned int cur =3D 0; cur < nr_sectors; cur++)
->>                  scrub_bio_add_sector(bbio, stripe, cur);
->> -       atomic_inc(&stripe->pending_io);
->> +       scrub_stripe_get_io(stripe);
->>
->>          /*
->>           * For dev-replace, either user asks to avoid the source dev, =
-or
->> --
->> 2.56.0
->>
->>
->=20
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 3c48cc714fef..6f04d0a49d86 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -319,7 +319,7 @@ static int btrfs_init_dev_replace_tgtdev(struct btrf=
+s_fs_info *fs_info,
+>   		goto error;
+>  =20
+>   	mutex_lock(&fs_devices->device_list_mutex);
+> -	list_add(&device->dev_list, &fs_devices->devices);
+> +	list_add_rcu(&device->dev_list, &fs_devices->devices);
+>   	fs_devices->num_devices++;
+>   	fs_devices->open_devices++;
+>   	mutex_unlock(&fs_devices->device_list_mutex);
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a494c913ad12..f128115a3a3b 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2358,6 +2358,7 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info,
+>   	struct btrfs_fs_devices *fs_devices =3D fs_info->fs_devices;
+>   	u64 num_devices;
+>   	int ret =3D 0;
+> +	bool free_cur_devices =3D false;
+>  =20
+>   	if (btrfs_fs_incompat(fs_info, EXTENT_TREE_V2)) {
+>   		btrfs_err(fs_info, "device remove not supported on extent tree v2 ye=
+t");
+> @@ -2483,8 +2484,25 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_info=
+,
+>  =20
+>   	num_devices =3D btrfs_super_num_devices(fs_info->super_copy) - 1;
+>   	btrfs_set_super_num_devices(fs_info->super_copy, num_devices);
+> +
+> +	/*
+> +	 * This can happen if cur_devices is the private seed devices list.  W=
+e
+> +	 * cannot call close_fs_devices() here because it expects the uuid_mut=
+ex
+> +	 * to be held, but in fact we don't need that for the private
+> +	 * seed_devices, we can simply decrement cur_devices->opened and then
+> +	 * remove it from our list and free the fs_devices.
+> +	 */
+> +	if (cur_devices->num_devices =3D=3D 0) {
+> +		list_del_rcu(&cur_devices->seed_list);
+> +		ASSERT(cur_devices->opened =3D=3D 1, "opened=3D%d", cur_devices->open=
+ed);
+> +		cur_devices->opened--;
+> +		free_cur_devices =3D true;
+> +	}
+> +
+>   	mutex_unlock(&fs_devices->device_list_mutex);
+>  =20
+> +	*bdev_file =3D device->bdev_file;
+> +
+>   	/*
+>   	 * At this point, the device is zero sized and detached from the
+>   	 * devices list.  All that's left is to zero out the old supers and
+> @@ -2503,23 +2521,10 @@ int btrfs_rm_device(struct btrfs_fs_info *fs_inf=
+o,
+>   		}
+>   	}
+>  =20
+> -	*bdev_file =3D device->bdev_file;
+>   	synchronize_rcu();
+>   	btrfs_free_device(device);
+> -
+> -	/*
+> -	 * This can happen if cur_devices is the private seed devices list.  W=
+e
+> -	 * cannot call close_fs_devices() here because it expects the uuid_mut=
+ex
+> -	 * to be held, but in fact we don't need that for the private
+> -	 * seed_devices, we can simply decrement cur_devices->opened and then
+> -	 * remove it from our list and free the fs_devices.
+> -	 */
+> -	if (cur_devices->num_devices =3D=3D 0) {
+> -		list_del_init(&cur_devices->seed_list);
+> -		ASSERT(cur_devices->opened =3D=3D 1, "opened=3D%d", cur_devices->open=
+ed);
+> -		cur_devices->opened--;
+> +	if (free_cur_devices)
+>   		free_fs_devices(cur_devices);
+> -	}
+>  =20
+>   	return btrfs_commit_transaction(trans);
+>  =20
+> @@ -2799,7 +2804,7 @@ static void btrfs_setup_sprout(struct btrfs_fs_inf=
+o *fs_info,
+>   	fs_devices->open_devices =3D 0;
+>   	fs_devices->missing_devices =3D 0;
+>   	fs_devices->rotating =3D false;
+> -	list_add(&seed_devices->seed_list, &fs_devices->seed_list);
+> +	list_add_rcu(&seed_devices->seed_list, &fs_devices->seed_list);
+>  =20
+>   	generate_random_uuid(fs_devices->fsid);
+>   	memcpy(fs_devices->metadata_uuid, fs_devices->fsid, BTRFS_FSID_SIZE);
+> @@ -2821,11 +2826,15 @@ static void btrfs_rollback_sprout(struct btrfs_f=
+s_info *fs_info,
+>   	lockdep_assert_held(&uuid_mutex);
+>   	lockdep_assert_held(&fs_devices->device_list_mutex);
+>  =20
+> -	list_del_init(&seed_devices->seed_list);
+> -	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, syn=
+chronize_rcu);
+> -	list_for_each_entry(device, &fs_devices->devices, dev_list) {
+> +	list_del_rcu(&seed_devices->seed_list);
+> +	/*
+> +	 * Before splicing seed_devices, update the fs_devices of each seed
+> +	 * device, otherwise a concurrent RCU reader could get a use-after-fre=
+e
+> +	 * on device->fs_devices still pointing to seed_devices.
+> +	 */
+> +	list_for_each_entry(device, &seed_devices->devices, dev_list)
+>   		device->fs_devices =3D fs_devices;
+> -	}
+> +	list_splice_init_rcu(&seed_devices->devices, &fs_devices->devices, syn=
+chronize_rcu);
+>  =20
+>   	fs_devices->seeding =3D true;
+>   	fs_devices->num_devices =3D seed_devices->num_devices;
+> @@ -7555,21 +7564,33 @@ struct btrfs_device *btrfs_find_device(const str=
+uct btrfs_fs_devices *fs_devices
+>   	struct btrfs_device *device;
+>   	struct btrfs_fs_devices *seed_devs;
+>  =20
+> +	/*
+> +	 * In many cases we are called under the protection of
+> +	 * fs_devices->device_list_mutex, in others we are not, so always use =
+a
+> +	 * RCU read section (if a caller needs a wider RCU read section, nesti=
+ng
+> +	 * RCU sections works fine).
+> +	 */
+> +	rcu_read_lock();
+>   	if (dev_args_match_fs_devices(args, fs_devices)) {
+> -		list_for_each_entry(device, &fs_devices->devices, dev_list) {
+> -			if (dev_args_match_device(args, device))
+> +		list_for_each_entry_rcu(device, &fs_devices->devices, dev_list) {
+> +			if (dev_args_match_device(args, device)) {
+> +				rcu_read_unlock();
+>   				return device;
+> +			}
+>   		}
+>   	}
+>  =20
+> -	list_for_each_entry(seed_devs, &fs_devices->seed_list, seed_list) {
+> +	list_for_each_entry_rcu(seed_devs, &fs_devices->seed_list, seed_list) =
+{
+>   		if (!dev_args_match_fs_devices(args, seed_devs))
+>   			continue;
+> -		list_for_each_entry(device, &seed_devs->devices, dev_list) {
+> -			if (dev_args_match_device(args, device))
+> +		list_for_each_entry_rcu(device, &seed_devs->devices, dev_list) {
+> +			if (dev_args_match_device(args, device)) {
+> +				rcu_read_unlock();
+>   				return device;
+> +			}
+>   		}
+>   	}
+> +	rcu_read_unlock();
+>  =20
+>   	return NULL;
+>   }
 

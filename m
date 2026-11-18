@@ -1,97 +1,60 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.54
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=185.70.43.171
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794962289;
-	b=bxBsrhCS7rLTw2U60lRVW2yLBpcHTOd3uywe0M3wAB13zDLq6wjVvOlMLjGtbFdAWtp5
-	 nrxcFsiBNtVbyDQkXEN6GldX3cbkyP8eTuUurW6pQiYPNmyXH0draj0Obq/ivPgAzzkKL
-	 pNVhKGwayGkeOnfyd6QwZJFcAyzCXnsHLBRl+eHM5u5EdcpFLvR3KqK4M6jAWLS/43Xrs
-	 /8OkmNKpt7ssivCx0a0UjtbpORPJ/N58/r65FcjOwW9+S0M6YkRc5z19LwptUa/y06JxA
-	 C5EpPh4G6kZF9bR2RVkhb5xxJ0LVB2/05MOS+ck0L+NwuIBZC2Steu3zv1eHYiWmbWg==
+	t=1794962910;
+	b=QB+fKLU90nGDsX+wExjQil49xTaGgurDdE58hpqlwO/1ypnEOzMmtfYm7k5wJl88xvaY
+	 BKk1q2FIJjS48tOFJEbhCiNS4YXiKe+8r7pJwjXQZf2YgBLKtshCeB+rc0XGtzDn0XNsc
+	 q2SUI1jxPhUJ0xWglXIK5mi6yh7uNuMv2niGMUU6MF/57tppU777ZMYq05edHlnYeRwQQ
+	 pxne6nArYUBW2b86LyxXqqVY/7KKVvn/exKc4jaUJZSDYoXzgTVFHTs+bSUoYFGQwu38j
+	 98gIhQmtOsg+t5RDMX/IzYEiJyHS7aOvoIWYr+7LCml9JxUKQdL/sQQxtBJ8BuWSOxQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794962289;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=GGx8OzdzqapfevoWWRMRNGEIpX1i/hNz58ZqC4Nkm8E=;
-	b=APBoUBk6g0mMAedtJlvHHz5gpgaQVysENaCCC+/hlRBfAG0pC9PuJL0KkBNHslUTaCBc
-	 HtBiIy311KcQOto605tlAvpQArbmag3Yjp+Vfvz/Ns4Ixes+7E/E7W7qMNc5eup4qDi79
-	 eZiff4yWKh1k+kBzkm7Yvzdrx7bOPzgJvj5EofpDmGLQk6yKMPbvToqudw/s4utVhqVyM
-	 jvyE7hPZsUan6eAnCiQ5c8ITlYoYSKjZH/ODlM5Iz9jiV7iIwO6yjhyMoSXXkbEeKYdS3
-	 zjRVRZvqM/JBaqY0uzHB3QFedryi2tDT3JeGrIImjds2Wf3PxIYttnjd+1qPZ1fmdwQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1794962910;
+	h=DMARC-Filter:DKIM-Signature:X-Pm-Submission-Id:From:To:Cc:Subject:
+	 Date:Message-ID:X-Mailer:MIME-Version:Content-Transfer-Encoding;
+	bh=mw6A9y9mCJDaeXxPPToECiD1RC/0Eef4ZlgQ/93wlhk=;
+	b=tIcon944pG7OptvhOYxbZXsL8zMyQTBxmkBIiao6Vsbbdl6aTAjCOfRJaYGlrN2lm/YY
+	 WVkMS9fSaNQLsq8BB/7wzLx8xyjyjqNI1pZQunUMMDSHFd3cig95M0H2cCnwZucD2S2yn
+	 lxGufsE9v/nIkxVhAZANzb636UDuRT977G7fo5pMocTcNVTQvXgcPL1sMIKMdhe6DrwSh
+	 qECI/pEvQ4wINl43DDTabFS+ogeExA9cYvrk/xrkEyMesQ9lDfFx0N9UL09RVQqGpjfCG
+	 f6Of+YWftJvdHVtXjGqu9/1WwbkS5XIbImwbHsiQgC+PWJ9FCbwV/zTXA7zcXxuBsfA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mV9be3mc;
-	arc=none smtp.remote-ip=209.85.128.54
-Received: from mail-wm1-f54.google.com (mail-wm1-f54.google.com [209.85.128.54])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=raidlab.org;
+	spf=pass smtp.mailfrom=raidlab.org;
+	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=TIgsiGIc;
+	arc=none smtp.remote-ip=185.70.43.171
+Received: from mail-43171.protonmail.ch (mail-43171.protonmail.ch [185.70.43.171])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CCEBE606A897
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 00:38:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CCEBE606A897
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4E5C6606A882
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 00:48:28 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4E5C6606A882
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mV9be3mc
-Received: by mail-wm1-f54.google.com with SMTP id 5b1f17b1804b1-4bb64ef5a14so4342515e9.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2026 16:38:05 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1794962284; x=1795567084; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=GGx8OzdzqapfevoWWRMRNGEIpX1i/hNz58ZqC4Nkm8E=;
-        b=mV9be3mcMTKxVPK4czv5jUUSyCo8ztvwir1wZfprO0UV2FifRWMguzaYEUw0keTJS9
-         aa7+u6pIIdhYauoDM4+P5IpOPAxhXlHZ/G7hA8z7AoCWR2tblnaL4/pE7hntTZ9ulzkA
-         PH4kRz00AHDBDmNauKrGtrktCmS3qDBpi7gPBAcMcp0rKuSdBaTE1PVAptjMY06uxesg
-         Ln5hNyWQN3haPIc0M4L2dJeOm2dJzQWrIaRS8q4ydog+z+MbdGk1VTHFvwzA7+Vr8lxx
-         yzO/pQ3Bt/wsmscivSrnyN7Qxmet29wIL573Bzhm2XBUX4aWJTPi0KEFxvG5qYo3yFNW
-         K+xA==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1794962284; x=1795567084;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=GGx8OzdzqapfevoWWRMRNGEIpX1i/hNz58ZqC4Nkm8E=;
-        b=EF7QFd06lQaYEr1a+tmHlkcetmu0RSDX0Y4+P6cB6Hzb47Kg1e2MlHoPYNcxPCG+Ik
-         St4K3A+RobQ9uNElXd9kGe5nXzJk2GpeREPdpumV6lKQyOmhXjk68PwaMcspzE+V+jJz
-         nLEXrvnkzyqby1Duce/G6kd1uWqc85u8gr1ozmEU3zFY2KgWX5hR/IoLp3EnaFjdDOn1
-         k6ajlVPWzdN31G93gx1qvFjTDCxtdcRbnT0P9EEhp7lZrwD6CZlngj+UH1/uhF0He9B9
-         3n6daRy/AbYzQUx/hgKh23EpdFvn15bSy94hFAHQZAo80OWCq55KPxjZpSPqyjyoiJGk
-         itHw==
-X-Gm-Message-State: APuU4Z97CXdhcvxvj7H+XRoSL70qKaUCX8rNz0fkH/1T9g4qUzKhjRcc
-	4DhrmnIIqhG6u63Q/o/jrm/zipTcxGUkTfUrWlas16XsNjxr8IjkV/gA8tiLnrvNdYU=
-X-Gm-Gg: AYBFou2zu9qWd98slJYhKFexC3wmwbdSpyzQjhD8zY26YTrOv0A708Mxt/JZvo1jpY2
-	HHomj/mY7gmvgkiV1hbEylrj7golkUz8vAds0cuesNHpyQ1IEku5Vw6THIQTirPnl2EqNqn7biS
-	YD8vMjQAI+FKLtdh3zLcX2jCniKSPTFGaUn3aLZliCMSwbuXSzAV1zdCSj6UkqNJUKFqB4JWR2R
-	SRhfZ5kNaMCBj2cpkV+kiOYPbqRzDa2SmQAZcKRiPxzwMlDZspY9n2FHvHBDGccx9gSsaI6xYhh
-	GQZZiWr6QNOHZ2D6UfuHHayXXs+4o6y5J03t7CVXBVyJf+kPvanRyiTdV+J5RCYE6kz2kPfGJNK
-	HKr+a65fd2dm4qHopQJ85wmb4Ipxb+iBfpmLvm8W5HREC73GUOQ26zVdv2qB+OGhzB4mpMGxKjt
-	H4xboWJoob4y6MJoZYoqHFKPINfZmW5VwaO5m99Y0etpox9iEmI9qgoVTFx+1YvkPyHa5fqEkeJ
-	Z5Nxu4Vy6StSbYPh9w2BIHrOJeztzBxOipDOzomofWskLaK32dQ7p4LRjYcP6a1Byz6sSD3UDhS
-	+9AaHrdcGfeBhAxw/3jI1Q+9Hk2xyxB30yYjOXpguRz3HrtVY4mX7/79vrznEY7Oaa0RI/n20Ml
-	JmrCW5rglyHDDbCUyN8HYsoh2AymT5jiAFe+CWx9SOa5Q5h2lxCdnvHBMe0CyVI0KBJPbpdORdO
-	EpNWAx
-X-Received: by 2002:a05:600c:6208:b0:4a1:da58:1ee with SMTP id 5b1f17b1804b1-4bb7da46178mr16130175e9.31.1794962283957;
-        Tue, 17 Nov 2026 16:38:03 -0800 (PST)
-Received: from maskinen.tail34f753.ts.net (c-92-34-161-199.bbcust.telenor.se. [92.34.161.199])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4a655608733sm1552901f8f.22.2026.11.17.16.38.03
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Tue, 17 Nov 2026 16:38:03 -0800 (PST)
-From: Elias Jernberg <eliasjernberg@gmail.com>
+	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=TIgsiGIc
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
+	s=protonmail; t=1794962907; x=1795222107;
+	bh=mw6A9y9mCJDaeXxPPToECiD1RC/0Eef4ZlgQ/93wlhk=;
+	h=From:To:Cc:Subject:Date:Message-ID:From:To:Cc:Date:Subject:
+	 Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
+	b=TIgsiGIcI1wOOe9PDU04o15OrojNhRCaTNcDi/Qxu/dgGneXSKO78UnB/PdUPMw7U
+	 FFtec1ElspCF867Pf7j1zJfnBXSvcN1OTpWzdvkddpIqswP2hGUuj2+Z3XSu/7hJFE
+	 b2QMUgxeGTlDS8N7awX134B/yl9O13s7C1imX9izMzsWJniXZF+LviHqXiTNwHva+P
+	 +O9vqmodT+kKTA6c1ooFzHHaBacYYztdZOusmKqwihyN/hPwqAcRsBzW7MthGhZ03w
+	 NW6uYmtP85QUTx+llXyCr5fWOYtgMoy3jMwyGOq9mfKghQRvDN7/0oH7ipPx51f2Hi
+	 1yQL0BbdQhNgg==
+X-Pm-Submission-Id: 4jTjdN54jcz2ScQ3
+From: Miroslav Cimerman <mc@raidlab.org>
 To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@kernel.org,
-	wqu@suse.com,
-	dsterba@suse.com,
-	mason@kernel.org,
-	Elias Jernberg <eliasjernberg@gmail.com>
-Subject: [PATCH v2] btrfs: speed up steal_from_bitmap_to_front() with a backward word scan
-Date: Wed, 18 Nov 2026 01:37:19 +0100
-Message-ID: <20261118003719.1789633-1-eliasjernberg@gmail.com>
-X-Mailer: git-send-email 2.56.1
-In-Reply-To: <20261114000234.339513-1-eliasjernberg@gmail.com>
-References: <20261114000234.339513-1-eliasjernberg@gmail.com>
+Cc: David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: zoned: wait for the relocating repair kthread during unmount
+Date: Wed, 18 Nov 2026 00:48:08 +0000
+Message-ID: <20261118004808.201460-1-mc@raidlab.org>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,153 +66,212 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-steal_from_bitmap_to_front() looks for the last clear bit below the new
-extent entry by walking every clear bit of the bitmap from bit 0 with
-for_each_clear_bit_from(). In a bitmap that is mostly allocated that is
-one find_next_zero_bit() call per allocated sector below the entry, and
-it is done for every free space entry added next to a bitmap.
+On a zoned filesystem, a read error with another good copy makes
+btrfs_repair_one_zone() start a "btrfs-relocating-repair" kthread that
+relocates the whole block group, and return. Nothing tracks that
+kthread. It takes sb_start_write() and the BALANCE exclusive operation,
+but neither holds off an unmount: freeze protection only excludes
+freezing, and close_ctree() only pauses a balance that has a
+balance_ctl. If the filesystem is unmounted during the relocation,
+close_ctree() tears it down under the kthread:
 
-With 16K pages a bitmap has 131072 bits. On an arm64 machine with 16K
-pages (Apple M5, 4K sectorsize, discard=async, compression on),
-deleting a 4 GiB file of about one million 4K extents, after scattered
-4K rewrites had put the block group's free space into bitmaps, made the
-next fsync take 29 to 36 seconds of CPU. Three sysrq-l samples taken
-during the stall all showed:
+  assertion failed: list_empty(&fs_info->delalloc_roots), in fs/btrfs/disk-io.c:4608
+  kernel BUG at fs/btrfs/disk-io.c:4608!
+  RIP: 0010:close_ctree+0x67f/0x9b8
+  Call Trace:
+   generic_shutdown_super+0x14d/0x540
+   kill_anon_super+0x35/0x90
+   btrfs_kill_super+0x39/0x60
+   deactivate_locked_super+0x9f/0x120
+   cleanup_mnt+0x9a/0x130
 
-  _find_next_zero_bit
-  __btrfs_add_free_space
-  unpin_extent_range
-  btrfs_finish_extent_commit
-  btrfs_commit_transaction
-  btrfs_sync_file
+Without the assertion, the relocation goes on to use the fs_info and
+the roots that the unmount freed (KASAN: slab-use-after-free in
+wait_subpage_spinlock(), null-ptr-deref in btrfs_root_node()).
 
-Scan backwards from the bit below the entry one word at a time instead,
-so the cost follows the run of free sectors that ends there and not the
-number of allocated sectors below it. The result is the same for every
-index: a userspace copy of both versions agreed in about 11 million
-cases (bitmaps of 256, 32768 and 131072 bits, empty, full, random and
-long runs, word boundaries and the last bit). The index is still
-limited to BITS_PER_BITMAP - 1, as the old loop was.
+Do as for the uuid rescan kthread: hold a semaphore from the start of a
+repair until its kthread ends, and take and release it in close_ctree()
+where the block group reclaim work, which does the same relocation, is
+cancelled, before the cleaner is parked. btrfs_repair_one_zone() checks
+BTRFS_FS_CLOSING_START after taking the semaphore, so no repair starts
+once close_ctree() has waited. Unmount now waits for the relocation of
+that one block group, as it already does for the reclaim work. The
+kthread is split in two so that its guard(super_write) is released
+before the up(), which must be its last access to fs_info.
 
-The workload that triggers the stall is the following fio sequence,
-run in a directory on the btrfs filesystem under test. Here
-"end_fsync=1" is the fio option that makes fio call fsync() once on the
-file, after the job's last write, before the job ends. Nothing is
-deleted while the file is open.
+A repair started while mounting has the same problem if the mount then
+fails, as most error paths of open_ctree() (the fail_* labels) free
+fs_info without calling close_ctree(). Don't start one before
+BTRFS_FS_OPEN is set, as btrfs_should_reclaim() does.
 
-  # 1. Write a 4 GiB file with 1 MiB direct writes.
-  fio --name=a --filename=f --rw=write --bs=1M --direct=1 --size=4G \
-      --end_fsync=1
-  # 2. Rewrite it with random 4K direct writes for 15 seconds, to
-  #    fragment it into about one million 4K extents.
-  fio --name=r --filename=f --rw=randwrite --bs=4k --ioengine=libaio \
-      --iodepth=32 --direct=1 --size=4G --time_based --runtime=15 \
-      --end_fsync=1
-  # 3. Sequential 4K direct writes for 15 seconds with an fsync() after
-  #    every write.
-  fio --name=s --filename=f --rw=write --bs=4k --direct=1 --size=4G \
-      --time_based --runtime=15 --fsync=1
-  # 4. Delete the file. No fd is open on it any more.
-  rm f
-  # 5. Write a new 4 GiB file with buffered 1 MiB writes and one fsync()
-  #    at the end. This fsync() commits the transaction that frees the
-  #    extents of the deleted file, which is where the time goes.
-  fio --name=b --filename=f --rw=write --bs=1M --size=4G --end_fsync=1
+Only one repair runs at a time now. Before, a second repair started
+while one was running failed the exclusive operation with -EBUSY but
+left BLOCK_GROUP_FLAG_RELOCATING_REPAIR set, so its block group was not
+repaired again until the next mount. Now it returns before setting the
+flag, and the next read error retries it.
 
-Only the last job is timed. Without this patch it ran at 119-147 MB/s
-(29-36 s for the 4 GiB). With the patch the same sequence ran it in
-0.8-0.9 s (4613 and 5238 MB/s).
-
-Fixes: 200055239604 ("Btrfs: improve free space cache management and space allocation")
-Signed-off-by: Elias Jernberg <eliasjernberg@gmail.com>
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Fixes: f7ef5287a63d ("btrfs: zoned: relocate block group to repair IO failure in zoned filesystems")
+CC: stable@vger.kernel.org # 6.19+
+Signed-off-by: Miroslav Cimerman <mc@raidlab.org>
 ---
+Found with FuzzyRAID, a fault-injection tester for RAID that is not
+public at the moment. The analysis, the fix, the tests and the commit
+message were prepared with the help of an LLM. I reviewed everything.
 
-Changes in v2:
-- Expanded the changelog as requested by Filipe: explained end_fsync,
-  moved the reproducer and the measurements from below the --- line
-  into the changelog.
-- Added Qu's Reviewed-by.
-- No code changes.
+Tested on btrfs for-next (6f4bbde7e036) in QEMU with KASAN, two zoned
+null_blk devices with RAID1 and the raid stripe tree, and read errors
+on one of them, so that reading a file starts the repair:
+- unmount while the repair relocates: without the patch 4 of 4 crash as
+  above, with it 6 of 6 unmount cleanly after the relocation
+- unmount after the repair has finished: works with and without the
+  patch
+- mount with read errors in one device's metadata: without the patch
+  the repair starts during the mount, btrfs_start_pre_rw_mount() then
+  fails ("failed to recover relocation: -ENOENT") and close_ctree()
+  crashes on the repair's uncommitted transaction (ASSERT(!found) in
+  warn_about_uncommitted_trans()). With it the mount works and a scrub
+  repairs the errors.
 
-Notes:
-- The numbers above come from a 7.3-based tree (aurora-silicon/linux,
-  Apple M5 MacBook Pro, 16K pages) carrying this change in an
-  equivalent form. This version was build-tested on btrfs for-next
-  (3aefd67f08f8) as x86_64 UML with W=1, no new warnings, and the btrfs
-  self-tests pass (CONFIG_BTRFS_FS_RUN_SANITY_TESTS, including the
-  bitmap stealing tests).
-- On x86_64 with 4K pages I could not reproduce a clear stall with the
-  similar fragmenting workload (sync after the delete took 0.4-1.9 s),
-  so the effect looks tied to the larger bitmaps of 16K and 64K pages.
-- Prior art: Yun Levi suggested replacing this loop in December 2020 on
-  LKML, as a user of a proposed find_prev_zero_bit()
-  (https://www.mail-archive.com/linux-kernel@vger.kernel.org/msg2402457.html).
-  That helper was never added and the loop is unchanged in for-next.
-  This version keeps the backward scan local to free-space-cache.c.
-- Tool use: the stall was profiled, the fix written and the changelog
-  drafted with an LLM coding assistant (Claude). I have reviewed the
-  change; the equivalence test and the measurements were run on my
-  machine.
+Remount read-only has the same problem: it doesn't wait for the repair,
+and outside the part of the repair where the remount is refused with
+-EBUSY it succeeds with the kthread still running. The next unmount
+then finds the repair's transaction not committed (ASSERT(!found) in
+warn_about_uncommitted_trans(), 3 of 4 runs). I'll send a separate fix
+for that.
 
- fs/btrfs/free-space-cache.c | 30 ++++++++++++++++++++++--------
- 1 file changed, 22 insertions(+), 8 deletions(-)
+ fs/btrfs/disk-io.c |  8 ++++++++
+ fs/btrfs/fs.h      |  6 ++++++
+ fs/btrfs/volumes.c | 49 +++++++++++++++++++++++++++++++++++++++++-----
+ 3 files changed, 58 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index bff6e5b372d6..c599a8f25821 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1269,6 +1269,26 @@ static bool steal_from_bitmap_to_end(struct btrfs_free_space_ctl *ctl,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7775fc768f7e..6af173e65c77 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2965,6 +2965,7 @@ void btrfs_init_fs_info(struct btrfs_fs_info *fs_info)
+ 	init_rwsem(&fs_info->cleanup_work_sem);
+ 	init_rwsem(&fs_info->subvol_sem);
+ 	sema_init(&fs_info->uuid_tree_rescan_sem, 1);
++	sema_init(&fs_info->zone_repair_sem, 1);
+ 
+ 	btrfs_init_dev_replace_locks(fs_info);
+ 	btrfs_init_qgroup(fs_info);
+@@ -4405,6 +4406,13 @@ void __cold close_ctree(struct btrfs_fs_info *fs_info)
+ 	 * trying to stop the async reclaim task.
+ 	 */
+ 	cancel_work_sync(&fs_info->reclaim_bgs_work);
++	/*
++	 * Same for a zoned repair relocating a block group. Wait for it, no new
++	 * one can start after this since BTRFS_FS_CLOSING_START is set, see
++	 * btrfs_repair_one_zone().
++	 */
++	down(&fs_info->zone_repair_sem);
++	up(&fs_info->zone_repair_sem);
+ 	/*
+ 	 * We don't want the cleaner to start new transactions, add more delayed
+ 	 * iputs, etc. while we're closing. We can't use kthread_stop() yet
+diff --git a/fs/btrfs/fs.h b/fs/btrfs/fs.h
+index 2dd167c32d61..3abbe4aa85e4 100644
+--- a/fs/btrfs/fs.h
++++ b/fs/btrfs/fs.h
+@@ -862,6 +862,12 @@ struct btrfs_fs_info {
+ 
+ 	struct semaphore uuid_tree_rescan_sem;
+ 
++	/*
++	 * Held while a zoned repair kthread relocates a block group, see
++	 * btrfs_repair_one_zone(). close_ctree() waits for it.
++	 */
++	struct semaphore zone_repair_sem;
++
+ 	/* Used to reclaim the metadata space in the background. */
+ 	struct work_struct async_reclaim_work;
+ 	struct work_struct async_data_reclaim_work;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f27c0c400a20..4630053d5cea 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -9053,9 +9053,8 @@ bool btrfs_pinned_by_swapfile(struct btrfs_fs_info *fs_info, void *ptr)
+ 	return node != NULL;
+ }
+ 
+-static int relocating_repair_kthread(void *data)
++static int relocate_repair_block_group(struct btrfs_block_group *cache)
+ {
+-	struct btrfs_block_group *cache = data;
+ 	struct btrfs_fs_info *fs_info = cache->fs_info;
+ 	u64 target;
+ 	int ret = 0;
+@@ -9100,6 +9099,22 @@ static int relocating_repair_kthread(void *data)
+ 	return ret;
+ }
+ 
++static int relocating_repair_kthread(void *data)
++{
++	struct btrfs_block_group *cache = data;
++	struct btrfs_fs_info *fs_info = cache->fs_info;
++	int ret;
++
++	ret = relocate_repair_block_group(cache);
++	/*
++	 * Pairs with close_ctree(). Must be the last access to fs_info, the
++	 * unmount may free it as soon as the semaphore is released.
++	 */
++	up(&fs_info->zone_repair_sem);
++
++	return ret;
++}
++
+ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
+ {
+ 	struct btrfs_block_group *cache;
+@@ -9112,19 +9127,43 @@ bool btrfs_repair_one_zone(struct btrfs_fs_info *fs_info, u64 logical)
+ 	if (btrfs_test_opt(fs_info, DEGRADED))
+ 		return true;
+ 
++	/*
++	 * Don't start one during mount either: most error paths of
++	 * open_ctree() free fs_info without waiting for the repair in
++	 * close_ctree().
++	 */
++	if (!test_bit(BTRFS_FS_OPEN, &fs_info->flags))
++		return true;
++
++	/*
++	 * One repair at a time, the kthread releases the semaphore when it
++	 * ends. close_ctree() takes it after setting BTRFS_FS_CLOSING_START,
++	 * so either it waits for the kthread or we see the flag here.
++	 */
++	if (down_trylock(&fs_info->zone_repair_sem))
++		return true;
++	if (btrfs_fs_closing(fs_info))
++		goto out_up;
++
+ 	cache = btrfs_lookup_block_group(fs_info, logical);
+ 	if (!cache)
+-		return true;
++		goto out_up;
+ 
+ 	if (test_and_set_bit(BLOCK_GROUP_FLAG_RELOCATING_REPAIR, &cache->runtime_flags)) {
+ 		btrfs_put_block_group(cache);
+-		return true;
++		goto out_up;
+ 	}
+ 
+ 	task = kthread_run(relocating_repair_kthread, cache, "btrfs-relocating-repair");
+-	if (IS_ERR(task))
++	if (IS_ERR(task)) {
+ 		btrfs_put_block_group(cache);
++		goto out_up;
++	}
++
++	return true;
+ 
++out_up:
++	up(&fs_info->zone_repair_sem);
  	return true;
  }
  
-+/*
-+ * Return the index of the last clear bit at or below @bit, or ULONG_MAX if
-+ * bits 0 to @bit are all set.  Scan backwards a word at a time, so the cost
-+ * follows the length of the run of set bits that ends at @bit rather than the
-+ * number of clear bits below it.
-+ */
-+static unsigned long find_last_clear_bit_upto(const unsigned long *bitmap,
-+					      unsigned long bit)
-+{
-+	unsigned long idx = BIT_WORD(bit);
-+	unsigned long word = ~bitmap[idx] & BITMAP_LAST_WORD_MASK(bit + 1);
-+
-+	while (!word) {
-+		if (idx == 0)
-+			return ULONG_MAX;
-+		word = ~bitmap[--idx];
-+	}
-+	return idx * BITS_PER_LONG + __fls(word);
-+}
-+
- static bool steal_from_bitmap_to_front(struct btrfs_free_space_ctl *ctl,
- 				       struct btrfs_free_space *info,
- 				       bool update_stat)
-@@ -1277,7 +1297,6 @@ static bool steal_from_bitmap_to_front(struct btrfs_free_space_ctl *ctl,
- 	struct btrfs_free_space *bitmap;
- 	u64 bitmap_offset;
- 	unsigned long i;
--	unsigned long j;
- 	unsigned long prev_j;
- 	u64 bytes;
- 
-@@ -1294,13 +1313,8 @@ static bool steal_from_bitmap_to_front(struct btrfs_free_space_ctl *ctl,
- 		return false;
- 
- 	i = offset_to_bit(bitmap->offset, unit, info->offset) - 1;
--	j = 0;
--	prev_j = (unsigned long)-1;
--	for_each_clear_bit_from(j, bitmap->bitmap, BITS_PER_BITMAP) {
--		if (j > i)
--			break;
--		prev_j = j;
--	}
-+	prev_j = find_last_clear_bit_upto(bitmap->bitmap,
-+					  min(i, BITS_PER_BITMAP - 1));
- 	if (prev_j == i)
- 		return false;
- 
 -- 
-2.56.0
+2.53.0
 

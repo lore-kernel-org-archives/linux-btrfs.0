@@ -1,88 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.53
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.44
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795034233;
-	b=bR4EDGh7hzTrYr3j/FY4ijcyphz0rJXq2Iy0Pm43EjdqswMZcymFB+Uq4P8wYB+hdJUa
-	 0s2dThnIo+bTjYMQTYyOkL6fGXgVs4vYQ1i4lYP30fWsmhMYQf2kgqp6Bsv7zi1OUZxSr
-	 5xSsnE1go87RVwUbSu2s9SnUakaCHQeXy0SxlAS7jiPOlAyCjLk1fVm4zalGLU0R94O2l
-	 kuN5P4WlbjuaZThw+b5nAtUZBsz4vk8F7u14AxXWdDyjTIuQbLsWS7v2Jx4CIWgk3Bg/O
-	 RwJz+A0qrbqmQu3xb81bDzP3BEv6Syc9XK5YcQ64FrMqdjJ3FqOsv/y2Q2dc0v9PXSg==
+	t=1795034312;
+	b=rg32RbfVVbBqdSI7Rfl7kQ/1zds6Duh08Gb+EPJmwH0wAO9oZSbn1GMntzTSlTd3huFo
+	 Lbk0KypzT34Fp5tmh11nea6a4j1gDOd1/0s0I3uAmUoz36YeCBnST8EMa5TcOExTHo8Lp
+	 IB/u6exngFwsXo4rqFDjT7SXOXY3mqYeNzv+iIDME2kHVmtxyA7l1GMBnxlP5c98DfwoG
+	 VMPlwh2VmLMkpL7H+SKDIWFyah4Zgkd7DFS1QCwx/Wbus0NdHeP+OoqAUVXhK53xHGlUV
+	 Bcjzmmq6tsJVCX/j7AwvbKbPhuJLjDqckCDdvEi5yxHuk5Z++JLM3qkghQQXkr9NBnA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795034233;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795034312;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
 	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding;
-	bh=AXj5XAIXyOPZnH0h1yeuXtufzs9FJkS5FqXFYfO/IRM=;
-	b=lHi26vl6RVIkF/jN7JNEBa5g2wjf5QB/Zv5MUax1oepz9Jqxh0SBHODx65wunrlV4ntH
-	 ZrOty8tuoNIbnq0hkk+1rB/bqBrWJg8O/BHtTHpbyKBXbVwyMgtia1nydZFhTVGO+0pSs
-	 g2icT86B3axvHwRt1TuFtY7gdNFq492HuO+1dl1u1EBgfkG6CdrQ4MT5JMlk7tKu4xEv+
-	 A5257aCojZyMynlYNHcuF4jzwmxfgqp1XzYGwb4GwhLD4EpIbpcXdOskIJkFt96GT4egZ
-	 41CGL0hZASzNoNfZJvapfjCxoZnxLQZXWSMrhL5i0+E2RZJGICu/cMwM27jRm+XHg/w==
+	bh=gl3uARuCLrvmOuEUSt0jl78CwT5lLVAwnYwWKnlCtjg=;
+	b=AGYPSvChAMBJN7yDoyXqhVBYcrMrtAWdBmDESGlqE1WjVp0iXzkKXVlehKdamCxgzfQI
+	 HT//OrqdQrUdmCNR8TznjDomeLGL5fANPkEi+au0YpxC4XaJiVBuVf1/YUyPEa4qJlugZ
+	 2gNWbCqL/pwDsy6EkoKMEWhUPOju2gG+Wc99kOtLAC+okWwJMqQEISsFnFys9B2cX7bqh
+	 RbV3KO48zLJ8bxFWHFO3R5gIABQ1JUNd24qcfU3wAHX2s6fwNKzBqrGIUTuUrjkuWx6C4
+	 DFzZwzpXGbrcJ1Rl8tZHGMA1H8DSre3Yk/sNt4iFXxN8Qs3V0N3jrhx8Tjh2rY+4ncw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=dsAQiv1E;
-	arc=none smtp.remote-ip=209.85.218.53
-Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=aMjMPqIK;
+	arc=none smtp.remote-ip=209.85.128.44
+Received: from mail-wm1-f44.google.com (mail-wm1-f44.google.com [209.85.128.44])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C25C3606A331
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 20:37:12 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C25C3606A331
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 09CF1606A331
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 20:38:31 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 09CF1606A331
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=dsAQiv1E
-Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-c505186727fso218630366b.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 12:37:12 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=aMjMPqIK
+Received: by mail-wm1-f44.google.com with SMTP id 5b1f17b1804b1-4ba013938d7so14856745e9.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 12:38:31 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1795034231; x=1795639031; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1795034310; x=1795639110; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=AXj5XAIXyOPZnH0h1yeuXtufzs9FJkS5FqXFYfO/IRM=;
-        b=dsAQiv1Eftk7IJH1p/el8h1FglAzkeKj832z7mjHYk7TVaUsh6k9F9zDbW7kDbgpHm
-         NhoIMwsEHAtIPBFLrxhC2KeFQRsRihSRB17MEEkxyuUzbiOMZyIFDU8R7AEx9u0Xx2+0
-         8/LlxgHDt+2Xbqm53FbJbukv5V0bv1ovDNPKWvTVFJJQGnp4J4WfayEJAVtFhANvyv6N
-         KKV9XT0RKxiRux42ZyBRt9c/stQ0CwiJsZWdQ9qyPFD2L8bcwnZuWeIDdVa+kqddBzo+
-         92UWyjwhmPb/eAO2Avjz0I5C/go7CFtqIbf8mRDGt/e0/Boboz+YZwXxYgrF2LecnGoD
-         Q/Fg==
+        bh=gl3uARuCLrvmOuEUSt0jl78CwT5lLVAwnYwWKnlCtjg=;
+        b=aMjMPqIKTeoUDpBgnMIqwkeYUd0CBMu/ebiA1IObULvrIXU2b8hu0MhxRqN4vGMBe2
+         6e4QpLWrODjeS8x/3VFhJV2e+/oPGqmXBLolqnoJ97EtdwZTBsJ+3vP4khGLjB9U7S1c
+         ic8Sf4Ko+ZV6WOHmoSmTrXW/zlCyWfP3ygTRmYzsBAGynkOK75a8nG3jc8V1rCfQSAb+
+         s3zRFpYRITW/QUa5bUD4mXjprH5yy6u8KowlmJrdBmbL5A8MT5ymTHsCzoUEYM5gzSqC
+         gGc5WYxxqGGtjQklZfBz936Jdp4ZAV7QHQNn1ySvjQ1cEyXyynywM4Klj+/3HWPUYhK1
+         Sypg==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795034231; x=1795639031;
+        d=1e100.net; s=20260707; t=1795034310; x=1795639110;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=AXj5XAIXyOPZnH0h1yeuXtufzs9FJkS5FqXFYfO/IRM=;
-        b=DR63iYhfF0nEuUs9kClPJYSC81N1irc6QEsbVOWC6w2K/FBasGEwNjiehzDADIXiKn
-         8JO7OTju2KCM023TRKf6ET835dXxQOlWIjGDUubnz1yorm9Mye3+Jq123kBz8KvF2ol2
-         hGRWOCmHRZTRM5kz/x/uARQE2rw6+BMHNevSax2OIjUiDzktKBCH4JAQnwBOokkXiYKi
-         Cs0wVukOqiAyon85nCcRee+dBXar9F6C0Lg8r+14PxXlt+HAZy2pHDZb6IcB2DMyYbnu
-         rhOz9trLL/y7jPhuIxIUfCPogrc5esRJUTBZpsVXhRIkR3oSOGDDx7vpYV8PMGXoP9Qg
-         PVIg==
-X-Forwarded-Encrypted: i=1; AL+hErEExWd/BKteeaJGG0MX8kC1as41vHAUaxrhNQ29xtKHXJIXEvoI0hukFmeMG8uQNJrbYCGw2oCgnm8/cw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/aCDWE8u7YXz1th3IGbyxKL9SuxkckfLpUQWlFVxZq3LB6Hp1g
-	ZZAaj94Vzcag27bwxw/Jsi5cETz5he3bm1SYZO+IJdEfVgGvKKlkKvipJXgLn3ID1v0=
-X-Gm-Gg: AYBFou3zrXvgAdrptPYOnkMa0i3HxQam7NP18ghtHTUVPlGExbLqP4zWDy3LA0M2c5A
-	0zoOWQId8sDBqLvhcUJpor5+vBiaJK0NqqsnfeL+0DZi0wjjdyV2jXqv13eb1gs6iotxdq3++YL
-	o1mGNp0qJjXBvIbc2FR9+znEyRqAAYNrDDK/QeAYUjnZ+ed8mB4EKMCMQTKeZUN2ZiaVmJLR83m
-	Jz78ez1X+LNI0MAOyrK2l4SjxFIjIwi9q5RxSUpNarifogSSAQto0RJvmZPu97RZ1JTjbGg/fHy
-	Dt7KwA1Eev52U9QHhOT+jvm/9b5r1RPU14GGrbAjzJF377Bhc3nDGO8ugtXev6yb8ALFqcV7c5t
-	tGS6K7qrZSYWrPT5notoqvIMnrlkeeB/a2mte4byn2KSACM+wHzc5LLYQyaGxR15N/lrpMrpTVM
-	RlJgDdwypkX5R5DsAS4XS2Eeoz9yr79RY27+ucAIPC5JqaoD4QRgou2GuMP0jSOql6QFEDrfVmW
-	3yJb/FMzPZ0Knot8vqjYj/QDpBLiQGcI9mfwoIM9eSeo1QjMXIIUcKV6zq1EZaHC4baEdRk49QJ
-	Lpct0oi8Wi7k5sJXqzlakg==
-X-Received: by 2002:a17:907:7b93:b0:c46:a5bb:5740 with SMTP id a640c23a62f3a-c510deb706emr381419266b.5.1795034231032;
-        Wed, 18 Nov 2026 12:37:11 -0800 (PST)
+        bh=gl3uARuCLrvmOuEUSt0jl78CwT5lLVAwnYwWKnlCtjg=;
+        b=PQZM/2KrvUtvjULMv4Ul8Ijct63GguwzygQJ9nHl4VdWvN9VVo20QVMbcAyCgUBPfX
+         /piW/LpZ/qRp7MwGrQ4AXHGNF0/LTuxvGgKtAN9XoAj49l2AAacawYS1oTM7fqGEQVcL
+         Fj2plxfPqoBL8s5ggi3feGMQD2/UEsUVWVR7CG1SVfiI7AK1TVx8AIR+fo7ZK6nW1Mua
+         WDv85yCpa7fJnno0ImUcJDmcFmk8S4tNYHGVi5CX2/dlamc8h8GFM1Y8gJTuQgRbeyyC
+         Oa4UVkyBwox02h6eHB8VUpCtfxCsv0L6UdrVQps/tDKQrI7XldQWXUPq446ZdtFz3qyd
+         x+JQ==
+X-Forwarded-Encrypted: i=1; AL+hErGR1RJDX7VJcUrHy6eeL4KOuaV+6aX9J40u21qVpJoQ9fj8/wDtJZq9raPjzdrr2lFWbGe/+f4qh38fkQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z8G5KzU0S9CqnpcI3GwcoWbtuA7c30IbRLbUdg/jhStm4vcCHH2
+	lGEuOlX9pZd46a336Tfu84kb0I7y/tHT7Syqe+DtWEfzaC3hiVHgIGBs0k1D3r8T7T4=
+X-Gm-Gg: AYBFou34to/glAAqzvBnwua4Rctxskctws704cwbxxILv79mpqypk0S+Y6WaFJ30H10
+	8SuzsywXmX+4yi2nPFe7U+prORL77WS6+Ievk3jR5ZNa74ovLmKfLBAwNbCBfYYkfSJwhEdqinm
+	uBXbe6C81TAPuoaQI9qEJ0/PkcJijufGMfgkAkg5h73OQ0AJnlxCtI3b9OoOYXBSfzsLbSvu6Ii
+	JicdAxOD35RL8fQI/ml3krCZOHs76Id0HWtV2uKZTgrfPzTaJoeeVqJNtRe6USNO7pPI25i5RIb
+	Wd7/LEVvqQvkpgwNl1bkJ0u1hsYH/y+2VmIRU7p3sMvvjgjPfoK7j/Odo1k97w3Kz+IQwhRN+gV
+	crCmxy219inNLgF2LcTvbpkekClKnV3013D6Wu++YAhv4nT9QgIi4mBCuZuVIq90yJaV+kmRNHH
+	BGNyOXR6goEMw3rKRWcV9FOwy5Gbz/mWfNlB17R273g56Zj2DP8404JU4ZWGDhiau64f8yF+I6j
+	XnYJ8jesiEUzVvjjYriO5iNLXttTEH/0l8u/MGaYYge05YiV5GdpB1MHkS08nr+caCPQT/oTwPR
+	w3P+U722neyP4UrT3Z7mOw==
+X-Received: by 2002:a05:600c:6298:b0:4a2:397:73fd with SMTP id 5b1f17b1804b1-4bb7da1b37fmr77157215e9.12.1795034310161;
+        Wed, 18 Nov 2026 12:38:30 -0800 (PST)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b3d56ec725sm2566470a91.4.2026.11.18.12.37.07
+        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b3f687baaasm841803a91.2.2026.11.18.12.38.24
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Nov 2026 12:37:09 -0800 (PST)
-Message-ID: <ee3cc2d0-6991-4d7a-bbd6-a84972d44b37@suse.com>
-Date: Thu, 19 Nov 2026 07:07:04 +1030
+        Wed, 18 Nov 2026 12:38:29 -0800 (PST)
+Message-ID: <da879d7e-7790-4507-bfbc-55a78fe20ddc@suse.com>
+Date: Thu, 19 Nov 2026 07:08:22 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,13 +93,14 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: scrub: don't count zoned repairs as corrected on a
- degraded mount
-To: Miroslav Cimerman <mc@raidlab.org>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- Naohiro Aota <naohiro.aota@wdc.com>,
- Johannes Thumshirn <johannes.thumshirn@wdc.com>, linux-kernel@vger.kernel.org
-References: <20261118175637.60283-1-mc@raidlab.org>
+Subject: Re: [PATCH v2] btrfs: fix bytes_may_use underflow after a failed tree
+ block allocation
+To: Vlad Poenaru <vlad.wing@gmail.com>, dsterba@suse.com,
+ linux-btrfs@vger.kernel.org
+Cc: mason@kernel.org, osandov@osandov.com, josef@toxicpanda.com,
+ fdmanana@suse.com, boris@bur.io, quwenruo.btrfs@gmx.com,
+ linux-kernel@vger.kernel.org, kernel-team@meta.com, stable@vger.kernel.org
+References: <20261118170332.992625-1-vlad.wing@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -126,116 +127,71 @@ Autocrypt: addr=wqu@suse.com; keydata=
  0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
  os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
  UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261118175637.60283-1-mc@raidlab.org>
+In-Reply-To: <20261118170332.992625-1-vlad.wing@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
-在 2026/11/19 04:26, Miroslav Cimerman 写道:
-> On zoned devices scrub can't rewrite a bad copy in place. It calls
-> btrfs_repair_one_zone() to relocate the block group instead, and counts
-> the repaired blocks as corrected.
+在 2026/11/19 03:33, Vlad Poenaru 写道:
+> When btrfs_alloc_tree_block() fails after btrfs_reserve_extent() has
+> succeeded, its error path gives the block back to the block reserve,
+> although the block has already left bytes_may_use. Each such failure
+> leaves bytes_may_use a block short, and it underflows and warns in
+> space-info.h when the global block reserve is released at unmount, or
+> earlier.
 > 
-> On a degraded mount btrfs_repair_one_zone() relocates nothing ("Do not
-> attempt to repair in degraded state"),
-
-I think this is a little weird, any special reason for this in the first 
-place?
-
-> but scrub still counts the
-> blocks as corrected and logs "fixed up error" for each. The bad copies
-> stay, and the next scrub finds and "fixes" the same errors again. With
-> zoned RAID1 mounted -o degraded with both devices present and read
-> errors in one device's metadata zone, two scrubs in a row both report:
+>    btrfs_alloc_tree_block()
+>    |- btrfs_use_block_rsv()
+>    |- btrfs_reserve_extent()
+>    |  \- btrfs_add_reserved_bytes()  <- bytes_may_use -= blocksize
+>    |- btrfs_init_new_buffer()
+>    |  \- alloc_extent_buffer()       <- fails with -ENOMEM
+>    |- btrfs_free_reserved_extent()   <- bytes_reserved -= blocksize
+>    \- btrfs_unuse_block_rsv()        <- block rsv += blocksize again
 > 
->    Error summary:    read=96
->      Corrected:      36
->      Uncorrectable:  60
+> Since commit 19d7f65f032f ("btrfs: convert the buffer_radix to an
+> xarray") in 6.16, alloc_extent_buffer() can fail this way under memory
+> cgroup pressure, because fs_info->buffer_tree is memcg-accounted.
 > 
-> Count such errors as uncorrectable, which the uapi header defines as
-> "no intact copy was found or the writeback failed". Dev-replace, which
-> writes the repaired blocks to the target device, and read-only scrub
-> are not changed.
+> Return without giving the block back once btrfs_reserve_extent() has
+> succeeded.
 > 
-> Fixes: 54765392a1b9 ("btrfs: scrub: introduce helper to queue a stripe for scrub")
+> Fixes: 67b7859e9bfa ("btrfs: handle ENOMEM in btrfs_alloc_tree_block")
+> Cc: stable@vger.kernel.org # 6.16+
+> Reviewed-by: Boris Burkov <boris@bur.io>
+> Signed-off-by: Vlad Poenaru <vlad.wing@gmail.com>
 
-I do not think this is the correct fixes tag, that commit is just 
-calling btrfs_repair_one_zone(), and btrfs is already calling that before.
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
-> Signed-off-by: Miroslav Cimerman <mc@raidlab.org>
+Thanks,
+Qu
+
 > ---
-> Keeping these errors as corrected and only logging that the repair was
-> skipped would leave a false positive: the counters would still report
-> the bad copies as fixed, and the next scrub finds them again. A new
-> counter for errors with an intact copy that were not written back would
-> be another option, but it changes the uapi. A read-only scrub, which
-> also counts errors with an intact copy as corrected without writing
-> anything, is not changed here.
+> v2:
+> - Shorter changelog, built around a call trace (Qu Wenruo).
+> - Dropped the code comment (Boris Burkov).
 > 
-> Found with FuzzyRAID, a fault-injection tester for RAID that is not
-> public at the moment. The analysis, the fix and the commit message
-> were prepared with the help of an LLM, which also tested it. I reviewed
-> everything.
+> The code is v1's apart from the removed comment, so v1's testing stands:
+> its reproducer leaves bytes_may_use below the global reserve without the
+> fix and not with it, and fstests btrfs/002, btrfs/220, generic/475 and
+> generic/476 pass.
 > 
-> It also applies on top of "btrfs: scrub: fix several races which can
-> lead to UAF" (v2), with offsets.
+> v1, with the reproducer:
+> https://lore.kernel.org/all/20261113170926.1468850-1-vlad.wing@gmail.com/
+>   fs/btrfs/extent-tree.c | 1 +
+>   1 file changed, 1 insertion(+)
 > 
->   fs/btrfs/scrub.c | 22 +++++++++++++++++++++-
->   1 file changed, 21 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 98362c91bce4..9dcb0e7e3d0b 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -323,6 +323,12 @@ struct scrub_error_records {
->   	 */
->   	unsigned long init_error_bitmap;
->   
-> +	/*
-> +	 * Set if the repaired blocks could not be written back, thus all the
-> +	 * initial errors are still on disk.
-> +	 */
-> +	bool repair_skipped;
-> +
->   	unsigned int nr_io_errors;
->   	unsigned int nr_csum_errors;
->   	unsigned int nr_meta_errors;
-> @@ -992,7 +998,7 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
->   	struct btrfs_fs_info *fs_info = sctx->fs_info;
->   	struct btrfs_device *dev = NULL;
->   	const unsigned long extent_bitmap = scrub_bitmap_read_has_extent(stripe);
-> -	const unsigned long error_bitmap = scrub_bitmap_read_error(stripe);
-> +	unsigned long error_bitmap = scrub_bitmap_read_error(stripe);
->   	u64 physical = 0;
->   	int nr_data_sectors = 0;
->   	int nr_meta_sectors = 0;
-> @@ -1003,6 +1009,11 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
->   	if (test_bit(SCRUB_STRIPE_FLAG_NO_REPORT, &stripe->state))
->   		return;
->   
-> +	/* Not written back, the repaired blocks are still bad on disk. */
-> +	if (errors->repair_skipped)
-> +		bitmap_or(&error_bitmap, &error_bitmap,
-> +			  &errors->init_error_bitmap, stripe->nr_sectors);
-> +
->   	/*
->   	 * Init needed infos for error reporting.
->   	 *
-> @@ -1227,6 +1238,15 @@ static void scrub_stripe_read_repair_worker(struct work_struct *work)
->   	if (!sctx->readonly && !bitmap_empty(&repaired, stripe->nr_sectors)) {
->   		if (btrfs_is_zoned(fs_info)) {
->   			btrfs_repair_one_zone(fs_info, sctx->stripes[0].bg->start);
-> +			/*
-> +			 * On a degraded mount btrfs_repair_one_zone() does not
-> +			 * relocate the block group and the bad copies stay,
-> +			 * unless dev-replace writes the repaired blocks to the
-> +			 * target device.
-> +			 */
-> +			if (btrfs_test_opt(fs_info, DEGRADED) &&
-> +			    !sctx->is_dev_replace)
-> +				errors.repair_skipped = true;
->   		} else {
->   			scrub_write_sectors(sctx, stripe, repaired, false);
->   			wait_scrub_stripe_io(stripe);
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 9b0a5c6b96f3c..8d4c66bf850bc 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5433,6 +5433,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+>   	free_extent_buffer(buf);
+>   out_free_reserved:
+>   	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, false);
+> +	return ERR_PTR(ret);
+>   out_unuse:
+>   	btrfs_unuse_block_rsv(fs_info, block_rsv, blocksize);
+>   	return ERR_PTR(ret);
 

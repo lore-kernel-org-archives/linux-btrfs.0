@@ -1,83 +1,97 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.42
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.210.49
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795020651;
-	b=MjHGmEgEN4psyPed2QVUnbXFVia/PvkRSZ8pgjj8odGaK5aNgfIykod2NeB0TZA6nOm8
-	 L8DetjCslM+JDC9UOn8vkLdaL8UXKZByCaGpl0EMin6fGMIWcQLezbQtenzeY+4QX5tKv
-	 4d49E4Nj2CpwVlquR5kIx9isAk1R3usu9UiU/QX0PZWAQLgxbRzot90y65tvjIbNS1LNv
-	 Ord5DXbfNhwLRxLPXsURaivCdHicwYMXWg8p6baVyYksR8E5G4m+BlJYLXrYnhLHzGWOv
-	 4fOarH+48PsiGjH35ZJLkrm8g4OTwJDvMBufF433wHs+q/HAfcnY6H3m3NEbQE4Y/+w==
+	t=1795021423;
+	b=W+MJu3+7/Ej6k4gPRnD7XjylhXFoP/EX3ZStPC3vANSypRXnrCaDmfvkpadQa6wmzZp9
+	 ny+SHxZZb4DR0YyUdPn6kuP3hyd+xy+KA1RsyX7KMHY+uPro6gYqKOmcse9KHUNO65Yad
+	 96Xpj0sW5+N3eFaKflCFK15NTyJ5UBCdVoMHeysrTagCk+xRpajD6cDaKSgl3S9ngHVJ1
+	 lWAleSNeSdWRbrlSIB/yjr1b4gJ/2YZjrypd2arzQ0kSouWLKk8qlqP4eBkTGtgwhC4Dw
+	 sunTjmdLe8EVrGF61x8JtC+qL0eG6r5+hq8n6ZY4JJiSBfmW3eA7kNH/sOsALK1Qjxw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795020651;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795021423;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:X-Mailer:
-	 References:In-Reply-To;
-	bh=m3pvNF133wcwSGy+HdLA8hjMu+z12FMemfmO2dtjbkM=;
-	b=dd7gV2Z9j1f06t1YK/h3qAw6O8Y+fbDUHggKk9NJsT7P0U4Y4+agSMH1g4VDvKgqNLos
-	 iBQZrE6FtqNBVZmzoV57V5b5hbzAPiCR+urrtbSAh6s484ybWWld4JYRA/wm7UA+2ohc2
-	 sGUw20hWzxBhG94AY8fEP+DGvlDlFHwxSrMxytg90mRX4emAZP/k9aP9hRWoKMqMiIE8p
-	 nQTlp0AOP3QwHv/Z+qyUmvatMU8siWDY+z/RQWRrk1SapzL8szqH4Qf0Rh2B3ZWVrtmPB
-	 vREGtPxUSPyfPQrSaw/QxArAKaM9u5QXgs6wfWItuHsBngrKtlrQVtKZHgQXSX0tLWw==
+	 From:To:Cc:Subject:Date:Message-ID:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=UaVcyNlEXvHCvSegf7DdOWk+AJHnO+R6lg7onpWBTLM=;
+	b=ukPr1nDhDfjRzD5Vdro1Fp/Jy09v8zfLTGg/kH2RW6lOgkNgEknLptS50R+RS/eNzh4a
+	 /yI9yvpcPIiiLM6+yBpYUdS3KnqGpyD6GH2mzGHlKCYXdgR4ewBMCPgmvmdHf8+ffSRqu
+	 xXznBgGoIZdbr58meYQO8Huupt1gUEA9G1AA9m5mZAvwbmpuZYiRncY/c54FHk/MMJwDo
+	 6b094hBYm1/Tmtn4IadEmH1JoS+prP4CpMukxC39OhUFVznFxkuVP95uIliBoSKZDhd07
+	 6dQarVBH9Ag5xRVkatHtM7Cz4sNfAg7AhRTpuCrWh9/maGrUBx5AGbRCEg5HatfDPiQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmail.com;
 	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pAt6ghYd;
-	arc=none smtp.remote-ip=209.85.221.42
-Received: from mail-wr1-f42.google.com (mail-wr1-f42.google.com [209.85.221.42])
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mOwwJznX;
+	arc=none smtp.remote-ip=209.85.210.49
+Received: from mail-ot1-f49.google.com (mail-ot1-f49.google.com [209.85.210.49])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 38E3360A2611
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 16:50:51 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 38E3360A2611
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8B20E60A260D
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 17:03:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8B20E60A260D
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pAt6ghYd
-Received: by mail-wr1-f42.google.com with SMTP id ffacd0b85a97d-49d64a88222so1522189f8f.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 08:50:51 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=mOwwJznX
+Received: by mail-ot1-f49.google.com with SMTP id 46e09a7af769-8490a7d6696so697031a34.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 09:03:43 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795020650; x=1795625450; darn=vger.kernel.org;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=m3pvNF133wcwSGy+HdLA8hjMu+z12FMemfmO2dtjbkM=;
-        b=pAt6ghYdJ/7/HTIaJO6x4Wuc0RCUjEjzeD/MJj4QrpUWOv7saFOFm6foATaUxUurqB
-         jLBwoBDZMtIzTdKmn/s+HJmfNDwmN/jYWy2a8oG74Il8wPXklVF/ZALAxDgIuYdkd+D3
-         ceh/NpyqW0XTixDdf0q68XM66B36EaX3cfRpDmysDDCy+PuExDokiO/xVmOO5KkQ751V
-         8T9fpnnH4mSXT2zNUaHg8bPeCyqwwqKWzAz0XEK2rh3bUBTZZx6PKMIrdK1DwOxDdF6S
-         Xc4S+6zeDuayTBdb5OEXpV+Fk9gb/KN6tk4sQGu5caOPWrDhh17g11G2ZrDpE+FrCkaX
-         S8eA==
+        d=gmail.com; s=20260707; t=1795021422; x=1795626222; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=UaVcyNlEXvHCvSegf7DdOWk+AJHnO+R6lg7onpWBTLM=;
+        b=mOwwJznXdq/mL9a1/tRYiu+9aHrPlamFRSWHPx0O36q9m1DP0sFU3+p9VaXqjV9+Jc
+         MHRPPQyaH6plbzz+MRt03IENGzTCFWtIU2eB6RDCK/vXwdZ3FIYebVbtzwU68gaL+/YL
+         svImR0bmonJzBwIrCZkIeL2mFLfBOb0UYMwLIM3rpOA9Rx0s1aEgxxJziWKfhhCyP6h5
+         geqrqUdZrc7VGULz5CGgt6SNcvKLjmcItUpgyqAgUBH5zB+tze7iTqdDztLygklSMQsv
+         CDA8M9ne2KsRlZRTbIJYPmcmkdYmXliMxsuKVjRfHlL7z45p5d8Bv8061oC7JWLDorFM
+         JKkQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795020650; x=1795625450;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=m3pvNF133wcwSGy+HdLA8hjMu+z12FMemfmO2dtjbkM=;
-        b=1PrLoCjQuSqAzAUcuROhQcRsfeqGNJg9kbtN6qxeHgT1tolZwoAxuJCMUsQxD3eKNo
-         7AOaVPNFgr6GE5Oe5sEDlS750/Nfn8KGK80sE5HC0s6mECXgCa5768xL8hYhSpNgoCeT
-         CNGAK6GliGj8K6xX5H0WO0QOi5X1xHzZZYzwiWKfYwWD4310p6FHPU24+h+RgGzpBsJj
-         zc6tn4xYCh2HBt74Yo7lU0ZLkSqtFUEHkw/tWo947L9wrSq2ZkZaTUenhDReJgqIgfgV
-         IKtwniiJhFGXIPkwVUl4ey31u60apOCAdJiVv8PhFexurIlTkkItUWj9SQWJSD4pNJFo
-         D/Fw==
-X-Forwarded-Encrypted: i=1; AL+hErE0KjIOp9gjiLnFeqCetqM+rbf6kQQkZVe6d4uLJyUFb8VNihBLZKLzvZ9kz8jBBuV7LCV7kMwGBVH5sQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9C/hd5Ffgf+XO5mkKr4QegDqcW1sS2wcVq49i2WZDR+fjabo0u
-	Q5C9/V4IsQD1ALveTB3m62TWp5ihJgFNVWf3Biybp4w1Wv1fsvrwCYrY
-X-Gm-Gg: AZFdTZc7p40OrOWiyQXt1yxQX4bMH2H/D2X/xTo04O2ovibiNSaX7i1SeRVefoYfqOg
-	8Wh0Qex7NgqpwMvQG7xTILGxvyKL1upfGdGWUcd5kdphM+pmnELTS8so1Bmth96ezMgwIMPMiL3
-	nhGQz8r1Knp+0Qn6u1Wk0YPDtpx/u4NcmUSCpw0b09AWvILZ8gGXWjGc0GBfyJe6vSVAkm4LdsI
-	Mo/uTATz+yCA+RXlvSH7bAQvClN/1ewKP2MDILFAVM0tbFgegb76oHecYihYVxGzHwASEZD/mdG
-	Mbkxj2xKda1R893/pCnjERWsjc88kbNTI+1W1/TxjoJ+ZrzEsfuf5qE2qKACTGYZBe24n2KRS1Z
-	RdhX1uDDA+lF3TlkJ+uYE9P7aU98bWa7YVZ/yO6ioTsLc8vAKOLzT8hElv/4irEsPQ9VAn926pM
-	5SY7+v74LAQr+6F6XZ/XanYDbhaVrspTBit8/cGJxmwx3vnykwA4S79vEwheBrvilegEqS59VCK
-	zlOcFrG4FglYLGoYK9WZQXDDvIojbpGrwss4i1OmWFyNOJMvpovDG7tivVody3+wP8TcYr6db25
-	N4UaVGXwD4G8W7Q4BF+Ca7DrEiQ=
-X-Received: by 2002:a05:6000:29d6:b0:48c:585b:8825 with SMTP id ffacd0b85a97d-4a8e60ff7eamr118137f8f.18.1795020649313;
-        Wed, 18 Nov 2026 08:50:49 -0800 (PST)
-Received: from localhost ([2001:b07:5d26:7a6a:de3b:51f3:e461:c0df])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4a650d2ecd0sm6451582f8f.8.2026.11.18.08.50.46
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 18 Nov 2026 08:50:48 -0800 (PST)
+        d=1e100.net; s=20260707; t=1795021422; x=1795626222;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=UaVcyNlEXvHCvSegf7DdOWk+AJHnO+R6lg7onpWBTLM=;
+        b=T+sEYyuBOa8HhrUCbYvTn2UVcVvt+zaFYyG7acWNZqEOgsPIslC8WwK/t6QLPCbhnp
+         vRQOteMQHma+62e34v1bNtOaZ2AuaR4CDcBQXUMmCNoqhmBSDjhwufAH11kw5XSvsYVT
+         dMw4/r/ZZpsBMsdgLvAeir7TkyLq0e95JTVtQkF1NxgAxs7hieWSDo6ZfvMzbdlkMMw0
+         csQIst7eMR42yXiaoqmy6T0o9EOlF34bENvSZXAojQ9JAaKqZxyvpUWBwJgjx4oU1pKq
+         ZSjPJ1dWVqVivwntW0GmC1ZZnaHQ8lxXC4BzZiokB+vxeUacQrdOWKAnhf+BQVAkFVtS
+         OH7A==
+X-Forwarded-Encrypted: i=1; AL+hErGPtOno3nLCHJ5R50ecvh3ISSLS4yYV/nqmHzwV05/d6ccmAoKJavoRLISmOgf8h2t0d7KMuyzJVlUEUw==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9ms47Z0SCoFhkKQKMPjm4/Hc6yzzKvtBmqlTHeSilgsCF/sSKy
+	lUvh6bKbRHoUgDkUj0NKLJwkfkGBIdSkz5Ltsg56wMTsr+9L3oPyQdC6GDHe448G7YY=
+X-Gm-Gg: AYBFou3NHhDtbsArQwiaJ+czvFRz6vahnGG37B6HnAoRRKFLKqAzv3WM3j2Kl7aJt1s
+	aNCnHWB85GrgTZ1wmKsDw6jf39p2pkHHm3l+l7IRknZpk0MkYXB4M3KFTb0hrBbpiKGC1uXsno1
+	t/9Tc+czWsn+Hf9/uHZldQADOMibQmwq2e+XMNthfH4kJSuiP2skqvcEd671y6UqRB4JXNydjIU
+	AkWwUitVI2u+za43rpmblq12yEnA9izzmXCFLF4qfspApRfoXnjIkp38D2etSRa7u/gdhTF/jnl
+	FCu43FjSUWGFzLvowzY2L2HRHaI9ZztmFa4kRmoS+nvEartAV0whKEwFrC04AMj0cqYAv+ALgU+
+	h99Mnei16V/TgmxAgx5K7augR3Y5lv8taVJqhoKTL+UT0K+1s35bwHb3DI8DLUP5/GAW7wHJfFs
+	nQ06KGPgMR7f5nDQOSJG+pG2sKjjzPRPgsIFoOWQLlFjPxgF9kFDtNuIFRpe1yy7cBeFnAr+ZL5
+	6VsB5A6y6mXHJIDgS5Smqd1q/BKsvTARLYQQ2ET34Fu5cStMrGS8YESHAnvxzzlxilE62rDqkRc
+	5CXTaLcUDUA2SMNcL8VxWvc=
+X-Received: by 2002:a05:6830:2696:b0:862:aca4:1158 with SMTP id 46e09a7af769-862f0861aafmr2972784a34.22.1795021419554;
+        Wed, 18 Nov 2026 09:03:39 -0800 (PST)
+Received: from localhost ([2a03:2880:10ff:15::])
+        by smtp.gmail.com with ESMTPSA id 46e09a7af769-862f01d474esm2486617a34.4.2026.11.18.09.03.38
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 18 Nov 2026 09:03:39 -0800 (PST)
+From: Vlad Poenaru <vlad.wing@gmail.com>
+To: dsterba@suse.com,
+	linux-btrfs@vger.kernel.org
+Cc: mason@kernel.org,
+	osandov@osandov.com,
+	josef@toxicpanda.com,
+	fdmanana@suse.com,
+	boris@bur.io,
+	quwenruo.btrfs@gmx.com,
+	linux-kernel@vger.kernel.org,
+	kernel-team@meta.com,
+	stable@vger.kernel.org
+Subject: [PATCH v2] btrfs: fix bytes_may_use underflow after a failed tree block allocation
+Date: Wed, 18 Nov 2026 09:03:32 -0800
+Message-ID: <20261118170332.992625-1-vlad.wing@gmail.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,172 +100,60 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=e68d7a3c08e03032b674b625d495d35f9a655e5ba7e0e8c8006911574197;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Wed, 18 Nov 2026 17:50:39 +0100
-Message-Id: <DMYHPLWKPSH3.MUM1IIZZIWNR@gmail.com>
-Cc: "David Sterba" <dsterba@suse.com>, "Namjae Jeon"
- <linkinjeon@kernel.org>, "Sungjong Seo" <sj1557.seo@samsung.com>,
- "Alexander Viro" <viro@zeniv.linux.org.uk>, "Christian Brauner"
- <brauner@kernel.org>, "Trond Myklebust" <trondmy@kernel.org>, "Anna
- Schumaker" <anna@kernel.org>, "Chuck Lever" <cel@kernel.org>, "Jeff Layton"
- <jlayton@kernel.org>, "Konstantin Komarov"
- <almaz.alexandrovich@paragon-software.com>, "Paulo Alcantara"
- <pc@manguebit.org>, "Chris Mason" <mason@kernel.org>, "Yuezhang Mo"
- <yuezhang.mo@sony.com>, "Jan Kara" <jack@suse.cz>, "NeilBrown"
- <neil@brown.name>, "Olga Kornievskaia" <okorniev@redhat.com>, "Dai Ngo"
- <Dai.Ngo@oracle.com>, "Tom Talpey" <tom@talpey.com>, "Ronnie Sahlberg"
- <ronniesahlberg@gmail.com>, "Shyam Prasad N" <sprasad@microsoft.com>,
- "Bharath SM" <bharathsm@microsoft.com>, "Sergey Senozhatsky"
- <senozhatsky@chromium.org>, "ChenXiaoSong" <chenxiaosong@chenxiaosong.com>,
- "Darrick J . Wong" <djwong@kernel.org>, "Sean Smith"
- <defendthedisabled@gmail.com>, "Andrey Albershteyn" <aalbersh@kernel.org>,
- "Pedro Falcato" <pfalcato@suse.de>, "Amir Goldstein" <amir73il@gmail.com>,
- <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
- <linux-fsdevel@vger.kernel.org>, <exfat@lists.linux.dev>,
- <ntfs3@lists.linux.dev>, <linux-cifs@vger.kernel.org>,
- <linux-nfs@vger.kernel.org>, <linux-api@vger.kernel.org>
-Subject: Re: [RFC PATCH v4 00/10] add provenance time (ptime)
-From: "koraynilay" <koray.fra@gmail.com>
-To: =?utf-8?q?Pali_Roh=C3=A1r?= <pali@kernel.org>, "koraynilay"
- <koray.fra@gmail.com>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
-References: <20261115180343.576773-1-koray.fra@gmail.com>
- <20261118142613.be3r3s6kobkkxnz4@pali>
- <DMYFBDIV4Y08.35ZKR5G86U1H7@gmail.com>
- <20261118151605.lqtn5fz423kuswk5@pali>
-In-Reply-To: <20261118151605.lqtn5fz423kuswk5@pali>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
 
---e68d7a3c08e03032b674b625d495d35f9a655e5ba7e0e8c8006911574197
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
+When btrfs_alloc_tree_block() fails after btrfs_reserve_extent() has
+succeeded, its error path gives the block back to the block reserve,
+although the block has already left bytes_may_use. Each such failure
+leaves bytes_may_use a block short, and it underflows and warns in
+space-info.h when the global block reserve is released at unmount, or
+earlier.
 
-On Wed Nov 18, 2026 at 4:16 PM CET, Pali Roh=C3=A1r wrote:
-> On Wednesday 18 November 2026 15:58:02 koraynilay wrote:
->> On Wed Nov 18, 2026 at 3:26 PM CET, Pali Roh=C3=A1r wrote:
->> > Hello,
->> >
->> > I have just one issue with the userspace API. It does not allow me to
->> > figure out what is the source of statx btime field. If it is fs ptime =
-or
->> > fs btime because this RFC implementation is mixing both fs ptime and
->> > fs btime into the statx btime field.
->> >
->> > I have feeling that this is quite a mess in API and I would like to se=
-e
->> > a clear distinguish between btime and ptime in the API, like there is =
-a
->> > difference in the fs storage.
->> >
->> > If the btime is used for forensic analysis then somehow I would expect
->> > that the statx would not report / not fill changeable ptime value into
->> > the statx btime.
->>=20
->> Hi, for native linux filesystems it will report ptime as PTIME and btime
->> as BTIME (also semnatically).
->
-> That is fine.
->
->> for the windows-like ones that only have
->> ptime (semantically) I think it's reasonable to not expect btime to be
->> immutable, since they are meant to be used with other OSs who lack btime
->> semantics.
->
-> The problem is here that the RFC statx API does not provide this
-> information that the fs lacks btime semantics and instead it fills
-> non-immutable ptime value there.
->
-> I'm pointing only about this inconsistency.
->
->> > It would be really helpful if the statx API on inode can differ betwee=
-n:
->> >
->> > 1. btime is present and its value is ..., ptime is not supported
->> > 2. btime is not supported, ptime is set to value ...
->> > 3. btime is present and its value is ..., ptime is set to value ...
->> > 4. both btime and ptime are not supported
->> >
->> > This should cover all cases of different filesystems and also allows
->> > userspace to do proper backup of both ptime and btime fields (if it wa=
-nt
->> > to do forensic analysis or anything else).
->>=20
->> These should already all be covered by STATX_BTIME/PTIME and their
->> fields in struct statx, the only problems are windows-like filesystems,
->> which IMO shuold be handled as mentioned above.
->
-> Exactly, I pointed out about these problems. I somehow expect that the
-> new API would be generic and uniform across filesystem. IMHO it does not
-> matter if the filesystem is windows-like or not (there are also FreeBSD
-> fs and also others which allows to modify that time). So better
-> description is fs belongs to category 2. from my above description.
+  btrfs_alloc_tree_block()
+  |- btrfs_use_block_rsv()
+  |- btrfs_reserve_extent()
+  |  \- btrfs_add_reserved_bytes()  <- bytes_may_use -= blocksize
+  |- btrfs_init_new_buffer()
+  |  \- alloc_extent_buffer()       <- fails with -ENOMEM
+  |- btrfs_free_reserved_extent()   <- bytes_reserved -= blocksize
+  \- btrfs_unuse_block_rsv()        <- block rsv += blocksize again
 
-Ah yes, I used windows-like to mean "only have ptime semantics", so same
-as your category 2.
+Since commit 19d7f65f032f ("btrfs: convert the buffer_radix to an
+xarray") in 6.16, alloc_extent_buffer() can fail this way under memory
+cgroup pressure, because fs_info->buffer_tree is memcg-accounted.
 
->> Of course, as in the other discussion, I'm open to changing ptime
->> NTFS/exFAT/... support to remove btime altogether and only use ptime for
->> their own crtime if that's what wanted (I'm fairly impartial on this
->> specific issue).
->
-> I'm giving some ideas how to possible handle this situation:
->
-> 1. do not fill btime it at all when it is not available (remove btime
->    altogether - the case like you wrote above)
+Return without giving the block back once btrfs_reserve_extent() has
+succeeded.
 
-This would be the most semantically correct option, but would break at
-least 1 script/program/use case.
+Fixes: 67b7859e9bfa ("btrfs: handle ENOMEM in btrfs_alloc_tree_block")
+Cc: stable@vger.kernel.org # 6.16+
+Reviewed-by: Boris Burkov <boris@bur.io>
+Signed-off-by: Vlad Poenaru <vlad.wing@gmail.com>
+---
+v2:
+- Shorter changelog, built around a call trace (Qu Wenruo).
+- Dropped the code comment (Boris Burkov).
 
-> 2. when userspace ask both ptime and btime, then do not fill btime
->    (remove btime altogether - but only for that new case)
+The code is v1's apart from the removed comment, so v1's testing stands:
+its reproducer leaves bytes_may_use below the global reserve without the
+fix and not with it, and fstests btrfs/002, btrfs/220, generic/475 and
+generic/476 pass.
 
-This probably is the best compromise.
+v1, with the reproducer:
+https://lore.kernel.org/all/20261113170926.1468850-1-vlad.wing@gmail.com/
+ fs/btrfs/extent-tree.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-> 3. fill btime with ptime value, but add a new output flag indicating that
->    the btime is not present at all and instead kernel filled ptime value
->    into the statx btime field
-
-I don't really like this, it adds complexity and uses memory/1 flag big
-for a single specific field, IMO it's not worth it.
-
-> 4. let statx btime as currently is, and add two new statx fields:
->    immutable_btime and ptime. immutable_btime would be filled only if the
->    fs supports real btime (so not for ntfs/extfat crtime) and ptime would
->    be what is currently in RFC
-
-I think this is also too complex.
-
-> Ideas 2. 3. and 4. should be fully backward compatible as it would
-> affect statx output only when called with new flags.
-
-Then 2. is probably the best way to go forward (maybe I'll include it in
-some way in v5), but I think we should let each filesystem maintainer
-decide if they think their users want to have statx report their own
-crtime as btime, ptime or both (native linux ones would of course
-report btime as btime and ptime as ptime).
-
-Thanks,
-koraynilay
-
->> Thanks,
->> koraynilay
->>=20
->> >
->> > Pali
-
-
-
---e68d7a3c08e03032b674b625d495d35f9a655e5ba7e0e8c8006911574197
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-
-iHUEABYKAB0WIQRJ2XvJtXGwULYEerQ0bnTtJTDoOAUCav3XXwAKCRA0bnTtJTDo
-OHCeAQCEIeCKM23PngeIMoBXCQU9k+fpxVE5Iim2Z6kczs7U7QD/QrQdNXwKde9D
-5NVqKpZ3hIlgyN/x854bwe3ySGv/rQc=
-=h4y9
------END PGP SIGNATURE-----
-
---e68d7a3c08e03032b674b625d495d35f9a655e5ba7e0e8c8006911574197--
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9b0a5c6b96f3c..8d4c66bf850bc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5433,6 +5433,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+ 	free_extent_buffer(buf);
+ out_free_reserved:
+ 	btrfs_free_reserved_extent(fs_info, ins.objectid, ins.offset, false);
++	return ERR_PTR(ret);
+ out_unuse:
+ 	btrfs_unuse_block_rsv(fs_info, block_rsv, blocksize);
+ 	return ERR_PTR(ret);

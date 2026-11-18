@@ -1,61 +1,62 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=79.135.106.111
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795024608;
-	b=2YamiZeZ3oj8KocpcyybtsSKoihaHFeTzFG66LuIN/Nkf00oPvysSefxyWvGyCaZSW5O
-	 sdsM6dPrNr1EHHEnqA1O2VKUdPzsNzn0HagxZBcoPzyQldp33mh3dccRrAOra53YYIkv+
-	 W+2jS7m8+ZnnQl9WAH5je5SlfpYV3PoKiMXJSIoOgV/Ysxg7hR264eNs9vqG5jo1HspwQ
-	 aET9kxdT6FMfL9CucLO6x2wRZeBSUp4WhKHDbTIWrog9dnN7tn8WyTZKhlBASfTXtu3D8
-	 /3wsgLkX5Ed+ZEq/yS72J8YfhnBNtFQnN1L3XSBDF856pwKH1I0VtupO+TJ69Sz7Yfg==
+	t=1795033002;
+	b=gSYMWv+nxoMWy4Ue2KPzCaRmCbAvwm0SNttb8f3qXBQ3XJM6q2mpL+v4GIsUZ5rVJYFI
+	 O9ISmAgTXmxyJFIgxj+BksU5HQeJ2ixledNGgTrzgK2ouXhHxDAYuH5Urmf7xF9Iifyyi
+	 gLwCTpc62YgqDz76XaSYcujTIc3jJjJzUKW0BKHQyIG4HKug3W/Ah81Tjer+fk8mvQyON
+	 J5cxbVCPTrRzf51JswdcDxh1wp2kywr7LXb54JTcxOPmBl1YNTOsJrTma+HsE4Tnq4W6T
+	 P7dATITfTmrTnZtKVZJu15BfdlRaJhrLjOa9oLVuyyKnTcdn5PxHTAZNi34ztvBlTaA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795024608;
-	h=DMARC-Filter:DKIM-Signature:X-Pm-Submission-Id:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:MIME-Version:Content-Transfer-Encoding;
-	bh=eqIKaeW36JPgRIZtQ4J+lRUkCbQ0VgAWoDp8AASnMNg=;
-	b=rN9ixD+2UvMmOcPF3SuNxjY6uYmi1iJEacE4FGtPV+i9WJHzcPDOfKLbOzkqNk6ixrWI
-	 JnOpPRLs6VXIwDYiYuYQcbjMjCmQqv2jhK1Oxj4wOPxQBt9IiuU8Ebe2I3IUJQS6vtLuk
-	 96EeczQHJXHLuaqX4PMH8ByG+pMwQoNdEwe/Put7xasQ9397MYuZ2JkREW/uCYAm89CI7
-	 40ms5uKUe6z3aZ+lWtSWQYVGD8g1ScL9rhyX1OxLwMjngfcWrZdYtMyO8/0W35eKrpZpc
-	 533tJehvKW0CXXZBID8J6J8YAEsPr+nWtpTvRhuVvJugB6i8eGLGQLVBxJwfIlu19zw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795033002;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=Iyy5rHt8wdojXmesxiaPyIfh6qBHJimQ/sEuE5qTOKk=;
+	b=gk0WueJ76pI8Pgveor7WkM1K7okskBQwQPB/EjKcFl/EP+7s8ntgE5cn52VJj6U9VPyC
+	 MZqtq0fu3y2SXsBcSKf5ifKx7jRsodQak16lES6olXhutclkfwGUiO+AeEAReeLIQUHNS
+	 XtFm1AlXjm82nRbd1MWgkRkwriNOXSxKSBjFUxqCKyZAbBip/4U5dNPbO6hlwvObZr/cm
+	 zoMESEuCbt0E2N3i/p3HwZ3oN242/nUEi9zuV4G3WQ7a1JV9uSdFw5VDSgb6vBvjW2iV3
+	 2nKlSHsRpl1lxTsL6/kAA3x6lMfi/pXdNcJ5/gFzD3gEf9oX0+qb4IaHYpflzapLifQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=raidlab.org;
-	spf=pass smtp.mailfrom=raidlab.org;
-	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=rn9DL0Xs;
-	arc=none smtp.remote-ip=79.135.106.111
-Received: from mail-106111.protonmail.ch (mail-106111.protonmail.ch [79.135.106.111])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Cl2J1hZv;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7F75A606A320
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 17:56:47 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7F75A606A320
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0541F606A331;
+	Wed, 18 Nov 2026 20:16:41 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=rn9DL0Xs
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
-	s=protonmail; t=1795024605; x=1795283805;
-	bh=eqIKaeW36JPgRIZtQ4J+lRUkCbQ0VgAWoDp8AASnMNg=;
-	h=From:To:Cc:Subject:Date:Message-ID:From:To:Cc:Date:Subject:
-	 Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
-	b=rn9DL0Xs2ew1XjhK1O3neG+/sYA4wqECrRhUhTe4gPwOkQMQ7pu478ejECAEdS0A3
-	 6uxsbEsC5lif7bDHEIv6YDnaMQNA13osEc1DtRIi3BNFOES7/tffWsSDV+/tqSikuu
-	 iD9botqPVhZOhBp3cXiJ8ytb38NNQFpiPEU0QXfb+pETe7OBCMjO7xCsKuMnQM6iOp
-	 PUF4ZjFljNY0EeVjIQvfpmbDp5DDHq/OAX4ImT2up6nYsmSHyOpJ7z++XEUeHBwlq5
-	 WnFS0BlDCT/c9MD3ixf+4P49yvdlMfiETQq3r0nI/U43DT8JeZWyKvSzheuvB43Uq8
-	 iRYe4+gSc1Y2w==
-X-Pm-Submission-Id: 4jV8Rv0RxYz2ScD7
-From: Miroslav Cimerman <mc@raidlab.org>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>,
-	Chris Mason <mason@kernel.org>,
-	Qu Wenruo <wqu@suse.com>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
-	linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: scrub: don't count zoned repairs as corrected on a degraded mount
-Date: Wed, 18 Nov 2026 17:56:37 +0000
-Message-ID: <20261118175637.60283-1-mc@raidlab.org>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Cl2J1hZv
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9EFB51F000C7;
+	Wed, 18 Nov 2026 20:16:38 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795033001;
+	bh=Iyy5rHt8wdojXmesxiaPyIfh6qBHJimQ/sEuE5qTOKk=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=Cl2J1hZvIPaLYz8PK3ibIwHEj8ENjkTs5l9jG7LnQLNJZ/pUP5sVqtWlEwOUW25N7
+	 DAohysPcy4Z8lORDVUd3JmtGnZsdL2QqOqpfA+rtWGtE8G/1le3L20spuzR32LFSky
+	 5bdHCrErjjQCnZXDNOjWG8iJzDteHX5UogjHTPY3wEOWpoJOYkHKjv6qTtl5xLvR4h
+	 I3q81pvFCufnTD81ejRhLxJ22v6+YwMUGx1eRT18p3h6vkJAt5iOuaVjm3K/OCtSd8
+	 UMRdcCetpZimS2Ea3ALgnz911cLEsjWFBK67vAH9WABxVky8tRfTy1gWfSevD2o2Uf
+	 tJRJN2hZKPPhA==
+Date: Thu, 19 Nov 2026 07:16:31 +1100
+From: Dave Chinner <dgc@kernel.org>
+To: Christian Brauner <brauner@kernel.org>
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Lauri Gates <lauri.gates@gmail.com>, linux-xfs@vger.kernel.org,
+	Carlos Maiolino <cem@kernel.org>,
+	Christian Brauner <christian@brauner.io>,
+	"Darrick J. Wong" <djwong@kernel.org>, linux-api@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	ocfs2-devel@lists.linux.dev, linux-nfs@vger.kernel.org,
+	linux-cifs@vger.kernel.org
+Subject: Re: Concurrent FIEMAP on reflinked files serialises on the AGF
+ buffer lock
+Message-ID: <av4Hn9u80fs8iHZ6@dread>
+References: <au3wJNbRPXQZG5Op@infradead.org>
+ <20261106204026.14530-1-lauri.gates@gmail.com>
+ <avYb7D3bCmnw0Mbw@infradead.org>
+ <20261117-kiefer-beinfreiheit-entnommen-685343327ac9@brauner>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -65,104 +66,43 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261117-kiefer-beinfreiheit-entnommen-685343327ac9@brauner>
 
-On zoned devices scrub can't rewrite a bad copy in place. It calls
-btrfs_repair_one_zone() to relocate the block group instead, and counts
-the repaired blocks as corrected.
+On Tue, Nov 17, 2026 at 05:22:25PM +0100, Christian Brauner wrote:
+> On Thu, Nov 12, 2026 at 12:05:00PM -0800, Christoph Hellwig wrote:
+> > On Fri, Nov 06, 2026 at 10:40:26PM +0200, Lauri Gates wrote:
+> > > The other is that for a "may share" bit, clear is the unsafe answer,
+> > > so a filesystem that cannot answer should not look like one that
+> > > answers "not shared". As I understand it, stx_attributes_mask makes
+> > > that distinction, while struct file_attr has no validity mask today
+> > > (it is size-versioned, so one could be added), so through
+> > > file_getattr() btrfs would currently read as never shared. A spare
+> > > bit in stx_attributes adds no field to struct statx, which I hope
+> > > meets the concern Christian raised about spending statx space on the
+> > > case-folding RFC [2]. If fileattr is preferred, the bit could instead
+> > > mean "no shared extents", so that clear is the safe default, as it is
+> > > for FS_XFLAG_CASEFOLD.
+> > 
+> > statx sounds good to me, but I'd really like to hear from Christian.
+> 
+> I'm not fond of it mostly because it seems FIEMAP is a debug interface
+> and adding bits into statx() to make said debug interface quicker or
+> easier to use feels very wrong to me. So I'd like to hear a better
+> argument why we should do this. Otherwise, I think using file_attr as
+> suggested earlier is good enough.
 
-On a degraded mount btrfs_repair_one_zone() relocates nothing ("Do not
-attempt to repair in degraded state"), but scrub still counts the
-blocks as corrected and logs "fixed up error" for each. The bad copies
-stay, and the next scrub finds and "fixes" the same errors again. With
-zoned RAID1 mounted -o degraded with both devices present and read
-errors in one device's metadata zone, two scrubs in a row both report:
+I really don't care if it is exposed by statx or file_attr; checking
+the flag through either interface will be orders of magnitude faster
+than using FIEMAP to iterate extents on every file to find shared
+extents. My concern with statx is coherency - it runs completely
+unlocked and so can race with operations that add/remove the reflink
+flag...
 
-  Error summary:    read=96
-    Corrected:      36
-    Uncorrectable:  60
+Cheers,
 
-Count such errors as uncorrectable, which the uapi header defines as
-"no intact copy was found or the writeback failed". Dev-replace, which
-writes the repaired blocks to the target device, and read-only scrub
-are not changed.
-
-Fixes: 54765392a1b9 ("btrfs: scrub: introduce helper to queue a stripe for scrub")
-Signed-off-by: Miroslav Cimerman <mc@raidlab.org>
----
-Keeping these errors as corrected and only logging that the repair was
-skipped would leave a false positive: the counters would still report
-the bad copies as fixed, and the next scrub finds them again. A new
-counter for errors with an intact copy that were not written back would
-be another option, but it changes the uapi. A read-only scrub, which
-also counts errors with an intact copy as corrected without writing
-anything, is not changed here.
-
-Found with FuzzyRAID, a fault-injection tester for RAID that is not
-public at the moment. The analysis, the fix and the commit message
-were prepared with the help of an LLM, which also tested it. I reviewed
-everything.
-
-It also applies on top of "btrfs: scrub: fix several races which can
-lead to UAF" (v2), with offsets.
-
- fs/btrfs/scrub.c | 22 +++++++++++++++++++++-
- 1 file changed, 21 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 98362c91bce4..9dcb0e7e3d0b 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -323,6 +323,12 @@ struct scrub_error_records {
- 	 */
- 	unsigned long init_error_bitmap;
- 
-+	/*
-+	 * Set if the repaired blocks could not be written back, thus all the
-+	 * initial errors are still on disk.
-+	 */
-+	bool repair_skipped;
-+
- 	unsigned int nr_io_errors;
- 	unsigned int nr_csum_errors;
- 	unsigned int nr_meta_errors;
-@@ -992,7 +998,7 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
- 	struct btrfs_fs_info *fs_info = sctx->fs_info;
- 	struct btrfs_device *dev = NULL;
- 	const unsigned long extent_bitmap = scrub_bitmap_read_has_extent(stripe);
--	const unsigned long error_bitmap = scrub_bitmap_read_error(stripe);
-+	unsigned long error_bitmap = scrub_bitmap_read_error(stripe);
- 	u64 physical = 0;
- 	int nr_data_sectors = 0;
- 	int nr_meta_sectors = 0;
-@@ -1003,6 +1009,11 @@ static void scrub_stripe_report_errors(struct scrub_ctx *sctx,
- 	if (test_bit(SCRUB_STRIPE_FLAG_NO_REPORT, &stripe->state))
- 		return;
- 
-+	/* Not written back, the repaired blocks are still bad on disk. */
-+	if (errors->repair_skipped)
-+		bitmap_or(&error_bitmap, &error_bitmap,
-+			  &errors->init_error_bitmap, stripe->nr_sectors);
-+
- 	/*
- 	 * Init needed infos for error reporting.
- 	 *
-@@ -1227,6 +1238,15 @@ static void scrub_stripe_read_repair_worker(struct work_struct *work)
- 	if (!sctx->readonly && !bitmap_empty(&repaired, stripe->nr_sectors)) {
- 		if (btrfs_is_zoned(fs_info)) {
- 			btrfs_repair_one_zone(fs_info, sctx->stripes[0].bg->start);
-+			/*
-+			 * On a degraded mount btrfs_repair_one_zone() does not
-+			 * relocate the block group and the bad copies stay,
-+			 * unless dev-replace writes the repaired blocks to the
-+			 * target device.
-+			 */
-+			if (btrfs_test_opt(fs_info, DEGRADED) &&
-+			    !sctx->is_dev_replace)
-+				errors.repair_skipped = true;
- 		} else {
- 			scrub_write_sectors(sctx, stripe, repaired, false);
- 			wait_scrub_stripe_io(stripe);
+Dave.
 -- 
-2.53.0
-
+Dave Chinner
+dgc@kernel.org

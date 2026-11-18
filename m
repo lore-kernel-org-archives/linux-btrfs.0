@@ -1,45 +1,45 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1794961780;
-	b=AZ5K8ZE5iLymVjyzzMtHJOx8agyaevDah4jdMCw+E3HOQTPks4T8AeQTNLu3UCQPbPv5
-	 YMNFieAR9V18MoQTAgiymZIBJJbEdImq+gMiTSEKkp/A9+4xhn4bF1Bg7laY7vTXfiYf1
-	 Qwf1sIjnVeVXtkwlweplZ7onNKLJYnfpwg+TyPijmkzJuhua0C9O+FP338yjsYVLEG+4L
-	 7L+VxmI0T+LTrtfU7wIFKbwSmbNzA+0bdcyIVh9vgyM/U0wrzSqKC8mQRW5dHf6O7+Xxg
-	 Qkhh015YG3b80hl0vvz0xfrzMbGiCO9KgQ7whI52YU6Hebyg/ZWaby9Ltgc8rlQ3/ZA==
+	t=1794961788;
+	b=YA7aFKKxiqlx49bii6buxb/sG8H145Ut0QRXC8r7/GH7ZZ0vtD5elUyJZF/J7GcvsVc1
+	 cUYocL7WV5uoBY07D8baF4otGIVfQwCosiiBoPwQi3uVtHaKUvsYi/QBKPUO/wRwIOai7
+	 VowaoLwGH0HSAZICKrrAWA80whiqu/FFHmWs+g/f32i2akxf9L8uFstF7NRu3qoxRxKL7
+	 TalSpqyU7abWbwxbRK6xVg4WV9clrgv+u7PX1LDGVyjYU97z4t0YlUZc16MEWbS33MJIY
+	 WkGF+MTePwtOPoSUTbIXl9ooW53rDq2mTB0OnhfFAt8e0PIyHTSsHVVFGTeu+N3bI6A==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1794961780;
+	a=rsa-sha256; c=relaxed/relaxed; t=1794961788;
 	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:X-Developer-Signature:
 	 X-Developer-Key:Content-Transfer-Encoding;
-	bh=77Zc1u0jfwO76KAyX4WCIbvGbPpwLYaW9Jlo2sPynfo=;
-	b=KHC8QOTr/ZECkkvx1s99Csyh1INr+7uZZ5M1wkXPqGZARJanLe1xtDINXpqzATvwPdaU
-	 8MWaEf3M5pjRGH6LuhNOtxXEgtsFnj2seC4piQiPQRma6w+QBEYfQTfutcUTnv5DU/F8B
-	 qyvGKsZcHClQN13B4+hNfrb4sBoaY3SE05uLtYqCi+yxNrdaPagba6v/l9OutfyMt+ZnI
-	 l5nj43U/kemOmZiinWva4PhDkrX3KhYrk933t9M8TjXWNyX5uUt4PnSk9h1iUzTuouKpB
-	 0eESWge5zj72ohA0wW0kLwx/ooceaFay0zHWRWJEX44FfYxmhAiCyl3e2O1DEUGAd8g==
+	bh=7p8hzQulzm2sdT6ljl53TR4xqlIGw1FUKTCUNJv0MWM=;
+	b=VrVeVsOweJ57Nl7sVXIyR17zGFucznpmL6IYU91JO64L/7TysRRG00d/QSX762tLADIq
+	 z2Fw4C32cXUfoRe3BvJWT3SHYCILFdrXAV5qrKOoiYmVZzvCfkCTwogKwz+hFtJHufbZQ
+	 5DtlCo/Wdjp9OAXjt3tRC2Swsgpn5xWDPeEPiRAQev5PtX9y6oeo1w0yOiBpczyfqN79e
+	 /AhWPNvN05+LVg5yvqwXZoEbfACgd920piBY0g/62hIuEuGLZ3jHTmz3G1aVOmXljKI+z
+	 1S367+5U3ezGn24U5VwtObOnWpFRlEiNIfaxbKmCFVxOUS26vv0Yf5WVjw2YHNr9wuw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DjUc1tFl;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lP3GMpvF;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A6F42606A32F;
-	Wed, 18 Nov 2026 00:29:40 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A8018606A32A;
+	Wed, 18 Nov 2026 00:29:48 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=DjUc1tFl
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 022E21F000C5;
-	Wed, 18 Nov 2026 00:29:36 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lP3GMpvF
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2C7411F000C4;
+	Wed, 18 Nov 2026 00:29:44 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1794961780;
-	bh=77Zc1u0jfwO76KAyX4WCIbvGbPpwLYaW9Jlo2sPynfo=;
+	s=k20260515; t=1794961788;
+	bh=7p8hzQulzm2sdT6ljl53TR4xqlIGw1FUKTCUNJv0MWM=;
 	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=DjUc1tFlOzVBzrYcXaPjCSi6i0uyhGfvMjsCTw9wPfX9BGKuTOeFjr1b832Vu99cL
-	 jp1BV4nyinAEqqimy7fZ3LpEC9U9HrsuiZl4zXdDGhZEjU0pGYEuMeRxZzztktpi6q
-	 bX+6Q1ORLsoxks9UnBx0uFWziaMGC8KVjKvEh/3U//qqUxdJBQZhUmmRmluFUXOvHQ
-	 HFn1FgAgCYF4mRr7ugb3wKX4DI05/Fz90qvN+m30J68S4EgLui8QMRKNDQUhwn6QZK
-	 J6gm4FTPnDAc81JqjeSjs68y2lDw0blFNZmXCX3DGNY+89wnlJhoAjg4q0cpCqxpc2
-	 YyLnYFIi6dOUQ==
+	b=lP3GMpvFvIEPM7v98/UaUS54HWXwJpqZEQTCiBzDHxv72y1Q5Hg/7gI59uQ8+G2rU
+	 wbCh+AFvdJ6fdXjpEhgrDLxOu552gaoMCfkXw9ZO7mGtKfG0zH075ffsllhlYYaJnZ
+	 siJEsDxgx0HtMFa1D6H2AXaCdAdLgobMe19vpXgC2CSAYPImdBNAYxfHyGy6vJ2Sq2
+	 +1NmhPrUMwKjHWXduX8i/oAJ2URl3dfBOrj3gT/B9dX+QG56gF+tL7emg1tvHDMVl+
+	 pZ/Ko3CglaLOm2d2CdAeQpNN/THkB/gi9FBCAMTaQOKe7eZzCgf9ePjUjX2NuHgHFf
+	 4fQ0Brrss7xVA==
 From: Thorsten Blum <blum@kernel.org>
 To: David Sterba <dsterba@suse.com>,
 	Chris Mason <mason@kernel.org>,
@@ -55,9 +55,9 @@ Cc: linux-btrfs@vger.kernel.org,
 	linux-mtd@lists.infradead.org,
 	linux-fscrypt@vger.kernel.org,
 	Thorsten Blum <blum@kernel.org>
-Subject: [PATCH 1/4] fscrypt: Add FSTR() helper macro
-Date: Wed, 18 Nov 2026 01:28:47 +0100
-Message-ID: <20261118002845.574426-7-blum@kernel.org>
+Subject: [PATCH 3/4] f2fs: Use FSTR() in f2fs_do_make_empty_dir()
+Date: Wed, 18 Nov 2026 01:28:49 +0100
+Message-ID: <20261118002845.574426-9-blum@kernel.org>
 X-Mailer: git-send-email 2.56.1
 In-Reply-To: <20261118002845.574426-6-blum@kernel.org>
 References: <20261118002845.574426-6-blum@kernel.org>
@@ -70,27 +70,37 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-Developer-Signature: v=1; a=openpgp-sha256; l=730; i=blum@kernel.org; h=from:subject; bh=9TS87tFQrJmJ2L6d5vREcb1e62JHLVxiiKSkN7PY/9U=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFl/Ptq5/b51/ZGu2+FIucCFP+qZ/J50hR/m2B2qoMu2f p3ujtL9HaUsDGJcDLJiiiwPZv2Y4VtaU7nJJGInzBxWJpAhDFycAjARFRGG/4msy3fns51NOsx7 JpD/+k3J0ki2ju+qS+9b8detfVXCacXwV+7Ggvu/J2UIOnB823+jQsTzhqtj3f5yNef1Fs+E9l5 34gQA
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1106; i=blum@kernel.org; h=from:subject; bh=grfMiZcoagjGMDC9TYISjWneu7iyoRjVgpowfER1HnI=; b=owGbwMvMwCUWt7pQ4caZUj3G02pJDFl/PtrvevJS83nhl+U99vkmJ9OD2jemKS6ey25/41md5 iWNvB9fOkpZGMS4GGTFFFkezPoxw7e0pnKTScROmDmsTCBDGLg4BWAie/gZ/lcYZ7kVtX8pmD7l AjfbDl2fx3ciG1d9KN655ZnnfR3eTFtGhgMpL/f6HXcpsFg+ybi2vOhk5Iqz5hyf9+5Q2SdUuZf XiAEA
 X-Developer-Key: i=blum@kernel.org; a=openpgp; fpr=1D60735E8AEF3BE473B69D84733678FD8DFEEAD4
 Content-Transfer-Encoding: 8bit
 
-Similar to QSTR(), add FSTR() to initialize struct fscrypt_str from a
-NUL-terminated string without specifying its length.
+Replace FSTR_INIT() with FSTR() and drop the hard-coded length argument.
+
+Use FSTR() directly and remove the temporary variables.
 
 Signed-off-by: Thorsten Blum <blum@kernel.org>
 ---
- include/linux/fscrypt.h | 1 +
- 1 file changed, 1 insertion(+)
+ fs/f2fs/dir.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/include/linux/fscrypt.h b/include/linux/fscrypt.h
-index 28f2108e29f3..84d9147fda2f 100644
---- a/include/linux/fscrypt.h
-+++ b/include/linux/fscrypt.h
-@@ -50,6 +50,7 @@ struct fscrypt_name {
- };
+diff --git a/fs/f2fs/dir.c b/fs/f2fs/dir.c
+index 97f7fef6b068..469c4cc7a3b7 100644
+--- a/fs/f2fs/dir.c
++++ b/fs/f2fs/dir.c
+@@ -515,14 +515,11 @@ static void init_dent_inode(struct inode *dir, struct inode *inode,
+ void f2fs_do_make_empty_dir(struct inode *inode, struct inode *parent,
+ 					struct f2fs_dentry_ptr *d)
+ {
+-	struct fscrypt_str dot = FSTR_INIT(".", 1);
+-	struct fscrypt_str dotdot = FSTR_INIT("..", 2);
+-
+ 	/* update dirent of "." */
+-	f2fs_update_dentry(inode->i_ino, inode->i_mode, d, &dot, 0, 0);
++	f2fs_update_dentry(inode->i_ino, inode->i_mode, d, &FSTR("."), 0, 0);
  
- #define FSTR_INIT(n, l)		{ .name = n, .len = l }
-+#define FSTR(n)			((struct fscrypt_str)FSTR_INIT(n, strlen(n)))
- #define FSTR_TO_QSTR(f)		QSTR_INIT((f)->name, (f)->len)
- #define fname_name(p)		((p)->disk_name.name)
- #define fname_len(p)		((p)->disk_name.len)
+ 	/* update dirent of ".." */
+-	f2fs_update_dentry(parent->i_ino, parent->i_mode, d, &dotdot, 0, 1);
++	f2fs_update_dentry(parent->i_ino, parent->i_mode, d, &FSTR(".."), 0, 1);
+ }
+ 
+ static int make_empty_dir(struct inode *inode,

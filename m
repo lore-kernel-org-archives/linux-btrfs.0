@@ -1,50 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795104270;
-	b=z0YizsBDlsMO4YShIrARjagm5FSvtpUv2HQnL3vTVqvNbkz9Dvvwi83eH63j6knUzFO1
-	 ENz0dqw4qkLkdCOzVoyavMqQsL/tJ6gcNawlF3l5CfX9qGMycs5TzJD6nhBdtSoOuWHMA
-	 e9fnSaEjlzhM3BwlymJwzwBjKiMVKMbguXjaQKFYeH0cAYfuZVF8lFTuB4OIuE39jmlqc
-	 s7QMZTSx6D+eogd0/NZZbW18/oew+6Bq5f2B0nriHGtZ8olVahKxd5OxYUz7cuLRtdSup
-	 OwTad1BpiEI0Wvy88/eCwy/FEdW+4jdmpuAVtRNa+EEheGeW4WjYPWs1zKKd48zKsaQ==
+	t=1795105399;
+	b=Za7/B8cByGcRfxRRWSIv1RDpQg9XzqnkMhe/er/5GA0rcCgVZuEfpYcOVUJodi7joqrg
+	 goC0zaA6WDiKIYMbyiOE7/xRekzycRixlLzF93jPT1/c4TwMuWKAvBP/lq/8SRJRG/ieO
+	 BVPDIMrNula7W4dP7saKjRKCJVY2dIL33wy6ukXH2rbPRvm7UXbYhzb0vUazKhYGZCWP2
+	 ZT94nlGoTtzQNs6PVWOG2at4b4jvh/UaKoatlxsLIB0AWtocjDQZNTxA9Dy7SsIMwX6nI
+	 6ZKgGHd3xsjQncLLNx2Xoknl0Q0krpQ9+mG4bDsF5C4CLdUCUfYTDUO4nUr12+zi9Pw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795104270;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=hVVuVv+C2qbW1abga5nl1nCEmTApyceWszF4BhGzX/U=;
-	b=aTheRdg4QwBdLaPgOKHIxjobVo37ZFUBZ130HNzw8zhPR5ZyVQ2JTvbKLYX2QS7LdHqW
-	 8JPLXafQfT/cAIuk/V4zZljKdaiRcpSmset6buh8yxwDethsLxCDjxPEr9XAy4qjqpmo5
-	 kw1KheRKkXBy1lrGsyYFhtn0Wq1CvHo/tjEtVMSq/8OYQ1UhCSocNOCvoCp+7b4vDnPjW
-	 eycwtVbyKFmkrjSxneQB5RFZlW2hQekrbFj3qd1DnYT4XKgbR0+XmC0WtR1TOntvnHeqt
-	 NiZnHAwspcJRlfNs4UeEiTb+gUnqgxXjlcAOg4bl7E4T41CBQTCMZc0dsXdm9+pi0HA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795105399;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
+	 DKIM-Signature:Received:Received:Date:From:To:Cc:Subject:Message-ID:
+	 Reply-To:References:MIME-Version:Content-Type:Content-Disposition:
+	 In-Reply-To:User-Agent:X-Rspamd-Queue-Id:X-Spam-Level:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:X-Spam-Score;
+	bh=pGj5HbpZMQVFnLgGwqwq1HzwBrkTidzvF9kv3fg0AJ0=;
+	b=J/IRFq80h4C/PXXZUILL3+a3HtKbGV7vakydUTfzHncvvUF1kJJ/7KVblamVWOTy8HPy
+	 5ZCoNswk2JErlV7LEHYLxK+1UI4AM9iVCfHF9YhCkzCxA3YGDAQIcV6MiQrROqlTq8K3P
+	 P+vpJqeoYCQL7ruJdRZqQqk4ZeWyMPs975Y3gSK6QbJFikab5cW1p8mAmHqAd1gz0xdyN
+	 PbVgZ8GgjYm+oprS4q985a4YAlcPIgdE9BtS2u/b1CuGhC9ER4QVza03DwKWCAGP6eAw8
+	 eEvXpNt8GygAYbiqye3T4+FLIQr/yrsfDOFuEQo/kOPdD9KD99WALz4iER7ETpZMWTw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=NxdTLYrU;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=none header.from=suse.cz;
+	spf=pass smtp.mailfrom=suse.cz;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zCpVIITa;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=szH07XgK;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zCpVIITa;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=szH07XgK;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 725B7606A320
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 16:04:30 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E3E7F606A32A;
+	Thu, 19 Nov 2026 16:23:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E3E7F606A32A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=NxdTLYrU
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C2A5A1F000C4
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 16:04:29 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795104270;
-	bh=hVVuVv+C2qbW1abga5nl1nCEmTApyceWszF4BhGzX/U=;
-	h=From:To:Subject:Date;
-	b=NxdTLYrU12HiuHGvq80lvp07WLlEgw80Rq9hV3KA2n8cPlUqi4WUKSus303TyPtRK
-	 EbzUOq4Kn+PBN57NI5UA/Djyb3RMwtqtStb9scTOOi8Y5uRTBSqgFK08ei60Sw9r6P
-	 GRy8xNOYzYSg3s7ngh9O6JQZ2mwUJJwGMz9QQ1sYwnuIPyMCqsA1An+4IQMPaGzH5P
-	 5wbh6sfAuH8f2NLJBfcJJBal75Hz0DWKBZ3/EXcu3CwEL0Pa4LUZca0QzA4Oi9WyvX
-	 +5gqzKBrXeamkXJoCcZPHLegPN5I0Q2Enias2gXiKPQkwzMVkEux0jvV9zZCli2DrC
-	 Dtcv9QhVbmCaQ==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: wait for async dio before dirtying folio in btrfs_cont_expand()
-Date: Thu, 19 Nov 2026 16:04:26 +0000
-Message-ID: <a6b31fe34ababf35e0d9577589890ad637b09e20.1795104168.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
+	dkim=pass (1024-bit key, unprotected) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zCpVIITa;
+	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=szH07XgK;
+	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=zCpVIITa;
+	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=szH07XgK
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id B22501FCBC;
+	Thu, 19 Nov 2026 16:23:13 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1795105393;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pGj5HbpZMQVFnLgGwqwq1HzwBrkTidzvF9kv3fg0AJ0=;
+	b=zCpVIITadxuKe19ktUuwQ9hw/Q8Akrz6DPfqzWYgrQJqct6u8VTNIOKtJRlh+7j2gXO+X8
+	mNnR0IXTzORpP+f/2ziqXQnkSQXJBgJyFHUcx1/r6jjdUtFAnSBaHNPsV+F1VuuVSPNTj9
+	cMfgrR8jA2Aoxz75FD8GmqNRQBjg2MM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1795105393;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pGj5HbpZMQVFnLgGwqwq1HzwBrkTidzvF9kv3fg0AJ0=;
+	b=szH07XgKW0Ri/DHD0v5Edd6rEwIXX2NQqJbC6pvY9oF3cAfD5W7Yz9KuOikhuLkXtSaD5Q
+	JrATr+N9ej8YsbAg==
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.cz header.s=susede2_rsa header.b=zCpVIITa;
+	dkim=pass header.d=suse.cz header.s=susede2_ed25519 header.b=szH07XgK
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
+	t=1795105393;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pGj5HbpZMQVFnLgGwqwq1HzwBrkTidzvF9kv3fg0AJ0=;
+	b=zCpVIITadxuKe19ktUuwQ9hw/Q8Akrz6DPfqzWYgrQJqct6u8VTNIOKtJRlh+7j2gXO+X8
+	mNnR0IXTzORpP+f/2ziqXQnkSQXJBgJyFHUcx1/r6jjdUtFAnSBaHNPsV+F1VuuVSPNTj9
+	cMfgrR8jA2Aoxz75FD8GmqNRQBjg2MM=
+DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
+	s=susede2_ed25519; t=1795105393;
+	h=from:from:reply-to:reply-to:date:date:message-id:message-id:to:to:
+	 cc:cc:mime-version:mime-version:content-type:content-type:
+	 in-reply-to:in-reply-to:references:references;
+	bh=pGj5HbpZMQVFnLgGwqwq1HzwBrkTidzvF9kv3fg0AJ0=;
+	b=szH07XgKW0Ri/DHD0v5Edd6rEwIXX2NQqJbC6pvY9oF3cAfD5W7Yz9KuOikhuLkXtSaD5Q
+	JrATr+N9ej8YsbAg==
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 794961342D;
+	Thu, 19 Nov 2026 16:23:13 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id s+5wFHEi/2rIewAAD6G6ig
+	(envelope-from <dsterba@suse.cz>); Thu, 19 Nov 2026 16:23:13 +0000
+Date: Thu, 19 Nov 2026 17:23:12 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Thorsten Blum <blum@kernel.org>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
+	Richard Weinberger <richard@nod.at>,
+	Zhihao Cheng <chengzhihao1@huawei.com>,
+	Eric Biggers <ebiggers@kernel.org>,
+	"Theodore Y. Ts'o" <tytso@mit.edu>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
+	linux-mtd@lists.infradead.org, linux-fscrypt@vger.kernel.org
+Subject: Re: [PATCH 2/4] btrfs: Use FSTR() for the "default" name
+Message-ID: <20261119162312.GA3245297@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20261118002845.574426-6-blum@kernel.org>
+ <20261118002845.574426-8-blum@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -54,76 +120,49 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261118002845.574426-8-blum@kernel.org>
+User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
+X-Rspamd-Queue-Id: B22501FCBC
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-13.21 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	HAS_REPLYTO(0.30)[dsterba@suse.cz];
+	R_DKIM_ALLOW(-0.20)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FROM_HAS_DN(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	TO_DN_SOME(0.00)[];
+	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
+	RCPT_COUNT_TWELVE(0.00)[14];
+	MIME_TRACE(0.00)[0:+];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_TRACE(0.00)[suse.cz:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	REPLYTO_ADDR_EQ_FROM(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	MID_RHS_MATCH_FROM(0.00)[];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.cz:dkim,suse.cz:replyto]
+X-Spam-Score: -13.21
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Nov 18, 2026 at 01:28:48AM +0100, Thorsten Blum wrote:
+> Replace FSTR_INIT() with FSTR() and drop the hard-coded length argument.
+> 
+> Use FSTR() directly and remove the temporary name variables.
+> 
+> Signed-off-by: Thorsten Blum <blum@kernel.org>
 
-Sashiko reported that we race with async direct IO during fallocate and
-truncation (to a larger i_size). For example for the truncation case:
-
-         CPU0                            CPU1
-
-  btrfs_setsize()
-    btrfs_cont_expand()
-      btrfs_truncate_block()
-        __filemap_get_folio()
-        btrfs_folio_set_dirty()
-                                  iomap_dio_complete()
-                                    kiocb_invalidate_post_direct_write()
-                                      invalidate_inode_pages2_range()
-                                      dio_warn_stale_pagecache()
-                                        --> calls errseq_set() on the
-                                            file's mapping
-                                        --> triggers a warning in syslog
-
-The warning is annoying to have in syslog/dmesg and it's something not
-expected, but having errseq_set() called on the file's mapping results
-in the next fsync to fails with -EIO (returned by the call to
-file_check_and_advance_wb_err() made by fsync).
-
-Fix this by having btrfs_cont_expand() call inode_dio_wait() when the
-current i_size is not sector size aligned.
-
-Sashiko reported this for fallocate and truncate and not for other places
-like reflinking because in those other places we either wait for any
-ordered extents in progress before calling btrfs_cont_expand() (or
-btrfs_truncate_block()) or we have already called inode_dio_wait() before,
-like during reflink when we call generic_remap_file_range_prep().
-
-Link: https://sashiko.dev/#/bug/linux-05440703-4fc3-41f8-a693-9ffe4d9f4426
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4b29b82eb180..54cb6aa371eb 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5243,6 +5243,23 @@ int btrfs_cont_expand(struct btrfs_inode *inode, loff_t oldsize, loff_t size)
- 	u64 hole_size;
- 	int ret = 0;
- 
-+	/*
-+	 * Before zeroing the tail of the block, wait for any async direct IO
-+	 * writes in progress to complete, otherwise if they complete after we
-+	 * dirty the folio, they will trigger a warning when trying to
-+	 * invalidate the page cache and call errseq_set() on the mapping (which
-+	 * makes the next fsync fail with -EIO), because the folio is dirty:
-+	 *
-+	 * iomap_dio_complete()
-+	 *    kiocb_invalidate_post_direct_write()
-+	 *       invalidate_inode_pages2_range()
-+	 *       dio_warn_stale_pagecache()
-+	 *          --> calls errseq_set() making next fsync fail
-+	 *          --> triggers warning
-+	 */
-+	if (!IS_ALIGNED(oldsize, fs_info->sectorsize))
-+		inode_dio_wait(&inode->vfs_inode);
-+
- 	/*
- 	 * If our size started in the middle of a block we need to zero out the
- 	 * rest of the block before we expand the i_size, otherwise we could
--- 
-2.53.0
-
+Acked-by: David Sterba <dsterba@suse.com>

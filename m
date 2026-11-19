@@ -1,55 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795121385;
-	b=Vg3pg/t9m0uTEBWze9QDmyTAKL9YxR3qW+oobNjKFG1px+9MJdVE6WKf5qsexPqM22CR
-	 mZJRn8bs6emi0niHtwwS+zhY9A9NuhEau2v2VSbuzVBdXijobNcBEAzGroHC13vOnqYjm
-	 DjmljN5DJ6PM7+irFjVa8P+wOkflkiQEW0bjVDjJQdxsd5Mln6jV+6GhzArKpKyWrYplH
-	 nwtoz/Lqqq6TjgMmtyFisG01QUE4Cu/ivNg1fqWst8TEgWFMlhzKO760Iz3++ptr0/+Xr
-	 dfvlWREDPM2/ITKL8zwMTxUeTxr/bNjYGDYQdNwrijiF1z3N5Di2m4H9riRrIx3mbVA==
+	t=1795121658;
+	b=bYtcpYC/eOG8S3/8ws8oGVC1JXYFUCTSFda3it8gqJdN1nsQ3t0PUuSi76ysBa3BE1gB
+	 /NFLPYVxaAHhpXZAoE7TJO4ATK06atiUKS692nHRNVxPqcsIPuUpMNHpciB6H2pXz12R4
+	 YrycMngOvNBK6SZ34mh4ImO1Sg99s/fEoZ0LfV0ENKS0h4vcwEh22ky7LrkeTfTGSUKxE
+	 97QR0Nu60UtPFO3ejY/PLW50TbtbnX3okwgmg9wl+1dhkHMF3dvQY5UIDPROmudiPWCui
+	 ML1LV8MaAryHPOiFzzuGkQzSGSwuZthfhI7rkaEfXJuXZuFJIyUOxtBRVKzUeSNPxIQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795121385;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=6uUyYlgjM4gUdz5mj1dp5lYq0596fRi9TUMCukh9VpQ=;
-	b=rP2lrXWpmuKpLCwJ6TXESEtwkbHdNAURHNefVse34z4WRtwv+MCikcfQ7z/H+radPO2q
-	 k7rro/UKSasYTlLnQv1ye47upO7OLFM6pQXgIDMy6/s656s/D/kRosoOQSI5LN5IVV6CU
-	 z092tk0RhDy1wMwICdRbWfaXNRhkh+65xxk6bHhsvzLhDHlC2kEhs1gx0tOnmjrW/zIYv
-	 az7R/sRnelxsPm6vsmXbkol/ixpw6VKuP1JUbWya/Fac6QefyYDKiSWG5lDyCTgJKr/JA
-	 1zL0ZC2GEm1m7JjTB1iDrX40QatCHqreaWx+CXUWKJxV/5Qd9IaL8TVYCI+EQXvqlwQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795121658;
+	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=0p+q8IpVTNOek8hpj/iQcusogTuctDnbBAIvKsNy3fQ=;
+	b=dAclDpe/HPAL47pfflaSwjTNic0VTIQ+qnye3/Gs+A1fj6EdjaUUcdphPrVsdNXPuK3E
+	 5Z+X5Q07ysnXmLkjOJ8EaZ6Px9DgGyfAHfKY8xk5ddigS+MgzmqNfuQjMOzUX9cYNiSX4
+	 K/z2qpNQNJJxl6L7oi2hfH7XOBLDV2/6dZUtvbjE9o+xlONWNqJQNeI3ruPE/Wxl0ZuhA
+	 SNCvioIOW+GSONq+xlwdQ8Fv5+Pa0vYMsf+JnsxW0hFRfmy1dL7mVpgetpL6LxZivIRnp
+	 NsPakbqIzgDpde2ZZKqIKcYrS/2+ZkD7hq3pjweQpjSerKE9pFiicXwEhHuoArM5e7Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=XUsuVD2N;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=fhH95VeS;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 0A48B606A905;
-	Thu, 19 Nov 2026 20:49:44 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AD2B7606A901
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 20:54:18 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=XUsuVD2N
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id C419A1F000C0;
-	Thu, 19 Nov 2026 20:49:41 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=fhH95VeS
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id DCE651F000C0
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 20:54:17 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795121384;
-	bh=6uUyYlgjM4gUdz5mj1dp5lYq0596fRi9TUMCukh9VpQ=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=XUsuVD2NP90/zfhUq9QbKDAGXZhdmG7O0dpAwPuMLXYuHA+VoVSq3LwTuzGNJ2xoy
-	 pV7h6GlpNWJZdh+tQ7T8BoZICBsaA2neeIJsyeGJPjHbEd8sWe8qD312t0m4XYkqV/
-	 LoSlP2csABz4sBDz1ttLmKZMKk3vQnxk3YuS21AsxlarQsWPozwmZMwptG4NWo0QR9
-	 N1wVktid4Bxzu54Xfs2Jy80X4EjDqQKBN1ZyQpXn7zh7DxjSVlmxETqGvXpTodcoIJ
-	 /PHgRfyNNNvlC/QJrm8d/c88bX+m/rrMjwyCSXG6XjQiLY63pymmDeSx+CM73mL4Pd
-	 /Lts2Y92lgbmg==
-Date: Thu, 19 Nov 2026 21:49:39 +0100
-From: Christian Brauner <brauner@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: ebiggers@kernel.org, hch@lst.de, fsverity@lists.linux.dev, 
-	dsterba@suse.com, linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	viro@zeniv.linux.org.uk, jaegeuk@kernel.org, chao@kernel.org, tytso@mit.edu
-Subject: Re: [PATCH v2 2/5] fsverity: add I_VERITY_BUILDING inode state flag
-Message-ID: <20261119-geben-irren-erspielen-4456e4be9246@brauner>
-References: <20261105115532.613467-1-aalbersh@kernel.org>
- <20261105115532.613467-3-aalbersh@kernel.org>
+	s=k20260515; t=1795121658;
+	bh=0p+q8IpVTNOek8hpj/iQcusogTuctDnbBAIvKsNy3fQ=;
+	h=From:To:Subject:Date;
+	b=fhH95VeSEC2YXsFQsTC7ZmGM9a04fqDYXa3N9gRtRp1pMYOeZIRDjd/VrP3iQf0Xs
+	 vXv5Qe85C+Zy3oQjXewyIfXwOklGbnF4Zt6w7RGjdsu+tTb585jHnM3nUm0SIbw8v/
+	 +djeBPrTnHH9X9y06rfeobgiB+j7VGZpb4686oKbJwxlc1VkuoNMFF/mBJ2FgiodHo
+	 aZ5pzsAbUKQgpz0i8jH1Go7vsk4WMwmV4JBgYzVmhuYaUotwrYTl1/0QaBYE4LUhxt
+	 BWR8EKaAsdJl0jTQCGxPcrTqnsv1DKG67jm2+lbxxxe7+lgry5d9VGh/pyI2q+1PBv
+	 kWz9DpqhvRxnw==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: fix zeroing tail of copied inline extent when reflinking
+Date: Thu, 19 Nov 2026 20:54:14 +0000
+Message-ID: <29d76fabcc56ab13b66b7149638348c9914221c5.1795121636.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -59,33 +54,44 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-In-Reply-To: <20261105115532.613467-3-aalbersh@kernel.org>
+Content-Transfer-Encoding: 8bit
 
-On Thu, Nov 05, 2026 at 12:55:27PM +0100, Andrey Albershteyn wrote:
-> Every filesystem that supports fs-verity keeps a private runtime inode
-> flag meaning Merkle tree is currently being built *_VERITY_IN_PROGRESS.
-> They all serve the same two purposes: reject a concurrent enable with
-> -EBUSY and let the write paths recognize the special writes done while
-> the tree is under construction.
-> 
-> Hoist this flag into the VFS as a new inode state flag,
-> I_VERITY_BUILDING, and manage its lifetime in the generic fs-verity
-> enable path. The flag is set after ->begin_enable_verity() succeeds and
-> cleared after ->end_enable_verity() returns (both on the success and the
-> rollback paths). Add the concurrent-enable guard.
-> 
-> A new helper, fsverity_is_building(), is provided for filesystems to
-> query the flag. No filesystem uses it yet; the per-fs flags are
-> converted in following patches.
-> 
-> Signed-off-by: Andrey Albershteyn <aalbersh@kernel.org>
-> ---
->  fs/verity/enable.c       | 22 +++++++++++++++++++---
->  include/linux/fs.h       |  6 ++++++
->  include/linux/fsverity.h | 21 +++++++++++++++++++++
+From: Filipe Manana <fdmanana@suse.com>
 
-fs,fsverity:
+When the fs block size is smaller than the page size or we are using large
+folios, we are zeroing the tail part of a block in the wrong range of the
+folio because we are not taking into account that the folio can contain
+multiple blocks. That is, we are ignoring the offset in the folio for
+the end offset of the inline extent's data.
 
-as prefix, please.
+Fix this by computing the correct folio offset.
+
+Link: https://sashiko.dev/#/bug/linux-7e417e9c-465a-41aa-884e-d1c65fc614cb
+Fixes: 3115deb381e9 ("btrfs: reflink: make copy_inline_to_page() to be subpage compatible")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/reflink.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/reflink.c b/fs/btrfs/reflink.c
+index ecef21773027..618556cf1ba4 100644
+--- a/fs/btrfs/reflink.c
++++ b/fs/btrfs/reflink.c
+@@ -150,8 +150,12 @@ static int copy_inline_to_page(struct btrfs_inode *inode,
+ 	 *
+ 	 * So what's in the range [500, 4095] corresponds to zeroes.
+ 	 */
+-	if (datal < block_size)
+-		folio_zero_range(folio, datal, block_size - datal);
++	if (datal < block_size) {
++		const size_t foffset = offset_in_folio(folio, file_offset) + datal;
++		const size_t zero_len = round_up(foffset, block_size) - foffset;
++
++		folio_zero_range(folio, foffset, zero_len);
++	}
+ 
+ 	btrfs_folio_set_uptodate(fs_info, folio, file_offset, block_size);
+ 	btrfs_folio_set_dirty(fs_info, folio, file_offset, block_size);
+-- 
+2.53.0
+

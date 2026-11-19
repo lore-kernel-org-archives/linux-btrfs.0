@@ -1,99 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=62.89.141.173
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795067497;
-	b=PizJrPiRdacQOivJN1glKJiYPuAYyuMqqTZl3wR6SZDQCrGB0x8rOMA9QkgdTaT0uV/1
-	 bgLOd87vA/SwIr+H+68jWMEIOv5B4NGuBQ+p7yO9tZmKcyqE8vVdCqqAKSihHDS0K7yDP
-	 7O8b5P+to3XynZpyLjO5JJjiL8lXNU7SReH3SYW6tM7daU8vm4G6OJm+/TaXmJmMg1gyL
-	 Yfxr+8of5GKNaxXhphnWFrQHUHf8SnYjbFzm5o9OfJIDiolqN8uORqfvKszlLXISCHMvK
-	 2be/9YMNQdXf5MwcfuM4NkEwLIA2LOfWAAHBXC1JS/fmxCNDNh8KH2VXQLN9kHFF89Q==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795067497;
-	h=DMARC-Filter:DKIM-Signature:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To:Sender;
-	bh=z8G4571aUTPFuGlDRih4WtoT+MR1zWs5KxPfHLJ0IoQ=;
-	b=K438CdbgINAZblCj2Vo8NMPTupp/jd8A3pokleOc9gKBuaVvr8hgSpT7r+t88U3xpw4R
-	 8lCEgPXLikVJak4pUOOjA4WHRs43tG8gXxCkodM9lU1qGFg3zzn8+XP2CxxHooy1Gayd0
-	 juO8N3HMQBBckyCNTsdUDRwj9NuzbHC90rRyc7Aa3H108FuG2cE5256WaeqxJlJN+wkEj
-	 takEtrZqw7IUaVDHq3aUOrY1e0ps3JpvqlCFmg12LpqYohT5bh1QbKRiHNRdaq2adobsE
-	 vYFosqm6szMv6srf4rGaa0Vd5nVeEHcEzwuULrG4gu1btRDDdAOfuAPwdULTADdmyPg==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=zeniv.linux.org.uk;
-	spf=none smtp.mailfrom=ftp.linux.org.uk;
-	dkim=pass header.d=linux.org.uk header.i=@linux.org.uk header.a=rsa-sha256 header.s=zeniv-20220401 header.b=HUmq9V2f;
-	arc=none smtp.remote-ip=62.89.141.173
-Received: from zeniv.linux.org.uk (zeniv.linux.org.uk [62.89.141.173])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.46
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1795069283;
+	b=JlXjBaixsNSpbQU0sk4lcGCEtMvLcOcJhfJ/5fuuVENvkHEj3KXKLTp0KsA6IF8VA/C1
+	 /QLHaloBbVyclV5+gAr0SL6m2Awv6enWCZYRk3pc7w6HX9pmTDgFJOA+bqZI/AKVQLLxD
+	 RpgYqcPLoMM0DgSKxBdYztOOi0q9D7ZVUP7s2EoLxAiQJQH6spbygq2xxuH6TSZdXG+V+
+	 WdkMXUPJB71uB3+3ukxcaI8CcprAxpo8Imm79wd7fwjsWUNJdU0obfgTfuOtKxDUIomPa
+	 1WQ6qkRYQH+MCENPng6CeQFz9x8VCn1LW2oWiuV9DEwBvrjenJkBDEjaOTofdlAtA5A==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795069283;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=dw4sEEscOzdXh0Zd2TjfgHcpr97CB+RHTHfHcH2OFEY=;
+	b=kuehChKIKqOEWeD1UDppX60JOXf0rHf8MNd+hjR+/uVdf0pltn0kixHuptjqcpCcj2SY
+	 AL5V69Hb8bGuEkTQHk5OY3onETAIGixpGgqlq4kllBa/y/kh5t54UhsLA1LsveQLlO28q
+	 8TblXo7I9rOScTrWYXwcOTDUgrgZTuGzcQxuhWUcpXP43ZgUZaCZLEQvi8mcOgJvIc2wg
+	 sQ5r5lev9Yy/ms2pr7WGFXI07dWgAWx+ytjr/633MyPXR8gippL/LRMKuPtqLV5nnSAv6
+	 QcTxEzXOcvBNtYi+VfCW2vOHOqjKZU53BHd9XgIZRghrhmqA6eoBxOQ7KwEL9615MhQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Lc2q2E6a;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.219.46
+Received: from mail-qv1-f46.google.com (mail-qv1-f46.google.com [209.85.219.46])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EFD1F606A325;
-	Thu, 19 Nov 2026 05:51:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EFD1F606A325
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=zeniv.linux.org.uk
-Authentication-Results: smtp.subspace.kernel.org; spf=none smtp.mailfrom=ftp.linux.org.uk
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C985606A326
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 06:21:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1C985606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=linux.org.uk header.i=@linux.org.uk header.a=rsa-sha256 header.s=zeniv-20220401 header.b=HUmq9V2f
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=linux.org.uk; s=zeniv-20220401; h=Sender:In-Reply-To:Content-Type:
-	MIME-Version:References:Message-ID:Subject:Cc:To:From:Date:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=z8G4571aUTPFuGlDRih4WtoT+MR1zWs5KxPfHLJ0IoQ=; b=HUmq9V2fqWZniya7o9nBaVPeDZ
-	hdLnNqA0+VaoySgEJuKHB41/nmyLaGptpyplTvFZpj9ZsUfvW/Uacb0EujAyxoatj/wEjrTHUy1Y8
-	Jf/0+dvEia8oYQhTDJ2QTEjT6TZu9xP6N/is4httLR57O2jb4I7x7sybjo+/cFqRcKEnzzz9PN71w
-	Fs3s4nF5yw1DIdzaYMKdWCNazNDVu5/+7GdnX+s8wkC+dHul4l8kAJetHVgTfI7IM42m1/kFkA0V+
-	e5cVGVGh3fNAY2bVKP02Pyi9IdxpjMoQwmhSMxh71ivIpbruqUDwYbd4JXLlMVMx0hkbK2WWTq4Oa
-	k2qmfFmA==;
-Received: from viro by zeniv.linux.org.uk with local (Exim 4.100.1 #2 (Red Hat Linux))
-	id 1xTv3O-000000063G7-3IJX;
-	Thu, 19 Nov 2026 05:51:26 +0000
-Date: Thu, 19 Nov 2026 05:51:26 +0000
-From: Al Viro <viro@zeniv.linux.org.uk>
-To: Christian Brauner <brauner@kernel.org>
-Cc: Cai Xinchen <caixinchen1@huawei.com>, mic@digikod.net,
-	gnoack@google.com, paul@paul-moore.com, jack@suse.cz,
-	amir73il@gmail.com, andrii@kernel.org, apparmor@lists.ubuntu.com,
-	ast@kernel.org, axboe@kernel.dk, bpf@vger.kernel.org,
-	casey@schaufler-ca.com, cel@kernel.org, cem@kernel.org,
-	chenxiaosong@chenxiaosong.com, code@tyhicks.com, corbet@lwn.net,
-	Dai.Ngo@oracle.com, dakr@kernel.org, daniel@iogearbox.net,
-	dhowells@redhat.com, dlemoal@kernel.org, dmitry.kasatkin@gmail.com,
-	driver-core@lists.linux.dev, dsterba@suse.com,
-	ecryptfs@vger.kernel.org, eddyz87@gmail.com, emil@etsalapatis.com,
-	eric.snowberg@oracle.com, exfat@lists.linux.dev,
-	georgia.garcia@canonical.com, gregkh@linuxfoundation.org,
-	hch@lst.de, hirofumi@mail.parknet.co.jp, hyc.lee@gmail.com,
-	ihor.solodrai@linux.dev, jlayton@kernel.org, jmorris@namei.org,
-	johan@kernel.org, john.fastabend@gmail.com,
-	john.johansen@canonical.com, jolsa@kernel.org, kpsingh@kernel.org,
-	linkinjeon@kernel.org, linux-api@vger.kernel.org,
-	linux-block@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-cifs@vger.kernel.org, linux-doc@vger.kernel.org,
-	linux-fsdevel@vger.kernel.org, linux-integrity@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-kselftest@vger.kernel.org,
-	linux-nfs@vger.kernel.org, linux-security-module@vger.kernel.org,
-	linux-trace-kernel@vger.kernel.org, linux-unionfs@vger.kernel.org,
-	linux-xfs@vger.kernel.org, liubaolin12138@163.com,
-	martin.lau@linux.dev, mason@kernel.org,
-	mathieu.desnoyers@efficios.com, matt@bobrowski.net,
-	memxor@gmail.com, mhiramat@kernel.org, miklos@szeredi.hu,
-	neil@brown.name, netfs@lists.linux.dev, ntfs@lists.linux.dev,
-	okorniev@redhat.com, omosnacek@gmail.com,
-	penguin-kernel@i-love.sakura.ne.jp, rafael@kernel.org,
-	rdunlap@infradead.org, roberto.sassu@huawei.com,
-	rostedt@goodmis.org, selinux@vger.kernel.org,
-	senozhatsky@chromium.org, serge@hallyn.com, sj1557.seo@samsung.com,
-	skhan@linuxfoundation.org, song@kernel.org,
-	stephen.smalley.work@gmail.com, takedakn@nttdata.co.jp,
-	tom@talpey.com, yonghong.song@linux.dev, yuezhang.mo@sony.com,
-	zohar@linux.ibm.com, utilityemal77@gmail.com, lujialin4@huawei.com
-Subject: Re: [PATCH -next -v4 02/17] LSM: pass struct path to the
- inode_setsecctx hook
-Message-ID: <20261119055126.GU989762@ZenIV>
-References: <20261117150542.1169451-1-caixinchen1@huawei.com>
- <20261117150542.1169451-3-caixinchen1@huawei.com>
- <20261117184342.GR989762@ZenIV>
- <20261118001641.GA1669148@ZenIV>
- <20261118-woher-duften-bejubeln-7a8a2099f89f@brauner>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=Lc2q2E6a
+Received: by mail-qv1-f46.google.com with SMTP id 6a1803df08f44-92107df3f13so17019766d6.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2026 22:21:21 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1795069281; cv=none;
+        d=google.com; s=arc-20260327;
+        b=dBZGLzORx5VMQhcHwdcR1TvA3wfaMJ+b3zFNN7CQuwtp4PJiCqZFg+peUjQPYIKafR
+         xYfTe2Em3FWi3ShW3BNtKXeieTh4/Mu0lPa8qdTqcUbk07J4mKfI6SqFvmuSFFXRv61F
+         n2bwLam44qs0IJh0j2Dw+wnuKoIOa46k3ZN1pxW9v5U1XYQqu25YVWfBB00gJ9NfFZ9i
+         z5QemLr6H9V80rKXnLKuGHvI96wao4Q3knOGtGpRKWaJvxTakuLkMupGIiczwbaOtits
+         x+XGFHNVp0inrDa3ap5Jl5R8Q3ZIkEvjS7lTZveIehpbHarIQtSv3evns2993kUEWt/E
+         W4Hw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=dw4sEEscOzdXh0Zd2TjfgHcpr97CB+RHTHfHcH2OFEY=;
+        fh=SHyGiWLQjfFtntLQotqzM0HFKLLG9tQHX1CFuYwAzOY=;
+        b=k7v8jjCcqa67YdAfUwZacVaS2eHuDoR+vQ74NrzrlxvaIHAjumooMnVgVwIQ0jL08u
+         +b0ZVEqT+qvFnbAGj084/vkkPKw2paz57z6HuB9N13IiHQvTopoQGF/MR/BUjyVWMCgO
+         3OAi8Y73MxfvTaPMbu818Nd9wkI/wCTTPdeMXMptM5H8PnQMuvjKIl7hgViNftBs6aGJ
+         AtnUO8Z305Ycy1Ck7q/UaFSQJnphTex+1UhJRh+rS4CerLfQ995gzTb1wuNlixL16nfO
+         +9cM9NvMYRLdCMw3TCbFoGbry8kDQo/Jexj/MWxYnfqJVxBKtLGjWIjhy6ZyKfvyn6+n
+         wcuQ==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795069281; x=1795674081; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=dw4sEEscOzdXh0Zd2TjfgHcpr97CB+RHTHfHcH2OFEY=;
+        b=Lc2q2E6aq/619ivYO6N3rLuPF4GGpBYfUThFCLnXePbxSRg8VO6GmEpvXmwK3IB1H0
+         EdQBzDmWmk0W+i06F7oQcBQUc6Nb9R6sf9NyPovrLi7PJpo59YUGRLnVoEiFmfDJE1eD
+         znQZ94clOnQt09sBYjkAIKoibCtHSbm8FORWqeiPBdy7b2aYJ4rtVxT38BnMiZTJyE61
+         ECcuTdghI2R9+T9DjSqp7TJwiuyy7cZECFRYrX3L0CEXZ80DgSCd0Da9i5dezHKbAK9m
+         Sy9he5BQ5mpF68GITpvRHpHeQ3NJKgQhdy8iqXgtKdaGScMFryzv0jux06v6A8AfLEW7
+         StmQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795069281; x=1795674081;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=dw4sEEscOzdXh0Zd2TjfgHcpr97CB+RHTHfHcH2OFEY=;
+        b=i6u4l0mphH2j7WhJAtkJ4PDPqJk2gDjeEPxSteiEnSRkxM0GN9lRlOox6nwQFWaz+a
+         tOkBBq6uOLvr1aTelWD713wgsc1HXs66oFyNySjALl4mJ2vIAtpcVp1XO6bndMS7jfnA
+         Pg2fRFJZy35m3lNargQaBbODjf4esS4Af4NLhh7ZDlEngNs00cG0kRNccWNJm/gfi6ec
+         LcqJnQMkJaioDKjynaCQGTnNMo5iVrscJ3NcYQO7VaS0VAlj8TrNhwlD29Fb16PvXWpD
+         2JXpk08dFqoAqcscgCPtpzQYeER6Fka481hWBTeycQyN16meLmx9OD25cOmG0ZXE9AGQ
+         l+uA==
+X-Forwarded-Encrypted: i=1; AL+hErF6xv8tvgtdOkl0TZM0NCNRd2+C9+D7Qy9QyolNzte/KSG1YWgwzYI6Xd01i0z+COXQJBQj3i2qdx4k2g==@vger.kernel.org
+X-Gm-Message-State: APuU4Z89LkPlxYkTeM2foc6HOohJFjdSSoRQiK+ZFQ0fVYYH7pRP/rrQ
+	pmvEMOL0hsK77C+k1lRScBs9PEe4kolYnMsNgsPNV3UGxrly+MEcKtjBLbrQHj7Wiak1QC+HWCc
+	fsYl2p5KoTuBNjCxG4fN0yfqdqds7zT0=
+X-Gm-Gg: AZFdTZceXOD6o/k3jnSlhaiNduIC1wFtTAc6jSz0QndCR188WlplJMgAKug95FfLd2n
+	3pQwgorIwrknFq6AQSECFcEj99lrCnZ06Zl5X3vAlNJQn9kY1Yq2t/9Q3E0wfzwof51Zzddg4bo
+	uePSozG+RHafCC1gt+4Pfs9f7KHzmuGrnYtzijmTR+po2crJnVgj/tZyIBlHmD7dZ2C7X8w2Hbz
+	wNTX9XLUC9HfJUsWJJVi05QsFAAJ1V+SwgKnMBrmi8cMq/dyTkbaDDWmrvzlLU/E+TKv9LrVKZ8
+	ml5I7fTduLujgVyJkNbgC6G7fIiQNrm2dS2M14hz3f1BxPgzNL7xALjX/vT5rFlSmJ5CKgm+LAI
+	SDS8NRyVGBcW1MHs7EEsK3OO0MBXiB9dKX9ZnaZbpuWP/FqcI7BsLrH9QvMRsMcdbTdtv8oO1RS
+	MEgQsSo439MS9vSAG3xsQ=
+X-Received: by 2002:a05:6214:8602:b0:921:117d:2e88 with SMTP id
+ 6a1803df08f44-92114f1258fmr78619116d6.28.1795069280925; Wed, 18 Nov 2026
+ 22:21:20 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -103,123 +102,95 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261118-woher-duften-bejubeln-7a8a2099f89f@brauner>
-Sender: Al Viro <viro@ftp.linux.org.uk>
+From: =?UTF-8?B?5qKT5bed5ZKy5aSq?= <inkxiao12@gmail.com>
+Date: Thu, 19 Nov 2026 01:21:09 -0500
+X-Gm-Features: Aa3M54rKctNstj-xAw2aIWk4fNeHbccByvy8aMtrRliTYHyg6gQPWk7NFTjZLmk
+Message-ID: <CAMcAce918POMDvZtF6QbhZMzmf+m49jKGdBEKV2pUi_Y3nn-Ug@mail.gmail.com>
+Subject: [PATCH bpf 3/3] bpf: Add missing raw_tp_null_args[] entries for fs tracepoints
+To: bpf@vger.kernel.org
+Cc: dsterba@suse.com, dhowells@redhat.com, pc@manguebit.org, 
+	idryomov@gmail.com, linux-btrfs@vger.kernel.org, netfs@lists.linux.dev, 
+	ceph-devel@vger.kernel.org, ast@kernel.org, daniel@iogearbox.net, 
+	stable@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-On Wed, Nov 18, 2026 at 09:51:27AM +0100, Christian Brauner wrote:
-> On Wed, Nov 18, 2026 at 12:16:41AM +0000, Al Viro wrote:
-> > On Tue, Nov 17, 2026 at 06:43:42PM +0000, Al Viro wrote:
-> > > > + * Hooks that take a struct path argument: the VFS only sanctions passing
-> > > > + * the path to VFS helpers that take a struct path (e.g. notify_change());
-> > > > + * it makes no guarantees with regard to path->mnt, whose layout and
-> > > > + * implementation details are subject to change.  Implementations must
-> > > > + * not rely on its properties.
-> 
-> That comment is a garbled version of an earlier review. It meant that
-> LSMs get no guarantees about struct vfsmount internals and don't get to
-> poke at them. I'm not sure how this can be read as path->mnt being a
-> random mount.
+Four built-in filesystem tracepoints pass NULL pointer arguments without
+corresponding PTR_MAYBE_NULL masks in raw_tp_null_args[]:
 
-"no guarantees with regard to path->mnt" is easy to parse that way when one
-is stuck with a caller that needs to be converted to new API with no relevant
-mount reference in sight.
+  1. btrfs_prelim_ref_insert (include/trace/events/btrfs.h:2878):
+     fs/btrfs/backref.c:328 passes literal NULL for arg 2 (newref),
+     and TP_fast_assign (:2856) checks newref ? newref->count : 0.
+     Add { "btrfs_prelim_ref_insert", 0x100 }. (Also affects 6.12.y.)
 
-> > > If that kind of stuff actually does get passed to any existing hooks, we need
-> > > to fix that ASAP.
-> 
-> Of course there is one...
-> 
->   dent = lookup_one_unlocked(idmap, &QSTR_LEN(...),
->                              priv->dir_fp->filp->f_path.dentry);
->   [...].
->   rc = ksmbd_vfs_fill_dentry_attrs(priv->work, idmap, dent, &ksmbd_kstat);
-> 
-> It passes only the bare dentry, and ksmbd_vfs_fill_dentry_attrs() then
-> makes up a path from the share's root mount:
-> 
->   struct path path = {
->           .mnt = share_conf->vfs_path.mnt,   /* mount the share is exported from */
->           .dentry = dentry,                  /* entry inside the listed dir */
->   };
->   rc = vfs_getattr(&path, ...);
-> 
-> since 5614c8c487f6 ("ksmbd: replace generic_fillattr with vfs_getattr").
-> 
-> So a client that lists a directory on a submount below the share then
-> that dentry belongs to another superblock. So security_inode_getattr()
-> and ->getattr() get a mixed path.
+  2. cachefiles_no_space (include/trace/events/cachefiles.h:718):
+     fs/cachefiles/namei.c:122 passes literal NULL for arg 0 (obj),
+     and TP_fast_assign (:729) checks obj ? obj->debug_id : 0.
+     Add { "cachefiles_no_space", 0x1 }.
 
-So e.g. apparmor hits
-        vfsuid_t vfsuid = i_uid_into_vfsuid(mnt_idmap(path->mnt),
-					    d_backing_inode(path->dentry));
-with path->mnt having nothing to do with path->dentry there?  Fun...
+  3. netfs_failure (include/trace/events/netfs.h:413):
+     raw_tp_null_args[] currently lists 0x10 (arg 1, sreq only), while
+     fs/netfs/buffered_read.c:790 calls trace_netfs_failure(NULL, NULL,
+     ret, netfs_fail_check_write_begin), passing literal NULL for arg 0
+     (rreq) as well. Update mask to 0x11. (Also affects 6.12.y.)
 
-> The third patch in this series fixes this. But we should make this a
-> Fixes: patch really... Something like [1].
-> 
-> > To elaborate a bit: correctness of quite a few places does depend upon the
-> > following invaraint:
-> > 	path->mnt->mnt_sb == path->dentry->d_sb		(1)
-> > for all struct path pointers they might possibly run into.
-> >
-> > _IF_ you can guarantee that (1) is not violated, we have something to
-> > talk about; otherwise, don't call your object struct path and don't
-> > pass it to anything that expects to deal with struct path.
-> 
-> Every struct path the series constructs:
-> 
->   - devtmpfs
->   - nfsd
->   - cachefiles
->   - ecryptfs
->   - overlayfs
->   - ksmbd
-> 
-> doesn't have this bug.
-> 
-> [1]:
-> 
->   --- a/fs/smb/server/smb2pdu.c
->   +++ b/fs/smb/server/smb2pdu.c
->   @@ -6375,13 +6375,14 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
->                           continue;
->                   }
-> 
->   +               path.mnt = priv->dir_fp->filp->f_path.mnt;
->   +               path.dentry = dent;
->   +
->                   if (test_share_config_flag(priv->work->tcon->share_conf,
->                                              KSMBD_SHARE_FLAG_HIDE_UNREADABLE)) {
->                           __le32 daccess = FILE_READ_DATA_LE | FILE_READ_EA_LE |
->                                   FILE_READ_ATTRIBUTES_LE;
-> 
->   -                       path.mnt = priv->dir_fp->filp->f_path.mnt;
->   -                       path.dentry = dent;
->                           rc = smb_check_perm_dacl(priv->work->conn, &path,
->                                                    &daccess, daccess,
->                                                    priv->work->sess->user->uid,
->   @@ -6397,7 +6398,7 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
->   @@ -6397,7 +6398,7 @@ static int process_query_dir_entries(struct smb2_query_dir_private *priv)
->                   if (priv->info_level != FILE_NAMES_INFORMATION) {
->                           rc = ksmbd_vfs_fill_dentry_attrs(priv->work,
->                                                            idmap,
->   -                                                        dent,
->   +                                                        &path,
->                                                            &ksmbd_kstat);
->                           if (rc) {
->                                   dput(dent);
->   --- a/fs/smb/server/smb_common.c
->   +++ b/fs/smb/server/smb_common.c
->   @@ -472,32 +472,36 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work, int info_level,
->           for (i = 0; i < 2; i++) {
->                   struct kstat kstat;
->                   struct ksmbd_kstat ksmbd_kstat;
->   -               struct dentry *dentry;
->   +               struct path path = { .mnt = dir->filp->f_path.mnt };
+  4. ceph_mdsc_suspend_request (include/trace/events/ceph.h:89):
+     fs/ceph/mds_client.c:3691,3726,3749 invoke
+     trace_ceph_mdsc_suspend_request(mdsc, session, req, ...) with
+     session == NULL (arg 1), and TP_fast_assign (:107) checks
+     session ? session->s_mds : -1. Add { "ceph_mdsc_suspend_request", 0x10 }.
 
-That's just asking for breakage down the road.  Just pass it
-the address of ->f_path for "." and
-	&(struct path){.mnt = dir->filp->f_path.mnt, .dentry = dentry}
-for ".." (and sod the dentry = dget(...) for "." - just have it NULL there)
+Verified in QEMU on x86_64 7.4.0-rc3 (20eef29b7c84, all 4 tracepoints
+flip LOADED -> REJECTED) and 6.12.118 (btrfs_prelim_ref_insert and
+netfs_failure flip LOADED -> REJECTED; cachefiles_no_space and
+ceph_mdsc_suspend_request are post-6.12 tracepoints).
+
+Fixes: 838a10bd2ebf ("bpf: Augment raw_tp arguments with PTR_MAYBE_NULL")
+Cc: stable@vger.kernel.org # 6.12+
+Signed-off-by: BoBppy <inkxiao12@gmail.com>
+---
+ kernel/bpf/btf.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/bpf/btf.c b/kernel/bpf/btf.c
+index ef10af2..30be05b 100644
+--- a/kernel/bpf/btf.c
++++ b/kernel/bpf/btf.c
+@@ -7274,6 +7274,8 @@ static const struct bpf_raw_tp_null_args
+raw_tp_null_args[] = {
+  { "afs_make_fs_call2", 0x10 },
+  { "afs_protocol_error", 0x1 },
+  { "afs_flock_ev", 0x10 },
++ /* btrfs */
++ { "btrfs_prelim_ref_insert", 0x100 },
+  /* cachefiles */
+  { "cachefiles_lookup", 0x1 | 0x200 },
+  { "cachefiles_unlink", 0x1 },
+@@ -7284,6 +7286,7 @@ static const struct bpf_raw_tp_null_args
+raw_tp_null_args[] = {
+  { "cachefiles_mark_inactive", 0x1 },
+  { "cachefiles_vfs_error", 0x1 },
+  { "cachefiles_io_error", 0x1 },
++ { "cachefiles_no_space", 0x1 },
+  /* ext4, from ext4__mballoc event class */
+  { "ext4_mballoc_discard", 0x10 },
+  { "ext4_mballoc_free", 0x10 },
+@@ -7314,7 +7317,7 @@ static const struct bpf_raw_tp_null_args
+raw_tp_null_args[] = {
+  /* .. from mm_page event class */
+  { "mm_page_alloc_zone_locked", 0x1 },
+  /* netfs */
+- { "netfs_failure", 0x10 },
++ { "netfs_failure", 0x11 },
+  /* power */
+  { "device_pm_callback_start", 0x10 },
+  /* qdisc */
+@@ -7416,6 +7419,8 @@ static const struct bpf_raw_tp_null_args
+raw_tp_null_args[] = {
+  { "pnfs_mds_fallback_write_done", 0x10000 },
+  { "pnfs_mds_fallback_read_pagelist", 0x10000 },
+  { "pnfs_mds_fallback_write_pagelist", 0x10000 },
++ /* ceph */
++ { "ceph_mdsc_suspend_request", 0x10 },
+  /* coda */
+  { "coda_dec_pic_run", 0x10 },
+  { "coda_dec_pic_done", 0x10 },

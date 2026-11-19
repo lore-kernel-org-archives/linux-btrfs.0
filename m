@@ -1,87 +1,58 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.224
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795058440;
-	b=egsOL3UYeWo2PbiSu499ELaUm5qF3qpJnRqgHttQ1rEkdjDxonQAc0xQwV+xqfcE4Y9j
-	 noah6aBzg/jdypooBvkHbBgkwWlVUnkkXv5Ykga40hDcSX3CNf9mqGYhlyb2jIhwFVOLb
-	 CbAe/veUca+ncvsBPQSDUt4r1dWkfEcm9y3J6ekTxnJPTydc9EXwoRDomk7uO2EFDw9YG
-	 +2Pa0VEi/qZEGBmZTXIw/LFArDC01lw7j9J1SlZBw38o1r89m4PlQs04KS8QJh7d8I1Q4
-	 i040eIcwqdVV8ZuqaexPbI8rxdUMfGeqCeZINY8SWjPne48wkYyPyEZ19dzOAOP4EJw==
+	t=1795059983;
+	b=QYt4A8VEMNU2nDiWBjzUQ7PEbKtbfaSd2D4AekzpAzCU4GvL+3+YoXkX6+g0vEvwzx9+
+	 Gf6lw0N0abtxb2Sid24/YKLVoBglkGEbv2POOON+Q7aAVGSfKg9ipmcJmRbOpm3XJ2CtY
+	 t++GrXGtHF4cXHxc0FSsPR+SYj1HwhQ9QbTjrgYGKPh4UOOADFtTAxrvZ3u0Rb9QqfgkB
+	 PfGCHwT1lM5PNwto0BLkoJcmgRqw9v4/4dgdihNEnKQlnpVfInOiyXrfzhDgCMhbWGDkC
+	 AUG0icYznYOT6p0xUdjrgX3PLZmeYtfAHEC8bVZkqoTmtiItMDEItwmMfXs2Bz9Xj0Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795058440;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
-	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
-	 X-Spamd-Result:X-Spam-Score;
-	bh=VpNFfKzHNhCYovbFj9x7bd+USPCuslFZOV8dJ+P6Wmo=;
-	b=3GKDo5GorszgaU+SFLa8G4z+pMIBW6hyQxczwUHkZZg9PqrjN2PGw+LQsT1WLxcSICTG
-	 CthA/R14Hx9+C4Vph0j/r7fvL6A1YfidumJV1OPQe5SLaEV/4iZ/hsw4UFSs6BTNveJOw
-	 0d7RHBezjSDDk+y2dMzJaHg97Zdy8VaoGaC/zf3yiveDkXHvHDiOlvbM4RktMTzBVfuWa
-	 KNgK0YnBEarXoNjzy6QCau8uWie8npN7mG5tdQ2VCmEHmgR5v1zGtGkQDTjHFBb1rHdN/
-	 S8Pfb7qvz2Pd+ABXYPy809+RQ58DsGHnZDvW11xpWvQ9P1kBmbhlxLdGkrBNZrCo/Gw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795059983;
+	h=DMARC-Filter:dkim-signature:Received:Received:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:CC:References:
+	 Content-Language:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:X-Originating-IP:X-ClientProxiedBy;
+	bh=OAbbp57riKGI1fZlq88CcOSg3koPqPRG3juTd/UX3uo=;
+	b=QaeNr5+xsg9u+Rf7J/e/9IDeo3uOfhzzOj8w1nwr4kfUk9+lX7pcWpnvwf4ki60o2Vxp
+	 waauT8pMaEmjFG6oMJwkIKgMuSK4SEPEIM8f5tBySDtSu/BZkC8dN9tQKto/F2a/WhWkQ
+	 puw01L5uYn+S3+hb4TM5Teq86DtGgKLpSqcsSIYtXIBD5Q+qNJAHTIUqiDB4DSXkfuKyu
+	 5xn8Z8hc3h6miOabyk83/zB8L5KNR1CbXYBK28HyMVCaAazkHH4TkK7kTzGv9MwsvfIMh
+	 o4flW/mnYDnxoiEyKn+x5Hu2XrwY2rwjlIabDzSvd5ZVIdlZDgBmE6N2ArXhodyDHeA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fKwCg53K;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fKwCg53K;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dmarc=pass header.from=huawei.com;
+	spf=pass smtp.mailfrom=huawei.com;
+	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b="V/52GJjf";
+	arc=none smtp.remote-ip=113.46.200.224
+Received: from canpmsgout09.his.huawei.com (canpmsgout09.his.huawei.com [113.46.200.224])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id C072D606A339
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 03:20:39 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org C072D606A339
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3CA36606A325;
+	Thu, 19 Nov 2026 03:46:20 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 3CA36606A325
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fKwCg53K;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fKwCg53K
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id B4C4C1F799
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 03:20:37 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795058437; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VpNFfKzHNhCYovbFj9x7bd+USPCuslFZOV8dJ+P6Wmo=;
-	b=fKwCg53K0aTxj6milFgJbPqZCJifI1bNMLM4p1bP2cQ5wF1DzhSQaCXaXqJrxcrYft3/d/
-	2r3YJ1HlWCO9KaFzq07EMjqlgXXBgRSXLAkMOFSsd4cD27wWHio+I4dN2OPPNDZ4RXwKMC
-	Twlxgq3UoYQPeHghXX6u1NlKrtZoD20=
-Authentication-Results: smtp-out2.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=fKwCg53K
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795058437; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=VpNFfKzHNhCYovbFj9x7bd+USPCuslFZOV8dJ+P6Wmo=;
-	b=fKwCg53K0aTxj6milFgJbPqZCJifI1bNMLM4p1bP2cQ5wF1DzhSQaCXaXqJrxcrYft3/d/
-	2r3YJ1HlWCO9KaFzq07EMjqlgXXBgRSXLAkMOFSsd4cD27wWHio+I4dN2OPPNDZ4RXwKMC
-	Twlxgq3UoYQPeHghXX6u1NlKrtZoD20=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 918FB1334C
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 03:20:36 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id sSvrFwBr/mq7WQAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 03:20:36 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: warn about multiple profiles after dev-replace
-Date: Thu, 19 Nov 2026 13:50:14 +1030
-Message-ID: <67c14c754958159d20a7152932adce7f77b2a0e1.1795057869.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1795057869.git.wqu@suse.com>
-References: <cover.1795057869.git.wqu@suse.com>
+	dkim=pass (1024-bit key) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=V/52GJjf
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=OAbbp57riKGI1fZlq88CcOSg3koPqPRG3juTd/UX3uo=;
+	b=V/52GJjfwvVK8DnDIvM5IQVRHWD6bWwP9aQgdIQW3zyiANrSaj0DY2j7nFjPaV7CdoJkRPEs9
+	j5P3307aBbCQKc9UtkmeUFvURRjxT+IUgrgDq+974N8dU9cb6StPqSQAXioAda0lAeeDVSXW/cF
+	zoa53Mrhki2F1QPx2mEV1j0=
+Received: from mail.maildlp.com (unknown [172.19.163.15])
+	by canpmsgout09.his.huawei.com (SkyGuard) with ESMTPS id 4jVPWm3pc4z1cyPH;
+	Thu, 19 Nov 2026 11:45:56 +0800 (CST)
+Received: from whupemk100010.china.huawei.com (unknown [7.152.184.41])
+	by mail.maildlp.com (Postfix) with ESMTPS id C65134058E;
+	Thu, 19 Nov 2026 11:46:16 +0800 (CST)
+Received: from [10.67.110.140] (10.67.110.140) by
+ whupemk100010.china.huawei.com (7.152.184.41) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.45; Thu, 19 Nov 2026 11:46:09 +0800
+Message-ID: <9787bc85-5b1c-4f13-9b0c-cd027548efa0@huawei.com>
+Date: Thu, 19 Nov 2026 11:46:07 +0800
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,84 +62,78 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: B4C4C1F799
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
-X-Spam-Flag: NO
-X-Spamd-Result: default: False [-12.01 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	FROM_HAS_DN(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	ARC_NA(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCPT_COUNT_ONE(0.00)[1];
-	DNSWL_BLOCKED(0.00)[2a07:de40:b281:104:10:150:64:97:from,2a07:de40:b281:106:10:150:64:167:received];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
-	RCVD_COUNT_TWO(0.00)[2];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DKIM_TRACE(0.00)[suse.com:+];
-	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
-X-Spam-Score: -12.01
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH -next -v4 02/17] LSM: pass struct path to the
+ inode_setsecctx hook
+To: Christian Brauner <brauner@kernel.org>
+CC: Al Viro <viro@zeniv.linux.org.uk>, <mic@digikod.net>, <gnoack@google.com>,
+	<paul@paul-moore.com>, <jack@suse.cz>, <amir73il@gmail.com>,
+	<andrii@kernel.org>, <apparmor@lists.ubuntu.com>, <ast@kernel.org>,
+	<axboe@kernel.dk>, <bpf@vger.kernel.org>, <casey@schaufler-ca.com>,
+	<cel@kernel.org>, <cem@kernel.org>, <chenxiaosong@chenxiaosong.com>,
+	<code@tyhicks.com>, <corbet@lwn.net>, <Dai.Ngo@oracle.com>,
+	<dakr@kernel.org>, <daniel@iogearbox.net>, <dhowells@redhat.com>,
+	<dlemoal@kernel.org>, <dmitry.kasatkin@gmail.com>,
+	<driver-core@lists.linux.dev>, <dsterba@suse.com>,
+	<ecryptfs@vger.kernel.org>, <eddyz87@gmail.com>, <emil@etsalapatis.com>,
+	<eric.snowberg@oracle.com>, <exfat@lists.linux.dev>,
+	<georgia.garcia@canonical.com>, <gregkh@linuxfoundation.org>, <hch@lst.de>,
+	<hirofumi@mail.parknet.co.jp>, <hyc.lee@gmail.com>,
+	<ihor.solodrai@linux.dev>, <jlayton@kernel.org>, <jmorris@namei.org>,
+	<johan@kernel.org>, <john.fastabend@gmail.com>,
+	<john.johansen@canonical.com>, <jolsa@kernel.org>, <kpsingh@kernel.org>,
+	<linkinjeon@kernel.org>, <linux-api@vger.kernel.org>,
+	<linux-block@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+	<linux-cifs@vger.kernel.org>, <linux-doc@vger.kernel.org>,
+	<linux-fsdevel@vger.kernel.org>, <linux-integrity@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>, <linux-kselftest@vger.kernel.org>,
+	<linux-nfs@vger.kernel.org>, <linux-security-module@vger.kernel.org>,
+	<linux-trace-kernel@vger.kernel.org>, <linux-unionfs@vger.kernel.org>,
+	<linux-xfs@vger.kernel.org>, <liubaolin12138@163.com>,
+	<martin.lau@linux.dev>, <mason@kernel.org>, <mathieu.desnoyers@efficios.com>,
+	<matt@bobrowski.net>, <memxor@gmail.com>, <mhiramat@kernel.org>,
+	<miklos@szeredi.hu>, <neil@brown.name>, <netfs@lists.linux.dev>,
+	<ntfs@lists.linux.dev>, <okorniev@redhat.com>, <omosnacek@gmail.com>,
+	<penguin-kernel@i-love.sakura.ne.jp>, <rafael@kernel.org>,
+	<rdunlap@infradead.org>, <roberto.sassu@huawei.com>, <rostedt@goodmis.org>,
+	<selinux@vger.kernel.org>, <senozhatsky@chromium.org>, <serge@hallyn.com>,
+	<sj1557.seo@samsung.com>, <skhan@linuxfoundation.org>, <song@kernel.org>,
+	<stephen.smalley.work@gmail.com>, <takedakn@nttdata.co.jp>, <tom@talpey.com>,
+	<yonghong.song@linux.dev>, <yuezhang.mo@sony.com>, <zohar@linux.ibm.com>,
+	<utilityemal77@gmail.com>, <lujialin4@huawei.com>
+References: <20261117150542.1169451-1-caixinchen1@huawei.com>
+ <20261117150542.1169451-3-caixinchen1@huawei.com>
+ <20261117184342.GR989762@ZenIV> <20261118001641.GA1669148@ZenIV>
+ <bdc22808-9f22-46f7-b42d-e6bd8e1eeaca@huawei.com>
+ <20261118-nordlicht-badeort-daumen-813a1e9fd0b3@brauner>
+Content-Language: en-US
+From: Cai Xinchen <caixinchen1@huawei.com>
+In-Reply-To: <20261118-nordlicht-badeort-daumen-813a1e9fd0b3@brauner>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 7bit
+X-ClientProxiedBy: kwepems500002.china.huawei.com (7.221.188.17) To
+ whupemk100010.china.huawei.com (7.152.184.41)
 
-There is a private user report that, after replacing a missing device
-from a degraded RAID1 raid, the fs is unable to tolerant a missing
-device anymore.
+o, you are right, dentry is borned *self-parented*, and 
+d_alloc()/d_alloc_parallel allocate
+from parent->d_sb, __d_move only re-parent withon on sb. So 
+dget_parent() cannot
+leave the sb.
 
-It turns out that a new SINGLE system chunk is created during that
-dev-replace, which will reject mounts if that device is missing.
-
-We have several sub-commands that will warn about such situation, e.g.
-"btrfs filesystem" and "btrfs balance".
-
-Add "btrfs replace start" to also do the warning before exiting.
-
-This warning will be output even if we failed to start replace, this is
-not the worst thing, as the end user have more chance to note the
-unexpected profiles.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- cmds/replace.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/cmds/replace.c b/cmds/replace.c
-index bd17ea94842b..bb89fcc0d4f3 100644
---- a/cmds/replace.c
-+++ b/cmds/replace.c
-@@ -355,13 +355,16 @@ static int cmd_replace_start(const struct cmd_struct *cmd,
- 			goto leave_with_error;
- 		}
- 	}
-+	btrfs_warn_multiple_profiles(fdmnt);
- 	close(fdmnt);
- 	return 0;
- 
- leave_with_error:
- 	free(dstdev);
--	if (fdmnt != -1)
-+	if (fdmnt != -1) {
-+		btrfs_warn_multiple_profiles(fdmnt);
- 		close(fdmnt);
-+	}
- 	if (fddstdev != -1)
- 		close(fddstdev);
- 	return 1;
--- 
-2.56.0
-
+On 11/18/2026 5:35 PM, Christian Brauner wrote:
+> On Wed, Nov 18, 2026 at 04:59:29PM +0800, Cai Xinchen wrote:
+>> There are two places that violate (1), both introduced by this series of
+>> patches in ksmbd:
+>>
+>> smb2_parent_compressed() and smb_inherit_dacl() pair the directory entry
+>> returned by dget_parent()
+>>
+>> with path->mnt, and problems arise once that directory entry becomes the
+>> root of its mount point.
+> No, (1) holds there. dget_parent() never leaves the superblock so the
+> parent has the same ->d_sb as path->dentry.
+>
+> What happens at the root of a mount is that the parent isn't below
+> path->mnt->mnt_root anymore. That's a different property and struct path
+> doesn't guarantee that (open_by_handle_at(), nfsd with
+> no_subtree_check). So there's nothing to fix for (1) in those two.

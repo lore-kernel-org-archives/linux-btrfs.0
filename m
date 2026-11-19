@@ -1,100 +1,55 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.45
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795107872;
-	b=NkZgolTMYbmq/Iqa42/da85vWv4ei3q8XfK05IqRmnA6G9Nus9VQ8OPLmhFu2j3itEVZ
-	 rWCFm2gmcj2WUyF+HAvDecf9WF8/MM8JQAFuoO/nZMVS0EQCaICVXOWldAAoV77Sknzqh
-	 3YPFTigoSQScF1hJU5jfMNfAzAWwdME9ZyGCmK464Kvd9wnm+6TTqpY3pYufOvjple3lN
-	 6+wS6xkXBqB+P8E0INt2XcVBj8vlHWssSI4ls+wIrWpROSnwWMdDcN8CYxK1kkT0bN2PP
-	 leYlmcuBry8h8uEIxKThvNh8VpsGYUFbfO5/ARJcnsUm0qGiVYHRrby1RpHpnOkaLIg==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795107872;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=2yLuK3u1QEHTUyBs9ayIe02GiJhaVWl6gJPjVQwJ7zg=;
-	b=2HXpgk+MwB6OxNbsZISRUFnDgxSwuEX93mH8+kicoFSVPaCwClliEH7si0TgFDuTPv5D
-	 hThFvlPV3KW/jINwoQT0HW5S9dW9XkKNoYUz1fpFjXDqGTsuNLg3FgbQwIlaV1aD8y9lX
-	 cGO7aJ2BuiYxubrgbbQfV48+sBadvRlvfEIu8NQJa4pAcoG7ynnk7MNWgUZLRaKQNDoYO
-	 1kViD4JR3gOhQw38I4wIdwIVmBB7RkvOIgfgzTJ8FDp46Rf3WIsjyftF2Uc3oH1f7Sr7x
-	 eT/wis8pN70P0xY7H7GKqzxmc1umDAv7KIYYs2sZDAqxG635wKNEuS9G+D8Id8t572g==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=s5zc6etq;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.45
-Received: from mail-ed1-f45.google.com (mail-ed1-f45.google.com [209.85.208.45])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1795109128;
+	b=QyKnrh3zwHH6QibO0ypCbP2IBDg5ux2aCpazcKdAqjs9yBVrjnAyqGwbb8feyMr1xqkb
+	 1GK373vC95kqZgr5sA6F9W4Eqj/qkwEmuLmKqCWge2qFvdXDC4A7+YRkrJ7bcNxf8GO8B
+	 9Oum2upd/w4z7L6sQaIwTGrv8uf8uPqZavJy8Sx3EK46iEJ3sN/ZB5ZBkfUdC+tBRxt5P
+	 wHioSnOxbqp2Z13zg7PbhjzUzyYdS8lvPPB8rHy9hqoBIIIUFmek5DoReTwXSFHWN3IgI
+	 J4OSk2wJ5pjlwPXdOG7fWUpACXqGK0ifraY7mL6oxqyva9mgKT+4wcGZ8Mr83DKJxSQ==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795109128;
+	h=Received:DKIM-Signature:Received:X-Forwarded-Encrypted:
+	 X-Gm-Message-State:X-Received:MIME-Version:References:In-Reply-To:
+	 From:Date:X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:
+	 Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=3NoSJfl1tqPHZMrjtjOr+avKcj2bGSnTS+mj2gEXY4g=;
+	b=RVeG3p673g0j2ubbQLxBLRZeIpMwg96e1nq88cqfCvkBllCPzbJDHqkSWXImgukueWYf
+	 WGCnuu/WxrklLEvOw8jlWYvXt3i7kX4Gm1HiUHlh44OFQ+47GCksr+w3DsP7SDsDNo5ve
+	 Co7K2Mt+gcXkYlsAOkPlBEicr3L4q4Gqg1t04NEQGUAwEWRp7Uw/DTy3kmM5m5lMjwDLk
+	 02mYTg+gR+jZXT55ZVL/5AXJ5U+ox02gYzQzLfTRHBVh08psoPmF+0/QP0pxeW+PRyU2y
+	 N71DBCUxVrIWrs2bQllXuXj1hX/mMDtM7WPhJugdiwSo5rplYZTVZi/w12Ry2bjZYwg==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=i9sxPLmp;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 48ED9606A32A
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 17:04:30 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 48ED9606A32A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 031BC60A2601
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 17:25:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=s5zc6etq
-Received: by mail-ed1-f45.google.com with SMTP id 4fb4d7f45d1cf-6b596afb4c5so2850193a12.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 09:04:30 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1795107869; cv=none;
-        d=google.com; s=arc-20260327;
-        b=OO4GQQlV+HdbHtQ9eFvDh0M/yZ1NoCN/DJktUwNpdJIQI3zqsIhBLXIWyuJuD16YCU
-         oV+M9SDFpPub3brJLlfZ9AhdDttTp/Pth5iQwkxSdXJkDz7s4T+vAqMzxQYnwVTIwGAu
-         w2pDTEo7ibzAU6c6aT8Ltd59ulJ+ciSyssoxN4Po1BXBSJzPe4x2vbVehE6skx6ZB3Th
-         AoTyWca8vCpzKAdVw4SpSUmqNEFNkcCUI5caxRGSZgxEcGb2O2bwFgui9Gey5BsmymTw
-         Sz4LQk0ckGMe8+0GKAFWVpfsuTbnBeMtCaRp5wSdpPx6LWstOaTi6M9Qa2UaApQrupeT
-         urVw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=2yLuK3u1QEHTUyBs9ayIe02GiJhaVWl6gJPjVQwJ7zg=;
-        fh=jaj/0eWAeviTCycdEyU/iSrX+Irl0x3zQ/avjnOFVQw=;
-        b=jrv6P640hu0ecbeGpVkw1EUout2yhMyruleFNG8PigzzSHE0N8m4Zfrw79rVN/9ld6
-         LyaeXde4THfviihvtuBm9+IABsqCNqNmUSf+OLBa8cHVsv5Vc8QPhsBOrTT6t/QpgS7e
-         vuLXZsLFx/sAT1c+d/Z0nIt5HGsxEV8PqOMz8T4edUeIUj2C6x3JlCbBzN21WfIwUbh1
-         LzqVMfACdjJJ8LUxhut1k8G02pB1JPBiV3+mgZ72TWb/Gh165I9K06hTm7tZXl3q3NIV
-         4z/FeIMcZeILsGTFLZw695RzKX/l9qoJkzF4N47oC6u+TgMmcx/6vzvxry1rG8Vgtf2L
-         h7Tg==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795107869; x=1795712669; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=2yLuK3u1QEHTUyBs9ayIe02GiJhaVWl6gJPjVQwJ7zg=;
-        b=s5zc6etqP3GKrfiHHgIM6qRwBj4GIrrYXAc6mNtEDxVzqmttJaHCzBqV1dtIN+vio3
-         Bnt6ZD+22BFWnuCnU8EfLslCEzR54XnIaMRCfU4Wp6aReVvOjg7SSEeZ++TPablfbh0l
-         nWScX+/5rkWM/Hp/yZ+hSStf6OX4OY+2MyRjQ6hvynNEq3yrt2g+oozsb2uIIRwN9Z0y
-         kqeQwucwtBml5gJuvt9l9W1sgy2+Q505qHa2NQnc54/JOh7uClHStUwVlxpUu36xurI8
-         7fgIaULXH+3INvDRKkck+rkIPO9DQA/oiLHBMSnEoMnziJpuqf6MgQUtU78WnH6opbGH
-         aXRQ==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795107869; x=1795712669;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=2yLuK3u1QEHTUyBs9ayIe02GiJhaVWl6gJPjVQwJ7zg=;
-        b=K26VlGSv5H18Dxd8gJIJtIFpNwlnlVbtivAPZhe3fgekPAIc0bYVUtWny1ziGuYovq
-         Vkvjl0/RMJqQYrtP0z6UdlHa8doEKlDPRl4wpeWkSAhEwX1GGenvFyOAoHeeC/idRHYt
-         bfcahHzBP3CwOJZVKE8Url43LWHwv/adMdy2I3yxpBj2pGSvUkd6tV5J6yZCwDIGlePO
-         CviGcRQttS7gW0CTMjr+Y9nAHA4otc2ODctvv6BVGJbaJiE0j94dbB0JGjsWbC1kHTIZ
-         JJjpkThkaRHx1QZVWyrBM/hhW8bMO40SgdByMPhp7OlILEw2espA87+khLiUhnJdkl1a
-         ZK/w==
-X-Forwarded-Encrypted: i=1; AL+hErHoYWLPe7ycGOxfhga/N05PVeqS6zH2tuJXMKMI5ApGCW7rvAOExcHJ3dYkQikuKOBt1mrBnQ/EiUi7wQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9I6crRM21kLrRqcAEjodUHfHTn9bIPTymJ/igELiF/xP15LfD8
-	STp99q8A+ahRgHLzeBvdhJWFlW5GUjoZ1CWnASweNLucoY7ZeJ0KNQtYhXhGR500OPSpPxQSHmY
-	WwglU6i8qZ9jBO4A4CTYrRFo1H0H3zf0=
-X-Gm-Gg: AYBFou2R+VxDo+dmpfB4PS/4iEDhL/wqqFd4TOOaNUlPn0pTsyQxHn4ViNEvz2h7p9I
-	pEpC+Yppx51NXzc4VySX+WrRz/+jU7q+aJ4EbztNkWqEboc+1LZWyaHA/NWeMgiJGOZjh0B94Fr
-	Uq+NoxR1D5z0FnI8RRVJAxs4D9c8p+lAi7rod5j+hxYLZD38zoceqMJqjHDP/8TpHP5TqB/Fqla
-	YAijVfjd8b7RfC9LFf9wjs3NQiaDUS/wwPnFhRvfSRQhpJjsvyusHhiGE6uMMJl8zMy/B0DPuTh
-	qWy6HEftNqITQpaLv5u+NwSjMrR9J7HYOqxmT/Mqs8npGntLgiAHoFtBE0hKg8K5bYSZq8J78k2
-	Z3Rr9DdW/Q+iYUATI0rcGeN1n8Jz6x+G/4x0FjRQv84MA19rqW/knDTzpBxegSjk1V0A7E3g=
-X-Received: by 2002:a05:6402:15cb:b0:6b7:b872:27a0 with SMTP id
- 4fb4d7f45d1cf-6b887e9b3a2mr4758592a12.21.1795107868285; Thu, 19 Nov 2026
- 09:04:28 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=i9sxPLmp
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id C6EF51F000D0
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 17:25:27 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795109127;
+	bh=3NoSJfl1tqPHZMrjtjOr+avKcj2bGSnTS+mj2gEXY4g=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=i9sxPLmpU/uHzsHSeSBEmSkGOLpfHXZX5pm+/F0Kx4GRHKanFH21C+etGgFQ/qaSF
+	 E3vDHPY+j43vwEGvErHRK0xLbXC3C09HCHTBANWn89f7+C8CaZAOakxDBBbfsCL+Mw
+	 gjsNNVBAXu1Fl36G9RYd9oCK7G9KFiQevyZa1mmGTd9SpXpYgprwxgEFjPFoNYQU4j
+	 QSJpHEzraxL2f0bSUsO8vYvcsbY5ydkuZkQF8UiBs6ccsQ3rKDb5Ieoush2xEdPpPl
+	 xBTKMffUa1wJgum2i/zWn7mmQ31yu8UWzVue6W5wg/Y0/DSFbgRghF0U2Ab4q7CgLo
+	 i164QxuA/sKww==
+Received: by mail-ua1-f51.google.com with SMTP id a1e0cc1a2514c-97ccbba8e86so629241.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 09:25:27 -0800 (PST)
+X-Forwarded-Encrypted: i=1; AL+hErFZS9tX/Pnz30sJvv6/w5pozzGu/smvYNKkK9QRfiRDXL06bnsq/SP2dteOzR1uhnpLwAlQDe1IdaCExg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/TVhw9QU+Fk+eTqm7kpXN0qSiaEqbLXAPvO/mtSraLE32dZ4tZ
+	ERWTRNy+rNkQBCv3wNyv1whLCdygsy54uJFyFfG25UcrrAuUFwV6SbZVQS/B3u5C/AEwpAdT3ri
+	/szuLjkH/p/D25HR9l8a3cSeFYL5u0os=
+X-Received: by 2002:a05:6102:f86:b0:7d6:5e38:3418 with SMTP id
+ ada2fe7eead31-7d72b361662mr77131137.1.1795109126797; Thu, 19 Nov 2026
+ 09:25:26 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,192 +59,424 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <av4Hn9u80fs8iHZ6@dread> <20261119095943.85048-1-lauri.gates@gmail.com>
- <DMZ4VQ7SZ07T.29WMPQ0BQZGSS@gmail.com>
-In-Reply-To: <DMZ4VQ7SZ07T.29WMPQ0BQZGSS@gmail.com>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Thu, 19 Nov 2026 18:04:14 +0100
-X-Gm-Features: AclHuK_v3fdGGegcviRdfo5LNeBocqyxiM32rnjQTLwAQD9spb3t-0FSAl1IioM
-Message-ID: <CAOQ4uximow25oc=3XEN1ATgQvonQaTXtDPmQufxo75tJ=e355A@mail.gmail.com>
-Subject: Re: Concurrent FIEMAP on reflinked files serialises on the AGF buffer lock
-To: koraynilay <koray.fra@gmail.com>
-Cc: Lauri Gates <lauri.gates@gmail.com>, Dave Chinner <dgc@kernel.org>, 
-	Christian Brauner <brauner@kernel.org>, Christoph Hellwig <hch@infradead.org>, linux-xfs@vger.kernel.org, 
-	Carlos Maiolino <cem@kernel.org>, Christian Brauner <christian@brauner.io>, 
-	"Darrick J. Wong" <djwong@kernel.org>, linux-api@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	ocfs2-devel@lists.linux.dev, linux-nfs@vger.kernel.org, 
-	linux-cifs@vger.kernel.org
+References: <20261117-my-btrfs-patch-v1-1-4b934a7ff69a@shangen.org>
+In-Reply-To: <20261117-my-btrfs-patch-v1-1-4b934a7ff69a@shangen.org>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Thu, 19 Nov 2026 17:24:50 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6zzrx-oHoiXqMA6U=GoS8rZpWE7gjtZDkrA-87UycM-Q@mail.gmail.com>
+X-Gm-Features: Aa3M54qLUJH02-K1Z64C4KQNI1pPF-WbaI7fXt34O8XuDtnG3g3eFGBh7xxyv50
+Message-ID: <CAL3q7H6zzrx-oHoiXqMA6U=GoS8rZpWE7gjtZDkrA-87UycM-Q@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: pin folios before dropping the last extent buffer reference
+To: Shang En Sim <sim@shangen.org>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, Boris Burkov <boris@bur.io>, 
+	Daniel Vacek <neelx@suse.com>, Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, stable@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, Nov 19, 2026 at 12:00=E2=80=AFPM koraynilay <koray.fra@gmail.com> w=
-rote:
+On Wed, Nov 18, 2026 at 12:20=E2=80=AFAM Shang En Sim <sim@shangen.org> wro=
+te:
 >
-> On Thu Nov 19, 2026 at 10:59 AM CET, Lauri Gates wrote:
-> > On Wed, Nov 18, 2026 at 10:16PM +0200, Dave Chinner wrote:
-> >> I really don't care if it is exposed by statx or file_attr; checking
-> >> the flag through either interface will be orders of magnitude faster
-> >> than using FIEMAP to iterate extents on every file to find shared
-> >> extents. My concern with statx is coherency - it runs completely
-> >> unlocked and so can race with operations that add/remove the reflink
-> >> flag...
-> >
-> > Thanks, Dave and Christian. Given Christian's preference and the
-> > coherency point, I'll write the RFC against file_attr, once the
-> > question at the end is settled. xfs_fileattr_get() already reads the
-> > flags under XFS_ILOCK_SHARED, so the new flag gets that without extra
-> > work. The answer can still go stale right after the call, as with any
-> > stat result: a clone that lands after the read is missed, just as one
-> > that lands after FIEMAP returns is missed today.
-> >
-> > As I suggested on the 6th, the flag would take the inverted meaning,
-> > so that an unset flag stays the safe answer: say FS_XFLAG_NOSHARED
-> > ("no extents shared with another file"), read-only, in
-> > FS_XFLAG_RDONLY_MASK next to the case-folding flags.
->
-> Hello, I don't have any say in the FIEMAP issue, but I wanted to let you
-> know that, since also a mask was mentioned and your patch would be
-> touching the fileattr API, there is work going[1] on for adding a
-> fsx_xflags_mask that filesystem use[2][3] to advertise supported flags (o=
-n
-> get, like stx_attributes_mask) and users use to say what they want to
-> change (on set).
-> It doesn't seem like an FS_XFLAG_NOSHARED flag would touch this new
-> change, but I thought it was worth pointing out, especially because this
-> patch would also add FS_XFLAG_PROJID and a new FS_FILE_ATTR_XFLAGS_MASK
-> to have a way to include both legacy and newly added xflags, so
-> FS_XFLAG_NOSHARED would maybe also go there (correct me if I'm wrong).
->
-> > Christian, one question on the shape within file_attr: would you take
-> > the inverted flag, or would you rather keep a plain "may share" flag
-> > and add a mask to struct file_attr that says which xflags the
-> > filesystem reports?
->
-> And if Christian chooses the mask approach, then my patch[4] becomes
-> relevant.
-> (in [4] I put the patch that will be sent in v5 of [1], since in [1]
-> it's merged with the ptime change)
->
-> (For Amir who I just CC'd, [5] is the main link for this thread)
+> release_extent_buffer() drops the last reference to a mapped extent
+> buffer (eb) before detaching its folios.
 
-Thanks for the CC and the link
+To mapped and unmapped extent buffers, so remove the "mapped" part.
 
+> The eb holds no reference to
+> the folios themselves.
 >
-> Thanks,
-> koraynilay
+> Since commit 3649833a58b6 ("btrfs: fix broken drop_caches on extent
+> buffer folios"), the page cache owns the allocation reference. Once the
+> eb's reference count reaches zero, another eb can take over the folios.
+> They can then be evicted before the original eb detaches them:
 >
-> [1]: https://lore.kernel.org/all/20261115180343.576773-1-koray.fra@gmail.=
-com/T/#u
-> [2]: https://lore.kernel.org/all/CAOQ4uxj82K4z+2OiY5W1g7NyWAFOFjqqWnZSS3p=
-rytW36j1LgA@mail.gmail.com/
-> [3]: https://lore.kernel.org/all/CAOQ4uxiuJ=3DeZu28FZAUz3rpqPKqCimPxJucOn=
-YYuBowvD09_Cw@mail.gmail.com/
-> [5]: https://lore.kernel.org/linux-xfs/20261102193533.93690-1-lauri.gates=
-@gmail.com/T/#u
->
-> [4]:
-> commit 0efe0de3b5cc2b767aa6e2bb9174eb05b0d818f1
-> Author: koraynilay <koray.fra@gmail.com>
-> Date:   Tue Nov 17 14:57:47 2026 +0100
->
->     vfs: add xflags mask to file_attr API
->
->     Add fa_xflags_mask to struct file_attr and equivalent fsx_xflags_mask
->     to struct file_kattr.
->
->     This lets filesystems advertise their support for specific xflags and
->     users specify only what they want to change, behaving like
->     statx.stx_attributes_mask:
->     - on GET (file_getattr): each filesystem fills the mask according to
->       its supported xflags, e.g. FS_XFLAG_COWEXTSIZE or FS_XFLAG_EXTSIZE,
->       and provides the values in the corresponding struct fields;
->     - on SET (file_setattr): userspace fills the mask according to which
->       xflags it wants to change, VFS validates this and preserves xflags
->       that were not specified in the mask;
->     - if xflags_mask =3D=3D 0, use legacy full-struct replacement to keep
->       compatibility with older programs.
->
->     Furthermore, add the missing FS_XFLAG_PROJID flag, to allow userspace=
- to
->     set the projid using file_[sg]etattr().
+>   task A                         task B                    task C
+>   release_extent_buffer(eb)
+>    refs: 1 -> 0
+>    remove eb from buffer_tree
+>                                  alloc_extent_buffer()
+>                                   attach_eb_folio_to_filemap()
+>                                    grab_extent_buffer()
+>                                     refs is 0, take over
+>                                     the folios
+>                                  ... new eb released ...
 
-Correction. usersapce can already set projid using file_[sg]etattr().
-With FS_XFLAG_PROJID in fsx_xflags_mask, chattr -p <projid>
-could set the projid without having to read and set all the other xflags.
+It's not "new eb released", it's the new folio that is released and we
+take the existing folio into the new eb.
 
+>                                                            drop_caches
+>                                                             folio->mappin=
+g
+>                                                             =3D NULL
+
+And where does this happens?
+Please be detailed, add the call chain triggered by drop_caches that
+results in setting the folio's mapping to NULL.
+
+I don't see how that is happening, because when we end up in
+try_release_extent_buffer(), eb->refs is 0 and that
+makes us return immediately with 0:
+
+spin_lock(&eb->refs_lock);
+if (refcount_read(&eb->refs) !=3D 1 || extent_buffer_under_io(eb)) {
+        spin_unlock(&eb->refs_lock);
+        spin_unlock(&folio->mapping->i_private_lock);
+        return 0;
+}
+spin_unlock(&folio->mapping->i_private_lock);
+
+Thanks.
+
+>    btrfs_release_extent_buffer_folios()
+>     detach_extent_buffer_folio()
+>      mapping =3D folio->mapping (NULL)
+>      spin_lock(&mapping->i_private_lock)
 >
->     Finally, in order to prevent the legacy FS_IOC_FSSETXATTR from accept=
-ing
->     FS_XFLAG_PROJID, add an FS_FILE_ATTR_XFLAGS_MASK to support new xflag=
-s
->     and use it in fileattr_to_file_attr()/file_attr_to_fileattr() to
->     validate that the xflags passed in fa_xflags and fa_xflags_mask field=
-s
->     are valid.
+> The result is a NULL pointer dereference. With a delay added in the
+> window (not part of this patch), it reproduces as:
 >
->     Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.7
->     Signed-off-by: koraynilay <koray.fra@gmail.com>
+>   BUG: kernel NULL pointer dereference, address: 0000000000000074
+>   RIP: 0010:_raw_spin_lock+0x18/0x30
+>   Call Trace:
+>    detach_extent_buffer_folio+0x68/0x140
+>    release_extent_buffer+0xac/0x120
+>    btrfs_release_path+0x17/0x80
+>    btrfs_free_path+0x17/0x30
+>    btrfs_getxattr+0xe2/0x110
+>    ...
+>
+> Compaction can also hit this window, since it calls
+> release_extent_buffer() through btree_migrate_folio() ->
+> btree_release_folio().
+>
+> Even without the NULL mapping, the folio can already be freed and
+> reused when detach_extent_buffer_folio() looks at it.
+>
+> This race requires nodesize >=3D PAGE_SIZE. With subpage metadata,
+> grab_extent_buffer() never takes over folios, and a shared folio keeps
+> folio->private set until every eb on it is detached, so
+> try_release_subpage_extent_buffer() does not release it while an eb is
+> in this window.
+>
+> Fix this in two parts:
+>
+> - In release_extent_buffer(), when refs is 1 and the eb is mapped, take
+>   a reference on each folio before dropping the eb reference, and drop
+>   those references after the folios are detached. This keeps the folios
+>   alive across the window, as the eb's own folio reference did before
+>   the commit above.
+>   Checking refs =3D=3D 1 under refs_lock is enough: free_extent_buffer()
+>   only decrements a mapped eb's refs without refs_lock while refs is
+>   above 3, so no one else can drop it to 0 under us.
+>
+> - In detach_extent_buffer_folio(), take i_private_lock from the btree
+>   inode instead of from folio->mapping. A pinned folio can still be
+>   removed from the page cache. All folios of a mapped eb belong to the
+>   btree inode, so this is the same lock in every other case.
+>
+> Fixes: 3649833a58b6 ("btrfs: fix broken drop_caches on extent buffer foli=
+os")
+> Cc: stable@vger.kernel.org # 6.16+
+> Signed-off-by: Shang En Sim <sim@shangen.org>
 > ---
->  fs/file_attr.c           | 46 ++++++++++++++++++++++++++++++++++++++++++=
-----
->  include/linux/fileattr.h |  5 +++++
->  include/uapi/linux/fs.h  |  3 +++
->  3 files changed, 50 insertions(+), 4 deletions(-)
+> I reproduced the oops with the test-only delay below.
 >
-> diff --git a/fs/file_attr.c b/fs/file_attr.c
-> index 833e03810b24..56ea65f790f1 100644
-> --- a/fs/file_attr.c
-> +++ b/fs/file_attr.c
-> @@ -102,10 +102,18 @@ EXPORT_SYMBOL(vfs_fileattr_get);
->  static void fileattr_to_file_attr(const struct file_kattr *fa,
->                                   struct file_attr *fattr)
+> Testing, on btrfs for-next 6f4bbde7e036, 8 vCPUs, 2 NUMA nodes, 120 s
+> per run of the reproducer below:
+>
+> - delay only: oops in 3 of 4 runs (at 61 s, 83 s, 46 s), trace as in
+>   the commit message
+> - delay + this patch: no oops in 3 runs
+>
+> Subpage, arm64 with 64K pages, nodesize 16K, emulated in QEMU:
+>
+> - delay only: no oops in 3 runs (expected: grab_extent_buffer() does
+>   not take over folios for subpage)
+> - delay + this patch: no oops in 3 runs
+>
+> Builds with W=3D1 with no new warnings in fs/btrfs/.
+>
+> Test-only delay patch:
+>
+>   @@ -4037,6 +4038,10 @@ static int release_extent_buffer(struct extent_b=
+uffer *eb)
+>                                GFP_ATOMIC);
+>
+>                 btrfs_leak_debug_del_eb(eb);
+>   +             /* TEST ONLY: widen the window between last ref drop and =
+folio detach. */
+>   +             if (!test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags) &&
+>   +                 ((eb->start >> 14) & 7) =3D=3D 0 && (jiffies & 3) =3D=
+=3D 0)
+>   +                     mdelay(20);
+>                 /* Should be safe to release folios at this point. */
+>                 btrfs_release_extent_buffer_folios(eb);
+>    #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>   (plus #include <linux/delay.h>)
+>
+> Reproducer, run on a 128M loop btrfs with -n 16384, mounted -o commit=3D1=
+:
+>
+>   ./repro-xattr 120 /mnt
+>
+>   // SPDX-License-Identifier: GPL-2.0
+>   /*
+>    * btrfs: release_extent_buffer() vs. folio reuse and eviction.
+>    *
+>    *   task A                         task B                    task C
+>    *   release_extent_buffer(eb)
+>    *    refs -> 0, removed from tree
+>    *                                  alloc_extent_buffer()
+>    *                                   grab_extent_buffer()
+>    *                                    takes over eb's folios
+>    *                                  ... new eb released ...
+>    *                                                            drop_cach=
+es
+>    *                                                             folio->m=
+apping =3D NULL
+>    *    detach_extent_buffer_folio()
+>    *     spin_lock(&folio->mapping->i_private_lock)   <-- NULL deref
+>    *
+>    * I have only seen this program crash a kernel that has the TEST ONLY
+>    * delay patch applied.
+>    *
+>    * Usage: repro-xattr <seconds> <btrfs mountpoint>
+>    */
+>   #define _GNU_SOURCE
+>   #include <fcntl.h>
+>   #include <pthread.h>
+>   #include <sched.h>
+>   #include <stdint.h>
+>   #include <stdio.h>
+>   #include <stdlib.h>
+>   #include <string.h>
+>   #include <sys/stat.h>
+>   #include <sys/types.h>
+>   #include <sys/xattr.h>
+>   #include <unistd.h>
+>
+>   #define NFILES 64
+>
+>   static volatile int stop_flag;
+>   static int fds[NFILES];
+>   static int root_fd =3D -1;
+>
+>   static void pin_cpu(int cpu)
+>   {
+>         cpu_set_t set;
+>
+>         CPU_ZERO(&set);
+>         CPU_SET(cpu % 8, &set);
+>         sched_setaffinity(0, sizeof(set), &set);
+>   }
+>
+>   /* Readers take and drop references on the leaves that hold the xattrs.=
+ */
+>   static void *xattr_reader(void *arg)
+>   {
+>         char buf[256];
+>
+>         pin_cpu((int)(intptr_t)arg);
+>         while (!stop_flag) {
+>                 for (int i =3D 0; i < NFILES && !stop_flag; i++) {
+>                         fgetxattr(fds[i], "user.a", buf, sizeof(buf));
+>                         fgetxattr(fds[i], "user.miss", buf, sizeof(buf));
+>                 }
+>         }
+>         return NULL;
+>   }
+>
+>   /* Writers COW the leaves and commit, so old leaves become clean and st=
+ale. */
+>   static void *xattr_cow_writer(void *arg)
+>   {
+>         char val[128];
+>         int tick =3D 0;
+>
+>         pin_cpu((int)(intptr_t)arg);
+>         memset(val, 'X', sizeof(val));
+>         while (!stop_flag) {
+>                 val[0] =3D (char)('A' + (tick & 15));
+>                 fsetxattr(fds[tick & (NFILES - 1)], "user.b", val, sizeof=
+(val), 0);
+>                 if ((tick & 7) =3D=3D 0)
+>                         syncfs(root_fd);
+>                 tick++;
+>         }
+>         return NULL;
+>   }
+>
+>   /* Evict clean btree folios from the page cache and migrate the rest. *=
+/
+>   static void *evict_and_compact(void *arg)
+>   {
+>         int cfd =3D open("/proc/sys/vm/compact_memory", O_WRONLY);
+>         int dfd =3D open("/proc/sys/vm/drop_caches", O_WRONLY);
+>         int iter =3D 0;
+>
+>         pin_cpu((int)(intptr_t)arg);
+>         while (!stop_flag) {
+>                 if ((iter & 1) =3D=3D 0 && dfd >=3D 0)
+>                         (void)!write(dfd, "1\n", 2);
+>                 if (cfd >=3D 0)
+>                         (void)!write(cfd, "1\n", 2);
+>                 iter++;
+>         }
+>         return NULL;
+>   }
+>
+>   int main(int argc, char **argv)
+>   {
+>         int duration =3D (argc > 1) ? atoi(argv[1]) : 60;
+>         const char *mnt =3D (argc > 2) ? argv[2] : "/mnt";
+>         char init_val[180];
+>         pthread_t tids[10];
+>         int nt =3D 0;
+>
+>         root_fd =3D open(mnt, O_RDONLY | O_DIRECTORY);
+>         if (root_fd < 0) {
+>                 perror("open mountpoint");
+>                 return 2;
+>         }
+>         memset(init_val, 'Z', sizeof(init_val));
+>         for (int i =3D 0; i < NFILES; i++) {
+>                 char path[256];
+>
+>                 snprintf(path, sizeof(path), "%s/file_%03d", mnt, i);
+>                 fds[i] =3D open(path, O_CREAT | O_RDWR | O_TRUNC, 0644);
+>                 if (fds[i] < 0) {
+>                         perror("open file");
+>                         return 2;
+>                 }
+>                 fsetxattr(fds[i], "user.a", init_val, sizeof(init_val), 0=
+);
+>                 fsetxattr(fds[i], "user.b", init_val, 128, 0);
+>         }
+>         syncfs(root_fd);
+>
+>         for (int i =3D 0; i < 4; i++)
+>                 pthread_create(&tids[nt++], NULL, xattr_reader, (void *)(=
+intptr_t)i);
+>         for (int i =3D 0; i < 2; i++)
+>                 pthread_create(&tids[nt++], NULL, xattr_cow_writer, (void=
+ *)(intptr_t)(4 + i));
+>         for (int i =3D 0; i < 4; i++)
+>                 pthread_create(&tids[nt++], NULL, evict_and_compact, (voi=
+d *)(intptr_t)(4 + i));
+>
+> printf("[repro-xattr] %d threads on %d files for %ds\n", nt, NFILES, dura=
+tion);
+>         fflush(stdout);
+>         for (int s =3D 0; s < duration; s++) {
+>                 sleep(1);
+>                 if ((s + 1) % 10 =3D=3D 0) {
+>                         printf("[repro-xattr] %d/%ds\n", s + 1, duration)=
+;
+>                         fflush(stdout);
+>                 }
+>         }
+>         stop_flag =3D 1;
+>         for (int i =3D 0; i < nt; i++)
+>                 pthread_join(tids[i], NULL);
+>         printf("[repro-xattr] finished %ds, no panic\n", duration);
+>         return 0;
+>   }
+> ---
+>  fs/btrfs/extent_io.c | 33 ++++++++++++++++++++++++++++++---
+>  1 file changed, 30 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b2739838c646..ce6880b1d64e 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3155,15 +3155,18 @@ static bool folio_range_has_eb(struct folio *foli=
+o)
+>  static void detach_extent_buffer_folio(const struct extent_buffer *eb, s=
+truct folio *folio)
 >  {
-> -       __u32 mask =3D FS_XFLAGS_MASK;
+>         struct btrfs_fs_info *fs_info =3D eb->fs_info;
+> -       struct address_space *mapping =3D folio->mapping;
+> +       struct address_space *mapping =3D NULL;
+>         const bool mapped =3D !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bfla=
+gs);
+>
+>         /*
+>          * For mapped eb, we're going to change the folio private, which =
+should
+> -        * be done under the i_private_lock.
+> +        * be done under the i_private_lock. Do not use folio->mapping, t=
+he
+> +        * folio may have left the page cache, see release_extent_buffer(=
+).
+>          */
+> -       if (mapped)
+> +       if (mapped) {
+> +               mapping =3D fs_info->btree_inode->i_mapping;
+>                 spin_lock(&mapping->i_private_lock);
+> +       }
+>
+>         if (!folio_test_private(folio)) {
+>                 if (mapped)
+> @@ -4011,8 +4014,27 @@ static inline void btrfs_release_extent_buffer_rcu=
+(struct rcu_head *head)
+>  static int release_extent_buffer(struct extent_buffer *eb)
+>         __releases(&eb->refs_lock)
+>  {
+> +       struct folio *pinned[INLINE_EXTENT_BUFFER_PAGES];
+> +       int nr_pinned =3D 0;
+> +
+>         lockdep_assert_held(&eb->refs_lock);
+>
 > +       /*
-> +        * fsx_xflags_mask contains only flags added after the
-> +        * file_[gs]etattr() API, so we need to tell userspace the filesy=
-stem
-> +        * actually supports all legacy (FS_XFLAGS_MASK and FS_XFLAG_PROJ=
-ID,
-> +        * which lacked its own bit) and new advertised flags.
+> +        * Once refs drops to 0 our folios can be taken over and freed, s=
+o pin
+> +        * them until they are detached. refs only drops below 3 under
+> +        * refs_lock, so checking for 1 is enough. Keep the folios in a l=
+ocal
+> +        * array: if refs does not hit 0, another holder may free the eb.
 > +        */
-> +       __u32 mask =3D (FS_XFLAGS_MASK | FS_XFLAG_PROJID | fa->fsx_xflags=
-_mask) &
-> +                    FS_FILE_ATTR_XFLAGS_MASK;
-
-This is not exactly how I envisioned exporting fa_xflags_mask.
-
-fa_xflags_mask =3D=3D 0 means old kernel or unmodified fs.
-
-For a new kernel with fs that supports flags other than
-FS_XFLAGS_MASK it's the fs responsibility to advertise its supported
-flags.
-
-Something like:
-
-     __u32 mask =3D (fa->fsx_xflags_mask ?: FS_XFLAGS_MASK) &
-                              FS_FILE_ATTR_XFLAGS_MASK;
-
-     memset(fattr, 0, sizeof(struct file_attr));
-     fattr->fa_xflags =3D fa->fsx_xflags & mask;
-     fattr->fa_xflags_mask =3D fa->fsx_xflags_mask ? mask : 0;
-
-Then you can add filesystems that support get/set of new
-attributes without support for legacy attributes.
-
-And specific filesytems could opt-into the set of an individual
-attribute like projid by advertising
-fa->fsx_xflags_mask =3D FS_XFLAGS_MASK | FS_XFLAG_PROJID
-or a subset thereof.
-
-And I am still on the fence wrt should API also advertise the
-fsx_xflags_ro_mask in addition to the supported mask.
-
-The advantage being that it makes the interface symmetric.
-User can alway setattr() with the buffer they got from getattr()
-and instead of randomly ignoring flags in set, the fsx_ro_mask
-along with fsx_mask defines the behavior exactly.
-
-Thanks,
-Amir.
+> +       if (refcount_read(&eb->refs) =3D=3D 1 &&
+> +           !test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags)) {
+> +               for (int i =3D 0; i < INLINE_EXTENT_BUFFER_PAGES; i++) {
+> +                       if (!eb->folios[i])
+> +                               continue;
+> +                       folio_get(eb->folios[i]);
+> +                       pinned[nr_pinned++] =3D eb->folios[i];
+> +               }
+> +       }
+> +
+>         if (refcount_dec_and_test(&eb->refs)) {
+>                 struct btrfs_fs_info *fs_info =3D eb->fs_info;
+>
+> @@ -4039,6 +4061,8 @@ static int release_extent_buffer(struct extent_buff=
+er *eb)
+>                 btrfs_leak_debug_del_eb(eb);
+>                 /* Should be safe to release folios at this point. */
+>                 btrfs_release_extent_buffer_folios(eb);
+> +               for (int i =3D 0; i < nr_pinned; i++)
+> +                       folio_put(pinned[i]);
+>  #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
+>                 if (unlikely(test_bit(EXTENT_BUFFER_UNMAPPED, &eb->bflags=
+))) {
+>                         kmem_cache_free(extent_buffer_cache, eb);
+> @@ -4050,6 +4074,9 @@ static int release_extent_buffer(struct extent_buff=
+er *eb)
+>         }
+>         spin_unlock(&eb->refs_lock);
+>
+> +       for (int i =3D 0; i < nr_pinned; i++)
+> +               folio_put(pinned[i]);
+> +
+>         return 0;
+>  }
+>
+>
+> ---
+> base-commit: 6f4bbde7e0364b3676d7644af2d4be386f512b0e
+> change-id: 20261117-my-btrfs-patch-984742ed64b0
+>
+> Best regards,
+> --
+> Shang En Sim <sim@shangen.org>
+>
+>

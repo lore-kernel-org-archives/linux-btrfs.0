@@ -1,49 +1,49 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795112906;
-	b=WeYwepvBbt6ZnQeDjyibt18C+w76WDOeQCPhG2S0ekCrvrEtx0ELUl4GDdDGPJbsI4Sd
-	 YT83Dc2OAq2JZ0yUeOI/FaYMCXd5eai0IY+DNDhPzqh7ThKxhcXkpAPcB259fLg1tgHQd
-	 ob32tvxVdtSQEInS44yQqV8mMgt40M/e0h9IkpM/xVn0kk+Von4XGqnkvi5Mqg0vHO9eA
-	 A65O/v8CLCuTa2XnodlkI4H/gTuOOfiT3VJmmwtP3UtN7usbffSkits6C9Ujzzm0Oqqd0
-	 TVKPhZKvJmi6CiwjfogZHHFxvC+aduAqg4pXVy1nfc4swHTneRivEwdpmQsnVOY9sHg==
+	t=1795112907;
+	b=Fe+3rPA1SqzLOriNyGvXlC3F3hLDM+TN5KMX01sZkqOgz7OYapLDfqpdkzmCOBmDUfQc
+	 iqkgyJkSQWLCfjY+pn9E2gQ22xIydAuxWFM60z25flgyhhT8NDIJxLlLk0pXzVtuCoEpR
+	 BqU6j1Nw07+lVGwgPcYyYCgRlGxaVJKfsBG6RpY7cn7KnmBZ/e1RbuuYeoJQR7DRMGjW8
+	 aqxXqAL+LEZPuMkRy9RBUqj6U/o4MTTgsLPimMJnrPy5b6Sx1HRL0xVmyl3IEVRzvIzDu
+	 qMh9hhPHM27/pKkh490C28I2I3u51G1owXEbDgROpKJ4BQ42OT2FDbqsFp4kExM286A==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795112906;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795112907;
 	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
 	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=uqLpLxv8bLQr4W44BYPxgaZOxuBRMe12kLOb1QeOYhk=;
-	b=MfYQ50wxJYC4RakkVHVnGHCYLofGOBUBlFrF/1XyXm0yF/84LxqIx0s9eT9MPpLhZZSz
-	 UNNwLJbMNYw/iN3+ZKYSHCjDa/lL9In6OSNapAR6xQ1zhxltviFzxkfNS2Qg3U23fXajx
-	 Yofu9CJ8zXl7TR7+DI4+6OSlRUoHG/i+8gnMMYwY/tj3QaXA2mMkTuAfwzp4Re2mHFST/
-	 E8gSsdIwAOfm3jRpQEDIOf6p3Ti1YG1LlwxLyoaa9FJoPfQrVlSnhGvd4lrQcFP+ih0y/
-	 PlKLPOBXme+QaWqs6N7hsFqP0kG9QfJu9wQ1wQr/SRm4BPR8lDfpBiZjoPWkNM226bg==
+	bh=tDOLs5qxL0reB4APUSWQU61Ux4Oz32Ec3PCujGsEsBM=;
+	b=YsaWhnJGH/SNhoIPxeqxOXQkGe9m4lb/QJY+i8iyi2c1kyX6DDGg2Sb2xVs4geYZpX8f
+	 dO+sO16eUHSngIojTgxLjtd+jSsMBP21Hwn8LbETMCZ2XVUleNXr4i9QrAzXvMHCf5xzQ
+	 udSpW4fFjGVimR1GVqkgMPHZh3kdhYVpJZw/Cu3sxE2PWBlATRgjBoW/NycYciKnJDmWl
+	 QR4MwZVmitjfPbxxv4vqlVK1auXaAhCqnBcX14efv2ONzWT/f38SHnXfJ+MjLKU9tfpSR
+	 aabk3xrH67C7e2P2/Ocl2L+1A+pWpSSY7t2EZ9i/d6bx+VXcC1yntWsTxjT4g7IsPOw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bjhIh6XZ;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=em27CyY7;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8C78B606A32C
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 18:28:26 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 832D9606A324
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 18:28:27 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=bjhIh6XZ
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id E9A681F000C6
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 18:28:25 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=em27CyY7
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id D459C1F000C4
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2026 18:28:26 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795112906;
-	bh=uqLpLxv8bLQr4W44BYPxgaZOxuBRMe12kLOb1QeOYhk=;
+	s=k20260515; t=1795112907;
+	bh=tDOLs5qxL0reB4APUSWQU61Ux4Oz32Ec3PCujGsEsBM=;
 	h=From:To:Subject:Date:In-Reply-To:References;
-	b=bjhIh6XZ2ndAVHpgOMg9iK/8wnL4u9SUL+zpH8cnwMIydxeqRPX2kdEikfX8VOY5n
-	 0k+NdLi00BGYuRsG1dY5H7rDVV5QvLNgAe5btOFNCEHJsoA6h07hW4mLpTIViH8NlB
-	 S4RxOXR8sfydHncHekTUtqaKh4mEm7yukGAC4xwJOnHpksLUMOGgMrwGxssO3MEnDs
-	 L4L0GRq0NguyPS7QZFN3tHQumQQ/c7AE2IbTRaF/c3ni+204R/PJdJQWLovaHz2Tvq
-	 CzXkIAZlNn07os5r2FyHWYyd/McHFNfkcGJTa9W34sbWrpKmLzpaMwqYTnBj5lvFDB
-	 SCqhAUGp4b+kw==
+	b=em27CyY7yH32W/lvs7XgEDzwKB/NeTDmMCVMXqgJ5tMkq4tfHvPrQxbZDE20bPUES
+	 khgn4bF75XLZdMLt5PQvefcFdjUhKP0p2NfhBZ58vWi+7j9lEH2aFkdGsagpyjP9aB
+	 pV+JDM34wO/0b4m7/rhqofe94BkywEZifgW/AD5lOu+pcNV1240ANr78ayDe25/7Hk
+	 eeyuRPP3gh4vxpZUFoZRXgqdFrgbFMKbs7uzShbqEg9eUdj9InqTJY+Nf4YF8ToCHi
+	 jLmLFngMxXIZmE7RpqeoBDirs8BwCuv+J2LX41p/OnjpzhW7WpRcfOOo+QB8E/xjAi
+	 FxXjO+iLibm6Q==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/2] btrfs: fix incorrect memory copying in BTRFS_IOC_GET_SUPPORTED_FEATURES
-Date: Thu, 19 Nov 2026 18:28:20 +0000
-Message-ID: <6680855bc8cae04685712762f9e971f0ea2fa19b.1795112801.git.fdmanana@suse.com>
+Subject: [PATCH 2/2] btrfs: use AUTO_KFREE() in btrfs_control_ioctl()
+Date: Thu, 19 Nov 2026 18:28:21 +0000
+Message-ID: <0f2ad05e9f38ddb7de900b72d8c2e90fd478a50d.1795112801.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <cover.1795112801.git.fdmanana@suse.com>
 References: <cover.1795112801.git.fdmanana@suse.com>
@@ -60,77 +60,45 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In btrfs_control_ioctl() we always assume the argument from user space
-matches a 4096 bytes buffer, for a struct btrfs_ioctl_vol_args. That was
-true until commit c5868f8362f5 ("btrfs: add GET_SUPPORTED_FEATURES to the
-control device ioctls"), because back then all the control ioctls took
-such a structure as an argument (and for input). However after that commit
-we now have an ioctl that does not take that struct as an argument, it
-takes a buffer that can be much smaller than that and it's only used for
-output, so it does not make sense to treat it as a struct
-btrfs_ioctl_vol_args and to validate it as such. Plus doing the
-memdup_user() call can result in an -EFAULT error if user space passes a
-buffer much smaller than sizeof(struct btrfs_ioctl_vol_args), as
-attempting to read beyond its limit can cross an unmapped page.
+Use AUTO_KFREE() to slightly simplify the code and avoid the explicit
+kfree(), remove one error label and return directly on error.
 
-Fix this by doing the memdup_user() and btrfs_check_ioctl_vol_args_path()
-only if the ioctl is not BTRFS_IOC_GET_SUPPORTED_FEATURES.
-
-Fixes: c5868f8362f5 ("btrfs: add GET_SUPPORTED_FEATURES to the control device ioctls")
-Link: https://sashiko.dev/#/bug/linux-7dac1d86-8580-4ba2-b8c5-c15fa9cdb0e8
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/super.c | 30 +++++++++++++++++++++++-------
- 1 file changed, 23 insertions(+), 7 deletions(-)
+ fs/btrfs/super.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b424cc836bd4..90e45becb59b 100644
+index 90e45becb59b..2609d7783e8a 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
 @@ -2240,7 +2240,7 @@ static int btrfs_control_open(struct inode *inode, struct file *file)
  static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
  				unsigned long arg)
  {
--	struct btrfs_ioctl_vol_args *vol;
-+	struct btrfs_ioctl_vol_args *vol = NULL;
+-	struct btrfs_ioctl_vol_args *vol = NULL;
++	struct btrfs_ioctl_vol_args AUTO_KFREE(vol);
  	struct btrfs_device *device = NULL;
  	dev_t devt = 0;
  	int ret = -ENOTTY;
-@@ -2248,12 +2248,28 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+@@ -2267,7 +2267,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 			return PTR_ERR(vol);
+ 		ret = btrfs_check_ioctl_vol_args_path(vol);
+ 		if (ret < 0)
+-			goto out;
++			return ret;
+ 		break;
+ 	}
  
--	vol = memdup_user((void __user *)arg, sizeof(*vol));
--	if (IS_ERR(vol))
--		return PTR_ERR(vol);
--	ret = btrfs_check_ioctl_vol_args_path(vol);
--	if (ret < 0)
--		goto out;
-+	switch (cmd) {
-+	case BTRFS_IOC_SCAN_DEV:
-+	case BTRFS_IOC_FORGET_DEV:
-+	case BTRFS_IOC_DEVICES_READY:
-+		/*
-+		 * Not all control ioctls take a struct btrfs_ioctl_vol_args as
-+		 * argument, some may pass a smaller buffer and attempting to
-+		 * read more may result in an unexpected -EFAULT if the memory
-+		 * crosses an unmapped page. BTRFS_IOC_GET_SUPPORTED_FEATURES
-+		 * expects a much smaller buffer for a short array of
-+		 * struct btrfs_ioctl_feature_flags elements. So attempt a copy
-+		 * of a struct btrfs_ioctl_vol_args only for the ioctls that
-+		 * expect such an argument.
-+		 */
-+		vol = memdup_user((void __user *)arg, sizeof(*vol));
-+		if (IS_ERR(vol))
-+			return PTR_ERR(vol);
-+		ret = btrfs_check_ioctl_vol_args_path(vol);
-+		if (ret < 0)
-+			goto out;
-+		break;
-+	}
+@@ -2314,8 +2314,6 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 		break;
+ 	}
  
- 	switch (cmd) {
- 	case BTRFS_IOC_SCAN_DEV:
+-out:
+-	kfree(vol);
+ 	return ret;
+ }
+ 
 -- 
 2.53.0
 

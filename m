@@ -1,87 +1,87 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.54
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.222.177
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795206141;
-	b=GqsBvtUYUY5svzXg7VMdOaCS6ES6ul6oh/3hNW28evkn7Tyg1kYUeWKo5fxbs2Rraeql
-	 /Rxfm7Qnk2Vhe9lbyVjBPAJWXk9Nky6ZAKIgkZe6zJELTc13N2KPA0tJ1tgNgyMVUQ8L9
-	 oOIP+LKVCNJqFyjb0i3acPbK43LxnOqJtojcP0dgJqPgNQTNNYn+6JBZe0LtZ2XeeXrcn
-	 iQ8fAXck0PSh7+OswhOSo/vzRrasdSvkr56MXNbVf3bt9O8bshwPV50v+akn4I0I5pZp/
-	 XMcMs+aFUSGvEfY4HAj/RJM9xJb8ONrbMiCbTFrGcMP1Tsx3mav4gyF+6AZ5jxgP0/Q==
+	t=1795207909;
+	b=Xs3r7xrC8P5ObI/NDyx2tR2CZAEJfM0WkFZDD2o6JaZmRXRzmeqdAA7Xg4Sqxwlyw1cq
+	 FXL+NuvfDpT50fGmSagcVPAx2QouYDCjavns+jR8HxE1sb3YvMIrCW2Oj5YvoBQFyzBpJ
+	 SO8I8IPwXmYbKOY9MJ+PL8QxsZVR6D7gWwwyEFVhoLG0gsrc4kncRQj2rw1vg9lJ87wuB
+	 5SF+iMyS1lp0DwQfeAVvtQe5gx7Ib/S1QTYGLBkOPDLwIsG5DsXQmhTPqQwIXgUtR0Mbs
+	 N6sCIZtZCehc2i2F6Y+1hwYjHDVEDlrQXdis+nKKG2lFK1nTy0gRLfyFwZNx7F+zs3w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795206141;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795207909;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=A24LpEufLD+IT5DdnquyRKXTDx9ckNOnBsSiirRxiCU=;
-	b=IgGA00RmQofMOFGcgciZmnO04L96FjD5QkKyIZDlTcgCcIRRFO9H3gEPU+nyzIxwtegl
-	 cxDOr6/BjtE+XbbJ6kByyxfm4M51UY/CXXdpuzYQ0oQ70ErAqYMSW11g8ZMu5Ecgnw/o0
-	 C8k+pdlo1hxuXsqnE6fkBqCqC2OkUgwhELdR5eaAhtSBFsxUrTq7WT3ObM3KhsM+m43tO
-	 EEghFQO5zCRrLNfLk9lSHJQJET8VIYxZELm6cTINjAvxw+5WE9KMVVyJsJhwyYAIuC6u9
-	 gXohS2DpmPE73Z4aRtmBvXglFjKXHp4y+3alppkVWhbEB17/sFi+5KMeeUUSGaD3V2A==
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:From:Subject:Date:
+	 Message-Id:MIME-Version:Content-Type:Content-Transfer-Encoding:
+	 X-B4-Tracking:X-Change-ID:To:Cc:X-Mailer:X-Developer-Signature:
+	 X-Developer-Key;
+	bh=i08pkuEXfpe6Y5JQCUxVj9oMxeG4uLiSFjkD/0yi0a8=;
+	b=EYIkOaNyTOUM563J9/76MRoXyX2TbWaTMdGpFo1lYZbeh3vEPSVP5ozlbvuYm1yLfDvh
+	 fiwxbV6WHAHCYjAmiDEUmm6Lm5XXf67Y0ua6b2RYYxrqo7KZucUZSSWFUjDXqsbQPJtMi
+	 FjG7FpGpMYmAKCeZqzlF2ArzWXrO4xNTsCszLwPin2K4p7on/7XoZzQhk/K/UrpHAUdUt
+	 PfoVmUu2msEh/+S9VGnMeKXkedTvvMIRZW8l2l58uaiItFhIdbsAI87HXja/TNAO09NaJ
+	 vLMuP0bcyKIEa+9aYVoIzkFQ5Cvq0fzxMFN4FWeYLABVmGuc/6lacNHw2AP7prjtG3Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=es9wvLjt;
-	arc=none smtp.remote-ip=209.85.218.54
-Received: from mail-ej1-f54.google.com (mail-ej1-f54.google.com [209.85.218.54])
+	dmarc=none header.from=toxicpanda.com;
+	spf=pass smtp.mailfrom=toxicpanda.com;
+	dkim=pass header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=i+QJjDOS;
+	arc=none smtp.remote-ip=209.85.222.177
+Received: from mail-qk1-f177.google.com (mail-qk1-f177.google.com [209.85.222.177])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 80862606A6EB
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 20:22:18 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 80862606A6EB
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id ADB3E606A695
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 20:51:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org ADB3E606A695
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=toxicpanda.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=toxicpanda.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=es9wvLjt
-Received: by mail-ej1-f54.google.com with SMTP id a640c23a62f3a-c50933bdf4bso306796866b.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 12:22:18 -0800 (PST)
+	dkim=pass (2048-bit key, unprotected) header.d=toxicpanda.com header.i=@toxicpanda.com header.a=rsa-sha256 header.s=google header.b=i+QJjDOS
+Received: by mail-qk1-f177.google.com with SMTP id af79cd13be357-93f20c3aaa5so124318485a.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 12:51:46 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1795206137; x=1795810937; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:from:to:cc:subject:date:message-id:reply-to:content-type;
-        bh=A24LpEufLD+IT5DdnquyRKXTDx9ckNOnBsSiirRxiCU=;
-        b=es9wvLjtGnX107b8yAjgWcxlscQ94B5SJRO2157ERKo0U9vtknz8J/s5C0TDW3Qgwe
-         s1daeW6uwkT4xrmEppjROhvmDyr21T6ayVJDj+XXEhqEJjI6xAMeLow1g4vKhpgSO8UN
-         DDDqo8Bbe4eEEsymSnOqr6+fvHV8qmJKWaqHj5rOYR0TgMqD9Rk6Ad3ax/JvyvG9+2hY
-         RJNiWrmGwXrTYqUeiURBafSwiHuyk0VBNu3v+n4lE9CoaSq7R0sMYm7Aril+VZnjpATD
-         vXUYaxcBKq6lpj3qaNX2HeP3XEJ8Ih/p8yTg9cH4zlFqtfNb5B86KLWdHworg44dGyZC
-         009w==
+        d=toxicpanda.com; s=google; t=1795207905; x=1795812705; darn=vger.kernel.org;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=i08pkuEXfpe6Y5JQCUxVj9oMxeG4uLiSFjkD/0yi0a8=;
+        b=i+QJjDOSdexfW1O8Wf7U+kYpXPZ91CdX1B+TxKTvtlq72/PX9dAqCiVvtrjtaTF1iT
+         5zzzmW5YvPYWgY/NBmEmq17PK9FZ6pP2uegLy3fiqcxXAM6HYil8aPPz0S+EH4CMlOqx
+         Yqwhyezskr0ZxFWonzcLOE2L3qJT5jh35asEl4KB6LHzjdUAZW14APCDQe6hTQxW6r2b
+         FxSdLlhBXu7Zrpw8+qdwouGsxWuSWEmRXQKoPnd+aG4VYuvi3ncmd1hV0195PO2pB4h9
+         wM/2AkeyrZWrLb4tahDFDIFUuGQShWwG5dOTBH9ZHvSP2rePpnrO9pDVNyyc9lptn+W3
+         3KAQ==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795206137; x=1795810937;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:to:subject:user-agent:mime-version:date
-         :message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=A24LpEufLD+IT5DdnquyRKXTDx9ckNOnBsSiirRxiCU=;
-        b=WL4m28zZk+7/uQoqui8KFCe1sjlczeOD5XlZ+cl0Z3rnrsZd6o0I/jTbHtdLKbfeN0
-         grgkPfjbYQz0jtD+Kt2s71M4EZRGbRd7EalfpQ3YMM3JiML6n6lxtjG6WGb+yeUiJ41y
-         FJY0bTY4lnYzmBKZKv0OUakPe1aqpvmCJWhAYas6XxRYHIgCTnbCAvgxFRmYIJQCqWS5
-         VTqw6O9EpSOCbC5OaKxsWV7uhrkRYbwjcAfsV+ucY4Gl6bTCj42UnWzCIURhLQ+IZy27
-         BQUyVYpP9S9h8zf/MHIpC1+DuqXhTIPlPBInEbBvUsZGm8XqVcVX0NWQGrFmXzPpaUuD
-         o27w==
-X-Forwarded-Encrypted: i=1; AL+hErFab+EfA+H0Jgy1Q6VBPbVG2Qm0FIPm4cz6Q5eKAUooJlPiXjPPuyYwGqahYIWCqP4hRNGR20vOcpHFkw==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/DSokTyLOgUIpyBNrY0a8sTBWeKBA0tbPO47R8cosUtpeiTYBc
-	9QW+8nle4yJ0QndywGFD9TVPegXNRAAs8LKeYM2z24yBmp8qnBWHk+M7yzQGcrqxKXc=
-X-Gm-Gg: AZFdTZfWoZo8zofQs53JAKNLSzn/CdC1z5Nsix4AQGS0I+650aCMrzzeX1VzgnfzKan
-	qImsFVIvwPXZE1z4B1wKjjgbTCAd+002EBkaDSxyNDw8139b9g4IW6OJGsQ0bFgu6rcrbGU5YO+
-	3wv92aV6H+XJ65HHzhRbTEIjbXxHzTC3c4y/bUQRCipz4De8LxlYVn8ManCKVofs0OiBHR/4Yg+
-	rhvCC2jOZLf5C5F3ot4oKXw6BRN1ug2vmEVLxT2Xgpzsn55IOVRICvcdSsvBD7WPpM5YAMUpnrp
-	1kO5Jdahyw8bHQ1Z5j1P5VaD24HLpEqLmZJIg9nK6qEnbDFgHD3vpeeWAfl/h3MyIbTskEA4AWx
-	Y79HsEUblU7lvpaKE2O5Yc0siU1HCxKL4aa8ETfJqlPNPnZvWwBgK6j5v/RD/pIub9kSiFxsZKj
-	RG0ArxaWcaHebgPI0qram49bcrPlV5wDJqsr+TiPohwk7G3cWcOk9jyCtEcSh15PhRC9Q107i31
-	efrV2snYGIOcvZ0edzndqhJf+O6diegL6bbq0U8AGTiBAf/dlcJoGIwHTnUOMqqzMIJLDRNNBes
-	WHdpBwExQf/a9DBiieIEyw==
-X-Received: by 2002:a17:906:4fd1:b0:c46:7de7:e41d with SMTP id a640c23a62f3a-c51318a03d9mr592653366b.18.1795206136666;
-        Fri, 20 Nov 2026 12:22:16 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2f03f0c1a8asm18569905ad.24.2026.11.20.12.22.14
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 20 Nov 2026 12:22:15 -0800 (PST)
-Message-ID: <1ec06c42-b9e1-4222-ad9e-d3433788b80c@suse.com>
-Date: Sat, 21 Nov 2026 06:52:11 +1030
+        d=1e100.net; s=20260707; t=1795207905; x=1795812705;
+        h=cc:to:content-transfer-encoding:content-type:mime-version
+         :message-id:date:subject:from:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=i08pkuEXfpe6Y5JQCUxVj9oMxeG4uLiSFjkD/0yi0a8=;
+        b=IPzot2HkFsA2NaXLyNpQcOEwp9JFC3gp9C6StmZs4PXNZbLQBRtRofFDBV/a1qkFEf
+         sUoVnrj981V+9RblQnNzBNilBHo06IL9N5Z1fcEXLMznuUycHHV1BRqTaeolWUQABDy/
+         YxiZCWXbQsEbEhnbQujYIorxmmO9VDGr462D1S+YGdCS8oEOFnfht57asbAe4v0DmjOB
+         793tZKr8IShTq5Us+R/hNjX7AxM5CW8sdwKqKBno8QAxxTLLNDaGVcve9ZaINTqHljSp
+         qOLeT7sxfpaw+tV8C3LbH/voELb3dMlDdEt2Ws7C62ORJw0yHMalVhFy3GZpxb2KQSvq
+         6ETQ==
+X-Gm-Message-State: APuU4Z/yJTMDhkER6JPn5IsGyTa82VLaSXP+65B7TgwJKLN/rn86u4n6
+	1PmC5zC+jdI4MuP1xX6An/fgbsN/Wx8+ddc/xUcfjjMOwh30tvmIkpfXwHZdMXlMgT0=
+X-Gm-Gg: AYBFou3NsWyWy3cAbvx0j3UHK3t0NlCDPqUIRx8AyumGsB21u8CsgVG02ENfnSE3Wqg
+	YxO5TIVkCBU7cdxy9DMqR7RxG37CbVIVeAIHM9lHHt+zO+FT2D5GU3fQWy8l1dYrdqnqgkwQT4B
+	cdqjIXUELxs5BSxMv6KhcA3O8ejKPRB7Lgy3Lc3Ob0MJMUD2JX7vSzRbrr5vLnztQ3IWG3m2hMd
+	2MEFIAfk35lOoulgOi2N6cpiC/v9tWG/zWgMr0ohqokQm7dqGx5DTCY14AcBoB81mJlTZ/hy3bL
+	IK4nUC27YBNEH1uVJT0WjwnOdzoFF4BCpNrAuzaw/2bFagTGiUisbCGVGcRrxzBTPiBEQvfvooh
+	iNBxtlnN2UGU051Rm0A5Av/PqgBSwAbRYZkXiltjiRdc32DRMYL88BjszcSO5kGXsdEO352/eLi
+	Pf2fSn2Z8qBGmTqU4omIum0OcJ6/63wFDeK0SeGDA/213BlT92c/ECCDIZ/Q2VdzeQIn7N0uU46
+	bbUrQKJdrzf8J1qT9Itu++IJJSw405iWxZ7rxsvbCTIpv1tI9/5bQl4I4EVvtVcDhDThvc9jRfv
+	+vn4TMPLgJuDmSLVHlM3K2/NM3diZuBBUh3HbG28Ot5kWQ==
+X-Received: by 2002:a05:620a:4397:b0:93c:8e3f:3036 with SMTP id af79cd13be357-949ba827abemr681554985a.4.1795207905523;
+        Fri, 20 Nov 2026 12:51:45 -0800 (PST)
+Received: from toxicpanda.com ([153.61.196.242])
+        by smtp.gmail.com with ESMTPSA id af79cd13be357-949bb397b4bsm282157985a.21.2026.11.20.12.51.44
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Fri, 20 Nov 2026 12:51:44 -0800 (PST)
+From: Josef Bacik <josef@toxicpanda.com>
+Subject: [PATCH v3 0/6] btrfs: data integrity fixes
+Date: Fri, 20 Nov 2026 20:51:28 +0000
+Message-Id: <20261120-b4-btrfs-data-integrity-v3-0-4de4b91b826e@toxicpanda.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,109 +91,144 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: fix leak of roots in dropped_roots list after
- transaction abort
-To: fdmanana@kernel.org, linux-btrfs@vger.kernel.org
-References: <7daabc94a5577726850f8f1c9dc7785077222111.1795198535.git.fdmanana@suse.com>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <7daabc94a5577726850f8f1c9dc7785077222111.1795198535.git.fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+X-B4-Tracking: v=1; b=H4sIANCyAGsC/3XOzU4DIRQF4FdpWHuVnxnIuPI9TBf8XDpohAaQT
+ NPMuxeqiQvT5bk598u5koI5YCGvhyvJ2EIJKfYgng7ErjqeEILrmXDKJaN8ATOBqdkXcLpqCLH
+ iKYd6ATRqFmZWglJP+vc5ow/bXX4//uTybT7Q1sGNhtEFwWQd7TpOn043fPEpQ8StjsIaSk35c
+ t/W2IB+Zwj6cEZjQMFPbmKLVIKhfKtpC/aso9PPNn2RsaXxP6xrjzHesVkpZ7lcKJXsH7bv+w3
+ K+BUAQwEAAA==
+X-Change-ID: 20261029-b4-btrfs-data-integrity-eb753b57300f
+To: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
+ Naohiro Aota <naohiro.aota@wdc.com>, 
+ Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>, 
+ Boris Burkov <boris@bur.io>, Filipe Manana <fdmanana@suse.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, 
+ stable@vger.kernel.org, Zygo Blaxell <ce3g8jdj@umail.furryterror.org>, 
+ Josef Bacik <josef@toxicpanda.com>
+X-Mailer: b4 0.15.2
+X-Developer-Signature: v=1; a=openssh-sha256; t=1795207902; l=5593;
+ i=josef@toxicpanda.com; h=from:subject:message-id;
+ bh=anVFp57BSGnp41DgrPKjML35KX9vG0TIKRZWERnyGts=;
+ b=U1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgUBr36M/n0nWN0DNbnxwzIiCZez6MG
+ JiruuNaSCI/zXsAAAAGcGF0YXR0AAAAAAAAAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAA
+ QCABDZneooLIeuMHi7gGpLp8BmWPUFaVbNubq6Su6vBSVD4ltjW4NXzcA8DKr08XIFEKfm6z/+W
+ iiAOXifm8mws=
+X-Developer-Key: i=josef@toxicpanda.com; a=openssh;
+ fpr=SHA256:C8kOX2QUJCMqnCX+KEeoqRAjLo9L+ELOSH2NSAJHqGA
 
+v1: https://lore.kernel.org/all/20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com/
+v2: https://lore.kernel.org/all/20261103-b4-btrfs-data-integrity-v2-0-577dc2690061@toxicpanda.com/
 
+v2->v3:
+- Rebase onto for-next-20261109.  Encoded writes now always get a full
+  fsync (900bbc210986 "btrfs: skip fast sync for inodes with encoded
+  writes"), so the fsync fix no longer handles them.
+- Patch 3 of v2 is now two patches, and goes back to an inode flag
+  instead of checking the collected ordered extents for errors, which
+  missed truncated ordered extents (Sashiko, Filipe):
+  - Patch 3 renames BTRFS_INODE_COW_WRITE_ERROR to
+    BTRFS_INODE_INCOMPLETE_COW_WRITE and also sets it for a write that
+    fails before a bio is submitted and for a truncated ordered extent,
+    such as a direct IO write that stops short.  It is set under the
+    ordered_tree_lock, before BTRFS_ORDERED_IO_DONE.
+  - Patch 4 makes a fast fsync wait for BTRFS_ORDERED_IO_DONE on the
+    ordered extents it collected, direct IO included, before it checks
+    the flag.
+- Patch 1: drop the bi_status store that nothing reads anymore.
+- Patch 2: use btrfs_folio_clamp_finish_io() for the cleanup.
+- Patch 6 (patch 5 in v2): don't count the replace target in
+  btrfs_ioctl_fitrim(), and Fixes: 929be17a9b49, which made the trim of
+  a device depend on its alloc_state; before it the replace target was
+  never trimmed.
+- Stable: patch 1 6.6+ and patch 2 5.15+, as for the commits they fix;
+  patches 3 and 4 6.10+, and patch 4 depends on patch 3.
 
-在 2026/11/21 05:03, fdmanana@kernel.org 写道:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> If a transaction is aborted and happens to have roots in its dropped_roots
-> list, we end up not empyting that list and drop the references for each
-> root there, resulting in memory leaks. A root is added to that list after
-> we delete a root, with a call to btrfs_add_dropped_root(), where we remove
-> the root from the fs_roots_radix radix tree. As a consequence during the
-> transaction abort path, we never drop the reference for such a root since
-> we don't find it in the fs_roots_radix radix tree and we don't empty the
-> dropped_roots list anywhere (like btrfs_cleanup_one_transaction(),
-> cleanup_transaction(), btrfs_cleanup_transaction(), etc).
-> 
-> Fix this by updating btrfs_cleanup_one_transaction() to  iterate over the
-> dropped_roots list and drop the log trees for all roots there as well as
-> their references.
-> 
-> Fixes: 2b9dbef272b6 ("Btrfs: keep dropped roots in cache until transaction commit")
-> Link: https://sashiko.dev/#/bug/linux-8cb356ea-6a28-4bfa-89d2-e04c9a391607
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+v1->v2:
+- Rework patch 3, now "btrfs: wait for ordered extent IO in fast fsync".
+  BTRFS_INODE_COW_WRITE_ERROR is set after the end IO handler clears
+  writeback, so a fast fsync could still miss it, for plain write errors
+  as well.  Fast fsync now waits for BTRFS_ORDERED_IO_DONE on the ordered
+  extents it collected and checks BTRFS_ORDERED_IOERR, and the inode flag
+  is gone (Sashiko, Qu, Filipe).
+- Patch 4: use DEBUG_WARN() instead of ASSERT() for the check that can no
+  longer be true (Filipe).
+- Collect tags.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+--- Original email (v1) ---
 
-Thanks,
-Qu
+Hello,
 
-> ---
->   fs/btrfs/disk-io.c     | 14 ++++++++++++++
->   fs/btrfs/transaction.c |  1 +
->   2 files changed, 15 insertions(+)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7775fc768f7e..d8d433ac458b 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -4982,6 +4982,20 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans)
->   		btrfs_qgroup_clean_swapped_blocks(root);
->   	}
->   
-> +	spin_lock(&cur_trans->dropped_roots_lock);
-> +	while (!list_empty(&cur_trans->dropped_roots)) {
-> +		struct btrfs_root *root;
-> +
-> +		root = list_first_entry(&cur_trans->dropped_roots,
-> +					struct btrfs_root, root_list);
-> +		list_del_init(&root->root_list);
-> +		spin_unlock(&cur_trans->dropped_roots_lock);
-> +		btrfs_free_log(NULL, root);
-> +		btrfs_drop_and_free_fs_root(fs_info, root);
-> +		spin_lock(&cur_trans->dropped_roots_lock);
-> +	}
-> +	spin_unlock(&cur_trans->dropped_roots_lock);
-> +
->   	btrfs_destroy_delayed_refs(cur_trans);
->   
->   	cur_trans->state = TRANS_STATE_COMMIT_START;
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index d2da7de4b905..1ea8dc522d2e 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -201,6 +201,7 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
->   			btrfs_put_block_group(cache);
->   		}
->   		WARN_ON(!list_empty(&transaction->dev_update_list));
-> +		WARN_ON(!list_empty(&transaction->dropped_roots));
->   		kfree(transaction);
->   	}
->   }
+I've been doing some model checking of our trickier paths with Claude's
+help, and these are the fixes for the bugs it turned up that actually
+lose data, or tell userspace that something is safe when it isn't.
+Every one of them was reproduced in a VM on an unpatched kernel and goes
+away with the fix, though the fsync and log sync ones needed a delay
+injected to hit the window.
+
+The worst one is the fstrim one.  If you run fstrim while a device
+replace is running we'll discard everything that has already been copied
+to the target device, because the target's alloc_state is empty until
+the replace finishes, so the whole device looks unallocated.  The
+replace then finishes happily, the source device goes away, and you're
+left with zeroes where your metadata used to be.  This has been around
+since FITRIM learned to trim unallocated space back in 4.3.
+
+The split bio one is similarly nasty.  If the last piece of a split bio
+to complete is one of the split bios and it failed, we drop the error on
+the floor, and a buffered read returns success with whatever was sitting
+in the page.
+
+The rest are in our error handling.  A delalloc failure in the middle of
+a folio leaves blocks dirty that no longer have an ordered extent, a
+fast fsync after an error that happened before we submitted the bio can
+log extents that were never written (which log replay then happily puts
+in place of the data that was there before), and btrfs_sync_log() can
+return success for a log transaction that never got committed.
+
+I have a cleanup series for btrfs_sync_log coming, as I had to spend a
+lot of time grokking that fix, which is a good indication that the code
+is too complicated.
+
+They're all tagged for stable, and independent of each other except
+that patch 4 needs patch 3.  This is against for-next.  Thanks,
+
+Josef
+
+---
+Changes in v3:
+- Split patch 3 in two and set an inode flag for failed and truncated
+  writes (Sashiko, Filipe); fast fsync waits for IO_DONE first.
+- Patch 1: drop the unread bi_status store.
+- Patch 2: use btrfs_folio_clamp_finish_io().
+- Patch 6: don't count the replace target in btrfs_ioctl_fitrim(),
+  Fixes: 929be17a9b49.
+- Stable: patch 1 6.6+, patch 2 5.15+, patches 3 and 4 6.10+.
+- Rebase onto for-next-20261109.
+- Link to v2: https://patch.msgid.link/20261103-b4-btrfs-data-integrity-v2-0-577dc2690061@toxicpanda.com
+
+Changes in v2:
+- Link to v1: https://patch.msgid.link/20261030-b4-btrfs-data-integrity-v1-0-f4d4196731e6@toxicpanda.com
+
+---
+Josef Bacik (6):
+      btrfs: don't drop the error of the last split bio
+      btrfs: clear dirty blocks after a delalloc failure
+      btrfs: make fsync wait for all incomplete COW writes
+      btrfs: wait for ordered extent IO in fast fsync
+      btrfs: don't report success for a skipped log sync
+      btrfs: don't trim the target of a device replace
+
+ fs/btrfs/bio.c          | 10 ++++---
+ fs/btrfs/btrfs_inode.h  | 24 ++++++++++------
+ fs/btrfs/extent-tree.c  |  8 ++++++
+ fs/btrfs/extent_io.c    | 15 ++++++----
+ fs/btrfs/file.c         | 74 ++++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/ioctl.c        |  3 ++
+ fs/btrfs/ordered-data.c | 52 +++++++++++++---------------------
+ fs/btrfs/tree-log.c     | 20 +++++++++++--
+ 8 files changed, 139 insertions(+), 67 deletions(-)
+---
+base-commit: 3aefd67f08f8ed59ed0fa90619b25856df415031
+change-id: 20261029-b4-btrfs-data-integrity-eb753b57300f
 

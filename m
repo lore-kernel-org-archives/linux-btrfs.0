@@ -1,50 +1,54 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795199641;
-	b=a7PeiT/REDf5Cpy89uQ2gZfjWNmkEbihOjvOyJsA21C9kUpYIaDcobyaS7aSCg3vRH9x
-	 wT9Tdl8VVNp1OEwUGhgO3VtgkLGzid6urrPPVCVOaHtkaJfv23gmbjf+3CtEXgPgQLmsw
-	 2p2xQuKXOFtKqTPaaKrTTg8bzTsIirWNfNCaiebym4Fsw2mXmnY7juAvL5JDkY1MUtB+/
-	 LDrkwvOtZRa5Zp61lapF5JHDOd9CeswK5S0DqH1svCKrxSBLef8EOb55fvNcPhPkxuQP8
-	 ys0r2CvETgAFD9JrflPMCxy+cVnWUCAd5QVQSA4GWX9VFcCAWUWmhRD6SxSMje4LUzg==
+	t=1795200953;
+	b=LB0YsgdI67/YYaLgoMbbRL0QCdpHs0ddO+78I6Yok94r29jgYxOna3s3xOqc/exyo491
+	 vSNmAtIVAMSyXNZgGXoxZy3bBwBUOEwSGVhqyZ8iu5Cgmfp1YKjmk+fqc5W5gKJjNc6JJ
+	 0AQHPOu+C7Y+ITyRqSlyu/9sXZb70fi5w52BzIr3EKmYzP3UJDwX0PvrT+QnaS00Z7QLV
+	 WfgrFe75lGc44CPirqCe9Ur/2djkcxY9jq7X5HjZKcFQkkRIMsqLEtHpoQ/Jvp4uHGVAM
+	 p4QHHxIoi+jK5ctWP2qEAxQ9CkCr7kYTVMnUtwSBAg5t7CsCV9lop5UX8smwCTc3obA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795199641;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=f4Qmn4Sy9RZghv0S/1gBYou8Ikdbm8AUf01Pn2KGmds=;
-	b=I3QuKjYSfTG7fde4V7wEYgou/P2zVGVYMG6QiuxN3EcRWpFDogYn/SeSZxbdOZGZeXfn
-	 MKuW6its7aE112/hw2I2ARy6ALiR+9zaOEotYqIl9or4TIxwqTJ0PilLOgEga/KCohL8V
-	 ravkHe+vBB1mzuahcDUPb5b94wwuV3khkP8GRrhba8r6cEpGGcdVENsrt14rwQg/mSdiA
-	 ZCbLPdcv31//+02GYHx3j3zQhyb2l2C2VkV90ZPpuYQ0uhWna9DKdC+3PBka1Yq+gP2Mp
-	 tx8D6veZUm7L6AKvgdJ+jdsXkb7je1JBQgVf1V+F2k1hMgv7Z2hHVWMImtx5jCTHUug==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795200953;
+	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:
+	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=aVe7QAtYgLUF/jH3V4jLtDfswfaE7SBHfV/dCwyBq7s=;
+	b=03X9Ejdi0L8xm2UTpQYp8DGdzfcUDtXTbtvAYIJFtwsUaB0f6WQZg1AFTgPCGZuQHJ8O
+	 p5ZiHp4ZQlKtKbw+Hvk66ajxhhb5t++Mwc1AY2umutknyJJZSTjhBFba1kXkell6XKAGE
+	 1FGhciaQt0VWpXWlLQ1ErLfML8Bv/+oPuyK4JXeqmfXEKH6QpHug7hwI0Qom1z9EEis+k
+	 UDmXJnpukwXzWLtnLPgjmSamRSA1uyUSxcxcoyXkUlxxcRm9a90we7QBsaUQRwC4yQ2Sl
+	 /tH+PbzR9nekfCBsWTPd1WSlxGK90rACsjh+8SzG7SyC3lJ8H7v5IUUfDpXbJ1SMgcw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="i/tVxlx+";
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OE7T6rt+;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 870CA60A2603
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 18:34:01 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 3688C60A2621
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 18:55:53 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=i/tVxlx+
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 937CE1F000CA
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 18:34:00 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OE7T6rt+
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 827BD1F000C0
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 18:55:52 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795199641;
-	bh=f4Qmn4Sy9RZghv0S/1gBYou8Ikdbm8AUf01Pn2KGmds=;
-	h=From:To:Subject:Date;
-	b=i/tVxlx+uBe9dumLg7rT5Dhv3gy6FFzfHt10QQPWTzxQ91GSw83NA/ok+XiokqzfM
-	 vVFKRmkxyxOJHTEQnhmMAAfZlDapMnDc3OKtklIsa7VV71+N+GyZkh7kThdrNovIl6
-	 EnJBD4AAeykhel2u5+RMGINXkX30IH0RNhRoo0QfRKELjaPAdXf482xXRvt9pJse7a
-	 obd8gxmzCUDT/mf5gwdNR/jhKF8e8dxoOGP8hk9oiuWb1FDOa0CjUDKyS38rJZkMb0
-	 G7Sy43cqOZ7SsKm4oWwOPzEeyYuqCTDuyTYr/KA8TpUH0CpSV4iG8bq/3lFL9S53X4
-	 bELYCTU+XlVLw==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: fix leak of roots in dropped_roots list after transaction abort
-Date: Fri, 20 Nov 2026 18:33:55 +0000
-Message-ID: <7daabc94a5577726850f8f1c9dc7785077222111.1795198535.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
+	s=k20260515; t=1795200952;
+	bh=aVe7QAtYgLUF/jH3V4jLtDfswfaE7SBHfV/dCwyBq7s=;
+	h=References:In-Reply-To:From:Date:Subject:To:Cc;
+	b=OE7T6rt+qR/kP5sYrj4M069ycIgB2hlSxR85IY5eGZ1QjYRIXzOleyUKbF4uEAkVj
+	 Hapn3HPkIqj+Z4qwfSzWEHbvsaheQNiaFx3mZnXMpRStBiWn5DpMPruMi1M339HW45
+	 X17V6ewdpOLlLIXI9s3T73PqutDBa4cUEzivp8zY1G3vzkMqUZqfSyuwvA6iTQbwvG
+	 M5Fa2yOJLqjMLcnRHbJP8Vmh0iEIWc+QMkbcsqQWaamHyVC1kv6VuldNZHcHPf739F
+	 fRsezM3YcbD3iOnVJi37OqX7Pxhf1GcC5N9WNcf+RVuXd/7XpUA6zWgh8P+kubXKd8
+	 Im73BKVVfFtJA==
+Received: by mail-vs1-f50.google.com with SMTP id ada2fe7eead31-7d2da1667b2so741219137.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 10:55:52 -0800 (PST)
+X-Gm-Message-State: APuU4Z9izDLeuOVQELq0JULwLe1UH75ZED471C5FL9sfMvs8drXNcuBB
+	Pg086Req1ND8JmFnRDdNBCFL/3tDglEIPHOMPNGt2e8DU0YPhrykQfjiNY+a8VwCEOisGtv6BaH
+	l7oCIA/EPqnt2a3MXNz1Wwb+jaJTY7Go=
+X-Received: by 2002:a05:6102:26c7:b0:7d2:7be1:271f with SMTP id
+ ada2fe7eead31-7d7395b6953mr2254719137.31.1795200951717; Fri, 20 Nov 2026
+ 10:55:51 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -54,69 +58,78 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+References: <cover.1795168584.git.wqu@suse.com> <900cc1ec5feac55f401015f3fdadc242c0c6d275.1795168584.git.wqu@suse.com>
+In-Reply-To: <900cc1ec5feac55f401015f3fdadc242c0c6d275.1795168584.git.wqu@suse.com>
+From: Filipe Manana <fdmanana@kernel.org>
+Date: Fri, 20 Nov 2026 18:55:15 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H6KOHBY9_bqjJofF1r-rSqT=jUSH55bpVxMO6owR6RX1g@mail.gmail.com>
+X-Gm-Features: Aa3M54pllHCUcE4xkJfIVUa-10VWAFZe_N5FsWpZKgN3hl3wDyeREIK74bU8xM8
+Message-ID: <CAL3q7H6KOHBY9_bqjJofF1r-rSqT=jUSH55bpVxMO6owR6RX1g@mail.gmail.com>
+Subject: Re: [PATCH v3 1/3] btrfs: qgroup: handle the transaction commit error
+ during rescan
+To: Qu Wenruo <wqu@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Nov 20, 2026 at 9:58=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+>
+> After qgroup_rescan_leaf() return 1, meaning it has done the scanning,
 
-If a transaction is aborted and happens to have roots in its dropped_roots
-list, we end up not empyting that list and drop the references for each
-root there, resulting in memory leaks. A root is added to that list after
-we delete a root, with a call to btrfs_add_dropped_root(), where we remove
-the root from the fs_roots_radix radix tree. As a consequence during the
-transaction abort path, we never drop the reference for such a root since
-we don't find it in the fs_roots_radix radix tree and we don't empty the
-dropped_roots list anywhere (like btrfs_cleanup_one_transaction(),
-cleanup_transaction(), btrfs_cleanup_transaction(), etc).
+return -> returns
 
-Fix this by updating btrfs_cleanup_one_transaction() to  iterate over the
-dropped_roots list and drop the log trees for all roots there as well as
-their references.
+> btrfs_qgroup_rescan_worker() will call btrfs_commit_transaction() to
+> update the qgroup infos.
+>
+> But if that btrfs_commit_transaction() failed, @ret is still 1, which
+> will treat the rescan as ended successfully, clearing the INCONSISTENT
+> flag.
+>
+> Fix the error handling by also check the return value of
 
-Fixes: 2b9dbef272b6 ("Btrfs: keep dropped roots in cache until transaction commit")
-Link: https://sashiko.dev/#/bug/linux-8cb356ea-6a28-4bfa-89d2-e04c9a391607
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/disk-io.c     | 14 ++++++++++++++
- fs/btrfs/transaction.c |  1 +
- 2 files changed, 15 insertions(+)
+check -> checking
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7775fc768f7e..d8d433ac458b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -4982,6 +4982,20 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans)
- 		btrfs_qgroup_clean_swapped_blocks(root);
- 	}
- 
-+	spin_lock(&cur_trans->dropped_roots_lock);
-+	while (!list_empty(&cur_trans->dropped_roots)) {
-+		struct btrfs_root *root;
-+
-+		root = list_first_entry(&cur_trans->dropped_roots,
-+					struct btrfs_root, root_list);
-+		list_del_init(&root->root_list);
-+		spin_unlock(&cur_trans->dropped_roots_lock);
-+		btrfs_free_log(NULL, root);
-+		btrfs_drop_and_free_fs_root(fs_info, root);
-+		spin_lock(&cur_trans->dropped_roots_lock);
-+	}
-+	spin_unlock(&cur_trans->dropped_roots_lock);
-+
- 	btrfs_destroy_delayed_refs(cur_trans);
- 
- 	cur_trans->state = TRANS_STATE_COMMIT_START;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index d2da7de4b905..1ea8dc522d2e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -201,6 +201,7 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 			btrfs_put_block_group(cache);
- 		}
- 		WARN_ON(!list_empty(&transaction->dev_update_list));
-+		WARN_ON(!list_empty(&transaction->dropped_roots));
- 		kfree(transaction);
- 	}
- }
--- 
-2.53.0
+Looks good otherwise, so:
 
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Thanks.
+
+> btrfs_commit_transaction(). If that failed, update @ret to the error
+> code so we treat the rescan as failed.
+>
+> Link: https://sashiko.dev/#/bug/linux-b578ca93-4f5a-4a46-9dfc-71c1ac9af09=
+5
+> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> ---
+>  fs/btrfs/qgroup.c | 11 ++++++++---
+>  1 file changed, 8 insertions(+), 3 deletions(-)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 3127d3fcab31..9f3886d128d3 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -3928,10 +3928,15 @@ static void btrfs_qgroup_rescan_worker(struct btr=
+fs_work *work)
+>                 ret =3D qgroup_rescan_leaf(trans, path);
+>                 did_leaf_rescans =3D true;
+>
+> -               if (ret > 0)
+> -                       btrfs_commit_transaction(trans);
+> -               else
+> +               if (ret > 0) {
+> +                       int commit_ret;
+> +
+> +                       commit_ret =3D btrfs_commit_transaction(trans);
+> +                       if (commit_ret < 0)
+> +                               ret =3D commit_ret;
+> +               } else {
+>                         btrfs_end_transaction(trans);
+> +               }
+>         }
+>
+>  out:
+> --
+> 2.56.0
+>
+>

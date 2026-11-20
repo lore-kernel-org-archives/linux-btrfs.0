@@ -1,54 +1,83 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.52
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795201258;
-	b=4K2bMP3nQVjfcApoPP7Ltk18OGNT1uEP2iNPMJ4vw7iMjsowOX4Yu+7MOEiRi87R3szL
-	 Dgwha6Zg2gnp5Gz+4BGJsUx2asIa6IzvS+nC60oOfZNtZWY0DQZPGFohhT/xyuwa8zJ5r
-	 pZke9UjnIKnGSZF4f/xgWbAGV78sVF4DzeN5NUcPp7XcYcvgfsUWKzu5cKhtl8M0JdW8C
-	 OM9V2BL9YzGPbV2JrM7nSAU9A+RDUn4gWEvTZ0EcXkN3ubWVYz+EM5EMiJyx8miIWhm5b
-	 UBeyvDtUENcq4/VvTOwHkGrEpT0h0yXTAhZdYYDauTMKUHI41PxF/s7DnfhQcUu6eog==
+	t=1795204634;
+	b=ZKSR4eaQqPaM0dYtKgPxVsBIUyZxgbNIMFb3qtRNKzUXTQGCJ/YH97C4ES4579n446UL
+	 SvWCQXOuLh8M5kgw/uXQW8uwbWzy/+Lx2FqRIRTRt3y7yiKYQCUHXaxlCp1IX8rvKWC7V
+	 zdUAEieOAiAOLBPC+gBI2hBcO5j819PN2NQxG7DzRoJk3beh9Y8yU6eK8Ktj7kEN6v9hU
+	 bSzN+W8MrPUD6iQEPXViLOqzjESSKkARflLQ07tyMva3lMFUCcjYQKVhQ2HWglqULoxNr
+	 bS2G2GvaUeRch3A7rgv2t0Ox0qX52B5yhqQwuO4u5tB5BRtQjgay38luYr3zQ48/epQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795201258;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=mMkZza2ij1qmVsCMIfToh1j9H5ueh7x6KJf0iwhJSXQ=;
-	b=1Luyx2whXKa51dX4fgVlceLPz9XSeci7GlX4+PNVKifh/azjDEm3fLm6iXDtBra+uxNT
-	 DrWZvLO6MvmT6skStg3zSUREUIM9A2GjuCYpz0zayBgrapvdjyibA3Q8zydJoM4q18XDy
-	 3aOo3hOz6JVOLC5pG5sguclTZ4aLouZOhuLPziFIl7O8FBlQxRyk8PuS4GkpG2ZQ6Jiur
-	 BVJfMrF/l0+9E4DMDtWT436pYaBxc2CXfDCX0kO3q5ITmYqfAFaSesDP+vDn6Etr5j4Xm
-	 ORcVhLF8vHb+54coITXNthMRlQDfT39k/q4vO/QCO8Ouoso7YOsbDIA3hSGayaL/lCQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795204634;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:X-Mailer:
+	 References:In-Reply-To;
+	bh=bepP2SIrLZrZLh3YoUhcI7r4qP8FXfE4vnBTwIQ4Skc=;
+	b=3/jbg2t3aMETpHB8MLT0EickdBbC70OSgRH3c4svlFAOiK7yWStDj7rUSQXp04nURJep
+	 TrbpSIdMSgB+jeHLAC9Nqt4TTRILU2NcTSW8WHYwFNSGGNdV+2xMsakGrxNgHbDdtaww5
+	 RJdUGTGtToxKQw1/I4fvRMaTXCuHmmcKEsWjyZWMhfPhdk1o9ElnDuxKQuz1Fok+JjQNa
+	 yVxaKt/xvCWlLbrtnhWQbpcHpY0dddOt4ONls+z8gFyDIj1F4HPimwRdBmxh9DRW07Br9
+	 es6G1Lbx10Ubdg3+Y5Xi1lQC9IIn5d9BtOj0MhKXIjSU/rlmBJ8igMXR8uYn3FQFnrQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nUNBvAAW;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=YLaDCL7l;
+	arc=none smtp.remote-ip=209.85.128.52
+Received: from mail-wm1-f52.google.com (mail-wm1-f52.google.com [209.85.128.52])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EDAB860A3814
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 19:00:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4BE16606A6F3
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 19:57:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4BE16606A6F3
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nUNBvAAW
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9DED31F000D2
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 19:00:57 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795201257;
-	bh=mMkZza2ij1qmVsCMIfToh1j9H5ueh7x6KJf0iwhJSXQ=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=nUNBvAAWYgwE6wHIE8ut0y0+6GFGj/QrLMULeXwMEbz+uDZX0QbJESztmmrCde6rL
-	 rxBoxwqocVBTuSyNlPqzUUjYuyH/iTpwwYfVDevCQcQG3MtODNnIaTOIOCO98DVkto
-	 +HomJYQ/yXhekB8cFjYJDD5ODOd0LcLLypwE1bk2tPeYuhfT3Qdk3J2YDEoX4ui0vW
-	 eALgknpez2WjNXdi8uM+VlhK658a2PHaHHl1LPulp0IjSzy2m6zER8dEaY41fGKGMf
-	 egJOJT53j1HgEZGKcjhURa9vhrqn4XqRWJmHV+JbIwV9VSCXD09NYqrZcLx4mHRgLK
-	 2vfJAAkwGhRyA==
-Received: by mail-vs1-f50.google.com with SMTP id ada2fe7eead31-7d6554d96d3so713815137.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 11:00:57 -0800 (PST)
-X-Gm-Message-State: APuU4Z+JkiQzPik9KAwsUSfIaJeMkCnHmBs0AWH0V3twWPihadwjcS/i
-	d1jsTphNFIn1sVBo3Yds4qXoCf5R/eD6ep/9BOyNOIhUnMNqneTFZsHsJoLUxxIxhSAdBi+WyeH
-	Ik83yePnPz3kr+TYdg84EHngl3B3dWxs=
-X-Received: by 2002:a05:6102:548a:b0:7d0:5688:f4fd with SMTP id
- ada2fe7eead31-7d739440c46mr2037012137.17.1795201256753; Fri, 20 Nov 2026
- 11:00:56 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=YLaDCL7l
+Received: by mail-wm1-f52.google.com with SMTP id 5b1f17b1804b1-4bb606491faso7520955e9.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 11:57:13 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795204631; x=1795809431; darn=vger.kernel.org;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-type:mime-version:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=bepP2SIrLZrZLh3YoUhcI7r4qP8FXfE4vnBTwIQ4Skc=;
+        b=YLaDCL7l+gBYhphKUE9IjZpDyAduT7RSvK84qheiU40y5Q/34BVNEL4rLRamvarM/C
+         mg3kd5tLIfPbaMdf3G9V6BovUh5VkWDYSKjV+RXqGZJx5qLgV/rtXLpHVkyc8mHbAmZO
+         VpYESRBLZlq9s9nUmVbzxATZGGbJTGkFIQ6+9yapG8xQO+m0AAuTnlXwpWSndiE2xj+C
+         O43okYYfhpEACmMpKGEsoHNbO9ZrnJ9DBqGUmtVs8KzhNnKimKDCOCBF7khsV/wfcH1h
+         ZYbExbg1oEs8CwbOGR32Tdjbv5k4phubo41fjM+2YGGD+wQwD9Z1lSShBIurs/95DC7W
+         L91g==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795204631; x=1795809431;
+        h=in-reply-to:references:to:from:subject:cc:message-id:date
+         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=bepP2SIrLZrZLh3YoUhcI7r4qP8FXfE4vnBTwIQ4Skc=;
+        b=1siileX1Yc4k6sjyMmdoWBwclIWmp+DgR/8MZ0JMkawEuJNxMjvlIoVGTU2sv7JZRd
+         RhuOdmkIxcJMwZ4HwGgQu3dM+OKDN2ld2UJzPrk2+9NE2qf879hmVCX6NubpgTouOzXP
+         u7+BKZWn3vVbuN0TQ742fBucjXvlapX0e+QUm1iSKEIQ9YAohQ+P26o3C6kgCk4I16/G
+         lWreFJo9F707KakNkGiAoIA0Z8sp3yHr3XoyDihUQUyg7o/kAmMbhSuEROA9n9fneEQi
+         WrYAiPw28qaQaHO28VeZnBlENdHFnyFr2KTa46+CKEgX+8FPIHBGmCFttc8AaATh0mMJ
+         niiA==
+X-Forwarded-Encrypted: i=1; AL+hErGAPNzxs/ya9xfBmdg+rdBIcAdPCAjBVEe5jC2UjYFD2GgLgQ1Atc1rvzjXUg1vFK2R4yt47MMqfUrEtA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+kAvFB8FomcOqUdjCpUvphnmYB8to/AohK6sosvOKW5qZhBrJY
+	oKXRWJ0CxbcHP7t84KczpdvvaaERSyy9vbc2r/sJHkkIH7tO6DOSnEaC
+X-Gm-Gg: AYBFou0ZtqK7QPwTTSTGwI7YAWZd2E5Fh7pzf+TO1gvshkWLlKpbIKI03WpksDpT1qe
+	9dMkYhb51GYGD66hqsR32aurUN9+fXX0O2EDVprym3ETHWPPmlUxXr08gxP5LZ3fJcJbhT673Qu
+	4ZQHfTFDwfImc5n8HRj6Q4J43hEOUjOyK0xDankodQWc6j418h9RYRaEXg4+jbO/lgu4mAo56Ry
+	nngLwbKEFHnDFu4EIuqaZ2ldw0Rxu+lmG9jIEFFfgzhWJAkNHoJ8q+rexiCZduA62s7/YGs8+S3
+	vbiif2E1S61UQHvhgP3tMOwQUL0MRcCioFI4Bmy67tdzCJcNFoO9mCxJleva/SIV1o9EKZvMzBy
+	k3ECUltuDkWkmcXJ8S5eTKmJUBoVFDL9R8+M/WOFNe/lW5w8B0wqxSLQ+6r6/Q0es9IZuo3/DE+
+	4CSj3uMcWMhYjEILE6gk/PyOCqaNYiQlJleLRUo+Us70N49RngOiM3ewiTbdmjf7SdZhGBcViOR
+	cItUVTqn24XGtTd9GwHgdARGy9VzquYO1DfeEY/8tGJbrRwctqV/Uumb5Rjkzb1FvxOHYiIUlEH
+	pZhmFOZXS5CuroD90sLdekwzyg==
+X-Received: by 2002:a05:600c:638e:b0:4bb:6c5e:b006 with SMTP id 5b1f17b1804b1-4bb887e265fmr93789305e9.3.1795204631450;
+        Fri, 20 Nov 2026 11:57:11 -0800 (PST)
+Received: from localhost ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb8526cbd0sm177401215e9.0.2026.11.20.11.57.08
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Fri, 20 Nov 2026 11:57:10 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -57,131 +86,99 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-References: <cover.1795168584.git.wqu@suse.com> <b7bb9a6e4195a65e10f31b81485d0e29af7a9da3.1795168584.git.wqu@suse.com>
-In-Reply-To: <b7bb9a6e4195a65e10f31b81485d0e29af7a9da3.1795168584.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 20 Nov 2026 19:00:20 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H7tG1Zj-XXDOybHHB84ASMRdwG-F0-XLjWndEyo1vNRQg@mail.gmail.com>
-X-Gm-Features: Aa3M54o8z-QcjV3cn4B2CM_2cMpbP3skUvBJOAejUeNihRiN2d3VzrnUrBFGnoo
-Message-ID: <CAL3q7H7tG1Zj-XXDOybHHB84ASMRdwG-F0-XLjWndEyo1vNRQg@mail.gmail.com>
-Subject: Re: [PATCH v3 3/3] btrfs: qgroup: show the "qgroup scan cancelled"
- message correctly
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+ boundary=0ce1f2737ac23ac54221dfe9ad89c8615ea720b53f7a9f6f6b271bd43f0e;
+ micalg=pgp-sha512; protocol="application/pgp-signature"
+Date: Fri, 20 Nov 2026 20:57:05 +0100
+Message-Id: <DN0AXFYCMGXO.1O5VDUA6GJCT4@gmail.com>
+Cc: "David Sterba" <dsterba@suse.com>, "Namjae Jeon"
+ <linkinjeon@kernel.org>, "Sungjong Seo" <sj1557.seo@samsung.com>,
+ "Alexander Viro" <viro@zeniv.linux.org.uk>, "Christian Brauner"
+ <brauner@kernel.org>, "Trond Myklebust" <trondmy@kernel.org>, "Anna
+ Schumaker" <anna@kernel.org>, "Chuck Lever" <cel@kernel.org>, "Jeff Layton"
+ <jlayton@kernel.org>, "Konstantin Komarov"
+ <almaz.alexandrovich@paragon-software.com>, "Paulo Alcantara"
+ <pc@manguebit.org>, "Chris Mason" <mason@kernel.org>, "Yuezhang Mo"
+ <yuezhang.mo@sony.com>, "Jan Kara" <jack@suse.cz>, "NeilBrown"
+ <neil@brown.name>, "Olga Kornievskaia" <okorniev@redhat.com>, "Dai Ngo"
+ <Dai.Ngo@oracle.com>, "Tom Talpey" <tom@talpey.com>, "Ronnie Sahlberg"
+ <ronniesahlberg@gmail.com>, "Shyam Prasad N" <sprasad@microsoft.com>,
+ "Bharath SM" <bharathsm@microsoft.com>, "Sergey Senozhatsky"
+ <senozhatsky@chromium.org>, "ChenXiaoSong" <chenxiaosong@chenxiaosong.com>,
+ "Darrick J . Wong" <djwong@kernel.org>, "Sean Smith"
+ <defendthedisabled@gmail.com>, "Andrey Albershteyn" <aalbersh@kernel.org>,
+ "Pedro Falcato" <pfalcato@suse.de>, =?utf-8?q?Pali_Roh=C3=A1r?=
+ <pali@kernel.org>, <linux-btrfs@vger.kernel.org>,
+ <linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+ <exfat@lists.linux.dev>, <ntfs3@lists.linux.dev>,
+ <linux-cifs@vger.kernel.org>, <linux-nfs@vger.kernel.org>,
+ <linux-api@vger.kernel.org>
+Subject: Re: [RFC PATCH v4 03/10] ntfs3: make crtime user-settable using
+ ptime
+From: "koraynilay" <koray.fra@gmail.com>
+To: "Amir Goldstein" <amir73il@gmail.com>, "koraynilay"
+ <koray.fra@gmail.com>
+X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
+References: <20261115180343.576773-1-koray.fra@gmail.com>
+ <20261115180343.576773-4-koray.fra@gmail.com>
+ <CAOQ4uxjdEiuJMQxtSL8XrPYHSamtfMh+BM8kS1wj_PVME4JynQ@mail.gmail.com>
+In-Reply-To: <CAOQ4uxjdEiuJMQxtSL8XrPYHSamtfMh+BM8kS1wj_PVME4JynQ@mail.gmail.com>
+
+--0ce1f2737ac23ac54221dfe9ad89c8615ea720b53f7a9f6f6b271bd43f0e
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=UTF-8
 
-On Fri, Nov 20, 2026 at 9:58=E2=80=AFAM Qu Wenruo <wqu@suse.com> wrote:
+On Fri Nov 20, 2026 at 4:58 PM CET, Amir Goldstein wrote:
+> On Sun, Nov 15, 2026 at 7:04=E2=80=AFPM koraynilay <koray.fra@gmail.com> =
+wrote:
+>>
+>> Since NTFS supports user-settable file creation timestamps, map
+>> provenance time (ptime) to NTFS file creation time (crtime) by using the
+>> newly introduced ptime API (in commit "vfs: add provenance time
+>> (ptime)").
+>>
+>> To do this, update ntfs_fileattr_[gs]et(), ntfs_getattr() and make it
+>> persist to disk in ni_write_inode().
+>>
+>> The timestamp is now retrievable by using file_getattr() or statx(), and
+>> is settable by using file_setattr() with the FS_XFLAG_PTIME flag.
+>>
+>> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.4.7
+>> Signed-off-by: koraynilay <koray.fra@gmail.com>
+>> ---
+>>  fs/ntfs3/file.c    | 20 ++++++++++++++++++--
+>>  fs/ntfs3/frecord.c |  8 +++++++-
+>>  2 files changed, 25 insertions(+), 3 deletions(-)
 >
-> There are several reasons why we won't output the "qgroup scan cancelled"
-> message:
+> Please don't change the unmaintained ntfs3 driver.
 >
-> - We always clear BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN before the
->   message check
->   So that test_bit() will never return true.
->
-> - @stopped has a higher priority
->   When a rescan is cancelled, it has a high chance to be caught by
->   rescan_should_stop(), so in that case @stopped is also true.
->
->   Then when checking which message to output, @stopped has a higher
->   priority, thus it shows the rescan as paused instead.
->
-> Fix the problem by:
->
-> - Save the previous CANCEL_RESCAN flag into @cancelled, and check that
->   variable instead
->   And @cancelled is only updated if the rescan is stopped.
->
->   This is to handle finished-then-cancelled rescan a little better.
->   This won't completely solve the cancel race with rescan though.
->
->   But the cancel-race is already there, not caused by this commit, and I
->   don't think we should bother too much on the mostly cosmetic error
->
-> - Change the message priority so that cancelled has a higher priority
->   The new priority list is:
->   - Error (ret < 0)
->   - Cancelled
->   - Stopped
->   - Finished
->
->   And we no longer go the complex "if () else if ()" way, instead each
->   hit branch will return, so only one branch will hit.
->
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> If you want to include an ntfs patch work on the new fs/ntfs driver.
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Huh, I thought ntfs3 was the modern and latest one by Paragon.
+But apparently I missed some news[1][2] lol.
+I'll use fs/ntfs for the mutable btime patch then.
 
-Thanks.
+Thanks,
+koraynilay
 
-> ---
->  fs/btrfs/qgroup.c | 25 ++++++++++++++++---------
->  1 file changed, 16 insertions(+), 9 deletions(-)
->
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index afac7402af36..ab382f41957f 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -3900,6 +3900,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs=
-_work *work)
->         struct btrfs_path *path;
->         struct btrfs_trans_handle *trans =3D NULL;
->         int ret =3D 0;
-> +       bool cancelled =3D false;
->         bool stopped =3D false;
->         bool did_leaf_rescans =3D false;
->
-> @@ -3970,8 +3971,9 @@ static void btrfs_qgroup_rescan_worker(struct btrfs=
-_work *work)
->         }
->
->         mutex_lock(&fs_info->qgroup_rescan_lock);
-> -       if (!stopped || test_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN,
-> -                                &fs_info->qgroup_flags))
-> +       cancelled =3D stopped && test_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL=
-_RESCAN,
-> +                   &fs_info->qgroup_flags);
-> +       if (!stopped || cancelled)
->                 clear_bit(BTRFS_QGROUP_STATUS_BIT_RESCAN, &fs_info->qgrou=
-p_flags);
->         if (trans) {
->                 int ret2 =3D update_qgroup_status_item(trans);
-> @@ -3989,16 +3991,21 @@ static void btrfs_qgroup_rescan_worker(struct btr=
-fs_work *work)
->         if (trans)
->                 btrfs_end_transaction(trans);
->
-> +       if (ret < 0) {
-> +               btrfs_err(fs_info, "qgroup scan failed with %pe", ERR_PTR=
-(ret));
-> +               return;
-> +       }
-> +       if (cancelled) {
-> +               btrfs_info(fs_info, "qgroup scan cancelled");
-> +               return;
-> +       }
->         if (stopped) {
->                 btrfs_info(fs_info, "qgroup scan paused");
-> -       } else if (test_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN, &fs_i=
-nfo->qgroup_flags)) {
-> -               btrfs_info(fs_info, "qgroup scan cancelled");
-> -       } else if (ret >=3D 0) {
-> -               btrfs_info(fs_info, "qgroup scan completed%s",
-> -                       ret > 0 ? " (inconsistency flag cleared)" : "");
-> -       } else {
-> -               btrfs_err(fs_info, "qgroup scan failed with %pe", ERR_PTR=
-(ret));
-> +               return;
->         }
-> +
-> +       btrfs_info(fs_info, "qgroup scan completed%s",
-> +                  ret > 0 ? " (inconsistency flag cleared)" : "");
->  }
->
->  /*
-> --
-> 2.56.0
->
->
+[1]: https://www.phoronix.com/news/New-NTFS-Driver-Submitted-Linux
+[2]: commit 1e9ea7e04472d4e5e12e58c881eaacfb3e49b669
+
+> Thanks,
+> Amir.
+
+
+
+--0ce1f2737ac23ac54221dfe9ad89c8615ea720b53f7a9f6f6b271bd43f0e
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+
+iHUEABYKAB0WIQSgVimKafU5DQMcjcDmj22qf5IGXAUCawCmEQAKCRDmj22qf5IG
+XMFuAP4jbqqWLf0rzRDeTfZI93Ntri5exvb2a4tXBADewtwEHQD+MLXXfUDqNxpu
+FJSnl3dfZi2d0aWeniR+psgoM+VAKw0=
+=6Hcz
+-----END PGP SIGNATURE-----
+
+--0ce1f2737ac23ac54221dfe9ad89c8615ea720b53f7a9f6f6b271bd43f0e--

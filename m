@@ -1,65 +1,47 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=90.155.92.199
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795164122;
-	b=Ed6pfZoq7/LNN5YCko6mOlX3RF8xXGxOAQ+HxglBlnJMHb0/xdmVl6vC4gfB8qPWUU/Z
-	 4GVnLKIeQMo8ZYOQbdNwHpSoQtqmAWCXrYX2kOq9UPhWCBjZVcx0XCtQ12Le8mVV3QoCm
-	 pK7zlCm87Ubr+Bc8ZsW0t8W4q40Gfm8g5HLMC18dVCI6QmYoNyPcxJH6tSORcLZ3takkR
-	 T0j5PD1q4kObrNoHT1Niw0REnYkxFPA7Fw+HPKWRI7hfP6HISplkRY9p0tgZBgbfnsMys
-	 hklTGSNG0vpDa2WelOckcNo/a7bot+mxLG2tF4tm2YTIrmwHMm+J7PEvugRaWi79GaA==
+	t=1795164223;
+	b=1P3WnBMypJejxUTxf9mfYIf908MDfFVZBF+NIZyJdsJ+bUdfs8KpHcw3JT2uGe/q8aum
+	 04Clj0ggSU/lPHRHfMeaz36CaaDuteu0f41jR9lUe0uCJJfNyjSfj3FC+To8/ZatsWEoj
+	 yQDxiPNaNK42Z1dwqOM2zh88RcJbPj0nZAqmIBkSixUO6o699MtHHoWnRCQ1fQVwaz0cF
+	 5vUuXl0QkvYz9Bs11hAlQ0tdlDAxLFFW6n4D3EHKakenJ9zVS7kj2rpqvgX+0ObZOmqGs
+	 NCPNBLtddq7yNszhIlKAozgVoxERNkUWSKd1csaVbZz1J2Gws6lgdnc0LUemB5noMAA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795164122;
-	h=DMARC-Filter:DKIM-Signature:Received:Received:Date:From:To:Cc:
-	 Subject:Message-ID:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To;
-	bh=HyRgedXWRK1X79pl9N4lyhbrJKBVIREWWNT5T9g0XqE=;
-	b=2wZG2EuR+3562hZezjAxCBGJuwKdwoMfEO9kz/kPggMrQb9WN4nTNHh65FDuxOnl6ND4
-	 wNZlJCyHSZmJETxSMUKOJKi8b5hlYnv7cV9gX8W8/5uMobf+fMMFGg2D5BE0F6tiBxTen
-	 bkHS1Muw3R+mnXiYQK1SskG7sO0qY4h1CtqOD6Esqll+hTDokWjmXPuFV3aCuEQKNVDOf
-	 072QD2sV5/DKaixT8Ywsg6eOlrUsNVRa+xeI91R5VGhvG4uuDuZPSpUdbMXgg4pLxPibc
-	 iPc5CRF+xkug68ImzLQvaAedQ0K8yPlhbVu6AoiC6QVDDRpU3HTlLejocK3xM5GAAdg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795164223;
+	h=Received:DKIM-Signature:Message-ID:Date:MIME-Version:User-Agent:
+	 Subject:To:References:From:Content-Language:Autocrypt:In-Reply-To:
+	 Content-Type:Content-Transfer-Encoding;
+	bh=OTWzE3tPyYLNMb0ejf7cfGY68Ow193sxZEFuqZx+Eu0=;
+	b=1ph/5IAWpvr0NjZzTLOg/oObCUhLvFjLqw9bWDazWAVQcEJJv7okH+xGRb6ptm9QLyKJ
+	 2mXjN/gGiiaTdPx64G2I6T/uN1r9yZM1K5j+xCF23pehHuKfpjgAlRBK7uoBJ+2zmtfPH
+	 PiW8wm+XXY2mn+Mh4nT92HFTXyjOg4Bh2Ec3zmfynRQekCDIS4E1UBneqrNjjK8flPBTl
+	 EsTIjyn4PoDrtoaunJnqnID/Uw9i/164/QJjQSM6yPdGF9JMAEGghpzFTTnMtSxFC1LWV
+	 Gbl6/SpANkC/CX59hvL/fthI1yNr8Wi5ZlLkztVWfTWvYF83Nj4brC7O5LracdCKDwA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=infradead.org;
-	spf=pass smtp.mailfrom=infradead.org;
-	dkim=pass header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=desiato.20200630 header.b=OVMe5WA4;
-	arc=none smtp.remote-ip=90.155.92.199
-Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=D2hT3iUK;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2116606A320;
-	Fri, 20 Nov 2026 08:42:01 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A2116606A320
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F121C606A335;
+	Fri, 20 Nov 2026 08:43:42 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=desiato.20200630 header.b=OVMe5WA4
-DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
-	d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
-	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
-	Content-Transfer-Encoding:Content-ID:Content-Description;
-	bh=HyRgedXWRK1X79pl9N4lyhbrJKBVIREWWNT5T9g0XqE=; b=OVMe5WA4iTacSoZNC6PRrwZnze
-	t7vONmL3OUlXbdsOazQguE6XQY5qcoAJrodjBPcR8JwiQp/P/1PqksGPB0rwPyCcbeObYfHmQ+/mW
-	RR+gfs5mF2rlvYU+RH9sq8qstQIp+1E/PqRueirVRTw1R8UM6atVvcuvRlxN43hXZHZ7/QuTaq4Ip
-	xvlUVYQyLcHLJ/AVFKWRKaRaIEX0QC7aqF4tCcOvRz+bjzLbCh9xhKoYdKVmZ8WfwM4ydPS6Ih7EQ
-	6UcJjoCl3pvMXf+LhsfFTDIVXOK5qBfzS6Eco/eWvGQugvk/t5PTemIxG1H/0Ezxfd1NCXWWW2+cG
-	2vFQmt/Q==;
-Received: from 77-249-17-252.cable.dynamic.v4.ziggo.nl ([77.249.17.252] helo=noisy.programming.kicks-ass.net)
-	by desiato.infradead.org with esmtpsa (Exim 4.100.1 #2 (Red Hat Linux))
-	id 1xUKBz-00000000YYx-2Hp9;
-	Fri, 20 Nov 2026 08:41:59 +0000
-Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
-	id 8255D300708; Fri, 20 Nov 2026 09:41:58 +0100 (CET)
-Date: Fri, 20 Nov 2026 09:41:58 +0100
-From: Peter Zijlstra <peterz@infradead.org>
-To: Eric Biggers <ebiggers@kernel.org>
-Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
-	linux-crypto@vger.kernel.org, ardb@kernel.org, x86@kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: Re: [PATCH RFC v2 0/6] lib/crc: x86: convert the CRC assembly to C
- intrinsics
-Message-ID: <20261120084158.GM2668564@noisy.programming.kicks-ass.net>
-References: <cover.1795137348.git.wqu@suse.com>
- <20261120034220.GA11532@sol>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=D2hT3iUK
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 54D1A1F000C6;
+	Fri, 20 Nov 2026 08:43:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795164222;
+	bh=OTWzE3tPyYLNMb0ejf7cfGY68Ow193sxZEFuqZx+Eu0=;
+	h=Date:Subject:To:References:From:In-Reply-To;
+	b=D2hT3iUKUhsmZgksXY+ApF6KbfHbJpcstAdQ/zKMHLgSraLKRqW7wanQOO0976RGX
+	 7i9NvcaxN8ksQG+k4A4ws+OB/cYxec0N3iUNWiWmWnMFQL+MVJ/8eFzBjFGK1yqavM
+	 8r/hvFO7Lxg3v3wA618WSuS9wHgiH2MT3+wxbW4SH4CpN4zMUPiUcoCsW6DiXdAt3j
+	 EOHKenKlAWiz+wID5LDK62Y4J25A5fCimz5sn1vmuh62uJBhBRHgmAG+PCfOJvRyM/
+	 kl7PuGUdFP3bqRPOPdeL73x3+DPsxshEoe5jMaoDNYzUEpbokJncSe3uk5Ai5JTVzt
+	 2eBV4frcYgZIQ==
+Message-ID: <fdb2526b-2fbf-46f7-b7ad-c4ec0385464e@kernel.org>
+Date: Fri, 20 Nov 2026 09:43:39 +0100
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -69,18 +51,89 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261120034220.GA11532@sol>
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH] btrfs: add a per-subsystem agent file
+To: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+ workflows@vger.kernel.org, linux-kernel@vger.kernel.org,
+ linux-doc@vger.kernel.org
+References: <df1c1fa031ba7e66486348dc37d1a7be53c18e43.1794894953.git.wqu@suse.com>
+ <63566373-86cc-4a55-8e09-741f283e6786@kernel.org>
+ <eb62aa0a-b027-4fc7-8d84-05fc5329576c@suse.com>
+From: Krzysztof Kozlowski <krzk@kernel.org>
+Content-Language: en-US
+Autocrypt: addr=krzk@kernel.org; keydata=
+ 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
+In-Reply-To: <eb62aa0a-b027-4fc7-8d84-05fc5329576c@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-On Thu, Nov 19, 2026 at 07:42:20PM -0800, Eric Biggers wrote:
+On 19/11/2026 22:15, Qu Wenruo wrote:
+> 
+> 
+> 在 2026/11/19 20:44, Krzysztof Kozlowski 写道:
+>> On 17/11/2026 06:58, Qu Wenruo wrote:
+>>> I believe btrfs is not the most affected sub-system, but a lot of
+>>> newbies without common senses are doing more harm than help.
+>>> E.g. wasting a lot of human review time on very low value fixes, filled
+>>> with long paragraphs and useless test steps/results.
+>>>
+>>> So it would be better to let those agents to stop being stupid and
+>>> follow the more common practices here, and hopefully those newbies can
+>>> build some common sense.
+>>>
+>>> I hope the agent file is clear and short enough, that is not only
+>>> readable for LLMs, but also for humans who want to be long term
+>>> contributers.
+>>
+>> Then it should be a maintainer profile. We should write docs for humans,
+>> which can be used by agents. Not the other way around.
+> 
+> In that case, what's the proper file that can also be applied to LLM?
+> 
 
-> So if we're going to proceed, I'd at least like to see a version that
-> compares a bit more favorably to the original.  But also I think before
-> diving into this approach I'd like wider agreement in the Linux
-> community (x86 maintainers, crypto, etc.) that the x86 intrinsics are
-> the way to go, and for there to be a path forward for DOITM as well, and
-> hopefully some interest in improving the compilers too.
+I just wrote... why would the LLM skip the most important document for
+given subsystem - the maintainer profile? It wouldn't...
 
-My 2cents go towards keeping the asm. There is no point in fighting
-compilers over this. The very same is true for atomics.
+Best regards,
+Krzysztof

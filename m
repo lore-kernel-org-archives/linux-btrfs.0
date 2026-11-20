@@ -1,56 +1,65 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=90.155.92.199
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795162565;
-	b=UXOcEnh4/B2G8XHLpqFqa9N0enqRU5ae463dGDbqi+BGtE2WO4kGW6bHzXeVABwzEPy0
-	 IL+A02xt15mZ0e16ms/1psAq9I9LL7dG1jP6WRKmG4o1fa57JsJmKWUR8GczsZviXhAbu
-	 PKpFNVhizCoFJHBtED6ldhGjbXIgGFEMf8bxkE1Al0jghUF4xmIhq1YY3nnQcqKRyQvdl
-	 jEJjugaxVFOE7LqM0yBlY3Dphtda6194HwATqHElJO97Y0uEUJioUEwdNR+tGU7XpoVDj
-	 5wcUtsJgVNJdxj5QZQj3WtXKZAuHWifnynTDmkwUZtQLUPB2VQPPawrILQ1Q+sD2KtA==
+	t=1795164122;
+	b=Ed6pfZoq7/LNN5YCko6mOlX3RF8xXGxOAQ+HxglBlnJMHb0/xdmVl6vC4gfB8qPWUU/Z
+	 4GVnLKIeQMo8ZYOQbdNwHpSoQtqmAWCXrYX2kOq9UPhWCBjZVcx0XCtQ12Le8mVV3QoCm
+	 pK7zlCm87Ubr+Bc8ZsW0t8W4q40Gfm8g5HLMC18dVCI6QmYoNyPcxJH6tSORcLZ3takkR
+	 T0j5PD1q4kObrNoHT1Niw0REnYkxFPA7Fw+HPKWRI7hfP6HISplkRY9p0tgZBgbfnsMys
+	 hklTGSNG0vpDa2WelOckcNo/a7bot+mxLG2tF4tm2YTIrmwHMm+J7PEvugRaWi79GaA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795162565;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=gRnXn7A8a8ltwBq+RheRl5mDgBsU2Z5PbLlb1u7e8CU=;
-	b=BJFsRyUJY4UbcqL6JI/lco7oXma4kGulbpVSgOy4JnXw6hh1QSJINwavxrVeXQ8GwhbE
-	 gdcvOn6sxz2wZQuAyKfXvqnbGrqYZ+DTr/d4uUNqpro1duain6/3aSeTpk0rgZ5l1ojsF
-	 vf5O4kOqz+G0AbQCvyXg8IvG0N3ozGCHnD7WBMO3m7swkG5TRb3nyokCL68DSjpU+nKgN
-	 cMs+EEys8nx4v6PSw1eg0xwuRmnKBBf6wgnYAwTZ1objbxUWwxNOrKfbdySDt+k3V7Wcp
-	 HBCUSvCw5L4/Qr833lyjaDohk2o1CszYpBXyzGbwkc6P5cemTJCLvdM1hB+JdCp6NIg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795164122;
+	h=DMARC-Filter:DKIM-Signature:Received:Received:Date:From:To:Cc:
+	 Subject:Message-ID:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=HyRgedXWRK1X79pl9N4lyhbrJKBVIREWWNT5T9g0XqE=;
+	b=2wZG2EuR+3562hZezjAxCBGJuwKdwoMfEO9kz/kPggMrQb9WN4nTNHh65FDuxOnl6ND4
+	 wNZlJCyHSZmJETxSMUKOJKi8b5hlYnv7cV9gX8W8/5uMobf+fMMFGg2D5BE0F6tiBxTen
+	 bkHS1Muw3R+mnXiYQK1SskG7sO0qY4h1CtqOD6Esqll+hTDokWjmXPuFV3aCuEQKNVDOf
+	 072QD2sV5/DKaixT8Ywsg6eOlrUsNVRa+xeI91R5VGhvG4uuDuZPSpUdbMXgg4pLxPibc
+	 iPc5CRF+xkug68ImzLQvaAedQ0K8yPlhbVu6AoiC6QVDDRpU3HTlLejocK3xM5GAAdg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=O3SBUo3Q;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=infradead.org;
+	spf=pass smtp.mailfrom=infradead.org;
+	dkim=pass header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=desiato.20200630 header.b=OVMe5WA4;
+	arc=none smtp.remote-ip=90.155.92.199
+Received: from desiato.infradead.org (desiato.infradead.org [90.155.92.199])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 63C14606A332;
-	Fri, 20 Nov 2026 08:16:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2116606A320;
+	Fri, 20 Nov 2026 08:42:01 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A2116606A320
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=infradead.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=infradead.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=O3SBUo3Q
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id DEE661F000CA;
-	Fri, 20 Nov 2026 08:16:01 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795162565;
-	bh=gRnXn7A8a8ltwBq+RheRl5mDgBsU2Z5PbLlb1u7e8CU=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=O3SBUo3Qd1oYvzOGUJ5rYpD2S8YhyUOUglVc/LxFyzDJLfoAn4a0DXLMJ/nR+m9M8
-	 sNN5u2N3okNnUETsRESBjksvHqkmuUTTC0GL7Ont3UhHFelFdFj0HhHZ7depwkLkrM
-	 Tfv/2kQ7CM3b6uy97snz53Hu1sfbx+dQsM6VxJ2fSK5sIWd8oDLSs7VmdAamuShnoF
-	 Q9DEGgGxDOMCy7wPXUwg36k8y4264dUYGGGdHlM6kDleWtbjv+uydRghVSrMVw5/EQ
-	 7uL+EVf4BdNUN8gnHe6Dn2+hYNRRLpE+tOjk9vaTUe7t98luO9gcouKOjdlybNTogO
-	 pIEzydj/7wkog==
-Date: Fri, 20 Nov 2026 09:15:58 +0100
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: Christian Brauner <brauner@kernel.org>
-Cc: ebiggers@kernel.org, hch@lst.de, fsverity@lists.linux.dev, 
-	dsterba@suse.com, linux-xfs@vger.kernel.org, linux-btrfs@vger.kernel.org, 
-	linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	viro@zeniv.linux.org.uk, jaegeuk@kernel.org, chao@kernel.org, tytso@mit.edu
-Subject: Re: [PATCH v2 2/5] fsverity: add I_VERITY_BUILDING inode state flag
-Message-ID: <awABahzFVV5pX6bG@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20261105115532.613467-1-aalbersh@kernel.org>
- <20261105115532.613467-3-aalbersh@kernel.org>
- <20261119-gefunden-beteiligen-epidemie-5a23ff160ef4@brauner>
+	dkim=pass (2048-bit key) header.d=infradead.org header.i=@infradead.org header.a=rsa-sha256 header.s=desiato.20200630 header.b=OVMe5WA4
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=infradead.org; s=desiato.20200630; h=In-Reply-To:Content-Type:MIME-Version:
+	References:Message-ID:Subject:Cc:To:From:Date:Sender:Reply-To:
+	Content-Transfer-Encoding:Content-ID:Content-Description;
+	bh=HyRgedXWRK1X79pl9N4lyhbrJKBVIREWWNT5T9g0XqE=; b=OVMe5WA4iTacSoZNC6PRrwZnze
+	t7vONmL3OUlXbdsOazQguE6XQY5qcoAJrodjBPcR8JwiQp/P/1PqksGPB0rwPyCcbeObYfHmQ+/mW
+	RR+gfs5mF2rlvYU+RH9sq8qstQIp+1E/PqRueirVRTw1R8UM6atVvcuvRlxN43hXZHZ7/QuTaq4Ip
+	xvlUVYQyLcHLJ/AVFKWRKaRaIEX0QC7aqF4tCcOvRz+bjzLbCh9xhKoYdKVmZ8WfwM4ydPS6Ih7EQ
+	6UcJjoCl3pvMXf+LhsfFTDIVXOK5qBfzS6Eco/eWvGQugvk/t5PTemIxG1H/0Ezxfd1NCXWWW2+cG
+	2vFQmt/Q==;
+Received: from 77-249-17-252.cable.dynamic.v4.ziggo.nl ([77.249.17.252] helo=noisy.programming.kicks-ass.net)
+	by desiato.infradead.org with esmtpsa (Exim 4.100.1 #2 (Red Hat Linux))
+	id 1xUKBz-00000000YYx-2Hp9;
+	Fri, 20 Nov 2026 08:41:59 +0000
+Received: by noisy.programming.kicks-ass.net (Postfix, from userid 1000)
+	id 8255D300708; Fri, 20 Nov 2026 09:41:58 +0100 (CET)
+Date: Fri, 20 Nov 2026 09:41:58 +0100
+From: Peter Zijlstra <peterz@infradead.org>
+To: Eric Biggers <ebiggers@kernel.org>
+Cc: Qu Wenruo <wqu@suse.com>, linux-btrfs@vger.kernel.org,
+	linux-crypto@vger.kernel.org, ardb@kernel.org, x86@kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH RFC v2 0/6] lib/crc: x86: convert the CRC assembly to C
+ intrinsics
+Message-ID: <20261120084158.GM2668564@noisy.programming.kicks-ass.net>
+References: <cover.1795137348.git.wqu@suse.com>
+ <20261120034220.GA11532@sol>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -62,37 +71,16 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20261119-gefunden-beteiligen-epidemie-5a23ff160ef4@brauner>
+In-Reply-To: <20261120034220.GA11532@sol>
 
-On 2026-11-19 21:48:27, Christian Brauner wrote:
-> On Thu, Nov 05, 2026 at 12:55:27PM +0100, Andrey Albershteyn wrote:
-> > Every filesystem that supports fs-verity keeps a private runtime inode
-> > flag meaning Merkle tree is currently being built *_VERITY_IN_PROGRESS.
-> > They all serve the same two purposes: reject a concurrent enable with
-> > -EBUSY and let the write paths recognize the special writes done while
-> >
-> > ...
-> >
-> > +/**
-> > + * fsverity_is_building() - is fs-verity being enabled on the inode
-> > + * @inode: inode to check
-> > + *
-> > + * This checks whether the inode's Merkle tree is currently being built.
-> > + * While this is the case the file is read-only to userspace and the only writes
-> > + * allowed are for the fs-verity metadata. This becomes false when fsverity
-> > + * metadata is fully created and written to disk or building failed.
-> > + *
-> > + * Return: true if fs-verity is being enabled on the inode
-> > + */
-> > +static inline bool fsverity_is_building(const struct inode *inode)
-> > +{
-> > +	return inode_state_read_once((struct inode *)inode) & I_VERITY_BUILDING;
-> 
-> Isn't the fix to make inode_state_read_once() take a const struct inode *?
-> 
+On Thu, Nov 19, 2026 at 07:42:20PM -0800, Eric Biggers wrote:
 
-Yes I have a fix, I will send as part of this series in the next
-revision
+> So if we're going to proceed, I'd at least like to see a version that
+> compares a bit more favorably to the original.  But also I think before
+> diving into this approach I'd like wider agreement in the Linux
+> community (x86 maintainers, crypto, etc.) that the x86 intrinsics are
+> the way to go, and for there to be a path forward for DOITM as well, and
+> hopefully some interest in improving the compilers too.
 
--- 
-- Andrey
+My 2cents go towards keeping the asm. There is no point in fighting
+compilers over this. The very same is true for atomics.

@@ -1,87 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
 	t=1795165745;
-	b=aCoqe5NoJJ4ZudzLrSRn9n42T64gYUL/uQ+wpvrxN5YQB6mUJ0ax/B8Ph+cdT/ejDRWV
-	 OR9i71UvvkH+BklUpbaGRzwjL+08CgtPVY66ormgQjx6SMfhFXQ46kYBPBFEvo0r7g92k
-	 UYOCeXNm5puaiQXg9ULx62I043b1WNdYSPs9QFDZmE7bTOwK3jJGOtdaVS/YyYiSIDTyQ
-	 y0zpEXBIhUqe33b6VT2JqZvBrRn0BKPDv4nGOx0aqgIklRZ6c287kmJtFGZw+3+8e0g1q
-	 MCpgBiIFzHruqMNyBVPXTx6yF37lwUqtoMuzJnJXRTPclQOuYlXXm5q0aEF+AO+Z7/w==
+	b=kteJgJ+v3+5qHmvyBz4ZoJyLlwuuLnH5WL61p+aRfKjXQUwWRnoLt91ohKv6okuuKLc1
+	 gaUMdlb9k/O+fAq0tedNntH9nx4b0uwGgaGeBkmwmDPSPpOHAiU0EDDJ26wqUQ36lwGng
+	 +f0ZF5P/cdk0BMWca6RxrHKXDEMbeSTD+nResrl3hZ3vIfzoJSSa5NTRJ+7LitWAP0VJi
+	 epN+z/54baCENK9Z4868sIqVhFdWB2gCOvhC2Icysmqs1oacILtmauI3cWDO98/a3slNr
+	 k7/BBAKzNDzpRGlWBMyhUovMLKOt15mO6d6pwtRMHN93If9NE558kD2MH4ZHzy4a9Cg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1795165745;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Rspamd-Queue-Id:
-	 X-Spam-Level:X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:
-	 X-Spamd-Result:X-Spam-Score;
-	bh=s7AwHVFXN74P6rAXHynoTYbx1cW3o6tGizph3GcEfz8=;
-	b=nObGljmcick5PVBHlhjr67MupeOB+qH/vOr/Jw7UxZ8aqTZZyioveTyqv9Ra4lsxyREL
-	 jBsGhpGk7FjKaftI9rS1wZS9brwoMsgypzFDnJxAOE4iwiTECU8kOi/uub/c4Osg23Czi
-	 njAyllerAxRGGWslX+hHu7dy7GnmLZJAw/a8p6N5rSFX9yEeihEM5CwC/nUAELIYW+cFT
-	 SEkNLL5z4hdJFrG2XZ0FGq/EKLT2K9djLX8SCqD3igatugWIMdJZj5NbOzVVmspBgo+Dd
-	 CoYPXWZgZZcHACka2IB20cuUAvxZXvYfUbn4Xamr85HNSFs50vV0cA1MeA6vnNiDeWg==
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=6b5iFkDB958ui6nWrB6BJ5IgzYQaTtsHyvBjl8nIP+E=;
+	b=1pPP+Q91BcWvfuTm6N5xGZ0mtg6Ma9KIFPqW32wJd6Le8DX0okAP6Lmz8ITngbAh3e3H
+	 6MBweSbHwEs9JrwOIp4o9ANl/D4/wcV6iW0kXTs5Mf4SoiaNXIL2GMODN966GuAp/vi/L
+	 jJvCr2VCLna2bGB/meBmXYt7hU3RQgcdTjYzI8KV2hDVgBA99elmxm9EvT2fTqzBjQi3p
+	 YBP4DQqpaoWvInjnEkAMjFVvvSjiPyXyaggfAUUCIwdqxubD7b8U+mGENbBBTI8n/WF4d
+	 y5I0MuLDs1BbKqISNZP1AW3Gn0UIihw3trY/C7tDuBXZUXrqCTg6K+OJgJwntuKM06A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YxiPV7ih;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YxiPV7ih;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=mfhMOHto;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=mfhMOHto;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 82288606A333
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:09:04 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 82288606A333
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 529F1606A32A
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:09:05 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 529F1606A32A
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YxiPV7ih;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=YxiPV7ih
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=mfhMOHto;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=mfhMOHto
 Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id CD0C122538
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:09:02 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id CBAD31F390
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:08:57 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795165742; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=s7AwHVFXN74P6rAXHynoTYbx1cW3o6tGizph3GcEfz8=;
-	b=YxiPV7ihQhd2tXa4GJpOZE5SqL+0fNlQjtdLm6g+ZeD9f6uekxlgF8NkE7C7SWbEYsqsZj
-	GOjwIFuhiQUHOuc19QD8UnHN4OyFyL/ucCN/PhwAwMPirfOm8NXPRo3Tb0owvfvkDAF1FF
-	0aDbJYvsQAAzMUDgd6OvbeRmdbkrmXM=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=YxiPV7ih
+	t=1795165737; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=6b5iFkDB958ui6nWrB6BJ5IgzYQaTtsHyvBjl8nIP+E=;
+	b=mfhMOHtoqH06kKh8Ub2Wu4u7FNcQrKkXb2Mad7Mq+rM9FMKBCmCtb1iw9HqqwJPGDDSV4k
+	2L+o+fkbhAetEvBLEZdoAJabjdq57cw9dJdKsKFkq2/XDfdxnVJk848OGI6Zor2P/3PjDw
+	amNQlOgGsJW/SfWfuYknWCloJelMb0Q=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=mfhMOHto
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795165742; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=s7AwHVFXN74P6rAXHynoTYbx1cW3o6tGizph3GcEfz8=;
-	b=YxiPV7ihQhd2tXa4GJpOZE5SqL+0fNlQjtdLm6g+ZeD9f6uekxlgF8NkE7C7SWbEYsqsZj
-	GOjwIFuhiQUHOuc19QD8UnHN4OyFyL/ucCN/PhwAwMPirfOm8NXPRo3Tb0owvfvkDAF1FF
-	0aDbJYvsQAAzMUDgd6OvbeRmdbkrmXM=
+	t=1795165737; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=6b5iFkDB958ui6nWrB6BJ5IgzYQaTtsHyvBjl8nIP+E=;
+	b=mfhMOHtoqH06kKh8Ub2Wu4u7FNcQrKkXb2Mad7Mq+rM9FMKBCmCtb1iw9HqqwJPGDDSV4k
+	2L+o+fkbhAetEvBLEZdoAJabjdq57cw9dJdKsKFkq2/XDfdxnVJk848OGI6Zor2P/3PjDw
+	amNQlOgGsJW/SfWfuYknWCloJelMb0Q=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id A808C1342D
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:09:01 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 9B5761342D
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:08:56 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 7jwnOScOAGsJYwAAD6G6ig:T4
+	id 7jwnOScOAGsJYwAAD6G6ig
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:09:01 +0000
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2026 09:08:56 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs: qgroup: show the "qgroup scan cancelled" message correctly
-Date: Fri, 20 Nov 2026 19:38:37 +1030
-Message-ID: <2ce9cd2d54cb4a69c26c40cdf9ebb2652d2866c0.1795165635.git.wqu@suse.com>
+Subject: [PATCH 0/3] btrfs: qgroup: rescan related message minor fixes
+Date: Fri, 20 Nov 2026 19:38:34 +1030
+Message-ID: <cover.1795165635.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.0
-In-Reply-To: <cover.1795165635.git.wqu@suse.com>
-References: <cover.1795165635.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,14 +86,14 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: CD0C122538
+X-Rspamd-Queue-Id: CBAD31F390
 X-Spam-Level: 
 X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
 X-Rspamd-Action: no action
 X-Spam-Flag: NO
 X-Spamd-Result: default: False [-12.01 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
+	BAYES_HAM(-3.00)[99.99%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
@@ -123,79 +117,25 @@ X-Spamd-Result: default: False [-12.01 / 50.00];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	DKIM_TRACE(0.00)[suse.com:+];
 	MIME_TRACE(0.00)[0:+];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:dkim,suse.com:email,imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo]
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim]
 X-Spam-Score: -12.01
 
-There are several reasons why we won't output the "qgroup scan cancelled"
-message:
+The first one is from Sashiko.
 
-- We always clear BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN before the
-  message check
-  So that test_bit() will never return true.
+The second one is to make sure we output the rescan related message even
+if we failed to start a transaction (e.g. transaction aborted).
 
-- @stopped has a higher priority
-  When a rescan is cancelled, it has a high chance to be caught by
-  rescan_should_stop(), so in that case @stopped is also true.
+The final one is to fix a bug that rescan cancelled message is never
+shown.
 
-  Then when checking which message to output, @stopped has a higher
-  priority, thus it shows the rescan as paused instead.
+Qu Wenruo (3):
+  btrfs: qgroup: handle the transaction commit error during rescan
+  btrfs: qgroup: ensure the qgroup rescan messages are always shown
+  btrfs: qgroup: show the "qgroup scan cancelled" message correctly
 
-Fix the problem by:
+ fs/btrfs/qgroup.c | 32 +++++++++++++++++++++-----------
+ 1 file changed, 21 insertions(+), 11 deletions(-)
 
-- Save the previous CANCEL_RESCAN flag into @cancelled, and check that
-  variable instead
-
-- Change the message priority so that cancelled has a higher priority
-  And for @stopped/@cancelled check, if they hit, output the message and
-  return. So we don't need the complex "if () {} else if () {}" logic
-  anymore.
-
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 15 +++++++++++----
- 1 file changed, 11 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index afac7402af36..3be159541e4c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -3900,6 +3900,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans = NULL;
- 	int ret = 0;
-+	bool cancelled = false;
- 	bool stopped = false;
- 	bool did_leaf_rescans = false;
- 
-@@ -3982,18 +3983,24 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 		}
- 	}
- 	fs_info->qgroup_rescan_running = false;
--	clear_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN, &fs_info->qgroup_flags);
-+	cancelled = test_and_clear_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN,
-+				       &fs_info->qgroup_flags);
- 	complete_all(&fs_info->qgroup_rescan_completion);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
- 	if (trans)
- 		btrfs_end_transaction(trans);
- 
-+	if (cancelled) {
-+		btrfs_info(fs_info, "qgroup scan cancelled");
-+		return;
-+	}
- 	if (stopped) {
- 		btrfs_info(fs_info, "qgroup scan paused");
--	} else if (test_bit(BTRFS_QGROUP_RUNTIME_BIT_CANCEL_RESCAN, &fs_info->qgroup_flags)) {
--		btrfs_info(fs_info, "qgroup scan cancelled");
--	} else if (ret >= 0) {
-+		return;
-+	}
-+
-+	if (ret >= 0) {
- 		btrfs_info(fs_info, "qgroup scan completed%s",
- 			ret > 0 ? " (inconsistency flag cleared)" : "");
- 	} else {
 -- 
 2.56.0
 

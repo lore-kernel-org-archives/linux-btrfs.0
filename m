@@ -1,77 +1,77 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.21
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.20
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795294815;
-	b=cY11PI0FmA8iqosvxIER+uDXeOScl8ZgxQ3H8knDVv22pYc+awPPNdIH+Nv6uNDMZoSn
-	 czoY7mJIdMofURQkLh3EI+wLrEyuE1vWCjdd8LyPzXo0pwH4tD4TlhWqeKWLnnH96mhht
-	 3Uw3XMu6IYtWKC/S8ZXULnYSY8qDaG4eh4pi7OnWNgudZJGyx9lqv8v9VGLGi3qwZIaKO
-	 05f+sTPih7tPEY2WLvgEyRAkycbURgn23fo9HyVfpcQn9TwCTRiyeiinWjTHe1nh6gV2X
-	 6yYhZ3z75zfLDv3q2jHy3qaR7rypNzK+TdkfiJdTICwHDJe1xDsdQO4u5OdK4WDzpyA==
+	t=1795295365;
+	b=M5B8enSTBmFUCxYQNtJBg2sVZKFhhQJBNybLf6JQJmnHOXkS1+5UuLF97FOuPtOP3l57
+	 d7Pp/bz0MSlql+kqUvkJidGGClm2XjzB3nn8HZiYhy9DX8seW59vVRMiebLL3AROfkgjG
+	 RbhncP1wb0tFGCFC/SzEjRy1sasyK/uZhqgC2FewT8GpzLPH4zZCf098xgNeuGUvUx9PQ
+	 tEYtz1SmLZi8MGlDqNMLStXVWBZKtlr2dbRCE6GAKgzVi4t047JdenWJ6vlBgcDPz9d4P
+	 fUhYT4deFvlU/us2Bix/rmYHJUHLB9BIlHJ4ek3M9rootPZIZuLi+H/p5UH0qwFNg2w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795294815;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795295365;
 	h=DMARC-Filter:DKIM2-Signature:Message-Instance:DKIM-Signature:
 	 X-UI-Sender-Class:Received:Message-ID:Date:MIME-Version:User-Agent:
 	 Subject:To:Cc:References:Content-Language:From:Autocrypt:In-Reply-To:
 	 Content-Type:Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:
 	 UI-OutboundReport;
-	bh=tHDn2ySSVMB7ccjsJPwuxkW/ZChMFUVGUOKQM6uQrN8=;
-	b=4TxzMOWy2rHUf7bquX7PpxFxsScZdwwUznTcQ6sVMTTxmkpeJLF412ZqvoKF6y8bin/h
-	 8OPfriCCZQCB7l3moOyeZ05LG2GWkbk9G9aLJMnoIskL6S0Dm75TxRxd8XPuze5gGa2GG
-	 DDH7cDY7vaDCHa8OA/eHBBlNCQmRfclaPNkZgFkWQtK7885Y+xk7Bnxkx2t9nY8hF6I3m
-	 8tyGOFNRcc0Fu+WWR3ZsiHjb+wuUN6xW3UGe1TiEN4F3RUvUWKohWNp1GF10Gvz6GQZ8I
-	 TD/5wYl6aAVocVjfO08hhicGUMyMs0t794uHWFurxvS6rTEz7Bjp6+3gIKflykIambA==
+	bh=9faj9D/B0BsEMSd9HOE18xmvHGSzdgXWKqlq/2YLRL4=;
+	b=ATOHUmDmIsQheA90FqEJweis99eZSDBAeNg7DrmiDFIN4qe+6sfrTjVIkqE7urX7O3Tq
+	 G7f/UrQ1+dDf4EKur+AcOky5WJcJtH+CS05ugDcXrz3ZgLNpEXaSQ3ZLQ1aLF/16oXtNj
+	 Nlq6bSV5yB85oYXGkEms3Fi8LlpGDIuigWk/JUSD7BPEMlgHu9c5FN9s+iy7W5XET3+q8
+	 ZYnw84+kmTIqQje19IMXZkPA3RaWxbT/8QaLzuNIjnkTfFNOWrdbrvfe0aCeyfxq9ZtkB
+	 n5gq5i1aQbt1yFySUe3yZLV6bw5BCtUFDiSqgyYaMKpvZQ9DkJGOSnanrdzG+e9DJrA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=gmx.com;
 	spf=pass smtp.mailfrom=gmx.com;
-	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=m+r1pQJU;
-	arc=none smtp.remote-ip=212.227.17.21
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
+	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=oIVcR+At;
+	arc=none smtp.remote-ip=212.227.17.20
+Received: from mout.gmx.net (mout.gmx.net [212.227.17.20])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F1A92606A32A
-	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2026 21:00:13 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F1A92606A32A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9621C606A331
+	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2026 21:09:24 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9621C606A331
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=m+r1pQJU
-DKIM2-Signature:  i=1; m=1; t=1795294811;
+	dkim=pass (2048-bit key) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=oIVcR+At
+DKIM2-Signature:  i=1; m=1; t=1795295362;
  mf=PHF1d2VucnVvLmJ0cmZzQGdteC5jb20+;
  rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
  d=gmx.com;
- s=s31663417:rsa-sha256:pjf09ZYDTdgksbFMfOo+JPTVVqPa
-   9YlN00fLzTzfe9U61rVrVCDW+mLuc0jNXG1oMRXIUD6Xidq4tVCH3r9sNFlJYdIdC1XWCxgg3n/
-   ChyNeJ+sekF0QRaQ/sqYxC02Wd+cR3sHsvl1OFVbGBWlSfu0wjHSIy3xKdiQe0fDch2hI3Boa5w
-   /ZjJK4xuNiIcWWLsdKJxhzGpOTVCyOrQQ2Dz/xKL/3A2pWKo8boz/zbRznVtXo5Tnx4AYr6PBS4
-   oCGvfceK+DKOxFPtFYigNmksUQh8y7paSg2pSR3qPE/+XENiBFZAE6fcj1fblpiKN+5UkH0pS7P
-   5mxr/GeJoo9kaw==;
+ s=s31663417:rsa-sha256:fMifUtn7XlGLb6ZKdRqu7L5XHqyp
+   1aOeM+1EfvqeZj7bZ6ZKmaVJIcZq5rtLExcw+LVD3eoRbIWBDj7mxUx7Fn93vuemuAjY6ZoyfH3
+   jBhobzF/CzUHNPGh2HVCO6bvJzjmMUHIOoWMm8zuAIE4XHxS3K1xd55OGjpVxEnZw1qGyqoL5KT
+   mgiPFAe98BNujPWmwn1QN63LdLjlD/C6n5YtqxcWUhLkA5pbA2+KL1jepACdr2+oPmuaEM+QSEq
+   5QT9HTXCAsFdeh10p729dveiFhh+DGZ5A/OOtIWY1f1HA2j59kvFE6H7LZ60XcvMEXv38zw/Rtd
+   bRVJgb+PvnsEBA==;
 Message-Instance:  m=1;
  h=sha256:
-   K6aKtAMNoJfaeJx/s+lnV1WJrqhBSove70JKd0xmRU8=:
-   Dvs7DN1yImMfFi8T7oy6KNKKMGc3ViltG5MDpYJcMpo=,
+   a/5gKxafea16CPbsXpUuokFyDfbigqBFUY9az8pGkdE=:
+   hkAxSGeMWu0y87vuZP6pEgYmY3L7xKltacH0yQxoJLA=,
   sha512:
-   /v0svq3P6BSMxc0D1tHOrLlEyqtJNpxp0RjSS63rSEuz/o6zw8JgDv56Ep5dRPPuEHKWsAe1jBYi8PyAm9vmGw==:
-   X4UXr9IFsiabn6TlJE4N3RAtBp7wRHOaMcKXaqxAGJ0x3K8ZQ2mJdKxi6bgE2sQSSz12oo4t/NLlegnA8ElEvA==;
+   yTuR9ajtCn+ySK+2QrDc2R1ILkcWYOd49sD+f1Cys0wu/cctWX3OD4ppBnBtyiXFSRLtFhOLqlMprUdl3hRW3g==:
+   s8fLsLa9IRgeX2sxcLnXNshxLxlMbMDFxJpwZdUxITwStQ112R/kPXCAbJOlWRccIA0PZvY7Dq6t1nLWrYWnng==;
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1795294811; x=1795899611; i=quwenruo.btrfs@gmx.com;
-	bh=tHDn2ySSVMB7ccjsJPwuxkW/ZChMFUVGUOKQM6uQrN8=;
+	s=s31663417; t=1795295351; x=1795900151; i=quwenruo.btrfs@gmx.com;
+	bh=9faj9D/B0BsEMSd9HOE18xmvHGSzdgXWKqlq/2YLRL4=;
 	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
 	 References:From:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding:cc:content-transfer-encoding:
 	 content-type:date:from:message-id:mime-version:reply-to:subject:
 	 to;
-	b=m+r1pQJU5RqIA+XOHVhDiOKZXcWApm4fxOqxBEKX3g9j9OJKAajwb4M/Xc+L/Qks
-	 Vl7zbXzcmD6HKVJeTAm+YLmLFsW/LnzD8LtrAOYz+Eht+mlRwUdOvRoYGxiuVky9T
-	 WzX9yfcYMc08EFyQDxfrDYYRMTHa0Z+t70wlRdI1z0reTZYvK95eccUoBH/VSFjwh
-	 Iy+vceEf9sktOgPzcrzn1eCetfmtFO5z3wJj81Uz9/xgNRLkPx5aUNQTZAExieXAI
-	 aRrLDhaGvXYnBUBDzda5X+8okpC5YD1u+RxT1XJgVohj6JQALB/4/Dy5WGWqI8h4p
-	 HYqd5D3i/vGROox0DQ==
+	b=oIVcR+AtJORePUv7EVKecf02lPaH4vY6heXh0xjnc81h9qNPkiL7axrb3pH3QAjD
+	 9wSvqbow4+EHli35aCHdtGb51bTmaE1TeNH4Zh09zdwyUwNHhJ6+xppi0XTHNVaSh
+	 Qd4KILPCENHlIPdR8ZtYjGArBvj7oSDwVxoexOySoZihFIsLPsVD+1WPwpkaVL2TZ
+	 XomsaIntbuheGSbvCcTkcGNiau/QaqDTeQuJuQS8veRMBB4pSVmDKI+dVaVOlmqYr
+	 xkLkehOAiZ8a2rDTRtHu6pXrGbgMHhPLE6l0dbJjKkDaqZggoF3Sdni/1EUgsSvUy
+	 UWCv1p2ROmEQPGD/xA==
 X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MxlzC-1yT2qi3NVO-010aGC; Sat, 21
- Nov 2026 22:00:11 +0100
-Message-ID: <3fe960f6-7488-4352-ab9e-1c4884ff68b4@gmx.com>
-Date: Sun, 22 Nov 2026 07:30:05 +1030
+Received: from client.hidden.invalid by mail.gmx.net (mrgmx105
+ [212.227.17.174]) with ESMTPSA (Nemesis) id 1MD9T7-1xdz8R0t9N-00A6SC; Sat, 21
+ Nov 2026 22:09:10 +0100
+Message-ID: <4aa0cdbf-98a4-4d44-887e-3924cd075c27@gmx.com>
+Date: Sun, 22 Nov 2026 07:39:04 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -82,8 +82,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v3 3/6] btrfs: make fsync wait for all incomplete COW
- writes
+Subject: Re: [PATCH v3 4/6] btrfs: wait for ordered extent IO in fast fsync
 To: Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
  Chris Mason <mason@kernel.org>, Naohiro Aota <naohiro.aota@wdc.com>,
  Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>,
@@ -91,7 +90,7 @@ To: Josef Bacik <josef@toxicpanda.com>, David Sterba <dsterba@suse.com>,
 Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
  stable@vger.kernel.org
 References: <20261120-b4-btrfs-data-integrity-v3-0-4de4b91b826e@toxicpanda.com>
- <20261120-b4-btrfs-data-integrity-v3-3-4de4b91b826e@toxicpanda.com>
+ <20261120-b4-btrfs-data-integrity-v3-4-4de4b91b826e@toxicpanda.com>
 Content-Language: en-US
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
 Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
@@ -118,163 +117,172 @@ Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
  ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
  9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
  3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
-In-Reply-To: <20261120-b4-btrfs-data-integrity-v3-3-4de4b91b826e@toxicpanda.com>
+In-Reply-To: <20261120-b4-btrfs-data-integrity-v3-4-4de4b91b826e@toxicpanda.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:qwLWkrC30m2VewX4ikEQhYZn+d1nAQz50GHRv9q/XuhKLKMGia/
- 0PGwpI3qzdc/vfvJXquEipIYvFl/xi9q1F+QDnY8Mlwr87+QXdW5Y2u7wSBBGcbCq05Bu6C
- 3BMNZKqmdDjQ2ky5Q5A2P0Uak1HDz79WYKN1ASmhTeeKm3cksD6dYTXmmWL318Y2Zi4u/P+
- r6ucrIHkgMHEtHGCcmwbQ==
+X-Provags-ID: V03:K1:dM5QtWiI7iSfhwJ4gPsOxjV45iAN93vFi9vAEzSCC2G+pUiou5A
+ HXUT6yACPr3xDAPzzGuzCkWSMnddBBnUXaAcSV8uD6wVAgBWDpzIN4onYWompayJjbPIDcb
+ JqrYWxrL96rbOI7obmLGtPpz/8DW5VzvhPxMJuhhA1M+J6yDDYfJ3sEXXM+3jxdp8EfjCM4
+ 9ArUU4c1vMqhjTUyRjlQg==
 X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:ENym3dpGbhk=;+g8IdX8VWHAom66hZ7bt8tuNKEG
- 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
- gjcpIoLdNfNs8mnU7VIoRiwEQ
+UI-OutboundReport: notjunk:1;M01:P0:1Y0pb07OaN8=;WOXjb6VsTxQhAn839c/1pMa3Mp9
+ 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
+ jFAwZ99rsGRiwhehnw==
 
 
 
 =E5=9C=A8 2026/11/21 07:21, Josef Bacik =E5=86=99=E9=81=93:
-> If a COW write fails, or its ordered extent is truncated, the extent
-> maps of the part that was not written still point to the newly
-> allocated extent until the ordered extent completes. If a fast fsync
-> logs those extent maps first, replaying the log after a crash replaces
-> the file's old data with an extent that was never written.
+> A fast fsync waits for writeback and then checks whether a write failed
+> or was truncated, in which case it waits for the ordered extents to
+> complete. The check can come too early, because end_bbio_data_write()
+> clears writeback before it finishes the ordered extent, which is where
+> a failure is recorded:
 >=20
-> BTRFS_INODE_COW_WRITE_ERROR is meant to make a fast fsync wait for the
-> ordered extents to complete in that case, but only
-> btrfs_finish_ordered_extent() sets it. A write that fails before a bio
-> is submitted, in writepage_delalloc() or submit_write_sector(), finishes
-> its ordered extent through btrfs_mark_ordered_io_finished(), which does
-> not set the flag. And since commit 66ff4d366e7e ("btrfs: fix false IO
-> failure after falling back to buffered write"), a direct IO write that
-> stops short truncates the rest of its ordered extent and finishes it as
-> uptodate, so the flag is not set either.
+>    end_bbio_data_write()            fsync
 >=20
-> Fix this by setting the flag, renamed to
-> BTRFS_INODE_INCOMPLETE_COW_WRITE, in can_finish_ordered_extent() when a
-> write fails, and in btrfs_mark_ordered_extent_truncated(). Convert the
-> open-coded truncation in extent_writepage_io() to that helper, so that
-> every truncation sets the flag. Both places hold the inode's
-> ordered_tree_lock and run before BTRFS_ORDERED_IO_DONE is set.
+>    btrfs_folio_clear_writeback()
+>                                     filemap_fdatawait_range()
+>                                     BTRFS_INODE_INCOMPLETE_COW_WRITE cle=
+ar
+>                                     btrfs_log_changed_extents()
+>    btrfs_finish_ordered_extent()
+>      set BTRFS_INODE_INCOMPLETE_COW_WRITE
 >=20
-> The flag stays set until a fast fsync clears it, and that fsync then
-> waits for all ordered extents to complete, even if the failed or
-> truncated one completed long before. A direct IO write that stops short
-> because its buffer was not faulted in costs the next fast fsync one
-> such wait.
+> A direct IO write has no writeback for the fsync to wait for at all, so
+> the failure of an asynchronous direct IO write still in flight is missed
+> too.
 >=20
+> The buffered case comes from commit a11d6912fdd9 ("btrfs: remove folio
+> parameter from ordered io related functions"), which moved the call to
+> btrfs_finish_ordered_extent() after the loop that clears writeback. The
+> direct IO case has been there since commit f13e01b89daf ("btrfs: ensure
+> fast fsync waits for ordered extents after a write failure") added the
+> flag.
+>=20
+> Fix by having a fast fsync wait for BTRFS_ORDERED_IO_DONE on the ordered
+> extents it collected for logging before it checks. Since "btrfs: make
+> fsync wait for all incomplete COW writes", a failure or truncation is
+> recorded before that bit is set, and a barrier in
+> can_finish_ordered_extent() now orders the two, pairing with the fully
+> ordered test_and_clear_bit() of the flag in fsync. For a buffered write
+> the bit is set right after writeback is cleared. The writeback of a
+> buffered write that is not done yet is started first, and fsync returns
+> the error if that fails, since the rest of the ordered extent may then
+> not be submitted.
+>=20
+> This depends on "btrfs: make fsync wait for all incomplete COW writes".
+>=20
+> Fixes: a11d6912fdd9 ("btrfs: remove folio parameter from ordered io rela=
+ted functions")
 > Fixes: f13e01b89daf ("btrfs: ensure fast fsync waits for ordered extents=
  after a write failure")
-> Fixes: 66ff4d366e7e ("btrfs: fix false IO failure after falling back to =
-buffered write")
 > CC: stable@vger.kernel.org # 6.10+
 > Signed-off-by: Josef Bacik <josef@toxicpanda.com>
+
+This also fixes a potential race with async data csum generation from=20
+experimental features, where a data write bio can be submitted but=20
+without its csum generated.
+
+Without the wait, fast fsync can log the OE without unpopulated csum and=
+=20
+after a power loss, the unpopulated csum will be inserted and cause=20
+future csum mismatch.
 
 Reviewed-by: Qu Wenruo <wqu@suse.com>
 
@@ -282,193 +290,148 @@ Thanks,
 Qu
 
 > ---
->   fs/btrfs/btrfs_inode.h  | 24 ++++++++++++++++--------
->   fs/btrfs/extent_io.c    |  7 ++-----
->   fs/btrfs/file.c         | 17 ++++++++---------
->   fs/btrfs/ordered-data.c | 46 ++++++++++++++---------------------------=
-=2D----
->   4 files changed, 40 insertions(+), 54 deletions(-)
+>   fs/btrfs/file.c         | 67 ++++++++++++++++++++++++++++++++++++++++-=
+=2D-------
+>   fs/btrfs/ordered-data.c |  6 +++++
+>   2 files changed, 61 insertions(+), 12 deletions(-)
 >=20
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index fbcf8ca05fb7..cd75c1a17e45 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -90,15 +90,23 @@ enum {
->   	/* Set when there are no capabilities in XATTs for the inode. */
->   	BTRFS_INODE_NO_CAP_XATTR,
->   	/*
-> -	 * Set if an error happened when doing a COW write before submitting a
-> -	 * bio or during writeback. Used for both buffered writes and direct I=
-O
-> -	 * writes. This is to signal a fast fsync that it has to wait for
-> -	 * ordered extents to complete and therefore not log extent maps that
-> -	 * point to unwritten extents (when an ordered extent completes and it
-> -	 * has the BTRFS_ORDERED_IOERR flag set, it drops extent maps in its
-> -	 * range).
-> +	 * Set when a COW write failed, before submitting a bio or during
-> +	 * writeback, or when a COW ordered extent was truncated. Used for bot=
-h
-> +	 * buffered writes and direct IO writes.
-> +	 *
-> +	 * The extent maps of what was not written point to blocks that won't =
-be
-> +	 * written until the ordered extent completes and
-> +	 * btrfs_finish_one_ordered() drops them. Completion runs in a work
-> +	 * queue, queued once the IO of the write is finished, and a fast fsyn=
-c
-> +	 * does not wait for it, to reduce latency. If a fast fsync logged
-> +	 * those extent maps, replaying the log would put unwritten extents in
-> +	 * place of the file's data, so this tells it to wait for the ordered
-> +	 * extents to complete.
-> +	 *
-> +	 * It is set under the inode's ordered_tree_lock, before
-> +	 * BTRFS_ORDERED_IO_DONE is set.
->   	 */
-> -	BTRFS_INODE_COW_WRITE_ERROR,
-> +	BTRFS_INODE_INCOMPLETE_COW_WRITE,
->   	/*
->   	 * Set by reflink while it holds the source's VFS inode lock shared.
->   	 * Direct IO writes also take that lock shared; one that finds this b=
-it
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 036d8c0f04ae..58951a89bfc6 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -1963,11 +1963,8 @@ static noinline_for_stack int extent_writepage_io=
-(struct btrfs_inode *inode,
->   			 * there must be an ordered extent.
->   			 */
->   			ASSERT(ordered !=3D NULL);
-> -			spin_lock(&inode->ordered_tree_lock);
-> -			set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
-> -			ordered->truncated_len =3D min(ordered->truncated_len,
-> -						     cur - ordered->file_offset);
-> -			spin_unlock(&inode->ordered_tree_lock);
-> +			btrfs_mark_ordered_extent_truncated(ordered,
-> +							    cur - ordered->file_offset);
->   			btrfs_put_ordered_extent(ordered);
->  =20
->   			btrfs_mark_ordered_io_finished(inode, cur, fs_info->sectorsize, tru=
-e);
 > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 6f525ce42a2d..4208587abff1 100644
+> index 4208587abff1..ee09c4ecbd4c 100644
 > --- a/fs/btrfs/file.c
 > +++ b/fs/btrfs/file.c
-> @@ -1638,7 +1638,7 @@ int btrfs_sync_file(struct file *file, loff_t star=
-t, loff_t end, int datasync)
+> @@ -1512,8 +1512,8 @@ static inline bool skip_inode_logging(const struct=
+ btrfs_log_ctx *ctx)
+>   	 * If we are doing a fast fsync we can not bail out if the inode's
+>   	 * last_trans is <=3D then the last committed transaction, because we=
+ only
+>   	 * update the last_trans of the inode during ordered extent completio=
+n,
+> -	 * and for a fast fsync we don't wait for that, we only wait for the
+> -	 * writeback to complete.
+> +	 * and for a fast fsync we don't wait for that, we only wait for the I=
+O
+> +	 * of the writes to complete.
 >   	 */
->   	if (full_sync || btrfs_is_zoned(fs_info)) {
->   		ret =3D btrfs_wait_ordered_range(inode, start, len);
-> -		clear_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_flags);
-> +		clear_bit(BTRFS_INODE_INCOMPLETE_COW_WRITE, &inode->runtime_flags);
->   	} else {
->   		/*
->   		 * Get our ordered extents as soon as possible to avoid doing
-> @@ -1651,15 +1651,14 @@ int btrfs_sync_file(struct file *file, loff_t st=
+>   	if (inode->last_trans <=3D btrfs_get_last_trans_committed(fs_info) &&
+>   	    (test_bit(BTRFS_INODE_NEEDS_FULL_SYNC, &inode->runtime_flags) ||
+> @@ -1523,6 +1523,41 @@ static inline bool skip_inode_logging(const struc=
+t btrfs_log_ctx *ctx)
+>   	return false;
+>   }
+>  =20
+> +/*
+> + * Wait for the IO of the ordered extents collected for logging to be a=
+ccounted,
+> + * starting IO on the dirty folios of a buffered write that is not done=
+ yet.
+> + *
+> + * Waiting for writeback is not enough: the end IO handler clears write=
+back
+> + * before it finishes the ordered extent, and a direct IO write has no
+> + * writeback. A failed or truncated write sets BTRFS_INODE_INCOMPLETE_C=
+OW_WRITE
+> + * before BTRFS_ORDERED_IO_DONE is set, see can_finish_ordered_extent()=
+.
+> + *
+> + * If starting IO fails, the rest of the ordered extent may never be su=
+bmitted,
+> + * so return the error instead of waiting.
+> + */
+> +static int wait_ordered_io_done(struct btrfs_inode *inode,
+> +				struct list_head *ordered_extents)
+> +{
+> +	struct btrfs_ordered_extent *ordered;
+> +	int ret;
+> +
+> +	list_for_each_entry(ordered, ordered_extents, log_list) {
+> +		if (test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags))
+> +			continue;
+> +		if (!test_bit(BTRFS_ORDERED_DIRECT, &ordered->flags)) {
+> +			ret =3D btrfs_fdatawrite_range(inode, ordered->file_offset,
+> +						     ordered->file_offset +
+> +						     ordered->num_bytes - 1);
+> +			if (ret)
+> +				return ret;
+> +		}
+> +		wait_event(ordered->wait,
+> +			   test_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags));
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+>   /*
+>    * fsync call for both files and directories.  This logs the inode int=
+o
+>    * the tree log instead of forcing full commits whenever possible.
+> @@ -1626,11 +1661,11 @@ int btrfs_sync_file(struct file *file, loff_t st=
 art, loff_t end, int datasync)
+>   	 * IO of a lower priority task while holding a transaction open.
+>   	 *
+>   	 * For a full fsync we wait for the ordered extents to complete while
+> -	 * for a fast fsync we wait just for writeback to complete, and then
+> -	 * attach the ordered extents to the transaction so that a transaction
+> -	 * commit waits for their completion, to avoid data loss if we fsync,
+> -	 * the current transaction commits before the ordered extents complete
+> -	 * and a power failure happens right after that.
+> +	 * for a fast fsync we wait just for the IO of the writes to complete,
+> +	 * and then attach the ordered extents to the transaction so that a
+> +	 * transaction commit waits for their completion, to avoid data loss i=
+f
+> +	 * we fsync, the current transaction commits before the ordered extent=
+s
+> +	 * complete and a power failure happens right after that.
+>   	 *
+>   	 * For zoned filesystem, if a write IO uses a ZONE_APPEND command, th=
+e
+>   	 * logical address recorded in the ordered extent may change. We need
+> @@ -1650,13 +1685,21 @@ int btrfs_sync_file(struct file *file, loff_t st=
+art, loff_t end, int datasync)
+>   		if (ret)
 >   			goto out_release_extents;
 >  =20
+> +		ret =3D wait_ordered_io_done(inode, &ctx.ordered_extents);
+> +		if (ret)
+> +			goto out_release_extents;
+> +
 >   		/*
-> -		 * Check and clear the BTRFS_INODE_COW_WRITE_ERROR now after
-> -		 * starting and waiting for writeback, because for buffered IO
-> -		 * it may have been set during the end IO callback
-> -		 * (end_bbio_data_write() -> btrfs_finish_ordered_extent()) in
-> -		 * case an error happened and we need to wait for ordered
-> -		 * extents to complete so that any extent maps that point to
-> -		 * unwritten locations are dropped and we don't log them.
-> +		 * Check and clear BTRFS_INODE_INCOMPLETE_COW_WRITE now after
-> +		 * starting and waiting for writeback, because it may have been
-> +		 * set while we waited, and if a write failed or was truncated
-> +		 * we need to wait for ordered extents to complete so that any
-> +		 * extent maps that point to unwritten locations are dropped and
-> +		 * we don't log them.
+>   		 * Check and clear BTRFS_INODE_INCOMPLETE_COW_WRITE now after
+> -		 * starting and waiting for writeback, because it may have been
+> -		 * set while we waited, and if a write failed or was truncated
+> -		 * we need to wait for ordered extents to complete so that any
+> -		 * extent maps that point to unwritten locations are dropped and
+> -		 * we don't log them.
+> +		 * waiting for the IO of the ordered extents, because it may
+> +		 * have been set while we waited, and if a write failed or was
+> +		 * truncated we need to wait for ordered extents to complete so
+> +		 * that any extent maps that point to unwritten locations are
+> +		 * dropped and we don't log them.
+> +		 *
+> +		 * test_and_clear_bit() is fully ordered, which pairs with the
+> +		 * barrier before BTRFS_ORDERED_IO_DONE is set in
+> +		 * can_finish_ordered_extent().
 >   		 */
-> -		if (test_and_clear_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_f=
-lags))
-> +		if (test_and_clear_bit(BTRFS_INODE_INCOMPLETE_COW_WRITE, &inode->runt=
-ime_flags))
+>   		if (test_and_clear_bit(BTRFS_INODE_INCOMPLETE_COW_WRITE, &inode->run=
+time_flags))
 >   			ret =3D btrfs_wait_ordered_range(inode, start, len);
->   	}
->  =20
 > diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-> index df74c75d6c29..1a4e3e34ec11 100644
+> index 1a4e3e34ec11..728e73baf15e 100644
 > --- a/fs/btrfs/ordered-data.c
 > +++ b/fs/btrfs/ordered-data.c
-> @@ -367,6 +367,9 @@ void btrfs_mark_ordered_extent_truncated(struct btrf=
-s_ordered_extent *ordered,
->   	spin_lock(&inode->ordered_tree_lock);
->   	set_bit(BTRFS_ORDERED_TRUNCATED, &ordered->flags);
->   	ordered->truncated_len =3D min(ordered->truncated_len, truncate_len);
-> +	/* As for a failed write, see can_finish_ordered_extent(). */
-> +	if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
-> +		set_bit(BTRFS_INODE_INCOMPLETE_COW_WRITE, &inode->runtime_flags);
->   	spin_unlock(&inode->ordered_tree_lock);
->   }
->  =20
-> @@ -398,8 +401,18 @@ static bool can_finish_ordered_extent(struct btrfs_=
+> @@ -420,7 +420,13 @@ static bool can_finish_ordered_extent(struct btrfs_=
 ordered_extent *ordered,
->   		ordered->bytes_left -=3D len;
->   	}
->  =20
-> -	if (!uptodate)
-> +	if (!uptodate) {
->   		btrfs_mark_ordered_extent_error(ordered);
-> +		/*
-> +		 * The extent maps of a failed COW write point to blocks that
-> +		 * won't be written until the ordered extent completes and
-> +		 * drops them. Make a fast fsync wait for that, before
-> +		 * BTRFS_ORDERED_IO_DONE is set.
-> +		 */
-> +		if (!test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
-> +			set_bit(BTRFS_INODE_INCOMPLETE_COW_WRITE,
-> +				&inode->runtime_flags);
-> +	}
->  =20
->   	if (ordered->bytes_left)
->   		return false;
-> @@ -436,37 +449,6 @@ void btrfs_finish_ordered_extent(struct btrfs_order=
-ed_extent *ordered,
->   					uptodate);
->   	spin_unlock(&inode->ordered_tree_lock);
->  =20
-> -	/*
-> -	 * If this is a COW write it means we created new extent maps for the
-> -	 * range and they point to unwritten locations if we got an error eith=
-er
-> -	 * before submitting a bio or during IO.
-> -	 *
-> -	 * We have marked the ordered extent with BTRFS_ORDERED_IOERR, and we
-> -	 * are queuing its completion below. During completion, at
-> -	 * btrfs_finish_one_ordered(), we will drop the extent maps for the
-> -	 * unwritten extents.
-> -	 *
-> -	 * However because completion runs in a work queue we can end up havin=
-g
-> -	 * a fast fsync running before that. In the case of direct IO, once we
-> -	 * unlock the inode the fsync might start, and we queue the completion
-> -	 * before unlocking the inode. In the case of buffered IO when writeba=
-ck
-> -	 * finishes (end_bbio_data_write()) we queue the completion, so if the
-> -	 * writeback was triggered by a fast fsync, the fsync might start
-> -	 * logging before ordered extent completion runs in the work queue.
-> -	 *
-> -	 * The fast fsync will log file extent items based on the extent maps =
-it
-> -	 * finds, so if by the time it collects extent maps the ordered extent
-> -	 * completion didn't happen yet, it will log file extent items that
-> -	 * point to unwritten extents, resulting in a corruption if a crash
-> -	 * happens and the log tree is replayed. Note that a fast fsync does n=
-ot
-> -	 * wait for completion of ordered extents in order to reduce latency.
-> -	 *
-> -	 * Set a flag in the inode so that the next fast fsync will wait for
-> -	 * ordered extents to complete before starting to log.
-> -	 */
-> -	if (!uptodate && !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
-> -		set_bit(BTRFS_INODE_COW_WRITE_ERROR, &inode->runtime_flags);
-> -
->   	if (ret)
->   		btrfs_queue_ordered_fn(ordered);
->   }
+>   	/*
+>   	 * All the IO of the ordered extent is finished, we need to queue
+>   	 * the finish_func to be executed.
+> +	 *
+> +	 * Order BTRFS_INODE_INCOMPLETE_COW_WRITE, if set above, before
+> +	 * BTRFS_ORDERED_IO_DONE, as a fast fsync tests the latter without
+> +	 * the ordered_tree_lock. Pairs with the test_and_clear_bit() in
+> +	 * btrfs_sync_file().
+>   	 */
+> +	smp_mb__before_atomic();
+>   	set_bit(BTRFS_ORDERED_IO_DONE, &ordered->flags);
+>   	cond_wake_up(&ordered->wait);
+>   	refcount_inc(&ordered->refs);
 >=20
 

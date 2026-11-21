@@ -1,50 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=185.70.43.171
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795268768;
-	b=tr7OwDqlJaZ2atF8Q0LDQb9Mv870Ol562rBfoXrDlvfELPkjy+507sLcHjl3HVqHjSBj
-	 fKpmDt2DpSZEoQR3rast+Hl+36PlcMPMWRJNl5GWTZTR5ZZ9EKQ330+HoOHaxRU0nmcsQ
-	 MhLcKu3SHSSO3XvhNRlzvq5Ls0r9L6V5xE1k/c2kzK47+dbJEsJiVdz3ieip1PsHVjbbt
-	 nrt/5GWIL1YpF/G/kN1EubaHaP1X8JMp64K13A7zeT0Rx+hMWHw2RieaMVKwG8oxS87N1
-	 DXKcRc2+EY7lokxZauVnYZsyLcioI2gkikNlAXngxiCJELsSXIIQ6r3sCogDC3H8G9w==
+	t=1795268770;
+	b=IJ/vNWDgGA1YAo8+HJKltTaMbRzssjyTBSu2AAENZPxb19rLENW1lobQtZifqVwjp0Cb
+	 KKHSDppN70OHkgwmLIacgZVf+6ZRkV5MwsDo41x9d1+5wXaARel9CvnEuROJ/ZQ0oq4Wv
+	 HFnKu/Xu89AbbNP4x8hWojFktI+Acl2TcgXLKu/jDes5gP9Wtii7D9V4t+/eR4Yh9ghCU
+	 5CT1eh+Uqjil7E23qDY3bcVf8+5DridpUR1kvwzH8TBkRz90gcM2bpP2T/mbt0Cga2N3q
+	 st0yvCseYGCLRlDCoRmYM3zsgG8cU121VO/XZ+rzc0sDOqTPB+H44Ie/JAKmEURZgeQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795268768;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795268770;
 	h=DMARC-Filter:DKIM-Signature:X-Pm-Submission-Id:From:To:Cc:Subject:
 	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=Z9qMKaNC4wBNyFn+O6M1msXAVq4q0zIFSQoQ1hCYMtI=;
-	b=iYahxCJ9vuQzC3T2UguYE9rZ1cSJKvofrm1jUHGp8rkXK+cGiZxdzsUPpsa6TqojB4Z9
-	 UOS9m0AIUEZKS9DO/J/WFaEq/6HvbKXXSENwfzvFfd79uqtcaYKm0qbk4gw1DOzBk5rMl
-	 rLO7zkfRLw1NGXvMFfy5wTHMh7Wi9Ei09NZTl1cYxWnFIPdPweOO38GQjgNtCUvbhOGlK
-	 Ak5+0+B+5KHWJpT95OS6nvr2V4MG64IofKiWP9KBnVmXuGMAC6KwunMvF1BLMZp1cE4Td
-	 IIFHKe9gWaLucMgMeDlm7cK+itOV6YxPp6SalYtJTT3uGmnTakv7wuFQ1d/g1xUJZ8g==
+	bh=bgjr5+E58rRHzdOaQemxGfUdksvbJ9w6msH1vvyx8Sw=;
+	b=JNwuwUxk2QoUKU7g/fRcxwUcxC7xnxwboA0BVlqiozoZZdSYHm14jsMUjtYUG5JV1Ice
+	 AwnJ1ciaFknYv+a6ydl/b3ivwcrmJnAqAldnxr2LHbHn2L8BTybSCAeBlbZLZYch0i0n5
+	 KE/zLCRaoien+FEBn63FtxWBpCCGNFLe2JQQlO5CtfZA76uZmlVSPmh5vwxSMN3GHkAnL
+	 l1l5MZD4+GEt/qPKuV5Yg9LajXNFytJMqOUiqfIyYbRpvELxZAktXrDLIH6MzrqoBwPWe
+	 WojYfIQoZPg7PBi9yeeh8ZQEBrQfmw2aCKNxzWwrTBg6K8/nf0OXO+5RRnIRasf4uKQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=raidlab.org;
 	spf=pass smtp.mailfrom=raidlab.org;
-	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=ea7whOkp;
+	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=1w9X+FAG;
 	arc=none smtp.remote-ip=185.70.43.171
 Received: from mail-43171.protonmail.ch (mail-43171.protonmail.ch [185.70.43.171])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 33EFB606A682
-	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2026 13:46:08 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 33EFB606A682
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 201A3606A338
+	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2026 13:46:09 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 201A3606A338
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=ea7whOkp
+	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=1w9X+FAG
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
-	s=protonmail; t=1795268764; x=1795527964;
-	bh=Z9qMKaNC4wBNyFn+O6M1msXAVq4q0zIFSQoQ1hCYMtI=;
+	s=protonmail; t=1795268767; x=1795527967;
+	bh=bgjr5+E58rRHzdOaQemxGfUdksvbJ9w6msH1vvyx8Sw=;
 	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:From:To:
 	 Cc:Date:Subject:Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
-	b=ea7whOkpfBV6V4/uaVHrndsav0V5RPOSsv8xgwy7LCNTJb4VH5cg7DcMW/mvf+h9W
-	 SlWP7rvXcr8+tjRt11uloG33a9cyb3ul2TL46DrDVeK3tE1+XAYS+h0+grgWAFC6J4
-	 A3ODt/wNsEvTrGdtYausycwuQIdAp3cuICYGqUNtAO1kAosH4eB8sFDl8guAvSfKZU
-	 foYRDwEpccFIR54p6HFPKl3R3OklXJNxgBpb2g6WyhJf+B/w0youHuZeTL2kg+5iDc
-	 mmGmpMVda/k0qJmjtxwV2O6R202ldHTEkd0OzV6csCyJwjusVKJkSOVSV+EPwcWam0
-	 nD/Wbb4bTHV5w==
-X-Pm-Submission-Id: 4jWtlF6LjDz1DDnw
+	b=1w9X+FAGAkh+ojyQneBKVH2Xoeez3NAREB8ksJ7w5i3clut/h46XXEP5cJzK5Sxy7
+	 DPCLd4pEh2Bi3ATG6DbxfgbPgzlUhPX4oD6EuvdZkn0QuB6PtP1z+XLt09+gVdF0rx
+	 fJ2wMCurhsnmQICnT+8s3j/CH9gAjj2dqwFhK43lzjpZxBRrWI8Ilh5+9xhQWPM4xq
+	 hzA0O/UvhlP8Pun/ZCnvTzpCoMvbTuSdQFIDeb3p/cdMBVkzQURQwjxyKA7iUxtpzz
+	 YwaYdSQ4kyo7auTBoaLa1kHT+IZM7Qn64ym2SE7OGHsn8089ta1p8kSF/xnQkxZs5S
+	 QDA5/9BAJPpog==
+X-Pm-Submission-Id: 4jWtlL0QVjz1DDnv
 From: Miroslav Cimerman <mc@raidlab.org>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>,
@@ -53,9 +53,9 @@ Cc: David Sterba <dsterba@suse.com>,
 	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
 	Qu Wenruo <wqu@suse.com>,
 	linux-kernel@vger.kernel.org
-Subject: [PATCH v2 3/5] btrfs: zoned: cap full RAID1 zones at the block group's capacity
-Date: Sat, 21 Nov 2026 13:45:47 +0000
-Message-ID: <20261121134550.216217-4-mc@raidlab.org>
+Subject: [PATCH v2 5/5] btrfs: tests: zoned: add RAID1 cases with missing or stale stripes
+Date: Sat, 21 Nov 2026 13:45:49 +0000
+Message-ID: <20261121134550.216217-6-mc@raidlab.org>
 X-Mailer: git-send-email 2.53.0
 In-Reply-To: <20261121134550.216217-1-mc@raidlab.org>
 References: <20261121134550.216217-1-mc@raidlab.org>
@@ -70,134 +70,293 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-The zone capacity of a RAID1 block group is the smallest of its
-stripes'. Finishing the block group finishes its zones on devices with
-an active zone limit, and a full zone reports its own capacity as its
-write pointer. With zone capacities that differ between the devices, the
-write pointers of a full block group then differ, and the next mount
-fails:
+Add cases for the previous patches. On a degraded mount:
 
-  BTRFS error (device nb2): zoned: write pointer offset mismatch of zones in raid1 profile
-  BTRFS error (device nb2): zoned: failed to load zone info of bg 150994944
+- RAID1 with the first device missing, and RAID1 metadata with an empty
+  first zone: both are marked active
+- RAID1C3 with the first and the last, and with the first two devices
+  missing
+- RAID1 and RAID1C3 with different write pointers: the highest one is
+  taken
+- RAID1 with full zones of different capacities
+- RAID1 with a full zone that has extents past the smaller capacity: not
+  capped, so the caller then refuses the block group
 
-A degraded mount with all devices present takes stripe 0's write
-pointer, and fails too unless stripe 0 has the smallest capacity:
+On a regular mount:
 
-  BTRFS error (device nb2): zoned: invalid write pointer 14680064 (larger than zone capacity 12582912) in block group 150994944
+- RAID1 with the first zone offline, with a failed zone report for it,
+  and with full zones of different capacities: now load
+- RAID1C3 with a smaller third zone: sets the capacity
+- two cases that still fail: a write pointer past the capacity in a zone
+  that is not full, and full zones with extents past the capacity
 
-Take a full zone with a larger capacity as written up to the block
-group's capacity, unless an extent of the block group ends past it. Then
-the block group was written with a larger capacity, e.g. by a degraded
-mount without the stripe with the smallest capacity, or in RAID1C3 and
-RAID1C4 before the previous patch. Such a block group still fails a
-regular mount. Get the end of the last extent from the extent tree when
-the capacities differ, as for conventional zones.
+Let a case set the zone capacity of each stripe. A stripe without a
+write pointer has a capacity of 0 unless the case sets one:
+btrfs_load_zone_info() gives 0 for a missing device or a failed zone
+report, while an offline zone keeps its capacity. Derive the active
+state from the write pointer and the capacity, and check the zone
+capacity and the active state where a case asks for it. All new cases
+fail without the previous patches, except the two that fail either way.
+Those make sure that only full zones without extents past the capacity
+are capped.
 
-Fixes: 568220fa9657 ("btrfs: zoned: support RAID0/1/10 on top of raid stripe tree")
-CC: stable@vger.kernel.org # 6.7+
 Signed-off-by: Miroslav Cimerman <mc@raidlab.org>
 ---
-v2: new. An LLM review of v1 found that v1 failed a degraded mount here,
-where it loaded before. A later review found that capping zones with
-extents past the capacity let a regular mount accept a stale stripe. The
-fix and the commit message were prepared with the help of an LLM, which
-also tested it. I reviewed everything.
+v2 (was 4/4): add the cases with an empty first zone, with different
+zone capacities and with a failed zone report, and a capacity per
+stripe. The case with an offline zone gives that zone a capacity now.
 
-btrfs sets an active zone limit for devices that report none, so the
-zones are finished on almost every device. DUP, RAID0 and RAID10 are not
-changed here. RAID0 and RAID10 add up the capacities of their stripes.
-In testing with different zone capacities, writes past the smallest one
-failed, and so did the next mount. RAID10 also compares the two stripes
-of a pair as RAID1 did. I will send fixes for RAID0 and RAID10 with the
-RAID10 fixes mentioned in 1/5.
+The subject was "btrfs: tests: zoned: add degraded RAID1 cases", but
+6 of the 14 new cases are on a regular mount.
 
-Blocks of the log tree are never in the extent tree. File data is never
-only in the log tree here: zoned RAID1 data needs the raid-stripe-tree,
-and an fsync of new RAID1 data commits the transaction. A tree-log block
-group written past the capacity only by log tree blocks would still be
-capped, and log replay would then move the allocation offset past the
-capacity. I was not able to get that tested: in my tests on null_blk,
-every fsync on a zoned filesystem committed the transaction, also for
-changes without new data.
+Prepared with the help of an LLM, which also ran the tests. I reviewed
+everything.
 
-Not changed here, and found only by reading the code: with different
-capacities, a crash between the last write to a block group and its zone
-finish leaves the smaller zone FULL and the larger one open, at the same
-write pointer. A regular mount then activates the block group while
-loading it, which warns for metadata and fails the mount for data when
-no active zone is left.
+ fs/btrfs/tests/zoned-tests.c | 203 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 201 insertions(+), 2 deletions(-)
 
- fs/btrfs/zoned.c | 43 +++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 43 insertions(+)
-
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index ce7c535adff6..48f8391a80a9 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -1536,6 +1536,20 @@ static int btrfs_load_block_group_raid1(struct btrfs_block_group *bg,
- 	for (i = 0; i < map->num_stripes; i++)
- 		bg->zone_capacity = min_not_zero(bg->zone_capacity, zone_info[i].capacity);
+diff --git a/fs/btrfs/tests/zoned-tests.c b/fs/btrfs/tests/zoned-tests.c
+index bb9969210444..4848aa6fde11 100644
+--- a/fs/btrfs/tests/zoned-tests.c
++++ b/fs/btrfs/tests/zoned-tests.c
+@@ -21,12 +21,15 @@ struct load_zone_info_test_vector {
+ 	u64 raid_type;
+ 	u64 num_stripes;
+ 	u64 alloc_offsets[8];
++	u64 capacities[8];
+ 	u64 last_alloc;
+ 	u64 bg_length;
+ 	bool degraded;
  
-+	/*
-+	 * A full zone reports its own capacity as its write pointer. With more
-+	 * capacity than the block group, take it as written up to the block
-+	 * group's capacity, unless an extent ends past that capacity: then the
-+	 * block group was written with a larger one, and the zone keeps its
-+	 * write pointer.
-+	 */
-+	for (i = 0; i < map->num_stripes; i++) {
-+		if (zone_info[i].alloc_offset == zone_info[i].capacity &&
-+		    zone_info[i].alloc_offset > bg->zone_capacity &&
-+		    last_alloc <= bg->zone_capacity)
-+			zone_info[i].alloc_offset = bg->zone_capacity;
-+	}
-+
- 	/*
- 	 * When the last extent is removed, last_alloc can be smaller than the other write
- 	 * pointer. In that case, last_alloc should be moved to the corresponding write
-@@ -1920,6 +1934,22 @@ int btrfs_load_block_group_by_raid_type(struct btrfs_block_group *bg,
- 	return ret;
- }
+ 	int expected_result;
+ 	u64 expected_alloc_offset;
++	u64 expected_zone_capacity;
++	bool expected_active;
  
-+/* Whether the zones of the present stripes have different capacities. */
-+static bool zone_capacities_differ(const struct btrfs_chunk_map *map,
-+				   const struct zone_info *zone_info)
-+{
-+	u64 capacity = 0;
-+
-+	for (int i = 0; i < map->num_stripes; i++) {
-+		if (!zone_info[i].capacity)
-+			continue;
-+		if (capacity && zone_info[i].capacity != capacity)
-+			return true;
-+		capacity = zone_info[i].capacity;
-+	}
-+	return false;
-+}
-+
- int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
- {
- 	struct btrfs_fs_info *fs_info = cache->fs_info;
-@@ -1989,6 +2019,19 @@ int btrfs_load_block_group_zone_info(struct btrfs_block_group *cache, bool new)
- 			set_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &cache->runtime_flags);
- 			goto out;
- 		}
-+	} else if ((map->type & BTRFS_BLOCK_GROUP_RAID1_MASK) &&
-+		   zone_capacities_differ(map, zone_info)) {
+ 	const char *description;
+ };
+@@ -77,8 +80,16 @@ static int test_load_zone_info(struct btrfs_fs_info *fs_info,
+ 	for (int i = 0; i < test->num_stripes; i++) {
+ 		zone_info[i].physical = 0;
+ 		zone_info[i].alloc_offset = test->alloc_offsets[i];
+-		zone_info[i].capacity = ZONE_SIZE;
+-		if (zone_info[i].alloc_offset && zone_info[i].alloc_offset < ZONE_SIZE)
 +		/*
-+		 * The RAID1 loader caps a full zone only if no extent
-+		 * ends past the block group's capacity.
++		 * Without a write pointer, the capacity is 0 for a missing device
++		 * or a failed zone report, while an offline zone keeps its own.
 +		 */
-+		ret = calculate_alloc_pointer(cache, &last_alloc, new);
-+		if (ret) {
-+			btrfs_err(fs_info,
-+			"zoned: failed to determine allocation offset of bg %llu",
-+				  cache->start);
-+			goto out;
-+		}
++		if (zone_info[i].alloc_offset == WP_MISSING_DEV)
++			zone_info[i].capacity = test->capacities[i];
++		else
++			zone_info[i].capacity = test->capacities[i] ?: ZONE_SIZE;
++		if (zone_info[i].alloc_offset &&
++		    zone_info[i].alloc_offset < zone_info[i].capacity)
+ 			__set_bit(i, active);
+ 	}
+ 	if (test->degraded)
+@@ -101,6 +112,19 @@ static int test_load_zone_info(struct btrfs_fs_info *fs_info,
+ 		return -EINVAL;
  	}
  
- 	ret = btrfs_load_block_group_by_raid_type(cache, map, zone_info, active, last_alloc);
++	if (!ret && test->expected_zone_capacity &&
++	    bg->zone_capacity != test->expected_zone_capacity) {
++		test_err("unexpected zone_capacity: zone_capacity %llu expected %llu",
++			 bg->zone_capacity, test->expected_zone_capacity);
++		return -EINVAL;
++	}
++
++	if (!ret && test->expected_active &&
++	    !test_bit(BLOCK_GROUP_FLAG_ZONE_IS_ACTIVE, &bg->runtime_flags)) {
++		test_err("block group not marked active");
++		return -EINVAL;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -244,7 +268,182 @@ static const struct load_zone_info_test_vector load_zone_info_tests[] = {
+ 		.degraded = true,
+ 		.expected_alloc_offset = SZ_1M,
+ 	},
++	{
++		.description = "RAID1: missing first device on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			WP_MISSING_DEV, SZ_1M,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_1M,
++		.expected_active = true,
++	},
++	{
++		.description = "RAID1C3: missing first and last device on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1C3,
++		.num_stripes = 3,
++		.alloc_offsets = {
++			WP_MISSING_DEV, SZ_1M, WP_MISSING_DEV,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_1M,
++	},
++	{
++		.description = "RAID1C3: missing first and second device on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1C3,
++		.num_stripes = 3,
++		.alloc_offsets = {
++			WP_MISSING_DEV, WP_MISSING_DEV, SZ_1M,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE,
++	},
++	/* A stripe behind the others: the highest write pointer on DEGRADED. */
++	{
++		.description = "RAID1: metadata, empty first zone on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			0, SZ_1M,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_1M,
++		.expected_active = true,
++	},
++	{
++		.description = "RAID1: different write pointers on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			SZ_1M, SZ_2M,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_2M,
++	},
++	{
++		.description = "RAID1C3: first missing, different write pointers on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1C3,
++		.num_stripes = 3,
++		.alloc_offsets = {
++			WP_MISSING_DEV, SZ_2M, SZ_1M,
++		},
++		.degraded = true,
++		.expected_alloc_offset = SZ_2M,
++	},
++	/*
++	 * An offline zone or a failed zone report has no write pointer on a
++	 * regular mount either. An offline zone still has its capacity.
++	 */
++	{
++		.description = "RAID1: first zone offline",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			WP_MISSING_DEV, SZ_1M,
++		},
++		.capacities = {
++			ZONE_SIZE - SZ_1M,
++		},
++		.expected_alloc_offset = SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE - SZ_1M,
++	},
++	{
++		.description = "RAID1: failed zone report of the first zone",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			WP_MISSING_DEV, SZ_1M,
++		},
++		.expected_alloc_offset = SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE,
++	},
++	/* The block group's capacity is the smallest of its stripes'. */
++	{
++		.description = "RAID1C3: smaller third zone capacity",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1C3,
++		.num_stripes = 3,
++		.alloc_offsets = {
++			SZ_1M, SZ_1M, SZ_1M,
++		},
++		.capacities = {
++			ZONE_SIZE, ZONE_SIZE, ZONE_SIZE - SZ_1M,
++		},
++		.expected_alloc_offset = SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE - SZ_1M,
++	},
++	/* Full zones report their own capacity, which can differ by device. */
++	{
++		.description = "RAID1: full zones with different capacities",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.capacities = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.last_alloc = ZONE_SIZE - SZ_1M,
++		.expected_alloc_offset = ZONE_SIZE - SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE - SZ_1M,
++	},
++	{
++		.description = "RAID1: full zones with different capacities on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			ZONE_SIZE, ZONE_SIZE - SZ_1M,
++		},
++		.capacities = {
++			ZONE_SIZE, ZONE_SIZE - SZ_1M,
++		},
++		.last_alloc = ZONE_SIZE - SZ_1M,
++		.degraded = true,
++		.expected_alloc_offset = ZONE_SIZE - SZ_1M,
++		.expected_zone_capacity = ZONE_SIZE - SZ_1M,
++	},
++	{
++		.description = "RAID1: full zone with extents past the capacity on DEGRADED",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			SZ_1M, ZONE_SIZE,
++		},
++		.capacities = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.last_alloc = ZONE_SIZE,
++		.degraded = true,
++		.expected_alloc_offset = ZONE_SIZE,
++		.expected_zone_capacity = ZONE_SIZE - SZ_1M,
++	},
+ 	/* Error case: having different write pointers. */
++	{
++		.description = "RAID1: fail: write pointer past the capacity",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE - SZ_512K,
++		},
++		.capacities = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.expected_result = -EIO,
++	},
++	{
++		.description = "RAID1: fail: full zones with extents past the capacity",
++		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
++		.num_stripes = 2,
++		.alloc_offsets = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.capacities = {
++			ZONE_SIZE - SZ_1M, ZONE_SIZE,
++		},
++		.last_alloc = ZONE_SIZE,
++		.expected_result = -EIO,
++	},
+ 	{
+ 		.description = "RAID1: fail: different write pointers",
+ 		.raid_type = BTRFS_BLOCK_GROUP_RAID1,
 -- 
 2.53.0
 

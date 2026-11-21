@@ -1,60 +1,56 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795213385;
-	b=lO5CAdL9VP9GkoDSkPBpE0sJescQhJmx7eJe5mTYgpUCneJi3hsV755pSGB7wobJb7fy
-	 3yEOcnGXYeve1Wwc19d3hPcgEhOEAPVTlcENowxMWERzxWw72zpVZjf6R6rlJJ4hVnDRP
-	 1jM6pnyJpJpy7A1GPVHvJilOxNZxkB/Y+NpKLoDrM/42XrV+TNh4I0xoW96QkP1TCLAKW
-	 FX4w8KJOhkm4YvsLErn3Q3hu58kwM95t/0NJAWo/UMiD8f3OVLdxCILkyNxfGjqIF/t8F
-	 4EnETHnKPaPebMPll/uFMjZ884IO3bjPs6xuwW2QxeJzaWo4kO0YxdevTYkVE5rZKVQ==
+	t=1795263046;
+	b=kf0FFtU0T5OE14bnUfo/KBFGrdaVXu3Ko0KRNpMBAZzDVAWu2XNW1hb4bZ/Koxv/axZR
+	 uuSK3U3eGbFb+mhrviLm2VFLRyyZhRSvWFj8Vq0sq0zkhzPzVD5IbydDijtzhghlulHc5
+	 tFYrmPFQwQH7FgcR/jCj6Vz0Ej/IIVk6vT6olVbbWkBugvhG5MEEp3NpUIXzhUwCj87IE
+	 wpr9ep5nzv0zMFU1/AoC80r6qQ+GVQPKxld4XpOcbZtcIB73VbkWb2M2a8pY7waL3BfC5
+	 oIZztbjFcLnmEcLCTj+Kgi3JsDZTMiAN7RksBOaHa1GSmfY9l7ZCgoemB9rj8t51R6A==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795213385;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795263046;
 	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=uS1+xQe3B8rmtkclorvpldO1X/AeJScyduZArKaUSx0=;
-	b=A3JECAJpef590U1A1EKNzuZ6f7pIvP+JnEPODw8EyqYy4ZJw3DDNmFZDJf4us+hweHlm
-	 qDdRtAyjgUNfUoh46KqEqhewWUPb2+r6Nr30RpprrJI73rRqp3pi4MVaySoM/xUC+u1TA
-	 BSUzA5Smd4bMxx8If75OJCqKh5wsywM0DBYPGL1Shz9CjGxat47NjDHCMdP9Bw1ACTBlj
-	 RLHsrsFSCspCz3KErjxxrH0byReS8y3aucw3KjJr+mV2xtHNUSSRQ0T5asD2phaotHL3i
-	 gdHbF2hWkW/BWqE98cXJ0ZUqIe8QfWZjYuYn53GjaoAU34STysI596DALZLlxwWIMDA==
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=wBac+v4fBKiwSpBWCxyLKlLb4EBnT8hxj94EO4RzRH8=;
+	b=XFBbHbBApLVcliu3re2RkJMkWx6AJolQIrK+0BIYcL4/qiQfEgyfzMFsEEqo0xqTWmNT
+	 ZPWnKKz6XrXvoEL0ZSaDCaLOjh9ruuoCFF8ZmZyBUcAY8ca2v3MFA5MaQn9jC4HxY0wAM
+	 4NuFJ8SFq+rOp3Iec7Q6OrrVLWIquqDeOe29lRCRi/ZiowHdWhla9C7YRg7E581kj6Jhi
+	 5z0m7F5LuHJDWukBhV7sAo+2zLQSpeCJ+TT58Qv/p26nn5h/ymJUSCwB2mplBb9dB21Pm
+	 DXQS9fkPMkfEDCWUneiOCq1pvE6GaWf0Bt+WH2MNpAWn8fOA6Uq34LdGZ6+62WSusqA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=IgwwjnMf;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ClFx6Hom;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2C637606A6B5;
-	Fri, 20 Nov 2026 22:23:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31723606A320;
+	Sat, 21 Nov 2026 12:10:45 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=IgwwjnMf
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 0420D1F000CA;
-	Fri, 20 Nov 2026 22:23:03 +0000 (UTC)
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=ClFx6Hom
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 082451F000C0;
+	Sat, 21 Nov 2026 12:10:40 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795213384;
-	bh=uS1+xQe3B8rmtkclorvpldO1X/AeJScyduZArKaUSx0=;
+	s=k20260515; t=1795263045;
+	bh=wBac+v4fBKiwSpBWCxyLKlLb4EBnT8hxj94EO4RzRH8=;
 	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=IgwwjnMfHaRkmfJn07kpFLgVXS2VICq79tfV3PI2EtqmL3PtLYlopaeJb5eXojEn8
-	 S61bVEzAJNeJLAoZYfFkWhdUjTGyKG+vJRZvm64NWiOMbYRAAYMtasuSUQ8bSIh123
-	 CDa9hkfys7F1E1BCzwBWnXNyA3VrYcdKOsPO38KaW9Lk3TiJiK0T9aEqHx7MD+ptoy
-	 GstBPsfrpHJ9lHQ8Px0Ip8gaP2nbW6IrjYDxJejQRug2MkrZgNMbNkDAAc2xvlIbJC
-	 R9IyjlocCKAjHIKagXuvaVEhJYU6D9AsyBv3dFlYYPrG/OrfdBh0C04CFxmNKCMq5X
-	 uQLVrPdOf+TmQ==
-Date: Fri, 20 Nov 2026 22:23:02 +0000
-From: Eric Biggers <ebiggers@kernel.org>
-To: Andrey Albershteyn <aalbersh@kernel.org>
-Cc: fsdevel <linux-fsdevel@vger.kernel.org>,
-	fsverity <fsverity@lists.linux.dev>,
-	linux-ext4 <linux-ext4@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-f2fs <linux-f2fs-devel@lists.sourceforge.net>,
-	linux-xfs <linux-xfs@vger.kernel.org>, dsterba@suse.com,
-	Christian Brauner <brauner@kernel.org>, tytso@mit.edu,
-	chao@kernel.org, jaegeuk@kernel.org, viro@zeniv.linux.org.uk
-Subject: Re: [PATCH v3 4/7] iomap: use fsverity_is_building() to check for
- fsverity IO
-Message-ID: <20261120222302.GD3048696@google.com>
-References: <20261120155032.187246-1-aalbersh@kernel.org>
- <20261120155032.187246-5-aalbersh@kernel.org>
+	b=ClFx6HomIOpqiuxnhzY8Pvwa7hghJqvePYG90avqQLHxaxto8FixbKXq5xy5/eTgP
+	 bhDikGHSuW2IN90I4NQsbN02Me1CBgnH8uArrqNEro07wEzvJdqz7M307vN+9KPQO4
+	 yIa88dxLA13obIKexU1deAf3kZ8JDZyF4xfrSicdGS0u+tLwKnqSEPlvqBJBuBSutj
+	 w2WPDw8IPtHZHMTED3axUfmptMnmyUNd95WhqfkzsGuQz9Q14Htg8QIshKMN81AcbE
+	 +MFrmbczUIG7cBgN+EPagHiwYIwikz1kYZaCoRs28Ijvb3JYxWVDZ/EyfBEeEcXCCn
+	 J8NcT6z8/jGmQ==
+Date: Sat, 21 Nov 2026 20:10:35 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Cc: linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>, 
+	fstests@vger.kernel.org
+Subject: Re: [PATCH v2] generic: test that fsync on zoned doesn't fail with
+ -EAGAIN
+Message-ID: <awGKG7Z5XBiqzxdu@zlang-mailbox>
+Mail-Followup-To: Johannes Thumshirn <johannes.thumshirn@wdc.com>, 
+	linux-btrfs@vger.kernel.org, Christoph Hellwig <hch@lst.de>, fstests@vger.kernel.org
+References: <20261117065848.3825371-1-johannes.thumshirn@wdc.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -66,32 +62,132 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <20261120155032.187246-5-aalbersh@kernel.org>
+In-Reply-To: <20261117065848.3825371-1-johannes.thumshirn@wdc.com>
 
-On Fri, Nov 20, 2026 at 04:50:26PM +0100, Andrey Albershteyn wrote:
-> As fsverity inodes are read-only, the only write IO happening
-> during I_VERITY_BUILDING is fsverity metadata.
+On Tue, Nov 17, 2026 at 07:58:48AM +0100, Johannes Thumshirn wrote:
+> On a zoned btrfs, btrfs_start_transaction() forces a transaction commit
+> when the delayed refs reservation exceeds its zoned cap. If the cap is
+> still exceeded after the commit, it returned -EAGAIN, which fsync passed
+> on to user space.
+> 
+> Run parallel writers creating, overwriting and deleting small files with
+> an fsync after every write on a zoned device with a limited number of
+> active zones, and check that no fsync fails.
+> 
+> Assisted-by: LLM
+> Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+> ---
+> Changes to v1:
+> - Move to a generic test
 
-I think this is not accurate?  The inode is not a "fsverity inode" yet,
-and it can still have dirty data in it that is undergoing writeback.
+Thanks for this update.
 
-> diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
-> index 6d843b168d5f..0a176741e7b0 100644
-> --- a/fs/iomap/buffered-io.c
-> +++ b/fs/iomap/buffered-io.c
-> @@ -1930,7 +1930,7 @@ static bool iomap_writeback_handle_eof(struct folio *folio,
->  	struct inode *inode = wpc->inode;
->  	u64 isize = i_size_read(inode);
->  
-> -	if (wpc->iomap.flags & IOMAP_F_FSVERITY) {
-> +	if (fsverity_is_building(inode)) {
->  		WARN_ON_ONCE(folio_pos(folio) < isize);
->  		return true;
->  	}
+Reviewed-by: Zorro Lang <zlang@kernel.org>
 
-This function no longer needs the 'wpc' parameter: it can be passed
-'inode' directly instead.
-
-Sashiko also found an issue with this change.
-
-- Eric
+> 
+>  tests/generic/814     | 83 +++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/814.out |  2 ++
+>  2 files changed, 85 insertions(+)
+>  create mode 100755 tests/generic/814
+>  create mode 100644 tests/generic/814.out
+> 
+> diff --git a/tests/generic/814 b/tests/generic/814
+> new file mode 100755
+> index 00000000..316925c1
+> --- /dev/null
+> +++ b/tests/generic/814
+> @@ -0,0 +1,83 @@
+> +#! /bin/bash
+> +# SPDX-License-Identifier: GPL-2.0
+> +# Copyright (c) 2026 Western Digital Corporation.  All Rights Reserved.
+> +#
+> +# FS QA Test 814
+> +#
+> +. ./common/preamble
+> +_begin_fstest auto quick zone
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	[ -n "$pids" ] && kill $pids &> /dev/null
+> +	wait
+> +	rm -r -f $tmp.*
+> +}
+> +
+> +. ./common/zoned
+> +
+> +_fixed_by_fs_commit btrfs XXXXXXXXXXXX \
+> +	"btrfs: zoned: don't fail start_transaction() after a forced commit"
+> +
+> +_require_scratch_size $((4 * 1024 * 1024)) # kB
+> +
+> +if [ -b "$SCRATCH_RTDEV" ]; then
+> +	zoned_dev=$SCRATCH_RTDEV
+> +else
+> +	zoned_dev=$SCRATCH_DEV
+> +fi
+> +
+> +_require_zoned_device "$zoned_dev"
+> +_require_limited_active_zones "$zoned_dev"
+> +
+> +nr_writers=$((8 * LOAD_FACTOR))
+> +nr_files=250
+> +nr_rounds=$((4 * TIME_FACTOR))
+> +
+> +_scratch_mkfs >> $seqres.full 2>&1 || _fail "mkfs failed"
+> +_scratch_mount
+> +
+> +# Every other file is deleted per round to churn data and metadata.
+> +writer()
+> +{
+> +	local dir=$SCRATCH_MNT/w$1
+> +	local r i sz
+> +
+> +	mkdir -p $dir
+> +	for r in $(seq $nr_rounds); do
+> +		for i in $(seq $nr_files); do
+> +			# 4K - 256K
+> +			sz=$(( ((i + r + $1) % 64 + 1) * 4096 ))
+> +			$XFS_IO_PROG -f -c "pwrite -q -S $i -b 64k 0 $sz" \
+> +				-c fsync $dir/$i || return 1
+> +		done
+> +		for i in $(seq 1 2 $nr_files); do
+> +			rm -f $dir/$i
+> +		done
+> +	done
+> +}
+> +
+> +pids=""
+> +for w in $(seq $nr_writers); do
+> +	writer $w > $tmp.writer.$w 2>&1 &
+> +	pids="$pids $!"
+> +done
+> +
+> +ret=0
+> +for p in $pids; do
+> +	wait $p || ret=1
+> +done
+> +unset pids
+> +cat $tmp.writer.* >> $seqres.full
+> +[ $ret -eq 0 ] || echo "writer failed, see $seqres.full"
+> +
+> +find $SCRATCH_MNT -type f | sort | xargs md5sum > $tmp.md5.before
+> +_scratch_cycle_mount
+> +find $SCRATCH_MNT -type f | sort | xargs md5sum > $tmp.md5.after
+> +diff -q $tmp.md5.before $tmp.md5.after > /dev/null || echo "data mismatch"
+> +
+> +echo "Silence is golden"
+> +
+> +# success, all done
+> +_exit 0
+> diff --git a/tests/generic/814.out b/tests/generic/814.out
+> new file mode 100644
+> index 00000000..95532d3d
+> --- /dev/null
+> +++ b/tests/generic/814.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 814
+> +Silence is golden
+> -- 
+> 2.56.1
+> 

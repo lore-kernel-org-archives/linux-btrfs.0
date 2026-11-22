@@ -1,51 +1,51 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=95.215.58.169
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=95.215.58.206
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795315687;
-	b=x4ja/USxJKgueFtEf/qL8b+sQQnNz10dOxpXxEdVeK4JcW+/KA0nM5UaDFmq3Yh0zL0B
-	 oFIRr2/y1oZWxCxAfvcw2kcbx6uIN9RB6xGvo0XDMtVyhuSL/yzrCAgQ/AN5G6cobxUS0
-	 GYGJcS74E4qETGb/f92RiCXhIQADVp2we9LMv2Z4E76Ja4I1AJVnVtuz2ZwJuAUnVnlsR
-	 KGsdSpAoKzxLGj/HzPLDBfu5rkj2P99blr+bh6R61GgznoHnHVHjow90L09tdohm6Q6IC
-	 PcNS1SX/tOxE1jZz92ujzj7kQV2YyUU+j0IJNHY3I4eLeMXGnkCXJTJdBZr1rCBwjsQ==
+	t=1795315694;
+	b=ine5LlAfZzMwM7Q98dSmEcAS/39qYR/orOyFVJM3h0rsZVq1Jn/PMWfxdiB2RIebe/zl
+	 7KeENteLMunErOdjOpJBRBXgxouW2lPXHeQdn2324bvKV2EuSYPTCyo59k4oLp8P1KvEp
+	 EoeAGs3AHwF/5PWPQnfb+IMJI1P3mmnwWt+caNtdzo9KQSxSktdorb4t+vhkxKL+mdXa1
+	 VsBaEKNkkawGY9XIXU21XJeI4LXro+7ofWPaeljOuMc1aQTPcSr2SB4QNGS5l/cTKPNXC
+	 9mDtVtXhY3mIcpXqXUtK7d7bvoJgI7zNpkY58kqsGD4baGkTkx3wTkjRtyyRAYClrnw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795315687;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795315694;
 	h=DMARC-Filter:X-Envelope-To:DKIM-Signature:X-Envelope-To:Received:
 	 X-Mizu-Trace-ID:X-Migadu-Flow:From:To:Cc:Subject:Date:Message-ID:
 	 X-Mailer:In-Reply-To:References:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=kkxhsd+wNZ5decktFmYFGStmSBxY5/td+insSo0Xag0=;
-	b=a9YAyhq1vvaOpwwMpbKm71UlWvjpoLeb5QMHeUt7POX2KmXLmSKpS6RSFr3jXe2hYydw
-	 73Ij0srpFzMHRTDApmyUv1qEdXP7y7qT9AWTwP7hWKTLPiwSuuLuPb6DcQD1vANRt5x1j
-	 nYtCxcRkEpPD3utdT2btqA0isoHecrXPWiWSvPcsOSPZxGGRPWqmskCmbtS6s5PMVgv7+
-	 PyHaeZgEojbCye5y9wH0ef38WePmVHmkQpR4OxsAJhv3n6U0HA6uVaOdqc6SKLRfSLM0F
-	 i5jCqf53Vx4/pr3ayC5S59t+vC0AgO51NKX7gcNtE/pqurvvRuvhMLOqITfACgQM1TA==
+	bh=wvXKv2uGoryhV8ejGU2oe5V38xffHiqxUDzEj+9Yto4=;
+	b=Ef+M/Zk9UhNWeC4KLlxjuU+uUXWX403yxxS+DNylP0hw9YytJE0x+EstNMRGhvkAe9mU
+	 K/tNQlC3w0BTVNiI9/QWO17Ss6bHGfD3sxovEXSrhEDnrMgsQbfNiyrtqPjkVoYtfXps5
+	 FYr0RhK6+rHWPvh0cb2C+MEGE9eND56R+7czaZvNVXUiogtR85P4Q85keWTPp0zNdXbJb
+	 zgdNbyaV+17qVL4iFliiRtWukQAmexoeQqeHQ5w2EAJcr0DHBhecAuTB9Smz+5YiPr11J
+	 Uis+l+RTliUarlceE6Xp+E30CMUERZrE3NJmy9wRxXj6kfyJXED2H9Ib3a1cV747pkQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=linux.dev;
 	spf=pass smtp.mailfrom=linux.dev;
-	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b="rgR3igk/";
-	arc=none smtp.remote-ip=95.215.58.169
-Received: from mta1.migadu.com (out-169.mta1.migadu.com [95.215.58.169])
+	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=xgBbcIYd;
+	arc=none smtp.remote-ip=95.215.58.206
+Received: from mta1.migadu.com (out-206.mta1.migadu.com [95.215.58.206])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1516C606A68A
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:48:06 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1516C606A68A
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 74FCC606A68E
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:48:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 74FCC606A68E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=rgR3igk/
+	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=xgBbcIYd
 X-Envelope-To: linux-btrfs@vger.kernel.org
-DKIM-Signature: a=rsa-sha256; bh=fU97LFAIirxa+/rlTWHr0TmU8aBTzCwdMVuMHL65nxA=;
+DKIM-Signature: a=rsa-sha256; bh=FlgX4ij9PP8OLUKybf0hSOU7C77RZjMnD053eX5Rndg=;
  c=simple/simple; d=linux.dev;
  h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
- t=1795315685; v=1; x=1795920485;
- b=rgR3igk/I/weVpqc719mO0amIqbu5Bush6VykTQXIVP7Hgc6xYXHbkpsGvoi0e8PXlKMmskc
- wQdTm2EqLYCt8t7wde+FHoBhXbwDaHyBuIBzk4FnIWu9L8GpEI68nbKF/y/Xtc3ZMBAXReQVpyE
- heYqth8DiLAG0CF6RyGa4ueA=
+ t=1795315691; v=1; x=1795920491;
+ b=xgBbcIYdsWrScz/oSs25iQBtmCvRoJPC5puXDBYAuVeVwGFLVNe6SaeNj5t37nhEfm6o5V69
+ TohB8FPxWLMSjKUQPM01Mdloy556YRU4Wj66DO4wzWnehgJNbQSia2eDujE02ZzdcGuu0rnFAXF
+ uNNkVmPxBss03ajpBYuueN5c=
 X-Envelope-To: linux-btrfs@vger.kernel.org
-Received: by smtp.migadu.com with ESMTPS id 7007ba29080ecc76;
-	Sun, 22 Nov 2026 02:48:05 +0000
-X-Mizu-Trace-ID: 7007ba29080ecc76
+Received: by smtp.migadu.com with ESMTPS id cf46edc9697afc8d;
+	Sun, 22 Nov 2026 02:48:11 +0000
+X-Mizu-Trace-ID: cf46edc9697afc8d
 X-Migadu-Flow: FLOW_OUT
 From: Shakeel Butt <shakeel.butt@linux.dev>
 To: Tejun Heo <tj@kernel.org>,
@@ -73,9 +73,9 @@ Cc: Johannes Weiner <hannes@cmpxchg.org>,
 	linux-fsdevel@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [RFC PATCH 4/7] mm/shmem: handle memory.high overage in fallocate and reads
-Date: Sat, 21 Nov 2026 18:47:34 -0800
-Message-ID: <20261122024737.2741569-5-shakeel.butt@linux.dev>
+Subject: [RFC PATCH 6/7] memcg: remove synchronous memory.high enforcement
+Date: Sat, 21 Nov 2026 18:47:36 -0800
+Message-ID: <20261122024737.2741569-7-shakeel.butt@linux.dev>
 X-Mailer: git-send-email 2.53.1
 In-Reply-To: <20261122024737.2741569-1-shakeel.butt@linux.dev>
 References: <20261122024737.2741569-1-shakeel.butt@linux.dev>
@@ -90,130 +90,124 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-fallocate() on tmpfs or memfd allocates the whole range in one call,
-and a read can copy almost 2GiB, faulting in the user buffer and
-swapping the file back in. Without swap, this memory can't be
-reclaimed, and the internal mount behind memfd_create(),
-MAP_SHARED|MAP_ANONYMOUS and SysV shm has no size limit. Today the
-charge path throttles both for memory.high, except huge page charges,
-which can't block under the default defrag setting. Writes go through
-generic_perform_write(), which the previous patch covers.
+A task stuck in memcg limit enforcement in the charge path keeps its
+locks, and tasks in other cgroups that need them wait for a limit that
+has nothing to do with them.
 
-A later patch stops enforcing memory.high in the charge path, where
-the task may hold locks other tasks need. Handle the overage after each
-fallocate iteration, where only inode_lock is held, and after each
-folio a read copies, where no locks are held. This covers huge pages
-too. Reclaim doesn't need inode_lock: shmem_writeout() reads i_private
-under i_lock. As in filemap_read(), reads into kernel buffers and
-IOCB_NOWAIT or IOCB_WAITQ reads skip it. Reclaim uses the mapping's gfp
-constraint.
+memory.max is a hard limit, so the charge path has to enforce it.
+memory.high doesn't: since commit b23afb93d317 ("memcg: punt high
+overage reclaim to return-to-userland path"), the charge only records
+the overage, and the task reclaims and is throttled on return to
+userspace, where it holds no locks. Avoiding this priority inversion
+was one of the reasons for that commit.
 
-With swap, this reclaim finds the folios the fallocate added.
-shmem_writeout() won't swap them out and counts each try in
-nr_unswapped, and once there are more tries than new folios, the
-fallocate fails with -ENOMEM. memory.high should throttle the call, not
-fail it, so tries made by the fallocating task's own memory.high
-reclaim don't count. Tries by other reclaim still count. In a VM with
-swap, a 512M tmpfs fallocate under memory.high=64M fails with -ENOMEM 3
-times out of 3 today with small pages, and would with huge pages too if
-this reclaim's tries counted. With this patch it is throttled instead.
+But return to userspace is too late when one system call charges a
+lot, like mlock() of a large range. So commit c9afe31ec443 ("memcg:
+synchronously enforce memory.high for large overcharges") made a
+charge that can block handle the overage right away once more than a
+batch is pending. That step reclaims and sleeps, up to 2s per call,
+under whatever locks the caller holds: mmap_lock while mlock() faults
+in a MADV_HUGEPAGE range, or invalidate_lock and locked folios in
+readahead. It also misses THP charges in other ranges, which can't
+block under the default defrag setting.
 
+The previous patches handle the overage where the task holds no locks,
+or only the locks of its file, in the operations that charge the most
+in one call: populating memory, shmem fallocate, buffered writes,
+reads into user memory and MADV_COLLAPSE. Remove the synchronous step.
+
+Other paths now handle the overage only on return to userspace, and
+memory.max still limits them. Many can get a hook later. For example,
+reading /dev/urandom into an untouched buffer reaches 513M under
+memory.high=64M. With THP on, it did before too, but with small pages
+the synchronous step used to throttle it. Another is mprotect() making
+an mlocked private range writable, which copies its pages with
+mmap_lock held for writing.
+
+Update the memory.high documentation to say when tasks are throttled.
+
+Suggested-by: Tejun Heo <tj@kernel.org>
 Signed-off-by: Shakeel Butt <shakeel.butt@linux.dev>
 ---
- mm/shmem.c | 37 ++++++++++++++++++++++++++++++++++---
- 1 file changed, 34 insertions(+), 3 deletions(-)
+ Documentation/admin-guide/cgroup-v2.rst | 12 ++++++++++--
+ mm/memcontrol.c                         | 20 ++++++--------------
+ 2 files changed, 16 insertions(+), 16 deletions(-)
 
-diff --git a/mm/shmem.c b/mm/shmem.c
-index 951bb3c8f837..fad86c96170f 100644
---- a/mm/shmem.c
-+++ b/mm/shmem.c
-@@ -110,6 +110,8 @@ struct shmem_falloc {
- 	pgoff_t next;		/* the next page offset to be fallocated */
- 	pgoff_t nr_falloced;	/* how many new pages have been fallocated */
- 	pgoff_t nr_unswapped;	/* how often writeout refused to swap out */
-+	/* set while the fallocating task handles memory.high overage */
-+	struct task_struct *high_reclaimer;
- };
+diff --git a/Documentation/admin-guide/cgroup-v2.rst b/Documentation/admin-guide/cgroup-v2.rst
+index 9e3c67b02ae2..215710a44a88 100644
+--- a/Documentation/admin-guide/cgroup-v2.rst
++++ b/Documentation/admin-guide/cgroup-v2.rst
+@@ -1386,6 +1386,14 @@ write "max"; to set it to zero explicitly, write "0".
+ 	over the high boundary, the processes of the cgroup are
+ 	throttled and put under heavy reclaim pressure.
  
- struct shmem_options {
-@@ -1918,10 +1920,13 @@ int shmem_writeout(struct swap_io_ctx *ctx, struct folio *folio,
- 			if (shmem_falloc &&
- 			    !shmem_falloc->waitq &&
- 			    index >= shmem_falloc->start &&
--			    index < shmem_falloc->next)
--				shmem_falloc->nr_unswapped += nr_pages;
--			else
-+			    index < shmem_falloc->next) {
-+				/* See the memory.high comment in shmem_fallocate() */
-+				if (READ_ONCE(shmem_falloc->high_reclaimer) != current)
-+					shmem_falloc->nr_unswapped += nr_pages;
-+			} else {
- 				shmem_falloc = NULL;
-+			}
- 			spin_unlock(&inode->i_lock);
- 			if (shmem_falloc)
- 				goto redirty;
-@@ -3567,6 +3572,7 @@ static ssize_t shmem_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file_inode(file);
- 	struct address_space *mapping = inode->i_mapping;
-+	gfp_t high_gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
- 	pgoff_t index;
- 	unsigned long offset;
- 	int error = 0;
-@@ -3675,6 +3681,15 @@ static ssize_t shmem_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
- 			error = -EFAULT;
- 			break;
- 		}
-+		/*
-+		 * A large read can charge a lot, for faulting in the buffer
-+		 * and swapping in the file. Handle memory.high overage here,
-+		 * where no locks are held. As in filemap_read(), reads into
-+		 * kernel buffers and reads that must not block skip this.
-+		 */
-+		if (user_backed_iter(to) &&
-+		    !(iocb->ki_flags & (IOCB_NOWAIT | IOCB_WAITQ)))
-+			mem_cgroup_over_high_throttle(high_gfp);
- 		cond_resched();
- 	}
- 
-@@ -3883,6 +3898,7 @@ static long shmem_fallocate(struct file *file, int mode, loff_t offset,
- 	struct inode *inode = file_inode(file);
- 	struct shmem_sb_info *sbinfo = SHMEM_SB(inode->i_sb);
- 	struct shmem_inode_info *info = SHMEM_I(inode);
-+	gfp_t high_gfp = mapping_gfp_constraint(inode->i_mapping, GFP_KERNEL);
- 	struct shmem_falloc shmem_falloc;
- 	pgoff_t start, index, end, undo_fallocend;
- 	loff_t aligned_end;
-@@ -3962,6 +3978,7 @@ static long shmem_fallocate(struct file *file, int mode, loff_t offset,
- 	shmem_falloc.next  = start;
- 	shmem_falloc.nr_falloced = 0;
- 	shmem_falloc.nr_unswapped = 0;
-+	shmem_falloc.high_reclaimer = NULL;
- 	spin_lock(&inode->i_lock);
- 	WRITE_ONCE(inode->i_private, &shmem_falloc);
- 	spin_unlock(&inode->i_lock);
-@@ -4031,6 +4048,20 @@ static long shmem_fallocate(struct file *file, int mode, loff_t offset,
- 		folio_mark_dirty(folio);
- 		folio_unlock(folio);
- 		folio_put(folio);
++	A task is throttled when it returns to userspace after
++	charging, and at some points in long operations, such as
++	populating memory or large buffered reads and writes. A
++	system call that allocates a lot without reaching such a
++	point can take the usage over the high boundary by up to
++	the amount it allocates. Kernel threads are not throttled:
++	a worker reclaims for them instead.
 +
-+		/*
-+		 * Handle memory.high overage here, where only inode_lock is
-+		 * held; reclaim doesn't take it. shmem_writeout() won't swap
-+		 * out the folios added so far, and counts each try toward the
-+		 * -ENOMEM check above. memory.high should only throttle the
-+		 * fallocate, so tell shmem_writeout() not to count tries made
-+		 * by this reclaim.
-+		 */
-+		if (mem_cgroup_over_high_pending()) {
-+			WRITE_ONCE(shmem_falloc.high_reclaimer, current);
-+			mem_cgroup_handle_over_high(high_gfp);
-+			WRITE_ONCE(shmem_falloc.high_reclaimer, NULL);
-+		}
- 		cond_resched();
- 	}
+ 	Going over the high limit never invokes the OOM killer and
+ 	under extreme conditions the limit may be breached. The high
+ 	limit should be used in scenarios where an external process
+@@ -1396,8 +1404,8 @@ write "max"; to set it to zero explicitly, write "0".
+ 	reclaim is bypassed. This is useful for admin processes that
+ 	need to dynamically adjust the job's memory limits without
+ 	expending their own CPU resources on memory reclamation. The
+-	job will trigger the reclaim and/or get throttled on its
+-	next charge request.
++	job will reclaim and/or get throttled after it charges
++	memory again.
  
+ 	Please note that with O_NONBLOCK, there is a chance that the
+ 	target memory cgroup may take indefinite amount of time to
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index 6d147153bd06..4771730e017a 100644
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -2615,8 +2615,9 @@ static unsigned long calculate_high_delay(unsigned int nr_pages,
+ }
+ 
+ /*
+- * Handle pending high overage during a blocking charge or on return
+- * to userspace.
++ * Handle pending high overage on return to userspace, or at a point in a
++ * long-running operation where the task can sleep (see
++ * mem_cgroup_over_high_throttle()).
+  */
+ void __mem_cgroup_handle_over_high(gfp_t gfp_mask)
+ {
+@@ -2725,9 +2726,9 @@ static void memcg_enforce_high(struct mem_cgroup *memcg, unsigned int nr_pages,
+ 		!current->mm || !mm_match_cgroup(current->mm, memcg);
+ 
+ 	/*
+-	 * Check the charged cgroup and its parents. Local charges normally defer
+-	 * reclaim until return to userspace so it can use GFP_KERNEL. Large
+-	 * pending overages may be handled synchronously below. The handler looks
++	 * Check the charged cgroup and its parents. Local charges defer reclaim
++	 * until return to userspace, or until a long-running operation reaches
++	 * a point where it can sleep and calls the handler. The handler looks
+ 	 * up current->mm and rechecks the limits. If the task moved to another
+ 	 * cgroup in the meantime, the handler works on the new cgroup instead.
+ 	 * That is rare and costs little.
+@@ -2765,15 +2766,6 @@ static void memcg_enforce_high(struct mem_cgroup *memcg, unsigned int nr_pages,
+ 		current->memcg_nr_pages_over_high += nr_pages;
+ 		set_notify_resume(current);
+ 	}
+-
+-	/*
+-	 * Earlier charges may have left high overage pending even if this charge
+-	 * found no new overage. Handle it now if this charge can block, to limit
+-	 * overrun while the task remains in the kernel.
+-	 */
+-	if (current->memcg_nr_pages_over_high > MEMCG_CHARGE_BATCH &&
+-	    gfpflags_allow_blocking(gfp_mask))
+-		__mem_cgroup_handle_over_high(gfp_mask);
+ }
+ 
+ static int try_charge_memcg(struct mem_cgroup *memcg, gfp_t gfp_mask,
 -- 
 2.53.1-Meta
 

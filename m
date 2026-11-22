@@ -1,112 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.47
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=91.218.175.177
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795306161;
-	b=O6cXsUmh//kKVtyEN/HG5IoU2U7B6LRdgVYnA2xbhWEAqbM++wTYtuPnuILdAlGxJlQE
-	 RbkZrMoRfNkOLu4HOfLBldNPb5IWMBxwgdhNUHXOp2RDGxGiqZCCV9O6kNUGcHQDeckjl
-	 uS3AdFcB7RIgPYIm7H7GEIWlnb9F0nXe5E7f2d8iRGHbs+wxE/Uf5izDmzPWrbRgYW9t+
-	 HyY0+wop1YxJ/1piRUZ9bwhn8CvTyPQKzKNOVFNTqXlyHDTMU6kFOHqzxYsYUuYTw7jzL
-	 0tVb3Ky4JzW7+6oRxqz/I5a8fvoS7PLcxqcPNLQ7S+vMudMm6/BXoUVXAY4Tmx1h3Qg==
+	t=1795315672;
+	b=bUnkPkrGSP+SZ2+A6v1X+AwZB2qnXxSTiFr1pioA8S+gfL9s+KBgxb8gc5V6QWO+l9LO
+	 y4P6hxe8UjwUWC42KnZ41vleOM/LnGXnlfoznTebWzpJx2CE3yvQHIL76nFNERZK/ByLV
+	 uo4Iobgd30FvCqn/EuXBau/TPiH2/d1xxocs9z2lvSL0uiVqcsBxpbt9KWHLSc2gLB4aK
+	 /7yEI/xMmOflCuqnQnV3BPfkxFFfYen2rEbquQgGszXemZapRzM+SIArgCYABa89/JCdN
+	 qXALbKlLfsAsi7BvKloEJCRRtZ8h6Iv1s1wGzIObcREW1g0+RfvvUCAIoKyGvgyvuAg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795306161;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=4xZytGWv8+w9GAco63iTykOZG4XUcvcZgoLypgA0ThI=;
-	b=A35LvMYP/XNjQ9/nQ4tA7+j2hVE57TdYlESMmF4yhUI/lLABE/1iMz9lz4FVsYdt8hBM
-	 cB+jdlO435vJNbtWHLE4WwrVPHbjR7IMTLwwTmioJOa5oUBXp7DhFhB5gAge7bXe4ysEs
-	 7R9FN3K0zQjNDDCHtRt/KlZ4mYqUJARz0jmQCSjvBjnOH7BjncatBOuJolNczOB0WuKrb
-	 8y7NBjcUrmnBhLUXPMNfoX3fX1uXyvWFYnwVC22BzvHr+kDNc6KQWO1mDOrWEyjhFVlIz
-	 9phFtW5UHzbP7cWzY7O7Cktvzutq0XLSYyCv6lTIOBFYFnAfd5NIvUhWAvszTpdSYqg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795315672;
+	h=DMARC-Filter:X-Envelope-To:DKIM-Signature:X-Envelope-To:Received:
+	 X-Mizu-Trace-ID:X-Migadu-Flow:From:To:Cc:Subject:Date:Message-ID:
+	 X-Mailer:MIME-Version:Content-Transfer-Encoding;
+	bh=bOrv+xLYUsaUyXaSe+BARibazXC+W+FOt8ErwK+aCss=;
+	b=B20UMgpJtIa816ih7DZrJIqZgdlz/S4CoLbioGznOqRKYH2KY0U3rcfkxfbq5DJ+iwup
+	 Pwl0wXi4nK7cWOfW3QhYwDUY2z4E5GCYxMHSFkArrEFZNhQFz+Dl03Bu9yP5o8hG3eAt5
+	 ccJUTUcllSv1XcGgZlQPPhCTEiJtWxqqMuQ5GwEQJgLjJYhAj5Jz4XPeSP90VEyMrS+wI
+	 ih8cE8zkJVu8ysrh7xfqvISzc8Jxd4kUnojw1Ael0HuW/InKwCW7afQGCsQ6s2Uoy11/3
+	 yUMvfVcI6REgL0QyjnVj/L1cZAOXeQOMKFFh7P2IPLyfqy4JSAV9MkWVZv9fJqr+ROA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=AdgEZnCD;
-	arc=none smtp.remote-ip=209.85.128.47
-Received: from mail-wm1-f47.google.com (mail-wm1-f47.google.com [209.85.128.47])
+	dmarc=pass header.from=linux.dev;
+	spf=pass smtp.mailfrom=linux.dev;
+	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=GvsIzOyn;
+	arc=none smtp.remote-ip=91.218.175.177
+Received: from mta0.migadu.com (out-177.mta0.migadu.com [91.218.175.177])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF111606A33F
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 00:09:20 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EF111606A33F
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC1F0606A32A
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:47:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CC1F0606A32A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=AdgEZnCD
-Received: by mail-wm1-f47.google.com with SMTP id 5b1f17b1804b1-4bb6886d30aso20255005e9.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2026 16:09:20 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795306159; x=1795910959; darn=vger.kernel.org;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=4xZytGWv8+w9GAco63iTykOZG4XUcvcZgoLypgA0ThI=;
-        b=AdgEZnCDRq3OA0dGqO0rG+3FNmDWcKc9OiYKdCb+BC4wRCIERy/XVNqE1HQRURlfWW
-         6++IpNbbLaanVXSE8qHXRXM7YFV2oogVAsIfMXtAKT5Kp/baA4Q+e9ObD3oSg3GSLaIc
-         7uUXZQEfksKoDCYMnbSUOU2Bc7N8EvbIuIafw0xZFpfWAGqG+XEshXHv+bTvelS5Jn73
-         yoQISUCLkMC7nbi3tuqortv6L5uJQuSrod6nfemPgOwy8xMpxp8NmzM+Vic7LDYP8tzL
-         U6yOTYV8nqC5iN0OWt1OCeEPuqBcmDcHoYFIVAivmMCy8//NpPo2tEutcaNOzYrzIT5n
-         LYBg==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795306159; x=1795910959;
-        h=content-transfer-encoding:mime-version:references:in-reply-to
-         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
-         :to:cc:subject:date:message-id:reply-to:content-type;
-        bh=4xZytGWv8+w9GAco63iTykOZG4XUcvcZgoLypgA0ThI=;
-        b=xAofvTNGhSF6eoZ5oNgKa5sWU1C9Ae1hd+tF+xnz28GOpXx5Xapc8Py1wyRWVotA0a
-         T8NsUFJRZ/v6qvW0eng1kIuMES+Ea/KJBGHOuyUSNev2AUZpYufNdALyZKku7z1eZske
-         SvQUxfJdoM5EeHPMbY/NWW7imB3InjROWfnjo+7ute8hhV8aElI2mmNdBIvwm0NUU8JN
-         rCyX1uvJatvmgIu52ofIPuDiUpengCUVfP5kgWNp9K+sjuJuBmbScLAkwRdX3kFaOcJ8
-         YOqR1CAz6H4DuLeSp36DzEYuPpNgPzDbXjPOfEnWnDHbHqeKc0rdIaZNsi0d7SZ4WoA0
-         n7ew==
-X-Forwarded-Encrypted: i=1; AL+hErGjv2s/v/HF9Vz42d8GB21W4r/ng//eHo4nGt4PFrPtGLmVXtwbjQlM6x/12xW06XirCPxt2RMeiLO72w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/H9SFXsocvfoZKxvXX+N/1dBSFVwwten1vmy8E6gy4KkzGVWUj
-	6IPdvxApU/cIzSidTHYFm5W+jTCZve623v6TQfBxGe24i1LCp+oTW/3H
-X-Gm-Gg: AZFdTZdhkg2GIeW7YcaGfUiDTMoCoRMb6ftszmhrZPO0OQ6RCeD6IgFuh+glZf3dQis
-	j1TGf0rNMHUCEmBX5C6Udo4JVmpIGq7qhxhoXSwao0qDsoc0KJZxS9kcCTWR0yegBLbA4UOcRVs
-	GFskEtTNCA/iGhdkQim3xkRTDs9neCmA5ey9Jb1kKdCMqJB0y+KlMAxNKdYHKNp3dISxz3hUB4S
-	cHf7BRfmnDaeAkKd0STu4ardtBmcQLcs7Oj0Jdnt4qmvMabzjj3jUS46ZNYLLawySfvj0dfqifR
-	7r3uRTBkxTnNd02kUy+j1owTtRxWoB1mg1KvbEwnu/IFb/Ozu8TSFaReb7n/imM5FI8wdTQqEgX
-	0sl7VUOLdDyER80ja5TMRdy9ozX+M4HI84Q2ucjOSwP7Hz4HzgjOBrSZtuy2Hp2FOK23hF6m3Li
-	5jneH+zWkohePiwQwR31YJ6Whb7gDAVPx6+f3lcsLaJ5DEHDDRSvzPQ9sqpUaSakhvYCBTbe5ZG
-	K7rDZClHiycWHXpj6Ot+/eqoORgq1Hw90flyAOElQT4oLwToMpClySP2RNsXKWLscW7KsufbhML
-	YiGMv8B7zX14oqyWn0Lyi2e0
-X-Received: by 2002:a05:600c:8210:b0:4a2:1a:a116 with SMTP id 5b1f17b1804b1-4bb887865b5mr159815355e9.0.1795306159378;
-        Sat, 21 Nov 2026 16:09:19 -0800 (PST)
-Received: from infinity ([2001:b07:5d26:7a6a:365a:60ff:fe0d:cfc6])
-        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4ab5ffcad11sm13461872f8f.0.2026.11.21.16.09.16
-        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
-        Sat, 21 Nov 2026 16:09:18 -0800 (PST)
-From: koraynilay <koray.fra@gmail.com>
-To: Namjae Jeon <linkinjeon@kernel.org>,
-	Hyunchul Lee <hyc.lee@gmail.com>,
-	Alexander Viro <viro@zeniv.linux.org.uk>,
-	Christian Brauner <brauner@kernel.org>
-Cc: Chuck Lever <cel@kernel.org>,
-	Jeff Layton <jlayton@kernel.org>,
+	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=GvsIzOyn
+X-Envelope-To: linux-btrfs@vger.kernel.org
+DKIM-Signature: a=rsa-sha256; bh=rzojMZvLtM9+3SwUWO3HxhYcavbGDeGlgbRtLOpYVG4=;
+ c=simple/simple; d=linux.dev;
+ h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
+ t=1795315670; v=1; x=1795920470;
+ b=GvsIzOyniRqJWLrSd29NQaoEIkIBRxfPl1mYz3guSdKs+KeehSOg3M+BN50opEeuSqRggTiN
+ CrDymRoMXbaBZOcBSu1ZvDpQZo+XbrlbHRZH2prtGrrSy/q2pdLsCv2fj5vqqm0m0DMxFHjbCmv
+ Q1sqNC33JjQdqb18hpwpuG/8=
+X-Envelope-To: linux-btrfs@vger.kernel.org
+Received: by smtp.migadu.com with ESMTPS id 313eb3f773ebefb2;
+	Sun, 22 Nov 2026 02:47:49 +0000
+X-Mizu-Trace-ID: 313eb3f773ebefb2
+X-Migadu-Flow: FLOW_OUT
+From: Shakeel Butt <shakeel.butt@linux.dev>
+To: Tejun Heo <tj@kernel.org>,
+	Andrew Morton <akpm@linux-foundation.org>
+Cc: Johannes Weiner <hannes@cmpxchg.org>,
+	Michal Koutny <mkoutny@suse.com>,
+	Christian Brauner <brauner@kernel.org>,
+	Michal Hocko <mhocko@kernel.org>,
+	Roman Gushchin <roman.gushchin@linux.dev>,
+	Muchun Song <muchun.song@linux.dev>,
 	Jan Kara <jack@suse.cz>,
-	"Darrick J . Wong" <djwong@kernel.org>,
-	Andrey Albershteyn <aalbersh@kernel.org>,
-	Amir Goldstein <amir73il@gmail.com>,
-	=?UTF-8?q?Pali=20Roh=C3=A1r?= <pali@kernel.org>,
-	Lauri Gates <lauri.gates@gmail.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	Dave Chinner <dgc@kernel.org>,
-	linux-btrfs@vger.kernel.org,
-	linux-xfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
+	Matthew Wilcox <willy@infradead.org>,
+	David Hildenbrand <david@kernel.org>,
+	Vlastimil Babka <vbabka@kernel.org>,
+	Zi Yan <ziy@nvidia.com>,
+	Baolin Wang <baolin.wang@linux.alibaba.com>,
+	Nico Pache <nico.pache@linux.dev>,
+	Usama Arif <usama.arif@linux.dev>,
+	Kiryl Shutsemau <kas@kernel.org>,
+	Lorenzo Stoakes <ljs@kernel.org>,
+	Suren Baghdasaryan <surenb@google.com>,
+	Meta kernel team <kernel-team@meta.com>,
+	cgroups@vger.kernel.org,
+	linux-mm@kvack.org,
 	linux-fsdevel@vger.kernel.org,
-	ntfs@lists.linux.dev,
-	linux-nfs@vger.kernel.org,
-	linux-api@vger.kernel.org,
-	koraynilay <koray.fra@gmail.com>
-Subject: [PATCH 3/3] ntfs: switch to the new xflags fileattr API
-Date: Sun, 22 Nov 2026 01:08:56 +0100
-Message-ID: <20261122000856.536902-4-koray.fra@gmail.com>
-X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261122000856.536902-1-koray.fra@gmail.com>
-References: <20261122000856.536902-1-koray.fra@gmail.com>
+	linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Subject: [RFC PATCH 0/7] memcg: effective high limit that avoids isolation issues
+Date: Sat, 21 Nov 2026 18:47:30 -0800
+Message-ID: <20261122024737.2741569-1-shakeel.butt@linux.dev>
+X-Mailer: git-send-email 2.53.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -118,201 +87,187 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Switch ntfs_fileattr_[gs]et() from the legacy FS_*_FL flags to the
-modern xflags (FS_XFLAG_*) fileattr API with masks.
+(My initial plan [1, 2] was to track kernel lock holders, let them
+bypass memcg limits and throttle them on unlock or on return to
+userspace. I was asked to look for alternative solutions, and this
+series is one.)
 
-Introduce FS_XFLAG_COMPR and FS_XFLAG_ENCRYPT and add them to
-FS_XFLAG_COMMON (and add FS_COMPR_FL and FS_ENCRYPT_FL to FS_COMMON_FL)
-to be used in this API switch.
+memcg limits can cause isolation problems. A task stuck in limit
+enforcement in the charge path keeps holding its locks, and tasks in
+other cgroups that need them wait for a limit that has nothing to do
+with them. btrfs, for example, charges its tree blocks to the root
+cgroup for this reason [3].
 
-Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.11
-Signed-off-by: koraynilay <koray.fra@gmail.com>
----
- fs/file_attr.c           |  8 +++++
- fs/ntfs/file.c           | 63 +++++++++++++++++++---------------------
- include/linux/fileattr.h |  6 ++--
- include/uapi/linux/fs.h  |  2 ++
- 4 files changed, 44 insertions(+), 35 deletions(-)
+We see this in Meta's fleet. Over 28 days, on several tens of
+thousands of unique hosts, a bpftrace script [4] recorded sleeping
+locks held in memcg reclaim while another task waited for them. Most
+belong to the reclaiming workload, like its mmap_lock (680,579
+times, up to 4.7s), but some are shared by the whole machine or a
+whole filesystem:
 
-diff --git a/fs/file_attr.c b/fs/file_attr.c
-index 0e16c23368b2..815b8ba50e1f 100644
---- a/fs/file_attr.c
-+++ b/fs/file_attr.c
-@@ -39,6 +39,10 @@ void fileattr_fill_xflags(struct file_kattr *fa, u32 xflags)
- 		fa->flags |= FS_VERITY_FL;
- 	if (fa->fsx_xflags & FS_XFLAG_CASEFOLD)
- 		fa->flags |= FS_CASEFOLD_FL;
-+	if (fa->fsx_xflags & FS_XFLAG_COMPR)
-+		fa->flags |= FS_COMPR_FL;
-+	if (fa->fsx_xflags & FS_XFLAG_ENCRYPT)
-+		fa->flags |= FS_ENCRYPT_FL;
- }
- EXPORT_SYMBOL(fileattr_fill_xflags);
- 
-@@ -71,6 +75,10 @@ void fileattr_fill_flags(struct file_kattr *fa, u32 flags)
- 		fa->fsx_xflags |= FS_XFLAG_VERITY;
- 	if (fa->flags & FS_CASEFOLD_FL)
- 		fa->fsx_xflags |= FS_XFLAG_CASEFOLD;
-+	if (fa->flags & FS_COMPR_FL)
-+		fa->fsx_xflags |= FS_XFLAG_COMPR;
-+	if (fa->flags & FS_ENCRYPT_FL)
-+		fa->fsx_xflags |= FS_XFLAG_ENCRYPT;
- }
- EXPORT_SYMBOL(fileattr_fill_flags);
- 
-diff --git a/fs/ntfs/file.c b/fs/ntfs/file.c
-index 50be49f4c913..fde6fb2fe39c 100644
---- a/fs/ntfs/file.c
-+++ b/fs/ntfs/file.c
-@@ -155,31 +155,37 @@ int ntfs_file_release(struct inode *vi, struct file *filp)
-  * @dentry: dentry to report the flags of
-  * @fa: filled in with the flags of @dentry
-  */
-+#define NTFS_RO_XFLAGS (FS_XFLAG_COMPR | FS_XFLAG_ENCRYPT | FS_XFLAG_CASEFOLD)
-+#define NTFS_RW_XFLAGS (FS_XFLAG_IMMUTABLE | FS_XFLAG_APPEND | \
-+			FS_XFLAG_NOATIME | FS_XFLAG_NODUMP)
- int ntfs_fileattr_get(struct dentry *dentry, struct file_kattr *fa)
- {
- 	struct inode *vi = d_inode(dentry);
- 	struct ntfs_inode *ni = NTFS_I(vi);
--	u32 flags = 0;
-+	u32 xflags = 0;
- 
- 	if (NVolShutdown(ni->vol))
- 		return -EIO;
- 
- 	if (NInoCompressed(ni) || NInoWofCompressed(ni))
--		flags |= FS_COMPR_FL;
-+		xflags |= FS_XFLAG_COMPR;
- 	if (NInoEncrypted(ni))
--		flags |= FS_ENCRYPT_FL;
-+		xflags |= FS_XFLAG_ENCRYPT;
- 	if (vi->i_flags & S_IMMUTABLE)
--		flags |= FS_IMMUTABLE_FL;
-+		xflags |= FS_XFLAG_IMMUTABLE;
- 	if (vi->i_flags & S_APPEND)
--		flags |= FS_APPEND_FL;
-+		xflags |= FS_XFLAG_APPEND;
- 	if (vi->i_flags & S_NOATIME)
--		flags |= FS_NOATIME_FL;
-+		xflags |= FS_XFLAG_NOATIME;
- 	if (ni->linuxflags & NTFS_LINUXFLAGS_NODUMP)
--		flags |= FS_NODUMP_FL;
-+		xflags |= FS_XFLAG_NODUMP;
- 	if (!NVolCaseSensitive(ni->vol))
--		flags |= FS_CASEFOLD_FL;
-+		xflags |= FS_XFLAG_CASEFOLD;
- 
--	fileattr_fill_flags(fa, flags);
-+	fileattr_fill_xflags(fa, xflags);
-+	fa->fsx_xflags_ro_mask = NTFS_RO_XFLAGS;
-+	fa->fsx_xflags_rw_mask = NTFS_RW_XFLAGS;
-+	fa->has_masks = true;
- 	return 0;
- }
- 
-@@ -207,9 +213,6 @@ int ntfs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
- {
- 	struct inode *vi = d_inode(dentry);
- 	struct ntfs_inode *ni = NTFS_I(vi);
--	u32 allowed = FS_IMMUTABLE_FL | FS_APPEND_FL | FS_NODUMP_FL |
--		      FS_NOATIME_FL;
--	u32 readonly = 0;
- 	u32 linuxflags = ni->linuxflags & ~NTFS_LINUXFLAGS_MASK;
- 	unsigned int new_fl = 0;
- 	bool forced_immutable;
-@@ -219,42 +222,36 @@ int ntfs_fileattr_set(const struct mnt_idmap *idmap, struct dentry *dentry,
- 	if (err)
- 		return err;
- 
--	if (fileattr_has_fsx(fa))
--		return -EOPNOTSUPP;
--
--	/* chattr passes the unchanged read-only flags back to us too. */
--	if (NInoCompressed(ni) || NInoWofCompressed(ni))
--		readonly |= FS_COMPR_FL;
--	if (NInoEncrypted(ni))
--		readonly |= FS_ENCRYPT_FL;
--	if ((fa->flags ^ readonly) & (FS_COMPR_FL | FS_ENCRYPT_FL))
--		return -EOPNOTSUPP;
--	allowed |= readonly;
--
--	/* Case folding is a read-only, mount-wide property. */
--	if (!NVolCaseSensitive(ni->vol))
--		allowed |= FS_CASEFOLD_FL;
--	if (fa->flags & ~allowed)
-+	/*
-+	 * When userspace uses file_[gs]etattr(), VFS already checks and fails
-+	 * with -EOPNOTSUPP if rw_mask & ro_mask != 0 and rw_mask & ~allowed,
-+	 * but for FS_IOC_SETFLAGS and FS_IOC_FSSETXATTR VFS can't check for
-+	 * allowed flags as these ioctls don't support fsx_xflags_{rw,ro}_mask,
-+	 * so we need to check for unsupported flags anyway.
-+	 */
-+	if (!fa->has_masks &&
-+	    ((fa->fsx_xflags & ~NTFS_RW_XFLAGS) ||
-+	     fa->fsx_extsize || fa->fsx_projid || fa->fsx_cowextsize))
- 		return -EOPNOTSUPP;
- 
- 	forced_immutable = ntfs_is_forced_immutable(vi);
--	if (!(fa->flags & FS_IMMUTABLE_FL) && forced_immutable)
-+	if (!(fa->fsx_xflags & FS_XFLAG_IMMUTABLE) && forced_immutable)
- 		return -EPERM;
- 
--	if (fa->flags & FS_IMMUTABLE_FL) {
-+	if (fa->fsx_xflags & FS_XFLAG_IMMUTABLE) {
- 		new_fl |= S_IMMUTABLE;
- 		/* Do not persist an immutable bit derived from the mount. */
- 		if (!forced_immutable ||
- 		    (ni->linuxflags & NTFS_LINUXFLAGS_IMMUTABLE))
- 			linuxflags |= NTFS_LINUXFLAGS_IMMUTABLE;
- 	}
--	if (fa->flags & FS_APPEND_FL) {
-+	if (fa->fsx_xflags & FS_XFLAG_APPEND) {
- 		new_fl |= S_APPEND;
- 		linuxflags |= NTFS_LINUXFLAGS_APPEND;
- 	}
--	if (fa->flags & FS_NODUMP_FL)
-+	if (fa->fsx_xflags & FS_XFLAG_NODUMP)
- 		linuxflags |= NTFS_LINUXFLAGS_NODUMP;
--	if (fa->flags & FS_NOATIME_FL) {
-+	if (fa->fsx_xflags & FS_XFLAG_NOATIME) {
- 		new_fl |= S_NOATIME;
- 		linuxflags |= NTFS_LINUXFLAGS_NOATIME;
- 	}
-diff --git a/include/linux/fileattr.h b/include/linux/fileattr.h
-index 4faa40febf11..219e7c8eb601 100644
---- a/include/linux/fileattr.h
-+++ b/include/linux/fileattr.h
-@@ -7,12 +7,14 @@
- #define FS_COMMON_FL \
- 	(FS_SYNC_FL | FS_IMMUTABLE_FL | FS_APPEND_FL | \
- 	 FS_NODUMP_FL |	FS_NOATIME_FL | FS_DAX_FL | \
--	 FS_PROJINHERIT_FL | FS_VERITY_FL)
-+	 FS_PROJINHERIT_FL | FS_VERITY_FL | FS_COMPR_FL | \
-+	 FS_ENCRYPT_FL)
- 
- #define FS_XFLAG_COMMON \
- 	(FS_XFLAG_SYNC | FS_XFLAG_IMMUTABLE | FS_XFLAG_APPEND | \
- 	 FS_XFLAG_NODUMP | FS_XFLAG_NOATIME | FS_XFLAG_DAX | \
--	 FS_XFLAG_PROJINHERIT | FS_XFLAG_VERITY)
-+	 FS_XFLAG_PROJINHERIT | FS_XFLAG_VERITY | FS_XFLAG_COMPR | \
-+	 FS_XFLAG_ENCRYPT)
- 
- /* Read-only inode flags */
- #define FS_XFLAG_RDONLY_MASK \
-diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
-index e40806b3a69c..09fc7e066485 100644
---- a/include/uapi/linux/fs.h
-+++ b/include/uapi/linux/fs.h
-@@ -275,6 +275,8 @@ struct file_attr {
- #define FS_XFLAG_CASENONPRESERVING 0x00080000	/* case not preserved */
- 
- #define FS_XFLAG_PROJID		0x00100000	/* project ID */
-+#define FS_XFLAG_COMPR		0x00200000	/* Compress file */
-+#define FS_XFLAG_ENCRYPT	0x00400000	/* Encrypted file */
- #define FS_XFLAG_HASATTR	0x80000000	/* no DIFLAG for this	*/
- 
- /* the read-only stuff doesn't really belong here, but any other place is
+- cgroup_mutex, used by every cgroup change. mkdir charges the new
+  memcg to the parent while holding it, and reclaims if the parent is
+  at its limit: 350 times, up to 2.5s.
+- kernfs_rwsem, used by cgroupfs lookups. The kernfs notification
+  worker held it while queueing inotify events charged to the
+  watcher's cgroup: 2,324 times, up to 3.3s.
+- btrfs tree locks, used by every b-tree search and change. On kernels
+  with [3], the XArray nodes that index tree blocks are still charged
+  to the task, so tasks reclaimed with tree locks held 2,853 times,
+  850 of them with a root node locked, up to 2.6s.
+
+Hung-task reports show worse cases. A container's systemd created a
+cgroup while its own cgroup was over memory.high, and mkdir ran
+memory.high reclaim with cgroup_mutex and the parent directory's lock
+held for over 30 minutes. The host's systemd, tasks forking into
+cgroups, oomd and a monitoring agent all waited, so the userspace OOM
+killer could not even read the cgroup tree.
+
+memory.max is a hard limit, so this series does not change it.
+memory.high doesn't have to be enforced in the charge path: since
+commit b23afb93d317 ("memcg: punt high overage reclaim to
+return-to-userland path"), the charge only records the overage (usage
+above the limit), and the task reclaims and is throttled on return to
+userspace, where it holds no locks. Avoiding this priority inversion
+was one of the reasons for that commit.
+
+But return to userspace is too late when one system call charges a
+lot, like mlock() of a large range. So commit c9afe31ec443 ("memcg:
+synchronously enforce memory.high for large overcharges") handles the
+overage in the charge itself when the charge can block and more than
+a batch is pending. That brought the problem back: the task reclaims
+and sleeps, up to 2s per call, under whatever locks it holds. It also
+misses THP charges outside MADV_HUGEPAGE ranges, which can't block
+under the default defrag setting. RESULTS shows both problems.
+
+This series is a first step in rethinking the memcg high limit around
+isolation. It makes memory.high enforcement asynchronous (to
+allocation and charging) again and keeps it effective for large calls.
+The task handles the overage on return to userspace, and also inside
+the operations that can charge a lot in one call, where it holds no
+locks or only the locks of the file it works on:
+
+- Populating memory (mlock, mlockall, MAP_POPULATE, MAP_LOCKED,
+  MADV_POPULATE_*): 2M at a time, with mmap_lock dropped in between.
+- tmpfs fallocate, buffered writes (generic_perform_write(), iomap,
+  btrfs) and reads into user memory (filemap_read(), shmem): once per
+  folio or range.
+- MADV_COLLAPSE: after each collapse, with mmap_lock dropped.
+
+These points also throttle THP charges, which the synchronous step
+skips. A file's lock only blocks tasks using that file. Two cases hold
+more: splice() from a pipe also holds the pipe's lock, and gfs2 holds
+its allocation glocks in writes that allocate. The synchronous step
+sleeps with these locks today too.
+
+Why not keep the synchronous step, with a higher threshold, without
+its sleep, or only outside these operations? It would still reclaim or
+sleep under locks, like mmap_lock in THP faults and invalidate_lock in
+readahead, and it would not close the THP gap.
+
+This also lets users drop memory.max, which still reclaims in the
+charge path and can stall lock holders as above. They can set only
+memory.high and let a userspace OOM killer like oomd [5], or a future
+BPF OOM policy [6], decide when to kill. Meta plans to do this.
+
+The last two patches remove the synchronous step, update the
+memory.high documentation and fix test_memcg_high_sync, which missed
+the THP gap.
+
+RESULTS
+
+Tests run in a VM with 4 CPUs and THP on for anonymous memory and
+shmem (enabled=always, shmem_enabled=always, tmpfs huge=always, the
+default defrag=madvise), in a cgroup with memory.high=64M. Reads go
+into an untouched buffer. "No hooks" is the base plus only the patch
+that removes the synchronous step. Usage 18s into a 512M operation,
+without swap:
+
+  test                                    base  series  no hooks
+  mlock, mlockall, MAP_POPULATE,      513-514M     84M  513-514M
+    MADV_POPULATE_WRITE
+  tmpfs fallocate and write           512-513M     84M  512-513M
+  reads of a tmpfs file                   513M  84-85M      513M
+  MADV_COLLAPSE of a sparse range          96M     98M      514M
+    (one VMA, or one VMA per PMD)
+  reads of /dev/zero or /dev/urandom      513M    513M      513M
+    (known gaps)
+
+Usage grows by one 2M folio per throttle, so it is 84-85M after 18s.
+On ext4, XFS and btrfs, 256M writes stay at 64-67M on both kernels
+(257-264M with no hooks), and reads with a cold page cache at 70-73M.
+Reads with a warm page cache, where only the buffer is charged, reach
+257M on base and stay at 84-85M with the series.
+
+With swap, the MAP_POPULATE, MADV_POPULATE_WRITE and tmpfs write tests
+finish in under 2s at 65-66M with the series (base: 157-169M, no hooks:
+513M). tmpfs fallocate is throttled with or without swap. With swap,
+base fails it with -ENOMEM for small pages.
+
+During mlock() of an 80M MADV_HUGEPAGE range, a task in another cgroup
+that reads the process's /proc/<pid>/cmdline every 10ms waits up to
+15.3s on base and under 1ms with the series. Populating 2G with no
+limit takes the same time on both kernels.
+
+All patches build with gcc and clang (W=1), with CONFIG_MEMCG=n and
+with btrfs as a module. A lockdep kernel showed no warnings. The
+memcontrol selftests pass, and the fixed test_memcg_high_sync fails on
+base.
+
+KNOWN GAPS
+
+Other paths that charge a lot in one call are now throttled only on
+return to userspace, and memory.max still limits them. Most can get a
+throttle point later, some after dropping a lock:
+
+- /dev/zero and /dev/urandom reads, getrandom(), sendfile() to a
+  socket, io_uring submissions, netfs and FUSE write-through writes
+- MADV_WILLNEED, UFFDIO_COPY, KSM unmerge, mprotect() of mlocked
+  mappings
+- FIDEDUPERANGE, FS_IOC_ENABLE_VERITY, KVM_PRE_FAULT_MEMORY,
+  guest_memfd fallocate, KVM page splitting
+
+Rarer ones, like sendmmsg(), btrfs send and FITRIM, can wait. Memory
+pinning (VFIO, iommufd, RDMA, io_uring buffers, direct I/O and
+others), fork() and single large allocations (BPF maps and others)
+hold a lock for the whole call or can't be split, so they stay as they
+are.
+
+[1] https://lore.kernel.org/20260924155025.949998-1-shakeel.butt@linux.dev/
+[2] https://lore.kernel.org/20260921192559.2619635-1-shakeel.butt@linux.dev/
+[3] commit cf1dec76ba8a ("mm/filemap: add AS_KERNEL_FILE")
+[4] https://github.com/bpftrace/user-tools/tree/master/reclaimlockmonitor
+[5] https://github.com/facebookincubator/oomd
+[6] https://lore.kernel.org/20260127024421.494929-1-roman.gushchin@linux.dev
+
+Based on mm-everything-2026-11-20-06-34.
+
+Shakeel Butt (7):
+  memcg: add helpers to handle memory.high overage in long operations
+  mm/gup: handle memory.high overage while populating
+  mm, fs: handle memory.high overage in buffered reads and writes
+  mm/shmem: handle memory.high overage in fallocate and reads
+  mm/khugepaged: handle memory.high overage in MADV_COLLAPSE
+  memcg: remove synchronous memory.high enforcement
+  selftests/cgroup: make test_memcg_high_sync check that throttling
+    holds
+
+ Documentation/admin-guide/cgroup-v2.rst       | 12 +++++-
+ fs/btrfs/file.c                               |  9 +++++
+ fs/iomap/buffered-io.c                        |  9 +++++
+ include/linux/memcontrol.h                    | 34 ++++++++++++++++
+ mm/filemap.c                                  | 31 +++++++++++++++
+ mm/gup.c                                      |  9 ++++-
+ mm/internal.h                                 | 27 +++++++++++++
+ mm/khugepaged.c                               |  8 ++++
+ mm/madvise.c                                  | 11 +++++-
+ mm/memcontrol.c                               | 21 ++++------
+ mm/shmem.c                                    | 37 ++++++++++++++++--
+ .../selftests/cgroup/test_memcontrol.c        | 39 +++++++++++++++----
+ 12 files changed, 217 insertions(+), 30 deletions(-)
+
+
+base-commit: b298839c2f77b60eea645a68d2245aa088463955
 -- 
-2.56.0
+2.53.1-Meta
 

@@ -1,51 +1,51 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=91.218.175.198
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=95.215.58.182
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795315686;
-	b=SIgk2KDjXIxVnnlqXlL1aq7RJO2EYcl98VFYfzHFbSSpMJjLe3TXYNp8aSSJNe9u+Onz
-	 sPPPpLen8Uv60XcFx52xSSR4RB3kkY6ezBCDTYA0p0b/08WLH7a0WxXq+Nv+TI9OGNvre
-	 ilzSvlqrK9FZusST1EWXNq91pB0uk5I+UesX+ztSJqz/jlWo4TroFC6NJCQ8ZLyNi18pR
-	 gdcnvsEx1ao3qcrr1Ep3UGTLGwLgcySfebydyK5tIbZIxWb7EoOR0RO/FVenWvL0UUvWt
-	 pkpzpcPAa++eSFreTl+bzeTwCIBUevDblDLWXK2x94VyJFqPN03g1cvznL37zdq2I8Q==
+	t=1795315692;
+	b=osMKlD6Q5lNcl+eCY4X5gAetsxNYgHbO0HhApT2rdY0LKA9cx0buEGeZijVSYKl7VunZ
+	 U/OycdZjfPMehixDhmkq+wVBZ7/JJe5FGG7bskNhwwAjDjoEP7OnZTinDHr7WcDcrzjci
+	 +CEAmeKJxYA2QlOidwfJQRweCUijCRT9j1McDEGDUtAEB4GQs/p5pWtgeCqKKgBiwIe16
+	 ENa8VPTEIQFpnv7KlnSZ+finBHofngAH6xgmyFRui86mFgSvZShHhMBy18dMa6BWMi/AK
+	 tZQRxgXDli8wyQzC4ILD2xR/ZQ6bfC+ahdwLs5CSPFv4cb6zwKodbFpGP+G+cnyvBTw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795315686;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795315692;
 	h=DMARC-Filter:X-Envelope-To:DKIM-Signature:X-Envelope-To:Received:
 	 X-Mizu-Trace-ID:X-Migadu-Flow:From:To:Cc:Subject:Date:Message-ID:
 	 X-Mailer:In-Reply-To:References:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=93KEZZm79T4K4z1XzJKlBY4GniO+4cdR8lKTt2J+MH4=;
-	b=L4whdRJUQQOmDH1Su9Af2rDQcOnbfYliatXWmdiVnwD9vGpl/WYN3a4LkjuYjYOn8NKa
-	 Wcn2DAhTcHOmcEfFhNQKdLo0SjUO+jNbvfiii4vvflU7rTIXGaS9gRF0l0BKaMNcbe2qx
-	 ZVIZjrExoS5Disdqw7YN7KTXvvoHjZ/6/oE0CDofeOcdTf8em05ZyssDs9pfGcV9fCNjr
-	 5cJyQkv0cWYB36si8zZJFkZz/Yyf7kz82jZ2ACA+FGDtRDw7EbmLbRO2LRFvgsG2VPmSq
-	 dPNrR3mirC6j7vg/5js456OyoQ9POk9s0hoIhkLzd+z0gEerj6vxkaDd4alsop3Oo4w==
+	bh=kAE5NOdIS0At3Jh5k02AXwppwZhtnhWNnu4TdJThSWc=;
+	b=V3MRl0rWGOJ7g50z5ntIW5vTKla+0FIEG9OhFK5JWiXuya2KRcTvRZTsd45nTJ2eCL9J
+	 MZa7Rv1VqSB/oYIi4aulEDn57x/xKbO3W2pls+H90JuWSz76GCg8OCRg4jQG39m5vqUa3
+	 fezzfkkpkJSuZFoJIURx0phr84lVUNAc+s5U5vVb/6Af2cOKI/wHDRmnAzxE/QwbXH/Eg
+	 uGnBf6/KLexV/OThSwtSKJLSoysh9ioyvrgP1B6D6rDR9fm8VQe+uzR/8iM/bDNYi7CVK
+	 FC3zgXarCDNbf08Z/fqQAwvgoA/OJVIkSN5K6lkDykxXcEtJpDgwBRchFKb9awgzcyg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=linux.dev;
 	spf=pass smtp.mailfrom=linux.dev;
-	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=xwRWhxda;
-	arc=none smtp.remote-ip=91.218.175.198
-Received: from mta0.migadu.com (out-198.mta0.migadu.com [91.218.175.198])
+	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=IVKicsEJ;
+	arc=none smtp.remote-ip=95.215.58.182
+Received: from mta1.migadu.com (out-182.mta1.migadu.com [95.215.58.182])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 78655606A333
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:48:05 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 78655606A333
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7F75B606A335
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:48:11 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7F75B606A335
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=xwRWhxda
+	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=IVKicsEJ
 X-Envelope-To: linux-btrfs@vger.kernel.org
-DKIM-Signature: a=rsa-sha256; bh=Snj41/CC0oxxSA8iI87cvSw/qxupw/kfZbBBp8fjQq4=;
+DKIM-Signature: a=rsa-sha256; bh=rf+KgpXOB1eGgKM+XYvnpxenhFFTGz2oUtU9DXBh1Sk=;
  c=simple/simple; d=linux.dev;
  h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
- t=1795315683; v=1; x=1795920483;
- b=xwRWhxdaIy107ah3iAY22Gu7XWqiG9ljdHQHoHNTkKyPS6wytCpH7vUhJ+wqUKO4anH7S8fF
- nm91CScm9w736dGPnvxhZ4bk0nIvbMpXwiAO1OVuAqbdfcwLbMa/23d7byVPABMhe171wUKZbqj
- iXVmrBuFJN+SWzB1QXZAaP6Q=
+ t=1795315689; v=1; x=1795920489;
+ b=IVKicsEJXNAKfxno/Kp7uAN9lKaGVXM31V/OlAcTkNUiqcInsY9HcohqbaruKBNUi59YoWv6
+ zIOyfH+lX2pgNiAwJAGNPhTPpqhisrnSDlyGT1D3S1ZquOINWJW5B00/nY10cB+fXoN0GrAuF50
+ swEwHjvAR5ChboOv1dFubP9o=
 X-Envelope-To: linux-btrfs@vger.kernel.org
-Received: by smtp.migadu.com with ESMTPS id 47c6b318c025fda0;
-	Sun, 22 Nov 2026 02:48:03 +0000
-X-Mizu-Trace-ID: 47c6b318c025fda0
+Received: by smtp.migadu.com with ESMTPS id 0558d52f41647cbc;
+	Sun, 22 Nov 2026 02:48:09 +0000
+X-Mizu-Trace-ID: 0558d52f41647cbc
 X-Migadu-Flow: FLOW_OUT
 From: Shakeel Butt <shakeel.butt@linux.dev>
 To: Tejun Heo <tj@kernel.org>,
@@ -73,9 +73,9 @@ Cc: Johannes Weiner <hannes@cmpxchg.org>,
 	linux-fsdevel@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [RFC PATCH 3/7] mm, fs: handle memory.high overage in buffered reads and writes
-Date: Sat, 21 Nov 2026 18:47:33 -0800
-Message-ID: <20261122024737.2741569-4-shakeel.butt@linux.dev>
+Subject: [RFC PATCH 5/7] mm/khugepaged: handle memory.high overage in MADV_COLLAPSE
+Date: Sat, 21 Nov 2026 18:47:35 -0800
+Message-ID: <20261122024737.2741569-6-shakeel.butt@linux.dev>
 X-Mailer: git-send-email 2.53.1
 In-Reply-To: <20261122024737.2741569-1-shakeel.butt@linux.dev>
 References: <20261122024737.2741569-1-shakeel.butt@linux.dev>
@@ -90,195 +90,47 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-A buffered read or write can copy almost 2GiB in one call. A write
-charges the page cache it fills. Dirty throttling limits only the dirty
-part, and does nothing on tmpfs and memfd, whose bdi has no
-BDI_CAP_WRITEBACK. A read charges the page cache it reads, and the
-anonymous pages it faults in when the user buffer is untouched, which
-can't be reclaimed without swap. Today the charge path throttles these
-calls for memory.high, except huge tmpfs pages and THP faults on the
-user buffer, whose charges can't block under the default defrag
-setting.
+MADV_COLLAPSE doesn't limit empty PTEs, so it can turn a PMD range with
+one resident page into a 2MiB THP. Over a large sparse range, one
+madvise() call can charge far more than the range used before. Today
+the charge path throttles it for memory.high.
 
 A later patch stops enforcing memory.high in the charge path, where
-the task may hold locks other tasks need. Handle the overage in the
-copy loops instead:
+the task may hold locks other tasks need. Handle the overage right
+after each collapse that dropped mmap_lock instead:
+collapse_single_pmd() drops it to allocate and charge the THP. This
+also covers the last PMD of each call, so madvise() over many small
+VMAs, or a process_madvise() vector of small ranges, is throttled too.
 
-- generic_perform_write() and iomap_write_iter(): next to the dirty
-  throttling call.
-- btrfs_buffered_write(): between ranges. btrfs has its own loop, which
-  the other two hooks don't cover.
-- filemap_read(): after each folio is copied. Once per batch isn't
-  enough, as a batch of large folios can hold tens of MiB.
-
-Writers hold the inode's i_rwsem there, and dirty throttling already
-sleeps under it. Two cases hold more: splice() from a pipe also holds
-the pipe's lock, and gfs2 holds the resource group and quota glocks in
-writes that allocate, which other writers to that resource group wait
-for, on any node. The charge path sleeps with all of these locks today,
-plus those taken in write_begin(). In btrfs, copy_one_range() has
-already released its space reservation or handed it to delalloc, and
-dropped the snapshot lock of a NOCOW write.
-
-Most readers hold no locks. XFS, NFS and netfs hold the file's lock
-shared, and gfs2 and ocfs2 a cluster lock, so a writer to that file
-waits while a reader is throttled, as it does today. filemap_read()
-keeps its folio batch referenced while the task is throttled. If it
-dropped the batch, reclaim could free the folios not copied yet, and
-they would be read again: in a VM, a cold 256M read under
-memory.high=64M then read five to nine times as much from disk for the
-same progress. After the sleep, it reads i_size and
-mapping_writably_mapped() again.
-
-IOCB_NOWAIT writes and IOCB_NOWAIT or IOCB_WAITQ reads skip the hook:
-io_uring issues them with ctx->uring_lock held. Reads into kernel
-buffers skip it too: kernel_read() callers may hold other locks, like
-cred_guard_mutex in execve(). Reclaim uses the gfp mask of the
-allocation that follows, so filesystems that clear __GFP_FS get
-GFP_NOFS reclaim.
-
-Without these hooks, once the synchronous step is gone, a 256M write
-under memory.high=64M in a VM reaches 257-264M on ext4, XFS and btrfs
-instead of 64-67M.
+process_madvise() on another process charges that process's cgroup.
+If the caller is in that cgroup or below it, the caller handles the
+overage here. Otherwise high_work reclaims it and no task is
+throttled, as before.
 
 Signed-off-by: Shakeel Butt <shakeel.butt@linux.dev>
 ---
- fs/btrfs/file.c        |  9 +++++++++
- fs/iomap/buffered-io.c |  9 +++++++++
- mm/filemap.c           | 31 +++++++++++++++++++++++++++++++
- 3 files changed, 49 insertions(+)
+ mm/khugepaged.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index f978c6524aa0..d5a00a26fba6 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -18,6 +18,7 @@
- #include <linux/uio.h>
- #include <linux/iversion.h>
- #include <linux/fsverity.h>
-+#include <linux/memcontrol.h>
- #include "ctree.h"
- #include "direct-io.h"
- #include "disk-io.h"
-@@ -1320,6 +1321,7 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *iter)
- 	struct file *file = iocb->ki_filp;
- 	loff_t pos;
- 	struct inode *inode = file_inode(file);
-+	const gfp_t high_gfp = btrfs_alloc_write_mask(inode->i_mapping);
- 	struct extent_changeset *data_reserved = NULL;
- 	size_t num_written = 0;
- 	ssize_t ret;
-@@ -1356,6 +1358,13 @@ ssize_t btrfs_buffered_write(struct kiocb *iocb, struct iov_iter *iter)
- 			break;
- 		pos += ret;
- 		num_written += ret;
-+		/*
-+		 * A large write can charge a lot before the task returns to
-+		 * userspace. Handle memory.high overage between ranges, where
-+		 * btrfs holds only the inode lock.
-+		 */
-+		if (!nowait)
-+			mem_cgroup_over_high_throttle(high_gfp);
- 		cond_resched();
- 	}
+diff --git a/mm/khugepaged.c b/mm/khugepaged.c
+index 2dc4245814df..1ede7d30853d 100644
+--- a/mm/khugepaged.c
++++ b/mm/khugepaged.c
+@@ -3306,6 +3306,14 @@ int madvise_collapse(struct vm_area_struct *vma, unsigned long start,
  
-diff --git a/fs/iomap/buffered-io.c b/fs/iomap/buffered-io.c
-index 6d843b168d5f..861aa600b3af 100644
---- a/fs/iomap/buffered-io.c
-+++ b/fs/iomap/buffered-io.c
-@@ -7,6 +7,7 @@
- #include <linux/buffer_head.h>
- #include <linux/writeback.h>
- #include <linux/swap.h>
-+#include <linux/memcontrol.h>
- #include <linux/migrate.h>
- #include <linux/fserror.h>
- #include <linux/fsverity.h>
-@@ -1193,6 +1194,7 @@ static int iomap_write_iter(struct iomap_iter *iter, struct iov_iter *i,
- 	struct address_space *mapping = iter->inode->i_mapping;
- 	size_t chunk = mapping_max_folio_size(mapping);
- 	unsigned int bdp_flags = (iter->flags & IOMAP_NOWAIT) ? BDP_ASYNC : 0;
-+	gfp_t high_gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
- 
- 	do {
- 		struct folio *folio;
-@@ -1212,6 +1214,13 @@ static int iomap_write_iter(struct iomap_iter *iter, struct iov_iter *i,
- 		if (unlikely(status))
- 			break;
+ 		result = collapse_single_pmd(addr, vma, &mmap_unlocked, cc);
  
 +		/*
-+		 * A large write can charge a lot before the task returns to
-+		 * userspace. Handle memory.high overage here too.
++		 * collapse_single_pmd() drops mmap_lock to allocate and charge
++		 * a THP. Handle memory.high overage before taking it again,
++		 * including after the last PMD.
 +		 */
-+		if (!(iter->flags & IOMAP_NOWAIT))
-+			mem_cgroup_over_high_throttle(high_gfp);
++		if (mmap_unlocked)
++			mem_cgroup_over_high_throttle(GFP_KERNEL);
 +
- 		if (bytes > iomap_length(iter))
- 			bytes = iomap_length(iter);
- 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index dc0ceaa58a0f..b0cefe71c1fd 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -2822,6 +2822,7 @@ ssize_t filemap_read(struct kiocb *iocb, struct iov_iter *iter,
- 	struct file_ra_state *ra = &filp->f_ra;
- 	struct address_space *mapping = filp->f_mapping;
- 	struct inode *inode = mapping->host;
-+	gfp_t high_gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
- 	struct folio_batch fbatch;
- 	int i, error = 0;
- 	bool writably_mapped;
-@@ -2913,6 +2914,28 @@ ssize_t filemap_read(struct kiocb *iocb, struct iov_iter *iter,
- 				error = -EFAULT;
- 				break;
- 			}
-+
-+			/*
-+			 * A large read can charge a lot, for the page cache and
-+			 * for faulting in the buffer. Handle memory.high
-+			 * overage after each folio, as a batch of large folios
-+			 * can be big. Keep the batch, or reclaim could free
-+			 * folios not copied yet and they would be read again.
-+			 * The file may change meanwhile, so check its size and
-+			 * mappings again. Reads into kernel buffers skip this:
-+			 * their callers may hold other locks.
-+			 */
-+			if (user_backed_iter(iter) &&
-+			    !(iocb->ki_flags & (IOCB_NOWAIT | IOCB_WAITQ)) &&
-+			    mem_cgroup_over_high_pending()) {
-+				mem_cgroup_handle_over_high(high_gfp);
-+				isize = i_size_read(inode);
-+				if (iocb->ki_pos >= isize)
-+					break;
-+				end_offset = min_t(loff_t, isize,
-+						   iocb->ki_pos + iter->count);
-+				writably_mapped = mapping_writably_mapped(mapping);
-+			}
- 		}
- put_folios:
- 		for (i = 0; i < folio_batch_count(&fbatch); i++) {
-@@ -4385,6 +4408,7 @@ ssize_t generic_perform_write(struct kiocb *iocb, struct iov_iter *i)
- 	struct address_space *mapping = file->f_mapping;
- 	const struct address_space_operations *a_ops = mapping->a_ops;
- 	size_t chunk = mapping_max_folio_size(mapping);
-+	gfp_t high_gfp = mapping_gfp_constraint(mapping, GFP_KERNEL);
- 	long status = 0;
- 	ssize_t written = 0;
- 
-@@ -4401,6 +4425,13 @@ ssize_t generic_perform_write(struct kiocb *iocb, struct iov_iter *i)
- 		bytes = min(chunk - offset, bytes);
- 		balance_dirty_pages_ratelimited(mapping);
- 
-+		/*
-+		 * A large write can charge a lot before the task returns to
-+		 * userspace. Handle memory.high overage here too.
-+		 */
-+		if (!(iocb->ki_flags & IOCB_NOWAIT))
-+			mem_cgroup_over_high_throttle(high_gfp);
-+
- 		if (fatal_signal_pending(current)) {
- 			status = -EINTR;
- 			break;
+ 		switch (result) {
+ 		case SCAN_SUCCEED:
+ 		case SCAN_PMD_MAPPED:
 -- 
 2.53.1-Meta
 

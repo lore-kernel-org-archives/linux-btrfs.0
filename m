@@ -1,86 +1,62 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=79.135.106.111
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795388426;
-	b=bBTVTiDu2Bg2vpau9Fi8nZWWJ9HPhsPhXx6v0AFGCmrnLp7SyEp26HOGoiR+sK7afVsG
-	 bNnK+oGUVR1NUOIqV+/865sKvaaOk54OGYEKSw0Do6tbfgkvq4wAxa5k+ft7PlqJbAClQ
-	 OEVGiSKEUXjvn2ZrKLohZ9ZFBU5TRz73d3BwEaEBo8zfjcmpxp9kYbon38Y45Asy9VmbL
-	 GCDp+DGn0Ff+11ctbA9qTz6gVMd3+5Lo6BO+pnLbFDs+cS9JE8jzbIll/X01725aRl4Um
-	 OYGteOVWWJgbvUh1mxeEd1qOt8BJoI069eo7CGfi/q7nUVf5uFZRtAGyiIHSnsbbqtg==
+	t=1795389802;
+	b=JdwSjzrjaxaFPmORzYY1JmUK8nqkDOx6q3zpdA6Ny8lDHahqGewbM1F51jiYOfGFiAnt
+	 I14KXy72Ou9lQjXNX3PgXIB+B7icIaV+PXLUxt/rHcaDwOMGKxJvH6B2gY5P6kZjuoWXJ
+	 dWE80B8lTSwe08rKAVJ5ECM8h6sW7lrug/6ZkKaS7gE3CYD8K+jIclcAAN6p+qLsYnnYe
+	 Dd2khKHtqtOkDxNgoUgbUGGn/0gvtqNsi+0UaIEV5NGtMX5w87Gkl2HiZrkzxeadIttbj
+	 gn2RehMfCsSRrJtmGRYaZGO5SZwKYqIEwepmPB77Jbnw4ayrsEwu5DzUxLo0bD8MX8Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795388426;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
-	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=2IjCDMlL17A0i7YHPrRiq2iw1qde9cjSdY/1KpFUb5I=;
-	b=ZfZ/oPRN39zO6PcbajDeip8eplyHXQu3KXkwlgkkN3zbKgdIBd2PYcyAMe9IU3771m8b
-	 2fWZ800PEmA1MJqan6/+EBBPYjjSIeCTQ3WN08INfLjJgiD4Y9z5boEvrcDK29bkvD6om
-	 xBu8MjF79pAS7yummb7pKG8K6d5mxrsO7gwDrfoyFTbBmORZE1u3hvfGFl+Z6GPtheXTK
-	 n301K9OxMtLo+QEbDVnm9CrBwUXBYXALcCD/ozHa6fqM4FxJyu1yKELysCfOC7mMB5g3C
-	 X1Za7uMJZamWADyGTWir+G59AX4zPUBX+cRiYIlhHohRCMaByoE+Ohw+h1BAJQ5SgqA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795389802;
+	h=DMARC-Filter:DKIM-Signature:X-Pm-Submission-Id:From:To:Cc:Subject:
+	 Date:Message-ID:X-Mailer:MIME-Version:Content-Transfer-Encoding;
+	bh=9Ylcl2WCuGnCuk6ZD2VXvByahQ630SKNmfWNZIcDAQs=;
+	b=Krx1WdexX3WXygWh5xnu6/koG4tNEblAISo82CLyMuptBXACtOczobOX03nk9VVz9b3T
+	 ldiz1LXpE5CyaoZRD8LwfM3KCSrBa0TD4gtRUrJOqlQYN9Wm7qA/KId0nf4oIXHefxr5K
+	 34khnOCaaelO29jWguwR6xBgN+c/UDlPX6xNCKAxHV4LkqtZIxOUhv9xhLYp5YaYS6P+j
+	 XcKNXXN8gLVLJb3APVZi3Q7CkXfW6tKFWFOMxxJBqJs04lJD7yi5ucQv12Rt1q+L48juW
+	 LW+oi7F+w2Mld4HbnGMvFmHZQQnkPIvfHEWFUEwlYJmGKBxWIcqHMYVOXLYAd9R/2WQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Ihnimxxj;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Ihnimxxj;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dmarc=pass header.from=raidlab.org;
+	spf=pass smtp.mailfrom=raidlab.org;
+	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=1pK3OSxt;
+	arc=none smtp.remote-ip=79.135.106.111
+Received: from mail-106111.protonmail.ch (mail-106111.protonmail.ch [79.135.106.111])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6C8C0606A327
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 23:00:25 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6C8C0606A327
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4A5B5606A31D
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 23:23:21 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4A5B5606A31D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Ihnimxxj;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=Ihnimxxj
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 70AA4220F6
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 23:00:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795388423; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2IjCDMlL17A0i7YHPrRiq2iw1qde9cjSdY/1KpFUb5I=;
-	b=IhnimxxjSnbJoozjRgndO98zH6zS5zR7TCcn3ql+pIJz9f6AeFfs5a+Msq7B3qNbE394Tk
-	uEjESTP1l85TLqv0JNunRexB8/XeBHw3Z3ObCC6KriOYZRI5BDUKHbyxYe38ysSIuxs/UI
-	/ZCmHrJeBl3OVyWmlmix8kxzdKhJDHo=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795388423; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=2IjCDMlL17A0i7YHPrRiq2iw1qde9cjSdY/1KpFUb5I=;
-	b=IhnimxxjSnbJoozjRgndO98zH6zS5zR7TCcn3ql+pIJz9f6AeFfs5a+Msq7B3qNbE394Tk
-	uEjESTP1l85TLqv0JNunRexB8/XeBHw3Z3ObCC6KriOYZRI5BDUKHbyxYe38ysSIuxs/UI
-	/ZCmHrJeBl3OVyWmlmix8kxzdKhJDHo=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 5660013510
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 23:00:22 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id PE5SCgJ0A2v8PQAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 23:00:22 +0000
-From: Qu Wenruo <wqu@suse.com>
+	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=1pK3OSxt
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
+	s=protonmail; t=1795389798; x=1795648998;
+	bh=9Ylcl2WCuGnCuk6ZD2VXvByahQ630SKNmfWNZIcDAQs=;
+	h=From:To:Cc:Subject:Date:Message-ID:From:To:Cc:Date:Subject:
+	 Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
+	b=1pK3OSxtFy7AgF0RhUmsoZtZ2wUtoAbEUIMRBbz4ZFvRqn1HXsLivGB8R9HtdIi4U
+	 9g2r+Do2XHkCg4CxghH0JM4Pp1fYkQ0Xx5q1OUbM4QiZMxj0Zq8Wzu2zTyUN/8jI85
+	 pWnHQeqJXn4vTBcxJJCemb4Xk3UE2ECuUOFNd5vcDvvHmdGd1uh4sx9mx5PGW52uk0
+	 phl92rZS3Fx+TFOG//fOUw1k6yDepD/RjOjUcmvtXwDRe6qK8VhjLUnbrIYD74g7BX
+	 +YoTTbXoQnB0sO+4ERI2OUksVMyK+GEhrUMltLaPG6MVPjhX2paJJzlazAu7bBjwl/
+	 1XzsW/PfyCUBA==
+X-Pm-Submission-Id: 4jXlVs2P2Hz2ScQK
+From: Miroslav Cimerman <mc@raidlab.org>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: avoid NULL-ptr-dreference after a lowest_level search
-Date: Mon, 23 Nov 2026 09:29:59 +1030
-Message-ID: <1ddedb512e769f6f886a74471855472f4e62e682.1795388358.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.1
-In-Reply-To: <cover.1795388358.git.wqu@suse.com>
-References: <cover.1795388358.git.wqu@suse.com>
+Cc: David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	Qu Wenruo <wqu@suse.com>,
+	Damien Le Moal <dlemoal@kernel.org>,
+	linux-kernel@vger.kernel.org
+Subject: [PATCH 0/3] btrfs: zoned: handle a failed zone finish on one device
+Date: Sun, 22 Nov 2026 23:23:07 +0000
+Message-ID: <20261122232310.4099580-1-mc@raidlab.org>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -91,63 +67,66 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.998];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
 
-In handle_indirect_tree_backref(), if we got a corrupted backref item
-that has a valid level (e.g. 2), but higher than the subvolume root level
-(e.g. 0), btrfs_search_slot() will return 0 or 1 depending on if the key
-can be found in the leaf.
+When ZONE_FINISH fails on one device, btrfs can lose a completed write
+or turn read-only, even if the profile tolerates the failed device.
 
-But the returned path->nodes[] will be all be NULL.
+1/3: since 7.3, a failed zone finish fails the ordered extent whose
+completion started it. The data is written, but the file keeps the old
+data in the range of that extent.
 
-Later we call btrfs_node_blockptr(path->nodes[level]) will trigger a
-NULL pointer dereference.
+2/3: since 6.18, one failed device of a RAID1 metadata block group turns
+the filesystem read-only. The patch tolerates the failure when the zones
+are full. A partly written block group still stops at the first error.
+Finishing its other zones could make the next mount fail.
 
-Fix it by checking if we got a valid eb pointer before calling
-btrfs_node_blockptr(), and reject it as we can not find the parent tree
-block.
+3/3: relocation hits a WARN_ON() when a device fails ZONE_FINISH.
 
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/backref.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Tested in QEMU with KASAN on for-next 65101fe10b30, with two zoned
+null_blk devices (1 GiB, 16 MiB zones, zone capacity 12 or 16 MiB). A
+test-only module parameter fails the next ZONE_FINISH on one device.
+Each RAID1 case ran with a failure on each device:
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index d56476b21fe8..83301ffbfa87 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -3336,7 +3336,7 @@ static int handle_indirect_tree_backref(struct btrfs_trans_handle *trans,
- 		path->slots[level]--;
- 
- 	eb = path->nodes[level];
--	if (btrfs_node_blockptr(eb, path->slots[level]) != cur->bytenr) {
-+	if (!eb || btrfs_node_blockptr(eb, path->slots[level]) != cur->bytenr) {
- 		btrfs_err(fs_info,
- "couldn't find block (%llu) (level %d) in tree (%llu) with key " BTRFS_KEY_FMT,
- 			  cur->bytenr, level - 1, btrfs_root_id(root),
+                            for-next             with the series
+
+  RAID1 or single data, an  last 1 MiB reads     all new data
+  O_DIRECT overwrite fills  old data, first
+  the block group           read gets EIO
+
+  RAID1 metadata fills      forced read-only     stays writable,
+  a block group                                  remount works
+
+  relocation, RAID1 or      WARN_ON()            two warning
+  single data                                    messages
+
+The relocated block groups are partly written, so 2/3 does not tolerate
+the failure there.
+
+The btrfs self-tests pass. Degraded-mount tests and parallel writers
+show the same failures as on for-next. These are the bugs fixed by my
+pending series [1], [2] and [3]. fstests was not run.
+
+Found with FuzzyRAID, a fault-injection tester for RAID that is not
+public at the moment. It ran the series on an older for-next with my
+other pending zoned fixes. Its runs showed no lost write and nothing
+new. The analysis, the fixes and the tests were done with the help of
+an LLM. I reviewed everything.
+
+[1] https://lore.kernel.org/linux-btrfs/20261121134550.216217-1-mc@raidlab.org/
+[2] https://lore.kernel.org/linux-btrfs/20261121205657.1108500-1-mc@raidlab.org/
+[3] https://lore.kernel.org/linux-btrfs/20261122034826.2333981-1-mc@raidlab.org/
+
+Miroslav Cimerman (3):
+  btrfs: zoned: do not fail an ordered extent on a zone finish error
+  btrfs: zoned: tolerate a failed zone finish on a full block group
+  btrfs: zoned: do not WARN when zones fail to finish before relocation
+
+ fs/btrfs/relocation.c |  5 +++-
+ fs/btrfs/zoned.c      | 59 +++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 55 insertions(+), 9 deletions(-)
+
+
+base-commit: 65101fe10b3008186b813b628ee3a611b0e70ce6
 -- 
-2.56.1
+2.53.0
 

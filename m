@@ -1,51 +1,51 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=95.215.58.136
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=91.218.175.192
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795315678;
-	b=Df8yJ+zicjmSRGCtDOdwL/ZfQyXbJDD6HvCMOF2+sLs6zciPFX4zNeuGCIpSnUlwjGEH
-	 OuMTZux4eWjTaU0uENyWoEmkGVGKsqZTrxd8GjTuwOOBsmqOZjXzqns3v87q7nxfN4J3p
-	 6YzhN6XVQZgGZjBDCRYhkw4kdmbqBMEZKMxtcJNGBTt913GVNCJpyhQYeE9bRwxb1TvJD
-	 Df1L8h+3KVQpPwz/Lc1RxqBSDxQP6fLUVCItT1tnq0LKYAvrwIYmP0ZILx9V6LG67fPZH
-	 8MTirR7ReMHs0LYSQfS5sVRG5jLGD0+yVj+R3L+MpMZu0yLTp3Jw05EuF+7su11jMbw==
+	t=1795315680;
+	b=3UeqYyumT52xCvt/uXzETR+8Sx//6u/pZ+256/sJzj9EV7ZqIptlzt9CB2ywZCyLuPHV
+	 y/1dpGWVIHzTK3Wr5mAp6nUR37215/g5b0HSvY/1/OBXbKYdJrrI2fxd9yyao9rxm5wKy
+	 vzg3EuK7J9bLcV+VEdJog8kWuu3K+DbeZpylkWcU68ur6+JHs8hfiA8l97ok1zaofkdmm
+	 VDjpm5UwycW8syoJtguu5mZfMtBIzIfB87AAizvKw1W7j999kVAId5qMT+AedvVuplPNj
+	 zno9QJlO+SnyIBcZBiJTcJusveVX8+Gp2Y+7uoVJtN9o/l/Cknbrsr/WYa/tH/hrQpQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795315678;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795315680;
 	h=DMARC-Filter:X-Envelope-To:DKIM-Signature:X-Envelope-To:Received:
 	 X-Mizu-Trace-ID:X-Migadu-Flow:From:To:Cc:Subject:Date:Message-ID:
 	 X-Mailer:In-Reply-To:References:MIME-Version:
 	 Content-Transfer-Encoding;
-	bh=UXpp8sp/GRVRsUtSepKaptGcuvVFgYldxI029IWKwww=;
-	b=wqFjXYRerPqECKVWunoICkgxeTUHB9ZFwyzQ7+lW9DHpDMrt0hfD3CtwY8nayj1SOY6q
-	 WVOErYJfQtwV+zbzIZcpWkQi8ZpsFGKjfz0hab53WItqcZFPxDyN8FT6hqZfHfEk/eT1y
-	 tE5+XOlLFAQtunetKGcLCpHvcvhJzIdyMRSbWbkv3+S0rZPgHctwwEZcK74grdTTX1AnU
-	 fJ2tUecrAA/zF7F+xWR6iFpJEvUN3uHM00fKr1x0kPjzwF4Gi2ZwwhvV+0ni4UlPvuZmZ
-	 Mn5W6vS0xOkX2n2ISqeecBOw/MiiSv3CFt+4Z6qGoAdhJcPKghGj7zbc5GqlUqprvvQ==
+	bh=n0ndatV38PZlrFixRGq/e4s2juhZcDcXxdZkxAcE0Zo=;
+	b=sVspJ7yAKue7GqHDzd1NRVQvzxb4iWk4LUe9LfwUcNj2cZ9bHnlZYMHKgS2NYX48I4ob
+	 wN8YHlquhhc9Zuog1Ecjl8YEW9yqbTv1lBR34Md4BQ8XC4Eounjloboa04eRwYm1dapVx
+	 kwvr5cz//mLxo7nBTWB/vJk19CEvuukylFEOmmrCaHq52d5jLTErkfI9qOiv6GjHtG6k3
+	 auCF8Sx06OFte9Op5535hDOMwcPNTG/TCxWfri0QmiuYJTLji5bGzZHMltEnJQ8wOPqmX
+	 xaChfs7dabrvGlyFs8UI+LprMDcGGwZmIOgYrlYEBmeYAH9Z/Wt1PrG85ntlIwtolug==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=linux.dev;
 	spf=pass smtp.mailfrom=linux.dev;
-	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=SB3XWdtX;
-	arc=none smtp.remote-ip=95.215.58.136
-Received: from mta1.migadu.com (out-136.mta1.migadu.com [95.215.58.136])
+	dkim=pass header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=PDjGsYxU;
+	arc=none smtp.remote-ip=91.218.175.192
+Received: from mta0.migadu.com (out-192.mta0.migadu.com [91.218.175.192])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 057C8606A333
-	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:47:57 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 057C8606A333
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A2289606A691
+	for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2026 02:47:59 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A2289606A691
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=linux.dev
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=linux.dev
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=SB3XWdtX
+	dkim=pass (1024-bit key, unprotected) header.d=linux.dev header.i=@linux.dev header.a=rsa-sha256 header.s=key1 header.b=PDjGsYxU
 X-Envelope-To: linux-btrfs@vger.kernel.org
-DKIM-Signature: a=rsa-sha256; bh=4VmPcRtrp5VsXyo2a9LQORInZeHKK19ZabzxdfHobDU=;
+DKIM-Signature: a=rsa-sha256; bh=kDOoaIFLPqlwHJe2rIGpKq27GnOdOA9p/d3hHbZ9COc=;
  c=simple/simple; d=linux.dev;
  h=from:to:subject:date:message-id:mime-version:content-type; s=key1;
- t=1795315676; v=1; x=1795920476;
- b=SB3XWdtX9vVAhV2yqIyXR+Z3FAT3/zOTjYraEr2dZNCwA6Bf6Tyn/9wM94ZqX1O3zQFQDyHK
- w+qv72ybnzH9+o2vqiQ+uVhC/3MoHj0fm0ZzoW+xl/oBGO1XZ8JfBvM2xoNMl5z7VKJu3Odj5Cv
- /kJz20WwIl4HstMbzIeJdiL0=
+ t=1795315678; v=1; x=1795920478;
+ b=PDjGsYxU+zpTvZpMs4x2nP10+LGyeyGf1BZIV6pO0b6t3VzD/+J/hkCRUZJAyp92zbUhFODM
+ vgEfMn6tNx/EkUAQDbic6/RNTED+jFeUSL57dvliBLixiINl9wMpN5zM6KFzl4YItd52QTQbg3a
+ l8ey5JPc7wobUSIwu6riEG8Q=
 X-Envelope-To: linux-btrfs@vger.kernel.org
-Received: by smtp.migadu.com with ESMTPS id 6514b70c0cb31dcf;
-	Sun, 22 Nov 2026 02:47:56 +0000
-X-Mizu-Trace-ID: 6514b70c0cb31dcf
+Received: by smtp.migadu.com with ESMTPS id 70b8762278188cd6;
+	Sun, 22 Nov 2026 02:47:57 +0000
+X-Mizu-Trace-ID: 70b8762278188cd6
 X-Migadu-Flow: FLOW_OUT
 From: Shakeel Butt <shakeel.butt@linux.dev>
 To: Tejun Heo <tj@kernel.org>,
@@ -73,9 +73,9 @@ Cc: Johannes Weiner <hannes@cmpxchg.org>,
 	linux-fsdevel@vger.kernel.org,
 	linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Subject: [RFC PATCH 1/7] memcg: add helpers to handle memory.high overage in long operations
-Date: Sat, 21 Nov 2026 18:47:31 -0800
-Message-ID: <20261122024737.2741569-2-shakeel.butt@linux.dev>
+Subject: [RFC PATCH 2/7] mm/gup: handle memory.high overage while populating
+Date: Sat, 21 Nov 2026 18:47:32 -0800
+Message-ID: <20261122024737.2741569-3-shakeel.butt@linux.dev>
 X-Mailer: git-send-email 2.53.1
 In-Reply-To: <20261122024737.2741569-1-shakeel.butt@linux.dev>
 References: <20261122024737.2741569-1-shakeel.butt@linux.dev>
@@ -90,92 +90,122 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Since commit c9afe31ec443 ("memcg: synchronously enforce memory.high
-for large overcharges"), a charge that can block handles memory.high
-overage right away once more than a batch is pending. It reclaims and
-sleeps with whatever locks the caller holds, so tasks in other cgroups
-that need those locks wait too.
+mlock(), mlockall(), mmap() with MAP_POPULATE or MAP_LOCKED, and
+MADV_POPULATE_READ/WRITE can fault in a lot of memory in one call,
+with mmap_lock held. When their charges can block, the charge path
+throttles them for memory.high with mmap_lock still held. In a VM with
+THP on, mlock() of an 80M MADV_HUGEPAGE range under memory.high=64M
+made another thread wait up to 17.2s to mmap(), and a task in another
+cgroup wait up to 15.3s to read the process's /proc/<pid>/cmdline.
+THP charges in VMAs without MADV_HUGEPAGE can't block under the
+default defrag setting, so they are not throttled at all: mlock(512M)
+reached 513M.
 
-A later patch removes that step. Operations that can charge a lot in
-one call then need another place to handle the overage: a point in
-their loop where they hold no locks, or only the locks of their file.
+Throttle these calls with mmap_lock dropped instead. The populate
+loops, __mm_populate() and madvise_populate(), now fault in at most
+2MiB per GUP call. Between calls, if more than a batch of overage is
+pending, they drop mmap_lock, handle it, and go on. GUP itself doesn't
+change. One fault can still charge a whole folio.
 
-Add two helpers for them. mem_cgroup_over_high_pending() says whether
-more than a batch is pending, the threshold the synchronous step uses.
-mem_cgroup_over_high_throttle() handles the overage if so; its comment
-says where to call it and which gfp mask to pass. Export
-__mem_cgroup_handle_over_high() for filesystems built as modules.
+With this patch, mlock(512M) stays at 84M, and populating 2G with no
+limit takes as long as before. The mmap_lock stall goes away when a
+later patch removes the synchronous step.
 
 Signed-off-by: Shakeel Butt <shakeel.butt@linux.dev>
 ---
- include/linux/memcontrol.h | 34 ++++++++++++++++++++++++++++++++++
- mm/memcontrol.c            |  1 +
- 2 files changed, 35 insertions(+)
+ mm/gup.c      |  9 +++++++--
+ mm/internal.h | 27 +++++++++++++++++++++++++++
+ mm/madvise.c  | 11 +++++++++--
+ 3 files changed, 43 insertions(+), 4 deletions(-)
 
-diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 980358bc6f49..77115fe1873e 100644
---- a/include/linux/memcontrol.h
-+++ b/include/linux/memcontrol.h
-@@ -942,6 +942,31 @@ static inline void mem_cgroup_handle_over_high(gfp_t gfp_mask)
- 		__mem_cgroup_handle_over_high(gfp_mask);
- }
+diff --git a/mm/gup.c b/mm/gup.c
+index 7605da0e06d8..d93d89f6aad0 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -1951,6 +1951,7 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
+ 	end = start + len;
  
-+/*
-+ * True if the current task has more than a batch of memory.high or
-+ * memory.swap.high overage pending. Each charge that finds overage
-+ * counts at least a batch.
-+ */
-+static inline bool mem_cgroup_over_high_pending(void)
-+{
-+	return unlikely(current->memcg_nr_pages_over_high > MEMCG_CHARGE_BATCH);
-+}
+ 	for (nstart = start; nstart < end; nstart = nend) {
++		populate_handle_over_high(mm, &locked);
+ 		/*
+ 		 * We want to fault in pages for [nstart; end) address range.
+ 		 * Find first corresponding VMA.
+@@ -1976,9 +1977,13 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
+ 		/*
+ 		 * Now fault in a range of pages. populate_vma_page_range()
+ 		 * double checks the vma flags, so that it won't mlock pages
+-		 * if the vma was already munlocked.
++		 * if the vma was already munlocked. Do one chunk at a time,
++		 * see POPULATE_CHUNK_SIZE. On error, nend skips the rest of
++		 * the VMA.
+ 		 */
+-		ret = populate_vma_page_range(vma, nstart, nend, &locked);
++		ret = populate_vma_page_range(vma, nstart,
++					      populate_chunk_end(nstart, nend),
++					      &locked);
+ 		if (ret < 0) {
+ 			if (ignore_errors) {
+ 				ret = 0;
+diff --git a/mm/internal.h b/mm/internal.h
+index de4593b3e3b6..12f7b4b1254f 100644
+--- a/mm/internal.h
++++ b/mm/internal.h
+@@ -948,6 +948,33 @@ extern long populate_vma_page_range(struct vm_area_struct *vma,
+ 		unsigned long start, unsigned long end, int *locked);
+ extern long faultin_page_range(struct mm_struct *mm, unsigned long start,
+ 		unsigned long end, bool write, int *locked);
 +
 +/*
-+ * Handle the current task's memory.high overage if more than a batch is
-+ * pending, for operations that can charge a lot before they return to
-+ * userspace. The task may reclaim and sleep here, so call it only where
-+ * other tasks won't wait for it: with no locks held anywhere up the call
-+ * chain, or only the locks of the file being worked on. Pass GFP_KERNEL
-+ * if no filesystem locks are held, and mapping_gfp_constraint() in file
-+ * read and write paths.
++ * __mm_populate() and madvise_populate() fault in at most
++ * POPULATE_CHUNK_SIZE at a time, and handle memory.high overage between
++ * chunks with mmap_lock dropped, so other tasks don't wait for them.
 + */
-+static inline void mem_cgroup_over_high_throttle(gfp_t gfp_mask)
++#define POPULATE_CHUNK_SIZE	SZ_2M
++
++static inline unsigned long populate_chunk_end(unsigned long start,
++					       unsigned long end)
 +{
-+	if (mem_cgroup_over_high_pending())
-+		__mem_cgroup_handle_over_high(gfp_mask);
++	return min(end, round_down(start, POPULATE_CHUNK_SIZE) +
++			POPULATE_CHUNK_SIZE);
 +}
 +
- unsigned long mem_cgroup_get_max(const struct mem_cgroup *memcg);
- 
- void mem_cgroup_print_oom_context(const struct mem_cgroup *memcg,
-@@ -1376,6 +1401,15 @@ static inline void mem_cgroup_handle_over_high(gfp_t gfp_mask)
- {
- }
- 
-+static inline bool mem_cgroup_over_high_pending(void)
++static inline void populate_handle_over_high(struct mm_struct *mm,
++					     int *locked)
 +{
-+	return false;
++	if (!mem_cgroup_over_high_pending())
++		return;
++	if (*locked) {
++		mmap_read_unlock(mm);
++		*locked = 0;
++	}
++	mem_cgroup_handle_over_high(GFP_KERNEL);
 +}
 +
-+static inline void mem_cgroup_over_high_throttle(gfp_t gfp_mask)
-+{
-+}
-+
- static inline struct mem_cgroup *mem_cgroup_get_oom_group(
- 	struct task_struct *victim, struct mem_cgroup *oom_domain)
- {
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 091401cecf39..6d147153bd06 100644
---- a/mm/memcontrol.c
-+++ b/mm/memcontrol.c
-@@ -2707,6 +2707,7 @@ void __mem_cgroup_handle_over_high(gfp_t gfp_mask)
- out:
- 	css_put(&memcg->css);
- }
-+EXPORT_SYMBOL_GPL(__mem_cgroup_handle_over_high);
+ bool mlock_future_ok(const struct mm_struct *mm, bool is_vma_locked,
+ 		unsigned long bytes);
  
- /*
-  * Called after @nr_pages were charged to @memcg. If @memcg or one of its
+diff --git a/mm/madvise.c b/mm/madvise.c
+index 2d54cb9863ea..c77924e52d79 100644
+--- a/mm/madvise.c
++++ b/mm/madvise.c
+@@ -992,8 +992,15 @@ static long madvise_populate(struct madvise_behavior *madv_behavior)
+ 	long pages;
+ 
+ 	while (start < end) {
+-		/* Populate (prefault) page tables readable/writable. */
+-		pages = faultin_page_range(mm, start, end, write, &locked);
++		/*
++		 * Populate (prefault) page tables readable/writable, at most a
++		 * chunk at a time, see POPULATE_CHUNK_SIZE.
++		 */
++		pages = faultin_page_range(mm, start,
++					   populate_chunk_end(start, end),
++					   write, &locked);
++		if (pages >= 0)
++			populate_handle_over_high(mm, &locked);
+ 		if (!locked) {
+ 			mmap_read_lock(mm);
+ 			locked = 1;
 -- 
 2.53.1-Meta
 

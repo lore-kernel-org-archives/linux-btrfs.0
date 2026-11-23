@@ -1,64 +1,58 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795449741;
-	b=kLlFzAYFQhYm2pMOs0WnQ7V9ys6lq13C0/YRgidF7pY6m+sJ7DA8X/sHJrkxmiNW6xD1
-	 OSaGxnKcklNhbXJbaAUh9xcWN/dB/p54jSMbOrekJVmHbqSDF6pqSD2OMxB8hvO/0JLQ7
-	 bUxVyB4x4H2lXAY+GmrH1GIs48X9kyFM1gx2wwaHwV2rDUAKEcvEXLAQuFK06SuCn5taP
-	 WKdhlMo1nN/vcVFDu0KrwPiJclNon8PvTEo9KNlUZJQg147epQnyk2SIMS5BezqrzdZsy
-	 2nf7X90fys4kelW311wfKeAKh/8pYUhB1LlykTXpJaI3qaT/Z/KFhExLJ6drOxq8TuA==
+	t=1795454692;
+	b=FMKIh++ojKXLe1NN69qYwFRcIFqsuqSnwUd4rkqSdkyfy58Twg1DyfEZvt00HQhkDdyY
+	 HXQhh3YInZ4Rq8yxpI4aJpKFXPz/KBL7p2wg3chylwuoUcyLuA1M9+gJcF0XG8BrL+uLF
+	 bn0Zkuk9YDDXIql6x+OBCMWsscP5+MAyitKGNyCx79hFIZa0Z+QlfXXGoxuBikLO9s9hn
+	 5aSMxC9paX/SIQlCBsXss6MDmwqajjQZStMUYhxFcqB9I4gDWj9dgp0jrQ5g4dnS/xh/n
+	 HLVsQUvUL96dPx0TIfgUVpEY2+Q8hyS8LT62F15L/8LqdLXJCuc9FEKM2q5wgIxpPYA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795449741;
-	h=DMARC-Filter:Received:Received:Received:Date:From:To:Cc:Subject:
-	 Message-ID:Reply-To:References:MIME-Version:Content-Type:
-	 Content-Disposition:In-Reply-To:User-Agent:X-Rspamd-Pre-Result:
-	 X-Rspamd-Queue-Id:X-Rspamd-Pre-Result:X-Rspamd-Action:X-Rspamd-Server:
-	 X-Spam-Level:X-Spamd-Result:X-Spam-Flag:X-Spam-Score;
-	bh=wnGk+sZoRKJBsZVbSz7KhojmbFgQwaEfgMYM64LhpV4=;
-	b=ROg81a1CupZceuSIr9Wz72H30Voh+W+eaw0AXFZGmUZv/P7H3Rc9w9qzoyWX4MALzNk0
-	 3sze+s7iOQ5tiOCXf8jBUISdbxyWBRxNav3maVD7+Pcw3TQikrYxKmB/XYwP/J0STEkAF
-	 SxIl0L7dqP7KK5O0wWMtP9YSGgnCTTplNkP+v/e1B3nkiAnHdg/ve9PysZdsncLsEdypo
-	 dyjQDLycQ2kycaVUUE1FK1Fpw6JYYiCItwdI+GiyRlzYoArd/ABFYN/NikupHSr5MQt4z
-	 FBkko58atW+u+XuggaCWHX2mIulNkgJZ3JHskXNifomm2fDNR+OBDQ+gOzpWHGvrkVQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795454692;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=eoDSTZe53wuVRCyLceRxiACx+/d1rzfD6YrehQciITE=;
+	b=xgtOn1Xzr/lZPIACg5Qy8IV33yOYjv6V7g7V7BDP+Gbupvzfmdn5Fw3lu3EyZ8NHlq43
+	 GHWAiwcFiZ0MqFOjgxjvMhL/HJDrO1tnWcxTow4iU88PUv9g7v8ZoHI3DIBWTCYMcjATT
+	 KMzsKo8xw41sgiZI4PRIUFuV60uqdH+UmZzRW4xm7rF2wiimdOUYwIezA593EU+EUCa32
+	 txbAeOjlxj5BgnZP9whQl+Fp4195SknTlT4VyV9L9+xp4yuI29PJygfRxgTKu4CTFl2YF
+	 MQ7475Z59s92VSEQ8aapGhVIM380HITz+s8MjYzNzeSrN5+nTwfICU4/i/+OfvWIDUQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=suse.cz;
-	spf=pass smtp.mailfrom=suse.cz;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=op+ZuC35;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 418D2606A31F
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 16:02:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 418D2606A31F
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 83AEE1F390;
-	Mon, 23 Nov 2026 16:02:19 +0000 (UTC)
-Authentication-Results: smtp-out2.suse.de;
-	none
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 522C51352B;
-	Mon, 23 Nov 2026 16:02:19 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 6dKWC4tjBGs7PAAAD6G6ig
-	(envelope-from <dsterba@suse.cz>); Mon, 23 Nov 2026 16:02:19 +0000
-Date: Mon, 23 Nov 2026 17:02:18 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: reject too high tree level during backref walk
-Message-ID: <20261123160218.GC3245297@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1795388358.git.wqu@suse.com>
- <95c15a8e7aaff788ba9582186c2345db7cd52dfe.1795388358.git.wqu@suse.com>
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AE703606A337;
+	Mon, 23 Nov 2026 17:24:52 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=op+ZuC35
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 449DD1F000D3;
+	Mon, 23 Nov 2026 17:24:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795454692;
+	bh=eoDSTZe53wuVRCyLceRxiACx+/d1rzfD6YrehQciITE=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=op+ZuC351+ONYtuuLlHO0lsJWkjaMKyvYPMJvVxtYg8e76pOzg2iG8XYXtKleSeZn
+	 oEb8ictwuRpPIszasEO8sIHZzqudHZJfqfYOBPdeHXxvOZXT999y59y+y6cxpD0YgM
+	 wlPIY+xr5Gtw0udgB2Y1Ci9fpB9Ke8B3nmvrM/SMogTEFNzuiW/muL63/bMF6ubxhT
+	 6X16uESC4UhaEQJxa4J+6VIRz0uNRyUyKjt3JgjYcrEFZ76aeU0nSZtcWxF6FJk0L6
+	 LtUlz6Qt27seYxm+FAguGf7J9J/4OX2dxsEk3kAayl8rE3zf4mSyREoZmrp5Ot/wbd
+	 51rqo7qwrvqfQ==
+Date: Tue, 24 Nov 2026 01:24:43 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Anand Jain <asj@kernel.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net
+Subject: Re: [PATCH 01/21] fstests: introduce _require_clone_mount() helper
+Message-ID: <awR2y3ibb46JaqwM@zlang-mailbox>
+Mail-Followup-To: Anand Jain <asj@kernel.org>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net
+References: <cover.1791272793.git.asj@kernel.org>
+ <245314b2efd616b7ecf09f74e2a775e44e10ab43.1791272793.git.asj@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -70,44 +64,48 @@ Precedence: list
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
-In-Reply-To: <95c15a8e7aaff788ba9582186c2345db7cd52dfe.1795388358.git.wqu@suse.com>
-User-Agent: Mutt/1.5.23.1-rc1 (2014-03-12)
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Queue-Id: 83AEE1F390
-X-Rspamd-Pre-Result: action=no action;
-	module=replies;
-	Message is reply to one we originated
-X-Rspamd-Action: no action
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Spam-Level: 
-X-Spamd-Result: default: False [-4.00 / 50.00];
-	REPLY(-4.00)[]
-X-Spam-Flag: NO
-X-Spam-Score: -4.00
+In-Reply-To: <245314b2efd616b7ecf09f74e2a775e44e10ab43.1791272793.git.asj@kernel.org>
 
-On Mon, Nov 23, 2026 at 09:29:58AM +1030, Qu Wenruo wrote:
-> In handle_indirect_tree_backref(), if we got @cur->level set to 7
-> (the max level valid), @level will be 8, then later path->slots[level]
-> and path->nodes[level] will all go beyond the array boundary.
+On Tue, Oct 06, 2026 at 04:55:27PM +0800, Anand Jain wrote:
+> Add _require_clone_mount() to common/rc to check whether the filesystem
+> supports mounting cloned block devices simultaneously. For Btrfs, it
+> verifies kernel support for the temp_fsid feature, while skipping
+> unsupported filesystem types with _notrun.
 > 
-> Fix it by rejecting such high level before calling btrfs_search_slot().
-> 
-> Link: https://sashiko.dev/#/bug/linux-8a4f92b4-daf7-4f57-8369-8e6ef323652f
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
+> Signed-off-by: Anand Jain <asj@kernel.org>
 > ---
->  fs/btrfs/backref.c | 5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index a0fb90b7a9ed..d56476b21fe8 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -3316,6 +3316,11 @@ static int handle_indirect_tree_backref(struct btrfs_trans_handle *trans,
->  	}
->  
->  	level = cur->level + 1;
-> +	if (level >= BTRFS_MAX_LEVEL) {
 
-For EUCLEAN conditions you can add unlikely()
+Reviewed-by: Zorro Lang <zlang@kernel.org>
+
+>  common/rc | 15 +++++++++++++++
+>  1 file changed, 15 insertions(+)
+> 
+> diff --git a/common/rc b/common/rc
+> index 3958ac934980..7868e6d311a2 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -6124,6 +6124,21 @@ _force_inplace_writes()
+>  	esac
+>  }
+>  
+> +_require_clone_mount()
+> +{
+> +	case "$FSTYP" in
+> +	xfs|ext4|f2fs)
+> +		# No kernel-side restriction; always supported
+> +		;;
+> +	btrfs)
+> +		_require_btrfs_fs_feature "temp_fsid"
+> +		;;
+> +	*)
+> +		_notrun "$FSTYP does not support mounting cloned devices simultaneously"
+> +		;;
+> +	esac
+> +}
+> +
+>  # Test that a filesystem can do writes to a file in place (without allocating
+>  # new extents, without Copy-On-Write semantics).
+>  _require_inplace_writes()
+> -- 
+> 2.43.0
+> 

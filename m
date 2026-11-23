@@ -1,81 +1,86 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795466275;
-	b=nSX4le7FbeyM+/AQUJzIPhxzSkYTtRm79tTcPtOUqu726/I98un82s+nMF4jA8sVVMwL
-	 p6Eaky3L56V/nWNZMrd5kUGgQC6w/v6AKZu0Uai0avcj+rIadSOI9W0EdIBkeIGZTOT7T
-	 SrqEd7bLTmzTfRtzImxX5sYBozZxWQoC6mAxYYsR2AKT+QuoQixmW8qcLE52+YQzVNfFv
-	 MZ+Gv6xgUjFV0TBuP1nQTH0F2zHqJfBOGiwIkWd4ExJZrnGElswYjiQ2ecIQhbrlUkilk
-	 tmgmg7YCXEoPlBAXBq4xn4T5aCyThdQA3UjAPhIAcFOt7EbloC8tgBHJm0mVNFro6eA==
+	t=1795466276;
+	b=UuLlaqNPqG2wEzk34NyCuWAP68pWoLbU8PArxhv1q1EYnz3y0viNxNH6wxVhAcXLw6L/
+	 IgwR83fu4LlYr6UDsGsoJntigJPE7rzhs5Jj4iK2NdrJaZ9uCTeQISm9w4wvjm993D5cB
+	 tGBARAWwcRqyWoBjfgFZ3ZczqPhFvhQPz0A5H1W3St6lyucMhAJcIMaDq8l3+blQhK4Gy
+	 Mwnk8QKR143xGpfAu1lkaG1/aqoL5h73hGxbuCHfs8/wVV6f6mxDuhCumyG8+b9+vnXWG
+	 mN5kmA5sxO8SSLZLZiRQeWj8Npi7aV1yBBZJ+p7+t8AP4jFhnUeax7D7b2nlNa7zaCg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795466275;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795466276;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
-	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=8HmEVtSkIcs55r/J5sZJ6pcCAJfc+RTKMxVtQ6HToPg=;
-	b=fI6q33GudLE+NjkEwpIu1EuNu7OokhkTwuKsp6inFBU6+CRpZ4zTIApH7N9FUcgmJC88
-	 MlmP8AkvA5CB+3NbZo9+r+fxW0ARAPwUvyRq/5AT1T/7Z8YznGSqfDDUVo1NOfv5IAuvu
-	 HShHJs9mKIwu07/Yhnmob3OkcgNMWc6CkiQiJfBXhgdozEF0+MYYApVvtp1ONoNUt7ry8
-	 ijumP/XQa0jxDuG2rHyAArKnjB34xRDpcqJpgsWcsEhsMzDMnPmmlTq+WdwD0VHOba9+Y
-	 uEEdP9oaJLYbJjl0GaSDG4fqLOWTJVct3PZRitRLlDx2+2OhnZDuktJeCCDoUPSCmvw==
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
+	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
+	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
+	bh=VtobZ+SW1Ds0uxvopwWhXMBNb0lFM8WhmT2o5KWRM9c=;
+	b=N3pX6JpUCobubARLCtQTSCQ1NOifNb+LxXUjAwxAwQsklCSC1mjlhI94fgL6ctuuBHjU
+	 uMb2MYJ5WLTQ6RxlVK+nmxOQtwOYBmWZXcrue+VVpZnze2hDOIkXde5Qmb8GjHNIHRpZV
+	 OqvN0qPZqBzueU6EN/fG6YYquSwJSQQqzfT4qfb55/mxCJvBoePyAKE+8BzOKdWBkjs9c
+	 MWbkKEQjw+Zjo+FcWY3Ed7D553C1AIpYs2xl8ijsEc6Gkwv/a5vbFj1oV6+FGFRnFPc3C
+	 OFXtLK2ni6/1VMNcYWRs62a67efi5mirLcjJBOPpTvTN1o4GY+GVV6myLXFaQL3jz+Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jHjQnJ4o;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jHjQnJ4o;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=RHF3+Yuh;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=RHF3+Yuh;
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A9421606A321
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:54 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A9421606A321
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 31592606A336
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:56 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 31592606A336
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jHjQnJ4o;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=jHjQnJ4o
-Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=RHF3+Yuh;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=RHF3+Yuh
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id B1A8622076
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:52 +0000 (UTC)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 63C901FB5A
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:54 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795466272; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=8HmEVtSkIcs55r/J5sZJ6pcCAJfc+RTKMxVtQ6HToPg=;
-	b=jHjQnJ4o9csLrhqqKC+WMFO6lhO02vQP05xNfxbnecvMDBhtLciSmNOy7/zJnPBrn0dyF9
-	xLY8daNlNsOKprNxQ2DaB7SO3SqAO1OahQQWwxCW8XWgnXUjyCKhl7JVIAk0j22SaZH0+q
-	WqM7F4By8/8JjoRa7D7m7Gi0o/UZEpA=
-Authentication-Results: smtp-out1.suse.de;
-	dkim=pass header.d=suse.com header.s=susede1 header.b=jHjQnJ4o
+	t=1795466274; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VtobZ+SW1Ds0uxvopwWhXMBNb0lFM8WhmT2o5KWRM9c=;
+	b=RHF3+YuhLsNKybbOTISh2o1LgV+YUUX++Rsg3qTznKnys1K9566yURaCC6pUNv1/oxZZsw
+	pEypkg4fC9Xs3My1dBE3iHqVoPmE13dbxRA0B0/s0r9Ywj7QJeBDF813LF1S0f9m3kfulb
+	VkYAbRq6FQWq/tVTX4wVDQMYL1aJ/ik=
+Authentication-Results: smtp-out2.suse.de;
+	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795466272; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=8HmEVtSkIcs55r/J5sZJ6pcCAJfc+RTKMxVtQ6HToPg=;
-	b=jHjQnJ4o9csLrhqqKC+WMFO6lhO02vQP05xNfxbnecvMDBhtLciSmNOy7/zJnPBrn0dyF9
-	xLY8daNlNsOKprNxQ2DaB7SO3SqAO1OahQQWwxCW8XWgnXUjyCKhl7JVIAk0j22SaZH0+q
-	WqM7F4By8/8JjoRa7D7m7Gi0o/UZEpA=
+	t=1795466274; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:
+	 content-transfer-encoding:content-transfer-encoding:
+	 in-reply-to:in-reply-to:references:references;
+	bh=VtobZ+SW1Ds0uxvopwWhXMBNb0lFM8WhmT2o5KWRM9c=;
+	b=RHF3+YuhLsNKybbOTISh2o1LgV+YUUX++Rsg3qTznKnys1K9566yURaCC6pUNv1/oxZZsw
+	pEypkg4fC9Xs3My1dBE3iHqVoPmE13dbxRA0B0/s0r9Ywj7QJeBDF813LF1S0f9m3kfulb
+	VkYAbRq6FQWq/tVTX4wVDQMYL1aJ/ik=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7F5CA13505
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:51 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3D9AD13505
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:52 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id 3J8WMh6kBGuQTwAAD6G6ig
+	id 3J8WMh6kBGuQTwAAD6G6ig:T2
 	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:51 +0000
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 20:37:52 +0000
 From: Qu Wenruo <wqu@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 0/2] btrfs: minor fixes in handle_indirect_tree_backref()
-Date: Tue, 24 Nov 2026 07:07:30 +1030
-Message-ID: <cover.1795466145.git.wqu@suse.com>
+Subject: [PATCH v2 1/2] btrfs: reject too high tree level during backref walk
+Date: Tue, 24 Nov 2026 07:07:31 +1030
+Message-ID: <220d8ed1b3a8d502c4260d01e4ac4ece942873f4.1795466145.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.1
+In-Reply-To: <cover.1795466145.git.wqu@suse.com>
+References: <cover.1795466145.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,54 +91,60 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
-X-Rspamd-Queue-Id: B1A8622076
-X-Spam-Level: 
-X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
-X-Rspamd-Action: no action
 X-Spam-Flag: NO
-X-Spamd-Result: default: False [-12.01 / 50.00];
+X-Spam-Level: 
+X-Spamd-Result: default: False [-11.80 / 50.00];
 	SUSE_INTERNAL_BYPASS(-9.00)[];
 	BAYES_HAM(-3.00)[100.00%];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
 	NEURAL_HAM_SHORT(-0.20)[-1.000];
 	MIME_GOOD(-0.10)[text/plain];
-	MX_GOOD(-0.01)[];
-	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	URIBL_BLOCKED(0.00)[suse.com:dkim];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
 	RCPT_COUNT_ONE(0.00)[1];
-	DKIM_TRACE(0.00)[suse.com:+];
+	ARC_NA(0.00)[];
 	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	URIBL_BLOCKED(0.00)[suse.com:email];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	RCVD_TLS_ALL(0.00)[];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
 	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim]
-X-Spam-Score: -12.01
+	RCVD_TLS_ALL(0.00)[]
+X-Spam-Score: -11.80
 
-[CHANGELOG]
-v2:
-- Add unlikely() for both patches
+In handle_indirect_tree_backref(), if we got @cur->level set to 7
+(the max level valid), @level will be 8, then later path->slots[level]
+and path->nodes[level] will all go beyond the array boundary.
 
-The first one is reported by Sashiko, the second one is another bug
-exposed during fixing the first one.
+Fix it by rejecting such high level before calling btrfs_search_slot().
 
-Qu Wenruo (2):
-  btrfs: reject too high tree level during backref walk
-  btrfs: avoid NULL-ptr-dreference after a lowest_level search
+Link: https://sashiko.dev/#/bug/linux-8a4f92b4-daf7-4f57-8369-8e6ef323652f
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ fs/btrfs/backref.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
- fs/btrfs/backref.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index a0fb90b7a9ed..e9434e033372 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -3316,6 +3316,11 @@ static int handle_indirect_tree_backref(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	level = cur->level + 1;
++	if (unlikely(level >= BTRFS_MAX_LEVEL)) {
++		btrfs_put_root(root);
++		btrfs_err(fs_info, "invalid searcch level %d", level);
++		return -EUCLEAN;
++	}
+ 
+ 	/* Search the tree to find parent blocks referring to the block */
+ 	path->search_commit_root = true;
 -- 
 2.56.1
 

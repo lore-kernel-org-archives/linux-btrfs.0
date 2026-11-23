@@ -1,59 +1,89 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.44
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795423348;
-	b=vWyR0++Fmb1hMHLZNWqxK3scwRoWsKbHR6uRPav5U8YM74NG42v7UeKR/tsMtzeGJa7u
-	 gqjXTVjwkE9Ca23ipO69fvxhiPnHXYGIQk2NlGFN3FPGRUyMsBX1bXwzVqGgOLzix71Sz
-	 J/42c2clxMB5+YBlIzjzfTVHSLFABufTyj0tiLHll9pdxg7r2ZgSPOCOWyz14Bvk6TC3K
-	 Z+3o1GixNnfhij3WTT/yT3gQWHtfYCsz0aW+K6Q9Vn+c3qPPJ5d5udNa8AyK/zNP4HAC2
-	 bZME85czaLP88FEh9L+2UCzmnZythSA2YgsL/52wZ62TYKGMqiTF96vO3w5lR1gp9DQ==
+	t=1795427224;
+	b=aq26LWB0W6cVYI9ppqH6V7ulqZxTCiL7rlbp0uocvh4IGb21mRWFIn49glPeLA2C67eh
+	 zbw6J+14XbXM+qcFL34oS949DULEm75IAr7VItzvY3xCIxj6F5ytNeyE/Bg/dvq1OoCXQ
+	 E7ykfXKTDff04m4Xu0zFdgWPs9So2AaaNu8+awkj0721Prfp9v1I1u1zyLWCaM2htBO0O
+	 xBMyxNrxZ5s4eOfnWyHLPG5fIYkv/0dPFamTqkuTJOh0obZj25irF5xkFhXcQJwgQXgW+
+	 ORwcyxGtGv2Z3ewv2XLnFzr8F1GL7bdxPR97Fe5o/zBJuZ1FVXARG3tse4U7qvnIj2w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795423348;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=GnIk51qj01nRrXsnOHu/fIQGm+CWLUJoNK8st13nPwo=;
-	b=ap0MAgunPnrZh3c1H6ou/gdp8QXv00yMPE6bZiP7hVmpDgwgHCanpXJnjUNx0rWqm0Z5
-	 Zp7+9EUcD33TTqiL9IVRREiotPctPYbSTMzvZLgisCgl1HAu3fIK80nvhgsJ/Wowr0FHg
-	 qyt2J0m47ZP/W+U+I3jUXAJ1PEpfmoSuSD3QxCMN6O2zgVyCh3qdFBNZni2KSg8Npr6Gp
-	 PGHUhUAszS1v4r+EARr6v8qyI5F2JRv6TfZJNUbGgo5NSvzlCCqrHCJb7c6f+zFUkloIT
-	 4OFr6A3Ri8og8cg/uTZEtVx9k9RjwAcGphJAd7nLAkvJPycJlcSIZ1OlQ1izFvN1qPg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795427224;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Date:From:To:Cc:
+	 Message-ID:Subject:MIME-Version:Content-Type:
+	 Content-Transfer-Encoding:X-Correlation-ID;
+	bh=QKKddyB/3LPaj9XpOHrjBXWO+kDb0/gFR60jM/AbPd4=;
+	b=4oBDdNATvsJbWiVxN1lw+ByR9fX6guT71mXFIHpmQmPs0cOMFOXmQ+S5nvcrZ/JP7ANC
+	 wcJ2Qjdrxjm/vWmWquLxcCMntKK3/BKREjSRM2I7WWOGd3kXpP0BD2VK7677M0VD8B0w/
+	 1ZrMgNWiEZapG6QpqaFqhB2rCYkk8PPJ3Wd85FA6hHBmEkY/SU4gljqb1/Qu0R9o66fK4
+	 Yzga4xZfH1DPc3LhLic8miGlVS7w/K+6dCWVRH0dj+CHpxXI5VJynRacGgbecxRQl8VTE
+	 nriCPXpRTexjXXGEYidQWbBrzhl0XIQWVYjl4JFgYPsvMy5mXju8ulDzeNuhrGzEa1Q==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="EaQgt/Fz";
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pdCvjcAk;
+	arc=none smtp.remote-ip=209.85.221.44
+Received: from mail-wr1-f44.google.com (mail-wr1-f44.google.com [209.85.221.44])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CC16F606A31A;
-	Mon, 23 Nov 2026 08:42:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E1DF9606A31A
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 09:47:03 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E1DF9606A31A
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=EaQgt/Fz
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 826291F000D1;
-	Mon, 23 Nov 2026 08:42:23 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795423347;
-	bh=GnIk51qj01nRrXsnOHu/fIQGm+CWLUJoNK8st13nPwo=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=EaQgt/FzKze3wJRfPGE513dfCman+8X4AAIAVfKUCMeCfM3/W4f2VAZjMrJgJB6kq
-	 C372EOKxHq2ZviLHiLjEagtYFvvN9/INQ1uP41sGgx9Nb+hXWOWwVmPZxDkU8l7ZCw
-	 Jl5pSbNVqfOzUZ1/5wXEMF4Eu+k53AAImFVIq8608Pv93NMzeAiZ9Q5sSX8v/KR5Gv
-	 gN53wRsAQijIlAcvm+fCUYL/3vuyMyPi8ro5V8lt1q0qldyvIcdamjHDpZGFkjHqM6
-	 I39Mq6vo9kacIKif2whQ3zOv5mtGlEPYQX1zi1eiQ7BbX2QZ2/ptBn1r7MYCxIbH1Z
-	 Ql8NtIJIprzrg==
-Date: Mon, 23 Nov 2026 09:42:20 +0100
-From: Andrey Albershteyn <aalbersh@kernel.org>
-To: koraynilay <koray.fra@gmail.com>
-Cc: Namjae Jeon <linkinjeon@kernel.org>, Hyunchul Lee <hyc.lee@gmail.com>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
-	Chuck Lever <cel@kernel.org>, Jeff Layton <jlayton@kernel.org>, Jan Kara <jack@suse.cz>, 
-	"Darrick J . Wong" <djwong@kernel.org>, Amir Goldstein <amir73il@gmail.com>, 
-	Pali =?utf-8?B?Um9ow6Fy?= <pali@kernel.org>, Lauri Gates <lauri.gates@gmail.com>, 
-	Christoph Hellwig <hch@infradead.org>, Dave Chinner <dgc@kernel.org>, linux-btrfs@vger.kernel.org, 
-	linux-xfs@vger.kernel.org, linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	ntfs@lists.linux.dev, linux-nfs@vger.kernel.org, linux-api@vger.kernel.org
-Subject: Re: [PATCH 1/3] vfs: use goto out on error in vfs_fileattr_set()
-Message-ID: <awP8S5KF9v-nqWVY@aalbersh-thinkpadx1carbongen13.rmtcz.csb>
-References: <20261122000856.536902-1-koray.fra@gmail.com>
- <20261122000856.536902-2-koray.fra@gmail.com>
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=pdCvjcAk
+Received: by mail-wr1-f44.google.com with SMTP id ffacd0b85a97d-4a32576da88so1733575f8f.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 01:47:03 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795427222; x=1796032022; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:subject
+         :message-id:cc:to:from:date:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=QKKddyB/3LPaj9XpOHrjBXWO+kDb0/gFR60jM/AbPd4=;
+        b=pdCvjcAkJ2E00UCwpa7+LPm7mJhdFhZv0YY1gUModOPz523F3Vz15xzSVhB6smm2zp
+         APO084YMVolenYo2pepPeuVT7pEXr0D46nG2JZVQpPSxR7XW8Jkkiz4oxKQxwMvQ7vG0
+         kKYdjMey45l2eFoUsSLkYm4yVXM++IWycnif+CUXsZDs6ZdcothzqTEoYggTa65h636J
+         pajzxIsehl/AtEuwdzBEFdAZJhyt9b1FH4BgVNdfZwOHROJ8hTAg7DXIsFe2u2Xj7g/U
+         t2TR8N3DBMyfvDekGUHDBoEutbc++8v8EKbQpXxCZwnY2qc9+bd3VMuBH0lsM/A0q7yc
+         BAHg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795427222; x=1796032022;
+        h=content-transfer-encoding:content-type:mime-version:subject
+         :message-id:cc:to:from:date:x-gm-gg:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=QKKddyB/3LPaj9XpOHrjBXWO+kDb0/gFR60jM/AbPd4=;
+        b=0dy9uvTr4CdWiLxDbZXRjr87XdZ6fQmbG4ULI9yn6uXGgWKI09hsAucD+D0k1vfElR
+         65Mv2MC/fXSF7T2qzkMbEzxeg9Mxwrhb1nPPHrpYzvwfxKB0LCJLQknX7sYAkZNZmSlF
+         +AmuhXqbIzFmcDwrKBmI5nMGy6OTt2rBocb3BmPK6iMqe+nXj17Pux7a4G/elEF5+pBG
+         a/bjJyNkOEcvIB/LoKYSETonYcrb5Gwm4kx0JEDizzvNAgx1zZSas1a2hsGnzHrqxAaA
+         0wyVHgAUsfaCX69ghaRIqWW327ZuuwrbBWPTmPT937D7ZwIiPMX2w2Z30MWxlc7CzRii
+         msJQ==
+X-Gm-Message-State: APuU4Z8SNOuUfUVITjMNr2vjJU7MUIp7GY1hmUCYKaqjTSZBG97+s2/c
+	060OgOUj8wXYcgtwO07SozOjtJ5lX6/xyjql05SlEmbq6/dS4EakmSi0UHkLiecP
+X-Gm-Gg: AZFdTZd5WjKwdx2xr4TIdRNZTjQtVPMwujBsQmL3DN+/O6A/ySGueiOnO0rxewpUn0Z
+	tFf7VpGJr0wyfIFNcTlGZ4wBhEeAgphHQPCib3iNs1mUc8AJQKhrEIh/v/lZE8Z70wwDOrsnGom
+	vZTPq7R/hh3/1X2DHtFMN2OuOT/meEnI+R1V2q+6NRs1C36P+3z6j80doi4eDR7ZMHgIZrro5Ca
+	TLfWEJjsDteBlRtG6uxvi+UfKXwVjV3F8eylYAncHwTyMgWy2HzR5sjOdk/CHY5O/L8xiTsSmj1
+	0ku0BVmPykVyo0krz5UNfkfhPntXmNwjoIHCon3C39wP4J2fbD1h37XpM63U+sYlGahIkoCTRdK
+	1ucdEd6ytoel9s7PdH4/ryC0l0ROI5Qr1GaG7tCxHiNKpiJmZIC6RgQ2cjuIwGJPPl7mDS/nzuS
+	Jc2FJ8RHLyRJaKpVZ/DhZb9dvOQK9+Z6ZjZe4KQnBvuCIewoe32z9P0IcA1/smLME48cOrT2xIj
+	DF2CF+kyI3tJjez2R+03KMsNJ13QPPCFGg4RZDvX6MuzWcvRh3YUMN5mQQs/Col+nzDJpQoJXrV
+	Gis/wLQEf49bxiOYDd8kgRz4tRX8pR55tWP6jNLMEq9Wg17e0Q==
+X-Received: by 2002:a05:6000:29c6:b0:4a9:b2f1:aac4 with SMTP id ffacd0b85a97d-4abb42ea141mr14220172f8f.22.1795427221995;
+        Mon, 23 Nov 2026 01:47:01 -0800 (PST)
+Received: from [127.0.0.1] ([187.40.49.252])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4ab6a68048esm21834603f8f.29.2026.11.23.01.47.01
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 23 Nov 2026 01:47:01 -0800 (PST)
+Date: Mon, 23 Nov 2026 10:46:58 +0100
+From: Marcus Lell <marcus.lell@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: regressions@lists.linux.dev
+Message-ID: <b8b122c5-87c7-4363-b3cc-c91d24ff4d2d@gmail.com>
+Subject: btrfs corruption across different storage configurations. Both with
+ free addressable free storage.
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -63,18 +93,77 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261122000856.536902-2-koray.fra@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+X-Correlation-ID: <b8b122c5-87c7-4363-b3cc-c91d24ff4d2d@gmail.com>
 
-On 2026-11-22 01:08:54, koraynilay wrote:
-> Switch from using if (!err) { ... } to the cleaner if (err) goto out;
-> in the main body of vfs_fileattr_set().
-> 
-> Signed-off-by: koraynilay <koray.fra@gmail.com>
+[please CC me, as I'm off list]
 
-Looks good to me
-Reviewed-by: Andrey Albershteyn <aalbersh@kernel.org>
+I know it's a late report, but I thought, you may know about this one...
 
--- 
-- Andrey
+I experienced severe Btrfs corruption twice, on Linux 7.1.10 and 7.1.12, us=
+ing substantially different storage configurations.
+
+Incident 1 =E2=80=94 Linux 7.1.10
+
+I was running Btrfs on LUKS/dm-crypt over md RAID5, using four SATA devices=
+ with 64 KiB chunks. The incident occurred during or after a RAID5 reshape =
+and enlargement of the encrypted device. After enlarging the crypt layer, I=
+ tried mounting the filesystem, but "mount.btrfs" failed.
+
+Subsequent diagnostics revealed metadata errors at offsets beyond Btrfs's r=
+eported size:
+
+"total_bytes =3D 20001389936640"
+
+- Wanted bytenr "20015028908032", found "8567551700635656859"; checksum wan=
+ted "0x836ea028", found "0x8db80d65".
+- Wanted bytenr "20024023199744", found "12778909791338521120"; checksum wa=
+nted "0xfd168e20", found "0x95744024".
+
+These offsets were approximately 13.65 GB and 22.64 GB beyond the reported =
+filesystem size, but within the underlying device's addressable capacity.
+
+I did not touch the underlying filesystem during the enlargement. Just at t=
+he end. I was surprised, that an untouched filesystem could go so messed up=
+. I thought, it could be an mdadm grow failure.
+
+I made extensive attempts to diagnose and recover the filesystem. I tried s=
+uperblock recovery, "btrfs check --repair", "btrfs restore", "btrfs-find-ro=
+ot", mounting with recovery options, and "dmsetup"-based approaches. I also=
+ used a device-mapper snapshot to rule out concurrent changes during checki=
+ng. Despite these efforts, I could not restore a usable filesystem. "btrfs =
+restore" recovered some files but reported checksum errors.
+
+Incident 2 =E2=80=94 Linux 7.1.12
+
+I was running Btrfs on an approximately 1 TB root logical volume on LVM, on=
+ a single 2 TB NVMe device, without md RAID. The root filesystem became unu=
+sable. I recall seeing what appeared to be the same kind of "bytenr" failur=
+e, although I no longer have the logs to confirm the exact error. I had not=
+ observed unusually large writes before the failure.
+
+I lost the logs of the first attempt, that I saved on the root partition. I=
+ was like to be afraid to cope with the responses of you. (I'm shy)
+
+Because the second incident occurred on a substantially different storage c=
+onfiguration, I find it less likely that the problem was specific to the RA=
+ID reshape or crypt-layer resizing in the first incident.
+
+I want you to help make the btrfs filesystem more error prone. But I can on=
+ly point into the direction. I cannot prove that such a write occurred or t=
+hat both incidents shared the same root cause, but I believe the recurrence=
+ and the first incident's specific offsets warrant investigation.
+
+I don't know, how to help further, but I don't dare to trust Linux 7.1.x an=
+d successors, with 7.0.x I believe, this is the last stable one. I need to =
+upgrade sooner or later, so please find the root cause of this behavior...
+
+Marcus Lell
+
+
+--=20
+Return to the point of no return._
+
+--=20
+Return to the point of no return._

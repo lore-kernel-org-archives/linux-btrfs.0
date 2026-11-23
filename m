@@ -1,52 +1,58 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795461505;
-	b=rpRlO+nMGsGnxxnQ2ht3nBS1igIxLiHap2eI/bzsnBWmXa7nPJvS/Pfwwd0U9l+1mLUo
-	 DXYorgIbviUHjtc6LeXKX86QT28CcCJlxmUWgBa9bt+RyFnE+/ZJTznYfDNaa+ezrf+Ns
-	 PPYEH71G+2Td6hc4dsI58ogmrzVJ9iMXzNiEyLhLM24pH4/MpO1+rQaYxeitXdj5u5Kxx
-	 wLETI5xzbE7dsYkkzemZZMtdhFDyW4uDsImAMmC0x4qzEWkXImrjrgwGEJHjrqfwWBFyd
-	 bVGf85yfbM6lfA+oO6ZEiLbyCelplmAhlxsjZq/LvtUDsurp92cMBZtx58trKu+E05Q==
+	t=1795461533;
+	b=jl2r+c2j/5jfya1WDGQYZ0Zmq5D2wQMSPjmIYh8asRor1B6LJ7WRX0sLXXOmjEdHgtk9
+	 7ro+DnDpbFGmZviRF5ZOpWf2IuEVY6+I/NApEcnzNCX1WFvK2o3UTBEP3tOQ4vwWDGdbk
+	 5bjF9Aq9Atl2N3Tgb/SUVtTq+VEBu/NiFVKz+8cWW4S4ujxV3RIr85j+xuH8FYgVXJTjp
+	 sKn2tYJEzD3fGWlGSglvyCUlFNfWcsuOEgU5SVog4ottBQ5cDZfTL2OOZU61fuKl6WS8R
+	 QteO7LapT5oV6Id8UMJ/gEXJIzhfPNqrhJH292d5/iuug1YTwbWvh5lkEqZ/bz4ZqTg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795461505;
-	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=Gq3d/Hm+kzYA6KLXY0Mm0wJGUIT+RS/gB/blKA+GDa4=;
-	b=pdByvyej69OQZ4UkJ2Mr88qKU6VaJyouCwSE5nQF9z+pGVi4GRdtGdMXvmXr2owZGkwG
-	 NP9Rnri8hLp+r2TneMFvbREY/d5awcExJagk5sZibZURKVm2ific/JuBM8hzDXK1Uf/3l
-	 o96ajymlt4BXCnijPdhhMrsrnkMxGnSJZULVdOzMuh2hd7q8cUxs3tkY5p3TYE5cL5UfU
-	 3TzUIjk61C5b+ViivFTXa6ziNAuUaULjTu4fu13EpUEySyn0z1ZxitoqUdBEYK8C8YRbq
-	 5YHxdhRftuRoXw59Zzv2hm6ZyWUz+HmsZlGQJNrNtXMTbp+fwRa/vVGcg87m7KTzAxg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795461533;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=/GLZp1BMV/knfxh1EGIGcBPe8IPdbsKAYtyB5Pymdzw=;
+	b=qsZ2x4yHDKO7sun9R5ZIDPT8by82TqjvEtsBastUe5KiWWXPUTgRAHtYcPzxuR76FdJr
+	 ZtTiRqCgD2a58VlYfDpZITswPvwPU1kEOEFZhtnJoLasnEGIeUB6FBL0VgUIeaPs3O/pY
+	 3iZZpqp6gUkKoLhWTH6YzOnyiauBPsN/wT5uPJbr8nJwn4UEJID+bdbxb/0uxYhqOOe82
+	 WqNHIQsHxiMhUD7hI18gIY5qYbO8Yb64tirRiS3/37ZI0O2GY4sRsMeDYYfi4xnGV8qOy
+	 8vDu8F0zbVnoo5UJaQs9xKZZdlTHGT+UprDRLXcCwx3rVK4Z3531PKpnL7VM7zzzxXg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=eGndDvK3;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PEMxZX2l;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 2DB5A606A332
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 19:18:25 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EF39E606A686;
+	Mon, 23 Nov 2026 19:18:52 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=eGndDvK3
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 48A8D1F000CF
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 19:18:24 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=PEMxZX2l
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 178051F000EE;
+	Mon, 23 Nov 2026 19:18:47 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795461504;
-	bh=Gq3d/Hm+kzYA6KLXY0Mm0wJGUIT+RS/gB/blKA+GDa4=;
-	h=From:To:Subject:Date:In-Reply-To:References;
-	b=eGndDvK3LlgEd2ovXOLQOb6yyC+T7i5kolPVUjCzm+HYJFmY0jUS3vAulxbYqyDPl
-	 x3av+b7JHKNOMyPJV2/0TWJbs6ApA2xPs53rqu+4SCBX/ewHaHaELEnHxHfHkB/dcX
-	 VVZaXMjgCX8N9Bs1piSXUMb1L7OiCOk19vYhXnEsiPPGFWfyhbPgbHkB9FgSHTyJOR
-	 awNk4K6H5jEmydw+kuvrqrzMos3tAPnU0q12wmNlUHDKdAqX/NQ6Skjmu00Bsh2jnU
-	 71UEW4O38LjMiulR3GnN9S3Mu10y/5zDwl/fB8Ue0L+acLnVRU1s0FuntnJwM8JFjz
-	 FAoDcCoV0zczw==
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] btrfs: fix race between setting attributes and writeback with compress attempt
-Date: Mon, 23 Nov 2026 19:18:18 +0000
-Message-ID: <bd1f1a6c32bc00afea7ba59d8c56056f8c4787d2.1795461404.git.fdmanana@suse.com>
-X-Mailer: git-send-email 2.53.0
-In-Reply-To: <1a3e3bed8b8bb64943745a02167b68c3f41d38e0.1795376976.git.fdmanana@suse.com>
-References: <1a3e3bed8b8bb64943745a02167b68c3f41d38e0.1795376976.git.fdmanana@suse.com>
+	s=k20260515; t=1795461532;
+	bh=/GLZp1BMV/knfxh1EGIGcBPe8IPdbsKAYtyB5Pymdzw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=PEMxZX2lLAmo+0xpH03+7EwrZli3yKCNROivpy/DKjqvU2I8xNWpyDUV3TqDAWgpz
+	 ltZrbKxcY1uUsa++BPx7w/1Cio3WhGQRPZ3iao/GLTV0YzQydv4hZto/RPV6vhiYA2
+	 z4zSShRvWK4DAxYwSfe6o2HVw7m+MKqvZF9b03W17PlDugn/06uxSIlnO1mMim3xMY
+	 eX96HQnIRaV1dSYEcW5midq+ZWsr4zoi39lr2JAdEve9+KeUN+AYE2xssWiqr8RlOu
+	 bE7sriTUbficy6rw2nCIn+u9onK3qiCOK3A/KXnRZaA+ksELplTgsxZlezyXW4DIBk
+	 gYK44SF7EQOEQ==
+Date: Tue, 24 Nov 2026 03:18:43 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Anand Jain <asj@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org, 
+	linux-xfs@vger.kernel.org, linux-f2fs-devel@lists.sourceforge.net, fstests@vger.kernel.org
+Subject: Re: [PATCH 0/21] fstests: tests for cloned filesystem validation and
+ f_fsid
+Message-ID: <awSPgGGZv7u6_SGM@zlang-mailbox>
+Mail-Followup-To: Anand Jain <asj@kernel.org>, linux-btrfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net, fstests@vger.kernel.org
+References: <cover.1791272793.git.asj@kernel.org>
+ <768152d1-4215-4f27-a3ca-50252c5b5d9a@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -56,176 +62,164 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <768152d1-4215-4f27-a3ca-50252c5b5d9a@kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Nov 23, 2026 at 10:01:03AM +0800, Anand Jain wrote:
+> Zorro,
+> 
+>  Could we merge the patches in stages? What's your plan?
 
-When setting attributes (FS_IOC_SETFLAGS ioctl) we grab the inode's flags
-into a local variable, make changes to the flags in the local variable and
-then later assing the variable to the inode's flags member. This is all
-done without any locking and therefore can race with a writeback that
-attempts to compress data but falls back to uncompressed write since the
-data is found incompressible, in which cases it sets the flag
-BTRFS_INODE_NOCOMPRESS in the inode, also without any locking - this
-happens in compress_file_range() under the 'mark_incompressible' label.
-This leaves a time window where one task undoes what the other did:
+Hi Anand,
 
-  CPU 0 (ioctl)                   CPU 1 (Writeback)
-  -------------                   -----------------
-  btrfs_fileattr_set()
-    inode_flags = inode->flags;
-                                  compress_file_range()
-                                    inode->flags |= BTRFS_INODE_NOCOMPRESS;
-    inode->flags = inode_flags;
+Sorry for the long delay in reviewing v9 since the last round. The review
+queue has been getting quite heavy lately, so large patchsets with a lot
+of changes often end up getting pushed back. I just did a quick, high-level
+review of this series. If you agree to drop the two IMA-related patches from
+the next version (and send them separately later), that should help get the
+rest of this patchset merged much faster :)
 
-If CPU 0 updates inode->flags after CPU 1, it removes the flag
-BTRFS_INODE_NOCOMPRESS from the inode, wasting CPU cycles on
-incompressible data in the future.
-Butif CPU 1's non-atomic update occurs last, it silently clobbers
-the user's requested file attribute updates (chattr modifications).
+Thanks,
+Zorro
 
-Fix this by changing the ioctl to lock the inode's mmap semaphore, so
-that no mmap writes can happen in parallel, and flush delalloc existing
-delalloc, so that it can not race with writeback and no delalloc can
-happen until it releases the mmap semaphore - the VFS's inode lock is
-already held at the VFS level.
-
-Link: https://sashiko.dev/#/bug/linux-249f973b-6e85-4fe0-80d5-5b42e7be3e22
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Use a different approach, to lock mmap semaphore and flush writeback
-    so that it eleminates other races too (pointed by Sashiko).
-
- fs/btrfs/ioctl.c | 55 +++++++++++++++++++++++++++++++++++-------------
- 1 file changed, 40 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4271f7a6d48a..3de41987b5f5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -284,7 +284,7 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	struct btrfs_inode *inode = BTRFS_I(d_inode(dentry));
- 	struct btrfs_root *root = inode->root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
--	struct btrfs_trans_handle *trans;
-+	struct btrfs_trans_handle *trans = NULL;
- 	unsigned int fsflags, old_fsflags;
- 	int ret;
- 	const char *comp = NULL;
-@@ -297,15 +297,30 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	if (fileattr_has_fsx(fa))
- 		return -EOPNOTSUPP;
- 
-+	/*
-+	 * Lock the inode, flush delalloc and wait for any ordered extents
-+	 * to complete. Otherwise a concurrent writeback could be modifying
-+	 * the inode's flags (such as setting BTRFS_INODE_NOCOMPRESS when
-+	 * dellaloc runs and we find the file's data is incompressible).
-+	 * VFS already locked the inode's lock, so we only lock the mmap lock
-+	 * to avoid races with mmap writes.
-+	 */
-+	btrfs_assert_inode_locked(inode);
-+	down_write(&inode->i_mmap_lock);
-+
-+	ret = btrfs_wait_ordered_range(inode, 0, U64_MAX);
-+	if (ret)
-+		goto out;
-+
- 	fsflags = btrfs_mask_fsflags_for_type(&inode->vfs_inode, fa->flags);
- 	old_fsflags = btrfs_inode_flags_to_fsflags(inode);
- 	ret = check_fsflags(old_fsflags, fsflags);
- 	if (ret)
--		return ret;
-+		goto out;
- 
- 	ret = check_fsflags_compatible(fs_info, fsflags);
- 	if (ret)
--		return ret;
-+		goto out;
- 
- 	inode_flags = inode->flags;
- 	if (fsflags & FS_SYNC_FL)
-@@ -333,8 +348,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	if (!fa->flags_valid) {
- 		/* 1 item for the inode */
- 		trans = btrfs_start_transaction(root, 1);
--		if (IS_ERR(trans))
--			return PTR_ERR(trans);
-+		if (IS_ERR(trans)) {
-+			ret = PTR_ERR(trans);
-+			goto out;
-+		}
- 		goto update_flags;
- 	}
- 
-@@ -383,8 +400,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	if (!((fsflags ^ old_fsflags) & (FS_COMPR_FL | FS_NOCOMP_FL))) {
- 		/* 1 item for the inode */
- 		trans = btrfs_start_transaction(root, 1);
--		if (IS_ERR(trans))
--			return PTR_ERR(trans);
-+		if (IS_ERR(trans)) {
-+			ret = PTR_ERR(trans);
-+			goto out;
-+		}
- 		goto update_flags;
- 	}
- 
-@@ -399,8 +418,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	} else if (fsflags & FS_COMPR_FL) {
- 		enum btrfs_compression_type comp_type;
- 
--		if (IS_SWAPFILE(&inode->vfs_inode))
--			return -ETXTBSY;
-+		if (IS_SWAPFILE(&inode->vfs_inode)) {
-+			ret = -ETXTBSY;
-+			goto out;
-+		}
- 
- 		inode_flags |= BTRFS_INODE_COMPRESS;
- 		inode_flags &= ~BTRFS_INODE_NOCOMPRESS;
-@@ -431,21 +452,23 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	 * 1 for property
- 	 */
- 	trans = btrfs_start_transaction(root, 2);
--	if (IS_ERR(trans))
--		return PTR_ERR(trans);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
- 
- 	if (comp) {
- 		ret = btrfs_set_prop(trans, inode, "btrfs.compression",
- 				     comp, strlen(comp), 0);
- 		if (ret)
--			goto out_end_trans;
-+			goto out;
- 		prop_set = true;
- 	} else {
- 		ret = btrfs_set_prop(trans, inode, "btrfs.compression", NULL, 0, 0);
- 		prop_set = (ret == 0);
- 		/* If ret == -ENODATA ignore and proceed to update inode item. */
- 		if (ret && ret != -ENODATA)
--			goto out_end_trans;
-+			goto out;
- 	}
- 
- update_flags:
-@@ -462,8 +485,10 @@ int btrfs_fileattr_set(const struct mnt_idmap *idmap,
- 	if (unlikely(ret && prop_set))
- 		btrfs_abort_transaction(trans, ret);
- 
-- out_end_trans:
--	btrfs_end_transaction(trans);
-+out:
-+	up_write(&inode->i_mmap_lock);
-+	if (!IS_ERR_OR_NULL(trans))
-+		btrfs_end_transaction(trans);
- 	return ret;
- }
- 
--- 
-2.53.0
-
+> 
+> Regards, Anand
+> 
+> 
+> On 6/10/26 16:55, Anand Jain wrote:
+> > This series continues the work from the earlier "test coverage for cloned
+> > filesystem ids" series (last posted as v8 [1]) and has been tested against
+> > the major filesystems: Btrfs, XFS, ext4, and f2fs.
+> > 
+> > Although this version incorporates the review feedback received on v8, it
+> > expands substantially with additional infrastructure helpers, an extra test
+> > case to cover the recent regression report, and migration/cleanup of
+> > existing generic/744. Because the patch count grew from 13 to 21 patches,
+> > disrupting the previous patch numbering and scope, I have reset the
+> > versioning and updated the subject line to better reflect the broader
+> > validation coverage.
+> > 
+> > The core motivation remains identical: testing that mounting a block-level
+> > cloned filesystem concurrently with the original filesystem behaves
+> > correctly across filesystems and VFS subsystems (fanotify, statfs/f_fsid,
+> > libblkid resolution, IMA measurement, exportfs file handles, and
+> > metadata_uuid handling).
+> > 
+> > Summary of major changes since v8:
+> > - Added 1 new regression test case to verify statfs f_fsid derivation against FS UUID.
+> > - Dropped the test case verifying f_fsid persistence across mount cycles on
+> >   cloned filesystems, as this assumption is no longer valid following the Btrfs kernel
+> >   regression fix [2].
+> > - Introduced common helpers:
+> >   . _require_security_ima() and _require_metadata_uuid().
+> >   . _scratch_mkfs_uuid() and helpers for f_fsid verification.
+> > - Migrated generic/744 to utilize the new common clone helpers.
+> > - Worked on the review comments.
+> > 
+> > Details of changes:
+> > - _create_cloned_loop_devs():
+> >   . Renamed from _loop_image_create_clone() to _create_cloned_loop_devs().
+> >   . Relocated backing image files from "$TEST_DIR/${seq}.*" to a dedicated
+> >     directory "$TEST_DIR/${seq}/*".
+> >   . Added internal call to _require_clone_mount().
+> >   . Switched from _create_loop_device() to _create_loop_device_like_bdev()
+> >     to guarantee identical logical/physical sector sizes (512 vs 4096)
+> >     between the original and cloned loop devices.
+> >   . Used an intermediate local setup step to ensure consistent Direct I/O
+> >     attributes across both loop devices (preventing the first device from
+> >     enabling DIO while the cloned device fell back to buffered mode).
+> >   . Added device geometry and DIO attribute dump to $seqres.full for debugging.
+> >   . Renamed teardown helper _loop_image_destroy() to _destroy_cloned_loop_devs().
+> > - _clone_mount_options():
+> >   . Renamed from _clone_mount_option() to _clone_mount_options().
+> > - _require_metadata_uuid():
+> >   . Factored out prerequisite checks from _change_metadata_uuid() into a new
+> >     dedicated helper _require_metadata_uuid() and invoked it accordingly.
+> > - _require_clone_mount():
+> >   . Introduced new helper to check kernel support for concurrent clone mounts.
+> >   . Removed obsolete _require_duplicate_fsid() in favor of _require_clone_mount().
+> > - _require_security_ima():
+> >   . Introduced new helper to check securityfs and IMA policy availability.
+> > - _create_loop_device_like_bdev():
+> >   . Removed unused local variable 'dev'.
+> > 
+> > - Test Cases common update:
+> >   - Adjusted test groups: replaced 'clone' with 'tempfsid'.
+> >   - Standardized test exits: replaced open-coded "status=0; exit" with "_exit 0".
+> >   - Dropped stale "_require_block_device $TEST_DEV" checks left over from before
+> >     migrating tests to loop devices.
+> >   - Percolated helper renames across all tests:
+> >     . _loop_image_create_clone -> _create_cloned_loop_devs
+> >     . _loop_image_destroy      -> _destroy_cloned_loop_devs
+> >     . _clone_mount_option      -> _clone_mount_options
+> >   - Added cleanup of "$TEST_DIR/$seq" in test exit/cleanup handlers.
+> > 
+> > - Test Cases Individual Updates:
+> >   - generic/744:
+> >     . Replaced _require_duplicate_fsid with _require_clone_mount().
+> >     . Migrated to common _create_cloned_loop_devs() and _clone_mount_options().
+> >   - generic/902:
+> >     . New regression test case added to verify statfs f_fsid derivation against filesystem UUID.
+> >   - generic/903:
+> >     . Added --noheadings flag to findmnt queries for cleaner output parsing.
+> >   - generic/904:
+> >     . Dropped 'auto' and 'quick' from test groups due to runtime and policy requirements.
+> >     . Updated referenced kernel commit IDs.
+> > 
+> > [1] https://lore.kernel.org/fstests/cover.1784949154.git.asj@kernel.org
+> > [2] 72de4807ba84 ("btrfs: derive f_fsid with dev_t only when temp_fsid is active")
+> > 
+> > Anand Jain (21):
+> >   fstests: introduce _require_clone_mount() helper
+> >   fstests: introduce _create_cloned_loop_devs() helper
+> >   fstests: add _clone_mount_options() helper
+> >   fstests: add FSNOTIFYWAIT_PROG
+> >   fstests: add _require_fanotify_function
+> >   fstests: add _require_unique_f_fsid() helper
+> >   fstests: add SEMANAGE_PROG
+> >   fstests: verify fanotify isolation on cloned filesystems
+> >   fstests: introduce helper _scratch_mkfs_uuid()
+> >   fstests: add helpers to verify the expected f_fsid
+> >   fstests: verify statfs f_fsid is derived from the filesystem UUID
+> >   fstests: verify libblkid resolution of duplicate UUIDs
+> >   fstests: introduce _require_security_ima() helper
+> >   fstests: verify IMA isolation on cloned filesystems
+> >   fstests: verify exportfs file handles on cloned filesystems
+> >   fstests: introduce _require_metadata_uuid() helper
+> >   fstests: add _change_metadata_uuid helper
+> >   fstests: test UUID consistency for clones with metadata_uuid
+> >   fstests: generic/744: use new helper _require_clone_mount()
+> >   fstests: generic/744: migrate to _create_cloned_loop_devs()
+> >   fstests: _create_loop_device_like_bdev() remove unused variable
+> > 
+> >  common/config         |   2 +
+> >  common/rc             | 262 +++++++++++++++++++++++++++++++++++++++---
+> >  tests/generic/744     |  72 +++++-------
+> >  tests/generic/901     | 142 +++++++++++++++++++++++
+> >  tests/generic/901.out |   7 ++
+> >  tests/generic/902     |  38 ++++++
+> >  tests/generic/902.out |   2 +
+> >  tests/generic/903     |  71 ++++++++++++
+> >  tests/generic/903.out |   6 +
+> >  tests/generic/904     | 113 ++++++++++++++++++
+> >  tests/generic/904.out |  10 ++
+> >  tests/generic/905     |  79 +++++++++++++
+> >  tests/generic/905.out |   2 +
+> >  tests/generic/906     |  74 ++++++++++++
+> >  tests/generic/906.out |   6 +
+> >  15 files changed, 827 insertions(+), 59 deletions(-)
+> >  create mode 100644 tests/generic/901
+> >  create mode 100644 tests/generic/901.out
+> >  create mode 100644 tests/generic/902
+> >  create mode 100644 tests/generic/902.out
+> >  create mode 100644 tests/generic/903
+> >  create mode 100644 tests/generic/903.out
+> >  create mode 100644 tests/generic/904
+> >  create mode 100644 tests/generic/904.out
+> >  create mode 100644 tests/generic/905
+> >  create mode 100644 tests/generic/905.out
+> >  create mode 100644 tests/generic/906
+> >  create mode 100644 tests/generic/906.out
+> > 
+> 

@@ -1,50 +1,52 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
 	t=1795433249;
-	b=P1kqk7vSdCIl5/O7vW6WO3HpVUL194TGYsMeIUG2M8rZdxF3k9zBaO1qyomi3it8/Nah
-	 F4qrMW+8dlKdsnmSH/libH2AUoLPZAw3ruvaTQnYL0MjPc9QikgGsq7NNWIMFHRyEI05M
-	 5azNrVqO4YB9HcWplHGsA48XYZzIBpwrwbrwenMvaOyarobrBUtB7VVEaeNAWjdQXVJ0g
-	 rSXgIgQwCwBFJcsqtCmmR6nhkEA/XlOU1K4ZDtXP6J/ObPMlewxRoy4EZp+39MBIAQWjD
-	 8js0mvm/Ulos+ANrI47SdswptOWmeCCIfVnTYFNKHcrqeOByD8RbQOawlBwPBAlprqw==
+	b=N704QkC6a7FoZphmPvHF3A0rDohXpY8RQ2Du4EMkCS8PVDlJ/puucmHtPROrHc0adXt/
+	 wV2iwfv6qDcDCd1GUHk8vn3lDo/Vge6HWJheIaAkp7VDPMZ2pUeBGzYy/jqREl2PRGfBV
+	 SQ2hKcbTKCECKcBKTwQkFjgBtvb+sEH+YL/o2CCZTVwYIyYJUDtNp7stjN2cscqliRrRd
+	 q9SAj1nlQaBYT7HqKS2ZZwY5P0XuYci3vhS9zLg2Q0T8VRb+qvZ9fHVpkYqHbb+M/4c6y
+	 AgEmHhFdecsDtjPJmWIWl7qT8he1I/OJflDeSaXmaE354/KaSG2NtRXoPLV/NDNQbLg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
 	a=rsa-sha256; c=relaxed/relaxed; t=1795433249;
 	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
-	 MIME-Version:Content-Transfer-Encoding;
-	bh=znqUotAh/827NECUu/Pqrs2F27hDL/TFJEW8vMMP1/A=;
-	b=5e5/GYwwHIUjfc2JNqhRsXApkWgEOXrwSaQUcomaFkdf9zy+JL6FElKoebNLvQYXeCz7
-	 qVpkMv0KP3gzjJos/Fzsm4HW5wlcy0cq7BKcJoQrUAbIP6qsST2RfaQBFMnQnwKVrDn2v
-	 Lsgq6e2DANuwbin2eN4sE59bQSNVq9UHEbjUsVMTwDe47O4x23u9fGYjDwcoEkGk5MXg+
-	 OwFb3rLdwXRvL7olkbjy4VFTRE4E93ffZlqu/keHdg6VTISeH9aRegVB2HmSRHHffVLLV
-	 W7pF7m6ATXdJfu4AZ5Cs7cNasCeCMXyheJtKLj7MIZs+Wh7dlhryRqCUDDWk5HpNOjQ==
+	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
+	bh=V+VTXpCnr6NdSPZ1vDdcOZNFPIBauUD69OBx2ZVZ69I=;
+	b=Cus55EVFIeIJ4wphIo5KkkFEkH4B1+aJWhybHPHkzYuEydzc/yjLFFn8QowDrKcFfU9M
+	 S0vbsa5oBCnSGE4aIxugi6Gw104f4rGHKc3iUNW4saSdD559LeZJTrDyAlvga1XulN/SV
+	 AoZdPTPfj28yCKv1Ts8zG0rLnwmrr0deLiC4A/94ZcOw6BeeKDcFSny1WXWJZ1ao8hv88
+	 hbv70r8jDxxsFuyEB/w61IcDkJc0njW8KSvdiSsvvnbZ6m5k5Athw+TeCTPfR63C09TqJ
+	 2FNshoZkyNZNclbV5lXhhg7szYMVeX40DyS58absw1/sB2QHInEWvlLQjMahqSgakUQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=caIGsZD6;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=CCaL0irl;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1783B606A32E
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 11:27:28 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D8740606A338
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 11:27:29 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=caIGsZD6
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id A94E41F000CF
-	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 11:27:27 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=CCaL0irl
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 154EB1F000E1
+	for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2026 11:27:28 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795433248;
-	bh=znqUotAh/827NECUu/Pqrs2F27hDL/TFJEW8vMMP1/A=;
-	h=From:To:Subject:Date;
-	b=caIGsZD6bh+ESPWi3DwcS5Guzrg/lpU3WCuVZRU/EZfBs27M0Zm84waauFolE0TXA
-	 f9hHSCIugvEURdfXtALAUswNb/hB+UqEWW95lrcyZW9ZGRUablvv++XQMj9s2xcD1l
-	 JuVkCkCv6kLr0KNGdgbybjiJ0UWLbqYjAufgSUaRZIKYyfdnCBnk0P7tG6QdqShdgC
-	 8BphPJZrwCrD3NvZDAbFWxU7H6Pu6OZRvYjij3hItgMW5C9zAF2b5tLx58jkglkM8t
-	 YHVLZyOgOiOQGjErF8bsPeocBdcoNIKqlhv4M3V5/w4VUikfKsqA8WckNrp4ED4Z9A
-	 fcL5kub7HGNkQ==
+	s=k20260515; t=1795433249;
+	bh=V+VTXpCnr6NdSPZ1vDdcOZNFPIBauUD69OBx2ZVZ69I=;
+	h=From:To:Subject:Date:In-Reply-To:References;
+	b=CCaL0irlN129NIjsE3BZI70PN6npUtUxPzXCHKCG1Xvam/mwpDA5jCy7HfeJtHlP1
+	 n8vNiPz0IfGMw9roc3p6muyC/VtbTFCeklZMT++7bYTCYUhEzuEq2UpU9clEbFET8I
+	 pbZjzrrPnD0Aa+5fWT/aBlZ+zq4/pX8fFqpRoWXDX0Us+1B5V84A8RBvK/wkqkiiUj
+	 KoKCIu2jE1jlQnCDr10BBWexT0nQpdh8fY3qhFwED356umfphW0yB4ynJJ5uHK/ied
+	 i/i4+95ZfPJsyjn4h+aZygwn0iRAnRoNJ5nExJhDMJ3AXJwGEF08OWLIY9CcnCTkWd
+	 klnJ+r8BupT/w==
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/3] btrfs: cleanup some use of boolean struct members
-Date: Mon, 23 Nov 2026 11:27:23 +0000
-Message-ID: <cover.1795433118.git.fdmanana@suse.com>
+Subject: [PATCH 1/3] btrfs: assign boolean literals to fragmented field of btrfs_free_cluster
+Date: Mon, 23 Nov 2026 11:27:24 +0000
+Message-ID: <14a3f1989e3c8b46706f65a058ee3375bdd883ac.1795433118.git.fdmanana@suse.com>
 X-Mailer: git-send-email 2.53.0
+In-Reply-To: <cover.1795433118.git.fdmanana@suse.com>
+References: <cover.1795433118.git.fdmanana@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,21 +60,38 @@ Content-Transfer-Encoding: 8bit
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Trivial, details in the change logs.
+The fragmented field is defined as a boolen in struct btrfs_free_cluster
+but we have a couple places that assign literal integers to it. While
+it's not incorrect, as 1 and 0 are converted to true and false, it's less
+readable then using plain boolean literals.
 
-Filipe Manana (3):
-  btrfs: assign boolean literals to fragmented field of btrfs_free_cluster
-  btrfs: use boolean types in struct btrfs_dev_replace
-  btrfs: use boolean type for struct btrfs_device::dev_stats_valid
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
- fs/btrfs/dev-replace.c | 22 +++++++++++-----------
- fs/btrfs/extent-tree.c |  4 ++--
- fs/btrfs/fs.h          |  4 ++--
- fs/btrfs/scrub.c       |  4 ++--
- fs/btrfs/volumes.c     |  6 +++---
- fs/btrfs/volumes.h     |  2 +-
- 6 files changed, 21 insertions(+), 21 deletions(-)
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0008cbc12412..4eb69e5bce4e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2881,7 +2881,7 @@ static int unpin_extent_range(struct btrfs_fs_info *fs_info,
+ 		if (cluster && cluster->fragmented &&
+ 		    total_unpinned > empty_cluster) {
+ 			spin_lock(&cluster->lock);
+-			cluster->fragmented = 0;
++			cluster->fragmented = false;
+ 			spin_unlock(&cluster->lock);
+ 		}
+ 
+@@ -3956,7 +3956,7 @@ static int find_free_extent_unclustered(struct btrfs_block_group *bg,
+ 	 */
+ 	if (unlikely(last_ptr)) {
+ 		spin_lock(&last_ptr->lock);
+-		last_ptr->fragmented = 1;
++		last_ptr->fragmented = true;
+ 		spin_unlock(&last_ptr->lock);
+ 	}
+ 	if (ffe_ctl->cached) {
 -- 
 2.53.0
 

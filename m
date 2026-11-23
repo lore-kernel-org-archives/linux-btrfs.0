@@ -1,69 +1,59 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=79.135.106.113
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795460911;
-	b=2wgUEK/iTDlZYZ7CtEQgi9ZSX0M3bRZ2CmMCLGSdgkHihc7c/057fNyiV/EuBpPFOjnD
-	 ZQhk2m2BAN3q0+SfTdYyNUWXxxzgyCkNkW4EVTJOUUSY5BgJkSWS70H8eBFxHi8GZYthk
-	 g4xUlux/+wvC1atAlGpdG8/lPD6z1WSpgO4XgBtEb6xSyES/uuNTX4B4AuCekVhWs3SWq
-	 bviFjY/Mzr3aAu8c7j5ZjBA7IfMJ7RmEzYgtKUf9Fq8ObX64f3F9nGh7djljuhUB+oK5K
-	 kP3AJmEVaxeJ9RbXi81+/Vvn6JJnARXq/cUceyQuw+or4u4EUFwtBYMz+Vkua2p2I3Q==
+	t=1795460917;
+	b=lLzdgfT3AMk/i01D1+bRRKtxCXx2HCq24E3ZYB3eT1bAtxadopFZJb97r+E6N7EeaR3J
+	 n0SWjhMOCmpda7onQ/kVrbI9mYBQzUX/ZwD+CbvPIegzxN62WuIYOSuAJ8b1udYZkf0yj
+	 tQuQuOUyU97VTpXHx5jYNDE6EySELSDEUkTHx9KKvlPALxEuGAW/Kt+hNc9AZMi/rXr8u
+	 izwAKxkFIbeKgbCiHdszTa6Dk0h5LjHpZ/8X8lgjUAEjijdQ17bIefxLgZqlozx7RC5Oq
+	 FpRG94FzDaxabuh2BTm2TjkHiZZvVu65WIY1yEOpMw/hZYx81EN0MUgGaOIg5+av26w==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795460911;
-	h=DMARC-Filter:DKIM-Signature:X-Pm-Submission-Id:From:To:Cc:Subject:
-	 Date:Message-ID:X-Mailer:In-Reply-To:References:MIME-Version:
-	 Content-Transfer-Encoding;
-	bh=vsAgw1VfeeWM/+e489ddh7F+FNuBKxcy9f2jjrirCAY=;
-	b=BMS2mpZ1Ro09Y3mctKc6P9aHCJ0em13Ou8Rua7nRCcrXFM8rXyXW30dtKjc5CU5fQSOR
-	 H0NJqNivYlkr7muh7lbaF8Ghk/cYPm9TxQ8HyG+pnK+CsFQ5rhe932rU+6XqIJjZZoqfh
-	 kVuHuklzkfkrkb//32NzfL5CWhKtc6faRB5V7nV3TdhJzUo2fANcf2I04XDkxm8qxxkN/
-	 hJzDgwJKgKiLfxoDNiXgPCmQpDc0Ezcsb0oKfn3neF9xBvhNFVUOachw49prgaz5J5u6M
-	 UM2oPnZMIAlJonT/AEUuxkO0u5nTI3v1mzY/jMoCfVxHJhTtBISK1FZdu+79YlleeNA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795460917;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 Mail-Followup-To:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=fTN8vdK235+uC79sauRv+UP8AALuyUxzYO9E3eZKSZc=;
+	b=iTXkxqcLc09/C0UmYB1bqR/ho8qiNH+ygMKbPe4PboEKn9KiU6D2RN2uEeJXFUtLNuux
+	 fLC7IZv53NQYEpDU/jxIWZ3Z8pVLGbVpJHqNZAPnnjaA9x9m8Eci3DnyzNMf/iWgug5EM
+	 9iCSAnNR7ql+ViubnOcZIulQqLuEZ/SWWrB/O1g5x0OvPQtSz0c/9d/+ncWw55Vnvv6Kl
+	 H0ELowKxNLncbyb/rjxixGni0SGagWlw48Jm8U3kvZ5eXxS6X4y7nsQq+V9xWq5Nl40El
+	 jY/pY5sCior8/HgrHifOxVM0IOI7Rh7N2VnAUeUAAPkeAFNH1uH9vmFqv1wed/8nxog==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=raidlab.org;
-	spf=pass smtp.mailfrom=raidlab.org;
-	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=4YBPhukS;
-	arc=none smtp.remote-ip=79.135.106.113
-Received: from mail-106113.protonmail.ch (mail-106113.protonmail.ch [79.135.106.113])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=kfy3RuDS;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 41385606A32A;
-	Mon, 23 Nov 2026 19:08:31 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 41385606A32A
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 46400606A31A;
+	Mon, 23 Nov 2026 19:08:37 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=4YBPhukS
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
-	s=protonmail; t=1795460907; x=1795720107;
-	bh=vsAgw1VfeeWM/+e489ddh7F+FNuBKxcy9f2jjrirCAY=;
-	h=From:To:Cc:Subject:Date:Message-ID:In-Reply-To:References:From:To:
-	 Cc:Date:Subject:Reply-To:Feedback-ID:Message-ID:BIMI-Selector;
-	b=4YBPhukSKQV/iaBxkMy1GpIQGGkXrxBQLl8Alr0A69FqObNyzBrKiX8h7QUNH1dNB
-	 uyCavcjQo1txMiAcCu6uZhqpJP/PSqDm2FmVkATBTUPJkOf5BCvK2NbmtNOkHTjQ6b
-	 dv7UO41miHvbX8qsAs3hj5y+zr28EPXt/xvaBL/F9cb0rN4sw2E8SFKHGGrHXjGENd
-	 2xjbitDYE/SWVGvEmZvQpuSxMW7klekbUjTZpYvTwWj8sVFZJ70775LUKzhJoclFKi
-	 pN0iwUkbHPsPJqsG/kgf/+FUDLd4DE3k0Zz619EdiD1sWSR7y+ZQJ4Y16DEpLWX+xH
-	 7x4Jl96bRIvpA==
-X-Pm-Submission-Id: 4jYFpH3PvCz1DDKY
-From: Miroslav Cimerman <mc@raidlab.org>
-To: josef@toxicpanda.com
-Cc: boris@bur.io,
-	ce3g8jdj@umail.furryterror.org,
-	dsterba@suse.com,
-	fdmanana@suse.com,
-	johannes.thumshirn@wdc.com,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	mason@kernel.org,
-	naohiro.aota@wdc.com,
-	stable@vger.kernel.org,
-	wqu@suse.com
-Subject: Re: [PATCH v3 1/6] btrfs: don't drop the error of the last split bio
-Date: Mon, 23 Nov 2026 20:08:18 +0100
-Message-ID: <20261123190818.2841562-1-mc@raidlab.org>
-X-Mailer: git-send-email 2.43.0
-In-Reply-To: <20261120-b4-btrfs-data-integrity-v3-1-4de4b91b826e@toxicpanda.com>
-References: <20261120-b4-btrfs-data-integrity-v3-1-4de4b91b826e@toxicpanda.com>
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=kfy3RuDS
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 85E1D1F000ED;
+	Mon, 23 Nov 2026 19:08:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795460917;
+	bh=fTN8vdK235+uC79sauRv+UP8AALuyUxzYO9E3eZKSZc=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=kfy3RuDSQ9EIQvEeNT3epUDAPezGpBL+AyFR3Xgqc57X2lce7oOHHb/xFaT27FTWZ
+	 s5zKBXkhCFQM9QwiEf5/wQo8BJ35drSvcGtePSMiEZ/XrZ538pR2CNqJ4BOzQnA5nq
+	 1e/pZu+s4oH2KNYMk4y4kB0xbTtCDjCQqgTwQ8SD9YmD2n0lJiObxDqIHvwJD/bN2K
+	 HhcgRtPSmTMUff9Az8j5KbpWljbxclib6bL5ZAKNowkNtBr3Stu2glxrjuay8bdEJK
+	 LCT9SNOVFlhT7hlD4li2+AG8Vlup4ncCBQNwdik6dPOVzL4+ZeloWCF7qf7/wYV/bO
+	 cBrXJ8q6HnyJQ==
+Date: Tue, 24 Nov 2026 03:08:29 +0800
+From: Zorro Lang <zlang@kernel.org>
+To: Anand Jain <asj@kernel.org>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, 
+	linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net
+Subject: Re: [PATCH 20/21] fstests: generic/744: migrate to
+ _create_cloned_loop_devs()
+Message-ID: <awSPHC1UWULsJCx8@zlang-mailbox>
+Mail-Followup-To: Anand Jain <asj@kernel.org>, fstests@vger.kernel.org, 
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-f2fs-devel@lists.sourceforge.net
+References: <cover.1791272793.git.asj@kernel.org>
+ <2d0903ee55156a1a384f95b6e54ce2bacf0c9a77.1791272793.git.asj@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -73,15 +63,126 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <2d0903ee55156a1a384f95b6e54ce2bacf0c9a77.1791272793.git.asj@kernel.org>
 
-I hit this on a RAID10 file system (not zoned, 4 null_blk devices) with
-bad blocks on both copies of one mirror pair, on for-next 65101fe10b30.
-Reading four 1 MiB files with dd returned EIO. After
-"echo 3 > /proc/sys/vm/drop_caches", sha1sum of the same files returned
-no error and a wrong hash for each file, in 2 of 2 runs. A dd of one of
-them right after returned all 1 MiB with about half of the bytes wrong.
+On Tue, Oct 06, 2026 at 04:55:46PM +0800, Anand Jain wrote:
+> Switch generic/744 to use the common _create_cloned_loop_devs() helper
+> to format, modify, and clone the underlying loop devices, avoiding
+> open-coded clone setup and teardown logic.
+> 
+> Signed-off-by: Anand Jain <asj@kernel.org>
+> ---
 
-With this patch, all of these reads failed with EIO, in 2 of 2 runs.
+Reviewed-by: Zorro Lang <zlang@kernel.org>
 
-Tested-by: Miroslav Cimerman <mc@raidlab.org>
+>  tests/generic/744 | 70 ++++++++++++++++++-----------------------------
+>  1 file changed, 27 insertions(+), 43 deletions(-)
+> 
+> diff --git a/tests/generic/744 b/tests/generic/744
+> index 330d86ce826a..c522d6f46713 100755
+> --- a/tests/generic/744
+> +++ b/tests/generic/744
+> @@ -10,71 +10,55 @@
+>  . ./common/preamble
+>  _begin_fstest auto clone volume tempfsid
+>  
+> -_cleanup()
+> -{
+> -	cd /
+> -	rm -r -f $tmp.*
+> -
+> -	_unmount $mnt2 &> /dev/null
+> -	_unmount $mnt1 &> /dev/null
+> -	[ -b "$loop_dev2" ] && _destroy_loop_device $loop_dev2
+> -	[ -b "$loop_dev1" ] && _destroy_loop_device $loop_dev1
+> -	[ -n "$seq" ] && rm -rf $TEST_DIR/$seq
+> -}
+> -
+>  . ./common/filter
+>  . ./common/reflink
+>  
+> -_require_clone_mount
+>  _require_test
+>  _require_block_device $TEST_DEV
+>  _require_test_reflink
+>  _require_cp_reflink
+>  _require_loop
+>  
+> -clone_filesystem()
+> +_cleanup()
+>  {
+> -	local dev1=$1
+> -	local dev2=$2
+> -
+> -	_mkfs_dev $dev1
+> -
+> -	_mount $dev1 $mnt1
+> -	$XFS_IO_PROG -fc 'pwrite -S 0x61 0 9000' $mnt1/foo >> $seqres.full
+> -	_unmount $mnt1
+> +	cd /
+> +	rm -r -f $tmp.*
+>  
+> -	# device dump of $dev1 to $dev2
+> -	dd if=$dev1 of=$dev2 conv=fsync status=none || _fail "dd failed: $?"
+> +	_unmount $mnt2 &> /dev/null
+> +	_unmount $mnt1 &> /dev/null
+> +	_destroy_cloned_loop_devs "${devs[@]}" 2> /dev/null
+>  }
+>  
+> -[ -n "$seq" ] && rm -rf $TEST_DIR/$seq
+> -mkdir $TEST_DIR/$seq
+> +add_foo()
+> +{
+> +	local orig_dev="$1"
+> +	local temp_mnt="$TEST_DIR/$seq/temp_mnt"
+> +
+> +	mkdir -p $temp_mnt
+> +	_mount $(_common_dev_mount_options) $(_clone_mount_options) $orig_dev $temp_mnt
+> +	$XFS_IO_PROG -fc 'pwrite -S 0x61 0 9000' $temp_mnt/foo >> $seqres.full
+> +	$XFS_IO_PROG -c 'fsync' $temp_mnt/foo
+> +	_unmount $temp_mnt
+> +}
+>  
+> +rm -rf $TEST_DIR/$seq 2>/dev/null
+> +mkdir -p $TEST_DIR/$seq
+> +# Setup base loop device and its clone
+> +devs=()
+> +_create_cloned_loop_devs devs add_foo
+>  mnt1=$TEST_DIR/$seq/mnt1
+>  mnt2=$TEST_DIR/$seq/mnt2
+> -mkdir -p $mnt1 $mnt2
+> -
+> -loop_file1="$TEST_DIR/$seq/image1"
+> -truncate -s 300m "$loop_file1"
+> -loop_dev1=$(_create_loop_device "$loop_file1")
+> -
+> -loop_file2="$TEST_DIR/$seq/image2"
+> -truncate -s 300m "$loop_file2"
+> -loop_dev2=$(_create_loop_device "$loop_file2")
+> -
+> -clone_filesystem ${loop_dev1} ${loop_dev2}
+> +mkdir -p $mnt1
+> +mkdir -p $mnt2
+>  
+>  # Mounting original device
+> -_mount $(_common_dev_mount_options) $(_clone_mount_options) $loop_dev1 $mnt1
+> +_mount $(_common_dev_mount_options) $(_clone_mount_options) ${devs[0]} $mnt1
+>  $XFS_IO_PROG -fc 'pwrite -S 0x61 0 9000' $mnt1/foo | _filter_xfs_io
+> -
+>  # Mounting cloned device
+> -_mount $(_common_dev_mount_options) $(_clone_mount_options) $loop_dev2 $mnt2 \
+> +_mount $(_common_dev_mount_options) $(_clone_mount_options) ${devs[1]} $mnt2 \
+>  					|| _fail "mount of cloned device failed"
+>  
+>  # cp reflink across two different filesystems must fail
+>  _cp_reflink $mnt1/foo $mnt2/bar 2>&1 | _filter_test_dir
+>  
+> -# success, all done
+> -status=0
+> -exit
+> +_exit 0
+> -- 
+> 2.43.0
+> 

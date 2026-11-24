@@ -1,111 +1,80 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.137
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795557761;
-	b=VqNqwRTv2RxhHH9RMd5iXGwaRbdnD6ZkVMgUY9WPaPbR/TzgC6f2P/5U0l6bOpB1O0VQ
-	 +yFTUmyjVvZUL7CPn3XeuWQPUj2XXhoh8xlFG6/dT+4vzsJkCKcz8ePG+qnW08o1gnffw
-	 kLPVF9p17WlgGJtaID+wziULpl+4BSYcvHA7gh2TqVNOE0Nk3XOc6LmDc0ZMrSark0wos
-	 Wid8c06/J/BchXAhKUdZnS6cGkzcUIK2aFb9f/BzNBG+L7C9sm/YyUrQbI2VkvW+K/Wqw
-	 bVqmA5Q+a+uk1/Kp1Ao8pz/wyVEjhq9nSmq6djsI5YXn3iOIw0aEQy29+x9RTaJmLdQ==
+	t=1795558763;
+	b=U/it24QvTqs+wW6tzkbvCYYliQsrraZoKXXD+icBNbEnfLIMh4wYa5GKUTUTUA/PWsSP
+	 wjlvTSPYf8feBq8tZCn/TkgvEkusUVT6MfIzEyPI8QprMNO4FHgDWZR2SbNuqWtWU5p0v
+	 XsAU/X5Fg9XLsqVFlIJ1PRhDKdrSbFK0CCW95AS6h1BkSEoDx2ez/byvoQlkDrOw/RxH2
+	 JXacUS+RJbrDO7tZo5yTTEwJ3CgJBcN5wT1udz2/hChIkPFg4U04d1q/pcqut+EbXffG8
+	 K3en4k71eDINV3/5go7cCd7xbH30d8LGxztEXnkdbCSJPcvppurV5M+9M7Aq2a7QtKA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795557761;
-	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
-	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
-	 X-ME-Sender:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:Received:X-Mailer:
-	 MIME-Version:X-ThreadId:Date:From:To:Cc:Message-Id:In-Reply-To:
-	 References:Subject:Content-Type:Content-Transfer-Encoding;
-	bh=xqSGxC68OuGq0f3lY+sfYUCqjXoRvtvCw0BSPI+8ZKw=;
-	b=46q8FaqFuT6PEHVGZuOD7qRSFzKjB9YT7s+5rMQTxWrF0l1wZsiOFNgxhUZIE6Rm7KHC
-	 JUAospP+knQnOOXF8oiKhtmryfiEE6n68B6gechuH22ZeFSLd5SaP86JqLlVS51TNniJ3
-	 GliWwBgCHY4NmMbf+xa8gpnDDEjP4UitLC5zc/exi2PsCjxPgJxbY39/H0/9epVGeLigZ
-	 UodkOqMBl1F7om6gawffKuI2IlNRVSmNJBKSIEcabMSihKmvsV1dM2OJOf3qMCTgplNA/
-	 R+a5IljvnCSjljLsfPVcgkt5fjWpewYfMsZETXtBPmpVuCRFZL68lrb3/RJb2txkGLA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795558763;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
+	 X-Spam-Flag;
+	bh=3dDDnA8mFg86lqbGX6IQOIPVmCH6JFcQNKN9zE5vGAY=;
+	b=cnyDaQlRQg9aVnIqpdidCn1lZ1YDrY3JEsh678z4ZG1dvTriOBoLQH17T0LqshvO2uQZ
+	 7zUIjuFuHGYRDKMcfuLOWPYpBwgpKUkywBHeJPlzUwb3aBn4gfCUWvIx4dAXJNCNlfb0J
+	 YdHjqrsuXmLG9aecDErCgeXkyRv5ERortP1dnfWkxP5jSMkpEmgzR9GOMZQWh7XZ07V2t
+	 MNN79W1k2RVMFo2YAuEoGVfRECTTgRRmtjrdAJbkmD7KMedDfU26cKnn2TDXxmLBiqIrD
+	 ap6cj1UJ/tWd+wLT2azGyf3LpzV+uapEJjvowiZ5MgEB9g2lbm4A6I5bolpgilfDiQw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=arndb.de;
-	spf=pass smtp.mailfrom=arndb.de;
-	dkim=pass header.d=arndb.de header.i=@arndb.de header.a=rsa-sha256 header.s=fm2 header.b=mfnJGR8Z;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=wbnBnHyI;
-	arc=none smtp.remote-ip=103.168.172.137
-Received: from flow-a2-smtp.messagingengine.com (flow-a2-smtp.messagingengine.com [103.168.172.137])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="pRO7SM/9";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="pRO7SM/9";
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id BC71F606A32C
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 22:02:40 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org BC71F606A32C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=arndb.de
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=arndb.de
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D10B606BA0F;
+	Tue, 24 Nov 2026 22:19:22 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D10B606BA0F
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=arndb.de header.i=@arndb.de header.a=rsa-sha256 header.s=fm2 header.b=mfnJGR8Z;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=wbnBnHyI
-Received: from ams-compute-02.internal (ams-compute-02.internal [10.64.2.62])
-	by mailflow.phl.internal (Postfix) with ESMTP id D98BF1380417
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 17:02:39 -0500 (EST)
-Received: from ams-imap-03 ([10.64.2.23])
-  by ams-compute-02.internal (MEProxy); Tue, 24 Nov 2026 17:02:40 -0500
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=arndb.de; h=cc
-	:cc:content-transfer-encoding:content-type:content-type:date
-	:date:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to; s=fm2; t=1795557742;
-	 x=1795564942; bh=xqSGxC68OuGq0f3lY+sfYUCqjXoRvtvCw0BSPI+8ZKw=; b=
-	mfnJGR8ZvkU0LMsvLhbkB2aWWyYvVftk34Igv9f+VSyWFZL75F98YRJInsubsg5N
-	ErWkbpwwYR8PYwwytDXrBO4Zv5tmqL7Kcd99KBzFrH3plirHNa3BF91ghYHg1G2X
-	OmIzUeu9alCUMqYdLPe3t6xGqQDeBJFNzjBkCZdXLIRdfSfdGAENAvBoCa2Hd/va
-	6GViewBlkNAzICD3R2R+FvuW+BnNIr3jT+Fl9ot6DTCUyPwgXgiOAE7gr65RUlWF
-	zTV1eaMMqoKhfcdTawq7FOwHVOJ7hDxNDHC9/0HIOAI9uDObbhkabN2JM4I0uCwd
-	iklYqFK06JlPTifavsWnwQ==
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
-	messagingengine.com; h=cc:cc:content-transfer-encoding
-	:content-type:content-type:date:date:feedback-id:feedback-id
-	:from:from:in-reply-to:in-reply-to:message-id:mime-version
-	:references:reply-to:subject:subject:to:to:x-me-proxy
-	:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=1795557742; x=
-	1795564942; bh=xqSGxC68OuGq0f3lY+sfYUCqjXoRvtvCw0BSPI+8ZKw=; b=w
-	bnBnHyIX27rhdSGfAc5H4g5+m7drm11Zac2njlCmzN4mbo2YQ6EhH6D3pD/8PeWY
-	8GHoNQCNetXraVudoAhL0qYFTYu9qtXjJhzOx0LKjAdkofjkzwVdOhVC1J2hwfwt
-	VGDOiyN7FwH93as5zO5o+8QJnGBEUiUslUd724GRZXy/EKfZPjLZu/8oWwovMRB0
-	gqyKbJtAxmz5Ye7KI5rrGabmlFjzzdpLjwI7iCre5OXCavuM7GUe/YusH3YuhrsM
-	tEnsRe06oXURbQM9aMsO08wVojk5ODAx8uWqDju1VwkBgXeAY+UL/ydC1j0YZtCu
-	KfHp2BvZEv/a3sOge7mDw==
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=sign d=arndb.de a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1795557742; d=arndb.de;
-	mf=PGFybmRAYXJuZGIuZGU+;
-	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm2:rsa-sha256:Von0+p8RTx1pTrv0mvHwl5s91+ZCly3qK7YlVinNoVL1PWt
-	F41+jsjjXR/E3d+6nlqsMUTaq4sHMyuqUy7J5FCH1qDPzkqFrpLPea0qd9USwRSo
-	PCpxFXUUvUDAqmJxOcha3DsezQTDXF3SzTXHthu5Jeca2lCTBy+DaQwM3oaLVHCa
-	OnbTq06rR393DAhpFBWp8hITLi9X8hfdgVDm2uk3BXeKhjVi+1IYKQYrIU8J8lKr
-	EAElmKiZ+tqJzBE3MZA7FiGL2I/6yX9S5ulFwxp1tGE2XgGjL4CrUUq1qbJw8XNL
-	RvS4Zn1hdNd96Eba3O68I6f5ewrTeBDNuucK1Eg==;
-X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
-	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
-	action=mi-m=1; hc=12;
-	hn=cc,content-transfer-encoding,content-type,date,feedback-id,
-	from,in-reply-to,message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:Y1L9ZRjDVf0ae1O5OLJmIEMJoJINj3g0qWcfqpumaM8=:uV7HNzlAfzr4LTvQgcdWBWGhD8P70PVpTMD/LBLagBw=;
-X-ME-Sender: <xms:ZAkGa2S1qU5q8Tt4P59rLUZLMDcdcz9MhGSLBcV29aA_t5jwHSVpFQ>
-    <xme:ZAkGa2nn-MLHHH5bsIrtUn53Bm6dbM7HMZKuIRmjk9pvX9DAb9jnrJeBrNTX2ODRl
-    wAAtRHYTqQ6S0lkRVQTlORopD_RQ-qt5BuiOtcQDZFWBrRtGC248laJ>
-X-ME-Proxy-Cause: dmFkZTFRHh3IY7AQpE2sOB2PLJi3AuimKZDL9H1tXPiO9loafbcw/DGlO/Xoejw+8P82CU
-    LZtGPx5Dw2fehVmppW39nh7aiKQqHD4K4dz4hhwMbfJ/rvud1uNRBqKqwpOM3ItmC7aGg2
-    A+GKbJZ0q/HAUhCKq8KTriq2kSTLiR4BY395K6QXzmGZqOgGBQCeI+/qZ5DjTPzrKb+KCk
-    fWxNoXXTvO6/Q9umpMuH+R2tl9qmfexdyWMyjNVwhUtZI0siPxAVzMuaiN62cXkT1LxPsl
-    ivdDM2jUMgnHoUAdJkJTv2Cd0wNryoNWCgNqfkM9sF+PCCJ+n2SVasPPSYcFY35/BtjUi/
-    TlJok52x6K/qFFOH5y2f4B3BhSmPbdoGhxzStq5W26pndjLaCuALLGrZUSxDowPZL8Uxm9
-    tq8OcCqqLGoNK4Gz1S9oU6o18yltNNQA8ylIOP1GM8y9zFzH4ACeaKMpbIKk59CrU6mG5p
-    r7Vqugsc+zPL78L05eqJ+Dv566UPYEBjuKKkv+Kuz7Ek+Vcjrk5P3BBEWeI5xh7lI87c+k
-    EGduRPaTIxc7VwNPWY7uJsLAvKDYRTBcjLlbz5kr2cdl14XqqH/o219lKVdPi2m4ANFlMt
-    HKT2MGXWfnbkl4Zcq1AAqLM5PN7cFVRnArfJggG7bcTT8iycB6wsrFxURFsA
-X-ME-Proxy: <xmx:aQkGa5ADK0kQBKydW-jsYQL2owm6ypApuRcgesYyb9gfGqwkudPKNw>
-    <xmx:aQkGawu6ACeRQkfy1MUQnkSHymWoFOBsVAuxGxAvsiDY-MRkdjhslw>
-    <xmx:aQkGa41LhutcH3hl071xdqmfJ1-SyaJRtJWCEsdFZTLgpNQKlsyu9g>
-    <xmx:aQkGa5jbcusQENaD1VV6mJUEOIOUF73AiAns-Bfib3Jpb0Xg437OxQ>
-    <xmx:bgkGa4awIhQYBbKzBAjp50sAI32cG5KibTRETI3OZH4oHKFRGLB2KqwC>
-Feedback-ID: i56a14606:Fastmail
-Received: by mailuser.ams.internal (Postfix, from userid 501)
-	id EEB3B32A009C; Tue, 24 Nov 2026 17:02:11 -0500 (EST)
-X-Mailer: MessagingEngine.com Webmail Interface
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pRO7SM/9;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=pRO7SM/9
+Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id A2B231F7C8;
+	Tue, 24 Nov 2026 22:19:20 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795558760; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=3dDDnA8mFg86lqbGX6IQOIPVmCH6JFcQNKN9zE5vGAY=;
+	b=pRO7SM/9D4F1IkcMV8SmDsEsFhT1CWaeNxXbWZE2VRMng3O/VRvwlxCicgRXPwy3J/tDcm
+	BDgVJavIP1BfXBs8Vej3j8F42VcM9azZMFwzgXblspdpHIwZJhsjNR0jU76NG46lNXqFo6
+	IWQFcR6eWPIJmj+Tb109TU6b3x9G9Q0=
+Authentication-Results: smtp-out2.suse.de;
+	none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795558760; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=3dDDnA8mFg86lqbGX6IQOIPVmCH6JFcQNKN9zE5vGAY=;
+	b=pRO7SM/9D4F1IkcMV8SmDsEsFhT1CWaeNxXbWZE2VRMng3O/VRvwlxCicgRXPwy3J/tDcm
+	BDgVJavIP1BfXBs8Vej3j8F42VcM9azZMFwzgXblspdpHIwZJhsjNR0jU76NG46lNXqFo6
+	IWQFcR6eWPIJmj+Tb109TU6b3x9G9Q0=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 2C09D13505;
+	Tue, 24 Nov 2026 22:19:18 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id HVehHmYNBmv4DAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Tue, 24 Nov 2026 22:19:18 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	fstests@vger.kernel.org
+Subject: [PATCH] fstests: add a new test case for FS_IOC_GETFSUUID
+Date: Wed, 25 Nov 2026 08:49:00 +1030
+Message-ID: <2efc6a36bb0ebe8b88b643fbd5336daff3c084d3.1795558644.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -115,109 +84,278 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-ThreadId: AUJ1OXWu3nCJ
-Date: Tue, 24 Nov 2026 23:01:51 +0100
-From: "Arnd Bergmann" <arnd@arndb.de>
-To: "James Houghton" <jthoughton@google.com>
-Cc: "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>,
- "Arnaldo Carvalho de Melo" <acme@kernel.org>,
- "Andrew Morton" <akpm@linux-foundation.org>,
- "Pavel Begunkov" <asml.silence@gmail.com>,
- "Alexei Starovoitov" <ast@kernel.org>, "Jens Axboe" <axboe@kernel.dk>,
- bpf@vger.kernel.org, "Daniel Borkmann" <daniel@iogearbox.net>,
- "David Hildenbrand (Red Hat)" <david@kernel.org>,
- "David Sterba" <dsterba@suse.com>, io-uring@vger.kernel.org,
- "Jim Mattson" <jmattson@google.com>,
- "John Fastabend" <john.fastabend@gmail.com>,
- "Josh Poimboeuf" <jpoimboe@kernel.org>, "Kees Cook" <kees@kernel.org>,
- kvm@vger.kernel.org, "Liam R. Howlett" <liam@infradead.org>,
- linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
- linux-kernel@vger.kernel.org, linux-mm@kvack.org,
- linux-perf-users@vger.kernel.org, linux-scsi@vger.kernel.org,
- linux-trace-kernel@vger.kernel.org, "Lorenzo Stoakes" <ljs@kernel.org>,
- "Chris Mason" <mason@kernel.org>,
- "Mathieu Desnoyers" <mathieu.desnoyers@efficios.com>,
- "Masami Hiramatsu" <mhiramat@kernel.org>, "Michal Hocko" <mhocko@suse.com>,
- "Ingo Molnar" <mingo@redhat.com>, "Martin K. Petersen" <mkp@kernel.org>,
- "Namhyung Kim" <namhyung@kernel.org>, "Paolo Bonzini" <pbonzini@redhat.com>,
- "Peter Zijlstra" <peterz@infradead.org>,
- "Steven Rostedt" <rostedt@goodmis.org>, "Mike Rapoport" <rppt@kernel.org>,
- "Sean Christopherson" <seanjc@google.com>,
- "Suren Baghdasaryan" <surenb@google.com>,
- "Thomas Gleixner" <tglx@kernel.org>,
- "Vlastimil Babka (SUSE)" <vbabka@kernel.org>,
- "Alexander Viro" <viro@zeniv.linux.org.uk>
-Message-Id: <1a99e5fc-129e-41e3-8420-101bcf04b366@app.fastmail.com>
-In-Reply-To: 
- <CADrL8HX5vb1PGDpWzp-eR0rNfsMCVUhFa9vp_WZZx2eJZ+dfXQ@mail.gmail.com>
-References: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
- <20261027231728.1466446-1-jthoughton@google.com>
- <32fad21b-5bad-4640-97df-ef0f638cd9e9@app.fastmail.com>
- <CADrL8HX5vb1PGDpWzp-eR0rNfsMCVUhFa9vp_WZZx2eJZ+dfXQ@mail.gmail.com>
-Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
- current->mm is NULL
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-11.80 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	NEURAL_HAM_SHORT(-0.20)[-0.999];
+	MIME_GOOD(-0.10)[text/plain];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_TWO(0.00)[2];
+	ARC_NA(0.00)[];
+	TO_DN_NONE(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo]
+X-Spam-Score: -11.80
+X-Spam-Level: 
+X-Spam-Flag: NO
 
-On Tue, Nov 24, 2026, at 22:10, James Houghton wrote:
-> On Wed, Oct 28, 2026 at 7:14=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> =
-wrote:
->> On Wed, Oct 28, 2026, at 00:17, James Houghton wrote:
+This is inspired by a recent btrfs patch that adds the support for that
+generic ioctl.
 
-> So now in v2, the _nofault() helpers themselves do not check current->=
-mm.
->
-> I've uploaded a draft version of v2 here, in case you want to take a l=
-ook:
->   https://github.com/48ca/linux uaccess-v2-wip
+The new test case is just a simple one to make sure the ioctl returned
+the same value as the one reported by blkid.
 
-I read through this now and it all looks good to me so far.
+Older kernels or unsupported fs will still be skipped.
 
->> Since in principle every user access should go through both
->> access_ok/mask_user_address and current->mm check at some point,
->> so combining the two as much as possible should help long-term
->> maintainability.
->
-> You're right, and v2 has been restructured like this.
->
-> - The check is in access_ok() itself: the generic version, plus the
-> arm64 and riscv versions. __access_ok() remains a plain range check.
-> - The callers of mask_user_address()/masked_user_*_access_begin()
-> check current->mm explicitly. There are about a dozen such callers.
-> - The unchecked accessors, __copy_{from,to}_user()
-> and__copy_{from,to}_user_inatomic() (and arm64's
-> copy_from_user_flushcache(), which also relies on an earlier
-> access_ok()), keep an explicit check for now. Once their users are
-> converted to the checked versions, those checks can be dropped.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+ .gitignore            |  1 +
+ configure.ac          |  1 +
+ include/builddefs.in  |  1 +
+ m4/package_libcdev.m4 | 14 +++++++
+ src/Makefile          |  4 ++
+ src/t_getfsuuid.c     | 89 +++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/816     | 42 ++++++++++++++++++++
+ tests/generic/816.out |  2 +
+ 8 files changed, 154 insertions(+)
+ create mode 100644 src/t_getfsuuid.c
+ create mode 100755 tests/generic/816
+ create mode 100644 tests/generic/816.out
 
-Ok, sounds all good. If we get more than handful of mask_user_address()
-and masked_user_*_access_begin(), we can always revisit that interface
-to make sure the check can't be skipped, but for now this seems
-like a good tradeoff.
+diff --git a/.gitignore b/.gitignore
+index cdcfa06e1119..66bea02fe236 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -213,6 +213,7 @@ tags
+ /src/perf/*.pyc
+ /src/fiemap-fault
+ /src/min_dio_alignment
++/src/t_getfsuuid
+ /src/dio-writeback-race
+ /src/unlink-fsync
+ /src/file_attr
+diff --git a/configure.ac b/configure.ac
+index 6d7ff3ba35fa..7b4a6052fd4b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -75,6 +75,7 @@ AC_HAVE_FICLONE
+ AC_HAVE_TRIVIAL_AUTO_VAR_INIT
+ AC_HAVE_FILE_GETATTR
+ AC_HAVE_FANOTIFY_FID
++AC_HAVE_FS_IOC_GETFSUUID
+ 
+ AC_CHECK_FUNCS([renameat2])
+ AC_CHECK_FUNCS([reallocarray])
+diff --git a/include/builddefs.in b/include/builddefs.in
+index 8e9e2e3b4113..fe9817948673 100644
+--- a/include/builddefs.in
++++ b/include/builddefs.in
+@@ -76,6 +76,7 @@ NEED_INTERNAL_XFS_IOC_EXCHANGE_RANGE = @need_internal_xfs_ioc_exchange_range@
+ HAVE_FICLONE = @have_ficlone@
+ HAVE_FILE_GETATTR = @have_file_getattr@
+ HAVE_FANOTIFY_FID = @have_fanotify_fid@
++HAVE_FS_IOC_GETFSUUID = @have_fs_ioc_getfsuuid@
+ 
+ GCCFLAGS = -std=gnu11 -funsigned-char -fno-strict-aliasing -Wall
+ SANITIZER_CFLAGS += @autovar_init_cflags@
+diff --git a/m4/package_libcdev.m4 b/m4/package_libcdev.m4
+index 340cdad3faf9..7182d9f4f129 100644
+--- a/m4/package_libcdev.m4
++++ b/m4/package_libcdev.m4
+@@ -116,3 +116,17 @@ AC_DEFUN([AC_HAVE_FANOTIFY_FID],
+        AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
+     AC_SUBST(have_fanotify_fid)
+   ])
++
++# Check if we have FS_IOC_GETFSUUID
++AC_DEFUN([AC_HAVE_FS_IOC_GETFSUUID],
++  [ AC_MSG_CHECKING([for FS_IOC_GETFSUUID])
++    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
++#include <sys/ioctl.h>
++#include <linux/fs.h>
++    ]], [[
++	 struct fsuuid2 u;
++	 ioctl(-1, FS_IOC_GETFSUUID, &u);
++    ]])],[have_fs_ioc_getfsuuid=yes
++       AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)])
++    AC_SUBST(have_fs_ioc_getfsuuid)
++  ])
+diff --git a/src/Makefile b/src/Makefile
+index a1fc38d88b8a..cc19abf2517a 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -106,6 +106,10 @@ ifeq ($(HAVE_FICLONE),yes)
+      LINUX_TARGETS += t_reflink_read_race
+ endif
+ 
++ifeq ($(HAVE_FS_IOC_GETFSUUID),yes)
++     LINUX_TARGETS += t_getfsuuid
++endif
++
+ ifeq ($(HAVE_FANOTIFY_FID),yes)
+      LINUX_TARGETS += fs-monitor
+ endif
+diff --git a/src/t_getfsuuid.c b/src/t_getfsuuid.c
+new file mode 100644
+index 000000000000..e775abf4a99a
+--- /dev/null
++++ b/src/t_getfsuuid.c
+@@ -0,0 +1,89 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++ *
++ * Call the generic FS_IOC_GETFSUUID ioctl on the given path and print the
++ * returned ID, in lower case and in the same format as blkid.
++ *
++ * SYNOPSIS:
++ *   t_getfsuuid PATH
++ *
++ * Exit code is 0 on success, 2 if the ioctl is not supported (ENOTTY) and 1
++ * for any other error.
++ */
++#include <stdio.h>
++#include <string.h>
++#include <errno.h>
++#include <stdint.h>
++#include <endian.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/ioctl.h>
++#include <uuid/uuid.h>
++#include <linux/types.h>
++#include <linux/fs.h>
++
++int main(int argc, char **argv)
++{
++	struct fsuuid2 fsuuid = { };
++	uuid_t uuid;
++	char uuid_str[37];
++	uint32_t id32;
++	uint64_t id64;
++	int fd;
++	int err;
++
++	if (argc != 2) {
++		fprintf(stderr, "Usage: %s PATH\n", argv[0]);
++		return 1;
++	}
++
++	fd = open(argv[1], O_RDONLY);
++	if (fd < 0) {
++		perror(argv[1]);
++		return 1;
++	}
++
++	if (ioctl(fd, FS_IOC_GETFSUUID, &fsuuid) < 0) {
++		err = errno;
++		fprintf(stderr, "FS_IOC_GETFSUUID: %s\n", strerror(err));
++		close(fd);
++		return err == ENOTTY ? 2 : 1;
++	}
++	close(fd);
++
++	if (fsuuid.len == 0 || fsuuid.len > sizeof(uuid_t)) {
++		fprintf(stderr, "invalid UUID length %u\n", fsuuid.len);
++		return 1;
++	}
++
++	if (fsuuid.len == sizeof(uuid_t)) {
++		memcpy(uuid, fsuuid.uuid, sizeof(uuid));
++		uuid_unparse_lower(uuid, uuid_str);
++		printf("%s\n", uuid_str);
++		return 0;
++	}
++
++	/*
++	 * Some filesystems (e.g. FAT, NTFS) report an ID shorter than 16 bytes.
++	 * That is the raw on-disk volume serial number, a little endian integer.
++	 * Format them manually as blkid does, using the integer value.
++	 */
++	switch (fsuuid.len) {
++	case 4:
++		memcpy(&id32, fsuuid.uuid, sizeof(id32));
++		id32 = le32toh(id32);
++		printf("%04x-%04x\n", id32 >> 16, id32 & 0xffff);
++		break;
++	case 8:
++		memcpy(&id64, fsuuid.uuid, sizeof(id64));
++		id64 = le64toh(id64);
++		printf("%016llx\n", (unsigned long long)id64);
++		break;
++	default:
++		fprintf(stderr, "unsupported short UUID length %u\n",
++			fsuuid.len);
++		return 1;
++	}
++	return 0;
++}
+diff --git a/tests/generic/816 b/tests/generic/816
+new file mode 100755
+index 000000000000..4b6fb77dad19
+--- /dev/null
++++ b/tests/generic/816
+@@ -0,0 +1,42 @@
++#! /bin/bash
++# SPDX-License-Identifier: GPL-2.0
++# Copyright (c) 2026 SUSE S.A.  All Rights Reserved.
++#
++# FS QA Test 816
++#
++# Test that the generic FS_IOC_GETFSUUID ioctl works and returns the same
++# UUID as what blkid reports for the filesystem.
++#
++. ./common/preamble
++_begin_fstest auto quick ioctl
++
++_require_scratch
++_require_test_program t_getfsuuid
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++
++ioctl_uuid=$($here/src/t_getfsuuid $SCRATCH_MNT 2>&1)
++ret=$?
++echo "ioctl returned $ret: $ioctl_uuid" >> $seqres.full
++
++# Make sure both the kernel and the filesystem support the ioctl first.
++if [ $ret -eq 2 ]; then
++	_scratch_unmount
++	_notrun "FS_IOC_GETFSUUID is not supported by the kernel or $FSTYP"
++fi
++[ $ret -eq 0 ] || _fail "FS_IOC_GETFSUUID failed: $ioctl_uuid"
++
++_scratch_unmount
++
++# t_getfsuuid always prints in lower case, convert blkid UUID to lower case.
++blkid_uuid=$(blkid -s UUID -o value $SCRATCH_DEV | tr 'A-F' 'a-f')
++echo "blkid UUID: $blkid_uuid" >> $seqres.full
++
++if [ "$ioctl_uuid" != "$blkid_uuid" ]; then
++	echo "UUID mismatch: ioctl=$ioctl_uuid blkid=$blkid_uuid"
++fi
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/generic/816.out b/tests/generic/816.out
+new file mode 100644
+index 000000000000..a9d8f943c88c
+--- /dev/null
++++ b/tests/generic/816.out
+@@ -0,0 +1,2 @@
++QA output created by 816
++Silence is golden
+-- 
+2.56.1
 
-> Compared to v1, this also covers get_user()/put_user()/clear_user() on
-> arm64, powerpc, riscv and the asm-generic architectures, and arch code
-> like signal frame setup that uses access_ok() followed by __put_user()
-> or unsafe_*(). user_access_begin() no longer needs its own check.
->
-> What's still not covered: x86's get_user()/put_user(), which do their
-> own range check in asm, a few architecture-specific paths that call
-> __access_ok() directly (e.g. on alpha and sparc32), and arch code that
-> calls __get_user()/__put_user() without access_ok(), mostly trap
-> handlers for user-mode faults. Probably best tackled later.
-
-ok
-
->> There are probably few enough of these that we could address them
->> by either adding current->mm checks or converting them to use
->> the full versions instead where that is an obvious change like
->> that usb gadget driver.
->
-> Sounds good. I'll send a separate series converting the obvious ones,
-> starting with the usb gadget driver. I think that will be useful.
-> Let's see how far I can get; hopefully I can drop
-> __copy_{from,to}_user() completely.
-
-Ok, perfect!
-
-      Arnd

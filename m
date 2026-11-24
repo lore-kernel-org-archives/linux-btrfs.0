@@ -1,120 +1,94 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.45
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795502745;
-	b=kjCBeikoy9HEdkTVFUN/PY7d5L0y//eDNdu67N5ni24nZF162wPl8NVv+lKIFTLih79c
-	 XpDDWe8bbRQ4mno4kedtkwF4ba/FV0n9Q1XCAtqkU1grtL+YPYANBfQwX8wsCBXaLAfZP
-	 RhUJGcZquMp54SVGDKsbIiXaez/GFo3nsRLkL+YCZivB612Bo1a7WyDlrdbgaWeeM57TU
-	 PRCBYUCIVr+NdwVV94w9DYeHnujmCqvhX2DcecgTLC4zQ2wU/RGu/dVykZjRth9l0QDx8
-	 6BHln79BuZ8A69oEyDlw3Duml/98dhZUBFns3DYIGLrZyGpqVLMb7fjRONAe9ka5UPw==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795502745;
-	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
-	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:Message-ID:
-	 Date:User-Agent:Subject:To:Cc:References:Content-Language:From:
-	 In-Reply-To:Content-Type:Content-Transfer-Encoding:X-ClientProxiedBy:
-	 MIME-Version:X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
-	 X-MS-Office365-Filtering-Correlation-Id:WDCIPOUTBOUND:
-	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
-	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
-	 X-Forefront-Antispam-Report:
-	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-MessageData-0:
-	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
-	 X-MS-Exchange-CrossTenant-Network-Message-Id:
-	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
-	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
-	 X-MS-Exchange-CrossTenant-FromEntityHeader:
-	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
-	 X-MS-Exchange-CrossTenant-UserPrincipalName:
-	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
-	bh=5y2PNvt6mI3pJuHMPYtA2afJg+868ZswMcSjKR+r+Wk=;
-	b=jCYs9YD+8iVF3TPH0pUS6RvYVbH4AZKcwis+NYc57e7R6Hem8sNJ+/FEg1d+5SgOmWIe
-	 Xgz5/q5u+QP/PPz0O9H0qFSZbnHct3jPxxB1eYNmywALT1eIgdvg9OnfLkpZbsJOz9cif
-	 ey57k5Ir/g2Memezf8jyZqjQM4d+4/+SZFAQvsyRrhi9My9/Kae4FwUTzunkKQwJmpqJB
-	 Sx1gIQtBYzT426Ep+isXAFNnOkRqGssdP433jvGblYbiVEmg0Ax874sO3jsKoZUdcquYW
-	 EJ/sCv+M+Tkw7r5PsD4Tqc3nHkiTkdnXquiGvH+08jKET2g4bVnSc5Ns/S508N3eXmg==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=wdc.com;
-	spf=pass smtp.mailfrom=wdc.com;
-	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b="TIvthdP/";
-	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=B0owvuc+;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.45
-Received: from esa6.hgst.iphmx.com (esa6.hgst.iphmx.com [216.71.154.45])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.51
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1795535234;
+	b=H1rGJ6smbcylPPcy1EQWol+phh/HqFAxJH6xYpyas8dMWOlQRynqVBWezzVXzAwG25/r
+	 ZnJS+WUn+MOFv+psPKvndBRN3lfFdgVAPb8do7bgEJ8fMsHw0r/kIHpp8M6nghqHNwvdu
+	 pBw1eRnylNBXzFrRtuVIjJF34wSgp5azcFie5UWQHH0K0TP0sbr/v8bfyiazYBibE1J4v
+	 d2TijrdHut+aLD7knjmtmIIxRh6qxtGAFcSH4me6AlSHn5fs2Ux9FrfkWcO/ar3kh3BO4
+	 SudPx0yrNCx5sahKdPivfylDXEjBHx44H11EmBo8g1RZVTrmonbIhv+xTqj6FlGsm6w==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795535234;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=c+M74FJOsT5YQLJ08JqifNowztZ/oGKZWIre0sbqMpY=;
+	b=utSYSHQgE4EBjKLzdNnvY3okfocUAofhmUZMCD10OSFR7Bu80bJYUeRg5yJULPImndNo
+	 n89LihECbVJn6Yx0O8s+11oo+dihEA7BueLeYV3oOYKgofEId8XO0c8QWAd7CskqXo7SY
+	 IYEjIWTnppL1nslQAGuz1GSg8uVbpqxho0Cw24NVqtOuGK52O58GhUKyuZaZZ0XmqA7Nq
+	 tQrSoJ2hIC8pRsvo2Qexzs4cMgHEGoIRNwQSkoJUIaraEsaeWR7YYX5W116/KgN+yW7zw
+	 HZ1exe8A+dR3JAkSum8xJ0oTqKHa45fG0QLXrys4bbtDfVY8PT+fLhNx2YU0A2+lJYw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=none header.from=amutable.com;
+	spf=pass smtp.mailfrom=amutable.com;
+	dkim=pass header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=ZftFBMZb;
+	arc=none smtp.remote-ip=209.85.128.51
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 64964606A31E;
-	Tue, 24 Nov 2026 06:45:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 64964606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EBE8C606A321
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 15:47:13 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org EBE8C606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=amutable.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=amutable.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=TIvthdP/;
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=B0owvuc+
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1795502745; x=1827038745;
-  h=message-id:date:subject:to:cc:references:from:
-   in-reply-to:content-transfer-encoding:mime-version;
-  bh=Ewz/rTE0aWok6fA+/6oNvnCeYsBzA68aa8dwXkNQKNA=;
-  b=TIvthdP/usWZxROk7X7sNwHYG8FoNS/vcX7cuU4YS98WVYjlyKGWXIdP
-   tX9mk8XbnZgibEl2HfocpBZPJADk2yzprxu0CIp6y7LRthDXnBOpQK7if
-   tf5eH42n57zUQ/fVxxz1ijqrFgk+voCfYZzmfwAgrOLiic2RckNzQ4jp1
-   sUAT3wJAyQQrbFIsKDs7dwAvlI0Z0tFxp9+R99S6VRlsjXfE1bpciJe+X
-   aAilNqzfbMMUs2T+F6p4vHzQbv6LX5vuARPIPItII5iTbjaAL/utvXHD9
-   YhH8vU0JEjtNNOkNr2G2OlYV1nV8x1SI4NAYHcGRHnkLRo8i3XeSuqCAu
-   A==;
-X-CSE-ConnectionGUID: ryvJkkndRy6x4nEmBnW7lg==
-X-CSE-MsgGUID: 1bisQq4gQcWcKk4oeVIUwA==
-X-IronPort-AV: E=Sophos;i="6.27,230,1786982400"; 
-   d="scan'208";a="160008528"
-Received: from mail-northcentralusazon11013039.outbound.protection.outlook.com (HELO CH4PR04CU002.outbound.protection.outlook.com) ([40.107.201.39])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 24 Nov 2026 14:45:44 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=WbUfTCv3rr+CQnE/nrf/gNl8AftxyjkgvsS6356CExn+hhcW2GVmo3NbGzmhstGuRSgmR34xSWrQqgSdWU5CvGFxO97urgE58Ex3dfq3TmzyEVDRmt1RJbnCDxm2jUM05KCI90bTzdn6CORZ3FFaCM/uKQY9LICxWFFALJ5KGkNuHkdqdcJnCmW096QEQYFNRYZTRXsBxBCebEqEFRmubfLTomtM/ChAepe2jbOHK9xGNIvccLOW/p53h6Zm2ut0/cGlvfoPW02piZUBoBoiOfRjBGRvgqJDU5CI6gf4lx+LUyOb8haZffJbEOPz4N4lKjMiW3e4s1kd1a882JWfsw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=5y2PNvt6mI3pJuHMPYtA2afJg+868ZswMcSjKR+r+Wk=;
- b=Uc5yixwikDyaSBP/bb+f56eVLwdMClrvYeeMoaefoKkaXCWDTHiXnAaS/5WoGbPNWYILZX1YbLqsW6XAHw0MsDTqJZiAX+9Lxf52vYE6Q3YZ2/3505x8uBVYWBPSbsWLnAEqJa+ShrcG3T9D8CReqtbQlolmopMTjNHuzUU675uTt0nlYEJIzgcigHOZDAdBvum6c+Ryr5+/1PY1ID/8BYeG2m1SDQMp0YdpB5UVuy+uRkAk/nEMIT8959jlHx2WmYw3cdmjTIsphXfhCbjuyj/Hyh23q0Pnv2jAi7L0OnQB+lpgbxYUGT5pvVBAed7FB1P+QYhI2Iei/d/1XTJVcA==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+	dkim=pass (2048-bit key, unprotected) header.d=amutable-com.20260707.gappssmtp.com header.i=@amutable-com.20260707.gappssmtp.com header.a=rsa-sha256 header.s=20260707 header.b=ZftFBMZb
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4bb666304fdso50704945e9.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 07:47:13 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=5y2PNvt6mI3pJuHMPYtA2afJg+868ZswMcSjKR+r+Wk=;
- b=B0owvuc+cpcKfSzY31qPStEOCMnx+zXIK9R/tu/f0fMePHn+FULIFMOCh+JR8jmFVifyosJwSSLlUPSipF9UmJlDCkquEKhNpWJt2J+dt7psKYIIvxeuvKjiraeFZsbYrWu/PUehDpwH+wulXAQlglh3UMZKdOW2Vjo5jZstrgo=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by SA6PR04MB9297.namprd04.prod.outlook.com (2603:10b6:806:41a::13) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.639.13; Tue, 24 Nov
- 2026 06:45:42 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0639.012; Tue, 24 Nov 2026
- 06:45:42 +0000
-Message-ID: <8c893023-3647-40f9-90dc-63ce977fe710@wdc.com>
-Date: Tue, 24 Nov 2026 07:45:37 +0100
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2] btrfs: wait for block group relocation on remount
- read-only
-To: Miroslav Cimerman <mc@raidlab.org>, linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
- Naohiro Aota <naohiro.aota@wdc.com>, linux-kernel@vger.kernel.org
-References: <20261118125816.6878-1-mc@raidlab.org>
- <20261118202548.82001-1-mc@raidlab.org>
-Content-Language: en-US
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-In-Reply-To: <20261118202548.82001-1-mc@raidlab.org>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
-X-ClientProxiedBy: FR4P281CA0083.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:cd::8) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+        d=amutable-com.20260707.gappssmtp.com; s=20260707; t=1795535232; x=1796140032; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:from:to:cc:subject:date:message-id:reply-to:content-type;
+        bh=c+M74FJOsT5YQLJ08JqifNowztZ/oGKZWIre0sbqMpY=;
+        b=ZftFBMZbn0LcIRHZnzSsxbJlCymavz+w+LluUE3GdSb1gt7+ej3Dstzvhlcejgj559
+         jtVlxolwZJ2FVVlh1rTZSC7ngZZlWL5UqaHwPtYfqU01PnFh2173/eKTW6nlOR0vbVqw
+         0tFBYRBuxpXIwH03MMcTtFOdsMUaq82qx9vBnHQlYIk60nvSvs6gkfHOa6pIvXVB019S
+         MzuNWMaKOJ7x/xGrzhL8ZRJwy0u4yKwZ/BOYX2ECRRCMtdf3zscK3N69GU6Dt85/ltMD
+         NFYZVgZTieIAjSo5r2Jo+4+E/8Nu0+CZESCFN+DJi5EYGEwVTf6708tTA6+YRVIwd2Fz
+         7ntQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795535232; x=1796140032;
+        h=content-transfer-encoding:mime-version:message-id:date:subject:cc
+         :to:from:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=c+M74FJOsT5YQLJ08JqifNowztZ/oGKZWIre0sbqMpY=;
+        b=jFlMz34hojY8sJKfJFVcGaD36VM+nBlXfu+iVsayKKC/Ri6AgKsvbHBGv4UZwuUqTR
+         rt4M0oyu6Mx1oEdcmo4xJDjTGVdnP4G2pn+cMUDnVuhDpTDLC7CXS1tQP3d8gpPoVIHH
+         xGwLgUh55biujhV3W2uiA6BLJRGhuToCecUap0Kx6Reyuyy1POG5YVSTB7rB+wfL1xyj
+         hdlcW4V2m6QXC0ocXw7+9SNyGImK5PvP42mYjnvUI+vzt1e1BOLSznMerwcTJJKZplsN
+         aCN6xiukX98jkLXSmjN6mrayvYmpspfLM1OYM5BfOZno1kPK5wkuJ9d6yMpTJbfVb3/K
+         +tvQ==
+X-Forwarded-Encrypted: i=1; AL+hErFbIyANjqJLt85sVspasoFziLt88hAC+odfnAtKVkA3+wfMwkKsR5nclffdjnbA3KzT7xaGk6LZvfRRsA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+JGkpCvS2y8Hu9pjq3cNruy8sVoZJhkxf2PhHcSERWpFK7L6Cp
+	Ycjk0lezvS6AUfevoyZjcrIEKXP/SkH61S7kem+ghSwUHFazCzo4BvdDW5MZZ3+tQWMscpJlHVv
+	njs2lWXLp
+X-Gm-Gg: AZFdTZdxwZFKYb3OLpM3PEam2/tabNPv2eCRRUm2Ab4CwBLhRrR96wsQAdpr13VzT+Y
+	nBs3jxUjrDpc6oNi0308q7Bi1b38qtbt7mvhZ/J4xBOfDKakzdkXV2w66/yNLL80ZsFP2Rikcdh
+	H+zGpPFHu4B1DiVNZyfBy4TrMERfnHdhPHP4GkazQBqu34BSkso6KYHNZm7SHWSG66SP8c1l8wv
+	xB86d5ux8fJwT9PKOiazcI9kAO5Bca5moRmEvwWhZbgRnrHAzVP2Pxo5g7bJedOKVrxPkxclIWF
+	Ob+r+Jf+ghRbaTrvxbZXZuxkIMRXfE3SHvbQUlJEcnMNfeR7+4V61aD9Oqj/V26/DQHg4EBhDsE
+	WRPJD0WEQZTFrEEJ3Hahv5ZMJIsEhZH6CyvFDMwt5VibbPsRS0aKC64Y/JFovEiy+TL1Oi1Lk3p
+	2qCfKywrUgMvVFa5KB8YFGzv1bQ093vyaFxR5nVvFSK6qirhm5yXrYq2Kdyary7fnjyFpwZSO+H
+	ylhsLHGQXsgkaVIzWgVwR7c+L8UbbHsN79GkH4ITrHJrZEx3SejDuQXiWA4of451Zj1m0kfAeIQ
+	aX3cWj8BQ8Yi6lwTWc64emnGB7D5tR1BApDfKNVjjZG/Iv3GXCkWqBNJ8cM9V+zv7ktIO2cZsZv
+	47J8KC722EA/h2d8=
+X-Received: by 2002:a05:600c:154c:b0:4bb:6a78:7c42 with SMTP id 5b1f17b1804b1-4bb887c3428mr314460225e9.1.1795535232298;
+        Tue, 24 Nov 2026 07:47:12 -0800 (PST)
+Received: from alex-t14g7.lan (p200300cf572c28000f8773503e2ef921.dip0.t-ipconnect.de. [2003:cf:572c:2800:f87:7350:3e2e:f921])
+        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb853a9846sm525023365e9.11.2026.11.24.07.47.11
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Tue, 24 Nov 2026 07:47:11 -0800 (PST)
+From: Alexander Mikhalitsyn <alex@amutable.com>
+To: dsterba@suse.com
+Cc: mason@kernel.org,
+	Alexander Mikhalitsyn <alex@amutable.com>,
+	Lennart Poettering <lennart@amutable.com>,
+	linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: use super_set_uuid to support FS_IOC_GETFSUUID
+Date: Tue, 24 Nov 2026 16:46:04 +0100
+Message-ID: <20261124154604.77736-1-alex@amutable.com>
+X-Mailer: git-send-email 2.47.3
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -124,97 +98,33 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|SA6PR04MB9297:EE_
-X-MS-Office365-Filtering-Correlation-Id: ba4be8c0-32b5-4044-7923-08df49f68f2b
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|23010399003|19092799006|10070799003|366016|1800799024|376014|18002099003|22082099003|4143699003|11063799006|56012099006|261022105027099003|261026121527099003|261026140227099003|261009223027099003|10067099003|261028144727099003;
-X-Microsoft-Antispam-Message-Info:
-	SJMR6VHChrjui3RpH1ll8THBT/Sc+eoxkoZwFMUSZu4feroiy31kCg8xBuFSH2+FT7/oG+nK81X0CXtjV4J5ipz0vU9rU9lWg8cqixY9kEXS4p+CTinxgfYjtfanDfiSSanZzgH+Uyz4DRtaAmQezxOAv/jcQwZtZCngdd11wmBXuAs8cel2yDeL0AJa2k+sV53/1i4pBBtY/Rh2oX7ymwW2kyVRJ3NxjEx+/+xeipX0MM/Ne3obA61J+e7U3ud07VMY7FtCGtIHj1VyD/HvfxJziu/FILIHWFndOsJQ1TPqNOxtlMcZzFSVn3i3WoER+0UdcW+9BDFxNGY52/00Puj7BTc1si2gyXtoOJWIbFkKCUNK1ia91KxGTNF0/rl3F3YXE7yei/GUUuJPoEhe0ed+ete+UkjMHro3PuAza8GBFiDHqUVRJ7ucPxJf/MwY/QK+H6rWCEee8IvM1CPa0FyN+K5zrLGPCUkn1BHYqgtgDRwtYm4ilXuFJWe6oBjwmynF6dWo24pGqkcZMTLyfw19KgN7AtL7XDDh+KFLKb035Ay5wYhfszQ2Kt7XI6g9WYavPQCM9mQwXLYgYK4m//VGuVlUaHXfnGCARGrSGMw=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(19092799006)(10070799003)(366016)(1800799024)(376014)(18002099003)(22082099003)(4143699003)(11063799006)(56012099006)(261022105027099003)(261026121527099003)(261026140227099003)(261009223027099003)(10067099003)(261028144727099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?utf-8?B?aUFpOVNRYmthdzVoZW1hRWoxa2dkemt3NzFKeThNbDZROUNUSmI4bHZNckw4?=
- =?utf-8?B?OGdDVVZSSEhKc2hGNGxpMXJhdDA2UHVKYk5yaWNFblZIT3Jnam5naHBaMGor?=
- =?utf-8?B?RkswMCsvWWFSVVdoUG52OWV5VWNrelRxOWFrdi8rQWcvKzFRMnJkOEpoWDZ2?=
- =?utf-8?B?Y2hwVDRTbUowcmpiVmd5UkhWa0hrZzJhQlhPWjFsR2NQTWY0MzJNMWc5WFlV?=
- =?utf-8?B?d1l1WmcyOHB6eGYwN20xaXJwNndMa0FtVTdsWEJpRFBhQjFhQTF3ZEovV0xl?=
- =?utf-8?B?WlVCdnhPcHFTZ2lqK3JSeldLNThqQ0JPY1dpZDRUYld2eGlTY1VOaExJQ3Nh?=
- =?utf-8?B?aVdKcmgwWnJYOHJUdFpqcTFZN29xaDJDSFJOS2pJOVR0MU02TnBtM2s2ME14?=
- =?utf-8?B?cUpMaGRQcHFwMlBDU0I5SHRRWFRRa0pxcUg1U3F1QWxwTWFpU1M5N2QyZVZV?=
- =?utf-8?B?RXFYT2x5M0JqV0taci9nL2tHYTNpZEtoL1BjaHBzZ0xyQ3JzWFlvQmIvMi9i?=
- =?utf-8?B?R2VCOGM5aVdoTERPN0Z0dlRvRlhuSmpmYVNQU29neTUrUDdYR3RBN1QzQTUx?=
- =?utf-8?B?c3dub21sZm81eE43WHJoVzZRQU5idzh4VUt5ZXBEd210RjlYK21ZK1ArN1BE?=
- =?utf-8?B?RUV3bGZJYmxOb1JhQzFxblo4d3BUT21Oa2hOd2Y4RnpXNmp2V3lSdTJGTTVZ?=
- =?utf-8?B?ZkdGSUhpcy8zOEE1VTVoVHl5NUtzN2VOYmpLMFlYZXNLTlZ3QzE1YmNIWXlX?=
- =?utf-8?B?RG5BT00rMHRpT0dTNzRkRTUxTzk5K0tYYUZGWUR5aGwzVEg5amp2aytseWFJ?=
- =?utf-8?B?NkFNY1RhK2JyMzFOTnpYTGhOTlM3aEtzbXdrenVzeXEreldJb29DU0tPNDNR?=
- =?utf-8?B?cGZ0SStJUGR6Y1NaZUxzY2xzR3dseXZnUTVKVUVEQTA4dmxuUTlqQ2QwZjI3?=
- =?utf-8?B?NGNvdVNpMEc5anJnM1B4SEo0TE9zNDlNaXhPdmRxRGdENUc5c0JVR3pjanNR?=
- =?utf-8?B?UnpzTGxxazQxK0JNTlBXVFpRNk9TWnNyUmxvN3lFZExod096YVJpN2Jtck02?=
- =?utf-8?B?TVBhMVZqVjFRbFpTUC9rd0dIQ0tiNGNFUFB5QzhlWmREMjhYZDdvcFkwWGk2?=
- =?utf-8?B?VUhIdFh4RVBuWjUrRU9OcXQrblRZdmU0UzF1UlJDS1pwUjFMMzVNMjFYTlNr?=
- =?utf-8?B?OUxJNEY3bDV4a0FSWmRsQnlsb2s0ZzlveFZUOVgrVVpoazlmTzFucXNhYjQ1?=
- =?utf-8?B?M0N4UDVUOTZ3Q2dyblcxSXBmbFp0Mks3V2FVZnVFNUJkZTVYQldvSjhQVFgy?=
- =?utf-8?B?clhJQXVWMEY5Q0JteWZBVE5oYkZOL20wbkhRTjQ2N0RxeEFQaXR5d0JOZnZL?=
- =?utf-8?B?QlE1c2oyRWpUcVNNT05rNWZYbW14K3dZbzdOTzdQbzhOczlBZVhKRCtNWTJK?=
- =?utf-8?B?YTZaRlg1enlNUHpDM25TM3d5ZnBaNEhBTEx1M0pDUHp3VENVVjNVakNsZzRl?=
- =?utf-8?B?UEh6REZFOXpjQllzSUk1VTB3M09VQmRFS0xOSkhIQ1dWaHl3NWdid09tVWpi?=
- =?utf-8?B?c0hPMmEzb1ZSOUE0SGVqdXJWSHZPalBJc0xtRWgvVjQzckUyNzJlbER2RTFI?=
- =?utf-8?B?ZmdTLzk1MW5ldTdxZ1FoemxwQ3lHWWlnSzZBc3g0R3FmMHNTSFBHYk93QmJS?=
- =?utf-8?B?ckE3UnlNYzZ0RkpoWk9ib0wxOXp3aE9pV29tZWhDdUFXTGRzUTd0alBWZi9u?=
- =?utf-8?B?cmlVNldqM0tXdEJoNEdBOUk0TXl6TG9HL2dNdEFzNGM2ZlBxSHRZVU50ZCt4?=
- =?utf-8?B?TllKTG1FSnZFVU5SaytiSW9RV0dyTW52TXkxN1UzUUwzMU1tWE1pVVRYcHI2?=
- =?utf-8?B?blJGWm95ZHFxTFFSZlY2Z2s1QlB6RktiTTFKaFlFR3Z0Y3hiT1J0NkkxaVAv?=
- =?utf-8?B?OHZINXVjU1JwVzlmbHN5bnI0NVlxd2czTVY5bGRNVWdpOEtOOTFSakpwbHdo?=
- =?utf-8?B?QUR3czlTSENKVGNHMExScDdjbUx4MFBaZXFpNmNKVkVMUVlSZnlrMmQrK0VP?=
- =?utf-8?B?VkFQdERRNzY0UGRTQnBjTXlrSUxMalBSZC9JT2R2VEtZSlIrWUZSMldleHY4?=
- =?utf-8?B?YmpGbEt1QldtcldjWGtuVFc1WkwvWWpucFRoWXFMeWY5aVdNWXJ6TUZaUU41?=
- =?utf-8?B?Z0YzR1VlMjI5bENqOEpqeFIrUkJiZ3E4RFBLWEpCck1xV0x0VHk2WUhXamh5?=
- =?utf-8?B?U0oxbUlVL3Fwdm03UUl2MEJhUjNRNDNBcExiZ2x4TGM4YlR2N1lyeXNDVmdZ?=
- =?utf-8?B?S2dBZTB4a3hjSno1STdGRGZ3aEN3S1Q4U0l0T2Z0OW1aZ3FLRDhpTXhtWDZu?=
- =?utf-8?Q?UICqrEIDqXoXgQSjdsU8TjzCvL9xEj8adxvBqdcNSWWif?=
-X-MS-Exchange-AntiSpam-MessageData-1: /3ANDiu8QC1uRi3aBIa/eNoyCORaFmgzmOk=
-X-Exchange-RoutingPolicyChecked:
-	d+NBht1KsDnB7nwxJiOi/MPuGxh+HMMCCxudJFe501eGvX5KlRgVafnyCmnOS8lXAUhGR7ksX8jmS5zU45HcZQNeNoWxfkAMt/Nz7O86NAuEO+VGqMm1U2q9YO7FqsZGRJIrf4YghLWza0PeHJUyC9ZT3/sEm0hLyUzuq3Qv+x2dpaK2cQh+xlFDVlSET3jg60eTNT0MF4y0cppQ8H4t4GrdSvT25XzF5bFQx1imewcPaFDcG+NZUEk14tBqMzINk2VkdN2yMG5yHvCy+ouDMzH1TUjSEC85Q3mUUMjT7rd/MEAIxTYyw7AEo04qZ8D5qnYnQ5Y3LoeC9L6cufu2CQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	LXGQCK6a4rMHJ9vmKLqQmHKm7acf70NZYx+DavKsyUIchcM++gnbxqrGr1fYKjJ296/OhSeCETl30EQA8kN2C7KHrrPrHadBto1dW5CJnQ5A7BMX9HQichZD2ZDe/Dmu0m0moG68hgzFwOeMDpDqKmQ8dDYd/k608qntHaZ9z4a1moaC4Y15vMzefr0BFKZ07vAWEpzXM9ZSi/YbXjaeu6fOLTHoPwO0eNRvR6XdZGSZVmkyZtecAJHa27Q687zUbeES/qHRwaZR0BBV0eVtmsSNPkkrCOsHVL+4FUCuXmMdLJ0Z3mCSMHllmpSR5q3GbUpO8T9hO2FCiAeFkQ91p/dNDOFAsEU7bVY3EWmFi+G+pft1EVo2beZV6QP/uLuGgVO1an7pFYD7C2qLgQiI7VXxDmW6sOG/e1RPVfUxLcdPSP6bgoxXQ9kvx5Pok+rstP29baOfajwsy6cLTj7yH8tOdsCynbTRej98wZ45hmKEb4JkhDEFuncAAkMxWkMdYeh1vi9/fUlztQDp/FlfVQ/bR1OUTXi3+gPlCUhbkIdYv4bPMEoCC05gzZCrcQzl8Fqup+AcSupJydcisSG+SQw/YESaie9PhIV4DELsefnNKies8vRBQI8oAoiXqDYX
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: ba4be8c0-32b5-4044-7923-08df49f68f2b
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 24 Nov 2026 06:45:42.4756
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 9d1M9bF1dylxJ0Sn2e4Kv9Xo0aN5f7GGWS9VMWZOEKYlgx4h9wh51FnXBs7lNahdAtpmg6anwvkEIAkp2iR4AU10klP7q2f5VACNxJdzZsg=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: SA6PR04MB9297
+Content-Transfer-Encoding: 8bit
 
-On 11/18/26 9:25 PM, Miroslav Cimerman wrote:
->   reclaim work                       remount read-only
->   btrfs_reclaim_block_groups()
->   |-btrfs_relocate_chunk()           btrfs_remount_ro()
->   | Still relocating                 |-btrfs_set_sb_rdonly()
->   |                                  \-btrfs_commit_super()
->   |                                    Returns, read-only
->   \-Keeps writing, leaves its last
->     transaction open
->                                      unmount
->                                      close_ctree()
->                                        No commit on a read-only fs
->
->    BTRFS warning (device nb2 state I): transaction 65 (with 98304 dirty metadata bytes) is not committed
->    assertion failed: !found, in fs/btrfs/disk-io.c:4378
->    kernel BUG at fs/btrfs/disk-io.c:4378!
+Currently, FS_IOC_GETFSUUID fails with ENOTTY. To fix that we should
+use super_set_uuid() as other filesystems do.
 
-The bug looks real to me, but Sashiko has another complaint, that looks 
-vaild:
+Reported-by: Lennart Poettering <lennart@amutable.com>
+Signed-off-by: Alexander Mikhalitsyn <alex@amutable.com>
+---
+ fs/btrfs/disk-io.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-https://sashiko.dev/#/patchset/20261118202548.82001-1-mc%40raidlab.org
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d8d433ac458b..fde9f4c4ea11 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3616,9 +3616,9 @@ int __cold open_ctree(struct super_block *sb, struct btrfs_fs_devices *fs_device
+ 	 * on-disk UUID directly from the super_copy.
+ 	 */
+ 	if (fs_info->fs_devices->temp_fsid)
+-		memcpy(&sb->s_uuid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
++		super_set_uuid(sb, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
+ 	else
+-		memcpy(&sb->s_uuid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
++		super_set_uuid(sb, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
+ 
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_sys_array(fs_info);
+-- 
+2.47.3
 

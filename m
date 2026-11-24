@@ -1,77 +1,101 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=212.227.17.21
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795553941;
-	b=Qr/tvwG+7oxtkudRcSApkVfhwcbPygqg1KEOrHrUqoDLzl3P8q4OzpmPWBzetexjysWc
-	 Tm34VBsRS5OcyPdu1UhDgrzpsQCKpPTvQwVa/vqBvvmlXDgD8K9PO4T79+K4NPCH/xz2r
-	 mbyHxuzeqvoq84j+aqu7uFsF0oW8ITQvnmOjskzjeQsbztt5LBpH/IMEv7nJBi/NcO/Jh
-	 5BDMN2U1Xg9I3HTnoY2R+pgr5aZLdQS5pVNrKZqt9dZLbx9TY6bEe4vUTWXnQ1V8JhscN
-	 jCHw+saYdZvYhqXb9fKqtoMLsVk26Px/ShodN9Nu7oX2wIi9s1tcT5cBEOPX0awMvbQ==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795553941;
-	h=DMARC-Filter:DKIM2-Signature:Message-Instance:DKIM-Signature:
-	 X-UI-Sender-Class:Received:Message-ID:Date:MIME-Version:User-Agent:
-	 Subject:To:Cc:References:Content-Language:From:Autocrypt:In-Reply-To:
-	 Content-Type:Content-Transfer-Encoding:X-Provags-ID:X-Spam-Flag:
-	 UI-OutboundReport;
-	bh=kx7JuV4M/7yg3dBkY042bY8BmV3Wgtt39dxb5d8+6d8=;
-	b=J20YwkOaC3cfc1GomNKS8pF4vr2HRwOs/6o3+tg1uZ9nZHeWBwwqVck/XutDgLf5MCtL
-	 Q/k13xkZl1EIqYq4Imv2sedJK35M+5NuCsbvw8h2nxkoBmAeQxd9oOQSZr7UJOwnEOmr6
-	 PeKOIE4s8cHESupXH12MVvUoeMwHX8gOXcYNkwVNhir1MtILAxdsSRqyClBaaPgBnOseX
-	 4bi1TIkMgNf18wSFmT3i/27shsOlXCF5u9kq/B1ISoqkWm1G27cSKSEzb8TdhyuPYJDVM
-	 Vcs2JrDaJ8/96TePUge5FpmpL1hRqydJ6VbFgc9mD0b44Nq7bRKWHR4b0AzketOigSw==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmx.com;
-	spf=pass smtp.mailfrom=gmx.com;
-	dkim=pass header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=iiIlOmeJ;
-	arc=none smtp.remote-ip=212.227.17.21
-Received: from mout.gmx.net (mout.gmx.net [212.227.17.21])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange ECDHE (prime256v1) server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.48
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1795554687;
+	b=TXs2Ag4pRYlejgbS7nnmXey6nHIsb1hLR1RWApqrPGPRSa+ybBf53aTBD1E3E9pPERjG
+	 /bPcPXO5vNTJFYs0RH3ov6ofXDkC0MC7HqGtZ14CXQGmnJw1ubi7971pfWI1u/rfauXfD
+	 a7TkEgEdutvf6NYW4Vx2AJDHAmCahKxNkLHJCmrjLuzaUyTzvzB5QuTcaIyTEzC+qJz3g
+	 xEMTf15gxWw+Zu3MxmbcxbZ2UHlsBEBa0Rn+RBFfPcpCXqeR4jCanp1JVI8vyW+aXacAi
+	 GxHkoo2yfn+qb8KDRbINi7h2YBLxAHz6R4pO/aSQomQkzV9xlfTDNfDZAzg4Rr6Pg/g==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795554687;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=R4pw9DcpdnMYeIxEUYnbnv91ThzTvTrm2VVYBrvrMnw=;
+	b=1VhKZ44QP9flPknGp2H5Ag5cBqqEGuZPIrW6DsWaJhumM8P6x1Pue7pHVp2xZz0gw7SQ
+	 mRBGjAVOA6u51QfzS0OtRItBfHDaRAernBnxl4uK+ChUcuxEQo+YATSoOoKiDwW0gdd79
+	 s1tfWh7xbc7o7CFX6zlsTN0Ej4KiZXXQhAZm5BN8xJWF5jAqtD8Rc2JTDk+VG3SsMXMdG
+	 70SleS4pYB/H5JwDpxxyQbzATh5JsgfMjkH2ZY8V1DId3q9MVt3RHBGO9FxIv+pkWvdHL
+	 pPvFzH6N3IVV2ZXtLlnsfIWq2jLsYcXC0wZ0NONaYpb5LscKh2TjJcrds6sgLX6vzXQ==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=google.com;
+	spf=pass smtp.mailfrom=google.com;
+	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=HKOoVTgW;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.48
+Received: from mail-ej1-f48.google.com (mail-ej1-f48.google.com [209.85.218.48])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CBC66606A31E
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 20:59:00 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CBC66606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=gmx.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmx.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A44F0606A335
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 21:11:26 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A44F0606A335
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=gmx.com header.i=quwenruo.btrfs@gmx.com header.a=rsa-sha256 header.s=s31663417 header.b=iiIlOmeJ
-DKIM2-Signature:  i=1; m=1; t=1795553938;
- mf=PHF1d2VucnVvLmJ0cmZzQGdteC5jb20+;
- rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
- d=gmx.com;
- s=s31663417:rsa-sha256:Nt9/A2f++dWuNtziU6dhVDCBBqP8
-   Ogn6SFerw2fcQC62wA+O5wbWeWSzu4MQwqQfm45pfh2jsvOBNi9Ppyk5E+WwHZWnSYBmZ3n3eqc
-   u2dUxwzMDxu8nZnxXEr1/eBMNby5kof/UwAJN8NEqT3xtUiOX9o2thq/ouIVKgJqZgCjuqjZQD+
-   E4yL4HeAjjYo/hGgBlcdt2+dn9aKW8LPRluoJ33lxkhf1W38jNMzA/ZlaCq7EMpDUrOzX5egj3q
-   kWA3zQD6gq1iYipPN+zGs4e6WQaflSTyFssqoQ6HzipZUme/OXTHKC20TAkf7i1/RMDXArhpv59
-   NH1wGhQZAQlO/A==;
-Message-Instance:  m=1;
- h=sha256:
-   1cIbjOfHvWfKMOxhYJriIReXh2nILyHfZeDNXNIyN18=:
-   F/9S+u6zH0fVeQGRVblTVp6orsyetGsaslos23tGuaU=,
-  sha512:
-   EODK8dabSKQOqIFhc6Pzsng8RRUZ5fbygagjooQb93ce/mighVBKjH4j1jvCSpWMW14d/aW/0okNgKZN0tyC3Q==:
-   67PnsfNNoyKtFFw+jBfW3bodYNY496YF3XMyIya46gWYfUz0N23h0bOnPhthb/SBuswFJRbG1Cm0YAxPExLelQ==;
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=gmx.com;
-	s=s31663417; t=1795553924; x=1796158724; i=quwenruo.btrfs@gmx.com;
-	bh=kx7JuV4M/7yg3dBkY042bY8BmV3Wgtt39dxb5d8+6d8=;
-	h=X-UI-Sender-Class:Message-ID:Date:MIME-Version:Subject:To:Cc:
-	 References:From:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding:cc:content-transfer-encoding:
-	 content-type:date:from:message-id:mime-version:reply-to:subject:
-	 to;
-	b=iiIlOmeJ/Z+RFwW4h41z0Glpgc6Z3uS7Vjw4MqObI/E/x8gj13XdV3w7SvpCbuXI
-	 CyVzVi9gNwvvGN/UVFZNUMWsyRQydJp2QwdkKUX+X8GR075IZrtOh4VPhDGpSj9XP
-	 E0rTIy8+Q0qYRH2c/vmLoMle6Ym7u4k6MrNRybLbpiuxBVYYfjwKnxCBWQWIxosNY
-	 7IgWU7MRLz9QKmV5eJCQv3xYjMdgaxLx5jfti9YNNfXMgdWTl/nhI9HpHUHvBgXEi
-	 zs/x7DpP12htzc61BB6Dvi2oPifbO9JRFqDIOv/8tiX0qZlptFjy33yCRKgRF85M3
-	 W672BY4pMFaEKTgQ/w==
-X-UI-Sender-Class: 724b4f7f-cbec-4199-ad4e-598c01a50d3a
-Received: from client.hidden.invalid by mail.gmx.net (mrgmx104
- [212.227.17.174]) with ESMTPSA (Nemesis) id 1MYNJq-1y1Bbt3Bkw-00Sorz; Tue, 24
- Nov 2026 21:58:44 +0100
-Message-ID: <b6147b91-d8ef-4fcf-bd87-0bc30f2aa741@gmx.com>
-Date: Wed, 25 Nov 2026 07:28:40 +1030
+	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=HKOoVTgW
+Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-c50ac25cdd4so661335766b.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 13:11:26 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1795554685; cv=none;
+        d=google.com; s=arc-20260327;
+        b=neQCfzUrnOG4o5mlgfrmKnF6y4w6h7JccO1ush5kPGdQ7m55OFo8kgEbmMmh5njzDD
+         WqBOpOh24TfjNzzCKcQ6UjrWWAx0QbBP5MWYiNN+84QwtyfWLUx3kasUl+F7/2F6mzu3
+         iDUnXxwig+6Apn3eB7nicpi/01aLjv5Av6awaqQP/2uTpBy8TTLxiDTY35oLED0wz+fq
+         FvfDlcpt0Qh9f4gVajLrYlbS9jso7MP+Na0oFDCEEG20bSK0zc1CRGZWnKVZeHUE1U/A
+         TlP3HZ67fiSsfjVOyHcL1Gi/xOfuQOYvIl93HbDXVwF45uAs28JXjvql1YNB2vKT6AUT
+         bymw==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=R4pw9DcpdnMYeIxEUYnbnv91ThzTvTrm2VVYBrvrMnw=;
+        fh=JcihQBAaJWtdizSy572jtkr7Cp/9kL6dmB5BfDV/CMM=;
+        b=WM1UUwjX8PzW+O3fnQ5UfE5VUva/YLN4SYLDGqp5IcWpign7N0diMzVk5vhWv18IX3
+         ae+CwKZa+moR9qw+44jqIvhd4O2Kn5xawYOc2W6w/ZTtnuyNQJAFQeeioVeqWjaD1Nvw
+         PY2FQCcb94CPqQ7iucxSTiqeElzSAPw8l1EYui5gDZ3rEO7SC1nOY/cKqiGFFSyMPHKL
+         anbrBP8ibIOyd1QydYK0NBh5TfHqG29O+nFEcBcRl6mahdcK5GqonTiRLNwZ9m5PHbfh
+         0NF4f9eMDpyL2J8xpR8yvDAm5PvS1VLyz1HN9NCErgJvcBGAwR/7sNTR5fEXw4YHBcmX
+         jjtg==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=google.com; s=20260707; t=1795554685; x=1796159485; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=R4pw9DcpdnMYeIxEUYnbnv91ThzTvTrm2VVYBrvrMnw=;
+        b=HKOoVTgWD/jri2ICKWYuabv2C9ujuA+HmAdR17PYnmvFnkT100ju59IEN9nDAg7lhQ
+         3izGbBqkf1fX3HoYq56E8uvZBM8ZfAXmNAMUUomMtkB8DHkorVYcnwfKwOZBzRAsgJO2
+         wbssVX4FXCgljByNAMwJEcMSidhJrLwVFKJ1EfKU+8JqRAFj8NpfeL3/N4xH71b2T0ZD
+         PXQrVq2c0wZQYeDZp0n+YHWMjfbJA3/aBiAASKWtScWWXk2KhE5bNgUwG12UKI/EVE3c
+         WsQsHA0ImsWl4+O15635i2+p+jMvtEzWWzvoBA93u4Nd2V3dnI4ABVn9slfjzPalO5cK
+         HwaA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795554685; x=1796159485;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=R4pw9DcpdnMYeIxEUYnbnv91ThzTvTrm2VVYBrvrMnw=;
+        b=1z3XSvOMp54EvaJpQDKmTnUQKwPYVZXmoSRzTcMuiAMrROhzYRxsRu8G9PIOqwTGnG
+         HwGFhOC4XLVRo6tLPkUan35uL53TneC5jnBqxP4hqDWIOy+2Xi04dhQDhbmCI1UDJF3u
+         X8MEZHwNEd8TMydMqKD6+JNpDewPAIC1YrYIBv9fQTn4mdCZ0CtQjMhM3Ppo1EbRI2AR
+         oe3x2LtwtI/+ScAhrF7uLLCDUoTA/7J3wdJ0yPMRaaWdBp5tmy8tAFtt34d+y1Rbd+Og
+         H3Rlj6742XWQ8LWhf9fJ1C418nLx/iskgTY1hHKXFaYGEUPqroigZhKjkE+lGPUSbZ7y
+         Uv4Q==
+X-Forwarded-Encrypted: i=1; AL+hErFTFDDCeOLkTPAr5AE/gwFFu5UKQ4tnGOC81bXJu9JiaJQ7mkYiSZdGrUAljKqVMWxPAA8V8pDUZweJzA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9KPOgodgWfeQ7KsNBRuB1rkFPiPUUnznwddF7hK41FxdhsA1zr
+	vdgjyxkH9tL49GYLMN6xtnBHzy6sCNqaukDkTbnsKo3sSwBjf8ox3G1tA+nu2hRQM9nwzNWs8/Q
+	3XGcOSyHT1wcslqxfOZc289ljFLPFaS6eP07/l3yM
+X-Gm-Gg: AZFdTZfA3RGX2vh+nuUEY2hos8woSmG533RMpFThtQwMKHeiAxFAjXRlI3Okla+03zf
+	hbgMwX8pbYkq+nq87MPqmsCL94a48CdwHcEzBFUY8h8e49syGItbrLh9Oeb9yh0lBwKSbN2Q2KY
+	UXr9w17i5v7QIK/sBHnMKPvo6z2IJwVYNcxw4Ocn1dfNkSn61rb0xc+e7ZS24PcQn6WdITIZmqT
+	JLwFkLI/1T1X/+9uk/MYUY1j4yrxBrBv5d1v7F8hV1LnAG2m7biqFzgczyvDigX7iuMUcqd3gz3
+	1+1R/yetqbJikcddY3VKAes+hLrHyfdU6bz18wZro08+pGMLgcMqM/jWxhoVO4NsOPpjYWCsrS+
+	7s2b+AEtLcpvF1yvbnOtVr8tvllJc6iyMiLmuzMyPGh4vX2oST5WVsafpNzdi/1J1eRZ1waLC5J
+	WdHFwRxFGeMDhkSZIdtgP1n0EiKfo1JvAt8WtxEqX+TEwq/x5cv1M=
+X-Received: by 2002:a17:907:8e90:b0:c50:5186:a428 with SMTP id
+ a640c23a62f3a-c513a87d9edmr1227142466b.27.1795554684471; Tue, 24 Nov 2026
+ 13:11:24 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -81,187 +105,258 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: use super_set_uuid to support FS_IOC_GETFSUUID
-To: Alexander Mikhalitsyn <alex@amutable.com>, dsterba@suse.com
-Cc: mason@kernel.org, Lennart Poettering <lennart@amutable.com>,
- linux-btrfs@vger.kernel.org
-References: <20261124154604.77736-1-alex@amutable.com>
-Content-Language: en-US
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Autocrypt: addr=quwenruo.btrfs@gmx.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNIlF1IFdlbnJ1byA8cXV3ZW5ydW8uYnRyZnNAZ214LmNvbT7CwJQEEwEIAD4CGwMFCwkI
- BwIGFQgJCgsCBBYCAwECHgECF4AWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7o8gUJFKS8
- OQAKCRDCPZHzoSX+qAogB/9C5ErH7KGAGpcLPte3Wcfdt3acCkGAuMpCjqOt8BVw30mX0kmF
- SRo2nODjz8YsYhWR1T8L3ylANAS/IGIJ64idBmObaqGHQn845nXLIvG33LqMsAGXmOJdRgTT
- BnBA+QFCEIZpo7L9Qt1dOQdHSpHT31Ta1kKsbDm582KPVBl6KRcJJBnjudIerOA1/L/zEyDa
- YjIfHIcvuM3Xm8AS00iBpsmc151QgCPljqnSRXBiup9C1oMgVlaROhY1iDam4UIQB6glkHQs
- LZhUmFDNimX5LxfOzi2pFJSjJvPclRZVX7Sq6XhK/OFb6IvswN7i0nUYZMQfuGDNqGn70ic3
- AQImzsBNBFnVga8BCACqU+th4Esy/c8BnvliFAjAfpzhI1wH76FD1MJPmAhA3DnX5JDORcga
- CbPEwhLj1xlwTgpeT+QfDmGJ5B5BlrrQFZVE1fChEjiJvyiSAO4yQPkrPVYTI7Xj34FnscPj
- /IrRUUka68MlHxPtFnAHr25VIuOS41lmYKYNwPNLRz9Ik6DmeTG3WJO2BQRNvXA0pXrJH1fN
- GSsRb+pKEKHKtL1803x71zQxCwLh+zLP1iXHVM5j8gX9zqupigQR/Cel2XPS44zWcDW8r7B0
- q1eW4Jrv0x19p4P923voqn+joIAostyNTUjCeSrUdKth9jcdlam9X2DziA/DHDFfS5eq4fEv
- ABEBAAHCwHwEGAEIACYCGwwWIQQt33LlpaVbqJ2qQuHCPZHzoSX+qAUCat7pCgUJFMw7KQAK
- CRDCPZHzoSX+qEjbB/9crFFjips2NKxkt2XUutUIKjBoUlg/xCeFIj8PsTuJePhrV9HzgKsa
- rJgSqo3t78oQWmeaP9WPoDYjfhOkQXEs+G9UwHe/LENm70+Q1jrwY3nlcR3YrkDCJ+EvMZOW
- ackgcOYn46Iri9DN91FbSTszPMnwHi/nf0aeJXicO9krrY5C8mUxv4CSKeKSRg/5BR59uDiy
- 9CMRHDtIDnpDWaLOXtUeowCdiC5O/jA571PMFx3Aolc7g4SSyNbYodblCBOdJrh0CVm2LlQW
- 3SXrvFpSAw7LMVDgsS8pTRt4A11eTIS7mz0zqafTohXP1wt+575IBHK5ZpThQb+PzSQmxAqa
-In-Reply-To: <20261124154604.77736-1-alex@amutable.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+References: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
+ <20261027231728.1466446-1-jthoughton@google.com> <32fad21b-5bad-4640-97df-ef0f638cd9e9@app.fastmail.com>
+In-Reply-To: <32fad21b-5bad-4640-97df-ef0f638cd9e9@app.fastmail.com>
+From: James Houghton <jthoughton@google.com>
+Date: Tue, 24 Nov 2026 16:10:47 -0500
+X-Gm-Features: Aa3M54qLiZYW-OI4p5Ie96tNauNpwSe6qBub2eVFZl5dz1FgCFOseL6mdcwJEy8
+Message-ID: <CADrL8HX5vb1PGDpWzp-eR0rNfsMCVUhFa9vp_WZZx2eJZ+dfXQ@mail.gmail.com>
+Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
+ current->mm is NULL
+To: Arnd Bergmann <arnd@arndb.de>
+Cc: "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>, 
+	Arnaldo Carvalho de Melo <acme@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, 
+	Pavel Begunkov <asml.silence@gmail.com>, Alexei Starovoitov <ast@kernel.org>, Jens Axboe <axboe@kernel.dk>, 
+	bpf@vger.kernel.org, Daniel Borkmann <daniel@iogearbox.net>, 
+	"David Hildenbrand (Red Hat)" <david@kernel.org>, David Sterba <dsterba@suse.com>, io-uring@vger.kernel.org, 
+	Jim Mattson <jmattson@google.com>, John Fastabend <john.fastabend@gmail.com>, 
+	Josh Poimboeuf <jpoimboe@kernel.org>, Kees Cook <kees@kernel.org>, kvm@vger.kernel.org, 
+	"Liam R. Howlett" <liam@infradead.org>, linux-btrfs@vger.kernel.org, 
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
+	linux-mm@kvack.org, linux-perf-users@vger.kernel.org, 
+	linux-scsi@vger.kernel.org, linux-trace-kernel@vger.kernel.org, 
+	Lorenzo Stoakes <ljs@kernel.org>, Chris Mason <mason@kernel.org>, 
+	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Masami Hiramatsu <mhiramat@kernel.org>, 
+	Michal Hocko <mhocko@suse.com>, Ingo Molnar <mingo@redhat.com>, 
+	"Martin K. Petersen" <mkp@kernel.org>, Namhyung Kim <namhyung@kernel.org>, 
+	Paolo Bonzini <pbonzini@redhat.com>, Peter Zijlstra <peterz@infradead.org>, 
+	Steven Rostedt <rostedt@goodmis.org>, Mike Rapoport <rppt@kernel.org>, 
+	Sean Christopherson <seanjc@google.com>, Suren Baghdasaryan <surenb@google.com>, Thomas Gleixner <tglx@kernel.org>, 
+	"Vlastimil Babka (SUSE)" <vbabka@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>
+Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
-X-Provags-ID: V03:K1:rPPgADQMF1oGL9xXSAoX3pHnQcpi5kPFYhDPo8JphhYALkQSqtl
- Rl1PhLbAxWWgyqLhQElutQKsWSC1SoP0jNC2gBQP8dXKHYllz5nVC7uG9fJVoDJPNoCc2Td
- pZyFXtvz/ARLffEXsnxO7AzzCi97Ab83lWmZ4MI5OMC692o1EzOR7WlvUp8YV1ASIUblSsl
- J5Ji9JjL5vYRhi6zNrNoA==
-X-Spam-Flag: NO
-UI-OutboundReport: notjunk:1;M01:P0:dvmKAttaW3g=;erVkOzj6BU7RyTC/glXrIUBCV3B
- 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
 
+Hi Arnd,
 
+Sorry for the long delay; I am finally able to get back to this
+series. Thanks for all your feedback so far!
 
-=E5=9C=A8 2026/11/25 02:16, Alexander Mikhalitsyn =E5=86=99=E9=81=93:
-> Currently, FS_IOC_GETFSUUID fails with ENOTTY. To fix that we should
-> use super_set_uuid() as other filesystems do.
->=20
-> Reported-by: Lennart Poettering <lennart@amutable.com>
-> Signed-off-by: Alexander Mikhalitsyn <alex@amutable.com>
+On Wed, Oct 28, 2026 at 7:14=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> wrote=
+:
+>
+> On Wed, Oct 28, 2026, at 00:17, James Houghton wrote:
+> >>
+> >>  - does there need to be any compile-time configuration to skip
+> >>    the extra checks and/or the warnings?
+> >
+> > Since patch 10 moves the warning out of line, it costs nothing on the
+> > fast path, so making the WARN configurable wouldn't save anything. The
+> > question is really whether the mm check itself should be configurable,
+> > and that check is also what makes the access safe.
+>
+> Right, makes sense.
+>
+> > The text size increase seems manageable[1], but it would be great to
+> > hear other people's thoughts. For the runtime cost, I'll do some
+> > performance testing. My guess is that a load of current->mm and a
+> > well-predicted branch per user access will be negligible, but I'll get
+> > numbers.
+>
+> Sounds good. I agree this should not have much of a performance
+> impact, and for the size it is probably as good as it gets without
+> a major rework of the lazy mm switch.
+>
+> >>  - are there any cheaper ways to make it safe than to add a
+> >>    condition on each user access?
+> >>    E.g. the original lazy mm switch was intended to avoid
+> >>    expensive TLB flushes when switching to a kernel thread and
+> >>    back to the original task on 32-bit x86. On modern CPUs,
+> >>    the MMU can deal with multiple ASIDs cheaply, so turning
+> >>    off user access in a kernel thread may be cheaper than
+> >>    adding code to uaccess depending on the architecture.
+> >
+> > That's a fair point. If user memory were inaccessible in kernel threads
+> > and after exit_mm(), every such access would fault, and the fault
+> > handler could WARN about it (x86's do_user_addr_fault() already has a
+> > !mm branch), so it could still be loud without a check on every access.
+> >
+> > I'll look into disabling lazy mm switching on x86 and doing some
+> > performance testing with that (like comparing the per-uaccess check
+> > with the added cost of non-lazy mm switching).
+> >
+> > Other than the performance difference, I see these issues with making
+> > uaccess safe entirely with the mm switch mechanics:
+> >
+> >  - It only helps on architectures (and configs) that implement it,
+> >    while the common check works everywhere today.
+>
+> Yes, this would probably be opt-in by architecture, unless we decide
+> to give up on lazy mm switch altogether and pay the performance
+> penalty for that on CPUs without ASID support. Either way it is not
+> be something we can do right away but that we can still consider
+> in the future.
 
-Reviewed-by: Qu Wenruo <wqu@suse.com>
+Agreed. I haven't collected performance numbers yet; I'll try to do
+that before sending v2.
 
-Will push it for for-next if no other review.
+> >  - The fault handler would need to tell legitimate faults apart from
+> >    bugs, e.g. copy_from_user_nofault() from BPF or perf in a kernel
+> >    thread is fine and must stay quiet.
+>
+> Would it be possible to move those checks into the individual
+> callers that want to avoid the WARN_ON(), with a comment on
+> each one explaining why they do that? It feels more consistent
+> to always warn here, and I would expect that for most of the
+> _nofault() users we do want the warning, and I'm still unsure
+> what is special about these.
 
-Thanks,
-Qu
+Yes, I think that is better, and I've done this for v2.
 
-> ---
->   fs/btrfs/disk-io.c | 4 ++--
->   1 file changed, 2 insertions(+), 2 deletions(-)
->=20
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index d8d433ac458b..fde9f4c4ea11 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3616,9 +3616,9 @@ int __cold open_ctree(struct super_block *sb, stru=
-ct btrfs_fs_devices *fs_device
->   	 * on-disk UUID directly from the super_copy.
->   	 */
->   	if (fs_info->fs_devices->temp_fsid)
-> -		memcpy(&sb->s_uuid, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
-> +		super_set_uuid(sb, fs_info->super_copy->fsid, BTRFS_FSID_SIZE);
->   	else
-> -		memcpy(&sb->s_uuid, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
-> +		super_set_uuid(sb, fs_info->fs_devices->fsid, BTRFS_FSID_SIZE);
->  =20
->   	mutex_lock(&fs_info->chunk_mutex);
->   	ret =3D btrfs_read_sys_array(fs_info);
+The _nofault() users really did need more scrutiny, thanks Arnd. They
+are special for different reasons, and they differ in how we should
+handle them.
 
+1. They can run in any context. Many of the BPF functions like
+probe_read_user*, probe_write_user, user dynptr and bprintf helpers,
+etc. are like this; a user can just attach a BPF program to places
+where there is no mm. So we should fail the uaccess but not WARN on
+it.
+
+2. They run in process context, but use nofault because they can't
+take page faults. btrfs's tree search ioctl is an example. In these
+cases, a missing mm is a bug, so we should WARN. So v2 will fix these.
+
+3. There are three cases where it tries to read the PC while handling
+an exception that was taken from user mode. In these cases, it should
+always be the case that `current->mm` is non-NULL, because we just
+came from user mode (i.e., when user_mode(regs) returns true,
+`current->mm` should always be non-NULL and pointing to the correct
+mm). So we should WARN if current->mm is NULL, which v2 will do.
+
+4. powerpc's BHRB decoding is a special case; I'll just put this in v2
+and we can discuss it there.
+
+So now in v2, the _nofault() helpers themselves do not check current->mm.
+
+I've uploaded a draft version of v2 here, in case you want to take a look:
+  https://github.com/48ca/linux uaccess-v2-wip
+
+> > The series handles that today by
+> >    checking current->mm in the nofault helpers (patch 6).
+> >
+> > The two approaches are mostly complementary: if non-lazy switching
+> > turns out to be cheap enough, an architecture that does this will have
+> > better defense against uaccess bugs. But I'd still like the common
+> > check so that these bugs are reported on every architecture.
+>
+> Agreed. My main remaining concern is about the number of functions
+> that need the additional check, if we want to avoid missing
+> any of them. If we can have the check in access_ok(), that would
+> cover the majority of the functions you are changing right now,
+> and it looks like we can deal with the corner cases individually.
+>
+> Since in principle every user access should go through both
+> access_ok/mask_user_address and current->mm check at some point,
+> so combining the two as much as possible should help long-term
+> maintainability.
+
+You're right, and v2 has been restructured like this.
+
+- The check is in access_ok() itself: the generic version, plus the
+arm64 and riscv versions. __access_ok() remains a plain range check.
+- The callers of mask_user_address()/masked_user_*_access_begin()
+check current->mm explicitly. There are about a dozen such callers.
+- The unchecked accessors, __copy_{from,to}_user()
+and__copy_{from,to}_user_inatomic() (and arm64's
+copy_from_user_flushcache(), which also relies on an earlier
+access_ok()), keep an explicit check for now. Once their users are
+converted to the checked versions, those checks can be dropped.
+
+Compared to v1, this also covers get_user()/put_user()/clear_user() on
+arm64, powerpc, riscv and the asm-generic architectures, and arch code
+like signal frame setup that uses access_ok() followed by __put_user()
+or unsafe_*(). user_access_begin() no longer needs its own check.
+
+What's still not covered: x86's get_user()/put_user(), which do their
+own range check in asm, a few architecture-specific paths that call
+__access_ok() directly (e.g. on alpha and sparc32), and arch code that
+calls __get_user()/__put_user() without access_ok(), mostly trap
+handlers for user-mode faults. Probably best tackled later.
+
+>
+> >> There are of course few enough of these left that I think
+> >> we can consider doing the same thing here and turn them all
+> >> into the checking version:
+> >>
+> >> $ git grep -wl __copy_'\(from\|to\)'_user  drivers mm virt
+> >> drivers/gpu/drm/i915/gem/i915_gem_execbuffer.c
+> >> drivers/gpu/drm/i915/i915_gem.c
+> >> drivers/gpu/drm/i915/i915_query.c
+> >> drivers/usb/gadget/udc/atmel_usba_udc.c
+> >> drivers/vhost/scsi.c
+> >> drivers/vhost/vhost.c
+> >> mm/kasan/kasan_test_c.c
+> >> virt/kvm/kvm_main.c
+> >
+> > Agreed, I think we should clean those up, but that can be done
+> > separately. This series already adds the check to the common
+> > __copy_{from,to}_user() and __copy_{from,to}_user_inatomic() wrappers
+> > in include/linux/uaccess.h (patches 7 and 8), so the KVM path is
+> > covered without converting the callers first.
+>
+> Right, if dropping __copy_{from,to}_user() as global interfaces does
+> not help add the check in a consistent way, that can wait as well.
+> It looks like we are very slowly converting away from them already,
+> as we have about half the call sites left compared to v5.0.
+>
+> There are probably few enough of these that we could address them
+> by either adding current->mm checks or converting them to use
+> the full versions instead where that is an obvious change like
+> that usb gadget driver.
+
+Sounds good. I'll send a separate series converting the obvious ones,
+starting with the usb gadget driver. I think that will be useful.
+Let's see how far I can get; hopefully I can drop
+__copy_{from,to}_user() completely.
+
+> >> As a quick fix I would probably start with just the 'if (!mm) return f=
+alse'
+> >> bit here to get something merged while we still discuss the other
+> >> details.
+> >
+> > Making the same point as Sean[2] but with a little more detail, I had
+> > thought about making the change in access_ok(), but:
+> >
+> >  - On x86-64 and powerpc, the masked user access paths don't call
+> >    access_ok() at all. That includes copy_from_user(),
+> >    strncpy_from_user(), strnlen_user() and every scoped_user_*_access()
+> >    block, which is where many of the converted __get_user() users ended
+> >    up.
+>
+> Ok. Apparently there is some of this on arm64 as well, using
+> __uaccess_mask_ptr() instead of mask_user_address().
+>
+> >  - __copy_{from,to}_user() and __copy_from_user_inatomic() skip it too,
+> >    and the KVM bug followed exactly that pattern: the range was checked
+> >    once up front, and the access came much later from a different
+> >    context.
+>
+> Arguably this is itself a TOCTOU issue and replacing
+> all __copy_{from,to}_user() with copy_{from,to}_user() would be a better
+> solution long-term, if we can do that.
+
+Yeah, I agree, that's another reason to get rid of them.
+
+> >  - access_ok() is also used as a plain range check where having no mm
+> >    is fine. For example, copy_{from,to}_user_nofault() call
+> >    __access_ok()/access_ok(), and BPF and perf legitimately call those
+> >    from kernel threads, so a WARN there would fire on valid tracing.
+>
+> These at least could be easily worked around by just skipping the
+> calls to copy_{from,to}_user_nofault() as mentioned above.
+
+Yep, and v2 now does this.
+
+Thanks, Arnd! I'll send a v2 early next week. I've kicked off
+syzkaller against the new version too.

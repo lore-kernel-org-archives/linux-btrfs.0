@@ -1,80 +1,59 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795561168;
-	b=sCc4J+5P1YpZWoa+NcT5nXo+fM5Ge11FE+ULMZ9VKKlM1sSH0D/m8muSJZzYjhzUwKnX
-	 8mQNIxTC0ujKBN1TAbQIasyGPHnemz37JomDPu2Vq7Jwj3NSfpESlqhKuXTHa4FfjSL1P
-	 ymZfOnfn7ETMYFTGGbX2roRlZOrji29Cvq2crrzW8Gpnu69jvjmHigzY6UdQe6TLYQxjU
-	 9jeXmO93ouMH/bPKOSZY33RqzlutvaXpsDL6BzJ2l4JYgarpi7Y1xxLeWZZq+aUyW6j4T
-	 h6w61QJ0PA7R7DFaxuyFYNiZhn7WnrqEUxFUfugZTBlXtF9pgg/RxTEjPIBMsNk4sYA==
+	t=1795561917;
+	b=t+lhtunxQOjgzR2/PEVxqRhiQ3I9ah79SIG8SkhrG6goHuyfU6Xz6oAzyoVdbpBsO8Lm
+	 oMoFCubVCsTNyOcUR+0VqEGUMql9OwRg00nKaeiHlKMWw0HDhYXKeUxHSVIfYksoEfGCR
+	 ++MDIqdRfYC+DXvzi8GCmBTziOHNPljgW+dcjVLGeKrwSivPb2OCphykV80nLE0g7Grxn
+	 txhjjo9lTGfEY7sTy0eEgCoSq/ATao55v/Q/OPYLmitcGYmmS3ziEECDZGXCn+6aQvItN
+	 iyqRS9W9kcoQVEQhmRFOtSl6BhKOwqSAFdYhwSIAP4xNifVTM1VW7z7su25GM7H0h2Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795561168;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
-	 X-Spam-Score;
-	bh=si/Oo/0Xgr7herAl49rr1Ho9qjcn0FucVciAYabLPoo=;
-	b=C8vLks1fSvGXI8G3J0bgLXbfovl9GCiCeEHAfJNT1hokm0jwdODgHKerU/NRNjZs8lzf
-	 3Aqzr83eQZNMq5h1XSxM4KpXWR054jXZIOnAHgurUFlSU81CkfEBIswU2nEbbLhH6dAQm
-	 xrVNhifkkNOZgUTTorAAIFUZihNDsanZKWEvnjzyIWOACvWocieY6479Nq/P5G0Uz6RSN
-	 mYX+DRWxWsSZ/uZwk/XZ4Cf5yZI8F6lf4HGeEZd+cMaDkWzKQR6g0k3MnCN3rjEI4rmLs
-	 gmxQTsxt5WA+J/FvcPep1tf8HHN0okjLJj7YeDhDGdOwZtANP/oXL1JGIMAZtRuM3SA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795561917;
+	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
+	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
+	bh=QXxayGQ5zDJmW5qRYFz3W+oneeyzIOwcisMq8eZ3yFw=;
+	b=k28hr6EV57lSpTIvihgUbg8BYmq9zseDnCFeHI4OjSApTURP2yBOzjRB2sxUzBPGJgK6
+	 fWQgytQWMA/PPLzglTapZh3xNgbOQwe7bTUd1f+A1u0AcDP43Q7Qlxcbez9BLQ6FUaPUm
+	 E2WfzrfTK7vFLv4cSd94dq1gyV3eoth5QoB8bdJ5GUTp8FZnDOaVxvA1H+XiSabO3i5aG
+	 liXMWP6NfGujkrsxs1RnG2+A/GSmugR5Eo5bYqPw/KDhrMRHgm5+F1YAFni9Hk2Nb4+jE
+	 W0D/WaPSV+ISWEpetl9qGj/l/CNnIlQKRbqxRu+ibKOFiHCVRdDEelXqVN+QeFO4YLg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OO5fSYRg;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OO5fSYRg;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W3y88tmj;
+	arc=none smtp.remote-ip=100.103.45.18
+Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 88C7D606A31E
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 22:59:27 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 88C7D606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B924606A31E;
+	Tue, 24 Nov 2026 23:11:57 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OO5fSYRg;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=OO5fSYRg
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id AF3C41F38F
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 22:59:25 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795561165; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=si/Oo/0Xgr7herAl49rr1Ho9qjcn0FucVciAYabLPoo=;
-	b=OO5fSYRg9qr3t93vyPtPHT1Yk22mQNKbuahghcqcv70+TaKwd8dJLFUeYbwjixM/JASJQ7
-	MmGpZ3QX8v8xcGL+ypbOD3tO+Mnr7bPb82Lm3rgIDitkXCnvyItjQLlx/grbDikMFyrPyY
-	xuUiadhLwiGTwsi5EBmw2Lk91a8bXec=
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795561165; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=si/Oo/0Xgr7herAl49rr1Ho9qjcn0FucVciAYabLPoo=;
-	b=OO5fSYRg9qr3t93vyPtPHT1Yk22mQNKbuahghcqcv70+TaKwd8dJLFUeYbwjixM/JASJQ7
-	MmGpZ3QX8v8xcGL+ypbOD3tO+Mnr7bPb82Lm3rgIDitkXCnvyItjQLlx/grbDikMFyrPyY
-	xuUiadhLwiGTwsi5EBmw2Lk91a8bXec=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 86EE613505
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 22:59:24 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id wUAsNMsWBmvfMwAAD6G6ig
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2026 22:59:24 +0000
-From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: abort the transaction to avoid half deleted qgroup relationship
-Date: Wed, 25 Nov 2026 09:29:01 +1030
-Message-ID: <4d1b2d669194cb324213637bc6c6d38a2ecdb7d6.1795561094.git.wqu@suse.com>
-X-Mailer: git-send-email 2.56.1
+	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W3y88tmj
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id B03D61F000C6;
+	Tue, 24 Nov 2026 23:11:56 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
+	s=k20260515; t=1795561917;
+	bh=QXxayGQ5zDJmW5qRYFz3W+oneeyzIOwcisMq8eZ3yFw=;
+	h=Date:From:To:Cc:Subject:References:In-Reply-To;
+	b=W3y88tmj+TqN3sWdK2x05TghZqa+qDv9MXmU3/QPFA2AT98lD6/qJZ3933xeNZZUL
+	 mFbgAjZxP3YQfFNGN/E6aq6xHvwq3926/J7i7Ox/gvjyfKu/Jlr/F+6FE6JUy3P4Is
+	 6MdPs7dA0CFFOn8AwQK+1AsBSZLa2HZ0FGDt6VcRVLyFogg1MgzTckmIzazFX4Qe7P
+	 iFc01fx5AJywo5WpZQFnkHf0EnpzryblgxonC0zrk1gaPk9SkFDRC8a32P1yoFcKpj
+	 7HJT1DGrf8SZho5WvdsGUF3oCPgBlo4X/7mshT91A9EhlmNM3yivKhK6IJrlXuYV1U
+	 dUiEIUxoIk7dg==
+Date: Tue, 24 Nov 2026 15:11:55 -0800
+From: Eric Biggers <ebiggers@kernel.org>
+To: Thorsten Blum <blum@kernel.org>
+Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
+	Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
+	Richard Weinberger <richard@nod.at>,
+	Zhihao Cheng <chengzhihao1@huawei.com>,
+	"Theodore Y. Ts'o" <tytso@mit.edu>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-f2fs-devel@lists.sourceforge.net,
+	linux-mtd@lists.infradead.org, linux-fscrypt@vger.kernel.org
+Subject: Re: [PATCH 0/4] fscrypt: Add FSTR() helper macro and convert
+ initializers
+Message-ID: <20261124231155.GB2001@quark>
+References: <20261118002845.574426-6-blum@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -84,78 +63,31 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spam-Flag: NO
-X-Spam-Level: 
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	ARC_NA(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,sashiko.dev:url];
-	FROM_EQ_ENVFROM(0.00)[];
-	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	RCVD_COUNT_TWO(0.00)[2];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261118002845.574426-6-blum@kernel.org>
 
-In __del_qgroup_relation(), if the relationship item for (src, dst) was
-deleted successfully, but the item for (dst, src) failed to be deleted
-due to other reasons (EIO, ENOMEM etc), we just return the error without
-updating the in-memory relationship.
+On Wed, Nov 18, 2026 at 01:28:46AM +0100, Thorsten Blum wrote:
+> Similar to QSTR(), add FSTR() to initialize struct fscrypt_str from a
+> NUL-terminated string without specifying its length.
+> 
+> Use the helper for 8 initializers in btrfs, F2FS, and UBIFS, replacing
+> hard-coded lengths and explicit strlen() calls.
+> 
+> Thorsten Blum (4):
+>   fscrypt: Add FSTR() helper macro
+>   btrfs: Use FSTR() for the "default" name
+>   f2fs: Use FSTR() in f2fs_do_make_empty_dir()
+>   ubifs: Use FSTR() in ubifs_xattr_{set,get,remove}()
+> 
+>  fs/btrfs/inode.c        | 3 +--
+>  fs/btrfs/ioctl.c        | 3 +--
+>  fs/btrfs/super.c        | 3 +--
+>  fs/f2fs/dir.c           | 7 ++-----
+>  fs/ubifs/xattr.c        | 6 +++---
+>  include/linux/fscrypt.h | 1 +
+>  6 files changed, 9 insertions(+), 14 deletions(-)
 
-This can lead to minor inconsistency between in-memory structures and
-on-disk metadata.
+Applied to https://git.kernel.org/pub/scm/fs/fscrypt/linux.git/log/?h=for-next
 
-E.g. the second deletion failed with ENOMEM, but the on-disk metadata
-has no such item. In this particular case we can continue deleting
-in-memory structure.
-
-Fix it by aborting the transaction if the first deletion succeeded, and
-the second deletion failed for reasons other than ENOENT.
-
-By this we still keep the best-effert deletion attempt. E.g if one
-relationship item is not found, we can still continue delete whatever
-left and remove the relationship completely.
-
-Link: https://sashiko.dev/#/bug/linux-8878868a-a948-4f35-a459-2ba8be379061
-Signed-off-by: Qu Wenruo <wqu@suse.com>
----
- fs/btrfs/qgroup.c | 9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index ab382f41957f..eef012d340fe 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1688,8 +1688,15 @@ static int __del_qgroup_relation(struct btrfs_trans_handle *trans, u64 src,
- 	if (ret < 0 && ret != -ENOENT)
- 		return ret;
- 	ret2 = del_qgroup_relation_item(trans, dst, src);
--	if (ret2 < 0 && ret2 != -ENOENT)
-+	if (ret2 < 0 && ret2 != -ENOENT) {
-+		/*
-+		 * Abort to avoid inconsistency caused by
-+		 * half deleted relationship.
-+		 */
-+		if (unlikely(!ret))
-+			btrfs_abort_transaction(trans, ret2);
- 		return ret2;
-+	}
- 
- 	/* At least one deletion succeeded, return 0 */
- 	if (!ret || !ret2)
--- 
-2.56.1
-
+- Eric

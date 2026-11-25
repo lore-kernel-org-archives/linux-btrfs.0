@@ -1,114 +1,49 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.127.231.57
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795601749;
-	b=wEyY1r6H6+UzX6SkaLnVM4QQNRhl9Ts4Y5pAp/BA3YvDz7uF+uWLk7FMtfGG+7cb56Su
-	 hHP3zWVNzYmhvRRNJrYXDYKSkWVhIvZpvOhp3SjHhkr6hepdG5AnyAsELRgx/J6idrZQR
-	 /di1iGkzxLBf49ItBT5vk6/SR3a/FglUGOR1jXL03QXFBwoPJ+1RvLKaIwMsoPeS7Wku9
-	 f7z02bmY95B8dhXnZwqr6lXZGKJLUVJnylDYdiKYmefW/FArTg2k5Cx2TfgVhsGU80qzc
-	 zt4Ftv4vx9VKK6wBdNUOkBM+wRDGNy0aThjQqH+oqSpB+pCwt9SQpaFjqgpxZ/jVvIA==
+	t=1795602105;
+	b=HdYV4XVJUENBJPFpOlPgBjG8BjLf15tv+rLj/eAu5kZbpMf9gLrFrlaNpVLpslWCGTXx
+	 MFhYyhrERYRfUk9xDjjfk7le/4+IFCEgi2wABm63wavTQEXjMPiliyDhhq3CyZUM6CeAf
+	 BhpvmJ8v2NoB38k5AiiYlr8W0WVKnBTOI/dm/1/kUCc5kw4QwmtHein3oi2aHFA3IfSJx
+	 YvMaPHQ3ffl6NoG/SkS5gC/JJkBhR5RTlUbjLUA7+17HokpKJPC9CMEibYvr0qjn8SWtn
+	 W4UyK+leOLvToqBdQkCtLYf1uUtUdKjgUNn19PNRaO9+BMBi3mJ7MRW6blLVozWtXtg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795601749;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:DKIM-Signature:
-	 DKIM-Signature:Received:Received:Received:Date:From:To:Cc:Subject:
-	 Message-ID:References:MIME-Version:Content-Type:Content-Disposition:
-	 In-Reply-To:X-Spamd-Result:X-Spam-Score:X-Spam-Level:X-Spam-Flag;
-	bh=e8sKqwxNACN+JfXcDE3eynoSNxxjB3Xf/j/Wqh4gx5E=;
-	b=gV4MvidqXRVYNfguwkjsi9yDG6npxl+lAGf1l84Yiemx0KhN+hjAQCDI+OAN+tPvLTJo
-	 NeVnabe2Dfs1qYYsJZrr7Hyf+F9bHRAOCbzhyeV0WpR1DGl3hcUbCHJHhR1fOD7Dr+vwr
-	 gpWO11xcBw0ovQjdXY4OW1msAHYW6iFiCDf4zRLUaZ0yH4ulTvw9ZFZLBNhvEKWyVvkdA
-	 KWqOHIsNQoWL6sPFsO/pBROusydFL5GxAFiMEr+KHZp8D1J+4a8UMgYHZzb30n+A8oVbl
-	 XFcvKWmfiY17URtWt7dDsO32KyipMigcfi847vp/iWgZA5OROyjO49S6605exGrzrkQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795602105;
+	h=DMARC-Filter:DKIM-Signature:Message-Id:Mime-Version:X-Original-From:
+	 X-Mailer:Content-Type:Cc:Subject:Date:Content-Transfer-Encoding:From:
+	 To:Received:X-Lms-Return-Path;
+	bh=uLbd3W3shGdi/jYi5um9q/SoKm/LuDDOPTtMewAzBpo=;
+	b=RiMod9Im4cJeXRurKK/Sy562o0T5KGQmbBIAgwkR/zxYfuQEfhXIAbEoJ5oNk91JgoPU
+	 J74RdBESV+tD67RNGBOVfMM9cXKO67PD9E+cWxeY4flZIl1j/UHCVqV8rhws0NpW28hBr
+	 hegOB+4E78sUCdql6+b1oHzo4qPI6/FZ16eFaiAthLVXQhkl1cGnEz8nyTAFmp0B5OkRm
+	 beI2m2IfQ+CwrbrFLMtVRwcgSx9y/xUzohVC3fYbWdLLa0/OB6UDqk9uLuYjXD7suJCwX
+	 oD7Q99urBgnbC4sdeyiyP74DKXfNcyO1PGW3HuYLRJdjD7LMhA1TUUEkzMsMRI3vFfw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=none header.from=suse.cz;
-	spf=pass smtp.mailfrom=suse.cz;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=Z06kVsav;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=YAvQYBkQ;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=HhT85ONG;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b="vX/h8QqE";
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	dmarc=pass header.from=fygo.io;
+	spf=pass smtp.mailfrom=fygo.io;
+	dkim=pass header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=U3NS7rEG;
+	arc=none smtp.remote-ip=209.127.231.57
+Received: from va-2-57.ptr.blmpb.com (va-2-57.ptr.blmpb.com [209.127.231.57])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 6093E606A323;
-	Wed, 25 Nov 2026 10:15:49 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 6093E606A323
-Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=suse.cz
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.cz
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 66AA8606A323
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 10:21:44 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 66AA8606A323
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=fygo.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=fygo.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=Z06kVsav;
-	dkim=pass header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=YAvQYBkQ;
-	dkim=pass (1024-bit key) header.d=suse.cz header.i=@suse.cz header.a=rsa-sha256 header.s=susede2_rsa header.b=HhT85ONG;
-	dkim=neutral header.d=suse.cz header.i=@suse.cz header.a=ed25519-sha256 header.s=susede2_ed25519 header.b=vX/h8QqE
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id 2EA141F7AB;
-	Wed, 25 Nov 2026 10:15:41 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1795601742; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=e8sKqwxNACN+JfXcDE3eynoSNxxjB3Xf/j/Wqh4gx5E=;
-	b=Z06kVsavmP7JScicGhz4PLwxBu3Dex4qiFvXFQcw6hiBXSgAPrY31rGsLOeD8I/afpGxWJ
-	QqvbieM8a3SnCpA7Y6NvO/lh3yjke/TCCdWF5sXAa71+xF7URX+YmX/guYIaETRth2VdQ8
-	X+SZ14rjsBbQF8ej4TrovKNBc078KcM=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1795601742;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=e8sKqwxNACN+JfXcDE3eynoSNxxjB3Xf/j/Wqh4gx5E=;
-	b=YAvQYBkQHWlLyq/pc6sxjMqrMqDGJezvFVbuvPSz/Ar7h1bOwCSdmBMoEZ2smb9B8M8JBC
-	ODHaG9GFSZ3kR0AA==
-Authentication-Results: smtp-out2.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.cz; s=susede2_rsa;
-	t=1795601741; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=e8sKqwxNACN+JfXcDE3eynoSNxxjB3Xf/j/Wqh4gx5E=;
-	b=HhT85ONGGnzQc8EzNUw9bIL19KxpV6xykb0gpdQl0kCw8mIPbOdunsyJcQSXg0b1GormL1
-	lRw59Xh0TSaLua+iR8MJPm0XaefZaMjMOcSx3P3W3vJ6YYGgrJvJhcKtoZt0fzweZQ+Faz
-	rUqtUBs61FQpsWJiUV2N90/xs5lEjHo=
-DKIM-Signature: v=1; a=ed25519-sha256; c=relaxed/relaxed; d=suse.cz;
-	s=susede2_ed25519; t=1795601741;
-	h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:content-type:content-type:
-	 in-reply-to:in-reply-to:references:references;
-	bh=e8sKqwxNACN+JfXcDE3eynoSNxxjB3Xf/j/Wqh4gx5E=;
-	b=vX/h8QqEnMmoIVMqKy2xoZTwAcXtH8GK1fsnluYevvaejjH6oEbpgTXu0WSyCAsOPElHfr
-	3Mo54VbDLlNzkbBQ==
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id F2408134CA;
-	Wed, 25 Nov 2026 10:15:40 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id gu3dMky1BmtxWQAAD6G6ig
-	(envelope-from <jack@suse.cz>); Wed, 25 Nov 2026 10:15:40 +0000
-Received: by quack.suse.cz (Postfix, from userid 1000)
-	id 7F82427BF7; Wed, 25 Nov 2026 11:15:40 +0100 (CET)
-Date: Wed, 25 Nov 2026 11:15:40 +0100
-From: Jan Kara <jack@suse.cz>
-To: Christoph Hellwig <hch@lst.de>
-Cc: Matthew Wilcox <willy@infradead.org>, Jann Horn <jannh@google.com>, 
-	Pedro Falcato <pfalcato@suse.de>, David Howells <dhowells@redhat.com>, 
-	John Hubbard <jhubbard@nvidia.com>, Jan Kara <jack@suse.cz>, Rik van Riel <riel@surriel.com>, 
-	Qu Wenruo <wqu@suse.com>, "Darrick J. Wong" <djwong@kernel.org>, 
-	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org, linux-mm@kvack.org, 
-	linux-xfs@vger.kernel.org, linux-rdma@vger.kernel.org, Leon Romanovsky <leon@kernel.org>, 
-	Jason Gunthorpe <jgg@nvidia.com>
-Subject: Re: Removing ->dirty_folio
-Message-ID: <woe7ui2vuwznrdt4zxynkbnte7r57juoaicwuk4hmwmlhq7lmp@no52geqttfyk>
-References: <aoyWln-Gt-yvZQkE@casper.infradead.org>
- <CAG48ez0vXVUu9j4rYUeCqgwyHKAiN_6fL--D90WvX9q7B41V-A@mail.gmail.com>
- <ao3y8TtEGjniZ_4f@casper.infradead.org>
- <20260826050733.GB15122@lst.de>
- <20261125085814.GA24887@lst.de>
+	dkim=pass (2048-bit key, unprotected) header.d=fygo-io.20200929.dkim.larksuite.com header.i=@fygo-io.20200929.dkim.larksuite.com header.a=rsa-sha256 header.s=s1 header.b=U3NS7rEG
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+ s=s1; d=fygo-io.20200929.dkim.larksuite.com; t=1795602099;
+  h=from:subject:mime-version:from:date:message-id:subject:to:cc:
+ reply-to:content-type:mime-version:in-reply-to:message-id;
+ bh=uLbd3W3shGdi/jYi5um9q/SoKm/LuDDOPTtMewAzBpo=;
+ b=U3NS7rEGp0xCpaz+WXpf/5QyXAyOYcBWrVKVvS5R00pm+FZESFHjzesbMb0AdyJlLS6KlU
+ XvuMqpAsG6vqF9gs6EpOun26kQDHJvjXAoSsabdc4vjEwKUPf4aJFQe9BhCMxR9EPTK68B
+ gcxXZCH6tI4xTHTsLhdoCFheHFJS9kPW41g+tX4BBIfWgorcIPlZ6fj31mV8RTA2W40Gn7
+ dFJ//txGvM7ptYAoShK77Nyx5rQHn6UG9YACFDIzO+dc0B1zakvhKk1wt1tPqZfL3GUh2t
+ tjhSlZrsWO2UO0fUMMbH5ailAZXiEsVMZ1wlu7hR/GYRhD86zIjHPvwDfljuFA==
+Message-Id: <cover.1795600611.git.zhudongjiang@fygo.io>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -117,127 +52,84 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261125085814.GA24887@lst.de>
-X-Spamd-Result: default: False [-12.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	MID_RHS_NOT_FQDN(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
-	MIME_GOOD(-0.10)[text/plain];
-	RCVD_COUNT_THREE(0.00)[3];
-	MIME_TRACE(0.00)[0:+];
-	DKIM_SIGNED(0.00)[suse.cz:s=susede2_rsa,suse.cz:s=susede2_ed25519];
-	ARC_NA(0.00)[];
-	RCPT_COUNT_TWELVE(0.00)[17];
-	FROM_HAS_DN(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	TO_DN_SOME(0.00)[];
-	FROM_EQ_ENVFROM(0.00)[];
-	RCVD_TLS_LAST(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	MISSING_XM_UA(0.00)[];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo,suse.com:email]
-X-Spam-Score: -12.80
-X-Spam-Level: 
-X-Spam-Flag: NO
+Mime-Version: 1.0
+X-Original-From: Dongjiang Zhu <zhudongjiang@fygo.io>
+X-Mailer: git-send-email 2.39.5
+Content-Type: text/plain; charset=UTF-8
+Cc: <johannes.thumshirn@wdc.com>, <naohiro.aota@wdc.com>, 
+	<a2jphilipp@gmail.com>
+Subject: [PATCH v4 0/4] btrfs: zoned: fix active-zone accounting and transitions
+Date: Wed, 25 Nov 2026 18:21:27 +0800
+Content-Transfer-Encoding: 7bit
+From: "Dongjiang Zhu" <zhudongjiang@fygo.io>
+To: <linux-btrfs@vger.kernel.org>
+Received: from pdzhu.teiron-inc.cn ([183.34.165.116]) by smtp.larksuite.com with ESMTPS; Wed, 25 Nov 2026 10:21:38 +0000
+X-Lms-Return-Path: <lba+26b06b6b3+5e4816+vger.kernel.org+zhudongjiang@fygo.io>
 
-On Wed 25-11-26 09:58:14, Christoph Hellwig wrote:
-> Bringing this back as we're having another slightly discussion of
-> GUP semantics right now and this discussion stopped before it really
-> started.
-> 
-> Any comments on my idea in here?  If someone on the mm side could
-> come up with a way to figure out if a folio is pinned longterm or
-> not and we get a pre-pin method into the fs I could start looking
-> into the fs and writeback side of this.
+This series addresses active-zone accounting and block group
+transitions on zoned devices. It simplifies conventional-zone handling,
+restores metadata/system write roles at mount, and addresses a
+balance self-deadlock and a race during zone finishing.
 
-I think we agree regarding the direction where this should be going :).
-Regarding the tracking of longterm pins, I remember when we started working
-of the GUP / pin_user_pages() fixes, one of the ideas that we floated was
-to take pinned pages off the LRU (they cannot be freed anyway) and use that
-space in struct folio for the tracking we need. John? even had patches for
-that but the performance overhead was too big (primarily due to LRU locks
-contention) for direct IO. But for longterm pins, the additional overhead
-of the setup could be acceptable and that would significantly increase our
-maneuvering space in what we can do (because longterm pins are yet another
-page refcount in the end).
+The four patches:
 
-								Honza
-> 
-> On Wed, Aug 26, 2026 at 07:07:33AM +0200, Christoph Hellwig wrote:
-> > [adding rdma/hmm folks]
-> > 
-> > On Tue, Aug 25, 2026 at 08:54:25PM +0100, Matthew Wilcox wrote:
-> > > On Tue, Aug 25, 2026 at 09:35:57PM +0200, Jann Horn wrote:
-> > > > > The problem is GUP.  We have no way to force the GUP caller to go
-> > > > > through page_mkwrite again.  So instead we make the GUP caller call
-> > > > > folio_mark_dirty_lock() which many just don't, and generally we get away
-> > > > > with it.  But it's a bug, and a bad interface.
-> > > > 
-> > > > We currently have get_user_pages*() and pin_user_pages*(), where only
-> > > > the pin_*() version is properly usable for write access, right? And
-> > > > dropping such pins should always go through unpin_*() helpers?
-> > > 
-> > > Right.  I'm stuffing cheese into my ears and pretending that people
-> > > aren't calling get_user_pages() to do write accesses.  We should be
-> > > able to use this work to flush out the last remaining ones -- we
-> > > can put in various assertions that folios should still be dirty where
-> > > we currently have folio_mark_dirty() calls.
-> > 
-> > Last time I checked quite a few places still did.  Including various
-> > network file system O_DIRECT implementations (some got fixed, and
-> > for NFS a series is outstanding) and some really odd looking networking
-> > code.
-> > 
-> > I wish we could somehow force them to stop doing that, but I can't
-> > think of any. 
-> > 
-> > > Yes.  I think the only alternative would be storing a checksum of the
-> > > contents of the folio and seeing if it changed since the last write.
-> > > As you say, this is userspace doing something incredibly odd (I really
-> > > don't think people make a habit of mmap()ing files shared writable and
-> > > then giving RDMA longterm write accesses to them.  Not on machines with
-> > > poor quality flash storage anyway).
-> > > 
-> > > Or we could say "these pages only get written back on requested fsync()
-> > > rather than periodically".
-> > 
-> > Take one step back.  For regular pins we should be able to just wait for
-> > them given that they are by definition short lived, where short lived
-> > is defined by typical I/O latency for a wide range of "typical".
-> > We'll need the right helpers from the MM for that, and make sure
-> > we have a good way to debug file system hangs caused by incorrect
-> > use of the pinning, but all that is a solvable problem.
-> > Splitting read vs write pincounts would be really helpful to reduce
-> > the overhead of that.
-> > 
-> > The interesting case is FOLL_LONGTERM, as it can pin I/O for a much
-> > longer time.  And that also means IFF the user of FOLL_LONGTERM actually
-> > wants to be able to persist data on a shared mmap, it has to manually
-> > dirty folios one or more times during the FOLL_LONGTERM pin, because
-> > otherwise the file system would never know there is dirty data.
-> > The set_page_dirty call in ib_umem_odp_unmap_dma_pages is an example
-> > for that.
-> > 
-> > So what we'll need is:
-> > 
-> >  - a way for the file system to know if a dma pin on a folio is for a
-> >    short-term writable pin vs everything else.
-> >  - for the short term writable pin wait for it for data integrity syncs,
-> >    or otherwise just skip it.
-> >  - for FOLL_LONGTERM users we need an interface to (re-dirty) folios
-> >    while the long term pin persists.  This also needs a way for the
-> >    file system to reserve space.  Either as a rolling / bank switched
-> >    reservation for the whole life time of the mapping (although for
-> >    large mappings this might use up a lot of space), or to do that
-> >    ahead of whatever triggers the dirtying.
-> >    And maybe a way for file systems (or vm ops) to reject long
-> >    term writable pins if they don't want to deal with all this.
-> ---end quoted text---
+1. Track only sequential zones as active.
+2. Restore the normal metadata and system write roles at mount,
+   keeping one active block group for each role and finishing the
+   remaining active non-data block groups.
+3. Remove obsolete allocation-time non-data activation, leaving
+   activation and role switching to the writeback path.
+4. Serialize concurrent finish operations on the same block group,
+   keeping it active until the device operations and active-list
+   cleanup complete.
+
+Jochen Philipp tested a rebased version of this series on his
+filesystem. He reported writing another 2.3 TB via rsync without
+Btrfs errors, a clean unmount, no errors from btrfs check --readonly,
+and a successful read-write mount afterwards. Many thanks to Jochen
+for the extensive testing.
+
+Changes in v4:
+- Rebased onto btrfs for-next at 7bfc2c517eac.
+- Retained the upstream active-zone bitmap check for mount-time
+  reservation accounting and the conditional reservation updates
+  during activation and finishing.
+- Moved abandoned-tail accounting into do_zone_finish(), alongside
+  the alloc_offset update, preserving read-only block group accounting.
+- Removed the unnecessary temporary block group references in
+  mount-time cleanup.
+- Updated the commit messages to reflect the current base and clarify
+  the role-recovery and zone-finishing behavior.
+
+Changes in v3:
+- Dropped the block-group flag comment changes from patch 1; no
+  functional changes.
+
+Changes in v2:
+- Removed the [BUG], [CAUSE] and [FIX] headings from the commit messages.
+- Added a helper for identifying zones that need active-zone tracking.
+- Added block group locking around alloc_offset and zone_unusable
+  accesses during mount recovery.
+- Explained why moving the active-bit clear alone does not serialize
+  concurrent zone finish operations.
+
+Previous versions:
+v3: https://lore.kernel.org/linux-btrfs/cover.1787887776.git.zhudongjiang@fygo.io/
+v2: https://lore.kernel.org/linux-btrfs/cover.1787717573.git.zhudongjiang@fygo.io/
+v1: https://lore.kernel.org/linux-btrfs/cover.1787551793.git.zhudongjiang@fygo.io/
+
+Dongjiang Zhu (4):
+  btrfs: zoned: track only sequential zones as active
+  btrfs: zoned: recover active non-data block group roles on mount
+  btrfs: zoned: remove obsolete non-data block group activation helper
+  btrfs: zoned: serialize zone finishing per block group
+
+ fs/btrfs/block-group.c |  38 ++------
+ fs/btrfs/block-group.h |   1 +
+ fs/btrfs/disk-io.c     |   7 +-
+ fs/btrfs/zoned.c       | 211 +++++++++++++++++++++++++++++------------
+ fs/btrfs/zoned.h       |   9 +-
+ 5 files changed, 167 insertions(+), 99 deletions(-)
+
 -- 
-Jan Kara <jack@suse.com>
-SUSE Labs, CR
+2.39.5

@@ -1,60 +1,50 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=79.135.106.27
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=213.95.11.211
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795611750;
-	b=vUFLkPwZ6wjSYI3qork18UU54fLxAqZxUNDayYS5/uiizP9EQnthWqQUGkstCUwCjLlR
-	 WcyWkH2GtbXJDAhkN/dQGoW3LmOawQ9lHFr08k5ZcKMGPJNdBYU5pQ3D48uDvBLpOpe1t
-	 iJa5ACwwmR9bfpZybcsttA3TCNTacv35u0l650PPTDtqUEYHyE3diMsXZ5C/G3LT/0Iiq
-	 0QKu0ONs/eWadNuu4GDXg0cLiUvXeCq9RFwT3l2WvnlSo9cUlMwl/Y18g5nnHZRtAvzsl
-	 GbdisOhzmHUULZ1YtN/ucX3uUZ2PRsDbwoyXVe6+4zKWyApq5DClgZSJIWAjNWTHXug==
+	t=1795617136;
+	b=yS/SQmjhre3QBvhS0Ng+/zPC6mq2ZbgUN9znUxzEEv570tC8+qK9IStDjgG7rn7qFjHG
+	 ED1KtSyHyAp7P6/CUgbwVUGlnm1J+5fRsoEti6hhrnvSS/JyL7YYEoUBpeUGhjuSfVBYw
+	 SP87SF52t3r4mlde3N35/V/2+t+mHvNtKi9jFj2CfDI9fhMKX8AAwBWJdj8Otrl0F5lqP
+	 iG+l7DpXWMOsK+eNAsrbmBc81VX/kXawRqczy5Ymcl+NuYgEmv3Y/98/X+J2eja692coU
+	 WTKrNnoNkSnAKF7vhOjKpTOxenD5IhCL70U7XYQ65ZzEFcJNNR7Wjz9JfeMHlKzdpgg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795611750;
-	h=DMARC-Filter:DKIM-Signature:Date:To:From:Cc:Subject:Message-ID:
-	 In-Reply-To:References:Feedback-ID:X-Pm-Message-ID:MIME-Version:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=lQ4BkntmN7HehJFvDo34oP6vrHB+te6z9NzGOwyNzJQ=;
-	b=JmGf6t4F8Kyv3/6N+ihebeXqNef2PFAXSemrDOpsq2fBT/+hDv80THz2AsQ6lrHMFTsT
-	 0ahS7HfnADmYsqFCPi3Cy4eKvO6koevyuVewBTamxHjY2p0AJBkY9pBgt2olBxgdEecY7
-	 n3Daep9+fnm1VbAbLb1egaAryCnXsG6Y6VNrcqLVF09yFj6F/RytjN3IXnzhOgxjdhc16
-	 v0tq0L06F7ip/TWeMz2RlhTcQK3vpoWoQmvFACxSDrE3lETq0jsd9H1YxHrBuljeEsNVK
-	 D1x4XU+/LwDZ43hEYfOxUA7Hwuw/0sZ0uAS2hiYgdgJRdiOSQue6/0941kqAUEurhJA==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795617136;
+	h=DMARC-Filter:Received:Date:From:To:Cc:Subject:Message-ID:References:
+	 MIME-Version:Content-Type:Content-Disposition:In-Reply-To:User-Agent;
+	bh=PtRllFgQeaJJif96OcO1z/etvW3YwrHKGtxNZDdO9hA=;
+	b=biOmP/0BXjlakA9eLa1wOVRwHPsnjgvlbLtBzXR+bpE1lcUkFWdyWTYJXLySfblgscJt
+	 rKV/lmu/ijMuUFORxFrZaUpUeQ9UE1lbk9FJnhQgHfGCah10LWBMaWM5654qk8kfsG/5Q
+	 /viBKwLzkxitx8NDomiEauoTFk8KghBejuY+N0dpC/+9K9GfS/W2U0XdE0Ayqt3339gB+
+	 4uApSRIewgEkqaFczOZ+99JvTJVu9fNPMAFkK+UZESL/OSWSnAsn4SHNWM5sxLKwx0whB
+	 C5gDf+t+wVWG4kl8MMmA11BJcf/8lJM9o1E8D+qEQrayUyX5W6/uPAvGtiV1bZD3XZA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=raidlab.org;
-	spf=pass smtp.mailfrom=raidlab.org;
-	dkim=pass header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=0o1ggw97;
-	arc=none smtp.remote-ip=79.135.106.27
-Received: from mail-10627.protonmail.ch (mail-10627.protonmail.ch [79.135.106.27])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=lst.de;
+	spf=pass smtp.mailfrom=lst.de;
+	arc=none smtp.remote-ip=213.95.11.211
+Received: from verein.lst.de (verein.lst.de [213.95.11.211])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 27370606A329;
-	Wed, 25 Nov 2026 13:02:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 27370606A329
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=raidlab.org
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=raidlab.org
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=raidlab.org header.i=@raidlab.org header.a=rsa-sha256 header.s=protonmail header.b=0o1ggw97
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=raidlab.org;
-	s=protonmail; t=1795611747; x=1795870947;
-	bh=lQ4BkntmN7HehJFvDo34oP6vrHB+te6z9NzGOwyNzJQ=;
-	h=Date:To:From:Cc:Subject:Message-ID:In-Reply-To:References:
-	 Feedback-ID:From:To:Cc:Date:Subject:Reply-To:Feedback-ID:
-	 Message-ID:BIMI-Selector;
-	b=0o1ggw97MY5uaMJIPjFbG/LlmVoipWdfjZLchOzJUbzu+SaSfoazJ7uwyDOyu78lk
-	 htOluzmAmIC9CPAfX6uqtG/fkxA0y0UpnI7kXvK2SmUdYrcx/fyrW2yZzRWTA1g4zx
-	 qkFaXMpAoqzd9PLoSHvCOp3vPaQ46qhKuiuAa4Q9UWPYwqBFVSGfRwqeybGBnAmPqw
-	 TohSLzthR/k5WqRDlyOOwy28vSPnSHBnh+I0ivB/IalpjeDJKNAMwhMNWlO69kXOl7
-	 nO03Jld3mDUDoc5gCLbK3XbIIbyYQY1//+smu0AV/IwBMaprio4vm2myi1N+7XST+5
-	 lKQ9xZ1d9U4Sg==
-Date: Wed, 25 Nov 2026 13:02:23 +0000
-To: linux-btrfs@vger.kernel.org
-From: Miroslav Cimerman <mc@raidlab.org>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, Naohiro Aota <naohiro.aota@wdc.com>, Johannes Thumshirn <johannes.thumshirn@wdc.com>, Qu Wenruo <wqu@suse.com>, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v2 0/5] btrfs: zoned: RAID1 block groups with missing or stale stripes
-Message-ID: <9-2mnnEeWtv9IB6_6WebTlE3yFWPBLEtc94ilVb2gMhId8z8pMjeVRwAhkniDIESZEJhl7xNsZ6KCwe759zYLm2asBJrtFbeJpWM-TVCU1o=@raidlab.org>
-In-Reply-To: <20261121134550.216217-1-mc@raidlab.org>
-References: <20261121134550.216217-1-mc@raidlab.org>
-Feedback-ID: 232820807:user:proton
-X-Pm-Message-ID: 4e8b79bfa9f5b485ae9143216898751988f6765b
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CAB6B606A32E;
+	Wed, 25 Nov 2026 14:32:15 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CAB6B606A32E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=lst.de
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=lst.de
+Received: by verein.lst.de (Postfix, from userid 2407)
+	id 2966F68BFE; Wed, 25 Nov 2026 15:32:07 +0100 (CET)
+Date: Wed, 25 Nov 2026 15:32:06 +0100
+From: Christoph Hellwig <hch@lst.de>
+To: Jan Kara <jack@suse.cz>
+Cc: Christoph Hellwig <hch@lst.de>, Matthew Wilcox <willy@infradead.org>,
+	Jann Horn <jannh@google.com>, Pedro Falcato <pfalcato@suse.de>,
+	David Howells <dhowells@redhat.com>,
+	John Hubbard <jhubbard@nvidia.com>, Rik van Riel <riel@surriel.com>,
+	Qu Wenruo <wqu@suse.com>, "Darrick J. Wong" <djwong@kernel.org>,
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-mm@kvack.org, linux-xfs@vger.kernel.org,
+	linux-rdma@vger.kernel.org, Leon Romanovsky <leon@kernel.org>,
+	Jason Gunthorpe <jgg@nvidia.com>
+Subject: Re: Removing ->dirty_folio
+Message-ID: <20261125143206.GA15229@lst.de>
+References: <aoyWln-Gt-yvZQkE@casper.infradead.org> <CAG48ez0vXVUu9j4rYUeCqgwyHKAiN_6fL--D90WvX9q7B41V-A@mail.gmail.com> <ao3y8TtEGjniZ_4f@casper.infradead.org> <20260826050733.GB15122@lst.de> <20261125085814.GA24887@lst.de> <woe7ui2vuwznrdt4zxynkbnte7r57juoaicwuk4hmwmlhq7lmp@no52geqttfyk>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -64,14 +54,26 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <woe7ui2vuwznrdt4zxynkbnte7r57juoaicwuk4hmwmlhq7lmp@no52geqttfyk>
+User-Agent: Mutt/1.5.17 (2007-11-01)
 
-A note on this series:
+On Wed, Nov 25, 2026 at 11:15:40AM +0100, Jan Kara wrote:
+> I think we agree regarding the direction where this should be going :).
 
-Johannes' v8 "btrfs: zoned: metadata and GC updates" covers 1/5 and the
-active flag of 4/5 (04/27). 2/5, 3/5 and the highest write pointer of 4/5
-are still needed. I can rebase on v8 if it goes in first.
+Well, that's good.
 
-Thanks,
-Miroslav
+> Regarding the tracking of longterm pins, I remember when we started working
+> of the GUP / pin_user_pages() fixes, one of the ideas that we floated was
+> to take pinned pages off the LRU (they cannot be freed anyway) and use that
+> space in struct folio for the tracking we need. John? even had patches for
+> that but the performance overhead was too big (primarily due to LRU locks
+> contention) for direct IO. But for longterm pins, the additional overhead
+> of the setup could be acceptable and that would significantly increase our
+> maneuvering space in what we can do (because longterm pins are yet another
+> page refcount in the end).
+
+Yes, additional significant overhead for plain FOLL_PIN would be bad.
+But for longterm pins it should not be an issue, as they should last
+long enough to amortize additional cost

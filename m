@@ -1,88 +1,92 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.49
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.51
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795638322;
-	b=Li08EaWSUPE3lTwgCY6zsyWXGjDtTostaNMRKXndjGr0iEM000xPX7OAT+ROlxdb+n4v
-	 dr5plZrWktf8h1u2pTl3E2s8ewX3DWeycRUWYJmnKje9tjy6i+BiAgt13Bz8x5XGxOUd4
-	 Xwu1H5gGTq2fcNICa0k+a/qVoMi3coDDeL/i2Mz8gfXIJWI/YMLU1f/xR5RdNSJsK4iUF
-	 piLvZhQ58699zFFdx7vMj71ZRvlqsnP+Z9h7291HV0Z4bQtYHdHAWsHWQCNT3MMpMaqTr
-	 TzT80i3gx9UjBgYZmoeXV9lEcusCs7MZqTpbf/L5HcRKrNPgXe3kk14OgUqtj22eKIg==
+	t=1795639291;
+	b=5p0y1Jutukr7161QyWibnr18SfWsIvo9wYY+jn/wuoAirEMBaEVLq6ztHUa0cC20EEJP
+	 24l8AzPocH/qDHTxZl3WSlgK5rRHp0sz6tX2ILUGh37BK/Wmxl9JJACKFoPLPEFlIl4GA
+	 TrnhKH+3TJDfzovJdbC9YGUGyP5wM+YX5SHB55m6TN4p4nr1RDvAFaPPjYxj0OeZlXdOo
+	 nk2MLjumjQjda+WSuN7m1IRDTokfnvSuTfOBGWwI9s4tOWmrqNXyEIpTMMlCDmMLF00EK
+	 +Lg46vTe5oDFSPtWPR8lsoO6f4QQCZx9CBLOm4hjDSwrdpm0N1aGtVecv8usgbLvHVQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795638322;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795639291;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
-	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
-	 Content-Transfer-Encoding;
-	bh=qUfXZUKB9DaQS8RU9ovVyj3jZEh0TkP6nnfuX7AkYik=;
-	b=qm08uVgb/O9TM+2J+17vSX2IcnTgp5CJGogJvel2n0EouQ8K6vIEJrROgC/N7lEiaPyL
-	 EDnij3qwQkzI2/nK5/9FCEK21vhMNbF9cqV5uIKN4HdsDW19RNbxaQ4BnSp93KGhoEKme
-	 VJXZSW9XudqsGrFSQyBTesV0m1ZAEm98NTHIngQlz/daWmEwIdgO1znH7e6G3laQDmKet
-	 DqxFhzcz7PQIIksr+2K2U/+CyuDn/X8DEDVlGOlIjs6aHkSHwuFMXaUMjT3yN+mrawNBD
-	 f5qAQTcMfNrAPHSdLXvvpzIBuSIAPHoVCFr+h7Ee6Dmee9xQsi/CAQQLhl8vhE2ICsQ==
+	 X-Gm-Message-State:X-Gm-Gg:X-Received:Received:Date:From:To:Cc:
+	 Message-ID:In-Reply-To:References:Subject:MIME-Version:Content-Type:
+	 Content-Transfer-Encoding:X-Correlation-ID;
+	bh=0qait1yJ7uGinSq49biTTHsKyvdiVlra14ZPQjDoo1Q=;
+	b=Sc47nuQEppOr1RpPiCa2B6LfDhu/lgZMcUXMLsudB+0s6LRvg3l4E6KKpTtg+aoqL70q
+	 TyikpTuoJi5ju0gqTNPHqpAvldxwDhoeNyIVsZfwrNk/9+kIx2gMkxcY1tYntjs7T7iCl
+	 Fzux9NJAljYcwWx9ZzTHf7QeG2ZabBt3g/hv4EVmxcjjUIj8U5KiyUHddiFM+2ncXikZ9
+	 U/Lyweu16ZflPWQEUJCz+4pNq3jbxR0zhSD4zQCB2wLJSm3VCT5jTqkTeTUi35eZiSNbK
+	 gJ/a7ZUi8kjmFxg9kZglFAqb4piM7oC1WIUIe589ZI0ELp1TN6MfShKbx1lIXN3Fp+w==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=E1va+KSN;
-	arc=none smtp.remote-ip=209.85.218.49
-Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=n4bBv+FR;
+	arc=none smtp.remote-ip=209.85.128.51
+Received: from mail-wm1-f51.google.com (mail-wm1-f51.google.com [209.85.128.51])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id E2B07606A69D
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 20:25:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org E2B07606A69D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id F3E88606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 20:41:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org F3E88606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=E1va+KSN
-Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-c4cb6834eaaso165550066b.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 12:25:21 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=n4bBv+FR
+Received: by mail-wm1-f51.google.com with SMTP id 5b1f17b1804b1-4bb85e07aadso77656045e9.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 12:41:30 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1795638320; x=1796243120; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=qUfXZUKB9DaQS8RU9ovVyj3jZEh0TkP6nnfuX7AkYik=;
-        b=E1va+KSNKKkn6t93wf/F9iK6uk8Sw2FoIfX5uW/fke9i5jnoBjp1i5gSQ5iONOcRSL
-         g/ons4FP49O1gi+SWsFXSsZI0XyhSSShBgQ4bfLsIn8yQ+dNT6TySuvxcGU724djrVS7
-         7aTrogquiI3z57+ZnkXIIRRZT8EZGUsL3WqVhj1xMLyaxRg8nNNgkyshO9vItuf+cjdD
-         KV1KZSlKJT13FB6bd42hkQXXpdas7WTSKFi3Vm252cZ+UJKTreyY5/1xHEOOUrhPVZfB
-         RbxhfPHcpTUnkdrK9p0qmn276LQv52D2SkRms7/585kVln1KSTVkQUMM5/mq0OU4+Eyj
-         LcLg==
+        d=gmail.com; s=20260707; t=1795639289; x=1796244089; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:mime-version:subject
+         :references:in-reply-to:message-id:cc:to:from:date:from:to:cc
+         :subject:date:message-id:reply-to:content-type;
+        bh=0qait1yJ7uGinSq49biTTHsKyvdiVlra14ZPQjDoo1Q=;
+        b=n4bBv+FRXGp5cs0436t8zo5f6ZycQrX48DNOL3PinnQDIFumq0rLhLcMB0PFN1Zt4d
+         K0Glm9BKKL/WbgcWB9FjTsUdUEPxQYNLA1IT9gnu3kbcx2MC1q64N5yaqSlEqsS60X16
+         cFb+A3j2+SjvUzxkwUPUISz8o33uNqBlH+X7bcJyP9yYXCHTSXmhi9KGaonzNrwR5j9D
+         DJHtYENrlC2EmCfV+Q+EDYIux3mJA2UviimS0wtaDyPd/Ij4geNRQgNZfJ/C6XGgwE5k
+         Cj+twuc5W9us2dvtI9HZaYxguY43X1x6p0jGLPksaxVLgZTXZemBTNbefO53B87+hzlG
+         KVaw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795638320; x=1796243120;
-        h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
-         :content-language:references:cc:to:subject:user-agent:mime-version
-         :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
-         :message-id:reply-to:content-type;
-        bh=qUfXZUKB9DaQS8RU9ovVyj3jZEh0TkP6nnfuX7AkYik=;
-        b=J/BIUSWBt0rZAck0pKwp3O8RUE7qPT57tIa88fT41Sn3GoMP7cyjNGOICqKJXflOIe
-         M3dKrS4Y55OCfwb2ikZCg6gg2GTl+4N3KJxqgRA9pVDJ1h2Lywguvbkmc5ik7Pjn/lQx
-         CBBFKzli6exNbsa9M+wVqJJKbueQ+ndqenjqCn2+9ZNIpg/1zH21HzT8HARzuwNigU5Y
-         t5OQjvdFYKFQAnDz1dpUX+dZDeGjAqVwQTiG4uNPHQmhrktmkSMoUKbOD+btp0nz6eOi
-         yuUvLb+k+OzaFK07Mn+iY4g/Exc9Yk5aI8GyGB3khhS+qFLb1Pl9GgMqV0tWH8GNVtpg
-         GMFg==
-X-Forwarded-Encrypted: i=1; AL+hErE+2bbJWhGRxaoR/piut1LcPI9xb6lG5r/hkqso8KG7lov2Tz6fU0vdTMpjOJsQmMcxp6RWhiA7Lz3U/w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/F0DRIzu/LrXu/2hZcjSyuqsUzj47ncd4i9DE6pT8NEwsDBuQm
-	RYdFyIzb+zlfNLdPTxorYxnqiRYwzWyRz7nKehfH+1Z/PLI7y6XkYc9YT8vLkf2DSjo=
-X-Gm-Gg: AZFdTZeW07S+M3Ly6yeWBE0fz3l2PaFy6Fyk70uWNhsoLOEM/89B/Id58mBgPqllefh
-	PbA4inSG0IEzZD0CeFX0R6osfoCXGPHbJop2rjGolAOmdhS90mcZPVh2xL21YrJaDnJl03s2qhx
-	bxORAdCcxhxjpT32i4KR645J4fyCb1kvDK+k/DBQyKnOExv1eEhXbFHqLVmQpQrpn6UkfIrF5um
-	YrEpETpZ63HFNYFIXUOioF/sjcm36ebNVD6KtvHs1eV+TqhdaG8FCo+/mNI81P1v/yLJYuicM0s
-	zc1KOHMsDY41Vh+9ANE7WPvwKk1GxjfYa5Upj3OArGoxBw8DnyazwowrLNKJBFhBBR4nOtkcEFA
-	zl9rR7sf2lVpjC16bmOndF+Xp86R8PWt9NemrZgWh4PqvXwnt2rbD+tACUGtWpFAGcuGK9PAgdA
-	GzwBkZeXf9V+Ze4Ka2KgR01uyeUtxLT8oaLM7+b1oYETbdFdZ7gT7aFBOC21PLgswFxhJ7RjeVl
-	5dQ1Qmf9TZaYvoi85UikGoR16RhizWAhl/FGPJth5vGrQ2QavMQWqBwfi22npeOrbbCGdNScmrf
-	ugKfCxVlbFcq6z8IBflEvOdw9Bjj7aQiswJ2VXnDbqg=
-X-Received: by 2002:a17:906:eb15:b0:c24:4128:c19f with SMTP id a640c23a62f3a-c513a5ed086mr1183615566b.11.1795638320234;
-        Wed, 25 Nov 2026 12:25:20 -0800 (PST)
-Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id 98e67ed59e1d1-3b405d1361fsm31638840a91.6.2026.11.25.12.25.16
+        d=1e100.net; s=20260707; t=1795639289; x=1796244089;
+        h=content-transfer-encoding:content-type:mime-version:subject
+         :references:in-reply-to:message-id:cc:to:from:date:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=0qait1yJ7uGinSq49biTTHsKyvdiVlra14ZPQjDoo1Q=;
+        b=e9WRGlLi+u9cSMv3WEtt4vMb4x8fYgTNYm69IJDmIoqyuxo5ZuHn+oJr6+XDeZGttQ
+         HpKQ6lsmv7uDLbAn3dxysOxQH4J5Chije2tgRq1afs1fQ5zKUuemuNCt58BKTCvfsGQS
+         ev4qpkzJoy9rwCeMxTZ/G8o018IR607mp/NU7GoyA0t906nRA4QP8I6IF9gWPZvaeEq7
+         ldyCCE2Vo5XzwTK1qcZBwRZAYKVhYfq5qZdPDuFdT9JArRrJ45/Mz6aEQFjk+dhij2Ot
+         6c7nggeNdlwe0lpfILI4hmsESQLDr27Xb8L+oX128sU30tMNeNvvlBeWc+xROSEjo1r7
+         w3nQ==
+X-Gm-Message-State: APuU4Z/cYzzk/Y2+qt0Az4MMYMYEZb8kLcZyQ91N5fozutTTvTbNqUh8
+	h97xVmQ5l12Vs+IVNlgpiieLdRQd1NhNe4NVXH0+dRNA3fh3ppRNUdj5
+X-Gm-Gg: AZFdTZffqsQ5E8Y2MQx5EcInvtCLEs9nJ8ZJxI0Cdw3cXRt5stbTYhUa8HkKFN2dWxw
+	8BzIrhnRsuPQvPKyZdges7SCxWblc4Zwa+zStU8TMxDp02Bu9kuWWGEkS7WB09HoU7kPFpKbkEl
+	GkKtI94zvkFE4+OTEiapvQWqgng+LRfeslsVbaBwgQbkGgFMxrfVLaDQ1W1zbp3PNBHrCZyOcmU
+	v1KiSHvChJhZo2ntCA9FWpIGXLYZyrBHUXBaHFaitFEUzOj4wp68uy38QvViKZmXgU8V/7CiHKN
+	WjyVi0c0Mlk2zwoGALiETyEa1CHaI72/Z/cXnSso9RHhacn+o2Ac4mTh2gFII6w29jPYEZJIsnU
+	ULVw+AbT+Z6BbkDvmnTwDMeCuqw8PhOadFbbmR5dIaholvA3F74aH5HvViZve3bYuea52ItESej
+	EXK5xl93tZvjS3xailCDajV4+W3vovycE1sildPsz/5DttUAfU/OzvOFalsyF+01x1U79hjwWO7
+	Qdx5P/doLQz8zh7eInlvIGVmuCk6F2j+/x0RJRh5lePIKSWq0gmrneefjao7FyRzLh4CDvKdPOp
+	PmVClDX2erWS/aHJsH31tVIqT8Y=
+X-Received: by 2002:a05:600c:4e16:b0:4bb:69b2:d3df with SMTP id 5b1f17b1804b1-4bb88813024mr395587675e9.25.1795639289194;
+        Wed, 25 Nov 2026 12:41:29 -0800 (PST)
+Received: from [127.0.0.1] ([45.150.175.77])
+        by smtp.gmail.com with ESMTPSA id ffacd0b85a97d-4ab6c340df4sm41801178f8f.55.2026.11.25.12.41.28
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 25 Nov 2026 12:25:19 -0800 (PST)
-Message-ID: <a9a42697-2d63-4382-b66d-a87950af6289@suse.com>
-Date: Thu, 26 Nov 2026 06:55:14 +1030
+        Wed, 25 Nov 2026 12:41:28 -0800 (PST)
+Date: Wed, 25 Nov 2026 21:41:25 +0100
+From: Marcus Lell <marcus.lell@gmail.com>
+To: Przemek Klosowski <przemek.klosowski@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Message-ID: <e7a053b8-0f19-4a75-baf0-7973dec17c26@gmail.com>
+In-Reply-To: <CAC=1GgHNn17ygWL0tF26LGm+=5M4KrKoeMpq9YE794EothX++w@mail.gmail.com>
+References: <b8b122c5-87c7-4363-b3cc-c91d24ff4d2d@gmail.com> <CAC=1GgHNn17ygWL0tF26LGm+=5M4KrKoeMpq9YE794EothX++w@mail.gmail.com>
+Subject: Re: btrfs corruption across different storage configurations. Both
+ with free addressable free storage
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -92,120 +96,102 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH] btrfs: remove "rescue=usebackuproot" from "rescue=all"
- shortcut
-To: Hengyu Liang <hengyul@cs.unc.edu>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
- linux-btrfs@vger.kernel.org
-Cc: Boris Burkov <boris@bur.io>, David Sterba <dsterba@suse.com>,
- Chris Mason <mason@kernel.org>, linux-kernel@vger.kernel.org
-References: <20261117030353.1738805-1-hengyul@cs.unc.edu>
- <9155e9f6-9d76-43b3-bd20-a4c98a9f2c84@gmx.com>
- <20261125171741.3518473-1-hengyul@cs.unc.edu>
-Content-Language: en-US
-From: Qu Wenruo <wqu@suse.com>
-Autocrypt: addr=wqu@suse.com; keydata=
- xsBNBFnVga8BCACyhFP3ExcTIuB73jDIBA/vSoYcTyysFQzPvez64TUSCv1SgXEByR7fju3o
- 8RfaWuHCnkkea5luuTZMqfgTXrun2dqNVYDNOV6RIVrc4YuG20yhC1epnV55fJCThqij0MRL
- 1NxPKXIlEdHvN0Kov3CtWA+R1iNN0RCeVun7rmOrrjBK573aWC5sgP7YsBOLK79H3tmUtz6b
- 9Imuj0ZyEsa76Xg9PX9Hn2myKj1hfWGS+5og9Va4hrwQC8ipjXik6NKR5GDV+hOZkktU81G5
- gkQtGB9jOAYRs86QG/b7PtIlbd3+pppT0gaS+wvwMs8cuNG+Pu6KO1oC4jgdseFLu7NpABEB
- AAHNGFF1IFdlbnJ1byA8d3F1QHN1c2UuY29tPsLAlAQTAQgAPgIbAwULCQgHAgYVCAkKCwIE
- FgIDAQIeAQIXgBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ujyBQkUpLw5AAoJEMI9kfOh
- Jf6o8OIH/0mqW+TQM4m2x3hCsnK+oB4yJH1qnGvIhFF/Lhs48wI02sGh6/4aA0hkCDfd9LHQ
- +ci4FUepZ9y4VS01+oIExbg/8ytzGYTzLtb44jK2GBOBVSJkMiha6jp22XFt7WUkT/tvbreu
- WWdGsaJIRQaZChy7xsMI8lqQ2WdmluZJ4LT0wD3l/l6QU1ZseMGySebdY9sVOQEOJNV7Qj92
- /KOAFNmeZshV/qDI8Iw1RTs6TvLqCcqmlZLCmJkYSVhT1RonWRren8xIRcFEgMe004IDnt7V
- qdQhk/nhTS9x9MBAhMRl0TTE1VKDLvVALsud3iZLrmmtYvwPApzGJk052f0m28vOwE0EWdWB
- rwEIAKpT62HgSzL9zwGe+WIUCMB+nOEjXAfvoUPUwk+YCEDcOdfkkM5FyBoJs8TCEuPXGXBO
- Cl5P5B8OYYnkHkGWutAVlUTV8KESOIm/KJIA7jJA+Ss9VhMjtePfgWexw+P8itFRSRrrwyUf
- E+0WcAevblUi45LjWWZgpg3A80tHP0iToOZ5MbdYk7YFBE29cDSleskfV80ZKxFv6koQocq0
- vXzTfHvXNDELAuH7Ms/WJcdUzmPyBf3Oq6mKBBH8J6XZc9LjjNZwNbyvsHSrV5bgmu/THX2n
- g/3be+iqf6OggCiy3I1NSMJ5KtR0q2H2Nx2Vqb1fYPOID8McMV9Ll6rh8S8AEQEAAcLAfAQY
- AQgAJgIbDBYhBC3fcuWlpVuonapC4cI9kfOhJf6oBQJq3ukKBQkUzDspAAoJEMI9kfOhJf6o
- SNsH/1ysUWOKmzY0rGS3ZdS61QgqMGhSWD/EJ4UiPw+xO4l4+GtX0fOAqxqsmBKqje3vyhBa
- Z5o/1Y+gNiN+E6RBcSz4b1TAd78sQ2bvT5DWOvBjeeVxHdiuQMIn4S8xk5ZpySBw5ifjoiuL
- 0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
- os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
- UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261125171741.3518473-1-hengyul@cs.unc.edu>
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+X-Correlation-ID: <e7a053b8-0f19-4a75-baf0-7973dec17c26@gmail.com>
 
+Hi, Przemek,
+23 Nov 2026 21:45:10 Przemek Klosowski <przemek.klosowski@gmail.com>:
 
+> hi,
+> I am not a btrfs developer but I track the dev list.=C2=A0 I had a corrup=
+ted fs in the past, and it really was due to hardware problem on my system-=
+--memory errors due to controller parameters drifting over time. I ran memt=
+est86+, saw the errors, then ran the BIOS memory test, also finding errors,=
+ which caused BIOS to recompute the settings. Since then I ran memtest occa=
+sionally, see no errors, and have no problem with the FS.=C2=A0
 
-在 2026/11/26 03:47, Hengyu Liang 写道:
-> Hi Qu,
-> 
-> I found this while comparing the behaviour of different kernel versions.
-> I used an LLM to analyse the problem and to draft the patch and this
-> message, and I analyzed the result myself.
+Thank for your reply.
+I will check that, and report back. But since I'm using 6.18.x, I see no pr=
+oblems at all. I think the bug? was introduced in 7.1.x, so it is worth to =
+find out. Maybe others are seeing something similar. The least thing, I'd l=
+ike to see, Linux to become unstable.
 
-Then you should also stop waste human time on reading such long word salads.
+> I don't know if this is relevant to you, but please run memtest (best the=
+ bootable version, but if you can't at least boot in mimimal linux and run =
+memtester on as much memory as you can from the shell prompt).
+> Hope this is helpful
+> p
+>
 
-> 
-> On 2026/11/17 14:53, Qu Wenruo wrote:
->> Furthermore, one can even argue that this behavior gives a higher chance
->> to mount the fs.
+> On Mon, Nov 23, 2026 at 4:48=E2=80=AFAM Marcus Lell <marcus.lell@gmail.co=
+m> wrote:
+>> [please CC me, as I'm off list]
 >>
->> Thus counting this as a bug is very weak argument, thus the whole point
->> of your patch may not even stand.
-> 
-> I agree that slot 1 helps when the newest tree root is damaged. But
-> "rescue=all" is also what people use to copy data off after an unclean
-> shutdown, and there slot 1 can be worse than the newest roots:
-> 
-> 1. The data extents freed by the last committed transaction can already
->     hold data of the transaction that did not commit,
+>> I know it's a late report, but I thought, you may know about this one...
+>>
+>> I experienced severe Btrfs corruption twice, on Linux 7.1.10 and 7.1.12,=
+ using substantially different storage configurations.
+>>
+>> Incident 1 =E2=80=94 Linux 7.1.10
+>>
+>> I was running Btrfs on LUKS/dm-crypt over md RAID5, using four SATA devi=
+ces with 64 KiB chunks. The incident occurred during or after a RAID5 resha=
+pe and enlargement of the encrypted device. After enlarging the crypt layer=
+, I tried mounting the filesystem, but "mount.btrfs" failed.
+>>
+>> Subsequent diagnostics revealed metadata errors at offsets beyond Btrfs'=
+s reported size:
+>>
+>> "total_bytes =3D 20001389936640"
+>>
+>> - Wanted bytenr "20015028908032", found "8567551700635656859"; checksum =
+wanted "0x836ea028", found "0x8db80d65".
+>> - Wanted bytenr "20024023199744", found "12778909791338521120"; checksum=
+ wanted "0xfd168e20", found "0x95744024".
+>>
+>> These offsets were approximately 13.65 GB and 22.64 GB beyond the report=
+ed filesystem size, but within the underlying device's addressable capacity=
+.
+>>
+>> I did not touch the underlying filesystem during the enlargement. Just a=
+t the end. I was surprised, that an untouched filesystem could go so messed=
+ up. I thought, it could be an mdadm grow failure.
+>>
+>> I made extensive attempts to diagnose and recover the filesystem. I trie=
+d superblock recovery, "btrfs check --repair", "btrfs restore", "btrfs-find=
+-root", mounting with recovery options, and "dmsetup"-based approaches. I a=
+lso used a device-mapper snapshot to rule out concurrent changes during che=
+cking. Despite these efforts, I could not restore a usable filesystem. "btr=
+fs restore" recovered some files but reported checksum errors.
+>>
+>> Incident 2 =E2=80=94 Linux 7.1.12
+>>
+>> I was running Btrfs on an approximately 1 TB root logical volume on LVM,=
+ on a single 2 TB NVMe device, without md RAID. The root filesystem became =
+unusable. I recall seeing what appeared to be the same kind of "bytenr" fai=
+lure, although I no longer have the logs to confirm the exact error. I had =
+not observed unusually large writes before the failure.
+>>
+>> I lost the logs of the first attempt, that I saved on the root partition=
+. I was like to be afraid to cope with the responses of you. (I'm shy)
+>>
+>> Because the second incident occurred on a substantially different storag=
+e configuration, I find it less likely that the problem was specific to the=
+ RAID reshape or crypt-layer resizing in the first incident.
+>>
+>> I want you to help make the btrfs filesystem more error prone. But I can=
+ only point into the direction. I cannot prove that such a write occurred o=
+r that both incidents shared the same root cause, but I believe the recurre=
+nce and the first incident's specific offsets warrant investigation.
+>>
+>> I don't know, how to help further, but I don't dare to trust Linux 7.1.x=
+ and successors, with 7.0.x I believe, this is the last stable one. I need =
+to upgrade sooner or later, so please find the root cause of this behavior.=
+..
+>>
+>> Marcus Lell
 
-That's not a problem, COW makes sure the old data can still be reached.
 
-> while slot 1 still
->     points to them, and ignoredatacsums reads them without an error. In
->     my test, user A deleted 30 of 60 files in the last transaction, then
->     user B wrote and fsynced 60 private (0600) files before a power cut
->     (I used a copy of the disk taken at that point).
-
-And fsync is a different behavior. Fsynced data are only in log tree.
-No matter if you use the newest slot or not, as long as you ignore the 
-log tree, those new deletion will not be seen anyway.
-
-> With
->     "ro,rescue=all", A's deleted files are back, and 30 of A's files,
->     owned by A, contain B's data. Copying the data off with the owners
->     kept hands B's data to A. With the newest roots (v7.3, or
->     "rescue=all,rescue=usebackuproot_0" now), A sees only the 30 current
->     files with A's own data.
-> 
-> 2. On the same disk, "ro,rescue=usebackuproot" fails with "chunk ...
->     has missing dev extent" (-EUCLEAN), while the newest roots mount
->     without errors. I also have a syzkaller image that mounts with
->     ignorebadroots and usebackuproot (plus some unrelated options) on
->     the parent of c73eb6f72741 and fails with -EIO on that commit: slot 1
->     has a bad checksum,
-
-That's the problem, and users always have the solution to choose which 
-slot to use.
-
-> the newest roots load. So slot 1 does not always
->     give a better chance to mount.
-> 
-> I have two suggestions, but in the end it is your call:
-> 
-> a) "rescue=all" tries the newest roots first and falls back to slot 1
->     only when the mount fails with them (similar to the retry Boris
->     suggested in his review of your series).
-> 
-> b) Keep slot 1 for "rescue=all", and document in btrfs-progs that an
->     older slot can point to reused data blocks, which ignoredatacsums
->     then reads without errors.
-
-Nope, not for slot 1 at least.
-
-Data COW ensures it won't write data into an extent just released in the 
-current transaction.
-
-> 
-> Thanks,
-> Hengyu
-
+--=20
+Return to the point of no return._

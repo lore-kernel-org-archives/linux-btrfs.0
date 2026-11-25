@@ -1,122 +1,98 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.178
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795602680;
-	b=ibLD46XEtr7OqiPhD9Z/8IGVgUSNVQIYNKYp5XJmouDpcBhG5LBVchel8NKUMO7A+6Gz
-	 LYZbDff91T2a9jZljanL3z+w1JJi1u1CSHF71wKkPkhAs24TuxVCee0T3CMxoWPrxxqdN
-	 ikrdsO8CYr5uS5ZH0L294AqaZnj8Ssw90twqBeNXNtOKWle/GmUvfZbxognYnv+2qkzEd
-	 YpyrAQfLuesgNUr3CkrvAm2waK+zL97pKQxsEw/yPyCz9OPIc0HebCSiHlLsey2hUUyn8
-	 HdzV+1rdQGY7o+5bDReVI538C0dpl8C+ITOrZYBBSAbhL7Z1NR7AN2U5XhKrQ8jmCcw==
+	t=1795606263;
+	b=mb6VVI7yzhEqgrELwaF5wLge2ul9g4v3N9+50ZVPLdUOkLpSdrP/xA+XR8a4T5lYyQRu
+	 wKQ+9GvvrLYHtNkLL2+A5gnvDQHS2UtclX9ahFKuQG9W5bjWXmKS2s9tlTKj+FHoNqLjn
+	 fKRFIeJlH8MMgPuO8tbXHPEhlwTvAtNRvsEpK2hZviat347CEXoPoDky6BsPTJI+lqqWy
+	 hD8gHNvVMsLOAnaLyzW1wmBMM3jIm6G+znrKjxm3HahGuZU92TY8tcVAqETW9VK1T1cIp
+	 kQO4OlgBGq9l0BqggMoZsvghCMii+Wn9twiPkCJAU/5t+U2RkZ9x1ncdZRZ7W6oXZsg==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795602680;
-	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
-	 X-IronPort-AV:Received:DKIM-Signature:Received:Received:From:To:Cc:
-	 Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
-	 Content-Transfer-Encoding:Content-Type:X-ClientProxiedBy:MIME-Version:
-	 X-MS-PublicTrafficType:X-MS-TrafficTypeDiagnostic:
-	 X-MS-Office365-Filtering-Correlation-Id:WDCIPOUTBOUND:
-	 X-MS-Exchange-SenderADCheck:X-MS-Exchange-AntiSpam-Relay:
-	 X-Microsoft-Antispam:X-Microsoft-Antispam-Message-Info:
-	 X-Forefront-Antispam-Report:
-	 X-MS-Exchange-AntiSpam-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-MessageData-0:
-	 X-MS-Exchange-AntiSpam-MessageData-1:X-Exchange-RoutingPolicyChecked:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount:
-	 X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:X-OriginatorOrg:
-	 X-MS-Exchange-CrossTenant-Network-Message-Id:
-	 X-MS-Exchange-CrossTenant-AuthSource:X-MS-Exchange-CrossTenant-AuthAs:
-	 X-MS-Exchange-CrossTenant-OriginalArrivalTime:
-	 X-MS-Exchange-CrossTenant-FromEntityHeader:
-	 X-MS-Exchange-CrossTenant-Id:X-MS-Exchange-CrossTenant-MailboxType:
-	 X-MS-Exchange-CrossTenant-UserPrincipalName:
-	 X-MS-Exchange-Transport-CrossTenantHeadersStamped;
-	bh=RwSGD17/qpRD7lOCKDWH5OxUnmM7y6xjZkePqqWC2FY=;
-	b=RpvniigET7TI2lh6XAZnPt+6SKW8G2ItK4Bq9b/1jVADnaOzoZGnqrD+VnGedbw9xtmj
-	 a4MqMdrchzJwdxyT2DtxNgIqJHp3Hf/3d30Trx+2dtlf8hl/OeVxMV2pBrahcWi98i8p+
-	 /PZQV8ufxw8cG5GMgSkyL3KvpuWKUjKJC/EKaaKxbBuPuCHo66SnGgRcq9r3NgjHmkRvd
-	 uRPDUflpqqiaLybesLwS/mDifdV1A89qZ2HAc+dpzcdqWVzKRD773Hdy2ggK5tKzcOxAo
-	 ydthHhB1uoPIpKciuOZadTlPDROALhrYDR2tGQunhohcq4Vf711ax8JNBLh4q6o7NUw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795606263;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 MIME-Version:From:Date:X-Gm-Features:Message-ID:Subject:To:Cc:
+	 Content-Type;
+	bh=7+deDl3BmMnasRerW8PQ74sNqnJDNHW+TUk5KdDuYGY=;
+	b=ts7t24/irzDuaEVkGZd82XJxB/keGLpeWaculQhw+b3WRxmQtYyy6k63cPaYUNpygD++
+	 +oCkOQutW+WcDT6OIR8PINdZuKB9xRO76D2dgCtC47OqPbZFjhRClAOAGZtpyy1vPS87q
+	 fiIabttlWsOGwmBGFkf83eI2PZQt1c/V4G9+kLNYlqyzET1SteaOKoENW4LjThiTwucBD
+	 JaDKcTRcsdBw3SkI3Odibt5YYMEIByzHNcXn2qrpew+Oh6YqWXjefGCGfi4EgrFfaB3Xl
+	 nfsPCQdnQnTom+/epzPk9b5Nc8t7YfhPJs5l3jqF9FbuWpwgT0qITRhf8Z5fycce++g==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=wdc.com;
-	spf=pass smtp.mailfrom=wdc.com;
-	dkim=pass header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=BmfeVD31;
-	dkim=pass header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=PU7pd3J5;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=216.71.154.42
-Received: from esa4.hgst.iphmx.com (esa4.hgst.iphmx.com [216.71.154.42])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
+	dmarc=pass header.from=certik.com;
+	spf=pass smtp.mailfrom=certik.com;
+	dkim=pass header.d=certik.com header.i=@certik.com header.a=rsa-sha256 header.s=google header.b="Ua/xf+Ee";
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.128.178
+Received: from mail-yw1-f178.google.com (mail-yw1-f178.google.com [209.85.128.178])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 001D7606A331
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 10:31:19 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 001D7606A331
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=wdc.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=wdc.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5C746606A32D
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 11:31:02 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 5C746606A32D
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=certik.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=certik.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=wdc.com header.i=@wdc.com header.a=rsa-sha256 header.s=dkim.wdc.com header.b=BmfeVD31;
-	dkim=pass (1024-bit key) header.d=sharedspace.onmicrosoft.com header.i=@sharedspace.onmicrosoft.com header.a=rsa-sha256 header.s=selector2-sharedspace-onmicrosoft-com header.b=PU7pd3J5
-DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple;
-  d=wdc.com; i=@wdc.com; q=dns/txt; s=dkim.wdc.com;
-  t=1795602680; x=1827138680;
-  h=from:to:cc:subject:date:message-id:in-reply-to:
-   references:content-transfer-encoding:mime-version;
-  bh=nlh137BBRg/epx0ChV8oayBdWsqbVBnm5snHKPatqQo=;
-  b=BmfeVD31yg1SpFgPa0TEVGJndJYgVHqKqN40HpvPu6mp31C6mhgFMn2g
-   C3F0gocFydCBUtZ5ualw8h49VNE3dzKh6qj0N/e9TLDB5kYaCHXMkeXLa
-   Jv81Z8W4eD3g4gTLOn5p1ijgw/dptVCUvmqlDj2mm95lx25P7nCkSZgkX
-   nCti4WBvQ2ORUO8sKQS8BKIW+v5EhDO7iAt+YqGmG1iUsEPa0xIPAfUpZ
-   CCKxwh89qjNO2Tg9lpeKkEDX1hMZwy5w2SJRfp0l3uaYPbTLLceZV4zyG
-   Cl9y8jMxfcszx3SAA7AOE+kKsUN8aTou2qv322UGZZ854olLWYQbdfuvq
-   g==;
-X-CSE-ConnectionGUID: 1Kx8jNpiSGmfQinC7iGcXQ==
-X-CSE-MsgGUID: lPF+lPJyQoGiXwYOn52aZg==
-X-IronPort-AV: E=Sophos;i="6.27,232,1786982400"; 
-   d="scan'208";a="157492475"
-Received: from mail-southcentralusazon11013004.outbound.protection.outlook.com (HELO SA9PR02CU001.outbound.protection.outlook.com) ([40.93.196.4])
-  by ob1.hgst.iphmx.com with ESMTP/TLS/ECDHE-RSA-AES128-GCM-SHA256; 25 Nov 2026 18:31:19 +0800
-ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
- b=w4/1YE4VUt4jkrdOcdWTa6e0yT9drZe0eI82aQuCj5Whoutx/5PTwySoz5c0MzA2fSCRA4sCNC8zWjDBKiXyjUbEdsDpSqc5QzJO7Bd6sZaspemzJ9kta29u7FxsH8saKZD7t4WpA7W/ke0YjpBTdjGEBl9PBmtdpDGR1hZqJI6YFfRiuwh6Do5DLA2ovezEO5/R3jhD7tl5FvnJNQ1KbebT9Jllbxdttb/ugZYkawlwqMAAQTHalwNJYFpH8Xg52MxN9MhXdLeOsTu+0V2zSFaUebfNFiwwDwnY8ngaXGsJfFgs3xgMmz4Ls1/lB99g4Ub0O/e5ejyCpNkhWLFaGw==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
- s=arcselector10001;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
- bh=RwSGD17/qpRD7lOCKDWH5OxUnmM7y6xjZkePqqWC2FY=;
- b=LgG0ECtHehK6npevuo63sBoREQqeodVHE/SBr3SdLc+I3sFRUZxFVJUuQsZ4qOMFlXPe5vLloLxdFiLlHedveveTFds7ZIF911sf5UmFYUwc/8dWZiDskxoDL6L9B0dQV2svTvdFZ/zwmU9tsjzBRvw/kkuVegzJXH0MV5qpaRB4E2qUz49g80BgV6w6T8woimN+FE60KfBt/OY1ndvyeapqL0tGo5eNHp8ZmACioGKEio0woRweKDa3eGMGJCtefJYNgtBKRoJ34boODIS9L763rpzjiOXLPmsfWeJIjpyHqLkXe4hoWFbEwkhU5YVD658lJmAlMY7igLrWv6pf2g==
-ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
- smtp.mailfrom=wdc.com; dmarc=pass action=none header.from=wdc.com; dkim=pass
- header.d=wdc.com; arc=none
+	dkim=pass (1024-bit key, unprotected) header.d=certik.com header.i=@certik.com header.a=rsa-sha256 header.s=google header.b=Ua/xf+Ee
+Received: by mail-yw1-f178.google.com with SMTP id 00721157ae682-8b4e2fcc300so49484157b3.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:31:02 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1795606261; cv=none;
+        d=google.com; s=arc-20260327;
+        b=imGkSTlIGw/j0U/ymOhVrWiUeY47K9kBkh6NGco/tmo7Cf1zPvVFrN50FjRsk7P7L7
+         H1Tl8FUKCpxR/TornhlddoTN5FZvDr2b8H1/bXmPNBaVHYIXDsTg+/t80yduFOkBMAeX
+         qG3IboQ41TufPoYV740q1AS6EA/TzTAz+9s6Q0DXo+I+R25gZDJtPIUNFsZ/PDry/5Sg
+         sYmDv9X287E7r8bbsdswjdfUhwApgY5knfszaKJYGslkw8rHwm9eUiyC/qW+zEyaI066
+         589RBOJFSNOOC8mpjULjAYHp1WFxbCqji+TRtaENuUl7jKGBgOZH06ia/ld0x4JTwUK7
+         TlvQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=cc:to:subject:message-id:date:from:mime-version:dkim-signature;
+        bh=7+deDl3BmMnasRerW8PQ74sNqnJDNHW+TUk5KdDuYGY=;
+        fh=n30Uw2rN/NA9Zf6bmsTN2iwKRzwslEv6N8mzZEWZByI=;
+        b=PMdMWd4m1GW7rB8qGAeGMyyfXQ9+2iUvm4Pg4NRiXs/Oap599+YptV35fvccOX1IUd
+         XNhgxUtpHPZWgGVQQlopYG9udHyhnoYYqYXMpbuy+YwCtxno80kKO5iVM7kLgEfGESjc
+         QdMdJH7Qxxfm9Egrp7o7YODv5FKZmJRrbkgRfWCNmchdal90bpf0O5lPBx2iRTQGoHuA
+         XTrz3toxe2r3qnMDDv5HtAdIP2pcjG6p3qoXzi9/jb5gHv4rcuq/eeibO2eYca/jdxM4
+         eG0oJC0c757BHjrq+dn1q/wIGdPv2b2Quy3ltIl97GkQVaMlCs1C/KVii8lLA7MzgdN4
+         ullA==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
- d=sharedspace.onmicrosoft.com; s=selector2-sharedspace-onmicrosoft-com;
- h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-SenderADCheck;
- bh=RwSGD17/qpRD7lOCKDWH5OxUnmM7y6xjZkePqqWC2FY=;
- b=PU7pd3J5hK53aB3CsVNagzhgR3R6Hyk8d9uWEjkWzf6odAI/NuU+ompbkFvtCVRc6UIuLzT40CZ9qcF7tyK71UxO/k2y9Pi3JqnpEsv/VOpCT5cTfNHv6iRzkSFMpN9Ep6j93XEn6Nq+4TLmq1GLzf/sjbAlUMEDxNvGelMdSr8=
-Authentication-Results: mx.microsoft.com 1; dkim=none (message not signed)
- header.d=none;dmarc=none action=none header.from=wdc.com;
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com (2603:10b6:806:436::21)
- by DS4PR04MB9868.namprd04.prod.outlook.com (2603:10b6:8:2fb::18) with
- Microsoft SMTP Server (version=TLS1_2,
- cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id 15.21.639.12; Wed, 25 Nov
- 2026 10:31:17 +0000
-Received: from SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825]) by SA6PR04MB9447.namprd04.prod.outlook.com
- ([fe80::14c6:1c14:485f:1825%6]) with mapi id 15.21.0662.004; Wed, 25 Nov 2026
- 10:31:17 +0000
-From: Johannes Thumshirn <johannes.thumshirn@wdc.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Damien Le Moal <dlemoal@kernel.org>,
-	Naohiro Aota <naohiro.aota@wdc.com>,
-	Boris Burkov <boris@bur.io>,
-	Filipe Manana <fdmanana@suse.com>,
-	David Sterba <dsterba@suse.com>,
-	Josef Bacik <josef@toxicpanda.com>,
-	Johannes Thumshirn <johannes.thumshirn@wdc.com>
-Subject: [PATCH v8 27/27] btrfs: zoned: provide zoned specific reclaim sweep
-Date: Wed, 25 Nov 2026 11:29:56 +0100
-Message-ID: <20261125102956.266389-28-johannes.thumshirn@wdc.com>
-X-Mailer: git-send-email 2.56.1
-In-Reply-To: <20261125102956.266389-1-johannes.thumshirn@wdc.com>
-References: <20261125102956.266389-1-johannes.thumshirn@wdc.com>
-Content-Transfer-Encoding: 8bit
-Content-Type: text/plain
-X-ClientProxiedBy: FR4P281CA0411.DEUP281.PROD.OUTLOOK.COM
- (2603:10a6:d10:d0::10) To SA6PR04MB9447.namprd04.prod.outlook.com
- (2603:10b6:806:436::21)
+        d=certik.com; s=google; t=1795606261; x=1796211061; darn=vger.kernel.org;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=7+deDl3BmMnasRerW8PQ74sNqnJDNHW+TUk5KdDuYGY=;
+        b=Ua/xf+Eeq/gBpPHD5Ll/Hjfmkp3BBSM1ZsOIqV2tJK1ylWmsHa+sNbxeDAD3mV69HA
+         WmmlMp42PE7xW8FRs5ntpA6ZFyNFgMdTXwaVfp8f8u+mD1pVNEedfBawyCA9POBl5FFv
+         0cL+Fg8yMrs04DjFlbGprzGLANexU3wI/l+Fo=
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795606261; x=1796211061;
+        h=content-type:cc:to:subject:message-id:date:from:mime-version
+         :x-gm-gg:x-gm-message-state:from:to:cc:subject:date:message-id
+         :reply-to:content-type;
+        bh=7+deDl3BmMnasRerW8PQ74sNqnJDNHW+TUk5KdDuYGY=;
+        b=aaXanvzX03QbVLprh+0cLo2Q5Lf8ymsY1WAezBuDZzvOJHGZUEiEkPjsBtFVzo+GEp
+         7lLpY6DJ8UiG5f6pdb2g6PiJWa7E3I8D7pbTM/ZGXPEgQsGRdxb1X1PkVq/U2xV2ZRKl
+         TWZiSjTk3ChcbwRXjO74Ryg3YD7EX8gdd3K5I5RwMkNiysOE86M7j/8DQyhMuLgVdDO2
+         u//sCecu1s1/XDJobzARn2FmQKrgwQtOCsE3kqHsqcja1ZJ393xcFxEHkRWcJyXkcBeA
+         kyMoknOW93STMZa//TgqOZsuXnmTIzb33VWVSBimJ/egH+XQJPOgiVBCLhDVVdIa965e
+         mHpA==
+X-Forwarded-Encrypted: i=1; AL+hErHu5OBnt4BkW40I/FSXu+2W2gSaZxf6xrzwHacy0SHURZFmyAV608SnsP1GLvWVYyJ1rTRBIXI00tlkNA==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9amTsmPXG+ku7RpXYOWipfrkLsYHaTE5HzYTwNHbQaio7zE2LU
+	m43sGi0M3s16Zgd62UVIUbyySg/CRDr3NnTHf+CEaMPAArSAH8E/tkttqhITDCcT05MfvGf74NI
+	F9/VdXYgDegVPAYaHZXFLypIiXji+THAWxIQWWFq1ZA==
+X-Gm-Gg: AZFdTZdBXZ0BnpKrchtwwru8sLLHd9XJgom5PQLNbJsCR7JLXsAM43fKtS0nt3Gi59W
+	y1xWCstnVa9paICRDsLExu0ZzJWOpQ8mq9YV/jZCLEgyTil5pMePSzY9RcNwjrIWihgNi/hExad
+	cBiLXYaSkKa1VyWL8xGdiZVrZF6ZeLW9RNnanp95JkKpEaWHBFU0X8cJXvKac4jevu2CFyBF4nq
+	Q4+jt76nl2iUXu8u6nP/MwhIi5FE9w2ekpfBN85X3xmHJRk5RGogBKyjY1J/PRA05HH9dZRUEyt
+	NhJFvAhlim2mPs0QCyQW159MyNZr91SiVVpMfISVr0XPzvvy+sE/+r5sPtknMLjsTruF7D5oqQV
+	W8xpUyslDyBuyVOmP/r149N+5QekcoKe/LeANvnlZMnvERXqmD1JBEguQdvLHJKUDSI2qU4qcGJ
+	ahwju0debrEXy6OaEiQWNZyZkUG3YBL2HsfDQ6z3CRoW2zHgclp1e6+CSpA7UqpsrJ6Uit77gKm
+	eLpN97tvBcfgNXmUhfU7ySoCqP7zYE79o0u
+X-Received: by 2002:a05:690c:6e8b:b0:8b4:e8c4:238d with SMTP id
+ 00721157ae682-8b520522fdemr57535227b3.105.1795606261197; Wed, 25 Nov 2026
+ 03:31:01 -0800 (PST)
+Received: from 77377267392 named unknown by gmailapi.google.com with HTTPREST;
+ Wed, 25 Nov 2026 05:31:00 -0600
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -126,278 +102,323 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-X-MS-PublicTrafficType: Email
-X-MS-TrafficTypeDiagnostic: SA6PR04MB9447:EE_|DS4PR04MB9868:EE_
-X-MS-Office365-Filtering-Correlation-Id: 2f96529d-19df-4f91-6168-08df4adf3d43
-WDCIPOUTBOUND: EOP-TRUE
-X-MS-Exchange-SenderADCheck: 1
-X-MS-Exchange-AntiSpam-Relay: 0
-X-Microsoft-Antispam:
-	BCL:0;ARA:13230040|10070799003|366016|376014|1800799024|23010399003|19092799006|10067099003|261021123027099003|56012099006|11063799006|261009223027099003|261026140227099003|5023799004|261102123227099003|261021121427099003|261022105027099003|261028144727099003|261026121527099003|22082099003|18002099003;
-X-Microsoft-Antispam-Message-Info:
-	6YlN1nw+rAjnstBAE0oJFpnzyAPjqIDsTBaP0/QDQEcCY4WDAeDsEK+PlPO4yZiyA6Frs6uY6+pyg4JYQlR2bzvY424iCmpe7ESKqI/kxD1WNDQjzCUIJUHHArxlzPAaq8Ve4QbX5dXNNx2KxBC3pw8U2rXhYr9B1e64pHB7hsvA5r3X+eBndXJQMh2msB5hAc/TbQ9iTDnAO1Or7khL5NZySeEVV4UgkfcQjmkRmx4ip12hJ0iSyX9HwHlOdfG697MEAyaQfPK15XmAKS9u+gsWM96XLfzosRHUPCUSY8qef/HFHMyNNRPiu+N8H/SGlVBdLFLNRCA+c5f3qLbzSIG1DvPDPapB1Nuj2Sz4XrQjDldg0qkL7kIOHPVVPnknHFGYvx6P4B3lXQxZ5mF9ZJq5dfHpLMDJz5YdPeaazoklBdvuL0ctytSKTP0WRHzs0qJ9MAypgQkIJgeSbeXMDAiPEssQHSM2sLcDaljgzMgvtcYs/XGK1BYgYc38pkkfhhojhs7U8cCukuUaJnZtt6SRRWqIc0jjBw1Ai8tvrFp7Hb328iLizVDOb74ijQUqL+2Th+3m9PiCnHHLrTjHDKGiBLQMx8/m3HkvvsuBkDdn8xijB+CRNXLhWB0AXNOkqTNACHin9q6cZRajpZrdIcplpJifGIYTSfVnoXCQwMU=
-X-Forefront-Antispam-Report:
-	CIP:255.255.255.255;CTRY:;LANG:en;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:SA6PR04MB9447.namprd04.prod.outlook.com;PTR:;CAT:NONE;SFS:(13230040)(10070799003)(366016)(376014)(1800799024)(23010399003)(19092799006)(10067099003)(261021123027099003)(56012099006)(11063799006)(261009223027099003)(261026140227099003)(5023799004)(261102123227099003)(261021121427099003)(261022105027099003)(261028144727099003)(261026121527099003)(22082099003)(18002099003);DIR:OUT;SFP:1101;
-X-MS-Exchange-AntiSpam-MessageData-ChunkCount: 2
-X-MS-Exchange-AntiSpam-MessageData-0:
-	=?us-ascii?Q?Pln4F3+UCohIziKjA6G/1B34uhVnTwfhjSQ83qwNiaZubqDgEgbF2kWgracT?=
- =?us-ascii?Q?7NZ6La+/e+C82z2lTKw0bHs1jVNuqF/bnWSJcRJYQnQRkXgwyuv+ZVEKqIIW?=
- =?us-ascii?Q?zf5RzS/4r5xOZlJljOB5sgHgTAofELuYpewdpriyqOrXmtIhIi0uP3hCi2Lj?=
- =?us-ascii?Q?aG0SCduolLDBJr6xazM2mNIY603//tB5mWLePB33Chy394+cWxC+IBrWV03n?=
- =?us-ascii?Q?fh6f/72GK4rZhxI4lDI6/oLOz6mz8xidX62tvUaMWGmDrdW0o/uwEj+BJYKG?=
- =?us-ascii?Q?3aNcgGzLCZBFqnk2gX6C8FcWcSiFOi/iYLLFzhetgoLreOKfkjn58uRhGIQ3?=
- =?us-ascii?Q?YwmohQm4FBC7U+fsRTtpq16BGOALAC/XBdXp9i6rXopMpbvGOiFRxkE3NoXW?=
- =?us-ascii?Q?FquXugObZl5m2BN9hmkeHRqlWtJr6tbwIh1f7Ol4kTD0Dtyn+Ug5Qea4qCpT?=
- =?us-ascii?Q?JDy5sVyw8LhLE9UQSt5ry8PuPl7XR6U6wK8n9u7bqMgcGHw6Ts0L+tLXTAJQ?=
- =?us-ascii?Q?2Jnawy6XgKedVBS174phhuwHhXqStJxz2jkGGNZCyOh4I4kHglHtzGB0QBP9?=
- =?us-ascii?Q?mTzHAIdTQQlv+txINxsiLAGlcfzIOdfBOo43IYdAnClwhwcHQ5nqdAjdwDMw?=
- =?us-ascii?Q?3lM/XvxKdtShQHhsB+lsYs8BFaQCZM3BoKhhBNTU1dKzm3pPavaVFpBA3SyK?=
- =?us-ascii?Q?yocB+Q2NpWU+qmFu8wlHRbri/vZENNCGD+hAc6pQbS65e/jdllxVAAJSTiBy?=
- =?us-ascii?Q?dCwJWxCNvYSiWvxy9QtzT94aIy96+TGKtAquZcm8FrwfOxb0h/QsVT06kTXT?=
- =?us-ascii?Q?Xpg4mo2fxJ6uPfS8sfBprNs1SFaJTTeKhTqvwZ6dUmh/NRkUalOT9ei9bmiM?=
- =?us-ascii?Q?7DC1mqmngPugsLJ4z0k4EQ87ShURYeWPjZtrwyH/8XI0Z2eK0+S4puNMN91M?=
- =?us-ascii?Q?Il97NtspcyhappSEwb5wvgkjZ60YJmtESWt2w43WrRDcmZff/gO9qumilA9a?=
- =?us-ascii?Q?/5u+CLL36JHFmzkk/yUgO/0WcmZmTvdbBkOFRXyE+WgqgtIEgabtc8i7eqrC?=
- =?us-ascii?Q?3JblsUoOyYgrbfziw6Bc9Jgaye6VNPcF4H8BZMP0RA8ZXNULqVhQYiYiY6G7?=
- =?us-ascii?Q?cy71WUntf2RHO4s24JH28htIRg7bLZKCCLykv3P2cmtwwxF0Awwws3o5OdNd?=
- =?us-ascii?Q?pSSzyn8hfsl8OLI1vxTgnj3P/FDQbVQd9yZ5UPUyvfglTAB6Y5Bpvm7a5zLG?=
- =?us-ascii?Q?y2D3X5Q+kMvnf5MYRaWBz5MqTWtPlYpdsRRcTsBHU0mTxNsfj7kw7a6EwHxa?=
- =?us-ascii?Q?dINzXQ3dW4LtXebTtvKH/R8xzn/HEe9Hy/fxUYE+Q4CJV39C9X27tPltZiyJ?=
- =?us-ascii?Q?Gd1LAp0v07HXU/ek7GrwaO0tbxcqHME3h86bWinr9V/OL56locklptvsQIyn?=
- =?us-ascii?Q?ebF1L95ibz9B//cz+goKgxQ7fyaprZ72ctoo5jHF59MYaIzyLpQQHMKhNpb9?=
- =?us-ascii?Q?+FzRV8rP2LnYjJcs7kzHzyngn08QKyhQ7TzZCFXjlr0Czb7cf3EttAyYz40u?=
- =?us-ascii?Q?ZJO78bQCaTa31CUyHfSLrzzSr2ub6qdqONU/6bGEcchIRTSU309p3njNuqzU?=
- =?us-ascii?Q?B+fgKoR6BhgJMqng6RAdRWf16yvy3nl6i0luBLaaMWYKd+U2J/SDd3sdFE7r?=
- =?us-ascii?Q?bxQ8o/cY7qkuSoaKU1skdOoVHaVwWXEEMrKHn1bM7Iz6pEp8m9TLxHrK1Gcg?=
- =?us-ascii?Q?hcXnZ/9Bgu98BF7vwBAQjEMOWmlXbkErEgbGNvsQFoSlRIfLNqXrduykI6kW?=
-X-MS-Exchange-AntiSpam-MessageData-1: OfdWFSpu10Wrl4I60A00iuJ4mswgct9LEG4=
-X-Exchange-RoutingPolicyChecked:
-	GscyYn85il//PSDjal6wItfIrLss1qM8egKODdo7ZP69qu4z2JunK2E2CskhXj/ZC3EtMPR919GXbkEd67HLsXqezP5KrYhGy6uGPcnw5m/ubMCWSiHlMo6VucPb4s9ZF5Zm3g82vNbveXugZGyQl2p5gtIj5PW9RflcLqg1wGhFavdw55nzYyjhr6+G9/A0nnS/kJDRZBx0XcYDhtMO1WxXX33Nmtf+oGIL4+ybuRdyBvRSMvRGhiX+VvCX+am/nvEFj2ymITQux3uKU3dCCbQWJeJVYhhF9wT5iNUIWYWkZq1xFpJrD+wVI52MVbC/agS0KmtXhUySEHnoJ1wvTQ==
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-ChunkCount: 1
-X-MS-Exchange-AntiSpam-ExternalHop-MessageData-0:
-	YGwJ1t0uPDf0luf1giJsRMvXhY3O2YTC5swwnk001rm7KnJ/QxzL6+u19IH5L1J2xVyBLXObH2V8XzMmLhLazhbcebuUskXmu2ukYRG5KXKw1rzuRm8u10kgnvcoJ1t8wq5g0mD8QYYo8/9Se9/I2Zi2ZkWA3M2YiA5bRvBkfCDLnkEGFcDOOoTUgxIqp7FnEi+GfNAXUf8mDCmiQSk+C3H/wocLkyCJBHFuC6L27EpH16NrGtGpyBUt9ycO4xVbnEkdIwkDpBVJQ/6fv31eISZq55g11W6eUuoQjBBQZIF933Q5TUaLr9vpBJ33zcjJeG4Wb1harBjt66MCUxO4hzpXm0C3NSE3hVr3//1kGtvyf1h15ix9hy7mI6LG9s0PNikULpXGeDS7Qgm7C8JyN6ozLRfiJAJcPW2Xj7PY6F3Gv+qLwWUV0k7PL4zSm5HF3+RZnK3nVXWm/luFx3gZrwl8sbbTshHUVawt6P07Bm7KHhGjMuDKjw0/pn/oN5TEcWoExuDNuAqDyvs94gzfS7ajKsb266jlDnCNp582f0TCqjL4ncQ3Ex/UMP5gmWgirOl1SJOzyd5H9h3Xt/1tJSJe6uTnbjgCFtzyn0nbCAPj27y+mdqch5LoitS9ksaZ
-X-OriginatorOrg: wdc.com
-X-MS-Exchange-CrossTenant-Network-Message-Id: 2f96529d-19df-4f91-6168-08df4adf3d43
-X-MS-Exchange-CrossTenant-AuthSource: SA6PR04MB9447.namprd04.prod.outlook.com
-X-MS-Exchange-CrossTenant-AuthAs: Internal
-X-MS-Exchange-CrossTenant-OriginalArrivalTime: 25 Nov 2026 10:31:17.7923
- (UTC)
-X-MS-Exchange-CrossTenant-FromEntityHeader: Hosted
-X-MS-Exchange-CrossTenant-Id: b61c8803-16f3-4c35-9b17-6f65f441df86
-X-MS-Exchange-CrossTenant-MailboxType: HOSTED
-X-MS-Exchange-CrossTenant-UserPrincipalName: 0zg6l+mdrPy14HmKQgRpxLnnHbEwiuUFxHjuQT1rljZxUSx3Gz38ubz6GHlGpyVHmAHuWhnkn41hl2y14D4u+5mBFHTPniYrHuQBAu+loe0=
-X-MS-Exchange-Transport-CrossTenantHeadersStamped: DS4PR04MB9868
+From: Dickson Wu <dickson.wu@certik.com>
+Date: Wed, 25 Nov 2026 05:31:00 -0600
+X-Gm-Features: Aa3M54qnIKv2cHFcxtnYznnMaWaKKpFSmroNuvo3mQpecfDkftNz1iBAu2lMlZc
+Message-ID: <CAFaZ9epaxok_j7R-5075bWyHiUM99JQGKZbJnMfgcb=hOencPw@mail.gmail.com>
+Subject: [PATCH 6.1.y] btrfs: fix xattr replace when multiple xattrs are
+ packed in the same item
+To: stable@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>, Qu Wenruo <wqu@suse.com>, David Sterba <dsterba@suse.com>, 
+	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 
-The RECLAIM_ZONES flush state calls btrfs_reclaim_sweep() to find
-victims for garbage collection. That sweep does nothing unless periodic
-reclaim is enabled for the space_info, which it isn't by default. And
-even when it is enabled, it only queues a block-group the second time a
-sweep sees it below the reclaim threshold.
+From: Filipe Manana <fdmanana@suse.com>
 
-Apart from that, block-groups only get queued for reclaim when their
-usage drops below the threshold while space is freed. Block-groups that
-were already below it, or whose garbage comes from many small frees
-spread over the filesystem, are never picked. With data tickets waiting
-for space, RECLAIM_ZONES then relocates nothing and fails the tickets,
-although relocation could recover zone_unusable space.
+commit 858bee1c77857aabcc2327cd32dd8266332de332 upstream.
 
-Replace the call in RECLAIM_ZONES with btrfs_zoned_reclaim_sweep(),
-which:
+If we have a btrfs_dir_item item that packs multiple xattrs and then we
+replace the value of one of them (with the setxattr(2) family of syscalls)
+with another value of a different size, we end up not having a fully
+initialized btrfs_dir_item, resulting in a corruption that the tree
+checker will detect at extent buffer writeback time.
 
-- queues every full data block-group below the reclaim threshold,
-- then adds the full block-groups with the most garbage, until the
-  queued garbage adds up to two zones. As soon as the data relocation
-  block-group fills up, relocation uses the zone kept free for it, and
-  the waiting writer needs another zone on top before a new data chunk
-  may be allocated,
-- also considers the block-groups of the data relocation sub-group, as
-  relocated data turns into garbage there as well.
+This is because in btrfs_setxattr() when we find a btrfs_dir_item with
+multiple xattrs (due to the crc32c hash of their name being the same)
+we delete one of the xattr items (btrfs_dir_item) and then insert a new
+one, but the deletion and insertion results in shifting existing data in
+the leaf and therefore when the new value of a xattr has a different size,
+the new btrfs_dir_item is placed in a leaf section that was not
+initialized and we only copy the value's data and set the value's length
+in the new btrfs_dir_item, without setting the name, the name's length,
+the key (which must be all zeroes for xattrs), flags (BTRFS_FT_XATTR) and
+transaction ID.
 
-The periodic sweep keeps running from the cleaner, adding an additional
-layer of garbage collection.
+The following script reproduces the issue:
 
-Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
+  $ cat test.sh
+  #!/bin/bash
+
+  DEV=/dev/sdi
+  MNT=/mnt/sdi
+
+  mkfs.btrfs -f $DEV
+  mount $DEV $MNT
+
+  touch $MNT/testfile
+
+  # Add two xattrs that, on btrfs, have the same hash (crc32c) for their
+  # name and therefore are packed into the same btrfs_dir_item.
+  setfattr -n user.foobar -v 123 $MNT/testfile
+  setfattr -n user.WvG1c1Td -v qwerty $MNT/testfile
+
+  # Verify the xattrs are present.
+  echo "xattrs before:"
+  getfattr --absolute-names --dump $MNT/testfile
+
+  # Now replace the value of the foobar xattr with a significantly larger
+  # value.
+  setfattr -n user.foobar -v abcdefghijklmnopqrstuvwxyz $MNT/testfile
+
+  # Check the xattrs have the expected values.
+  echo "xattrs after:"
+  getfattr --absolute-names --dump $MNT/testfile
+
+  umount $MNT
+
+Running it:
+
+  $ ./test.sh
+  (...)
+  xattrs before:
+  # file: /mnt/sdi/testfile
+  user.WvG1c1Td="qwerty"
+  user.foobar="123"
+
+  xattrs after:
+  # file: /mnt/sdi/testfile
+  user.WvG1c1Td="qwerty"
+
+So the "user.foobar" xattr is missing and there was a transaction abort
+when unmounting the fs with the following traces in dmesg:
+
+  $ dmesg
+  [869800.159271] BTRFS warning (device sdi): access to eb bytenr
+30474240 len 16384 out of range start 16015 len 25964
+  [869800.159293] ------------[ cut here ]------------
+  [869800.159296] WARNING: fs/btrfs/extent_io.c:4408 at
+report_eb_range+0x44/0x60 [btrfs], CPU#8: getfattr/2605179
+  [869800.168961] Modules linked in: btrfs dm_thin_pool (...)
+  [869800.190527] CPU: 8 UID: 0 PID: 2605179 Comm: getfattr Tainted: G
+       W           7.3.0-rc3-btrfs-next-244+ #1 PREEMPT(full)
+  [869800.193726] Tainted: [W]=WARN
+  [869800.194502] Hardware name: QEMU Standard PC (i440FX + PIIX,
+1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
+  [869800.197576] RIP: 0010:report_eb_range+0x44/0x60 [btrfs]
+  [869800.198985] Code: 48 8b 7b 18 (...)
+  [869800.203531] RSP: 0018:ffffce4541937d58 EFLAGS: 00010246
+  [869800.204609] RAX: 0000000000000000 RBX: ffff8dde054b8738 RCX:
+0000000000000000
+  [869800.206137] RDX: 0000000000000000 RSI: 0000000000000001 RDI:
+ffffffffc04c92a0
+  [869800.207645] RBP: 0000000000003e8f R08: 0000000000000000 R09:
+3fffffffffefffff
+  [869800.226175] R10: ffffce4541937a88 R11: 0000000000000003 R12:
+000000000000656c
+  [869800.227594] R13: ffff8dde14be800f R14: 000000000000656c R15:
+0000000000000069
+  [869800.229097] FS:  00007f59023bb780(0000)
+GS:ffff8de5788ed000(0000) knlGS:0000000000000000
+  [869800.231137] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  [869800.232321] CR2: 0000558dc45e6a78 CR3: 0000000765b16004 CR4:
+0000000000370ef0
+  [869800.233783] Call Trace:
+  [869800.234330]  <TASK>
+  [869800.234791]  read_extent_buffer+0x4d/0x100 [btrfs]
+  [869800.235898]  btrfs_listxattr+0x199/0x240 [btrfs]
+  [869800.236912]  vfs_listxattr+0x51/0xa0
+  [869800.237683]  listxattr+0x7e/0x100
+  [869800.238398]  path_listxattrat+0x9e/0x190
+  [869800.239117]  do_syscall_64+0x89/0x470
+  [869800.239877]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+  [869800.240914] RIP: 0033:0x7f59024cdcb7
+  [869800.241686] Code: f0 ff ff 73 (...)
+  [869800.245353] RSP: 002b:00007ffd056dcdb8 EFLAGS: 00000246
+ORIG_RAX: 00000000000000c2
+  [869800.246892] RAX: ffffffffffffffda RBX: 00007ffd056df2e2 RCX:
+00007f59024cdcb7
+  [869800.248853] RDX: 0000000000006600 RSI: 0000558dc45e0470 RDI:
+00007ffd056df2e2
+  [869800.250514] RBP: 00007ffd056df2e2 R08: 0000000000006600 R09:
+0000000000006600
+  [869800.252295] R10: 0000000000000004 R11: 0000000000000246 R12:
+00000000ffffff9c
+  [869800.254105] R13: 0000558dc45e0470 R14: 0000000000006600 R15:
+0000000000000000
+  [869800.255931]  </TASK>
+  [869800.256529] ---[ end trace 0000000000000000 ]---
+  [869800.260071] page: refcount:2 mapcount:0 mapping:000000007ccfc77f
+index:0x1d10 pfn:0x608c69
+  [869800.260075] memcg:ffff8dde00344d40
+  [869800.260076] aops:btree_aops [btrfs] ino:1
+  [869800.260151] flags:
+0x17fffc00000402a(uptodate|lru|private|writeback|node=0|zone=2|lastcpupid=0x1ffff)
+  [869800.260154] raw: 017fffc00000402a fffff4adc773d4c8
+fffff4adc48f3d88 ffff8de36504ba30
+  [869800.260155] raw: 0000000000001d10 ffff8dde054b8738
+00000002ffffffff ffff8dde00344d40
+  [869800.260156] page dumped because: eb page dump
+  [869800.260157] BTRFS critical (device sdi): corrupt leaf: root=5
+block=30474240 slot=5 ino=257, invalid location key type, have 46,
+expect 132 or 1
+  [869800.260161] BTRFS info (device sdi): leaf 30474240 gen 9 total
+ptrs 6 free space 15629 owner 5
+  [869800.260163] BTRFS info (device sdi): refs 3 lock_owner 0 current 2550294
+  [869800.260164] 	item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+  [869800.260165] 		inode generation 3 transid 0 size 0 nbytes 16384
+  [869800.260166] 		block group 0 mode 40755 links 1 uid 0 gid 0
+  [869800.260167] 		rdev 0 sequence 0 flags 0x0
+  [869800.260168] 		atime 1790340637.0
+  [869800.260169] 		ctime 1790340637.0
+  [869800.260169] 		mtime 1790340637.0
+  [869800.260170] 		otime 1790340637.0
+  [869800.260170] 	item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+  [869800.260172] 		index 0 name_len 2
+  [869800.260172] 	item 2 key (256 DIR_ITEM 982728850) itemoff 16073 itemsize 38
+  [869800.260173] 		location key (257 1 0) type 1
+  [869800.260174] 		transid 9 data_len 0 name_len 8
+  [869800.260175] 	item 3 key (257 INODE_ITEM 0) itemoff 15913 itemsize 160
+  [869800.260176] 		inode generation 9 transid 9 size 0 nbytes 0
+  [869800.260177] 		block group 0 mode 100664 links 1 uid 0 gid 0
+  [869800.260177] 		rdev 0 sequence 0 flags 0x0
+  [869800.260178] 		atime 1790340638.38778502
+  [869800.260179] 		ctime 1790340638.38778502
+  [869800.260179] 		mtime 1790340638.38778502
+  [869800.260180] 		otime 1790340638.38778502
+  [869800.260180] 	item 4 key (257 INODE_REF 256) itemoff 15895 itemsize 18
+  [869800.260181] 		index 2 name_len 8
+  [869800.260182] 	item 5 key (257 XATTR_ITEM 751495445) itemoff 15779
+itemsize 116
+  [869800.260183] 		location key (0 0 0) type 8
+  [869800.266052] 		transid 9 data_len 6 name_len 13
+  [869800.266053] 		location key (8243121639454149888 46
+7229457603934778967) type 0
+  [869800.266055] 		transid 113 data_len 26 name_len 0
+  [869800.266056] 		location key (8608196880778817904 120 162425) type 9
+  [869800.266057] 		transid 8391162079612502016 data_len 26982 name_len 25964
+  [869800.266058] BTRFS error (device sdi): block=30474240 write time
+tree block corruption detected
+  [869800.266091] ------------[ cut here ]------------
+  [869800.266092] WARNING: fs/btrfs/disk-io.c:336 at
+btree_csum_one_bio+0x20b/0x220 [btrfs], CPU#7: kworker/u50:7/2550294
+  [869800.268392] Modules linked in: btrfs dm_thin_pool (...)
+  [869800.365851] CPU: 7 UID: 0 PID: 2550294 Comm: kworker/u50:7
+Tainted: G        W           7.3.0-rc3-btrfs-next-244+ #1
+PREEMPT(full)
+  [869800.368937] Tainted: [W]=WARN
+  [869800.369834] Hardware name: QEMU Standard PC (i440FX + PIIX,
+1996), BIOS rel-1.16.2-0-gea1b7a073390-prebuilt.qemu.org 04/01/2014
+  [869800.372778] Workqueue: writeback wb_workfn (flush-btrfs-3821)
+  [869800.374314] RIP: 0010:btree_csum_one_bio+0x20b/0x220 [btrfs]
+  [869800.375915] Code: 89 44 24 04 (...)
+  [869800.380639] RSP: 0018:ffffce4548e3f7d0 EFLAGS: 00010246
+  [869800.382008] RAX: 0000000000000000 RBX: ffff8dde054b8738 RCX:
+0000000000000000
+  [869800.383850] RDX: 0000000000000000 RSI: 0000000000000001 RDI:
+ffff8de091c2ddc0
+  [869800.385710] RBP: ffff8dde196a2000 R08: 0000000000000000 R09:
+3fffffffffefffff
+  [869800.387388] R10: ffffce4548e3f500 R11: 0000000000000003 R12:
+ffffce4548e3f7d8
+  [869800.388973] R13: ffff8dde196a2000 R14: ffff8de36504b750 R15:
+ffff8dde4c497b00
+  [869800.390414] FS:  0000000000000000(0000)
+GS:ffff8de5788ad000(0000) knlGS:0000000000000000
+  [869800.392002] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+  [869800.393160] CR2: 000055cd6e92ad5c CR3: 00000007cb264001 CR4:
+0000000000370ef0
+  [869800.394595] Call Trace:
+  [869800.395113]  <TASK>
+  [869800.395570]  btrfs_submit_bbio+0x872/0x890 [btrfs]
+  [869800.397284]  write_meta_extent_buffer+0x70/0x80 [btrfs]
+  [869800.398940]  btree_writepages+0x141/0x4f0 [btrfs]
+  [869800.400426]  ? get_random_u32+0x8a/0xf0
+  [869800.401417]  ? build_slab_freelist+0x47/0x130
+  [869800.402574]  ? preempt_count_add+0x6b/0xa0
+  [869800.403633]  ? _raw_spin_lock_irqsave+0x23/0x50
+  [869800.404807]  ? _raw_spin_unlock_irqrestore+0x22/0x40
+  [869800.406085]  ? alloc_from_new_slab+0x18f/0x330
+  [869800.407223]  do_writepages+0xc6/0x160
+  [869800.408191]  ? refill_objects+0xd8/0x300
+  [869800.409211]  __writeback_single_inode+0x42/0x350
+  [869800.410408]  writeback_sb_inodes+0x231/0x560
+  [869800.411511]  wb_writeback+0x8a/0x300
+  [869800.412440]  wb_workfn+0xbf/0x460
+  [869800.413291]  ? _raw_spin_unlock+0x14/0x30
+  [869800.414328]  ? finish_task_switch.isra.0+0xb9/0x380
+  [869800.415105]  process_one_work+0x1d1/0x3d0
+  [869800.416633]  worker_thread+0x1c4/0x330
+  [869800.417467]  ? __pfx_worker_thread+0x10/0x10
+  [869800.418452]  kthread+0xfc/0x130
+  [869800.419257]  ? __pfx_kthread+0x10/0x10
+  [869800.420089]  ret_from_fork+0x1f7/0x2c0
+  [869800.420863]  ? __pfx_kthread+0x10/0x10
+  [869800.421654]  ret_from_fork_asm+0x1a/0x30
+  [869800.422484]  </TASK>
+  [869800.422953] ---[ end trace 0000000000000000 ]---
+  [869800.424005] BTRFS error (device sdi state A): Transaction 9 aborted (-EIO)
+  [869800.424010] BTRFS: error (device sdi state A) in
+__btrfs_run_delayed_items:1162: errno=-5 IO failure
+  [869800.424011] BTRFS info (device sdi state EA): forced readonly
+  [869800.424013] BTRFS warning (device sdi state EA): Skipping commit
+of aborted transaction.
+  [869800.424014] BTRFS: error (device sdi state EA) in
+cleanup_transaction:2076: errno=-5 IO failure
+
+Fix this by always setting all fields in the new btrfs_dir_item when we
+replace an existing xattr.
+
+Fixes: 5f5bc6b1e2d5 ("Btrfs: make xattr replace operations atomic")
+Reviewed-by: Qu Wenruo <wqu@suse.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
+[ adapted to 6.1: use btrfs_set_dir_type() for BTRFS_FT_XATTR ]
+Signed-off-by: Dickson Wu <dickson.wu@certik.com>
 ---
- fs/btrfs/space-info.c |   2 +-
- fs/btrfs/zoned.c      | 123 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/zoned.h      |   3 ++
- 3 files changed, 127 insertions(+), 1 deletion(-)
+6.1.y doesn't have this fix yet. 6.6.y and newer already took it
+(7a53bb4668b3 in 6.6.y). This is the same change as the 6.6.y backport
+except for one call: 6.1 still names the setter btrfs_set_dir_type(),
+which upstream later renamed to btrfs_set_dir_flags(). It writes the
+same on-disk field.
 
-diff --git a/fs/btrfs/space-info.c b/fs/btrfs/space-info.c
-index bb08294cbf9a..22b5ecd8b464 100644
---- a/fs/btrfs/space-info.c
-+++ b/fs/btrfs/space-info.c
-@@ -914,7 +914,7 @@ static void flush_space(struct btrfs_space_info *space_info, u64 num_bytes,
- 	case RECLAIM_ZONES:
- 		if (btrfs_is_zoned(fs_info)) {
- 			flush_work(&fs_info->reclaim_bgs_work);
--			btrfs_reclaim_sweep(fs_info);
-+			btrfs_zoned_reclaim_sweep(fs_info);
- 			btrfs_delete_unused_bgs(fs_info);
- 			btrfs_reclaim_block_groups(fs_info,
- 						   BTRFS_ZONED_SYNC_RECLAIM_BATCH);
-diff --git a/fs/btrfs/zoned.c b/fs/btrfs/zoned.c
-index 8db1e058e178..3dc6bc30f8a4 100644
---- a/fs/btrfs/zoned.c
-+++ b/fs/btrfs/zoned.c
-@@ -6,6 +6,7 @@
- #include <linux/sched/mm.h>
- #include <linux/atomic.h>
- #include <linux/vmalloc.h>
-+#include <linux/sort.h>
- #include "ctree.h"
- #include "volumes.h"
- #include "zoned.h"
-@@ -3839,6 +3840,128 @@ void btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct seq_file *seq)
- 	spin_unlock(&fs_info->zone_active_bgs_lock);
- }
- 
-+static u64 zoned_bg_garbage(const struct btrfs_block_group *bg)
-+{
-+	const u64 slack = bg->length - bg->zone_capacity;
-+
-+	if (bg->zone_unusable <= slack)
-+		return 0;
-+
-+	return bg->zone_unusable - slack;
-+}
-+
-+static bool zoned_bg_reclaimable(const struct btrfs_block_group *bg)
-+{
-+	if (bg->ro)
-+		return false;
-+
-+	if (!btrfs_zoned_bg_is_full(bg))
-+		return false;
-+
-+	if (test_bit(BLOCK_GROUP_FLAG_ZONED_DATA_RELOC, &bg->runtime_flags))
-+		return false;
-+
-+	if (!btrfs_is_block_group_used(bg) || bg->pinned || bg->reserved)
-+		return false;
-+
-+	return zoned_bg_garbage(bg) > 0;
-+}
-+
-+struct zoned_gc_candidate {
-+	struct btrfs_block_group *bg;
-+	u64 garbage;
-+};
-+
-+static int zoned_gc_candidate_cmp(const void *a, const void *b)
-+{
-+	const struct zoned_gc_candidate *ca = a;
-+	const struct zoned_gc_candidate *cb = b;
-+
-+	if (ca->garbage > cb->garbage)
-+		return -1;
-+	if (ca->garbage < cb->garbage)
-+		return 1;
-+	return 0;
-+}
-+
-+static u64 zoned_sweep_space_info(struct btrfs_space_info *sinfo, int thresh_pct,
-+				  struct zoned_gc_candidate *cands, size_t *nr,
-+				  size_t max)
-+{
-+	struct btrfs_block_group *bg;
-+	u64 garbage = 0;
-+
-+	down_read(&sinfo->groups_sem);
-+	for (int i = 0; i < BTRFS_NR_RAID_TYPES; i++) {
-+		list_for_each_entry(bg, &sinfo->block_groups[i], list) {
-+			u64 bg_garbage;
-+			bool below;
-+
-+			spin_lock(&bg->lock);
-+			if (!zoned_bg_reclaimable(bg)) {
-+				spin_unlock(&bg->lock);
-+				continue;
-+			}
-+			bg_garbage = zoned_bg_garbage(bg);
-+			below = bg->used < mult_perc(bg->zone_capacity, thresh_pct);
-+			if (below)
-+				btrfs_mark_bg_to_reclaim(bg);
-+			spin_unlock(&bg->lock);
-+
-+			if (below) {
-+				garbage += bg_garbage;
-+			} else if (*nr < max) {
-+				btrfs_get_block_group(bg);
-+				cands[*nr].bg = bg;
-+				cands[*nr].garbage = bg_garbage;
-+				(*nr)++;
-+			}
-+		}
-+	}
-+	up_read(&sinfo->groups_sem);
-+
-+	return garbage;
-+}
-+
-+void btrfs_zoned_reclaim_sweep(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_space_info *data_sinfo = fs_info->data_sinfo;
-+	struct zoned_gc_candidate *cands;
-+	const u64 profile = btrfs_data_alloc_profile(fs_info);
-+	const u64 target = 2 * fs_info->zone_size *
-+			   btrfs_bg_type_to_num_stripes(fs_info, profile);
-+	u64 total_bytes;
-+	u64 garbage;
-+	size_t nr = 0;
-+	size_t max;
-+	int thresh_pct;
-+
-+	spin_lock(&data_sinfo->lock);
-+	thresh_pct = btrfs_calc_reclaim_threshold(data_sinfo);
-+	total_bytes = data_sinfo->total_bytes;
-+	spin_unlock(&data_sinfo->lock);
-+	if (!thresh_pct)
-+		return;
-+
-+	max = div64_u64(total_bytes, fs_info->zone_size);
-+	cands = kvmalloc_array(max, sizeof(*cands), GFP_NOFS);
-+	if (!cands)
-+		max = 0;
-+
-+	garbage = zoned_sweep_space_info(data_sinfo, thresh_pct, cands, &nr, max);
-+
-+	sort(cands, nr, sizeof(*cands), zoned_gc_candidate_cmp, NULL);
-+
-+	for (size_t i = 0; i < nr; i++) {
-+		if (garbage < target) {
-+			btrfs_mark_bg_to_reclaim(cands[i].bg);
-+			garbage += cands[i].garbage;
-+		}
-+		btrfs_put_block_group(cands[i].bg);
-+	}
-+	kvfree(cands);
-+}
-+
- bool btrfs_zoned_data_chunk_allowed(struct btrfs_space_info *space_info, u64 flags)
- {
- 	struct btrfs_fs_info *fs_info = space_info->fs_info;
-diff --git a/fs/btrfs/zoned.h b/fs/btrfs/zoned.h
-index ddbc93d0b8ad..7837dcc91684 100644
---- a/fs/btrfs/zoned.h
-+++ b/fs/btrfs/zoned.h
-@@ -121,6 +121,7 @@ int btrfs_zoned_activate_one_bg(struct btrfs_space_info *space_info, bool do_fin
- void btrfs_check_active_zone_reservation(struct btrfs_fs_info *fs_info);
- int btrfs_reset_unused_block_groups(struct btrfs_space_info *space_info, u64 num_bytes);
- void btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct seq_file *seq);
-+void btrfs_zoned_reclaim_sweep(struct btrfs_fs_info *fs_info);
- bool btrfs_zoned_data_chunk_allowed(struct btrfs_space_info *space_info, u64 flags);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
-@@ -343,6 +344,8 @@ static inline int btrfs_show_zoned_stats(struct btrfs_fs_info *fs_info, struct s
- 	return 0;
- }
- 
-+static inline void btrfs_zoned_reclaim_sweep(struct btrfs_fs_info *fs_info) { }
-+
- static inline bool btrfs_zoned_data_chunk_allowed(struct btrfs_space_info *space_info,
- 						  u64 flags)
- {
+Tested on v6.1.193:
+- x86_64 allmodconfig W=1 build of fs/btrfs/xattr.o, base vs patched,
+  no new warnings
+- booted the patched kernel under QEMU/KVM with
+  CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
+- ran the reproducer from the commit message, plus a second colliding
+  name pair, on fresh btrfs images. The unpatched kernel loses the
+  replaced xattr and reports a corrupt leaf on unmount. The patched
+  kernel keeps both xattrs with no btrfs errors.
+- I haven't run fstests on it.
+
+The backport and the test runs were prepared with AI coding tools
+(OpenAI Codex agents, with review by Claude). I went over the result
+before signing off.
+
+ fs/btrfs/xattr.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 5bb8d8c86311..d7eb340c818a 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -170,6 +170,7 @@ int btrfs_setxattr(struct btrfs_trans_handle
+*trans, struct inode *inode,
+ 		const u16 old_data_len = btrfs_dir_data_len(leaf, di);
+ 		const u32 item_size = btrfs_item_size(leaf, slot);
+ 		const u32 data_size = sizeof(*di) + name_len + size;
++		unsigned long name_ptr;
+ 		unsigned long data_ptr;
+ 		char *ptr;
+
+@@ -198,8 +199,16 @@ int btrfs_setxattr(struct btrfs_trans_handle
+*trans, struct inode *inode,
+ 		ptr = btrfs_item_ptr(leaf, slot, char);
+ 		ptr += btrfs_item_size(leaf, slot) - data_size;
+ 		di = (struct btrfs_dir_item *)ptr;
++		memzero_extent_buffer(leaf, (unsigned long)ptr +
++				      offsetof(struct btrfs_dir_item, location),
++				      sizeof(struct btrfs_disk_key));
++		btrfs_set_dir_type(leaf, di, BTRFS_FT_XATTR);
++		btrfs_set_dir_transid(leaf, di, trans->transid);
++		btrfs_set_dir_name_len(leaf, di, name_len);
+ 		btrfs_set_dir_data_len(leaf, di, size);
++		name_ptr = (unsigned long)(di + 1);
+ 		data_ptr = ((unsigned long)(di + 1)) + name_len;
++		write_extent_buffer(leaf, name, name_ptr, name_len);
+ 		write_extent_buffer(leaf, value, data_ptr, size);
+ 		btrfs_mark_buffer_dirty(leaf);
+ 	} else {
 -- 
-2.56.1
-
+2.43.0

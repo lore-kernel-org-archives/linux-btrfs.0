@@ -1,54 +1,54 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795628279;
-	b=GRcjkj0WyDkCCHPJWjuJU+/PZvwCqAiL+64WmzPCHTmVp/2QLXpTDjYMcdO1wOMQTpQD
-	 HG3hkhruZgj0RqDOIQqT7lZbaa3dWhTHSly2IIul/Ac1KjNGyGHgrVhZj/Hqlv+3ixJ/L
-	 45kDJFGDyHRAFBzrP3SD5aMyl0U3JtMpfw47/9XLXjtTvIxMK2SkiARY7ay7MZ4LH3ag6
-	 ltfZczzv6p3gi7XxiWKPHTsRgnNrMFGIYxPSuI1N2EeB5BkDn+Z+WzcIXsXEMAW60VESL
-	 tvU7UgDkmHZKHSVZh5s0HsDT1/Cg1XL7VPYl/8SpuKqjA0AyqpTsagmk13PCLXOwh+A==
+	t=1795628345;
+	b=Zk2bz3UGsr+sZKVcemRtdGl2PJoQE8y9iiiVXcwnMk4UkWebHm4PjuSWGhalvInifPHK
+	 hG39iSqWVdXx4liK//Dp50G3a6uMJJacbDtYHmjPiffhQWY6lIOpH9gB5jjKyP0iNrToo
+	 Y/xNFKxvj4Vw1hNAe2UBpvotQIY85WJl13hZpDH/ErHqM+gn9vbPLNDUUVuP0GthZemSX
+	 Swk8DXaNdO73IApST73ckv5/IRhFL/Y684a0NJfgZV51aZXlc/wCXRxhVwZwhtQncjT+e
+	 VxAMujHrZThRisfCl5OjJh0KpQJgQSxUWPswqCrjU55DC+3KgmbRaIWNQttRKS9w/Sg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795628279;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795628345;
 	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
 	 MIME-Version:References:In-Reply-To:From:Date:
 	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
 	 Content-Type:Content-Transfer-Encoding;
-	bh=0svShfW9shblQTbUlL/JkG6kxTptexeOsInXxOic9OA=;
-	b=2pxvF28sjoOzoYDHwXXGom1STAU1umxocYgTwfPd1zlULPWxdaQlOXWxX8Ok3R9c0gCG
-	 fdOoz0c/h1qCj4i9b8ZNvxAcumdTs6Xj+shY7NL51xRqJKlVkQrAyaTungGQvSdRe3F/v
-	 cZ00StoNBdTbPvebN5JVtt7njrGcS5cVRfYKZDIh7eYo1wadHuVfuEjcMfu9jOfVufGkE
-	 JEsdwVQHSWgTROKYu0H/RqSYklH82oZGmfhgJtI5LHMvkBcowB/8MPYwK+tpNgvb9wuoo
-	 hV1QAn/hIGpAkkUkH+Biot9PX3O9gmdvlH3jrzjVhB2yhn9BqwAjEE5zLGzA3Ha5AbQ==
+	bh=xxGrvOgZ1FbLL1BMnkKogdqK5XFmDhvmznjfuq1uz2g=;
+	b=DWS5bfYYkCy+VopjbY6b2KYY6weWTxTTAMQmVF3SFMpZ1Z7CgNNSa0fWSg5byXOWNc7a
+	 W4CcF+sDh7d9PvkcKtxSjOSizmW+wj8M0swzPtEKgeQfT6VRJcfkUjzBA7+3t11KYzrm2
+	 kF/tQoZ9E8p97STsaEJZlkYbnnNyfQoZqTDEn+Eg/wWwCJOCfaQoisPmLT08qGDNOslG/
+	 lOFt9SicqVvnyPd+SkhJpI3Sy2MuXcuV+h1CAnO42+wgVs22J/swu9V1RqmcFTZVdoW5x
+	 LpdHmujdKv4ra/u3qDyvJMs1blMleleiSk7kRqdBHYWTFv+l0hJbSDuQEXekX6Aycww==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Yl5VBzs3;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=jCnRzRp1;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5D9B5606A31E
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:37:59 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF114606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:39:05 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Yl5VBzs3
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 00A6F1F000D0
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:37:59 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=jCnRzRp1
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4BB211F000C0
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:39:05 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795628279;
-	bh=0svShfW9shblQTbUlL/JkG6kxTptexeOsInXxOic9OA=;
+	s=k20260515; t=1795628345;
+	bh=xxGrvOgZ1FbLL1BMnkKogdqK5XFmDhvmznjfuq1uz2g=;
 	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=Yl5VBzs3zTaDgbe9jXHEByvTuG3LYkQbZYpYptDvpNVa4hA2rMP+SfWvdetjCSout
-	 pGXkJm0EfZTmdslsRJ5U3WVEgu/yDFDt/WoXbll79A1DVmFsBYFddDcse6xIKwW7gH
-	 06mLnNOsPPSYwG4CckwDLgCtNZ1M6H8OtfZk25wUkL0N2iZD+35wt0XnMuwp3Xl34y
-	 cHRpzYYIstGVa2ZwLpOjMHP0qgmLPeE4GZNkaf+EAvTNon2/rFYyRMGR01ijaEiHUP
-	 6GY1PZILd+2O1YHTcGXe6z1S7lAbHS95GlPnQknFOfYervqN4akNO24y7X6yTLv5r2
-	 hwXEtDMJSbxng==
-Received: by mail-ua1-f50.google.com with SMTP id a1e0cc1a2514c-99e740a7131so2739067241.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 09:37:58 -0800 (PST)
-X-Gm-Message-State: APuU4Z9CTUTGlUhasn4HPi6ralwzsnyFI1hl12auxQfERC6WyItoTMvh
-	dHJehPvtZ57r3WYvVr6B9lCslWgrndfDAzC2I04SMN6W0kTijnWj1Nda5752yqjuLom5OSpB2fp
-	S4XJHayU1nnuemQDsHjhRMOc2qXuTzV4=
-X-Received: by 2002:a05:6102:374d:b0:7cc:971a:61ee with SMTP id
- ada2fe7eead31-7d7393ff678mr11174527137.10.1795628278144; Wed, 25 Nov 2026
- 09:37:58 -0800 (PST)
+	b=jCnRzRp1J5qEWDP+bWnMrlcpeP8JBMLmtGKC5OoBsR0z4GV5xUcdSmaQlSaDGnHRY
+	 gnME6U+3bz2hRpxuzOaMWb+LGzIs2OoTPV/fGgLRoUzzyOK5Q9o+ogXkbji5l9UnDb
+	 5j8aMk5C+cpY88CuB2hTHikw0BXS1O8funTkL1FwRGfCW600rElhwHwlb39wKGSlft
+	 y4dhq6ys6q6TVwWxlCHM5w2+CUn0+8dFPQTzrFgK6VycKirTgH1hSGyFktv3tHKPaB
+	 cA+gNVhM7EJsW+5bWtYm0IBQn3WmikFeQqEhrx1tiNODuar6E/TPmd3kn+/cQZldqp
+	 E28szhSkpvZJg==
+Received: by mail-ua1-f49.google.com with SMTP id a1e0cc1a2514c-99071945aa7so3348135241.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 09:39:05 -0800 (PST)
+X-Gm-Message-State: APuU4Z+NjZ2pjUrs/JiWa2i/913D1GBIPE0Y6oL9AZZ+fyqTT2ABWr5w
+	hutH6CfeRM2LaJpH6bCq9wzhPWkq3/0aXhO5fuPvm4dCxmHoFAKC1F4B1JtO40F/F/7rqB/arbz
+	QOVv9dzm4NAvDEzr4VAJtcGVDKhGykwg=
+X-Received: by 2002:a05:6122:78b:b0:5ea:e324:7c15 with SMTP id
+ 71dfb90a1353d-5ee8af739cbmr11356598e0c.15.1795628344540; Wed, 25 Nov 2026
+ 09:39:04 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,15 +58,14 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <cover.1795466145.git.wqu@suse.com> <2a0a92aa027b67006da45ba8abb8177b333e31da.1795466145.git.wqu@suse.com>
-In-Reply-To: <2a0a92aa027b67006da45ba8abb8177b333e31da.1795466145.git.wqu@suse.com>
+References: <cover.1795466145.git.wqu@suse.com> <220d8ed1b3a8d502c4260d01e4ac4ece942873f4.1795466145.git.wqu@suse.com>
+In-Reply-To: <220d8ed1b3a8d502c4260d01e4ac4ece942873f4.1795466145.git.wqu@suse.com>
 From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 25 Nov 2026 17:37:22 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H6_1_fEkLo18DB1BfAfunfg3omGJ6OE0ZwMF-jrZRT-8g@mail.gmail.com>
-X-Gm-Features: Aa3M54qwRUhH64rXn-RLu3v9hl1_5SCNo3-etrwy6hB0wXHD_6gdU6uZmBTorfw
-Message-ID: <CAL3q7H6_1_fEkLo18DB1BfAfunfg3omGJ6OE0ZwMF-jrZRT-8g@mail.gmail.com>
-Subject: Re: [PATCH v2 2/2] btrfs: avoid NULL-ptr-dreference after a
- lowest_level search
+Date: Wed, 25 Nov 2026 17:38:27 +0000
+X-Gmail-Original-Message-ID: <CAL3q7H5tgvbVegbN8V6D5dNxWExz2tqbGGnK=6T=kqndq0L9Mg@mail.gmail.com>
+X-Gm-Features: Aa3M54ouyZa5FPft4esKfxkRqXd8isZCQsufDIGGHr5rtPvGZdvFfkdik2-fqvk
+Message-ID: <CAL3q7H5tgvbVegbN8V6D5dNxWExz2tqbGGnK=6T=kqndq0L9Mg@mail.gmail.com>
+Subject: Re: [PATCH v2 1/2] btrfs: reject too high tree level during backref walk
 To: Qu Wenruo <wqu@suse.com>
 Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
@@ -74,51 +73,42 @@ Content-Transfer-Encoding: quoted-printable
 
 On Mon, Nov 23, 2026 at 8:38=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
 >
-> In handle_indirect_tree_backref(), if we got a corrupted backref item
-> that has a valid level (e.g. 2), but higher than the subvolume root level
-> (e.g. 0), btrfs_search_slot() will return 0 or 1 depending on if the key
-> can be found in the leaf.
+> In handle_indirect_tree_backref(), if we got @cur->level set to 7
+> (the max level valid), @level will be 8, then later path->slots[level]
+> and path->nodes[level] will all go beyond the array boundary.
 >
-> But the returned path->nodes[] will be all be NULL.
+> Fix it by rejecting such high level before calling btrfs_search_slot().
 >
-> Later we call btrfs_node_blockptr(path->nodes[level]) will trigger a
-> NULL pointer dereference.
->
-> Fix it by checking if we got a valid eb pointer before calling
-> btrfs_node_blockptr(), and reject it as we can not find the parent tree
-> block.
->
+> Link: https://sashiko.dev/#/bug/linux-8a4f92b4-daf7-4f57-8369-8e6ef323652=
+f
 > Signed-off-by: Qu Wenruo <wqu@suse.com>
 > ---
->  fs/btrfs/backref.c | 3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  fs/btrfs/backref.c | 5 +++++
+>  1 file changed, 5 insertions(+)
 >
 > diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index e9434e033372..29737246d481 100644
+> index a0fb90b7a9ed..e9434e033372 100644
 > --- a/fs/btrfs/backref.c
 > +++ b/fs/btrfs/backref.c
-> @@ -3336,7 +3336,8 @@ static int handle_indirect_tree_backref(struct btrf=
-s_trans_handle *trans,
->                 path->slots[level]--;
+> @@ -3316,6 +3316,11 @@ static int handle_indirect_tree_backref(struct btr=
+fs_trans_handle *trans,
+>         }
 >
->         eb =3D path->nodes[level];
-> -       if (btrfs_node_blockptr(eb, path->slots[level]) !=3D cur->bytenr)=
- {
-> +       if (unlikely(!eb || btrfs_node_blockptr(eb, path->slots[level]) !=
-=3D
-> +                    cur->bytenr)) {
-
-It would be more readable to split the line after ||, instead of right
-after the comparison operator of a subexpression.
+>         level =3D cur->level + 1;
+> +       if (unlikely(level >=3D BTRFS_MAX_LEVEL)) {
+> +               btrfs_put_root(root);
+> +               btrfs_err(fs_info, "invalid searcch level %d", level);
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-Thanks.
+Don't forget to fix the typo in the log message, thanks.
 
->                 btrfs_err(fs_info,
->  "couldn't find block (%llu) (level %d) in tree (%llu) with key " BTRFS_K=
-EY_FMT,
->                           cur->bytenr, level - 1, btrfs_root_id(root),
+> +               return -EUCLEAN;
+> +       }
+>
+>         /* Search the tree to find parent blocks referring to the block *=
+/
+>         path->search_commit_root =3D true;
 > --
 > 2.56.1
 >

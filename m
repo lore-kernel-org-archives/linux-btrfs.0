@@ -1,88 +1,88 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.208.41
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.218.49
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795637662;
-	b=HkDf5D+t7KLusG6i615vG+V9jNv6tbcPBeayfI7vT/dO7gvHA+B58PTd9+1oGaB/WDAI
-	 lTuuGTzUmIt9HGmM4+AQ3MQzmcxEOV2QB7FTiX2lveyd/UTC60I+kTt4duH4+BiP+nt/U
-	 oI3ryLCa+qnwtQc7JLJ+sd5govtYeuutR3Sz6V27z+ztOcsqxBn6i+ACeBD7daGLSzyek
-	 cW4Jbz/r7gX6RXtdK5AohlukJJfh/39hmItzFXWagI46bcmcesjdjjs0VBMv09dMhPkSK
-	 CHzNVJYCNNJps6N5BQPEYR+3z0Kr2vHJWfs+2qOUSx2DxKjw7Mo0DZPZEosaxf/Uqqg==
+	t=1795637738;
+	b=Gykpi8LU2+ljEfnfQQwBL7yveSUDoQG0SxoLE/kuHJqc33EdV4fvQ866YoeZ0gv1j9qp
+	 ILhNphRRzbsqIGd36B+SlaGOmxzJ2mdskS1xvceGVelJV+M1VRbhchCQHdiGv2V44SDyr
+	 CzhQcG1KgXjEo1/tE5WeGRiHSjMvzdhEhEbCdjp6hOe1Rk77DUgkAedMkFrAZxGv80Py6
+	 rFYF5MsV6pZenVDo0S2vfRlWYft9rzLtd4JHH8NMYBIFW5Ruk7R4EBy5U6jsdBwfp7Hqb
+	 8m3f56SqVmXZcHqKGLj51NOiDU/ZZw9qT0E5FP6zQbEwl/5gq0Y/pWOP3XaS5hzDjqg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795637662;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795637738;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
 	 Message-ID:Date:MIME-Version:User-Agent:Subject:To:Cc:References:
 	 Content-Language:From:Autocrypt:In-Reply-To:Content-Type:
 	 Content-Transfer-Encoding;
-	bh=CHzlAEKEhKAcoRx6ZR9OpUH0lTyUbeq8rOmcJLHcMYs=;
-	b=h5tHm1tsSIvx9VSe1eDzRrwztVWMiodY0PAWLsh9Roajc9JO/UUpl28JVH9A9mPqlOIj
-	 LVii8uPmsBSS+Hq/UBCSVTTqZlmOxiMk20O+XsDbGG4GlqtSlTCl5DP4rUndXTKQie4dx
-	 PdF/W3exzrvGlOVarIGyaSfY6IolKBsNisZdwfORorqUyTkimzH76ade/76OAqLSJ9Chy
-	 rdkB39cMySJohXYgQRKz9thv6Y1zObhKKci/Qg6PMu20oeYzKtL+gF2lqG51fsvYfu6oB
-	 3GowXpLwaTE4PG8jK6eF+YiO1EGHHxw7IJMbHqO2xUTxGe9/jnB4aj1n8tZDD18Gx2Q==
+	bh=VjAawZmK4adGquUvf2bKR5vmv5LsHtKaxCEyqp2mZ8Q=;
+	b=XjpwDpTOblsNzvEhC9eD2J3WA1Mib9ZOQfSivzp+Tvrjsh+KgjuRbSavC4qBiRruUrKp
+	 hTTXUiIKZQ7X/ncGAirwUzMWL18Ak8OJjP9LIu5EqMsFCw2ScYQOPVkEbXq6suWCClPaE
+	 25IavyOM3GprJxMOAWOfFloeCuBWcy4Unb1rNefLv62g6S6xL3QDHs9uQZ2HMXSi1unpW
+	 oWBawknczcL0o8zNdA4MknAXfwXZUwbPofljWVW5xVE6mGSxpGr9/6WwbURLifES2GlgO
+	 cRfqWEs+yzLNBI8AhImVI397C5+VByOfYdRsa5VEBUYp0cPaakAA1uj+b5gwsW+BwLQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Tj9fkOAT;
-	arc=none smtp.remote-ip=209.85.208.41
-Received: from mail-ed1-f41.google.com (mail-ed1-f41.google.com [209.85.208.41])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=AWaysXHt;
+	arc=none smtp.remote-ip=209.85.218.49
+Received: from mail-ej1-f49.google.com (mail-ej1-f49.google.com [209.85.218.49])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9D1F8606A321
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 20:14:21 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9D1F8606A321
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A015E606A330
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 20:15:37 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A015E606A330
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=Tj9fkOAT
-Received: by mail-ed1-f41.google.com with SMTP id 4fb4d7f45d1cf-6bb06dc1fd5so3091174a12.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 12:14:21 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=google header.b=AWaysXHt
+Received: by mail-ej1-f49.google.com with SMTP id a640c23a62f3a-c5133831027so885754766b.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 12:15:37 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=suse.com; s=google; t=1795637660; x=1796242460; darn=vger.kernel.org;
+        d=suse.com; s=google; t=1795637736; x=1796242536; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=CHzlAEKEhKAcoRx6ZR9OpUH0lTyUbeq8rOmcJLHcMYs=;
-        b=Tj9fkOAT57U5pJygKRYclP6qHGySV9wdNcw1q7fVZPA08+VtdimfLAaGp4cxOh1GZi
-         jTaVi0JCNV5v/J33QcQ+UM9Xt/hmZv6ck3ADyFYfKsTHuvJyQ8HoLcHvVorfURN99jAr
-         LIPpMf2KzPOPxGQnLNIlXeoze7bc5POWU2PkFdl6HbohxrFmKBv2wI11Z2+0SpJT1sg2
-         Jzyf3bs7t/J3xGxivo6+De3+J4GDAeIcZBRnnFnxhH0ntloykUPCfToJ3g6EnxkPSSPb
-         6yZiV/iXVOoVA22eeN1MC3IO3gToO7BMcv8NHlcwNsrLQi3ZbF5C7iBFO66D7vE7VMej
-         GOOg==
+        bh=VjAawZmK4adGquUvf2bKR5vmv5LsHtKaxCEyqp2mZ8Q=;
+        b=AWaysXHtUkX9+stQx/HYwvBOzdjFGw9PA6dMFKC7PGKtByZl2xw0FcF7FhCvg1bw8P
+         1aCu8O6+w4O2Nh2YsloNBYlj22lSYIwY2pGRAcbz8H8M7E4x/atWp6mgp3w7F60BIzBu
+         A7bfBXMvFtVbYlUQ3jDhGDif218wDUFCkC26ESFm6RXRX5qgzKv4+QoFJh7OzCCywSC7
+         FOlrgW3UDZvcPtO4ysuIF8Y/0E0In0+gwVAa4ADvdKW/VS8wsTxPyqduGBKvFL4ZZmJa
+         DWAUHcJO9CdUtskWmXFeI8o++leBA1R17a15J+5YWUEPsqUYprdEfzjjka0WQwEI095Q
+         OXaw==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795637660; x=1796242460;
+        d=1e100.net; s=20260707; t=1795637736; x=1796242536;
         h=content-transfer-encoding:content-type:in-reply-to:autocrypt:from
          :content-language:references:cc:to:subject:user-agent:mime-version
          :date:message-id:x-gm-gg:x-gm-message-state:from:to:cc:subject:date
          :message-id:reply-to:content-type;
-        bh=CHzlAEKEhKAcoRx6ZR9OpUH0lTyUbeq8rOmcJLHcMYs=;
-        b=YszzKBi+Sjh763pd4JASwHzhlJI3zkLNseL6yMlAaKsoojpGf1gfqaEtLKRFNUtNLR
-         3dIqP2AShsgFCHGrKVOsRFZTJMsHdFU+XhmJh+Hl1iNQUiPyk2HRtNNwiD2WgQwCjS+u
-         s/Irng3OMjWHHvUPHLcGLtAgc0Pjdr1ax0+NKN17I6Aziq52LeV8/pIfK79pBGTyV+nI
-         JlN6qSvtdgvLe+Mdx6rQxZx/IwcLPLBkxoeK/9wGTG3Oy3BiYsJ2fAnDA8MqP1obhY/6
-         q8LXeJKdWpLkd07bQ2K4JYMdc87Rc0d6mr8DaxsGx47dFtr5EAqxjyEc7wuIoZjkeyGc
-         JtQw==
-X-Forwarded-Encrypted: i=1; AL+hErHr7vx2Op8cPDMp5NhmCI+/eNZWHIveLJZ1WifUYNaATQLEG+4P/SnwHSRsJAph+AdfW9EXaxMu7tdW5w==@vger.kernel.org
-X-Gm-Message-State: APuU4Z+AECkdkY99vNgMuJ+pR3zPOxt8fbSUwVlgU0hRuYY8PNvVcMUw
-	F2BDi5Zgd9QfVOzHBVZPbVVuf7TJxQ5dE1Ht32AtSZ97K4vzHOuPy4IQaBqEG16Oss4=
-X-Gm-Gg: AZFdTZdiOuOk9IufPZCBLJhLsLlu6UHWEhLWc5RWo4pA3kmFh3eUeAjIezJIb6H9dvq
-	5csdRwKoFw+We1u0lijlbMki+Xm1hU4HOT/EbsHPPMEytd9h07vQRa1u2yN97o4QsFGjI3BUG3t
-	Hl4T4cXHKLL6Tz9RmWwlVr8QvPDXJcTx5IgmrkROMGEFFupRjmD6N1GMEXmfHfF0bLXu8JPNyOT
-	xrM4uICfya42taqLLzyv7tblW/9DKCS7mpus/VyW2qxkGEe/UaTOivwpQwy4VFcw1dpFQAjRzeJ
-	DprrcUA14YMpHLLAiu7ZQUlbV5dmdMBoQsRZ4BJXAMJ07DvSuXkGh44yCUKFZPgljFSGyDqB6G+
-	37umXB9qBY2ACRWCVmDwjGRi6e8YB1E4nSpSslltQhKRTNrAd+csOSXBB+Yz44omIduOxDyyeHJ
-	Zo3WG4hUISM5f27z6Z7+MBsov0Ys3VmEGt6kMJYy7xzqTLiks0GmWOcVdk5Gkuf1u0wTSeM7N+p
-	yvFSyGQsDdF5lLj97qOwHeJiDismyPiy4gon5KmaZkZVo+5KU3uH8N7HlhJiYUPgr3uaHtZI6Sb
-	BdqYVeHEhLsXqyYs/hI/8k6R/Qzd+mZgZk3IihIJb38=
-X-Received: by 2002:a05:6402:1941:b0:6ba:7b46:78c3 with SMTP id 4fb4d7f45d1cf-6ba7b46833cmr10286360a12.22.1795637659120;
-        Wed, 25 Nov 2026 12:14:19 -0800 (PST)
+        bh=VjAawZmK4adGquUvf2bKR5vmv5LsHtKaxCEyqp2mZ8Q=;
+        b=VxdruQIj2GHfxYFohe9NMR8QIPjnrWwAJcP08WYp9bcYrp5JtONjWATjgcKtSVW3jP
+         qk4dkVvyOE9YACkRJPbetLkU2gWldc/rqCSCjAcipoP17hA0l9HmOVk4EqB5Y5hF0w8A
+         C9EcQPoAYr/itWiGDzBbCd1VTolK27o4gtZE9z12BYmLmw/9tKVHpFNq1GA0Z9Q44Fe5
+         WA6wuN+P8D1R6ywcdL0+mqzbiV/kHaGenaFxZLL6oRADulA3obUhBl8pQLRLG3D3lyZH
+         /iMAD0zJoHWk1DTxSEfAVb/CB8nId41sFLDKCm9dqpnQNKvzRRVnFFJ+RTc9AF9D5lst
+         wP7Q==
+X-Forwarded-Encrypted: i=1; AL+hErEqS3griEwMsdRoKsLDWFyGPsFlpd76Ge3Vw3VDcDqJ3tqvsezbzH5jDkriU0XBauR56362b7fBAWu8cw==@vger.kernel.org
+X-Gm-Message-State: APuU4Z+UGksVlTETqYppBDDtQ19AmCIv7U+27VYcKOPma5KyVfxbJ0Ls
+	pbJr9WPjozyOWKFDCO2bO5ivhIjBx2iM+1Dq+uw3UUIJ/AcyOaGkzHy07ieebMI30Xg=
+X-Gm-Gg: AZFdTZd3Rjxnns4Lrfk1fd803ZIrY/WSflRsLVuPkMHURMMfiWGvfoB+7vajDpV20BG
+	EIorL3ZBsjVccEAxEafVweQEmCYr26Pxw7kleQSQnXZ8xN9G/pDQVB+xGz6llrqEw1IvQ9aoeyW
+	+xMOpmiz5YPKxvigo5PO3TkiQO4dq6AUImpOKtpIlIt78hAxqE2FevILgx2I0cyo5gpuLkvBG+t
+	aHe3m4n3ZVzwNTZWRo9s9TqYQ0OrqWQ53Y+mjVUyW1JTV2Stj1uHqUhTEi5+a3oqWTbOBjUng/g
+	usCY6pDxHFoX3iHPEv1v/B/vIlKpi9sJ7+K7LeCXe5xGSeynKPh8T6Tf0XDwOkpmt2ZsI1Xx6ZP
+	QADoJoOuJcZnc9zyvtWugGgQGJ5Yint1kp27hclte4x09Kz9sNVvV1ibjku5XVQ1Bj7uHFjYvS1
+	npgDPB2HyC1lZVNS3ZOrPZm72kkMt1Rp+CuE7aH4BJS+cTMbLcGXGg/CfBCKRjudtSiYZQlVDls
+	hl2VamuwR73K06h5T8QDBmNibARZCdYVvX90Gt4rXimB/AhLIej00GqtH13UKbzVc6w80ky+3kj
+	0Uj3LPoEI16NWz6k+UF64Uw=
+X-Received: by 2002:a17:907:9692:b0:c48:ddac:7eb1 with SMTP id a640c23a62f3a-c513aad95cbmr1548985466b.45.1795637735895;
+        Wed, 25 Nov 2026 12:15:35 -0800 (PST)
 Received: from [172.16.0.229] ([159.196.52.54])
-        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2f03f0dc13fsm92440295ad.29.2026.11.25.12.14.13
+        by smtp.gmail.com with ESMTPSA id d9443c01a7336-2f04ed9620esm85182655ad.26.2026.11.25.12.15.32
         (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Wed, 25 Nov 2026 12:14:18 -0800 (PST)
-Message-ID: <56a63ebc-1d33-425d-a11f-6d7c73e820be@suse.com>
-Date: Thu, 26 Nov 2026 06:44:11 +1030
+        Wed, 25 Nov 2026 12:15:34 -0800 (PST)
+Message-ID: <ff0e9c8e-051b-424c-a07c-67f99cad1702@suse.com>
+Date: Thu, 26 Nov 2026 06:45:29 +1030
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -93,7 +93,7 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH 5/6] fs: btrfs: Remove the unused dev.c
+Subject: Re: [PATCH 6/6] fs: btrfs: Avoid the remaining 64-bit divisions
 To: Josef Schlehofer <pepe.schlehofer@gmail.com>,
  u-boot@lists.u-boot-project.org
 Cc: Tom Rini <trini@konsulko.com>,
@@ -101,7 +101,7 @@ Cc: Tom Rini <trini@konsulko.com>,
  Bradley Morgan <bradley.morgan@linux.dev>, linux-btrfs@vger.kernel.org,
  =?UTF-8?Q?Marek_Beh=C3=BAn?= <kabel@kernel.org>
 References: <20261125124259.95636-1-pepe.schlehofer@gmail.com>
- <20261125124259.95636-6-pepe.schlehofer@gmail.com>
+ <20261125124259.95636-7-pepe.schlehofer@gmail.com>
 Content-Language: en-US
 From: Qu Wenruo <wqu@suse.com>
 Autocrypt: addr=wqu@suse.com; keydata=
@@ -128,78 +128,160 @@ Autocrypt: addr=wqu@suse.com; keydata=
  0M33UVtJOzM8yfAeL+d/Rp4leJw72SutjkLyZTG/gJIp4pJGD/kFHn24OLL0IxEcO0gOekNZ
  os5e1R6jAJ2ILk7+MDnvU8wXHcCiVzuDhJLI1tih1uUIE50muHQJWbYuVBbdJeu8WlIDDssx
  UOCxLylNG3gDXV5MhLubPTOpp9OiFc/XC37nvkgEcrlmlOFBv4/NJCbECpo=
-In-Reply-To: <20261125124259.95636-6-pepe.schlehofer@gmail.com>
+In-Reply-To: <20261125124259.95636-7-pepe.schlehofer@gmail.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 8bit
 
 
 
 在 2026/11/25 23:12, Josef Schlehofer 写道:
-> Nothing uses btrfs_devread(), btrfs_blk_desc or btrfs_part_info, which
-> are all that fs/btrfs/dev.c defines. On 32-bit PowerPC, GCC turns the
-> u64 '%' in btrfs_devread() into a call to __umoddi3(), which U-Boot's
-> private libgcc does not provide.
+> On 32-bit PowerPC, GCC turns the u64 divisions in btrfs_stripe_length()
+> and in the RAID5/6 code of __btrfs_map_block() into calls to
+> __udivdi3(), which U-Boot's private libgcc does not provide.
+> calc_stripe_length() has the same divisions.
 > 
-> Remove the file.
+> U-Boot never runs these divisions. btrfs_stripe_length() and
+> calc_stripe_length() have no caller, and the RAID5/6 divisions sit in
+> the branch that fills a raid map, which needs a raid_map_ret. Both
+> callers of btrfs_map_block() set it to NULL. Builds of turris_1x_nor
+> and turris_1x_sdcard still link that branch, and with it __udivdi3().
 > 
+> Use div_u64(). Its divisors fit into 32 bits: num_stripes is a u32 or
+> an int and stripe_len is an int. full_stripe_len is the product of two
+> ints, so declare it as a u32.
+> 
+> linux/math64.h pulls in linux/log2.h, whose is_power_of_2() conflicts
+> with the copy in compat.h, which returns int instead of bool. Include
+> linux/log2.h in compat.h and drop the copy.
+> 
+> Suggested-by: Christophe Leroy (CS GROUP) <chleroy@kernel.org>
 > Signed-off-by: Josef Schlehofer <pepe.schlehofer@gmail.com>
 > Cc: Marek Behún <kabel@kernel.org>
 > Cc: Qu Wenruo <wqu@suse.com>
 > Cc: Tom Rini <trini@konsulko.com>
 
-The removal looks fine to me, however since there are only 
-__btrfs_devread() callers, it would make more sense to rename 
-__btrfs_devread() to btrfs_devread().
+Reviewed-by: Qu Wenruo <wqu@suse.com>
 
 Thanks,
 Qu
+
 > ---
->   fs/btrfs/Makefile |  2 +-
->   fs/btrfs/dev.c    | 25 -------------------------
->   2 files changed, 1 insertion(+), 26 deletions(-)
->   delete mode 100644 fs/btrfs/dev.c
+>   fs/btrfs/compat.h  |  6 +-----
+>   fs/btrfs/volumes.c | 19 +++++++++++--------
+>   fs/btrfs/volumes.h |  9 +++++----
+>   3 files changed, 17 insertions(+), 17 deletions(-)
 > 
-> diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-> index 31b426d572a..79d96c6e0ca 100644
-> --- a/fs/btrfs/Makefile
-> +++ b/fs/btrfs/Makefile
-> @@ -2,6 +2,6 @@
->   #
->   # 2017 Marek Behún, CZ.NIC, kabel@kernel.org
+> diff --git a/fs/btrfs/compat.h b/fs/btrfs/compat.h
+> index e6784884835..f973f3f1185 100644
+> --- a/fs/btrfs/compat.h
+> +++ b/fs/btrfs/compat.h
+> @@ -4,6 +4,7 @@
+>   #define __BTRFS_COMPAT_H__
 >   
-> -obj-y := btrfs.o compression.o ctree.o dev.o dir-item.o \
-> +obj-y := btrfs.o compression.o ctree.o dir-item.o \
->   	extent-io.o inode.o subvolume.o crypto/hash.o disk-io.o \
->   	common/rbtree-utils.o extent-cache.o volumes.o root-tree.o
-> diff --git a/fs/btrfs/dev.c b/fs/btrfs/dev.c
-> deleted file mode 100644
-> index e27a032c9f6..00000000000
-> --- a/fs/btrfs/dev.c
-> +++ /dev/null
-> @@ -1,25 +0,0 @@
-> -// SPDX-License-Identifier: GPL-2.0+
-> -/*
-> - * BTRFS filesystem implementation for U-Boot
-> - *
-> - * 2017 Marek Behún, CZ.NIC, kabel@kernel.org
-> - */
-> -
-> -#include <blk.h>
-> -#include <compiler.h>
-> -#include <fs_internal.h>
-> -
-> -struct blk_desc *btrfs_blk_desc;
-> -struct disk_partition *btrfs_part_info;
-> -
-> -int btrfs_devread(u64 address, int byte_len, void *buf)
+>   #include <linux/errno.h>
+> +#include <linux/log2.h>
+>   #include <fs_internal.h>
+>   #include <u-boot/uuid.h>
+>   
+> @@ -74,9 +75,4 @@ static inline void uuid_unparse(const u8 *uuid, char *out)
+>   	return uuid_bin_to_str((unsigned char *)uuid, out, 0);
+>   }
+>   
+> -static inline int is_power_of_2(unsigned long n)
 > -{
-> -	lbaint_t sector;
-> -	int byte_offset;
-> -
-> -	sector = address >> btrfs_blk_desc->log2blksz;
-> -	byte_offset = address % btrfs_blk_desc->blksz;
-> -
-> -	return fs_devread(btrfs_blk_desc, btrfs_part_info, sector, byte_offset,
-> -			  byte_len, buf);
+> -	return (n != 0 && ((n & (n - 1)) == 0));
 > -}
+> -
+>   #endif
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 71b0b55b9c6..fcb20a761f5 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2,6 +2,7 @@
+>   #include <stdlib.h>
+>   #include <errno.h>
+>   #include <fs_internal.h>
+> +#include <linux/math64.h>
+>   #include "ctree.h"
+>   #include "disk-io.h"
+>   #include "volumes.h"
+> @@ -825,17 +826,17 @@ u64 btrfs_stripe_length(struct btrfs_fs_info *fs_info,
+>   		stripe_len = chunk_len;
+>   		break;
+>   	case BTRFS_BLOCK_GROUP_RAID0:
+> -		stripe_len = chunk_len / num_stripes;
+> +		stripe_len = div_u64(chunk_len, num_stripes);
+>   		break;
+>   	case BTRFS_BLOCK_GROUP_RAID5:
+> -		stripe_len = chunk_len / (num_stripes - 1);
+> +		stripe_len = div_u64(chunk_len, num_stripes - 1);
+>   		break;
+>   	case BTRFS_BLOCK_GROUP_RAID6:
+> -		stripe_len = chunk_len / (num_stripes - 2);
+> +		stripe_len = div_u64(chunk_len, num_stripes - 2);
+>   		break;
+>   	case BTRFS_BLOCK_GROUP_RAID10:
+> -		stripe_len = chunk_len / (num_stripes /
+> -				btrfs_chunk_sub_stripes(leaf, chunk));
+> +		stripe_len = div_u64(chunk_len, num_stripes /
+> +				     btrfs_chunk_sub_stripes(leaf, chunk));
+>   		break;
+>   	default:
+>   		/* Invalid chunk profile found */
+> @@ -1085,17 +1086,19 @@ again:
+>   			int rot;
+>   			u64 tmp;
+>   			u64 raid56_full_stripe_start;
+> -			u64 full_stripe_len = nr_data_stripes(map) * map->stripe_len;
+> +			u32 full_stripe_len = nr_data_stripes(map) * map->stripe_len;
+>   
+>   			/*
+>   			 * align the start of our data stripe in the logical
+>   			 * address space
+>   			 */
+> -			raid56_full_stripe_start = offset / full_stripe_len;
+> +			raid56_full_stripe_start = div_u64(offset,
+> +							   full_stripe_len);
+>   			raid56_full_stripe_start *= full_stripe_len;
+>   
+>   			/* get the data stripe number */
+> -			stripe_nr = raid56_full_stripe_start / map->stripe_len;
+> +			stripe_nr = div_u64(raid56_full_stripe_start,
+> +					    map->stripe_len);
+>   			stripe_nr = stripe_nr / nr_data_stripes(map);
+>   
+>   			/* Work out the disk rotation on this stripe-set */
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 9d1a07ae789..d66547c6c10 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -4,6 +4,7 @@
+>   #define __BTRFS_VOLUMES_H__
+>   
+>   #include <fs_internal.h>
+> +#include <linux/math64.h>
+>   #include "ctree.h"
+>   
+>   #define BTRFS_STRIPE_LEN	SZ_64K
+> @@ -138,16 +139,16 @@ static inline u64 calc_stripe_length(u64 type, u64 length, int num_stripes)
+>   
+>   	if (type & BTRFS_BLOCK_GROUP_RAID0) {
+>   		stripe_size = length;
+> -		stripe_size /= num_stripes;
+> +		stripe_size = div_u64(stripe_size, num_stripes);
+>   	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+>   		stripe_size = length * 2;
+> -		stripe_size /= num_stripes;
+> +		stripe_size = div_u64(stripe_size, num_stripes);
+>   	} else if (type & BTRFS_BLOCK_GROUP_RAID5) {
+>   		stripe_size = length;
+> -		stripe_size /= (num_stripes - 1);
+> +		stripe_size = div_u64(stripe_size, num_stripes - 1);
+>   	} else if (type & BTRFS_BLOCK_GROUP_RAID6) {
+>   		stripe_size = length;
+> -		stripe_size /= (num_stripes - 2);
+> +		stripe_size = div_u64(stripe_size, num_stripes - 2);
+>   	} else {
+>   		stripe_size = length;
+>   	}
 

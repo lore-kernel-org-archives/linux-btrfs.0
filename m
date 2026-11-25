@@ -1,116 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.157
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.149
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795642472;
-	b=C52tYEWKsU8ePPC4yM8RrnfVWCaJRcmAQJRQEExi/MjKI0q5rELIp8xDrxcHd6y9ajwh
-	 lGbypKs8cJYnEZXP9XVKLJipqGSiYFHsaXLmJgwEYrEudQzFK5iQQrnBQnrXUsvZXaTT4
-	 GboSNqJozkjq2j/dDI1FrpyIwfnSnyavnD9tdZVvzJLgGHYsLcVzLVbGPzw3RXwSBXl66
-	 dL69vMC6NMjVsFCtPUNV4JjQHq8ZNXaPStCXht0SbcO/Nmg/oRvLYC2PvASx51WAcZDLR
-	 78bar/um6PnU26V2zqYZVaEo9KV5+m0tNa1wR2fsoNML5wH0vXFhACXQ6SuNZJpZ9gw==
+	t=1795642475;
+	b=UnxKTmD9LpFYFMCFBQuif41nqkvCfeguOZz01veQKGaLMA6EKO3Q2yMiS0yJqTHSXGW2
+	 pic60tkyZ/4XzlWU7JYBhBYT5Hv64+3r1krjxjBRBGkdoFgdrT95gPfjAVYnV/1YDfMSd
+	 5OooaepZV0zB8BmeTXwRR+eKbfFo1psJd0ebDYh2ZT60+MydhRzAmTtrlAsqls93gzGOp
+	 cQteG5LyGcA0tuCchA6b41wTsK1DG1gc2PG81xBxAMyZHv87cQcHFW5vctTrz62uTIum6
+	 wdw3iX21JDKkBclHSbkT1lHtquYOeXsdnb6QavWYftRmJBy8bd2FAgQqqA2AxaHgwAg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795642472;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795642475;
 	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
 	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
 	 X-ME-Sender:X-ME-Received:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding;
-	bh=iwdb0mv6V1tHSPxPpaaFHlgEf7z5iv+5Y3mTJTmUUIo=;
-	b=zlZKarJgRhRijrnCYaqT2WtHcDeUwKE7EyobsIP9XVf0o0XngaoWcQcAmnjfxmRcy5vI
-	 h2YZh6t0w44TzqCnVRQdOmYspDzq1QkAUtLGTSVZr4Uira2qI5qhPLGoG8//EQ422Pdpn
-	 usgBATG5xGChLY+qspLccylhtaJRaKD2xq8DjuwFSR1DjB6HIlYG1ugZqXhbk/IXdyOxH
-	 wsZ6bmTGyG8tLWpFXi/OAwAjerPAkQaB4HXpK1r76IJDTHQaDVZpuB7lfOsCrnSpVZ2W5
-	 bqy1bEN1y6xfEfUyzncKXxYsfK3gr3t2/Nt/6nVxx5WQ8Z/wmA8onyCkIsBRUoqsueA==
+	bh=SdwSdyRNMLgbAopGzApyI7Zh73sG5V5xbV1oz+AKgIU=;
+	b=TVIasB74cNsO0XbmZ5uEAhn7CIIVY1zRe05m1FZIGo/caf4DXJ+Agb35IgUJko9gQbh2
+	 +U9gVX4E04YJFtVQrezahyAbTDX9LeAM0cNGuVqDBhLTECYaUFqeqCeuOy4idAXNQXLFW
+	 NHFBR5FCkBVfVVBBb/YTF7H5RdaZoVpyHGsfVGbnpg8u/6Ebv9O1mmyrSkF2us1ySykxC
+	 sajLCSxd6suBncOqp1xN0fr0Vc5HiA/uUoxOLYPXg0qirRP6eoWjylCpqjcS8bputuHy7
+	 u8xZu3iQKpW4sRoxbV0CVLyb/RPxkvK1AAFT9rKWCBBRYSsIBGNZGRgvTJIha4p53Kg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=bur.io;
 	spf=pass smtp.mailfrom=bur.io;
-	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=RINlUL9V;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=gh1awpam;
-	arc=none smtp.remote-ip=103.168.172.157
-Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
+	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=bvWsaDqQ;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=WpQs3AtE;
+	arc=none smtp.remote-ip=103.168.172.149
+Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 51329606A32E
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 21:34:32 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 51329606A32E
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B9883606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 21:34:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B9883606A31E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=RINlUL9V;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=gh1awpam
-Received: from phl-compute-10.internal (phl-compute-10.internal [10.202.2.50])
-	by mailfhigh.phl.internal (Postfix) with ESMTP id 80A571400385
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:34:31 -0500 (EST)
-Received: from phl-frontend-03 ([10.202.2.162])
-  by phl-compute-10.internal (MEProxy); Wed, 25 Nov 2026 16:34:31 -0500
+	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=bvWsaDqQ;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=WpQs3AtE
+Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
+	by mailfout.phl.internal (Postfix) with ESMTP id CB436EC0B45
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:34:33 -0500 (EST)
+Received: from phl-frontend-04 ([10.202.2.163])
+  by phl-compute-02.internal (MEProxy); Wed, 25 Nov 2026 16:34:33 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm1; t=1795642471; x=
-	1795728871; bh=iwdb0mv6V1tHSPxPpaaFHlgEf7z5iv+5Y3mTJTmUUIo=; b=R
-	INlUL9VIxZrTWpah1ndBH2o3XEQHCSsO3N4kFVipg76JNdRLn6CyyiwQJ3DPlg84
-	DWT4UTAnWBSsNA2iWxEjtMx61r1Z0vQY1N6OwE/8O8sXcGH2Oi2E8TnhmuvGtHti
-	hC9Jzc11t9JWT2W+R8NJUViVh3NuQyzof8UA34ziM3xdZVfxdhvW9ZTxJ/ol7yAO
-	8sEkdym18ielkU6sK/PgXqNyGKW8diVomSi3Ir7Dp8kCCyvn7dWFXplR+C/LkQDr
-	CZn493URsJPAG31X4G0CeTkguVnCXAmZYjBnI7UszbiTnKAsj2ZlZBcVNpSJXsts
-	FOQ8OQIQ/c1eJxKkybbRA==
+	:reply-to:subject:subject:to:to; s=fm1; t=1795642473; x=
+	1795728873; bh=SdwSdyRNMLgbAopGzApyI7Zh73sG5V5xbV1oz+AKgIU=; b=b
+	vWsaDqQdJ54ULJDKSqEK1qX9HrhL2cEMVN6RoO71GIXphRei1j252zd19yv9lUQW
+	ICnaKvTnqkaC/hIb3cSJzlCKpopP41MbOZARDzg7hCjoeMQhZ5AOel95M9bhMMgQ
+	QtxQug2Qulm+H1mnSW4sQB0oLvszL6pIOgFg8XpHk2/QYm5uhGHC6OOVkTen3ysQ
+	wzEVne9ZS/xlS/F4bfR2wx11k/a3xHgQx571p30SDcUHl8CrOAMf3mSWK2gxWt4t
+	eTegW/DZ4feJakakcz4mS3UnDotDWwEHwYVoTw6or5S6mQw+oHc9/+arCCjR0OVZ
+	MGcKi9sUaKxE+aL8P72oQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm3; t=1795642471; x=1795728871; bh=iwdb0mv6V1tHSPxPpaaFHlgEf7z5
-	iv+5Y3mTJTmUUIo=; b=gh1awpamArGFGY1vUlOo60nozgvuT4dWXGpjhErOpbAl
-	CjMABwKdYrbm+/BBrCxRrTnWHrDa5huau+/gdgBlx2ZSrHrIH3qRVmrGIb7J0Flx
-	LpcZgDPGLwmajjshLOj6XuPfEVe8B0G9Xm9LK9isUV5KY4GKPGxgAGPb8aDk17vn
-	Hfu36Y5JZRv3fk69YolvJmSPd1C53mSDemX75zXmm/wiYFbCJBtJ+QTpEMdlKwbh
-	pF+DtEwu/Vy7Cc2n/Wd/sN2vl/S6SX5yPgICFGxns2cgWQl4r/TA34wzrx5/fGbZ
-	2rbu2UFbtXGkhNheZBS72PCyA+Xec33mMA9LjBymYA==
+	fm3; t=1795642473; x=1795728873; bh=SdwSdyRNMLgbAopGzApyI7Zh73sG
+	5V5xbV1oz+AKgIU=; b=WpQs3AtE/MwOBGWF/2A4zjxvfxggW5fi2sRMVblfhM8v
+	s/wOKjmuBSdjt9ket+SWn4hCxg60F1oeWyp32X7PR/0HroTGe20pSHTNWahbWoZZ
+	rvSm7vhVKdGWzdJStK8QkWQ/Bk3wXjG8QLsgLDvOcER0PGtS3bHtWCMxGnTVXBAK
+	Gkh8R37cB+hgNghG+Yp0NmaifuuuRmrW3z26TyZhkIKg+0E1M1FlciVYBewhKk4l
+	GiM5VjyhcAa1R233gKfxzhTgzr0ZS/3f+Ac9Bnwyz1sCnisqlUYvR7Qe1mqcfAMT
+	g+ubDq8B33C15ZM9O+syHA4DSd0f9t+aAWV/bh12/w==
 X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
 	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
 	action=sign d=bur.io a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1795642471; d=bur.io;
+DKIM2-Signature: i=1; m=1; t=1795642473; d=bur.io;
 	mf=PGJvcmlzQGJ1ci5pbz4=;
 	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm1:rsa-sha256:ilX0irLVw1KsNttlqtoJ38q4LNlNoVDxKsYrFt/1q92Py5z
-	lHoFGeoxcjn++RgbvYiuwRlrV6nwTHelIPYaxDclzy//doFxU9X79Bwy5K0fpbCR
-	3DnYBBaiUoKNf29miZJ1Mn5o9V5xF7VRnq+w1KVVMk4T1VbCPv9qhltPelQv80ns
-	C6Mdf8mVvTKUXHkxBXlHMYKrUT/9A014ebF4DIolP9h1TauMIqBtn2j7QoJpUpC8
-	mEfgCuAHkVgPtfZIlxgBHlkIN1aqJN2fDaoCoEXmjU/2bLGR4VYMTqrhbjkTiLum
-	BHyn+U67yw5v9dK7VWHX3vFgPEEY85PPuDzo1Xw==;
+	s=fm1:rsa-sha256:ATGbDtTO4br1DyLwa6yOuellS0uSNv86D2Qf4ArSc47lkA2
+	FKYu6yYrIIXvJoQCuEfKaHa3FytdvhNUORR9NF8TNXzRztxHbqxg5M/PioIJV1nt
+	nmAUXTzxRFJPsczPcxSXg0wJbx/6DCr2y5IJrlCbPO+UbgxbEQrB2c/D90LtOvnZ
+	IWF0wjnKd74iH/4D8q6dO5m172uc/zukutz5Q2CLfxt/gWclf071i7l82xBlxugL
+	YYmNJ/3pi/oeSDWpzoA8S/C2gu/2Ch5FYLCYdFfUfquywvi1kx6GDm0663o3JriL
+	TnNxbbOPG6PwZ7MpBz4ssA7YLQk5pxfkulFQ+tg==;
 X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
 	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
 	action=mi-m=1; hc=10;
 	hn=content-transfer-encoding,date,feedback-id,from,in-reply-to,
 	message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:s5/en+hnwA8ufso0aFzynqwNnDKCMfhreMFK13Y8qPo=:jBT7LWmPqIfcABaptRH9Yr4g40Ydm/79MpdtOaFE9ao=;
-X-ME-Sender: <xms:Z1QHazYRR-HlJ671TPbmSxNWNCCQwGbt7JrzLgyGR3YL2EC416gFTA>
-    <xme:Z1QHa4Z3FE-kQJYqVMQOg-MRLotLgaza_j9xufO1eziZ19qlkvGOcD0-noE0tm56u
-    4MSc_V9bv-PkOPd2Of4_q2iQOUBAuqieS3MrxE6OEvKptnD8sEAfHyD>
-X-ME-Received: <xmr:Z1QHazk-6qZ3bw4LnUq5RDvQGtKOuKMmzbgavTMnV0THOFeHLlWm6huX>
-X-ME-Proxy-Cause: dmFkZTE6X4ededCa774X9N3oU8PaP7eBbphXYjPAJIQ9yIpGOpNu8Uo7KIqh8Rxm76olh8
-    q7IaLvvmrA51+TnYnZOU/MK5rLyWmBHy50m+5C8wMNygPRsJh/GINbXhIw5hzFeAA0zGpx
-    7FksVL1P/QVitE3JgZCAr8OZXiidCGT+fXwCx/Pb9DW+Zz5Wr3wgoQ841dKvuDQYJSjzmx
-    +paGJ7mt0dcqbWfa4Esh8wChOVkL3h8I4gj0bC2t4GgW92SKsFKr6+mqVUU9ST/FI7YyzL
-    l+o3dxunGlBUICLsSMIf+M2epG95fUcn39V0TICel47WQtjaQHWyqdMReXYgr/IL9y62XQ
-    G1R8dBlGPhLSwUvUTz9NiaM3I2EOjzFdatZNKPp+sy6+peC3t60F5CA3PE5AHHf+4jOtcI
-    FIDrP1P4mLeRXaLjMliZNK73P/rlYc2QedFGQtUSR17fAwsbXUIt0PQ1rL4ctL+HfLkB3h
-    0cA49jr6xCZvBQLcm4megEqAZCLMK6dKjTOJ2OLoQzFT3TqCFNwbvNb5122NLm5P67fpU6
-    4xG23f49QRCkMjgh2XAmn1jdtKuzOvYxR+4r2SU1CTMpUrqbmVyeVr/LgmUQWAa+HU1rO/
-    tRbanffJDURXGDuiqlQodBvgO8lf3g91skIp58GzU+Ie76lP5sTS/UTIRwGg
-X-ME-Proxy: <xmx:Z1QHa0z9CXjXsxT8fW0S5G0pBKGz36cq312CZMhIMqhe84Cydw5b8Q>
-    <xmx:Z1QHaxOfqWmNi4ocvuyQj2k4ydzhwamUhGhCa6XfZqb-Sti6W0tZ-A>
-    <xmx:Z1QHa4S4Px_kEgOpfi2_I72m7UJ-c7ftFRnoSEQuJfFA5quG3DxvyQ>
-    <xmx:Z1QHa_baLPs9T7OeWVCquL2ZzixMStgzWgSF4Dcy3AAL0C4Ugr-8Vg>
-    <xmx:Z1QHa9ai_3gU5AZRfiHRaLvowqo5J-HVKhQ7UBuML4P4lIYpolsNjzvS>
+Message-Instance: m=1; h=sha256:3E0J9Ayy4F3RQzUXxrhQXflZ59XBQMuP0ZoXgeZXzvE=:D0Sq6WqEFQTga36TOlZNqYGvoRmVVR8xwPEZE5qV1XM=;
+X-ME-Sender: <xms:aVQHawBlwDgnbRkkXNFy5_H9YZLzxcZEoSsWbQEuBuy5EMc2XUORkA>
+    <xme:aVQHa4igPPnL6-YMDgmOBOYWDOb-DYVPX1NSJoSxzlOsa47LmuQia8loMDhrIun7j
+    5FhQgZPa7gTJSWLf0wj1r6dxbbbWwAlm1UXlFaqbx9UozfY866yHQQ>
+X-ME-Received: <xmr:aVQHaxOAs7j7DL2NP59uBuR2sL95JrgFiYp2tqM374b9-QagU8i5TdK6>
+X-ME-Proxy-Cause: dmFkZTFzYUoc4FEZgujwUyqGfIchZ6KZQfZElxuDDZP4NsAlkpLcs6TXf4ZF1bIc4aDdV6
+    AGkmXHsNe3+Pqf4EmkUXOP0oxW3+/NiFP5jAd1Of4bFlkYCaz1ATTkZIHOmICWF3dos3VK
+    UHMLadrz3DQItuj/6aiPrWd1zPMw0i3x/yoH06JhYmmh8+SR2iPvbUbA1Uj/ps9JIoHv/e
+    rubkzy1MKsi534kDEXv0rTkfz8jEHNdYjPVO1LNmQdyG730iza8sNeLNvOeAVMK+ERdHnw
+    j/GkYsVA2jL3nniDgMffJtGE4VuGTb/8mKX+obriLeFN3u9bk6uK4Ab4YSvM+qfaXgxXDn
+    Rov3PCZ4HEUt+HWZUrBQ5b7o9j31QN5RwpIOv8LSVGRD+Q+AYVwBXEj7uknXPM4NpQxMhh
+    5y6z+rgvJitriK0/ipW9m8D3qeVjYOKOUcpWXVzcYnYuBiqOtR+EbCDZ6Hp2lu2SB7rm2U
+    VN74L74KaVxHIjXSDazJPkp44I2bSSYh4atYf53ZSeLKJHpovsImvvFaf3uNJz+f7ufKi6
+    NSBxjk8GGnEnYifpouzohJvaCZ21pXeYLo5oHEvIPuN21/VS1jhqYTSnb3TvG2pfkM0kLp
+    mRnGqlWqVmrGQbSY0bIzcUFHRJdTQD8TUgGin66bMslTZbOTq5l6U7P+JBdg
+X-ME-Proxy: <xmx:aVQHax7j3JyZX53mzB5I45QN2pVYpDBXbMucjnxs9tE0papxf0prAg>
+    <xmx:aVQHa30liIuIkAPBqyyfnwIw59GqmlgKhWF8plxdyReXpFU7yOYKAQ>
+    <xmx:aVQHa6Yvek3ktGQCwbu3X7LDJuP47H-7Z3FCFtdttTsns8sETTw5BQ>
+    <xmx:aVQHa3AgcoA15EzMNrawrg2L4cZnTjCizd1G6W0Vg89mufuSlVu_3g>
+    <xmx:aVQHayBqeqeZtzXj-Hm8TbjTm9VdRIgIprm-LMaSiF8E_nhkeFMgzSTR>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 25 Nov 2026 16:34:31 -0500 (EST)
+ 25 Nov 2026 16:34:32 -0500 (EST)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 1/4] btrfs: scrub: release the commit root paths before pausing
-Date: Wed, 25 Nov 2026 13:34:02 -0800
-Message-ID: <b0805ac31ef24ee19db794633ca7ef1ebe912ebb.1795642270.git.boris@bur.io>
+Subject: [PATCH 2/4] btrfs: scrub: cancellable pause during throttle sleep
+Date: Wed, 25 Nov 2026 13:34:03 -0800
+Message-ID: <fdeb64e3fcf92bc8f1a69d07718dc07a23a133e8.1795642270.git.boris@bur.io>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1795642270.git.boris@bur.io>
 References: <cover.1795642270.git.boris@bur.io>
@@ -125,107 +125,80 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Since commit 1dc4888e725d ("btrfs: scrub: avoid unnecessary extent tree
-search preparing stripes") scrub keeps sctx->extent_path and
-sctx->csum_path across the stripes of a block group, so the paths are
-also held across the implementation of scrub pause in scrub_simple_mirror()
-and scrub_raid56_parity_stripe().
+scrub_throttle_dev_io() sleeps with schedule_timeout_interruptible()
+without pausing the scrub, while a transaction cannot enter a critical
+section without pausing scrub. Thus, a transaction commit gets blocked
+on a scrub throttle, which is completely backwards.
 
-Both use searches that set search_commit_root and skip_locking to true.
-Meanwhile, the transaction critical section is exactly what issues a pause.
-So if we populate sctx->extent_path/csum_path with nodes from a commit root,
-then pause, then complete a commit critical section, those nodes refer
-to the previous commit root, by construction.
+Furthermore, this sleep ignores attempts to cancel the scrub.
 
-These nodes could have been cowed and thus unpinned by the conclusion
-of the transaction. It is generally not safe to refer to nodes from old
-commit roots.
+Improve the scrub throttling semantics by implementing it as a cancel
+aware sleep wrapped in a pause.
 
-Therefore, we must drop these paths across pauses to ensure that after a
-pause we do a new search in the current commit root. Otherwise we would
-need to block the commit on the scrub which is obviously unacceptable.
-
-This issue becomes particularly nasty with dev-replace scrubs which can
-then try to use an invalid reallocated eb to populate the new device.
-
-Fixes: 1dc4888e725d ("btrfs: scrub: avoid unnecessary extent tree search preparing stripes")
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/scrub.c | 24 ++++++++++++++++--------
- 1 file changed, 16 insertions(+), 8 deletions(-)
+ fs/btrfs/scrub.c | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c8da03e14094..1a721623813f 100644
+index 1a721623813f..a976897cea8d 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -418,8 +418,16 @@ static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
- 	}
+@@ -448,6 +448,23 @@ static void scrub_blocked_if_needed(struct scrub_ctx *sctx)
+ 	scrub_pause_off(sctx->fs_info);
  }
  
--static void scrub_pause_on(struct btrfs_fs_info *fs_info)
-+static void scrub_pause_on(struct scrub_ctx *sctx)
- {
++/*
++ * Pause the scrub, and sleep for the throttle duration. Pausing allows the
++ * commit to proceed unblocked.
++ * Scrub cancel interrupts the sleep.
++ */
++static void scrub_throttle_sleep(struct scrub_ctx *sctx, ktime_t timeout)
++{
 +	struct btrfs_fs_info *fs_info = sctx->fs_info;
 +
-+	/*
-+	 * These paths are populated from the commit root without using
-+	 * commit_root_sem so they are not valid across pauses.
-+	 */
-+	btrfs_release_path(&sctx->extent_path);
-+	btrfs_release_path(&sctx->csum_path);
- 	atomic_inc(&fs_info->scrubs_paused);
- 	wake_up(&fs_info->scrub_pause_wait);
- }
-@@ -434,10 +442,10 @@ static void scrub_pause_off(struct btrfs_fs_info *fs_info)
- 	wake_up(&fs_info->scrub_pause_wait);
- }
- 
--static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-+static void scrub_blocked_if_needed(struct scrub_ctx *sctx)
- {
--	scrub_pause_on(fs_info);
--	scrub_pause_off(fs_info);
 +	scrub_pause_on(sctx);
-+	scrub_pause_off(sctx->fs_info);
- }
- 
++	wait_event_interruptible_hrtimeout(fs_info->scrub_pause_wait,
++					   atomic_read(&fs_info->scrub_cancel_req) ||
++					   atomic_read(&sctx->cancel_req),
++					   timeout);
++	scrub_pause_off(fs_info);
++}
++
  static noinline_for_stack void scrub_free_ctx(struct scrub_ctx *sctx)
-@@ -2204,7 +2212,7 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
- 		return ret;
+ {
+ 	int i;
+@@ -1435,12 +1452,8 @@ static void scrub_throttle_dev_io(struct scrub_ctx *sctx, struct btrfs_device *d
+ 		delta = 0;
+ 	}
  
- 	if (atomic_read(&fs_info->scrub_pause_req))
--		scrub_blocked_if_needed(fs_info);
-+		scrub_blocked_if_needed(sctx);
+-	if (delta) {
+-		long timeout;
+-
+-		timeout = div_u64(delta * HZ, 1000);
+-		schedule_timeout_interruptible(timeout);
+-	}
++	if (delta)
++		scrub_throttle_sleep(sctx, ms_to_ktime(delta));
  
- 	spin_lock(&bg->lock);
- 	if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
-@@ -2350,7 +2358,7 @@ static int scrub_simple_mirror(struct scrub_ctx *sctx,
- 			break;
+ 	/* Next call will start the deadline period */
+ 	sctx->throttle_deadline = 0;
+@@ -3334,6 +3347,7 @@ int btrfs_scrub_cancel(struct btrfs_fs_info *fs_info)
+ 	}
  
- 		if (atomic_read(&fs_info->scrub_pause_req))
--			scrub_blocked_if_needed(fs_info);
-+			scrub_blocked_if_needed(sctx);
- 
- 		spin_lock(&bg->lock);
- 		if (test_bit(BLOCK_GROUP_FLAG_REMOVED, &bg->runtime_flags)) {
-@@ -2492,7 +2500,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	/* Extent_path should be released by now. */
- 	ASSERT(sctx->extent_path.nodes[0] == NULL);
- 
--	scrub_blocked_if_needed(fs_info);
-+	scrub_blocked_if_needed(sctx);
- 
- 	if (sctx->is_dev_replace &&
- 	    btrfs_dev_is_sequential(sctx->wr_tgtdev, physical)) {
-@@ -2837,7 +2845,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		 * -> btrfs_commit_transaction()
- 		 * -> btrfs_scrub_pause()
- 		 */
--		scrub_pause_on(fs_info);
-+		scrub_pause_on(sctx);
- 
- 		/*
- 		 * Don't do chunk preallocation for scrub.
+ 	atomic_inc(&fs_info->scrub_cancel_req);
++	wake_up(&fs_info->scrub_pause_wait);
+ 	while (atomic_read(&fs_info->scrubs_running)) {
+ 		mutex_unlock(&fs_info->scrub_lock);
+ 		wait_event(fs_info->scrub_pause_wait,
+@@ -3358,6 +3372,7 @@ int btrfs_scrub_cancel_dev(struct btrfs_device *dev)
+ 		return -ENOTCONN;
+ 	}
+ 	atomic_inc(&sctx->cancel_req);
++	wake_up(&fs_info->scrub_pause_wait);
+ 	while (dev->scrub_ctx) {
+ 		mutex_unlock(&fs_info->scrub_lock);
+ 		wait_event(fs_info->scrub_pause_wait,
 -- 
 2.56.0
 

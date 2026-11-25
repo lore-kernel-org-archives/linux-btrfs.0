@@ -1,116 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.149
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.157
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795642477;
-	b=KVvADFmukhblAF+8o7kPT01W5Gwt8XvWpg+uXOPM5xTcsjgswMFWmN+ZQMUhZDjhltOg
-	 QmNtUduvBs2hWxp0SSo4xq1SJPSQPfHI2BbWRyLHXkdHyYGg+sTUOlM9RMsnm5eflumvr
-	 LOJz+SA34SPEUtGMfZTUcW7SRjeQ8WIJWSGaEHT63ti6+2e30oiWlUGZqQjx4V1WV8G1R
-	 cnk/d7D6lY2RxEW43uPjJSOXmlWR2vLiEIpWCfYip2uHQL7/M2ETLIZ0Lm0PFeMCWNDrX
-	 cxLSxyBa3dbgvF2SorzvbYmy6lcPUpthCZtUz8vnD4KH8wIRkB6cWUZ9Z6ITfSwuUhA==
+	t=1795642479;
+	b=odJnnF9Nk9uMabx+MD+NB1jkfJlZqiGbisY8hlWFcnxYUTtl37+eZcYMU8sEVwl2wF72
+	 FFvYcRs0ilh5JbzzPagaxv6mwRpJRAbJXOn6cBNdhtvvK/IhQ7UTkrVRQomRd4qC27Q1e
+	 4AYx/tpiOEpvAVrTx2fxsEiuMJsAzozPNndV6vUav+2CGrexQ67QYaNKh/0Ro7gKtRjcR
+	 uUxDnj5m9UdxUSvtAePjGjL5kmMWdInNB2EiHv2XkVyLA0Mb3AP3JrJF9CFLSiWfTSeXL
+	 eyCokDuyHtynppc6p1zYGNy++1gsZnBu6i9ewEEFq2Gmz6o1En2lgxYSkKqVQrCtiyw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795642477;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795642479;
 	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
 	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
 	 X-ME-Sender:X-ME-Received:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:
 	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
 	 References:MIME-Version:Content-Transfer-Encoding;
-	bh=Igm5wcrDD5sumTzrm2vjun9UFg7LPpIrHqNydp3olts=;
-	b=FmTY4GCwssCl0rdFpyjzaqHSQ9dkcLYjSuYjNeyJhCbGcNkxliW7J8UB/zBwFYQE787t
-	 mvkqPa6SSO1CAfE7iXKyvkeNbRm+ByGHf/u1fxjNLRPrWjHuYatyAOb9H7LD0u7seIyWx
-	 22a1tf10EU5Frp2oWKrPwEPD5Imca1/N+KCULwNJXgOwkvysyNTNFC8n5361RU3ndFEOs
-	 Zjtd1dBm5QlJWr2xdSan9CgmQwQkmtU5M6SN1KiHhx8L3UgkJB7Msw+dfXwjMSGd+HdA8
-	 YScqr6XHzEA850NNMrXZYmNnRZDZmNU0tZ+z/z02DwlLmabQoFp3d2QYsGh4IFIoNHQ==
+	bh=LP9+q6IPDeKpbeBXgkS3GLS+cpydmKPHtlq66w237Hc=;
+	b=tma5QZcPf9zCvR4efMY10i3QPoqsa43bY23CeC4qYLUf3EuNEyUNnDPsic1cXhHxy/IY
+	 K4mfe1SvlKxYuiZS5ysWiKJ5n12fIZ5HXy74tloFO5tNJFyR5IxeoxbtCGUh5udgWrIgv
+	 RpYmMb1eqDJEYImSRpY9tPdGB+8LFhaCSr60J/JTZKGBFyrlrnbhkHYr8tJXHjk5KWZim
+	 B2uxYgQxH+AMlrjWRK65urMreK4Vh9F9cAv7D5qQTInnBjOUm4dFvoXP1P9a8Q3PAzrsy
+	 hlmLdaiZFM7VJM0rS3Fd3ETqjBJ1p1vTEKVlPoTDx/i3J9mh3Uzt+rkxBuNWFLJbEtw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=none header.from=bur.io;
 	spf=pass smtp.mailfrom=bur.io;
-	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=CsTSIqqZ;
-	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=e3FKec5R;
-	arc=none smtp.remote-ip=103.168.172.149
-Received: from fout-a6-smtp.messagingengine.com (fout-a6-smtp.messagingengine.com [103.168.172.149])
+	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=lWBBfoO0;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=WcvsM0Qd;
+	arc=none smtp.remote-ip=103.168.172.157
+Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 579E0606A334
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 21:34:36 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 579E0606A334
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A4328606A327
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 21:34:38 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A4328606A327
 Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=CsTSIqqZ;
-	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=e3FKec5R
-Received: from phl-compute-02.internal (phl-compute-02.internal [10.202.2.42])
-	by mailfout.phl.internal (Postfix) with ESMTP id 5AE95EC0B4B
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:34:35 -0500 (EST)
-Received: from phl-frontend-04 ([10.202.2.163])
-  by phl-compute-02.internal (MEProxy); Wed, 25 Nov 2026 16:34:35 -0500
+	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=lWBBfoO0;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=WcvsM0Qd
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id 06DE11400368
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:34:38 -0500 (EST)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-05.internal (MEProxy); Wed, 25 Nov 2026 16:34:38 -0500
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
 	:content-transfer-encoding:content-type:date:date:from:from
 	:in-reply-to:in-reply-to:message-id:mime-version:references
-	:reply-to:subject:subject:to:to; s=fm1; t=1795642475; x=
-	1795728875; bh=Igm5wcrDD5sumTzrm2vjun9UFg7LPpIrHqNydp3olts=; b=C
-	sTSIqqZx3mokPUfpEj3oA3e580hoip2+VVnVYe1+6Y/X+5FnfCHeB1rEGCtGcyeM
-	XLeR9CB3Mtwcl9lyJEmDbO/CUMJfIaqV4sRlRKboFAmaewSE1pvgsbBvoauv/U+p
-	9TSQwb+m7VpVaRU+LyUkkVgrEda9JjFPMgbKajuLyL07Th6JFWzfsY9mkInEjrRe
-	545J0sMmoSNXHXF4gJu3J05pfQKqSXSLt8qCK1rMUA58pq9LkxzM5YSC3c9dQ1WW
-	Dk6CemzHiZwrA4VfZpgMHAV5dJPqdLRIrg/b3hohWM6K1CDBK97xkdX0wu50dlQ1
-	HNeb1oTdqOAJOUdlJXODQ==
+	:reply-to:subject:subject:to:to; s=fm1; t=1795642478; x=
+	1795728878; bh=LP9+q6IPDeKpbeBXgkS3GLS+cpydmKPHtlq66w237Hc=; b=l
+	WBBfoO0cDZH1FnxPFvP3mLABGA/TMPN2GN7I1pW2zXzUJxKgzNXB6kzxmJ3qIV1N
+	iTni3IZZqPO0b4eVGuctSGbnxKPBIfycXP70Z9anhwW0YP35PU6/LDmUxqbPoDs2
+	a6/LtgtUxWBLcA8FKU8ItSKfu4wtm1q9+nWxcf99z6S1y5on8KICPtuAYFYVWtMQ
+	3kmjOprmb0xClI7SFfL3XBnlt6yuOgvv67R161F0TPbVpD8yoq9HWkpUEV+KTDnE
+	+N5ToTXTL86OlflYp4iugE+lrMO81DBROghv9C1K7eW7Dg57MZsXR9Lh1ijMBIZL
+	xiaOz/8axUjnZuhYjHWYQ==
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
 	messagingengine.com; h=cc:content-transfer-encoding:content-type
 	:date:date:feedback-id:feedback-id:from:from:in-reply-to
 	:in-reply-to:message-id:mime-version:references:reply-to:subject
 	:subject:to:to:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=
-	fm3; t=1795642475; x=1795728875; bh=Igm5wcrDD5sumTzrm2vjun9UFg7L
-	PpIrHqNydp3olts=; b=e3FKec5RvIImpCRdR8zyNBfPLjOWkQ88quBRbu8UHDi0
-	P104pNNpaJRGxDFBBUINGualAIoYZlyT57v2xSx55UlW7Ssozjuo5b1eVrAmpNWm
-	9NrZuqspLDjtha2ui/2NMDLhsR5cC8e5GWjCq8w5Al7rfMvP7Us5LT7ycpf0cWbu
-	j0UVCabr1+Vz1jlk0vEy5K4wcfjvfb3vOKkjSxuKOg0VO7v8ht+LQhiz6K9bpPlW
-	rI/OV9LdNh004JajZ8lUpae8TqIy0tXSBL1/1pNVPw7X5vwe7s4lVBi0Xzb8UkFY
-	PexEnLOpVmSj8OBvKxj1tgaq2LgBkKYiZOwqGy+NNQ==
+	fm3; t=1795642478; x=1795728878; bh=LP9+q6IPDeKpbeBXgkS3GLS+cpyd
+	mKPHtlq66w237Hc=; b=WcvsM0QdWPcpK/C+5CcADU3G7QT2rl7w7guaUR/Oe1v3
+	P/KooZAgO5FYFuE9xnIAstRD+QHzTtn0ryMoRduaQ2VtIMBZhBJw0xW80BqbVF7G
+	sEM0e2CmJNtDqCSPx/zYQlmTY6CNZZKlF+6D+d7h5DQpDPPJwMtKpIQxspCKEVUb
+	JfqBmu8eD+eFUFpYihJlgfA26IVlgp5yLSdKWmOMssUzFioXWQuZRK1bJ+Ryl2sn
+	KUCi0vAY+1fsYPWt5hIq/EXajtpCSyzPPvqlC5+Ix7I0cw38DaaT5OCJmt8SMxJt
+	Y7gLOq5jc1NuPAOJRRcsyeI8JPWtPvnY3Jb3OFKCNQ==
 X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
 	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
 	action=sign d=bur.io a=rsa-sha256;
-DKIM2-Signature: i=1; m=1; t=1795642475; d=bur.io;
+DKIM2-Signature: i=1; m=1; t=1795642478; d=bur.io;
 	mf=PGJvcmlzQGJ1ci5pbz4=;
 	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
-	s=fm1:rsa-sha256:JHyDbsYi/8SQhiJ7yM3/0dut1ZG1jsxvGGXgPYDEwVE1QXk
-	92rKrR5QBZtX4YU86fsfSNY76j9zF7gKYmb8BXtikJXwiP64DCbXqssQWLXHFcVL
-	vuaqVTOtYJ5vGNYhgDx3MQOva6XNkzbxohY6RPm6G+pZ7Wjz/UVUN4Z+L306nkVX
-	LlgshfSDzj4t/hFrFTsY/CaAyQfp2qvGOE+bwamONOkRtDhx4sxsW9pWFkLqXvzz
-	DbcP4ZfgbW8FoRrfXglF/cnU3xT+g7lO9x3lajBX7IODP/wAqAbp1jA834JuT1LY
-	0NhaaCPZKmsTvo3lvzGP3DtL7KBWbjxT9Kv6icA==;
+	s=fm1:rsa-sha256:hNxDIomfp57L8VqUIBUv53eFhHFko0QydJOP4ioaRTW8zYM
+	Mhowu7i8+4gzz4CrXbmeMHBWPKB995qTxUpdg9yqqAiZxpaS1/0D72MKmdir95Z6
+	aZ2FpAlvzLJRuiamXdEDZSd6L/3ijpzORPD9ViD707t9BCpmkhqtWxxTxlYY3Idb
+	+gnXNWnMFnzVak4b+beuLWlxJQmNi6HgX5tI2lbNMLGYxASvO78rhi0f8HAP3GTd
+	OqThpU6VGbbZ+Bqve4XoQ9V3qscQTgv1lNlESB8WeE4wwsgUe5fr5kgS0Oo2cKfq
+	EjiPIFGp8Cx6PVqbvfKKCmtXyjTsWn5aGy/03cQ==;
 X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
 	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
 	action=mi-m=1; hc=10;
 	hn=content-transfer-encoding,date,feedback-id,from,in-reply-to,
 	message-id,mime-version,references,subject,to;
-Message-Instance: m=1; h=sha256:18PD1n/f29bHS8MfvmU3wg1fFKIIx3+050FHV4xYRkY=:ApeaCTEDU9N3fpJwzXYpYl36WcJlhoQubFLrS0OfNvY=;
-X-ME-Sender: <xms:a1QHazKqo8uXHJApDIqLlSWkpReU2QVJwSenV9DgW2CssU1GkewBfw>
-    <xme:a1QHa9ICRNow_B2-lBQbmvpeSqeK4khIr43eXKgy4F9ilSK7AcGWobWnEZfhyCGXp
-    qQcXD1GFjwUKobusjtb6qr8YpK-a7qe3GAP1hfSzMzAlWOGNEZcZtE>
-X-ME-Received: <xmr:a1QHa5XVXvPuvuX3-ErEYWnX7c94KnoNnGj5GR1hzP4sIAeafVOQ3XmE>
-X-ME-Proxy-Cause: dmFkZTEyYCe47wiGvORAIaEpsifHa4nJDkCQilR7NQ1yRlQlQm57jqDsIEOZakeQIEFhRS
-    LlRIgFT6njKwA23ZuZLvCxVfYRJdWHiGH3CKtgKa8sJCMAZnS4qRPS2LYVx0j2Z8NUwqlU
-    +Dt5Qqs03kB/eIOHbcT3Fw7K/GUKTX0GANsVh0sD/9bVifSlnbdl5ERcSq//QmY7BMdcAJ
-    9tytTIgW6zbBmyCdAmfcSwP8lC/WBRhxKnThAJ95BwCMWy2ZWzPBY8OH+RKv4H1XHCiyWU
-    p0UNxyr5ovXAub55M7fOnOxdiCU9lQll3XLstR5g3RG4gI/X4UgImAceUzHBj9wKQUHJlF
-    iP8hVIhuGiAfxmnsAaduIZgsLFQFaUn5YXxZYbbQXUH6IrDtz3Ds90tjmCxyniXVjaNl39
-    YNN6YwJKnNB4jZFji2LtYTg63k47X9NLsZCUt0V6aTZxYvZvtIDMAu0AQt60P5bofqN3VH
-    Dkn+rlSshVhSE6pe0snnqOhrtLENBHZkc6FcjyaUDwKRGCKWnugx3pEqDwtZ/4WV1r0Rj0
-    IAthXmBiGaUaapcXAY6urVZ1o0MHqUL7Pz7bRbxe9QWb0JieBjMYCOxFCsVXTkHJ72LIT3
-    IOCMkU/qwc4nG+BDh5F26T+M9h8dHfbBaCpzJijlMzaQiGWTVyAWh7S2UD7A
-X-ME-Proxy: <xmx:a1QHa3gXexbSPOCVOrvvfa_GH09HpPVdhLt0ozcYXDny4t0v5RnSlw>
-    <xmx:a1QHa89L5cXDjQ4H6_U5m_0fxwWqkwwAyfB2qMZJNvKmL4PtEmrYwA>
-    <xmx:a1QHa5AsKUdrcBYHIizqzEMekjuZnywR2cpJzYKqCg-EO5vbpuloGg>
-    <xmx:a1QHaxIM5hqWiH7wmkzTk0iis2tYLBFCZIL_E7Hl426Qi6rQCkgkGA>
-    <xmx:a1QHa9Ig2Dw-w-yRwj4JpuOMJjSXEymM6ieSB-sora3eEWy9y4idj-e8>
+Message-Instance: m=1; h=sha256:yuD1XFc87gjcTjEJOSQeI0TkAeMh5sqBX8u/GtUMczc=:6lAvFVUEJo3KN88Idy/8S2owseq+y22KA9dv7IdEuZc=;
+X-ME-Sender: <xms:bVQHa5Jg4cFBz3aXUO6_BQeFOzObS2NvNvwta5F670oh8NPjjT43HA>
+    <xme:bVQHa7Lp5IRj0cE9eBh7gSFmh5nTS16iqIOFpbYlBTQVUFB9kTwpi0poA-tBv1jmS
+    _MUcQlWOC8O0r-KAelngBNwHB_T213oehDBQJMSATj6iz2ZwE9rUig>
+X-ME-Received: <xmr:bVQHa_Vizj9gtGvY5y2l-HxsM6aF0XuWBaCWfoQLL5Fqf2bU4xxNWEiQ>
+X-ME-Proxy-Cause: dmFkZTE6X4ededCa774X9N3oU8PaP7eBbphXYjPAJIQ9yIpGOpNu8Uo7KIqh8Rxm76olh8
+    q7IaLvvmrA51+TnYnZOU/MK5rLyWmBHy50m+5C8wMNygPRsJh/GINbXhIw5hzFeAA0zGpx
+    7FksVL1P/QVitE3JgZCAr8OZXiidCGT+fXwCx/Pb9DW+Zz5Wr3wgoQ841dKvuDQYJSjzmx
+    +paGJ7mt0dcqbWfa4Esh8wChOVkL3h8I4gj0bC2t4GgW92SKsFKr6+mqVUU9ST/FI7YyzL
+    l+o3dxunGlBUICLsSMIf+M2epG95fUcn39V0TICel47WQtjaQHWyqdMReXYgr/IL9y62Ly
+    2VUqJLBvMP4kAOuU/exg8bCeMA2OjLluSrsPzm5t90FAVHiBVQJbpXQo7lNrDoSD3JMz8c
+    QNe9Q4aH8eUot4n7mkaRN6SeN4WG136bgIpDMm9560Hbj6j4rYro3p4QqjtZeWcnZhiTQw
+    uqNJGDWXZ6153aK+VxGkAJ/Kix3p1yAV4bIPwJu07okCQGPF/xxj4fOznaao3LrTlHlY0l
+    ZqJ3FWBki5uzkxj1uNOM5vuhuB3WMB2IFeJE296UGDhNtez0I32Jf4XtBwgQUdoYlkB1na
+    F8qF/IFg0/logOVwuTyTZO8n3dKT/e6h1hqFfNzYxgG45PT7BRd0q94Cb4fg
+X-ME-Proxy: <xmx:bVQHa1iJfm-LzpKV1cEKObcLeBo2xS_Dp3wavhieZW2EGfkDXjPlTg>
+    <xmx:bVQHay8ILP9veqeIwJ39xNojm51zVOVq2sZzN2QaETA9GkTjSBbyGQ>
+    <xmx:bVQHa3ChBSAoeCAFMVlyGLChweTZZptNaX5bLuiJ1ywPLWNUqisjTg>
+    <xmx:bVQHa3IPRYDqpPMpu6GPp_oJ1uu1OhSegb-HUJzRvc82AOpdAZ6hng>
+    <xmx:blQHazLfdh3AKquZ_nuQ1sk857XEUlmSJgOhWWZ0Mn0lMbEKtZOhSJH7>
 Feedback-ID: i083147f8:Fastmail
 Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
- 25 Nov 2026 16:34:34 -0500 (EST)
+ 25 Nov 2026 16:34:37 -0500 (EST)
 From: Boris Burkov <boris@bur.io>
 To: linux-btrfs@vger.kernel.org,
 	kernel-team@fb.com
-Subject: [PATCH 3/4] btrfs: scrub: handle bwlimit below 512KiB
-Date: Wed, 25 Nov 2026 13:34:04 -0800
-Message-ID: <dae911ee8e0d50741fd4d92b7df57e0ebc2707f4.1795642270.git.boris@bur.io>
+Subject: [PATCH 4/4] btrfs: scrub: size read bios to the bwlimit 10ms burst
+Date: Wed, 25 Nov 2026 13:34:05 -0800
+Message-ID: <231c4b458b357fff6b905dd9c5b3822c32d77c9d.1795642270.git.boris@bur.io>
 X-Mailer: git-send-email 2.56.0
 In-Reply-To: <cover.1795642270.git.boris@bur.io>
 References: <cover.1795642270.git.boris@bur.io>
@@ -125,195 +125,191 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-scrub_throttle_dev_io() divides a time slice into up to 64 intervals
-with the computation
-  div = clamp(bwlimit / (16 * 1024 * 1024), 1, 64);
-So at bwlimit below 16MiB/s, the time slice is unitary and above 1GiB/s
-the slice is split into 64 intervals.
+Now that scrub will sleep for long enough to pace to an arbitrary
+bandwidth limit, it is also helpful to size the bios in a way that is
+more burst aware. For limits below 512 KiB/s it is more logical to
+submit more bios with shorter sleeps than to dump a 512KiB bio then
+sleep for tens of seconds. Compute a burst size from the burst duration
+and the bwlimit, then clamp that between a single sector and the normal
+stripe_len to determine the bio size.
 
-Each interval represents an opportunity to schedule IO and we set a
-throttle deadline to now + time_slice / div. time_slice is 1000ms or 1s.
+Now if we throttle at each bio, the pacing scales naturally with the
+behavior essentially unchanged at higher limits but not crazy bursty at
+lower bwlimits.
 
-At each interval we count bio_size against bwlimit / div, or the portion
-of the per second bwlimit for that interval. If it is under, we send the
-bio with no throttling. Otherwise, we throttle till the end of the
-interval then send the bio.
+The stripe takes an extra pending_io reference across the submissions,
+as scrub_submit_extent_sector_read() does, so the repair worker is not
+queued before the last bio is submitted.
 
-This ensures that we have a hard cap of 64 sleeps in a second which
-ensures good throughput for typical unbounded or high limit scrubs.
-
-But because bio_size is always 512KiB and we send at each interval, the
-practical minimum limit is 512KiB/s, as we will send at least 512KiB
-every second (the longest possible interval when div = 1).
-
-To support lower limits without ruining throughput at higher limits,
-change to a model which can sleep for an arbitrary duration to properly
-amortize the data sent and acheive an average IO demand below bwlimit
-for bwlimit < 512KiB/s.
-
-However, at higher limits, because the unit of sending is still 512KiB,
-sleeping between every IO for a naively calculated limit would be far
-too many sleeps and adds unacceptable sleeping overhead, ruining our
-ability to even submit at those limits. Therefore, we need to allow a
-"burst duration" as a floor for the sleeping duration. 10ms is a
-reasonable value: it is a similar number of sleeps at high limits (100
-vs 64 per second) and is a responsive duration relatively commensurate
-in scale with disk latencies and intuitively seems like it would not
-be "too bursty" at any speed.
-
-Now that we might sleep for a rather long time rather than at most 1s,
-although the sleeps are cancellable, also add a wakeup/cancel path from
-changing the limit again. If the user tunes the limit higher, they
-should just start running rather than needing to cancel.
+To continue to avoid throttling parity reads on scrubs, we must add a
+throttle variable to skip throttling / bio shrinking on those bio
+submissions.
 
 Signed-off-by: Boris Burkov <boris@bur.io>
 ---
- fs/btrfs/scrub.c | 71 +++++++++++++++++++-----------------------------
- fs/btrfs/sysfs.c |  2 ++
- 2 files changed, 30 insertions(+), 43 deletions(-)
+ fs/btrfs/scrub.c | 82 +++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 60 insertions(+), 22 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a976897cea8d..d68e8d2f766f 100644
+index d68e8d2f766f..d7d986300793 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -57,6 +57,9 @@ struct scrub_ctx;
+@@ -1823,12 +1823,37 @@ static u32 stripe_length(const struct scrub_stripe *stripe)
+ 		   stripe->bg->start + stripe->bg->length - stripe->logical);
+ }
  
- #define SCRUB_TOTAL_STRIPES		(SCRUB_GROUPS_PER_SCTX * SCRUB_STRIPES_PER_GROUP)
- 
-+/* Length of a burst of throttled scrub IO, see scrub_throttle_dev_io(). */
-+#define SCRUB_THROTTLE_BURST_MS		10
+-static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
++static u32 scrub_read_burst(const struct scrub_stripe *stripe)
++{
++	const u64 bwlimit = READ_ONCE(stripe->dev->scrub_speed_max);
++	const u32 sectorsize = stripe->bg->fs_info->sectorsize;
++	u64 burst;
 +
- /* Represent one sector and its needed info to verify the content. */
- struct scrub_sector_verification {
- 	union {
-@@ -195,9 +198,8 @@ struct scrub_ctx {
- 	atomic_t		cancel_req;
- 	int			readonly;
++	if (bwlimit == 0)
++		return stripe->stripe_len;
++	/* units: (bytes / sec) * msec / (msec / sec) ==> bytes */
++	burst = mul_u64_u32_div(bwlimit, SCRUB_THROTTLE_BURST_MS, MSEC_PER_SEC);
++	burst = round_down(burst, sectorsize);
++	return clamp_t(u64, burst, sectorsize, stripe->stripe_len);
++}
++
++static void scrub_submit_read_bio(struct scrub_ctx *sctx, struct scrub_stripe *stripe,
++				  struct btrfs_bio *bbio, int mirror, bool throttle)
++{
++	if (throttle)
++		scrub_throttle_dev_io(sctx, stripe->dev, bbio->bio.bi_iter.bi_size);
++	scrub_stripe_get_io(stripe);
++	btrfs_submit_bbio(bbio, mirror);
++}
++
++static void scrub_submit_extent_sector_read(struct scrub_ctx *sctx,
++					    struct scrub_stripe *stripe, bool throttle)
+ {
+ 	struct btrfs_fs_info *fs_info = stripe->bg->fs_info;
+ 	struct btrfs_bio *bbio = NULL;
+ 	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
+ 	const unsigned long has_extent = scrub_bitmap_read_has_extent(stripe);
++	const u32 burst = throttle ? scrub_read_burst(stripe) : stripe->stripe_len;
+ 	u64 stripe_len = stripe->stripe_len;
+ 	int mirror = stripe->mirror_num;
+ 	int i;
+@@ -1844,10 +1869,10 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
+ 		/* The current sector cannot be merged, submit the bio. */
+ 		if (bbio &&
+ 		    ((i > 0 && !test_bit(i - 1, &has_extent)) ||
+-		     bbio->bio.bi_iter.bi_size >= stripe_len)) {
++		     bbio->bio.bi_iter.bi_size >= stripe_len ||
++		     bbio->bio.bi_iter.bi_size >= burst)) {
+ 			ASSERT(bbio->bio.bi_iter.bi_size);
+-			scrub_stripe_get_io(stripe);
+-			btrfs_submit_bbio(bbio, mirror);
++			scrub_submit_read_bio(sctx, stripe, bbio, mirror, throttle);
+ 			bbio = NULL;
+ 		}
  
--	/* State of IO submission throttling affecting the associated device */
--	ktime_t			throttle_deadline;
--	u64			throttle_sent;
-+	/* Earliest time the next read may be submitted under scrub_speed_max. */
-+	ktime_t			throttle_next;
+@@ -1892,8 +1917,7 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
  
- 	bool			is_dev_replace;
- 	u64			write_pointer;
-@@ -451,16 +453,19 @@ static void scrub_blocked_if_needed(struct scrub_ctx *sctx)
- /*
-  * Pause the scrub, and sleep for the throttle duration. Pausing allows the
-  * commit to proceed unblocked.
-- * Scrub cancel interrupts the sleep.
-+ * Scrub cancel or a change of the limit the sleep was computed under
-+ * interrupts the sleep.
-  */
--static void scrub_throttle_sleep(struct scrub_ctx *sctx, ktime_t timeout)
-+static void scrub_throttle_sleep(struct scrub_ctx *sctx, struct btrfs_device *device,
-+				 u64 bwlimit, ktime_t timeout)
+ 	if (bbio) {
+ 		ASSERT(bbio->bio.bi_iter.bi_size);
+-		scrub_stripe_get_io(stripe);
+-		btrfs_submit_bbio(bbio, mirror);
++		scrub_submit_read_bio(sctx, stripe, bbio, mirror, throttle);
+ 	}
+ 
+ 	if (scrub_stripe_put_io(stripe)) {
+@@ -1903,11 +1927,12 @@ static void scrub_submit_extent_sector_read(struct scrub_stripe *stripe)
+ }
+ 
+ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+-				      struct scrub_stripe *stripe)
++				      struct scrub_stripe *stripe, bool throttle)
  {
  	struct btrfs_fs_info *fs_info = sctx->fs_info;
+-	struct btrfs_bio *bbio;
++	struct btrfs_bio *bbio = NULL;
+ 	unsigned int nr_sectors = stripe_length(stripe) >> fs_info->sectorsize_bits;
++	const u32 burst = throttle ? scrub_read_burst(stripe) : stripe->stripe_len;
+ 	int mirror = stripe->mirror_num;
  
- 	scrub_pause_on(sctx);
- 	wait_event_interruptible_hrtimeout(fs_info->scrub_pause_wait,
- 					   atomic_read(&fs_info->scrub_cancel_req) ||
--					   atomic_read(&sctx->cancel_req),
-+					   atomic_read(&sctx->cancel_req) ||
-+					   READ_ONCE(device->scrub_speed_max) != bwlimit,
- 					   timeout);
- 	scrub_pause_off(fs_info);
- }
-@@ -514,7 +519,7 @@ static noinline_for_stack struct scrub_ctx *scrub_setup_ctx(
- 	atomic_set(&sctx->cancel_req, 0);
+ 	ASSERT(stripe->bg);
+@@ -1915,17 +1940,10 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 	ASSERT(test_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state));
  
- 	spin_lock_init(&sctx->stat_lock);
--	sctx->throttle_deadline = 0;
-+	sctx->throttle_next = 0;
- 
- 	mutex_init(&sctx->wr_lock);
- 	if (is_dev_replace) {
-@@ -1409,54 +1414,34 @@ static void scrub_write_sectors(struct scrub_ctx *sctx, struct scrub_stripe *str
- }
- 
- /*
-- * Throttling of IO submission, bandwidth-limit based, the timeslice is 1
-- * second.  Limit can be set via /sys/fs/UUID/devinfo/devid/scrub_speed_max.
-+ * Throttling of IO submission, bandwidth-limit based. Limit can be set via
-+ * /sys/fs/UUID/devinfo/devid/scrub_speed_max.
-  */
- static void scrub_throttle_dev_io(struct scrub_ctx *sctx, struct btrfs_device *device,
- 				  unsigned int bio_size)
- {
--	const int time_slice = 1000;
--	s64 delta;
-+	const u64 bwlimit = READ_ONCE(device->scrub_speed_max);
- 	ktime_t now;
--	u32 div;
--	u64 bwlimit;
-+	ktime_t ahead;
- 
--	bwlimit = READ_ONCE(device->scrub_speed_max);
- 	if (bwlimit == 0)
+ 	if (btrfs_need_stripe_tree_update(fs_info, stripe->bg->flags)) {
+-		scrub_submit_extent_sector_read(stripe);
++		scrub_submit_extent_sector_read(sctx, stripe, throttle);
  		return;
- 
--	/*
--	 * Slice is divided into intervals when the IO is submitted, adjust by
--	 * bwlimit and maximum of 64 intervals.
--	 */
--	div = clamp(bwlimit / (16 * 1024 * 1024), 1, 64);
--
--	/* Start new epoch, set deadline */
- 	now = ktime_get();
--	if (sctx->throttle_deadline == 0) {
--		sctx->throttle_deadline = ktime_add_ms(now, time_slice / div);
--		sctx->throttle_sent = 0;
--	}
--
--	/* Still in the time to send? */
--	if (ktime_before(now, sctx->throttle_deadline)) {
--		/* If current bio is within the limit, send it */
--		sctx->throttle_sent += bio_size;
--		if (sctx->throttle_sent <= div_u64(bwlimit, div))
-+	ahead = ktime_sub(sctx->throttle_next, now);
-+	if (ahead < 0) {
-+		sctx->throttle_next = now;
-+	} else if (ahead > SCRUB_THROTTLE_BURST_MS * NSEC_PER_MSEC) {
-+		scrub_throttle_sleep(sctx, device, bwlimit, ahead);
-+		/* Woken by a limit change: the debt was accrued at the old limit. */
-+		if (READ_ONCE(device->scrub_speed_max) != bwlimit) {
-+			sctx->throttle_next = ktime_get();
- 			return;
--
--		/* We're over the limit, sleep until the rest of the slice */
--		delta = ktime_ms_delta(sctx->throttle_deadline, now);
--	} else {
--		/* New request after deadline, start new epoch */
--		delta = 0;
-+		}
  	}
+ 
+-	bbio = alloc_scrub_bbio(fs_info, REQ_OP_READ,
+-				stripe->logical, scrub_read_endio, stripe);
+-	/* Read the whole range inside the chunk boundary. */
+-	for (unsigned int cur = 0; cur < nr_sectors; cur++)
+-		scrub_bio_add_sector(bbio, stripe, cur);
+-	scrub_stripe_get_io(stripe);
 -
--	if (delta)
--		scrub_throttle_sleep(sctx, ms_to_ktime(delta));
--
--	/* Next call will start the deadline period */
--	sctx->throttle_deadline = 0;
-+	/* (bytes * (nsec / sec)) / (bytes / sec) ==> nsec */
-+	sctx->throttle_next = ktime_add_ns(sctx->throttle_next,
-+				div64_u64((u64)bio_size * NSEC_PER_SEC, bwlimit));
+ 	/*
+ 	 * For dev-replace, either user asks to avoid the source dev, or
+ 	 * the device is missing, we try the next mirror instead.
+@@ -1939,7 +1957,29 @@ static void scrub_submit_initial_read(struct scrub_ctx *sctx,
+ 
+ 		mirror = calc_next_mirror(mirror, num_copies);
+ 	}
+-	btrfs_submit_bbio(bbio, mirror);
++
++	/* The extra ref is dropped after all bios are submitted. */
++	scrub_stripe_get_io(stripe);
++
++	/* Read the whole range inside the chunk boundary, @burst bytes per bio. */
++	for (unsigned int cur = 0; cur < nr_sectors; cur++) {
++		if (bbio && bbio->bio.bi_iter.bi_size >= burst) {
++			scrub_submit_read_bio(sctx, stripe, bbio, mirror, throttle);
++			bbio = NULL;
++		}
++		if (!bbio)
++			bbio = alloc_scrub_bbio(fs_info, REQ_OP_READ,
++					stripe->logical + (cur << fs_info->sectorsize_bits),
++					scrub_read_endio, stripe);
++		scrub_bio_add_sector(bbio, stripe, cur);
++	}
++	if (bbio)
++		scrub_submit_read_bio(sctx, stripe, bbio, mirror, throttle);
++
++	if (scrub_stripe_put_io(stripe)) {
++		INIT_WORK(&stripe->work, scrub_stripe_read_repair_worker);
++		queue_work(stripe->bg->fs_info->scrub_workers, &stripe->work);
++	}
  }
  
- /*
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 89b0a4ef4063..4c7f486c2924 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -1928,6 +1928,8 @@ static ssize_t btrfs_devinfo_scrub_speed_max_store(struct kobject *kobj,
- 	if (*endptr != 0)
- 		return -EINVAL;
- 	WRITE_ONCE(device->scrub_speed_max, limit);
-+	/* A throttled scrub sleeps on this under the old limit. */
-+	wake_up(&device->fs_info->scrub_pause_wait);
- 	return len;
+ static bool stripe_has_metadata_error(struct scrub_stripe *stripe)
+@@ -1970,16 +2010,13 @@ static void submit_initial_group_read(struct scrub_ctx *sctx,
+ 	ASSERT(first_slot < SCRUB_TOTAL_STRIPES);
+ 	ASSERT(first_slot + nr_stripes <= SCRUB_TOTAL_STRIPES);
+ 
+-	scrub_throttle_dev_io(sctx, sctx->stripes[0].dev,
+-			      btrfs_stripe_nr_to_offset(nr_stripes,
+-						sctx->stripes[0].stripe_len));
+ 	blk_start_plug(&plug);
+ 	for (int i = 0; i < nr_stripes; i++) {
+ 		struct scrub_stripe *stripe = &sctx->stripes[first_slot + i];
+ 
+ 		/* Those stripes should be initialized. */
+ 		ASSERT(test_bit(SCRUB_STRIPE_FLAG_INITIALIZED, &stripe->state));
+-		scrub_submit_initial_read(sctx, stripe);
++		scrub_submit_initial_read(sctx, stripe, true);
+ 	}
+ 	blk_finish_plug(&plug);
  }
- BTRFS_ATTR_RW(devid, scrub_speed_max, btrfs_devinfo_scrub_speed_max_show,
+@@ -2276,7 +2313,8 @@ static int scrub_raid56_parity_stripe(struct scrub_ctx *sctx,
+ 
+ 	for (int i = 0; i < data_stripes; i++) {
+ 		stripe = &sctx->raid56_data_stripes[i];
+-		scrub_submit_initial_read(sctx, stripe);
++		/* Do not throttle parity verification reads of other stripes. */
++		scrub_submit_initial_read(sctx, stripe, false);
+ 	}
+ 	for (int i = 0; i < data_stripes; i++) {
+ 		stripe = &sctx->raid56_data_stripes[i];
 -- 
 2.56.0
 

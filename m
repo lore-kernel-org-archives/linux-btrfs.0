@@ -1,54 +1,50 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795628345;
-	b=Zk2bz3UGsr+sZKVcemRtdGl2PJoQE8y9iiiVXcwnMk4UkWebHm4PjuSWGhalvInifPHK
-	 hG39iSqWVdXx4liK//Dp50G3a6uMJJacbDtYHmjPiffhQWY6lIOpH9gB5jjKyP0iNrToo
-	 Y/xNFKxvj4Vw1hNAe2UBpvotQIY85WJl13hZpDH/ErHqM+gn9vbPLNDUUVuP0GthZemSX
-	 Swk8DXaNdO73IApST73ckv5/IRhFL/Y684a0NJfgZV51aZXlc/wCXRxhVwZwhtQncjT+e
-	 VxAMujHrZThRisfCl5OjJh0KpQJgQSxUWPswqCrjU55DC+3KgmbRaIWNQttRKS9w/Sg==
+	t=1795628407;
+	b=GF7p+ol2vEFDSt8as0X/wst5eu7bgA/498MaV9spPXaqJQFnAHHjqXxxeNkV6SxwFopY
+	 Z0F5Uny9nYAyrzdshmUIWXKualJLV5TFnqhxSJAsD2YLZ1esTrxyJ/4IrZn/MirdFmeF3
+	 cDIwd1e7S7jjkjvHxB405jPlf4CkfBeI4szV3avOET3HkjYI85Ov9IvmvyP3QmL5D93DG
+	 eLi3GdViIbXCqSrFkf5EX+ONS+bKboFKcX2KLTFiaWWJ/rc+PWUPDbd9fnPXcGjPe2J4p
+	 k7+mffyvVENQsrtqY4jRDHn/bdEs4/26DxlYMhlpRFAA8+Df85UplOcohihcdC/t1tA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795628345;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=xxGrvOgZ1FbLL1BMnkKogdqK5XFmDhvmznjfuq1uz2g=;
-	b=DWS5bfYYkCy+VopjbY6b2KYY6weWTxTTAMQmVF3SFMpZ1Z7CgNNSa0fWSg5byXOWNc7a
-	 W4CcF+sDh7d9PvkcKtxSjOSizmW+wj8M0swzPtEKgeQfT6VRJcfkUjzBA7+3t11KYzrm2
-	 kF/tQoZ9E8p97STsaEJZlkYbnnNyfQoZqTDEn+Eg/wWwCJOCfaQoisPmLT08qGDNOslG/
-	 lOFt9SicqVvnyPd+SkhJpI3Sy2MuXcuV+h1CAnO42+wgVs22J/swu9V1RqmcFTZVdoW5x
-	 LpdHmujdKv4ra/u3qDyvJMs1blMleleiSk7kRqdBHYWTFv+l0hJbSDuQEXekX6Aycww==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795628407;
+	h=Received:DKIM-Signature:From:To:Subject:Date:Message-ID:X-Mailer:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=dVfO6GQGDbT6KsEQM6VZ9AgbedY8t17D+aBWJoestrM=;
+	b=Skd89ov97IbUxdCP8HYnTUqH+410xxJ5w8/DASmL2lotgOsI6t3kK28a4xUqB75F3/+6
+	 Fq/VqDOrtLtdpFABbc89FkaStxn7IXZOBadsTEhhrguP6P8LHpQgYEn9+SlBkhBECGL2m
+	 UzchIHLO5lSy00E15x0hG/L45dulryRNl6jpc4W0GIU3tPnoIIuu4J6zMdTaAD2PO7ftg
+	 DjKG6BVmiY+S3g8Zj4cJlx/uo+HBSftQE9GWFyj3HUe9xWtuF67q2O8qnYwAehHSsFeUS
+	 xOGB43hgIOcfa4sHCL3sr28mTWcVtYAhhwnDNba6cvzUj4sVZpz2UMU80jOnWuvx1pg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=jCnRzRp1;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lwEbAvoC;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id AF114606A31E
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:39:05 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9AC32606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:40:07 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=jCnRzRp1
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4BB211F000C0
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:39:05 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=lwEbAvoC
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 80C971F000D1
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:40:06 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795628345;
-	bh=xxGrvOgZ1FbLL1BMnkKogdqK5XFmDhvmznjfuq1uz2g=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=jCnRzRp1J5qEWDP+bWnMrlcpeP8JBMLmtGKC5OoBsR0z4GV5xUcdSmaQlSaDGnHRY
-	 gnME6U+3bz2hRpxuzOaMWb+LGzIs2OoTPV/fGgLRoUzzyOK5Q9o+ogXkbji5l9UnDb
-	 5j8aMk5C+cpY88CuB2hTHikw0BXS1O8funTkL1FwRGfCW600rElhwHwlb39wKGSlft
-	 y4dhq6ys6q6TVwWxlCHM5w2+CUn0+8dFPQTzrFgK6VycKirTgH1hSGyFktv3tHKPaB
-	 cA+gNVhM7EJsW+5bWtYm0IBQn3WmikFeQqEhrx1tiNODuar6E/TPmd3kn+/cQZldqp
-	 E28szhSkpvZJg==
-Received: by mail-ua1-f49.google.com with SMTP id a1e0cc1a2514c-99071945aa7so3348135241.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 09:39:05 -0800 (PST)
-X-Gm-Message-State: APuU4Z+NjZ2pjUrs/JiWa2i/913D1GBIPE0Y6oL9AZZ+fyqTT2ABWr5w
-	hutH6CfeRM2LaJpH6bCq9wzhPWkq3/0aXhO5fuPvm4dCxmHoFAKC1F4B1JtO40F/F/7rqB/arbz
-	QOVv9dzm4NAvDEzr4VAJtcGVDKhGykwg=
-X-Received: by 2002:a05:6122:78b:b0:5ea:e324:7c15 with SMTP id
- 71dfb90a1353d-5ee8af739cbmr11356598e0c.15.1795628344540; Wed, 25 Nov 2026
- 09:39:04 -0800 (PST)
+	s=k20260515; t=1795628407;
+	bh=dVfO6GQGDbT6KsEQM6VZ9AgbedY8t17D+aBWJoestrM=;
+	h=From:To:Subject:Date;
+	b=lwEbAvoCo8LEGTw8EHStEkPS29cnohvtvoN7/mCoIi4+0Thd65CPOnrhcqLJHC7sp
+	 4YMN7D/5jDPanvEmYgD1JWoGrA4K1V0RbABTlgb2T7+H2jaTZo+sG6QEM5PRvP7x0x
+	 iPJXLx+WFxzdfDNdqQs8iaP+fyg4Of9ALiZiqIzf98R1avwYcJL+eMy2dOAIOX16NB
+	 nKfJE0RFrdmvFbOO3pU4oW47migvZMKQ5c6SQQ11/JzOrdEKM1fA2m0juceZCuUCWi
+	 qFnhfnTJU0O9CIamkG1PMA7hCyzTnkIpzGFgmfKHZ79DvaBlTULWyw6PlrIVRV7Dmt
+	 Ez1YIJ+Fn2XaA==
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs: return -EIO when attempting to start/join transaction after shutdown
+Date: Wed, 25 Nov 2026 17:39:27 +0000
+Message-ID: <46986ec836a3f93b77ab9d6f664733cf12640e37.1795615479.git.fdmanana@suse.com>
+X-Mailer: git-send-email 2.53.0
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,58 +54,96 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <cover.1795466145.git.wqu@suse.com> <220d8ed1b3a8d502c4260d01e4ac4ece942873f4.1795466145.git.wqu@suse.com>
-In-Reply-To: <220d8ed1b3a8d502c4260d01e4ac4ece942873f4.1795466145.git.wqu@suse.com>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Wed, 25 Nov 2026 17:38:27 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5tgvbVegbN8V6D5dNxWExz2tqbGGnK=6T=kqndq0L9Mg@mail.gmail.com>
-X-Gm-Features: Aa3M54ouyZa5FPft4esKfxkRqXd8isZCQsufDIGGHr5rtPvGZdvFfkdik2-fqvk
-Message-ID: <CAL3q7H5tgvbVegbN8V6D5dNxWExz2tqbGGnK=6T=kqndq0L9Mg@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2] btrfs: reject too high tree level during backref walk
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Mon, Nov 23, 2026 at 8:38=E2=80=AFPM Qu Wenruo <wqu@suse.com> wrote:
->
-> In handle_indirect_tree_backref(), if we got @cur->level set to 7
-> (the max level valid), @level will be 8, then later path->slots[level]
-> and path->nodes[level] will all go beyond the array boundary.
->
-> Fix it by rejecting such high level before calling btrfs_search_slot().
->
-> Link: https://sashiko.dev/#/bug/linux-8a4f92b4-daf7-4f57-8369-8e6ef323652=
-f
-> Signed-off-by: Qu Wenruo <wqu@suse.com>
-> ---
->  fs/btrfs/backref.c | 5 +++++
->  1 file changed, 5 insertions(+)
->
-> diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-> index a0fb90b7a9ed..e9434e033372 100644
-> --- a/fs/btrfs/backref.c
-> +++ b/fs/btrfs/backref.c
-> @@ -3316,6 +3316,11 @@ static int handle_indirect_tree_backref(struct btr=
-fs_trans_handle *trans,
->         }
->
->         level =3D cur->level + 1;
-> +       if (unlikely(level >=3D BTRFS_MAX_LEVEL)) {
-> +               btrfs_put_root(root);
-> +               btrfs_err(fs_info, "invalid searcch level %d", level);
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+After shutting down the filesystem, if we attempt to start/join a
+transaction, we will return -EROFS since we don't have any code in
+transaction.c to explicitly check for the shutdown state, all we do is
+check if fs_info->fs_error is not zero, and if it's not, return -EROFS.
 
-Don't forget to fix the typo in the log message, thanks.
+Everywhere else in the code base we return -EIO if btrfs_is_shutdown()
+returns true. Probably applications don't care about -EIO versus -EROFS
+but this can trigger very sporadic failures in test generic/623 which
+does this:
 
-> +               return -EUCLEAN;
-> +       }
->
->         /* Search the tree to find parent blocks referring to the block *=
-/
->         path->search_commit_root =3D true;
-> --
-> 2.56.1
->
->
+   xfs_io -x -c "mmap 0 4k" \
+             -c "mwrite 0 4k" \
+             -c shutdown \
+             -c fsync \
+             -c "mwrite 0 4k" $file
+
+and expects the fsync to fail with -EIO, which normally does since by
+the time the fsync is called there's usually delalloc from the mmap write
+and when fsync flushes delalloc, it gets -EIO which comes from
+cow_file_range(), where we return -EIO when btrfs_is_shutdown() returns
+true and it gets propagated up the call chain to the fsync code.
+
+However if delalloc happened to be flushed before fsync is called, due to
+memory pressure, then when fsync flushes delalloc it does not get any
+error since there is no more delalloc, but then when it attempts to start
+a transaction it gets -EROFS and returns it to user space. This makes
+generic/623 fail since it explicitly expects -EIO.
+
+So change the transaction code to return -EIO instead of -EROFS when the
+filesystem was shutdown. This avoids the very sporaric failures of
+generic/623 and makes the return value consistent.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/transaction.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 1ea8dc522d2e..df3a3c78e681 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -306,7 +306,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 	/* The file system has been taken offline. No new transactions. */
+ 	if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 		spin_unlock(&fs_info->trans_lock);
+-		return -EROFS;
++		return btrfs_is_shutdown(fs_info) ? -EIO : -EROFS;
+ 	}
+ 
+ 	cur_trans = fs_info->running_transaction;
+@@ -361,7 +361,7 @@ static noinline int join_transaction(struct btrfs_fs_info *fs_info,
+ 		btrfs_lockdep_release(fs_info, btrfs_trans_num_extwriters);
+ 		btrfs_lockdep_release(fs_info, btrfs_trans_num_writers);
+ 		kfree(cur_trans);
+-		return -EROFS;
++		return btrfs_is_shutdown(fs_info) ? -EIO : -EROFS;
+ 	}
+ 
+ 	cur_trans->fs_info = fs_info;
+@@ -654,7 +654,7 @@ start_transaction(struct btrfs_root *root, unsigned int num_items,
+ 	ASSERT(has_single_bit_set(type));
+ 
+ 	if (unlikely(BTRFS_FS_ERROR(fs_info)))
+-		return ERR_PTR(-EROFS);
++		return ERR_PTR(btrfs_is_shutdown(fs_info) ? -EIO : -EROFS);
+ 
+ 	if (current->journal_info) {
+ 		WARN_ON(type & TRANS_EXTWRITERS_MASK);
+@@ -1156,7 +1156,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 		if (TRANS_ABORTED(trans))
+ 			ret = trans->aborted;
+ 		else
+-			ret = -EROFS;
++			ret = btrfs_is_shutdown(info) ? -EIO : -EROFS;
+ 	}
+ 
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+@@ -2371,7 +2371,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans)
+ 		 */
+ 		if (unlikely(BTRFS_FS_ERROR(fs_info))) {
+ 			spin_unlock(&fs_info->trans_lock);
+-			ret = -EROFS;
++			ret = btrfs_is_shutdown(fs_info) ? -EIO : -EROFS;
+ 			goto lockdep_release;
+ 		}
+ 	}
+-- 
+2.53.0
+

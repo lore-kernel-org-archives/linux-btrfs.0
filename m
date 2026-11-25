@@ -1,101 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.48
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.51
 ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795625055;
-	b=PT0HFC+nEtttvuE7YCtgkW8R/Pbw9KNz6OZI44R4raJSix2pW0ucSEfgppNpZ/fA1DSI
-	 mOWEWtn6zJBuxPWniy5szftD9I64yBylryJbf2VTVZBMu68BxEaTtpQL2/ms4hYf/FKI/
-	 Z46f+hpISh08uOZCU7Wp53aYP51WELWa4vPSpH+2bKOPUdSxZP8NSxy6HLAFEd0p6YQ6A
-	 MEP2KMrYrHeRx77rLaIs63EpWK0ULjIktJn5jr7hYOxezPOb42lIB7F9zV945NshPI0VU
-	 Bhgl5MNjcKL2OYU0ZTcZg//ItfN7lLJ8Z4HV/M9iWOgti+/5ZxSzsLtMGUqCX254UPw==
+	t=1795625490;
+	b=tK3GHnHMRMrvg5k1CBmr7H21HirEQL+jJauvrVf0ADsilGYeEoeLuX1/8SnkBM6s6zya
+	 txPq6hgjesVBR0A770+b29PZR2lRI8aYgDLec4q7Ydi2qOd0DCHr6L4rJjRtcqvv5hHtH
+	 UXnrwPBcbIKy9/0hEEz0V3N2DhmTSqzcmaZtPqB3Ro/RhOCsLf8bILf0l0nYHTWEYpDAU
+	 7L5I4hp79+/RRO9do/KUPdzBMpKxSbTz0GTQCJQkMdxnbB94BJDWftz2q7/00W5jJr5b2
+	 nn8fmVgda8/v6SXMT3ENj8U/9I1LguDQliFjKQnp1/l6DHlN93mIm9vyv6ddtksmXpw==
 ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795625055;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795625490;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
 	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
 	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
 	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=II/aro/lwWCAag041h9klo86GZWrpoxtriGNBQNlDMw=;
-	b=Hwc4lJ79KvzyhGi5+pn3F0ZayB0WB9Limp4wiXW7ASGwoTKzE4i9qavu/hpXy3rybXvQ
-	 b7Mvc8jBg4EsfMszIuLNJdpwIDNgQE4T9Mgc0Fz26MLiwc1qakXnvgL26Q+k/ThA51bXm
-	 dnCzmUyH1iAHTa1xPrxn+n5XRj5IUxWXVN/tGbt5ImFMcLHLvY8wNes9comqR5l1Q0kC5
-	 KlVQ5igYzArfJNQwsphmnD7rHitAL4jLZDoKEVKfzXHXsH28NFNBQpqPyB57p2rgyi+ay
-	 bpyiuuMN2QrQ8jIP2HThaxLh25XB1xuTNymdjNqqKlkwbVmfizZ9S3vadYj6Zt7oeTQ==
+	bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
+	b=PKojAoNR96N8AOkM6uYXZwSrv37SmcIKgdjPbJQ+/OugABWu6pXqhYdn0FQRCYjL7IRL
+	 BcvZQYqsLbs7x9W/1A92YQloUGnOFeKp4xZNMpiQY6orly60LlCf+LmXpLVWCORdmGOLI
+	 bTWQZes8uLsolbaRvEuOepqkkm8v4H+H+r0DgGdIuRGfgQSTLdF8xaLgmZ0aeh/HaG4Ak
+	 WKTpBV9vhpr8RDwG6Qd+YkGwWy7RMpJ3xVJX/VZL/NfZO1h5VQCcIlrpMZgRMlvh2h6M8
+	 BIMk9CCiLzdONM9FYdXSLuM0t9/zXwp6EQg1WUr/N9363pQ0gx7YzJxgVVvi7j8P3cA==
 ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=google.com;
-	spf=pass smtp.mailfrom=google.com;
-	dkim=pass header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=PKZ23RQe;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.48
-Received: from mail-ej1-f48.google.com (mail-ej1-f48.google.com [209.85.218.48])
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MoPoxyMU;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.51
+Received: from mail-ed1-f51.google.com (mail-ed1-f51.google.com [209.85.208.51])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 7AED9606A32D
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:44:15 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 7AED9606A32D
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=reject dis=none) header.from=google.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=google.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97BDB606A32C
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:51:29 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 97BDB606A32C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=google.com header.i=@google.com header.a=rsa-sha256 header.s=20260707 header.b=PKZ23RQe
-Received: by mail-ej1-f48.google.com with SMTP id a640c23a62f3a-c51a02ad3acso146648266b.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 08:44:15 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1795625054; cv=none;
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MoPoxyMU
+Received: by mail-ed1-f51.google.com with SMTP id 4fb4d7f45d1cf-6bb06dc1fd5so2785510a12.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 08:51:29 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1795625488; cv=none;
         d=google.com; s=arc-20260327;
-        b=cbLUBbweTUonDLaIfJJ1pQ6pGll3JtchIFmYZWQOKGUNX7kELrOl6UGrFzmYlR+wLL
-         UavGKCxEXTznjmqf/soNTWNdLLw24kfWiqDEZZz3AuhoIKSb1WdFgC3ReO0fHJjLfW1B
-         /NnYx9mK0H8N6dODOfIjOn+S8mVlhrGxumdzK31fejic0T+jMUOnoa1tfE3UbHTf+8Fj
-         zfLNU7k+Kjek9fE3hV6K5wt38ggeXwocy2eDR8qTvdboq+t/9yXuVWNSiDtPW47qzaJe
-         RDOK4VAui20rmISwKveh2BPSoUd2WH9EwtA7AXDGzZXVXrs4z9pYQQYUzWmyWxyJS41l
-         ggDg==
+        b=ECJPdR47wMYtcaL0aFU7AAkWeVHCBLVffOPTfCWk1mVrkDgdnDalrVc+LIIrlmqMwY
+         KH+aCxqG3qsRCq6Aj+VNYQqWce5cjfHlfury+OxzNWK9vBt/opy4De172IpfNiy148hy
+         LLZIEAVSYrx7O6FFKmOYPZW3gVbHn/4Ipgd/9Dk0qPy34y9LTolfIN0DsNDQOjSraftN
+         ZYPZNjpz1Zl3JfpSX8n9CPOvR7pL43BsnaqvzAkxWX2Ap9OVsX0MyyAybyxj8Sbdbv6i
+         Cuc+5ionq5fKNT7T4S5woMFf2Ykx9cfqOPIVHFza/558qdasP9Wjrie9QnTBmtg9N3yN
+         Kldg==
 ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
         h=content-transfer-encoding:cc:to:subject:message-id:date:from
          :in-reply-to:references:mime-version:dkim-signature;
-        bh=II/aro/lwWCAag041h9klo86GZWrpoxtriGNBQNlDMw=;
-        fh=Cv558qb8zcZAv3KYPrRAl4fA/BUWgNTN/WYdvxhy0u8=;
-        b=DMq4fh08AQ2puzrxqRjzHW8y9O1lVDhx8cK5SxKFvm7SVKgwLp7fK3Ec3HVdzqF2GB
-         pctjDjoayQu8KUMIRfxAtuKulAUo4GKUSyI/cnmFNUCWfO6zVxN/rl4ozQ2xSJ2VBeah
-         JYJCrcDC1eVaHIHip7WNlAVhqT9bTwQ1W5jssW0YRaAvAgdJgGYRRjhqMUnR+H441+Xa
-         hYmKqyRBLDIZoQCPUIFi3vS8ejnkW6zA8C2n5c9K4rfMd620Jf/5l5d9zM3cT1vmj264
-         cshW4fTXUudME8fet9sCrBKO18cfM1NEuDfni5C3nkOHxuJQxMLnQCnpFGKaT7gVwjpX
-         bfbQ==;
+        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
+        fh=SoCAaB7rtz/6jUHq8rJrgLWlH2VbkdLKoOJ7owTh69M=;
+        b=GrOyjyTQ+oNv5AVpAPpV8fAoyTZ5ay1Z4qG1fZIaiUSbV91XiwNMYIoEcPfZV3nzqs
+         /gnT3dX2uHhtFlM6eOEl5k6eUdBgut8vBEnpo/TtTr4LbaRsERiuPkEWw3l08W97agu/
+         mX51DK0S/fbUIHiG58WM7XLVjVFQnVyKzfpCKLuHplDMXZjeRdFcU/0Gql9xd5vhYAFT
+         le/ZS9uvy4NyHme6bAfidOJPg6/6pvhT1Xc10rrkIliybmLMTiWAybKoBdL9XPCpzGMJ
+         6pb9tFhK6QQhMkEJDmfFA2EZr+uCGyfdsC6b1K+VOa/jq3LlNil03ffjJbeh0wLeIu/u
+         mOOQ==;
         darn=vger.kernel.org
 ARC-Authentication-Results: i=1; mx.google.com; arc=none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=google.com; s=20260707; t=1795625054; x=1796229854; darn=vger.kernel.org;
+        d=gmail.com; s=20260707; t=1795625488; x=1796230288; darn=vger.kernel.org;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:from:to:cc:subject
          :date:message-id:reply-to:content-type;
-        bh=II/aro/lwWCAag041h9klo86GZWrpoxtriGNBQNlDMw=;
-        b=PKZ23RQeMEttotX4OBPRP2DbbrMEB51nwAQlsHi3Clsl60+KLwydytyVzIwS3CPrsp
-         gMCa0qLojqUmZPTj1WgDWb2vfDDzy8I3ouZC6AtzVQzGhYkAtsdS7I194LfKbKzPHVBH
-         9FjnQKv/TdlaTy27yqxtS+FRu+TCtlSdjsR4QOyB9tkMnDrs00BEwfTTEGdJNrrE0d1S
-         i0G3BgU+8ocwt4ScMKi+JN47+02WlDqK9aHu8g0fQCVcWCnmaTG9N306L0mPKog4H/f4
-         BgsXgGhnHP8RFqRdmh8kRVgxVbHO2JS8qa43xqFnpf9P4Z4Esbd1QfxvoHuOMiibIYtV
-         4BnQ==
+        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
+        b=MoPoxyMUvDW1SLt017Zbm2ElRZzGiEKE9LRDq//X7B5j3TZZdR2cJjL2ZBOsvKEAZ6
+         5IMuomAixYVKXTxTSbsvvUkuYlCm6JWLTwiWhbHnmzbjD0SYKpVTGs0a8R/hyeXlTCat
+         v++nacOw8wh8nQnKme7ZkOgcPVHS9U8PIZNzXPa5F/Gs2HzHICpegLzAaPhJMFiGMKnd
+         zJSCrK/jjB3QqXfi00Do0OBXJ9cHaspoS4hsJqMX0lgRiT/EeRtS0YXVLWqei5vHAUbO
+         Qr2NYy6jU0QsyDak7b6GcknaTsPdnQLdlnS7CLbP5ta2fpt8cldZxvRM2QK24ULz/9X2
+         +t2Q==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795625054; x=1796229854;
+        d=1e100.net; s=20260707; t=1795625488; x=1796230288;
         h=content-transfer-encoding:content-type:cc:to:subject:message-id
          :date:from:in-reply-to:references:mime-version:x-gm-gg
          :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
          :content-type;
-        bh=II/aro/lwWCAag041h9klo86GZWrpoxtriGNBQNlDMw=;
-        b=0lnCQBdBaOb8IinOeEMiSdkNIsQWAP9XpWoDDa968AaJ/EthltxjQ3OpwfRohLS+b3
-         30Gz5SJamj/fSaksXqS85DV/AJmmxpXRM6cAd+5LEMEBhzD91mcUZMs5qxGwHe7tJ0LW
-         6ptp46WbXJumGang4BA1h2DF9NImZAAAFtmKJnlgcCeXSLrroEoE38hPf6dRbDeph5Qs
-         CE5divnsxE/aio8eb4hKh4mY02epED7vDoZQPwsRXlHPRfKmSJ+GnKhHK/1kjG7CrBWB
-         fgBEf/L/g+JZgsu7LdsTNx/ac17awK0H9urQFlyHD0QrvB/ItwS13kDzc+CyuO+AHeyk
-         3OzA==
-X-Forwarded-Encrypted: i=1; AL+hErEFxEN5fG3oLrmV9F0fvs+VktIFAEk/Jt8YqAaO7TEBiCJHs0nUfn92w16krk1KLXjKk2lXnbIPI0MHNQ==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9fq37aiitsGMdbnOadKef4HI7oxg//FmvoNx3KJQn6NMqAwHW/
-	j798IR2P+yVv6VJkJJw6jX5HrWnOu12irD47QaQvly3KWvvpAudv5e6aSNyBQ9dUPqQFIoHdFPz
-	ppGgDLQVmaB27cn2gcFjHCt+33tJPWNLPhEJTqTzQ
-X-Gm-Gg: AZFdTZf7ehOxeDt1waSNrhHMjhHhoM6l09VRpDeiLs6uvIkRM84+DRJtLhs+GQd6Lai
-	1UQPsUHw1JLrA6vsZOEI/IaZ9zmMgmfs9HfqDE6DlQ/IjzH3kGu6b8LGskBUH7RJWN+zccvRj9k
-	IFyJxytnlfwTM+KVe2r4AH+GmWL6JjW23q7PpRzLfAFd8T+ZjY5f5mdeKPc+vWhibsd/Jvo96hY
-	OEvppzAiQ9dSzMNBlm46Q5cs6le8HM+HNDacPPSJgwiieFZMs0rL97Llkpa/nF7ng+O00ULdtvQ
-	H6j3hCjQ7Ynqy8RK7suOK7QFyIzCYtWuOBABZMPVqSeFzy78wGup5lnUsoeBcJk4Yj6xvN1djON
-	D0vx7ApPQSLkOyzKZ2qc/KLef/6pWGi5PE5kzllWVLUpdf1pSEb+2sfuIeUT24mNON1V917pnML
-	mqF4nMmtU5e4vpqfEgLZZEQtw7wUCEc+Gm4jejOrU/kz+lbu2/s6M=
-X-Received: by 2002:a17:907:6d22:b0:c51:40e:847a with SMTP id
- a640c23a62f3a-c513a1e6fdfmr1639688066b.0.1795625053094; Wed, 25 Nov 2026
- 08:44:13 -0800 (PST)
+        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
+        b=GCGj+W/6I+0fjZpb8Y42rQDQOzGM+fbhsWBeRltLMDatj9r2EEKZzyOtvq0u72ztNN
+         MYGN9sDdgMJBDGHyxkc6BAlWPVS+L5tXwcW4eGsnnaOR2RL/0lBpvCxYYpCbldp+Ttf3
+         0WLVGLN8InshelJVlBJbCSgJLEEoAOLTW5QcXU1mgTFUtMMQHjmAJYY+XBGhVgHvMGOG
+         RIwFfiYbmlqUJEqKI/8LI80MXkaUj9cU0CVX5BXbtTsrEqZk1kLWgzLOsm4MrO2dtjaF
+         b15UPUYpv3TQg1W4aM8M4JtlB5lqgUQQ3pJeUsxmMX9gX/RD7eXWzDBKzRyV+wQQttXh
+         xwjQ==
+X-Forwarded-Encrypted: i=1; AL+hErGu0G4TocbbYjyBATOCivaAmXR5xdqy0iEQUb1tdVeW8wwjdB6Io+/Uev5xtrrXQHgQ3jJxfDz4mTBd6Q==@vger.kernel.org
+X-Gm-Message-State: APuU4Z9238MCVHNW9reHo1zVizlNbcSeJwQhaF7gST+Lt1ucpBIn4R7f
+	8CLDSfjXWSTx9bFtej2hLUlAhPAhcQwJzeLUKDEHLxlll7UGJ49iSoc/H6qPckRPBY0+4HQQ8OI
+	BwW44MUPXawf6FfNJ6eIY+sq8vD2tf/E=
+X-Gm-Gg: AZFdTZeLofbAlVIu8t8USt3sv8pRpX/20GJhXJ6Nf0LrRMlAaVpvzA4s5MkMgpZ5U5A
+	GiFfxd2VR59LQq6q+fA+s1DHPJfZW17LdKcOwt42KWAXdx/jfKEqa5nC8Sfn0mBUdK/sehRqmCc
+	xy0AwhX6zTwWm157qmbtNIntxnvCKt3gd1FalrjvlFERBRA1LmCojKQMFSdOdtW+UwOaRaA/0wS
+	crpr5N+7KU2ENir7T0tOqVp4/W62rm0xO8txsS0YKHPnMVBpJC/hue4zZGH7adBRbp/lQWATTO8
+	U29XLGXZqChxZ/p0X2zsJQghi/Uh/OCjDGOFxQyRqSzyxp/B52pcU+P1Hxu4MDhwhs12UOAuAJB
+	kGcH1qczyCA5/3qyKktaOLAG63dqNT35kRBtVwvZulwnxpgCPm93Z8nJsPu5LslVrPBmxxQ==
+X-Received: by 2002:a05:6402:84e:b0:6b8:ac39:bb7b with SMTP id
+ 4fb4d7f45d1cf-6ba37f07a02mr12784419a12.45.1795625487513; Wed, 25 Nov 2026
+ 08:51:27 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -105,106 +104,252 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <ac22215d-3e58-4aab-851e-47c30836e058@app.fastmail.com>
- <20261027231728.1466446-1-jthoughton@google.com> <32fad21b-5bad-4640-97df-ef0f638cd9e9@app.fastmail.com>
- <CADrL8HX5vb1PGDpWzp-eR0rNfsMCVUhFa9vp_WZZx2eJZ+dfXQ@mail.gmail.com> <1a99e5fc-129e-41e3-8420-101bcf04b366@app.fastmail.com>
-In-Reply-To: <1a99e5fc-129e-41e3-8420-101bcf04b366@app.fastmail.com>
-From: James Houghton <jthoughton@google.com>
-Date: Wed, 25 Nov 2026 11:43:36 -0500
-X-Gm-Features: Aa3M54qTCDON0Zo2YJDXp5pBtwrXjTcYjv8NoqDjQS_XV_tl8JrBb-LQVlKEL3Q
-Message-ID: <CADrL8HUOZs-vWRyM9p+Na-=arRU+Gx_cWMLbxHmUYnho4fAUXg@mail.gmail.com>
-Subject: Re: [RFC PATCH 00/10] uaccess: Refuse and warn on user accesses when
- current->mm is NULL
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: "James E . J . Bottomley" <James.Bottomley@hansenpartnership.com>, 
-	Arnaldo Carvalho de Melo <acme@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, 
-	Pavel Begunkov <asml.silence@gmail.com>, Alexei Starovoitov <ast@kernel.org>, Jens Axboe <axboe@kernel.dk>, 
-	bpf@vger.kernel.org, Daniel Borkmann <daniel@iogearbox.net>, 
-	"David Hildenbrand (Red Hat)" <david@kernel.org>, David Sterba <dsterba@suse.com>, io-uring@vger.kernel.org, 
-	Jim Mattson <jmattson@google.com>, John Fastabend <john.fastabend@gmail.com>, 
-	Josh Poimboeuf <jpoimboe@kernel.org>, Kees Cook <kees@kernel.org>, kvm@vger.kernel.org, 
-	"Liam R. Howlett" <liam@infradead.org>, linux-btrfs@vger.kernel.org, 
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org, 
-	linux-mm@kvack.org, linux-perf-users@vger.kernel.org, 
-	linux-scsi@vger.kernel.org, linux-trace-kernel@vger.kernel.org, 
-	Lorenzo Stoakes <ljs@kernel.org>, Chris Mason <mason@kernel.org>, 
-	Mathieu Desnoyers <mathieu.desnoyers@efficios.com>, Masami Hiramatsu <mhiramat@kernel.org>, 
-	Michal Hocko <mhocko@suse.com>, Ingo Molnar <mingo@redhat.com>, 
-	"Martin K. Petersen" <mkp@kernel.org>, Namhyung Kim <namhyung@kernel.org>, 
-	Paolo Bonzini <pbonzini@redhat.com>, Peter Zijlstra <peterz@infradead.org>, 
-	Steven Rostedt <rostedt@goodmis.org>, Mike Rapoport <rppt@kernel.org>, 
-	Sean Christopherson <seanjc@google.com>, Suren Baghdasaryan <surenb@google.com>, Thomas Gleixner <tglx@kernel.org>, 
-	"Vlastimil Babka (SUSE)" <vbabka@kernel.org>, Alexander Viro <viro@zeniv.linux.org.uk>
+References: <20261122000856.536902-1-koray.fra@gmail.com> <20261122000856.536902-3-koray.fra@gmail.com>
+ <CAOQ4uxhegn1z=41_MHL1Zu2hXuPtzNhC=x4gd371oaeJE4-weQ@mail.gmail.com>
+ <DN2N6A68PBO1.2QT8ZOARF4I6L@gmail.com> <CAOQ4uxhDQqEQ3T9NveBFpUmSU032BxrNV5D+_zHj8u9LOQY+qg@mail.gmail.com>
+ <DN4DRUYPHYMP.20U4DYV5VBN7P@gmail.com>
+In-Reply-To: <DN4DRUYPHYMP.20U4DYV5VBN7P@gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Wed, 25 Nov 2026 17:51:16 +0100
+X-Gm-Features: Aa3M54qBSzc52sWJyl_AAZDXWvCmiaZo0RX22LaXSRo3u2ihdyPPNj6mbzgC3-4
+Message-ID: <CAOQ4uxg0g+XkPb3-kQS5ez1-rp7Q=BkYDHW0CGOFhpbcf70yMg@mail.gmail.com>
+Subject: Re: [PATCH 2/3] vfs: add xflags mask to fileattr API
+To: koraynilay <koray.fra@gmail.com>
+Cc: Namjae Jeon <linkinjeon@kernel.org>, Hyunchul Lee <hyc.lee@gmail.com>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
+	Chuck Lever <cel@kernel.org>, Jeff Layton <jlayton@kernel.org>, Jan Kara <jack@suse.cz>, 
+	"Darrick J . Wong" <djwong@kernel.org>, Andrey Albershteyn <aalbersh@kernel.org>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>, 
+	Lauri Gates <lauri.gates@gmail.com>, Christoph Hellwig <hch@infradead.org>, Dave Chinner <dgc@kernel.org>, 
+	linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	ntfs@lists.linux.dev, linux-nfs@vger.kernel.org, linux-api@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Nov 24, 2026 at 5:02=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> wrote=
+On Wed, Nov 25, 2026 at 4:01=E2=80=AFPM koraynilay <koray.fra@gmail.com> wr=
+ote:
+>
+> On Mon Nov 23, 2026 at 4:29 PM CET, Amir Goldstein wrote:
+> > On Mon, Nov 23, 2026 at 2:58=E2=80=AFPM koraynilay <koray.fra@gmail.com=
+> wrote:
+> >>
+> >> On Mon Nov 23, 2026 at 2:24 PM CET, Amir Goldstein wrote:
+> >> > On Sun, Nov 22, 2026 at 1:09=E2=80=AFAM koraynilay <koray.fra@gmail.=
+com> wrote:
+> >> >>
+> >> >> Add fa_xflags_rw_mask and fa_xflags_ro_mask to struct file_attr and
+> >> >> equivalent masks to struct file_kattr.
+> >> >>
+> >> >> Also add has_masks selector to struct file_kattr so we can know whe=
+n a
+> >> >> user of this API (userspace or filesystem) supports them.
+> >> >>
+> >> >> This lets filesystems advertise their support for specific xflags, =
+like
+> >> >> statx.stx_attributes_mask does, and userspace can specify only whic=
+h
+> >> >> xflags it wants to change without needing a RMW cycle:
+> >> >> - on GET: each filesystem that wants to support this new API fills =
+the
+> >> >>   masks according to its supported and read-only xflags, then:
+> >> >>   * for boolean xflags: it fills fsx_xflags with the current on-dis=
+k value
+> >> >>   * for value xflags: it sets the xflag bit to 1 in fsx_xflags and =
+the
+> >> >>     xflag value in the struct field;
+> >> >> - on SET: userspace fills the rw_mask with the bits of the xflags i=
+t
+> >> >>   wants to change, then:
+> >> >>   * for boolean xflags: it provides the xflag value as a bit in fa_=
+xflags
+> >> >>   * for value xflags: it sets the xflag bit to 1 in fa_xflags and t=
+hen
+> >> >>     provides the value in the struct field; if the xflag bit is set=
+ to 0
+> >> >>     instead, this informs the kernel to unset/clear that value.
+> >> >>
+> >> >> Since fa_xflags_rw_mask means "I want to change the xflags specifie=
+d in
+> >> >> here", if userspace specifies fa_xflags_rw_mask =3D 0, only check f=
+or
+> >> >> permissions and fileattr support without checking any xflags.
+> >> >>
+> >> >> Behaviour of older programs that already use file_[gs]etattr() is
+> >> >> preserved by checking against FILE_ATTR_SIZE_VER*.
+> >> >>
+> >> >> Also add the missing FS_XFLAG_PROJID xflag, to allow userspace to s=
+et
+> >> >> the projid using file_[gs]etattr() by leveraging the new masks.
+> >> >>
+> >> >> Finally, in order to prevent the legacy FS_IOC_FSSETXATTR from acce=
+pting
+> >> >> FS_XFLAG_PROJID, add a FS_FILE_ATTR_XFLAGS_MASK to support new xfla=
+gs
+> >> >> and use it to validate/clamp both the _xflags fields and the masks.
+> >> >>
+> >> >> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.11
+> >> >> Signed-off-by: koraynilay <koray.fra@gmail.com>
+> >> >> ---
+> > ...
+> >> >>         err =3D fileattr_set_prepare(inode, &old_ma, fa);
+> >> >> @@ -424,6 +504,14 @@ SYSCALL_DEFINE5(file_getattr, int, dfd, const =
+char __user *, filename,
+> >> >>                 return error;
+> >> >>
+> >> >>         fileattr_to_file_attr(&fa, &fattr);
+> >> >> +       /*
+> >> >> +        * Remove xflags added in or after VER1 so userspace progra=
+ms compiled
+> >> >> +        * against VER0 don't try to write xflags they don't know a=
+bout (since
+> >> >> +        * they do RMW).
+> >> >> +        */
+> >> >> +       if (usize < FILE_ATTR_SIZE_VER1)
+> >> >> +               fattr.fa_xflags &=3D FS_XFLAGS_MASK;
+> >> >> +
+> >> >
+> >> > This looks odd.
+> >> > old struct size with new flags should be -EINVAL not silently drop t=
+hem
+> >>
+> >> Right, and the GET path should strip any new flags, so old programs
+> >> doing RMW will never see them, correct?
+> >>
+> >
+> > Yes, I think so.
+> >
+> >> >
+> >> >>         error =3D copy_struct_to_user(ufattr, usize, &fattr,
+> >> >>                                     sizeof(struct file_attr), NULL)=
+;
+> >> >>
+> >> >> @@ -460,10 +548,6 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const =
+char __user *, filename,
+> >> >>         if (error)
+> >> >>                 return error;
+> >> >>
+> >> >> -       error =3D file_attr_to_fileattr(&fattr, &fa);
+> >> >> -       if (error)
+> >> >> -               return error;
+> >> >> -
+> >> >>         CLASS(filename_maybe_null, name)(filename, at_flags);
+> >> >>         if (!name && dfd >=3D 0) {
+> >> >>                 CLASS(fd, f)(dfd);
+> >> >> @@ -479,6 +563,30 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const =
+char __user *, filename,
+> >> >>                         return error;
+> >> >>         }
+> >> >>
+> >> >> +       /*
+> >> >> +        * Userspace said "I don't want to change any flag", so be =
+it I guess.
+> >> >> +        * Still check for fileattr support and permissions, also i=
+n case this
+> >> >> +        * is just a probe.
+> >> >> +        */
+> >> >> +       if (usize >=3D FILE_ATTR_SIZE_VER1 && fattr.fa_xflags_rw_ma=
+sk =3D=3D 0) {
+> >> >> +               struct inode *inode =3D d_inode(filepath.dentry);
+> >> >
+> >> >
+> >> > No No this is not what this userspace said!
+> >> >
+> >> > This user space is the same old chattr programs recompiled with a ne=
+w
+> >> > fs.h header file
+> >> > installed.
+> >>
+> >> Oh, right, I did not think about this case, I hope it doesn't break to=
+o
+> >> much of the new code I changed already for v2 :(
+> >>
+> >> > When userspace does not set anything is masks it means "old API"
+> >>
+> >> And so a modern program using masks that passes rw_mask as 0 should be
+> >> also interpreted as "old API", even if it kinda goes against the
+> >> definition of rw_mask right?
+> >
+> > Yes, but it is not a problem to describe this backward compat exception=
 :
+> > When (rw_mask | ro_mask) =3D=3D 0, it means "no mask" "set everything"
+> > but then vfs will not accept new xflags that were not supported in v0
+> > syscall.
 >
-> On Tue, Nov 24, 2026, at 22:10, James Houghton wrote:
-> > On Wed, Oct 28, 2026 at 7:14=E2=80=AFPM Arnd Bergmann <arnd@arndb.de> w=
-rote:
-> >> On Wed, Oct 28, 2026, at 00:17, James Houghton wrote:
+> Uhm, since we have no way to know on the GET path if the caller is mask
+> aware or not, on mask aware filesystems and legacy programs recompiled
+> against VER1, file_getattr() will return rw_mask !=3D 0, when the program
+> does RMW, so calling file_setattr() with the old struct which has
+> rw_mask !=3D 0, vfs will think that the caller is mask aware.
 >
-> > So now in v2, the _nofault() helpers themselves do not check current->m=
-m.
-> >
-> > I've uploaded a draft version of v2 here, in case you want to take a lo=
-ok:
-> >   https://github.com/48ca/linux uaccess-v2-wip
->
-> I read through this now and it all looks good to me so far.
 
-Wow you looked at that really quickly, thank you so much!
+True. This is a requirement from the design of v1
+that RMW works correctly when the program does not change the masks.
 
-> >> Since in principle every user access should go through both
-> >> access_ok/mask_user_address and current->mm check at some point,
-> >> so combining the two as much as possible should help long-term
-> >> maintainability.
-> >
-> > You're right, and v2 has been restructured like this.
-> >
-> > - The check is in access_ok() itself: the generic version, plus the
-> > arm64 and riscv versions. __access_ok() remains a plain range check.
-> > - The callers of mask_user_address()/masked_user_*_access_begin()
-> > check current->mm explicitly. There are about a dozen such callers.
-> > - The unchecked accessors, __copy_{from,to}_user()
-> > and__copy_{from,to}_user_inatomic() (and arm64's
-> > copy_from_user_flushcache(), which also relies on an earlier
-> > access_ok()), keep an explicit check for now. Once their users are
-> > converted to the checked versions, those checks can be dropped.
+> This causes problems when that legacy program changes the projid, since
+> vfs will see rw_mask =3D PROJID but fsx_xflags will not have PROJID, vfs
+> will clear it even tho the program wanted to set it to some value.
 >
-> Ok, sounds all good. If we get more than handful of mask_user_address()
-> and masked_user_*_access_begin(), we can always revisit that interface
-> to make sure the check can't be skipped, but for now this seems
-> like a good tradeoff.
 
-Great!
+Yes, this is a specific issue with PROJID itself, not with the
+entire masks API.
 
-> > Compared to v1, this also covers get_user()/put_user()/clear_user() on
-> > arm64, powerpc, riscv and the asm-generic architectures, and arch code
-> > like signal frame setup that uses access_ok() followed by __put_user()
-> > or unsafe_*(). user_access_begin() no longer needs its own check.
-> >
-> > What's still not covered: x86's get_user()/put_user(), which do their
-> > own range check in asm, a few architecture-specific paths that call
-> > __access_ok() directly (e.g. on alpha and sparc32), and arch code that
-> > calls __get_user()/__put_user() without access_ok(), mostly trap
-> > handlers for user-mode faults. Probably best tackled later.
->
-> ok
->
-> >> There are probably few enough of these that we could address them
-> >> by either adding current->mm checks or converting them to use
-> >> the full versions instead where that is an obvious change like
-> >> that usb gadget driver.
-> >
-> > Sounds good. I'll send a separate series converting the obvious ones,
-> > starting with the usb gadget driver. I think that will be useful.
-> > Let's see how far I can get; hopefully I can drop
-> > __copy_{from,to}_user() completely.
->
-> Ok, perfect!
 
-Thanks, Arnd! FWIW, there have been no syzkaller issues so far with
-this WIP v2. :)
+> Unless I'm missing something, there is no way for us to know if a caller
+> of file_getattr() is a new mask aware program or just a recompiled legacy
+> program.
+
+Right.
+
+>
+> My robot proposed 2 fixes: either don't introduce FS_XFLAG_PROJID
+> (which, eh, not the best imo)
+
+Me neither. It's inconsistent IMO.
+
+But it is inconsistent in that we want to have a way for chattr -p to say w=
+ith
+the new API "set only projid", so we must have the flag, but we
+mostly need it for the mask, we don't really care about its value in
+fsx_flags.
+
+> or add a new flag to be used in at_flags,
+> like AT_FILEATTR_MASKS, which would resolve all our legacy vs non-legacy
+> problems, but it would be in *at*_flags, so doesn't really make sense
+> semantically (but it would work well since file_getattr already rejects
+> unknown at_flags, so it wouldn't cause problems for old programs).
+
+I think this is an overkill as well.
+
+We discussed this before.
+
+Attributes that have X_value like fsx_projid have few types:
+1. 0 means disabled (all existing values incl. projid)
+2. 0 is a valid value but cannot be unset (btime)
+3. 0 is a valid value and NULL/unset is also a valid value
+
+Only for type 3 does can the interpretation of
+(!XFLAG_X && !fsx_X) be considered as an "unset"
+and anyway, this will require support in individual fs.
+
+fileattr_set_prepare() already treats the existing values as:
+fsx_X =3D=3D 0 =3D> clear XFLAG_X
+
+And xfs returns EINVAL for !!(fsx_X) !=3D !!(XFLAGX)
+
+A simple solution is to fix the flag according to val in fileattr_set_prepa=
+re()
+if rw_mask contains this flag:
+
+if (fa->fsx_xflags_rw_mask & FS_XFLAG_PROJID) {
+    /* Possibly legacy chattr -p compiled with new headers unaware of PROJI=
+D */
+    if (fa->fsx_projid =3D=3D 0)
+          fa->fsx_xflags &=3D ~FS_XFLAG_PROJID;
+    else
+          fa->fsx_xflags |=3D FS_XFLAG_PROJID;
+}
+
+Does that leave any problematic corner case?
+
+Thanks,
+Amir.

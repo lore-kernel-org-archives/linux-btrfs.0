@@ -1,100 +1,96 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.51
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795625490;
-	b=tK3GHnHMRMrvg5k1CBmr7H21HirEQL+jJauvrVf0ADsilGYeEoeLuX1/8SnkBM6s6zya
-	 txPq6hgjesVBR0A770+b29PZR2lRI8aYgDLec4q7Ydi2qOd0DCHr6L4rJjRtcqvv5hHtH
-	 UXnrwPBcbIKy9/0hEEz0V3N2DhmTSqzcmaZtPqB3Ro/RhOCsLf8bILf0l0nYHTWEYpDAU
-	 7L5I4hp79+/RRO9do/KUPdzBMpKxSbTz0GTQCJQkMdxnbB94BJDWftz2q7/00W5jJr5b2
-	 nn8fmVgda8/v6SXMT3ENj8U/9I1LguDQliFjKQnp1/l6DHlN93mIm9vyv6ddtksmXpw==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795625490;
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.128.169
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1795627082;
+	b=sqwD2pxpNURzwwwDunyj1jsFWDrlyox0z2RpQt3hQENCk4vB5csfBoiICDCKkyCJtAwi
+	 bJG/HM4i8km2C7EpJUQWHydvzvOFhv6ABgNgxkkz/e22n6xF/I96+sqJizmmJU91jB8bp
+	 ETdQsY3+Bp1ghn5lpPJjDEkBAc09tqBcWEiWxxxWHduvM1XT/PMH32llJoKu3RG5qticb
+	 ja2u8bDfcpmw2ka2oIdXJcaR9sjky/brePq4i/UsgergK+7smOA9E8rYI2wQxffKsjf+O
+	 kKHybBujmQVb7s8UD/ttJxINgzPHO7vAezD4C3MvcD6FH5tYzT1V1hC2NJAgUMq5i9w==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795627082;
 	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
-	b=PKojAoNR96N8AOkM6uYXZwSrv37SmcIKgdjPbJQ+/OugABWu6pXqhYdn0FQRCYjL7IRL
-	 BcvZQYqsLbs7x9W/1A92YQloUGnOFeKp4xZNMpiQY6orly60LlCf+LmXpLVWCORdmGOLI
-	 bTWQZes8uLsolbaRvEuOepqkkm8v4H+H+r0DgGdIuRGfgQSTLdF8xaLgmZ0aeh/HaG4Ak
-	 WKTpBV9vhpr8RDwG6Qd+YkGwWy7RMpJ3xVJX/VZL/NfZO1h5VQCcIlrpMZgRMlvh2h6M8
-	 BIMk9CCiLzdONM9FYdXSLuM0t9/zXwp6EQg1WUr/N9363pQ0gx7YzJxgVVvi7j8P3cA==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MoPoxyMU;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.208.51
-Received: from mail-ed1-f51.google.com (mail-ed1-f51.google.com [209.85.208.51])
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
+	 From:To:Cc:Subject:Date:Message-ID:X-Mailer:In-Reply-To:References:
+	 MIME-Version:Content-Transfer-Encoding;
+	bh=wCsrlj2L6zjqB33Ast7cbJ+UpGvbZhXlTc+v7Iwr5Y4=;
+	b=yAzMJXBSXjNm4qMlG8ogfCA7N2J14ZBARieXHYO/6Ok2S5krTXFdg02NCkh/GDdtoFrb
+	 OlQX/NttUBmw6dUqz6oFwhMhOJ9Zk/XsS+q2FZJ7gkF0TRCIq80fRvmdgy2d9o+HxPRDo
+	 l+/Vmiri6L7lDzzLKdx1gB9yB1f2JZRAhVP0F83KbSBm687ytLqswSidNLQMRgckI2PGC
+	 seS3PZVyVCLO9GidnT1Yt6nazlk0dF55B9deSVMQypznJFpTLzqHQIS451gcTkwy8C5hc
+	 THNXxLhHS61umQOp3fLXrZtzyIwuu0zDDWTo165mFc3TJanHDtRICOZtUusnwPHOwjw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=cs.unc.edu;
+	spf=pass smtp.mailfrom=cs.unc.edu;
+	arc=none smtp.remote-ip=209.85.128.169
+Received: from mail-yw1-f169.google.com (mail-yw1-f169.google.com [209.85.128.169])
 	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 97BDB606A32C
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:51:29 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 97BDB606A32C
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
-Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=MoPoxyMU
-Received: by mail-ed1-f51.google.com with SMTP id 4fb4d7f45d1cf-6bb06dc1fd5so2785510a12.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 08:51:29 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1795625488; cv=none;
-        d=google.com; s=arc-20260327;
-        b=ECJPdR47wMYtcaL0aFU7AAkWeVHCBLVffOPTfCWk1mVrkDgdnDalrVc+LIIrlmqMwY
-         KH+aCxqG3qsRCq6Aj+VNYQqWce5cjfHlfury+OxzNWK9vBt/opy4De172IpfNiy148hy
-         LLZIEAVSYrx7O6FFKmOYPZW3gVbHn/4Ipgd/9Dk0qPy34y9LTolfIN0DsNDQOjSraftN
-         ZYPZNjpz1Zl3JfpSX8n9CPOvR7pL43BsnaqvzAkxWX2Ap9OVsX0MyyAybyxj8Sbdbv6i
-         Cuc+5ionq5fKNT7T4S5woMFf2Ykx9cfqOPIVHFza/558qdasP9Wjrie9QnTBmtg9N3yN
-         Kldg==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
-        fh=SoCAaB7rtz/6jUHq8rJrgLWlH2VbkdLKoOJ7owTh69M=;
-        b=GrOyjyTQ+oNv5AVpAPpV8fAoyTZ5ay1Z4qG1fZIaiUSbV91XiwNMYIoEcPfZV3nzqs
-         /gnT3dX2uHhtFlM6eOEl5k6eUdBgut8vBEnpo/TtTr4LbaRsERiuPkEWw3l08W97agu/
-         mX51DK0S/fbUIHiG58WM7XLVjVFQnVyKzfpCKLuHplDMXZjeRdFcU/0Gql9xd5vhYAFT
-         le/ZS9uvy4NyHme6bAfidOJPg6/6pvhT1Xc10rrkIliybmLMTiWAybKoBdL9XPCpzGMJ
-         6pb9tFhK6QQhMkEJDmfFA2EZr+uCGyfdsC6b1K+VOa/jq3LlNil03ffjJbeh0wLeIu/u
-         mOOQ==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1C51D606A326
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 17:17:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 1C51D606A326
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=cs.unc.edu
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=cs.unc.edu
+Received: by mail-yw1-f169.google.com with SMTP id 00721157ae682-8b51389f58cso66507587b3.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 09:17:51 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795625488; x=1796230288; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
-        b=MoPoxyMUvDW1SLt017Zbm2ElRZzGiEKE9LRDq//X7B5j3TZZdR2cJjL2ZBOsvKEAZ6
-         5IMuomAixYVKXTxTSbsvvUkuYlCm6JWLTwiWhbHnmzbjD0SYKpVTGs0a8R/hyeXlTCat
-         v++nacOw8wh8nQnKme7ZkOgcPVHS9U8PIZNzXPa5F/Gs2HzHICpegLzAaPhJMFiGMKnd
-         zJSCrK/jjB3QqXfi00Do0OBXJ9cHaspoS4hsJqMX0lgRiT/EeRtS0YXVLWqei5vHAUbO
-         Qr2NYy6jU0QsyDak7b6GcknaTsPdnQLdlnS7CLbP5ta2fpt8cldZxvRM2QK24ULz/9X2
-         +t2Q==
+        d=cs.unc.edu; s=google; t=1795627071; x=1796231871; darn=vger.kernel.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to:content-type;
+        bh=wCsrlj2L6zjqB33Ast7cbJ+UpGvbZhXlTc+v7Iwr5Y4=;
+        b=NSWjJ1iUECaItAnSN36JkBuxnJeihAN1EnFqPIS4u87+AdZkqu0BV4VfhwU3YOP+Ur
+         87mcA2IFlmnUIjtuKeln/royBzYUY3o0XOTPbzKwWPBEQNuQV7iqlg1EzveubuZg6Z/R
+         Qtc/eQJ/UwYC1JHV3JJm/rKRvENuDxeGm4bMUEpmsMqKqRq9N6ldLEXE2rF+RHxB9ZkP
+         4HTvEIVHpr/ASt3QJyxQ0Mj3jHjBg2taPpLGqXvsSIorNPm7IQFEkrL82gkTpQSl/764
+         DxVuEwAFEetlrEBtLbvcBChVgzW21WCK9N7HRxMEKsSKHwVgnELMPATFjhA/tbka6uex
+         qJFA==
 X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795625488; x=1796230288;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=RXQk5HMe2BJYtF6nqI/dEd/GRzh+7/vUyfQ0kGs8Dkc=;
-        b=GCGj+W/6I+0fjZpb8Y42rQDQOzGM+fbhsWBeRltLMDatj9r2EEKZzyOtvq0u72ztNN
-         MYGN9sDdgMJBDGHyxkc6BAlWPVS+L5tXwcW4eGsnnaOR2RL/0lBpvCxYYpCbldp+Ttf3
-         0WLVGLN8InshelJVlBJbCSgJLEEoAOLTW5QcXU1mgTFUtMMQHjmAJYY+XBGhVgHvMGOG
-         RIwFfiYbmlqUJEqKI/8LI80MXkaUj9cU0CVX5BXbtTsrEqZk1kLWgzLOsm4MrO2dtjaF
-         b15UPUYpv3TQg1W4aM8M4JtlB5lqgUQQ3pJeUsxmMX9gX/RD7eXWzDBKzRyV+wQQttXh
-         xwjQ==
-X-Forwarded-Encrypted: i=1; AL+hErGu0G4TocbbYjyBATOCivaAmXR5xdqy0iEQUb1tdVeW8wwjdB6Io+/Uev5xtrrXQHgQ3jJxfDz4mTBd6Q==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9238MCVHNW9reHo1zVizlNbcSeJwQhaF7gST+Lt1ucpBIn4R7f
-	8CLDSfjXWSTx9bFtej2hLUlAhPAhcQwJzeLUKDEHLxlll7UGJ49iSoc/H6qPckRPBY0+4HQQ8OI
-	BwW44MUPXawf6FfNJ6eIY+sq8vD2tf/E=
-X-Gm-Gg: AZFdTZeLofbAlVIu8t8USt3sv8pRpX/20GJhXJ6Nf0LrRMlAaVpvzA4s5MkMgpZ5U5A
-	GiFfxd2VR59LQq6q+fA+s1DHPJfZW17LdKcOwt42KWAXdx/jfKEqa5nC8Sfn0mBUdK/sehRqmCc
-	xy0AwhX6zTwWm157qmbtNIntxnvCKt3gd1FalrjvlFERBRA1LmCojKQMFSdOdtW+UwOaRaA/0wS
-	crpr5N+7KU2ENir7T0tOqVp4/W62rm0xO8txsS0YKHPnMVBpJC/hue4zZGH7adBRbp/lQWATTO8
-	U29XLGXZqChxZ/p0X2zsJQghi/Uh/OCjDGOFxQyRqSzyxp/B52pcU+P1Hxu4MDhwhs12UOAuAJB
-	kGcH1qczyCA5/3qyKktaOLAG63dqNT35kRBtVwvZulwnxpgCPm93Z8nJsPu5LslVrPBmxxQ==
-X-Received: by 2002:a05:6402:84e:b0:6b8:ac39:bb7b with SMTP id
- 4fb4d7f45d1cf-6ba37f07a02mr12784419a12.45.1795625487513; Wed, 25 Nov 2026
- 08:51:27 -0800 (PST)
+        d=1e100.net; s=20260707; t=1795627071; x=1796231871;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to:content-type;
+        bh=wCsrlj2L6zjqB33Ast7cbJ+UpGvbZhXlTc+v7Iwr5Y4=;
+        b=MOw36RCASNjJKQU04zlJlih2JSd273VPz7KLgAjUGle+XoaJCxj9rJmP2JsLIELn8v
+         6PAhRoeud32La3aQpJDfju+HRY4R762YK/u8emjRZiPX+m5q8Id9naqe85k+vI9Kfg9Y
+         Ear2KCPdUv+WwMQgHe/qWndBsS9OQTe9NXNuH5sxrIdKKR7VwM5T97lhqdvO8ElyOt8Q
+         9QKckpr4Ov4KABJufkGYNEyr/ZH/5f8xIbBs7vsc5Zhww5Vs+9xYqzu3mXKl9F4BZBYz
+         bBoG7doLgFuDIrNUnfQxuXi4ZfT6FFm2DvcxNkSosMK59Qs5x/6mlVgu69WZ28ZTU5uE
+         3oKg==
+X-Forwarded-Encrypted: i=1; AL+hErEosWvGe6hBzhy85l1yF3uk0T0bn9ciBw3qXElkWxfWNbX0OxBcveNZM2Iw/gG40IhgV+vfeTLcfrYQKg==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/xqx5rTJ/MRWvRmX098Gpz8HDz5iXfWcw67w4FlvoJNS3C4/AA
+	ZmErJL4B35It53ZFVJNQ8mutLStZHIYh98ZPtdEL/Ahf+IQrk6ApuijQc346qFHEQulzoO02rBQ
+	SwY4u96qV
+X-Gm-Gg: AZFdTZfLhaQIFNCJOceowrWpvfjhMi6vQiFFP8bGJE3km2UNc1HI2B2K/EPdZMhPDHb
+	cLYQ21kRMn4b23G1+oQjMHlo+qAGdDSc81UVdK7LhMb+L8yLhoKdXBh/T+xDPGIqGetVrEoUbbY
+	qHb30rpJkl3hAQKyvD2pq86UYCrvwRgMma9V8bcEKz/cWr1onh4wCayJk+O2j/6QcEIks2bUVfr
+	gvjCYGKC0jdnagLBascg66gFvUEcXCo+j/Wtcdg9y2jf3tu88gkJmOjiksqDZvseyLbZxOr7Fi2
+	mYR1UlsGWsFjfuYtApgrY39PmFSxulPJm1KHybwGlmCA5BcH954YptYkMEAgGabhHtUBK4RDjwX
+	VHYjgJXXK10ZN3AowHjP2gU/VnPxLtJP9pcJNewuz8QbMad1YA7L5vmdpZuFX+qPeGJ1rZIJp0a
+	i+lieczK31fhqhFfklAJIRYjUEyN4TQFD2L0ZdBffqlo3DJAFJbBjGzK4DMPOG/dzRQBgCsK+CH
+	u1KvMOz9G+FxfBEeiqS9DX37L97vSUCIax8VUPvBRMtXkZd4lf5myWE1ET80aeaQzvD0ct3o0Ue
+	ZlAuqWOijZJBMpBONV8xsBwRlHkMbZGe9TuiXyWJnf/WOZDfxzgq+uAs6y9AcIKg0iYBxtHj7g=
+	=
+X-Received: by 2002:a05:690c:7348:b0:8b4:e905:e772 with SMTP id 00721157ae682-8b52050a47fmr74530757b3.92.1795627070780;
+        Wed, 25 Nov 2026 09:17:50 -0800 (PST)
+Received: from cobra01.cs.unc.edu (cobra01.cs.unc.edu. [152.2.130.143])
+        by smtp.gmail.com with ESMTPSA id 00721157ae682-8b5201b8cd0sm75087847b3.2.2026.11.25.09.17.50
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Wed, 25 Nov 2026 09:17:50 -0800 (PST)
+From: Hengyu Liang <hengyul@cs.unc.edu>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+	linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <wqu@suse.com>,
+	Boris Burkov <boris@bur.io>,
+	David Sterba <dsterba@suse.com>,
+	Chris Mason <mason@kernel.org>,
+	linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: remove "rescue=usebackuproot" from "rescue=all" shortcut
+Date: Wed, 25 Nov 2026 12:17:40 -0500
+Message-ID: <20261125171741.3518473-1-hengyul@cs.unc.edu>
+X-Mailer: git-send-email 2.53.0
+In-Reply-To: <9155e9f6-9d76-43b3-bd20-a4c98a9f2c84@gmx.com>
+References: <20261117030353.1738805-1-hengyul@cs.unc.edu> <9155e9f6-9d76-43b3-bd20-a4c98a9f2c84@gmx.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,252 +100,54 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261122000856.536902-1-koray.fra@gmail.com> <20261122000856.536902-3-koray.fra@gmail.com>
- <CAOQ4uxhegn1z=41_MHL1Zu2hXuPtzNhC=x4gd371oaeJE4-weQ@mail.gmail.com>
- <DN2N6A68PBO1.2QT8ZOARF4I6L@gmail.com> <CAOQ4uxhDQqEQ3T9NveBFpUmSU032BxrNV5D+_zHj8u9LOQY+qg@mail.gmail.com>
- <DN4DRUYPHYMP.20U4DYV5VBN7P@gmail.com>
-In-Reply-To: <DN4DRUYPHYMP.20U4DYV5VBN7P@gmail.com>
-From: Amir Goldstein <amir73il@gmail.com>
-Date: Wed, 25 Nov 2026 17:51:16 +0100
-X-Gm-Features: Aa3M54qBSzc52sWJyl_AAZDXWvCmiaZo0RX22LaXSRo3u2ihdyPPNj6mbzgC3-4
-Message-ID: <CAOQ4uxg0g+XkPb3-kQS5ez1-rp7Q=BkYDHW0CGOFhpbcf70yMg@mail.gmail.com>
-Subject: Re: [PATCH 2/3] vfs: add xflags mask to fileattr API
-To: koraynilay <koray.fra@gmail.com>
-Cc: Namjae Jeon <linkinjeon@kernel.org>, Hyunchul Lee <hyc.lee@gmail.com>, 
-	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
-	Chuck Lever <cel@kernel.org>, Jeff Layton <jlayton@kernel.org>, Jan Kara <jack@suse.cz>, 
-	"Darrick J . Wong" <djwong@kernel.org>, Andrey Albershteyn <aalbersh@kernel.org>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>, 
-	Lauri Gates <lauri.gates@gmail.com>, Christoph Hellwig <hch@infradead.org>, Dave Chinner <dgc@kernel.org>, 
-	linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
-	ntfs@lists.linux.dev, linux-nfs@vger.kernel.org, linux-api@vger.kernel.org
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: 8bit
 
-On Wed, Nov 25, 2026 at 4:01=E2=80=AFPM koraynilay <koray.fra@gmail.com> wr=
-ote:
+Hi Qu,
+
+I found this while comparing the behaviour of different kernel versions.
+I used an LLM to analyse the problem and to draft the patch and this
+message, and I analyzed the result myself.
+
+On 2026/11/17 14:53, Qu Wenruo wrote:
+> Furthermore, one can even argue that this behavior gives a higher chance
+> to mount the fs.
 >
-> On Mon Nov 23, 2026 at 4:29 PM CET, Amir Goldstein wrote:
-> > On Mon, Nov 23, 2026 at 2:58=E2=80=AFPM koraynilay <koray.fra@gmail.com=
-> wrote:
-> >>
-> >> On Mon Nov 23, 2026 at 2:24 PM CET, Amir Goldstein wrote:
-> >> > On Sun, Nov 22, 2026 at 1:09=E2=80=AFAM koraynilay <koray.fra@gmail.=
-com> wrote:
-> >> >>
-> >> >> Add fa_xflags_rw_mask and fa_xflags_ro_mask to struct file_attr and
-> >> >> equivalent masks to struct file_kattr.
-> >> >>
-> >> >> Also add has_masks selector to struct file_kattr so we can know whe=
-n a
-> >> >> user of this API (userspace or filesystem) supports them.
-> >> >>
-> >> >> This lets filesystems advertise their support for specific xflags, =
-like
-> >> >> statx.stx_attributes_mask does, and userspace can specify only whic=
-h
-> >> >> xflags it wants to change without needing a RMW cycle:
-> >> >> - on GET: each filesystem that wants to support this new API fills =
-the
-> >> >>   masks according to its supported and read-only xflags, then:
-> >> >>   * for boolean xflags: it fills fsx_xflags with the current on-dis=
-k value
-> >> >>   * for value xflags: it sets the xflag bit to 1 in fsx_xflags and =
-the
-> >> >>     xflag value in the struct field;
-> >> >> - on SET: userspace fills the rw_mask with the bits of the xflags i=
-t
-> >> >>   wants to change, then:
-> >> >>   * for boolean xflags: it provides the xflag value as a bit in fa_=
-xflags
-> >> >>   * for value xflags: it sets the xflag bit to 1 in fa_xflags and t=
-hen
-> >> >>     provides the value in the struct field; if the xflag bit is set=
- to 0
-> >> >>     instead, this informs the kernel to unset/clear that value.
-> >> >>
-> >> >> Since fa_xflags_rw_mask means "I want to change the xflags specifie=
-d in
-> >> >> here", if userspace specifies fa_xflags_rw_mask =3D 0, only check f=
-or
-> >> >> permissions and fileattr support without checking any xflags.
-> >> >>
-> >> >> Behaviour of older programs that already use file_[gs]etattr() is
-> >> >> preserved by checking against FILE_ATTR_SIZE_VER*.
-> >> >>
-> >> >> Also add the missing FS_XFLAG_PROJID xflag, to allow userspace to s=
-et
-> >> >> the projid using file_[gs]etattr() by leveraging the new masks.
-> >> >>
-> >> >> Finally, in order to prevent the legacy FS_IOC_FSSETXATTR from acce=
-pting
-> >> >> FS_XFLAG_PROJID, add a FS_FILE_ATTR_XFLAGS_MASK to support new xfla=
-gs
-> >> >> and use it to validate/clamp both the _xflags fields and the masks.
-> >> >>
-> >> >> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.11
-> >> >> Signed-off-by: koraynilay <koray.fra@gmail.com>
-> >> >> ---
-> > ...
-> >> >>         err =3D fileattr_set_prepare(inode, &old_ma, fa);
-> >> >> @@ -424,6 +504,14 @@ SYSCALL_DEFINE5(file_getattr, int, dfd, const =
-char __user *, filename,
-> >> >>                 return error;
-> >> >>
-> >> >>         fileattr_to_file_attr(&fa, &fattr);
-> >> >> +       /*
-> >> >> +        * Remove xflags added in or after VER1 so userspace progra=
-ms compiled
-> >> >> +        * against VER0 don't try to write xflags they don't know a=
-bout (since
-> >> >> +        * they do RMW).
-> >> >> +        */
-> >> >> +       if (usize < FILE_ATTR_SIZE_VER1)
-> >> >> +               fattr.fa_xflags &=3D FS_XFLAGS_MASK;
-> >> >> +
-> >> >
-> >> > This looks odd.
-> >> > old struct size with new flags should be -EINVAL not silently drop t=
-hem
-> >>
-> >> Right, and the GET path should strip any new flags, so old programs
-> >> doing RMW will never see them, correct?
-> >>
-> >
-> > Yes, I think so.
-> >
-> >> >
-> >> >>         error =3D copy_struct_to_user(ufattr, usize, &fattr,
-> >> >>                                     sizeof(struct file_attr), NULL)=
-;
-> >> >>
-> >> >> @@ -460,10 +548,6 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const =
-char __user *, filename,
-> >> >>         if (error)
-> >> >>                 return error;
-> >> >>
-> >> >> -       error =3D file_attr_to_fileattr(&fattr, &fa);
-> >> >> -       if (error)
-> >> >> -               return error;
-> >> >> -
-> >> >>         CLASS(filename_maybe_null, name)(filename, at_flags);
-> >> >>         if (!name && dfd >=3D 0) {
-> >> >>                 CLASS(fd, f)(dfd);
-> >> >> @@ -479,6 +563,30 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const =
-char __user *, filename,
-> >> >>                         return error;
-> >> >>         }
-> >> >>
-> >> >> +       /*
-> >> >> +        * Userspace said "I don't want to change any flag", so be =
-it I guess.
-> >> >> +        * Still check for fileattr support and permissions, also i=
-n case this
-> >> >> +        * is just a probe.
-> >> >> +        */
-> >> >> +       if (usize >=3D FILE_ATTR_SIZE_VER1 && fattr.fa_xflags_rw_ma=
-sk =3D=3D 0) {
-> >> >> +               struct inode *inode =3D d_inode(filepath.dentry);
-> >> >
-> >> >
-> >> > No No this is not what this userspace said!
-> >> >
-> >> > This user space is the same old chattr programs recompiled with a ne=
-w
-> >> > fs.h header file
-> >> > installed.
-> >>
-> >> Oh, right, I did not think about this case, I hope it doesn't break to=
-o
-> >> much of the new code I changed already for v2 :(
-> >>
-> >> > When userspace does not set anything is masks it means "old API"
-> >>
-> >> And so a modern program using masks that passes rw_mask as 0 should be
-> >> also interpreted as "old API", even if it kinda goes against the
-> >> definition of rw_mask right?
-> >
-> > Yes, but it is not a problem to describe this backward compat exception=
-:
-> > When (rw_mask | ro_mask) =3D=3D 0, it means "no mask" "set everything"
-> > but then vfs will not accept new xflags that were not supported in v0
-> > syscall.
->
-> Uhm, since we have no way to know on the GET path if the caller is mask
-> aware or not, on mask aware filesystems and legacy programs recompiled
-> against VER1, file_getattr() will return rw_mask !=3D 0, when the program
-> does RMW, so calling file_setattr() with the old struct which has
-> rw_mask !=3D 0, vfs will think that the caller is mask aware.
->
+> Thus counting this as a bug is very weak argument, thus the whole point
+> of your patch may not even stand.
 
-True. This is a requirement from the design of v1
-that RMW works correctly when the program does not change the masks.
+I agree that slot 1 helps when the newest tree root is damaged. But
+"rescue=all" is also what people use to copy data off after an unclean
+shutdown, and there slot 1 can be worse than the newest roots:
 
-> This causes problems when that legacy program changes the projid, since
-> vfs will see rw_mask =3D PROJID but fsx_xflags will not have PROJID, vfs
-> will clear it even tho the program wanted to set it to some value.
->
+1. The data extents freed by the last committed transaction can already
+   hold data of the transaction that did not commit, while slot 1 still
+   points to them, and ignoredatacsums reads them without an error. In
+   my test, user A deleted 30 of 60 files in the last transaction, then
+   user B wrote and fsynced 60 private (0600) files before a power cut
+   (I used a copy of the disk taken at that point). With
+   "ro,rescue=all", A's deleted files are back, and 30 of A's files,
+   owned by A, contain B's data. Copying the data off with the owners
+   kept hands B's data to A. With the newest roots (v7.3, or
+   "rescue=all,rescue=usebackuproot_0" now), A sees only the 30 current
+   files with A's own data.
 
-Yes, this is a specific issue with PROJID itself, not with the
-entire masks API.
+2. On the same disk, "ro,rescue=usebackuproot" fails with "chunk ...
+   has missing dev extent" (-EUCLEAN), while the newest roots mount
+   without errors. I also have a syzkaller image that mounts with
+   ignorebadroots and usebackuproot (plus some unrelated options) on
+   the parent of c73eb6f72741 and fails with -EIO on that commit: slot 1
+   has a bad checksum, the newest roots load. So slot 1 does not always
+   give a better chance to mount.
 
+I have two suggestions, but in the end it is your call:
 
-> Unless I'm missing something, there is no way for us to know if a caller
-> of file_getattr() is a new mask aware program or just a recompiled legacy
-> program.
+a) "rescue=all" tries the newest roots first and falls back to slot 1
+   only when the mount fails with them (similar to the retry Boris
+   suggested in his review of your series).
 
-Right.
-
->
-> My robot proposed 2 fixes: either don't introduce FS_XFLAG_PROJID
-> (which, eh, not the best imo)
-
-Me neither. It's inconsistent IMO.
-
-But it is inconsistent in that we want to have a way for chattr -p to say w=
-ith
-the new API "set only projid", so we must have the flag, but we
-mostly need it for the mask, we don't really care about its value in
-fsx_flags.
-
-> or add a new flag to be used in at_flags,
-> like AT_FILEATTR_MASKS, which would resolve all our legacy vs non-legacy
-> problems, but it would be in *at*_flags, so doesn't really make sense
-> semantically (but it would work well since file_getattr already rejects
-> unknown at_flags, so it wouldn't cause problems for old programs).
-
-I think this is an overkill as well.
-
-We discussed this before.
-
-Attributes that have X_value like fsx_projid have few types:
-1. 0 means disabled (all existing values incl. projid)
-2. 0 is a valid value but cannot be unset (btime)
-3. 0 is a valid value and NULL/unset is also a valid value
-
-Only for type 3 does can the interpretation of
-(!XFLAG_X && !fsx_X) be considered as an "unset"
-and anyway, this will require support in individual fs.
-
-fileattr_set_prepare() already treats the existing values as:
-fsx_X =3D=3D 0 =3D> clear XFLAG_X
-
-And xfs returns EINVAL for !!(fsx_X) !=3D !!(XFLAGX)
-
-A simple solution is to fix the flag according to val in fileattr_set_prepa=
-re()
-if rw_mask contains this flag:
-
-if (fa->fsx_xflags_rw_mask & FS_XFLAG_PROJID) {
-    /* Possibly legacy chattr -p compiled with new headers unaware of PROJI=
-D */
-    if (fa->fsx_projid =3D=3D 0)
-          fa->fsx_xflags &=3D ~FS_XFLAG_PROJID;
-    else
-          fa->fsx_xflags |=3D FS_XFLAG_PROJID;
-}
-
-Does that leave any problematic corner case?
+b) Keep slot 1 for "rescue=all", and document in btrfs-progs that an
+   older slot can point to reused data blocks, which ignoredatacsums
+   then reads without errors.
 
 Thanks,
-Amir.
+Hengyu

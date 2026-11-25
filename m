@@ -1,59 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795561917;
-	b=t+lhtunxQOjgzR2/PEVxqRhiQ3I9ah79SIG8SkhrG6goHuyfU6Xz6oAzyoVdbpBsO8Lm
-	 oMoFCubVCsTNyOcUR+0VqEGUMql9OwRg00nKaeiHlKMWw0HDhYXKeUxHSVIfYksoEfGCR
-	 ++MDIqdRfYC+DXvzi8GCmBTziOHNPljgW+dcjVLGeKrwSivPb2OCphykV80nLE0g7Grxn
-	 txhjjo9lTGfEY7sTy0eEgCoSq/ATao55v/Q/OPYLmitcGYmmS3ziEECDZGXCn+6aQvItN
-	 iyqRS9W9kcoQVEQhmRFOtSl6BhKOwqSAFdYhwSIAP4xNifVTM1VW7z7su25GM7H0h2Q==
+	t=1795576535;
+	b=4EcxJexXlGMVidpl/+lbaJ5rFR/9hzqgzm+Nb9w2Zex55DOjbAP2c7fc61gDgQqIBnOz
+	 3kcLSdBSl6pvtjedg7vki0lh7d/vhYIAEiu37SWRT0+AlbGNa3cWZOibEBZljOhRIVpuB
+	 CzG1Bu9HB3zOh2mZphHtgUbkn7D57uPQ4TyBQmVTj2c5PzR2Q5x/7MSr5/3qxzK4iLcP+
+	 ptNJrrQ18gOqZvU2DpDpkjcC/GB/IzfxwodlwJme7YMEKI8mFpjmfiyiK4vO/RUrZMENj
+	 uhiIJMmn11wzNemJ9bMVdDuo35SHbitBrt2xTDYdNg3MQVLqzlOFHE/ReopglC5k+6Q==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795561917;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:In-Reply-To;
-	bh=QXxayGQ5zDJmW5qRYFz3W+oneeyzIOwcisMq8eZ3yFw=;
-	b=k28hr6EV57lSpTIvihgUbg8BYmq9zseDnCFeHI4OjSApTURP2yBOzjRB2sxUzBPGJgK6
-	 fWQgytQWMA/PPLzglTapZh3xNgbOQwe7bTUd1f+A1u0AcDP43Q7Qlxcbez9BLQ6FUaPUm
-	 E2WfzrfTK7vFLv4cSd94dq1gyV3eoth5QoB8bdJ5GUTp8FZnDOaVxvA1H+XiSabO3i5aG
-	 liXMWP6NfGujkrsxs1RnG2+A/GSmugR5Eo5bYqPw/KDhrMRHgm5+F1YAFni9Hk2Nb4+jE
-	 W0D/WaPSV+ISWEpetl9qGj/l/CNnIlQKRbqxRu+ibKOFiHCVRdDEelXqVN+QeFO4YLg==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795576535;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
+	 X-Rspamd-Queue-Id;
+	bh=aX44jOjNax2NvPZreDY/BQxIDPTzrADmm5s9Hy9ZiDY=;
+	b=hNuSGx+E6pB15KhXZd2xVUZ4dYgILugT023qUgZp/09LLNFT1uFYkNx/LsFtD5TzlpMZ
+	 lvC4Fl+Gv+gmWoziy4h2p1LKhhRc1/L6ah6fI5dJLSWcfk11mCOMRz4gCSaSB5KASjB7d
+	 zmHq67SoStTbH6O+At0GpyAzXMY46yJhzUbr+grxj2iPX426NEa6n4p1StkBPQCLUtk/Z
+	 DxGCuGBpYejWIKnVxDLKjWG8NnxbOS80Ouq/woyt0k3404GFR1gV3Z3280sUISNYBPVTY
+	 DXqcy6GeCroB2oIA52VDY3SEpIVwAJv4DB9xwAj3PQKtTF1x2V+akuQLX99Ymwpgtfg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W3y88tmj;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IbnvYtle;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IbnvYtle;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9B924606A31E;
-	Tue, 24 Nov 2026 23:11:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9C50D606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:34 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9C50D606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key, unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=W3y88tmj
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id B03D61F000C6;
-	Tue, 24 Nov 2026 23:11:56 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795561917;
-	bh=QXxayGQ5zDJmW5qRYFz3W+oneeyzIOwcisMq8eZ3yFw=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=W3y88tmj+TqN3sWdK2x05TghZqa+qDv9MXmU3/QPFA2AT98lD6/qJZ3933xeNZZUL
-	 mFbgAjZxP3YQfFNGN/E6aq6xHvwq3926/J7i7Ox/gvjyfKu/Jlr/F+6FE6JUy3P4Is
-	 6MdPs7dA0CFFOn8AwQK+1AsBSZLa2HZ0FGDt6VcRVLyFogg1MgzTckmIzazFX4Qe7P
-	 iFc01fx5AJywo5WpZQFnkHf0EnpzryblgxonC0zrk1gaPk9SkFDRC8a32P1yoFcKpj
-	 7HJT1DGrf8SZho5WvdsGUF3oCPgBlo4X/7mshT91A9EhlmNM3yivKhK6IJrlXuYV1U
-	 dUiEIUxoIk7dg==
-Date: Tue, 24 Nov 2026 15:11:55 -0800
-From: Eric Biggers <ebiggers@kernel.org>
-To: Thorsten Blum <blum@kernel.org>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>,
-	Jaegeuk Kim <jaegeuk@kernel.org>, Chao Yu <chao@kernel.org>,
-	Richard Weinberger <richard@nod.at>,
-	Zhihao Cheng <chengzhihao1@huawei.com>,
-	"Theodore Y. Ts'o" <tytso@mit.edu>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org,
-	linux-f2fs-devel@lists.sourceforge.net,
-	linux-mtd@lists.infradead.org, linux-fscrypt@vger.kernel.org
-Subject: Re: [PATCH 0/4] fscrypt: Add FSTR() helper macro and convert
- initializers
-Message-ID: <20261124231155.GB2001@quark>
-References: <20261118002845.574426-6-blum@kernel.org>
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IbnvYtle;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=IbnvYtle
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 9DD052231B
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:32 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795576532; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=aX44jOjNax2NvPZreDY/BQxIDPTzrADmm5s9Hy9ZiDY=;
+	b=IbnvYtle0Q7cD571hYvQWIdOsUzxeE55C/pf7hw4zVL1aSllMW6Tux7MQsOvHbJFEK7VaH
+	+Z1ASiAgwGTt9EnjSloGYMD5hUMmE54cn28uMIasG2HX5nBTqksHYgbWDkZ9BbKK1Sz/Ol
+	MeNT9rw8uWhxRoTAoC5ti9SbWC8h/KQ=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=IbnvYtle
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795576532; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=aX44jOjNax2NvPZreDY/BQxIDPTzrADmm5s9Hy9ZiDY=;
+	b=IbnvYtle0Q7cD571hYvQWIdOsUzxeE55C/pf7hw4zVL1aSllMW6Tux7MQsOvHbJFEK7VaH
+	+Z1ASiAgwGTt9EnjSloGYMD5hUMmE54cn28uMIasG2HX5nBTqksHYgbWDkZ9BbKK1Sz/Ol
+	MeNT9rw8uWhxRoTAoC5ti9SbWC8h/KQ=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 709E11339F
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:31 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id b3N0L9JSBmvBMgAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:31 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/2] btrfs: minor fixes for handle_direct_tree_backref()
+Date: Wed, 25 Nov 2026 13:45:10 +1030
+Message-ID: <cover.1795576387.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -63,31 +85,56 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-In-Reply-To: <20261118002845.574426-6-blum@kernel.org>
+Content-Transfer-Encoding: 8bit
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FROM_HAS_DN(0.00)[];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	ARC_NA(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	RCPT_COUNT_ONE(0.00)[1];
+	DNSWL_BLOCKED(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	RCVD_COUNT_TWO(0.00)[2];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -12.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 9DD052231B
 
-On Wed, Nov 18, 2026 at 01:28:46AM +0100, Thorsten Blum wrote:
-> Similar to QSTR(), add FSTR() to initialize struct fscrypt_str from a
-> NUL-terminated string without specifying its length.
-> 
-> Use the helper for 8 initializers in btrfs, F2FS, and UBIFS, replacing
-> hard-coded lengths and explicit strlen() calls.
-> 
-> Thorsten Blum (4):
->   fscrypt: Add FSTR() helper macro
->   btrfs: Use FSTR() for the "default" name
->   f2fs: Use FSTR() in f2fs_do_make_empty_dir()
->   ubifs: Use FSTR() in ubifs_xattr_{set,get,remove}()
-> 
->  fs/btrfs/inode.c        | 3 +--
->  fs/btrfs/ioctl.c        | 3 +--
->  fs/btrfs/super.c        | 3 +--
->  fs/f2fs/dir.c           | 7 ++-----
->  fs/ubifs/xattr.c        | 6 +++---
->  include/linux/fscrypt.h | 1 +
->  6 files changed, 9 insertions(+), 14 deletions(-)
+The first one is a tree-checker enhancement to catch a tree block whose
+level is already maxed out, but still has a parent that is not itself.
+This should help us to detect such rare corruption early.
 
-Applied to https://git.kernel.org/pub/scm/fs/fscrypt/linux.git/log/?h=for-next
+The second is a similar hardening at runtime, for
+handle_direct_tree_backref(), which is also reported by Sashiko.
 
-- Eric
+Qu Wenruo (2):
+  btrfs: tree-checker: reject parent backref that goes beyond MAX_LEVEL
+  btrfs: backref: reject direct parent if the current level is maxed out
+
+ fs/btrfs/backref.c      | 11 +++++++++++
+ fs/btrfs/tree-checker.c | 24 +++++++++++++++++++++---
+ 2 files changed, 32 insertions(+), 3 deletions(-)
+
+-- 
+2.56.1
+

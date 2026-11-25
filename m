@@ -1,86 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795576538;
-	b=jwqPepXtrjAWRkH83YZw4RzEPXRUhmRZkIJ87lJvQ+/el1AQa8jtk4bw1uxlxAzd02bi
-	 jycMVPAt76kVo0eNpvwhwDSPXhNM0pTSR3/qOuQaU4vmLGip7n+j5whS3dysuBQTndN8m
-	 fsONnB55veGpS2C/gesBexxqvlqYyKKiczX5w4sT1/o24g1OOymoy+4tPlPCCTQdudygS
-	 ISODSHyRH8U8y5+Sy9xzA3tVL8PbkEC0pGIcnOcP+sMjU5dt0iVL7kjutFsiv+odwzwF+
-	 onn6S0BSBcCGVq0SxCrTN/A1eo6NL3GEcAZd2ArRKim90Q/pOYsHKfhFr/pQn3LQFKw==
+	t=1795582006;
+	b=Lbr1XMQVPojUZj/NyBLSO1j19h2DiR9dDKnbh+uhddxTt++KgkOw8tLZChosobS/FzDP
+	 j7Rvjf2FLQauKVmgcscuwE2O1holjsS3Sxt1h3TUKORTNu0XGqDwO9gglSp8/w4zXB501
+	 v9AiJwhYOwqFPB1PQU4c6RQaJ45Wz1n5Oi1HjruVpei6T62baB5ujgVy6RC1AxqvIpm/L
+	 WudrPHSxEGAcSKXfbEDEYeJGXBvwbrX2IqvCgQSqt1XHhfuLo4Fqs/SGLq1asB+/alBMh
+	 2zHmyMmubRj7bnr39TMZ6G5TtEPTLr/CpRXEc22CjSBAEF+XN2/fPa7eIc4zy43SJsA==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795576538;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795582006;
 	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Subject:Date:Message-ID:X-Mailer:In-Reply-To:
-	 References:MIME-Version:Content-Transfer-Encoding:X-Spam-Flag:
-	 X-Spam-Level:X-Spamd-Result:X-Spam-Score;
-	bh=fDtqdSV+V0Cz45SHA3t7E+5erBYHWMOWU0xWtsZG5MM=;
-	b=HpcFIsIrkZiBKPs7hRvQ8PBT6pK5P82tIK7Dk7CvFh9Bg46mUHvJ4u1PKYBmp5F4cEFO
-	 1odxXphkkBBifyoPWfk4gUDA3H5yvIZOpqF2ihsvZOLTUGeeHbdZEPeP6FPzvZfqrOdXr
-	 Wt+lFfGYOPJ1XislZ5r3/q4i4/5NWFkelpIQ6FlhlFkmgWmSLkii22KOKQWLfP1gbCbF3
-	 BjYpyExvGMS0DvrF3e8cbWk7SvHBcMmMubAKeC6oEd6q+YJl/NGrdvVe0mCyOEOTdZdpC
-	 Vz6z4MwKown/UYN1+S855ztHhQfDNC4yRqGC4Mp7Ijp+74dOg6ygfUFQiNhdSPMG5GA==
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spam-Flag:X-Spam-Level:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=pANba8wl/OyGTtYYVOpmrlRZMgySE6JCgtNDwnH0y/k=;
+	b=ZZ8g0xZgbazTxzszk5HTvGL9xAhhpOuaQmeNwdM6wAuXoZPVyP5t1Yo+ywiiCviJpt8l
+	 2/W4hLT8yrCPowtipRne0NAGXcl1Vc/gz1QCmSU2ay4HF1yDukUOtpcXd5yvgBVksLz3H
+	 r8gFtWT7FuZzjtMACHFtHOqTgsS059soFIrjyFXxCUIOfrbdxTx/mlspGCw7r/3Oh6Up+
+	 oLhW+aSzjaRPTKeaExiUyuRjnFxKEPAnJYb9NzS4f2Oq3wf1CV2vCh3OoaIXte1qvOfb8
+	 mIPG+HJ+kDjqkoo9mbTh26Gn61UqelL7UYWwQZK8BgsJSmNlUUfraZbUWB7EDECAw+A==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
 	dmarc=pass header.from=suse.com;
 	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=tQkcgzUJ;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ige+8exp;
-	arc=none smtp.remote-ip=195.135.223.131
-Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNMtE80R;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=M1BTdAXO;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id A3F11606A329
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:37 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org A3F11606A329
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 57460606A31E;
+	Wed, 25 Nov 2026 04:46:45 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 57460606A31E
 Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
 Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=tQkcgzUJ;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ige+8exp
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=UNMtE80R;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=M1BTdAXO
 Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by smtp-out2.suse.de (Postfix) with ESMTPS id DCDDA1FBB6
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:35 +0000 (UTC)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 3840E223A1;
+	Wed, 25 Nov 2026 04:46:42 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795576536; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fDtqdSV+V0Cz45SHA3t7E+5erBYHWMOWU0xWtsZG5MM=;
-	b=tQkcgzUJnJS3qRMRcQi8Sz+lMPtgZWx4FsIcBXVRp2UF3fHESOgAmw3fMr8n3f8xM/3AtI
-	XbdTDaQC4E1A8w6yViLxTvMW4sxxpujuBI4zhPN5Q9iki3npUYq3PMmrli//E11HownX3k
-	VGL3WMt5h6YeHKI2S+W8rBw3q33Pesc=
-Authentication-Results: smtp-out2.suse.de;
+	t=1795582003; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=pANba8wl/OyGTtYYVOpmrlRZMgySE6JCgtNDwnH0y/k=;
+	b=UNMtE80RBUDC9kO2+x0EegfMLyZ5Yp5xQv60znaH2AbtAZrdr/u3vWJjLRuEmsHmlxFqUc
+	QVpgY0DKWvi/6APbX07O/qrSJBoWLIctFePIqYDLJTBJG/+7L2uaLHU5yFrIac4f8ppZYg
+	54lEtH2FO9yINrhGtV0N8EJrIp0Hy70=
+Authentication-Results: smtp-out1.suse.de;
 	none
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795576535; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
-	 mime-version:mime-version:
-	 content-transfer-encoding:content-transfer-encoding:
-	 in-reply-to:in-reply-to:references:references;
-	bh=fDtqdSV+V0Cz45SHA3t7E+5erBYHWMOWU0xWtsZG5MM=;
-	b=ige+8expTwDgDqQCoSgaeHimfMKQTGLzh+GV7+hS1JrHFG4zJpyhuGvvcIqjn9253/E9jm
-	aONsO6OuM6X8f7eh2l7AyCDuvqumP0OleCVuO7i/4N2FDEe1sx9NJChtB8PB4DUG+2KpiF
-	+IccYHHhuDRZnJ2Cb+qJ1QqO+8kTiac=
+	t=1795582002; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=pANba8wl/OyGTtYYVOpmrlRZMgySE6JCgtNDwnH0y/k=;
+	b=M1BTdAXO/3vAaHaPJ2yJL6J4bQgRJhXW1CgSaINIPFMVBITqHjsXY2+/QHTzN8oz4EIWN3
+	/5vNuDQcXh7UNYI3VCEw3Msz7AoZuP6l7fzfR7r6lmt3vgwQhN+Nd9XfGyNhpeJFcB/2ui
+	4VwYHnxxPcQK5M+1Q1jeGSE+577IAeY=
 Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
 	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id C43B41339F
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:34 +0000 (UTC)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 44548134CA;
+	Wed, 25 Nov 2026 04:46:39 +0000 (UTC)
 Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
 	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id b3N0L9JSBmvBMgAAD6G6ig:T3
-	(envelope-from <wqu@suse.com>)
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 03:15:34 +0000
+	id JCM2Iy9oBmuHDAAAD6G6ig
+	(envelope-from <wqu@suse.com>); Wed, 25 Nov 2026 04:46:39 +0000
 From: Qu Wenruo <wqu@suse.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs: backref: reject direct parent if the current level is maxed out
-Date: Wed, 25 Nov 2026 13:45:12 +1030
-Message-ID: <6e3b33445364d7d0f4b95323e51ee2cbbee28aa0.1795576387.git.wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	workflows@vger.kernel.org,
+	linux-doc@vger.kernel.org
+Subject: [PATCH] btrfs: add a maintainer entry profile
+Date: Wed, 25 Nov 2026 15:16:21 +1030
+Message-ID: <0037554862c0d9dce3ddafd1238347e4b16a5079.1795581896.git.wqu@suse.com>
 X-Mailer: git-send-email 2.56.1
-In-Reply-To: <cover.1795576387.git.wqu@suse.com>
-References: <cover.1795576387.git.wqu@suse.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -99,59 +94,218 @@ X-Spamd-Result: default: False [-11.80 / 50.00];
 	MID_CONTAINS_FROM(1.00)[];
 	NEURAL_HAM_LONG(-1.00)[-1.000];
 	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	NEURAL_HAM_SHORT(-0.20)[-0.997];
 	MIME_GOOD(-0.10)[text/plain];
-	RCPT_COUNT_ONE(0.00)[1];
+	MIME_TRACE(0.00)[0:+];
 	RCVD_VIA_SMTP_AUTH(0.00)[];
 	ARC_NA(0.00)[];
 	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,imap1.dmz-prg2.suse.org:helo,sashiko.dev:url];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[sashiko.dev:url,btrfs.readthedocs.io:url,imap1.dmz-prg2.suse.org:helo,suse.com:email,agent.md:url];
 	FROM_EQ_ENVFROM(0.00)[];
 	FROM_HAS_DN(0.00)[];
-	MIME_TRACE(0.00)[0:+];
+	RCPT_COUNT_THREE(0.00)[3];
 	RCVD_COUNT_TWO(0.00)[2];
 	TO_MATCH_ENVRCPT_ALL(0.00)[];
 	TO_DN_NONE(0.00)[];
-	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
 	RCVD_TLS_ALL(0.00)[]
 X-Spam-Score: -11.80
 
-Similar to the check in handle_indirect_tree_backref(), in
-handle_direct_tree_backref() we have a similar problem that if a tree
-block at level 7, searching for level 8 parent can lead to
-out-of-boundary access for btrfs_path structure during tree search.
+This new file is mostly based on my personal preferences, focusing on
+how to improve the human readability in the LLM era.
 
-Fix it by rejecting such backref walk if it's not self-parenting (e.g.
-reloc root).
+The new file should also act as a guide for humans that want to be a
+long term contributor to btrfs.
 
-Link: https://sashiko.dev/#/bug/linux-e90153be-7335-4621-9d72-6316f96cea82
 Signed-off-by: Qu Wenruo <wqu@suse.com>
 ---
- fs/btrfs/backref.c | 11 +++++++++++
- 1 file changed, 11 insertions(+)
+Changelog:
+RFC->v1:
+- Use maintainer entry profile instead of agent.md
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index a0fb90b7a9ed..e8c299e1c010 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -3221,6 +3221,17 @@ static int handle_direct_tree_backref(struct btrfs_backref_cache *cache,
- 		return 0;
- 	}
- 
-+	/*
-+	 * Self-parent already checked, and if we're at MAX_LEVEL -1,
-+	 * there can not be any higher level parent.
-+	 */
-+	if (cur->level >= BTRFS_MAX_LEVEL - 1) {
-+		btrfs_err(cache->fs_info,
-+			  "tree block at %llu level %u can not have any parent",
-+			  cur->bytenr, cur->level);
-+		return -EUCLEAN;
-+	}
+- Further simplfy the content for human readers
+
+---
+ Documentation/process/maintainer-btrfs.rst | 154 +++++++++++++++++++++
+ MAINTAINERS                                |   2 +
+ 2 files changed, 156 insertions(+)
+ create mode 100644 Documentation/process/maintainer-btrfs.rst
+
+diff --git a/Documentation/process/maintainer-btrfs.rst b/Documentation/process/maintainer-btrfs.rst
+new file mode 100644
+index 000000000000..5170dd73e655
+--- /dev/null
++++ b/Documentation/process/maintainer-btrfs.rst
+@@ -0,0 +1,154 @@
++.. SPDX-License-Identifier: GPL-2.0
 +
- 	edge = btrfs_backref_alloc_edge(cache);
- 	if (!edge)
- 		return -ENOMEM;
++Btrfs patch guidelines
++======================
++
++Human readability comes first. A reviewer should be able to understand the
++problem and the fix from the message and code.
++
++Bloated LLM-generated information only wastes precious human time, no matter
++whether it is in a comment or a commit message.
++
++Code comments
++-------------
++
++* **Necessary comment only**
++
++  Comment is for things that are not obvious by itself, e.g. a locking
++  rule, an ordering requirement or a non-trivial reason for a workaround.
++
++  Keep the comment short if possible.
++
++  Don't repeat what the code does.
++
++* **Add kernel-doc only for complex and/or exported functions**
++
++  If the function and parameter names are self-explaining, don't waste words
++  on the kernel-doc.
++
++Commit messages and cover letters
++---------------------------------
++
++* **Keep it simple**
++
++  Use short and simple sentences, avoid long paragraphs.
++
++  Simple patch for simple bug. Don't write a full [BUG] [CAUSE] [FIX] analysis
++  for something like a simple error handling enhancement.
++
++  And we don't care how you or your LLM found the bug unless it's hit in the
++  real world, so don't put such information even after the "---" line.
++
++* **Prefer visual aids over long sentences**
++
++  See "Visual aids" section below.
++
++* **Follow the style of well-known btrfs developers**
++
++  Check ``git log -- fs/btrfs`` for recent examples before drafting.
++
++Visual aids
++-----------
++
++Prefer visual aids like an ASCII chart over words, e.g.:
++
++* A race. Show the race window, do not describe it in prose only.
++* An error handling bug in a function, seen from several call sites.
++* A call chain across layers, where the bug only shows on a certain path.
++
++Example, a race::
++
++   CPU0 (endio)                       CPU1 (fsync)
++   end_bbio_data_write()
++   |-btrfs_folio_clear_writeback()
++   |                                  btrfs_sync_file()
++   |                                  |-filemap_fdatawait_range()
++   |                                  | Returns after writeback finished
++   |                                  |
++   |                                  \-test_and_clear_bit(COW_WRITE_ERROR)
++   |                                    Still 0, skips waiting
++   \-set_bit(COW_WRITE_ERROR)
++     Too late.
++
++Example, an error handling bug, from commit c9583ada8cc4. The callee cleans up
++on error, then the caller cleans up again::
++
++   btrfs_do_readpage()
++   |-submit_extent_page()
++   | \-submit_one_bio()
++   |   \-btrfs_submit_data_bio()
++   |     \-bio_endio()
++   |       Calls end_page_read() and unlock_extent().
++   |
++   \-end_page_read() and unlock_extent()
++     Cleaned up again, the subpage reader count underflows.
++
++Versioned patches
++-----------------
++
++* **Full history**
++
++  Include all versions, not only the changes of the last version.
++
++* **Newest version first**
++
++  E.g.::
++
++    v3:
++    - Rename the helper to xxx()
++    - Add a missing lock in yyy()
++
++    v2:
++    - Fix the build failure on 32-bit
++
++* **Changelog location**
++
++  Put it in the cover letter for a patch series, or after the "---" line for
++  a single patch.
++
++  Don't put it in the commit message body.
++
++Review
++------
++
++* **Follow the review**
++
++  Don't send a patch and just forget it. If you're not a well known developer,
++  it's uncommon to get merged on the first try.
++
++  One will need to communicate with the reviewers to get at least one review
++  from a well known btrfs developer, before getting the patch merged.
++
++* **Check Sashiko**
++
++  Sashiko posts AI-generated review for patches sent to the mailing list. The
++  btrfs list is at https://sashiko.dev/#/?list=org.kernel.vger.linux-btrfs
++
++  If a report is valid, address it in a newer version.
++
++  If a report is obviously wrong, it can be ignored. If the report is wrong but
++  the reason is not obvious, explaining it on the mailing list can help.
++
++Testing
++-------
++
++* **Run full fstests**
++
++  That's the main test suite we use.
++
++* **Testing procedures and results are only for complex patches**
++
++  Simple fixes shouldn't need a long paragraph on how to verify the fix.
++  Those simple fixes should be explained well by the commit message and code.
++
++  Bloated LLM-generated test procedures and results only waste human time.
++
++Before sending a patch
++----------------------
++
++* **Check the development branch**
++
++* **Check the mailing list**
++
++If your bug was found by an LLM, someone else may have already found, or even
++fixed, it.
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 44540a1eb2b8..55f0b3dca133 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -5838,9 +5838,11 @@ S:	Maintained
+ W:	https://btrfs.readthedocs.io
+ Q:	https://patchwork.kernel.org/project/linux-btrfs/list/
+ C:	irc://irc.libera.chat/btrfs
++P:	Documentation/process/maintainer-btrfs.rst
+ T:	git https://github.com/btrfs/linux.git for-next
+ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+ F:	Documentation/filesystems/btrfs.rst
++F:	Documentation/process/maintainer-btrfs.rst
+ F:	fs/btrfs/
+ F:	include/linux/btrfs*
+ F:	include/trace/events/btrfs.h
 -- 
 2.56.1
 

@@ -1,58 +1,116 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=103.168.172.157
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795642138;
-	b=KXuTZVOnQRQASf++fZBmB3l6KKArXMG0sei62fkCqH97JmhgXM+gaWdqqYXkHPE5b4O4
-	 suY+svB4DucLW9ugVpFCjx64zNQ0ziC1TbDaF8KgkUM1v94dRljbYZDGjhLgoTwekIgmz
-	 j841L5dT3zZXgiW1oxVLKQ6DQIhtIBc7ITwVdrm9cPLBdv2/O/oAs2Uo8nZVLVGlb9Jaw
-	 X1IlZreVf5pAmONiTvgFPxHv8il9aLPBTtAeAVg4YzN/Q9cHGePACnTmVbcs5Gx3Z6NNF
-	 z2UmgA+irHsib6LSrFe3E880Krf5cVwmJv3ilGeiycJl0ORwF08M1jKCIp1oje6fW5Q==
+	t=1795642471;
+	b=n2F70LQnl5TuGlid9MS/eBDnvrRyGzFmnhird1vJr9Hq+BpCKJTupvWITKZfan8xZHhw
+	 UAiXxEVxDKD1UIWFSRKGU7zTkazJAzoxiMVcmY6Lpy9gYXzlOmN7CESM9+a7vWraW/Yr0
+	 se1BqscDl0iCTGwaLzdsm5o2J2W/NsjI8soiDXW/XtzcwVNR6evEXvcKvK8AJR7WQemh5
+	 aA2S2gQIE2Mc0uWY03KwfnolOVJ/R9JC2sddydwz48Btm1VwNaG6syOYSyCgjJMNFCVAE
+	 8lNXzHFPM5gjPgng/oT9jc7TsqES4lOIZZDDY7X5ti6tCuPIAnBaVA1fi0/Z9eG6icg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795642138;
-	h=Received:DKIM-Signature:From:To:Cc:Subject:Date:Message-ID:X-Mailer:
-	 In-Reply-To:References:MIME-Version:Content-Transfer-Encoding;
-	bh=28BuPQQ4mw5Zm0fhQO8nOpkI5A+60ixyODEHYhwVeCE=;
-	b=uvQ4T89YGVhFJoO5bkHMXpfILfFGPR4PpwZN7Gg2bH71IxLLb2YluHywdmaXZIMSKUA4
-	 +lCRVkDUckUopRcNtaWzEKx7ncaP8kSctdCqMBdPYZA39mqQ2GdIFBf7nMNd3cjEHpdHq
-	 8gy0yYhbr5yoLSoSXVGATUQI/IMMIFm7XcHFYdlSTM4bUMvwZAe/KE3UUYKewuFtDBEt1
-	 bCmANh0IxcC1t3HDP6SDWqXlZPfx/cScnvsoAdOCEn1MeDpp8FIN6ZaP+OfQp774jnZzr
-	 OvOUk5J7BifUK1xNlCbfsoDp++O/tpiL/CIqg/O7FrehtN8dv6qwLj0jTchxLkmnYXQ==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795642471;
+	h=DMARC-Filter:Received:Received:DKIM-Signature:DKIM-Signature:
+	 X-DKIM2-Info:DKIM2-Signature:X-DKIM2-Info:Message-Instance:
+	 X-ME-Sender:X-ME-Received:X-ME-Proxy-Cause:X-ME-Proxy:Feedback-ID:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding;
+	bh=h2DKVysBU1ilVpAZ73KX/xWclaZ2a6CYyTzi8BOmvs4=;
+	b=my0KzGBSuwCLAacD0l194XI7Wdo9IzDxJ2h8vOPlT5ag920KvHy/FM3fnfIN6NRMKbBh
+	 PmkSuTqrCuNMbyVgY8fpB0TbI4URXFq/sVNzWa/zEBNGWtNexxqfSqOfvtk5W6Rnu8uJe
+	 tzpyxJFJ/AXugiXzePmdgA6bQ06ewkrkf0uPP7R8q/7e1inWeGJrTHD/hpVKuE4f07mMO
+	 W52awBeNLWDA1V2j1wlF3lNWn9CzxMh77wqBMCUZVebDIiPfFl4+ah960X8zuYgg1vrYe
+	 KyVPlZCbA9xozUBH6Ld9qLJj4rswdvSdpPGe1ZmCwku/j3xb5iEnCs2LrtwVAt8ZnsA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b="GAON0J/Y";
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=none header.from=bur.io;
+	spf=pass smtp.mailfrom=bur.io;
+	dkim=pass header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=QbhloMT7;
+	dkim=pass header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=ukBCHhSK;
+	arc=none smtp.remote-ip=103.168.172.157
+Received: from fhigh-a6-smtp.messagingengine.com (fhigh-a6-smtp.messagingengine.com [103.168.172.157])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id EB67D60A2607;
-	Wed, 25 Nov 2026 21:28:57 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id CDD41606A31E
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 21:34:30 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org CDD41606A31E
+Authentication-Results: smtp.subspace.kernel.org; dmarc=none (p=none dis=none) header.from=bur.io
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=bur.io
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=GAON0J/Y
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 4286D1F000E1;
-	Wed, 25 Nov 2026 21:28:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795642137;
-	bh=28BuPQQ4mw5Zm0fhQO8nOpkI5A+60ixyODEHYhwVeCE=;
-	h=From:To:Cc:Subject:Date:In-Reply-To:References;
-	b=GAON0J/YGPvVSaAZaskF1naYTzSwW/fG+qr7FL30zz1kYsTEaG4tcSF+hPCzUonyk
-	 9KGPckqjLnOnUyhDMWj55z3edpBsH7JRHI3k/Q6rtcOfgdrCxJxHIMDboDMepeQRHU
-	 IHjRhUWyAxwreSmwklwxo+JeH7DWE3k7XBSgWAT+QCysQUfsuN/CIeOnMuFhPE/5x/
-	 ANfUeiE/Xl9HGpR1EnX8tRvhTLItLSfaO/jrhP2qP80owX12vfzfrFr2nP09Jwb3gF
-	 U2uC4lgnEg3qna+L8qdk1pD5NEgfNCl5e4QsX/GCLMh3vD+rv3LAqPVowkzAXICGFL
-	 dS5mpk9E2wbRg==
-From: Zorro Lang <zlang@kernel.org>
-To: fstests@vger.kernel.org
-Cc: Andrey Albershteyn <aalbersh@redhat.com>,
-	cem@kernel.org,
-	Dave Chinner <david@fromorbit.com>,
-	linux-xfs@vger.kernel.org,
-	linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org
-Subject: [PATCH 6/6] doc: document the test hooks
-Date: Thu, 26 Nov 2026 05:28:23 +0800
-Message-ID: <20261125212823.3389430-7-zlang@kernel.org>
+	dkim=pass (2048-bit key, unprotected) header.d=bur.io header.i=@bur.io header.a=rsa-sha256 header.s=fm1 header.b=QbhloMT7;
+	dkim=pass (2048-bit key, unprotected) header.d=messagingengine.com header.i=@messagingengine.com header.a=rsa-sha256 header.s=fm3 header.b=ukBCHhSK
+Received: from phl-compute-05.internal (phl-compute-05.internal [10.202.2.45])
+	by mailfhigh.phl.internal (Postfix) with ESMTP id DA2471400368
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2026 16:34:29 -0500 (EST)
+Received: from phl-frontend-03 ([10.202.2.162])
+  by phl-compute-05.internal (MEProxy); Wed, 25 Nov 2026 16:34:29 -0500
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=bur.io; h=cc
+	:content-transfer-encoding:content-type:date:date:from:from
+	:in-reply-to:message-id:mime-version:reply-to:subject:subject:to
+	:to; s=fm1; t=1795642469; x=1795728869; bh=h2DKVysBU1ilVpAZ73KX/
+	xWclaZ2a6CYyTzi8BOmvs4=; b=QbhloMT7lfeCw1RRwD+ESk6dtQ8FNSTFS9Y+q
+	jIB/6zRGcbdE7L6QCMCqNFCcXJa91YIJ9bRi5XuaTHFPVoFRgx5R8qJrfLhsa+8H
+	Qkhz0/6kHVi6WPolhGVu1rVu5u5w+Nbn8oISz9EQDZxG68ekBQYmsZQkhLBUNQmf
+	nrW0IHsZ9hGY9mU3xKVMsSHsSjchmlAKddOM4jEVaMW6xVr1bQnW2WrHsheMSuIh
+	a0x4qTBDN0bMKQzR1fNyj/gzlNRinzsY81LToD82FH/vmJYcHOp+qKiSZaLSuiKL
+	yW/kM5+YORClDve4y5QuGKitobK6QSA0+89GRnz9nIdvFcBWw==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=
+	messagingengine.com; h=cc:content-transfer-encoding:content-type
+	:date:date:feedback-id:feedback-id:from:from:in-reply-to
+	:message-id:mime-version:reply-to:subject:subject:to:to
+	:x-me-proxy:x-me-sender:x-me-sender:x-sasl-enc; s=fm3; t=
+	1795642469; x=1795728869; bh=h2DKVysBU1ilVpAZ73KX/xWclaZ2a6CYyTz
+	i8BOmvs4=; b=ukBCHhSK9NAzcuFJGk+CeX2Q7vZPiqzWDENm53J3sb/NJ/JBnJh
+	1LqEbOGOw1qsZfssotwa78X5XkksfqGRo+6G7UHnwMVHyjdrXK+ReBf4i+9WyrD4
+	vjyS1xv9YUxbrn3cAdj9QEShT/ZBWocAbkvb5HUXAgrzyE0FXuyf6jx7rbXUH9jY
+	pPvlFW7P2XIyFNDZgJnGkleXtqKLvGwWyYgPSM+GIfj/x/A6qeCNO5BYyPh7QZFA
+	oOTJN7iqNps5mZLs/6er0NmxRknl4sBhr9giXsSOlvFlJtnn7x580fr+2M3BInP4
+	PyhWnrt/8sqO0LR74DuyW+oxK+05ILbb3wg==
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=sign d=bur.io a=rsa-sha256;
+DKIM2-Signature: i=1; m=1; t=1795642469; d=bur.io;
+	mf=PGJvcmlzQGJ1ci5pbz4=;
+	rt=PGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZz4=;
+	s=fm1:rsa-sha256:G3ST0jMsBVFYjYWUR7sT3VRzU37S8r3s7EOx3emQjbRHNBO
+	5RSsXIwkzqBhqOfKko4Zi5vsl5MwFInHeD0o5RHgTR8xq3IkfJBttHhFdo5a0IOk
+	9CkZMWPE2RqT7nnN24iJTrIVPeX5CSes+rJ1W9dcKQWCF/83RjmcTHrOrwyu96WZ
+	rqZ/+xqcmAt3z6I2a9DR0zTZH/oEyhsWYmmL+ktMCya1nnupbHsD0zWGX952ZWu5
+	67MfxyxPnOx+KzvBsWB7OrrXxStA2xa4tpgU/DaISrGpY9p/q2U6tt8PO1nqbv7n
+	AJYato/wyP6uAWoClToNWtfokAm5Tr37uc7+HkA==;
+X-DKIM2-Info: draft=ietf-dkim-dkim2-spec-09;
+	repo=github.com/dkim2wg/interop; date=2026-11-03; sw=lmtpprox;
+	action=mi-m=1; hc=8;
+	hn=content-transfer-encoding,date,feedback-id,from,message-id,
+	mime-version,subject,to;
+Message-Instance: m=1; h=sha256:fbLU8Ebg5R8wuEDfRc5UfTNHELIz2QDiLMuPMURmx1Q=:Mhgftxkc0pWvTPbNg9DonpgmhH5Hjih5ww4E1UAqBjM=;
+X-ME-Sender: <xms:ZVQHa0Gldlkjiu6pchjMzN3gU_hsxYFh9LWydL6QdmL7CncdMPcjzQ>
+    <xme:ZVQHazVifD6nFeYQ41sfByZFmfy8e5iwEYcmLvZf3VkY2XAjEWZYAWBpomcwxOAxd
+    esNT_TqlDzei32hAHAK_eB8WNelIaBpk36WaX4XYHl1nxqS-sb0xWwp>
+X-ME-Received: <xmr:ZVQHa7xkVg6O53rSr4eWoP6pUzf9BBF0WRgpr3zK4-66y8kcDviq7h1R>
+X-ME-Proxy-Cause: dmFkZTFmh897UYxtCTMBLIJEkp7jF1qo733+rRj424OlnFni+YTcawxja7Jz0LVUQp9u42
+    M5afu1jowsA4kQWXr2k8Z3eHbPSyHkpZCIyj3cNNULv10aDNWX7hi9tqH94QYPQK9y25eV
+    J3SbSGUPm8TwGl5GLMG4krudBtUkETFCnD8cFUhm+eYZOZfTmG+IiCzqjZt8VCXf6nDcfU
+    aWRkxTWd428r3WQvV4/K/70UGMVp/8gQ+305WH7gHaPgaNJUs/XCeLyhiW0UR2PCIFGZ63
+    65f/YdOp/DAyfLGzdjlgpxiwUhN5iZV1dtIWHFHQtDLyzfSafrS6PdCqDW2S9epztVnmQH
+    8Xyp7HyORGlt1gXrTQqngHr8/bOhC1UrvyIcPLokD1XoAYKI1Tgtmj1L1AOHME1heoRkQe
+    f5yx4OgICRHxhl2Yi/QoI9lNxzAvL3ES9A/t8t2XY6US2TyWznWzWEA9riu9RBEFB3ovWW
+    PF+B2tjtw6J9qbJq8W4PrYETGyt17rAylMU8+BslmmOiQlGNpEiKwhuq/9M2dnrnVtotdZ
+    NYeS//brtec2Y5KGMdyg2I7/+Ymb48/8X+zK0UErQduYC9o1Zj9GNUA3Z/SpP1Ag9mfvii
+    reb+CsAJP04ucwS4e02nCQ6RDCaI3ObxgDPYAP4ImL+OLq57hmcVv1hWN8yw
+X-ME-Proxy: <xmx:ZVQHaxMVdMZUQgIs98RqiTvkCpbkXC1o34KU-LP2kZ9eNj-LPxUxFA>
+    <xmx:ZVQHa86Ippvs6cAhmI_g7QxQkDgyG_45wavCBCDCYOTYtiIOD0vA9w>
+    <xmx:ZVQHayM_UURM2kagos1OslgLH62oHBDD4S4XQocT03R6hrSyHcN0-A>
+    <xmx:ZVQHa6kGKn8Jq4JPw7piZA8DLFkV_zcOWXrwhei_NIiHBv-ER452pw>
+    <xmx:ZVQHayGR_UAu5WI-p87-50UFUf6_6bNZDqcWE8pnKukOUSEed5-CJB_z>
+Feedback-ID: i083147f8:Fastmail
+Received: by mail.messagingengine.com (Postfix) with ESMTPA; Wed,
+ 25 Nov 2026 16:34:29 -0500 (EST)
+From: Boris Burkov <boris@bur.io>
+To: linux-btrfs@vger.kernel.org,
+	kernel-team@fb.com
+Subject: [PATCH 0/4] btrfs: scrub: support low bwlimits
+Date: Wed, 25 Nov 2026 13:34:01 -0800
+Message-ID: <cover.1795642270.git.boris@bur.io>
 X-Mailer: git-send-email 2.56.0
-In-Reply-To: <20261125212823.3389430-1-zlang@kernel.org>
-References: <20261125212823.3389430-1-zlang@kernel.org>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -64,177 +122,23 @@ Precedence: list
 MIME-Version: 1.0
 Content-Transfer-Encoding: 8bit
 
-Add README.hooks describing the hook events, modes, the context hooks
-receive and the limitations, with examples for both modes.
+Scrub currently bottoms out at 512KiB/s bwlimit, and below that the logic
+doesn't make much sense. But if we support it naively, we ruin high speed
+scrubbing and add unacceptably long uninterruptible sleeps.
 
-Signed-off-by: Zorro Lang <zlang@kernel.org>
----
- README.hooks | 156 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 156 insertions(+)
- create mode 100644 README.hooks
+Therefore, to support arbitrarily slow scrubs, we must also spruce up some of
+the sleeping / pausing / cancelling logic.
 
-diff --git a/README.hooks b/README.hooks
-new file mode 100644
-index 00000000..66cd4ddd
---- /dev/null
-+++ b/README.hooks
-@@ -0,0 +1,156 @@
-+Hooks
-+=====
-+
-+Test hooks let you customize a test run without modifying fstests.  Each
-+hook is a script or executable that 'check' runs at specific points during
-+a test.  Register hooks with the --hook-pre-test, --hook-post-test, and
-+--hook-post-result options:
-+
-+        --hook-pre-test path=/path/to/script[,mode=in|out][,match=<glob>]...
-+
-+Each option can be repeated; hooks run in the order given.  Without a
-+match pattern, a hook runs for every test; otherwise, it runs only when
-+the test name (e.g. generic/482) matches at least one of the glob patterns.
-+Match patterns cannot contain whitespace or commas.
-+
-+Note: Relative paths are resolved from the fstests root directory ($here).
-+      Tilde (~) expansion is not supported; use $HOME or an absolute path.
-+
-+
-+Events
-+------
-+
-+pre-test
-+        Runs right before each test starts (once per iteration when using
-+        -i or -L).
-+
-+post-test
-+        Runs right after each test finishes, before golden output
-+        comparison, passing the test's exit code.
-+
-+post-result
-+        Runs once each test's final result (pass/fail/notrun/expunge) is
-+        determined, passing the result and runtime.  It runs even when no
-+        report format (-R) is requested.
-+
-+
-+Modes
-+-----
-+
-+mode=in (default)
-+        The script is sourced in a subshell and has full access to the
-+        test environment (devices, mount points, options, and fstests
-+        helpers).  It should define hook_execute(); scripts without it
-+        are silently skipped.
-+
-+mode=out
-+        The hook runs as a standalone executable (written in any
-+        language).  It has no access to the test shell environment or
-+        fstests helpers; instead, 'check' passes the hook context via
-+        arguments and environment variables.  Requires env(1), and the
-+        hook file must be executable.
-+
-+
-+Hook context
-+------------
-+
-+Both modes run hooks with the same basic context:
-+
-+        $1              test name (e.g. generic/482)
-+        $2              status: test exit code (post-test), final result
-+                        such as pass/fail/notrun/expunge (post-result),
-+                        or invalid (pre-test)
-+        HOOK_EVENT      the event name (pre-test, post-test, post-result)
-+        runtime         test runtime in seconds (post-result only; invalid
-+                        for pre-test and post-test)
-+        cwd             $here (the fstests root directory)
-+        stdin           /dev/null
-+        stdout/stderr   appended to $seqres.hooks
-+
-+In addition, mode=out hooks receive the following 'check' variables in
-+their environment (mode=in hooks already inherit them).  Unconfigured
-+variables may be empty:
-+
-+        FSTYP section iters
-+        TEST_DEV TEST_DIR SCRATCH_DEV SCRATCH_MNT
-+        MKFS_OPTIONS MOUNT_OPTIONS
-+        RESULT_BASE REPORT_DIR seqres seqnum
-+
-+Hook failures are logged to $seqres.hooks and never affect the test result.
-+
-+
-+Examples
-+--------
-+
-+Trace a single test across multiple iterations with trace-cmd (mode=in):
-+
-+        $ mkdir -p $HOME/wrapper
-+        $ cat > $HOME/wrapper/trace-start <<'EOF'
-+        hook_execute()
-+        {
-+                trace-cmd start -b 8192 -e xfs\* -e xlog\*
-+        }
-+        EOF
-+
-+        $ cd /path/to/xfstests/
-+        $ mkdir -p hooks
-+        $ cat > hooks/trace-stop <<'EOF'
-+        hook_execute()
-+        {
-+                trace-cmd extract -o $seqres.trace.dat
-+                trace-cmd reset
-+                trace-cmd report -i $seqres.trace.dat > $seqres.trace
-+        }
-+        EOF
-+
-+        $ ./check --hook-pre-test path=$HOME/wrapper/trace-start,match=generic/482 \
-+                  --hook-post-test path=hooks/trace-stop,match=generic/482 \
-+                  -i 100 generic/482
-+
-+Report each test result to an external framework (mode=out):
-+
-+        $ mkdir -p /opt/fstests-hooks
-+        $ cat > /opt/fstests-hooks/report.sh <<'EOF'
-+        #!/bin/bash
-+        case "$2" in
-+        pass)    outcome=pass ;;
-+        fail)    outcome=fail ;;
-+        notrun)  outcome=skip ;;
-+        *)       outcome=error ;;
-+        esac
-+        my-reporter --name "/$section/$1" --result "$outcome" --runtime "$runtime"
-+        EOF
-+        $ chmod +x /opt/fstests-hooks/report.sh
-+        $ ./check --hook-post-result path=/opt/fstests-hooks/report.sh,mode=out \
-+                  -g quick
-+
-+Keep a hook inside the fstests tree and use a relative path (resolved
-+from the fstests root directory):
-+
-+        $ cd /path/to/xfstests/
-+        $ mkdir -p hooks
-+        $ cat > myhooks/pre-greet.sh <<'EOF'
-+        hook_execute()
-+        {
-+                echo "running $1"
-+        }
-+        EOF
-+        $ chmod +x hooks/pre-greet.sh
-+        $ ./check --hook-pre-test path=hooks/pre-greet.sh generic/001
-+
-+Run a pair of out-of-process hooks on every xfs test with a glob match,
-+repeating the same option (hooks run in the order given):
-+
-+        $ cd /path/to/xfstests/
-+        $ cat > hooks1/notify.sh <<'EOF'
-+        #!/bin/bash
-+        echo "$1 finished with status $2" | logger -t fstests
-+        EOF
-+        $ cat > hooks2/save-log.sh <<'EOF'
-+        #!/bin/bash
-+        cp "$seqres.full" /var/log/fstests/"$seqnum".full
-+        EOF
-+        $ chmod +x hooks1/notify.sh hooks2/save-log.sh
-+        $ ./check --hook-post-test path=hooks1/notify.sh,mode=out,match=xfs/0* \
-+                  --hook-post-test path=hooks2/save-log.sh,mode=out \
-+                  -g auto
+Boris Burkov (4):
+  btrfs: scrub: release the commit root paths before pausing
+  btrfs: scrub: cancellable pause during throttle sleep
+  btrfs: scrub: handle bwlimit below 512KiB
+  btrfs: scrub: size read bios to the bwlimit 10ms burst
+
+ fs/btrfs/scrub.c | 192 +++++++++++++++++++++++++++++------------------
+ fs/btrfs/sysfs.c |   2 +
+ 2 files changed, 121 insertions(+), 73 deletions(-)
+
 -- 
 2.56.0
 

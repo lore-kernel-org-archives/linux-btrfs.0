@@ -1,47 +1,47 @@
 Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795726666;
-	b=ZPZW3Zc0C0aynZ1Pdy0fVgMUr8e7XskuN5HXQlwqR0qjJzk2scB+DBwiDqe/pHrAFHgA
-	 kMsDNnfC84j+7fovGBS8f91861XLM8thtLb/bnx8O75hYymU1GX5dgPe4LIhu1VC4Z4zK
-	 OGMfj25rD/iVbGdBcCo64BbeFt/ltnfERp/guWm0nrqC570R+p0FzcPSSOy7dpXOn8XlH
-	 IOd82hJCOTkIaaoqwXbtdIh3yIyTEK6uI+CZqFzj5oslDOOmRwUtRzwfDjTY2Th9VG4tB
-	 iEzyu1HATLbG4TtIj5DLfnPqZ+PbERJGnDixzJ77nsBUwQS5e1ho3cdFPMUL2u5WTmg==
+	t=1795727401;
+	b=rnbc+jxTvZzPYb/3DwNNDepbjtPLAn8S/P7IJ0n2x+COrmXIR4yvWedrvZogkt8Qt4YT
+	 1G4fvuC169iX/+LTzZeSSDAHDk/CJ5cRGrzlQ2VeTWVLSGs0UK/OcjO8EETSdLe49rRy0
+	 5wQewvC6OWrjkL1n1qwKkE1tKs4kS3fUqFEbHxUwLK/YPaC6UJTbdTYVYK3Y6nti1v5sP
+	 Kb1yxhgvDwBmbpZpy0cMHGTTOU0JbXWCl12OxOBPc6nks1SuLJvzMOfAO3C0xtqz1R9n3
+	 yqMvys7XYEHlYSbzygBz8gccUw6kiflxX0GuLhOWhYsDVh3tMkw6FuxWQ1g0f6XWYLw==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795726666;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795727401;
 	h=Received:DKIM-Signature:Message-ID:Date:MIME-Version:User-Agent:
 	 Subject:To:Cc:References:Content-Language:From:Organization:
 	 In-Reply-To:Content-Type:Content-Transfer-Encoding;
-	bh=sQVnHhUBY2ZBHU09cV/ad4kzpuqgQ8nZFOAeg4gmnso=;
-	b=TftGbiRalTmR/FI0qm3wWdEd58tgF0cRGEoypQ2lqccFAoqOtwTodzCtISE8xC4BeUGO
-	 gv/m9nRVHUMMtZBW4FnrsHQWwBNOOA5tNkS6G6f+0I5y3pM8znmPizNXyQK8K6KFR4SBh
-	 oME4QSjVDwPLskunG/na/HUSdzJH2TQ004SZPiN5zOI/bAbhy+JLNOFaY4yWNwXSlKMZp
-	 UyuyqR3eDmmmEQY6prK8Ooj6PEqPh8JZhZNed/ofCaNtHPGDxsXpNP+KR7TM807pJCSMh
-	 IH2X/bG9X2M6anQuvMzxX6yoFlzOHY+48s0Ng0FLVJW8ENWoXflMJci7I3EIGND4XdQ==
+	bh=z+X5hSShmDdNyCInHh2t7NHUTRnUnKZzS9JxOXOuE1c=;
+	b=evo9y8VttU41uWm7d4CUwUo8wscImy6rnSHtDDKnw5J/1yX+xLNffPwam8kZtrK5SbH6
+	 br2rsVxhgd7wF1Aqo/2pA/cH6o90UQMt4YPOhW/lOoUC2gCV2KXFsZ7C9cdTkKKxvCD5P
+	 j/wA5SW+pUYRkLuGJzu/n7OMI9DKydybsrS1c9f+8iZKE9QDzMRzaMzg6KjGTd1LWOQ2E
+	 /iseK3nJeOas+C+pLXZXoH+iG1/Qvj+ZjAz9vkPuQb5M+8bTIiCYDRjM82oD+Ve9cNL4y
+	 s2WxVhkFt1vv9uPliYlHBEBC5izVdkwlyiW1DoOd8jsSD8YqLFNgksvNiYF/MvJfXpA==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nvdutCql;
+	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Yefxk46c;
 	arc=none smtp.remote-ip=100.103.45.18
 Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 5567F606A31E
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2026 20:57:46 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 58C3E606A323
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2026 21:10:01 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=nvdutCql
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 9E2E71F00896;
-	Thu, 26 Nov 2026 20:57:44 +0000 (UTC)
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=Yefxk46c
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 853C51F00896;
+	Thu, 26 Nov 2026 21:09:59 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795726665;
-	bh=sQVnHhUBY2ZBHU09cV/ad4kzpuqgQ8nZFOAeg4gmnso=;
+	s=k20260515; t=1795727400;
+	bh=z+X5hSShmDdNyCInHh2t7NHUTRnUnKZzS9JxOXOuE1c=;
 	h=Date:Subject:To:Cc:References:From:In-Reply-To;
-	b=nvdutCqlUamUXTNWsN0t/rJoE3FSJe86H87m+s//cRoT+b+tv9K9cVKXF7M2zxJdR
-	 UyYS79RZtDIkHG9ucsQgKcy7zrSWcbPO46m+rExRaGSDshnuVtuI3CNgevBPNZLS9B
-	 ZkaksVyrit81DGxeJj8Dl1P6dFPl1kP1x641eDIuuJjIoS0doOZvqGHWQGHZQ3tlGR
-	 jRvFAIVoUboFuORjY4idsyt8VPf+X6XededcP70jvKETJZqM/SJMkH1NdejgN3AjXP
-	 9rebFq+mB4YH/VWsLfimGQ52MA9JhMzR7S4+Fhxe9mWcLxKqqUjU5LDfIs4cMIJTqZ
-	 NcSjqAtNNEE0Q==
-Message-ID: <c0d16f78-3bb3-4ddf-9509-c79a46127dc2@kernel.org>
-Date: Fri, 27 Nov 2026 05:57:43 +0900
+	b=Yefxk46cW+1irRhw/UOWn0RoLOYRUu12TbWj07+KGAD/NxMsvFmzGHOAp6axhTUms
+	 k6lb+oyAzT+ENVUj7otLd3f9v/m1X8tOFefQm5Dw/qdyJZZiJc/wEjBF7EFfeuosHk
+	 u2bTKFdo0WGn5fVAxGw6bJOardbSXn5e2DyTagmbHx1m390porwMcUx/yYuMgLjTd+
+	 fhL1+e9ICfZqRaoyhGZ+NKtM1xtQf3VAA4mK2Vbz+kYrdz/xP+4kfaPHuuLNiHY0VZ
+	 6/kYMrVR5WrjS2hDd2h04whZwOyflB1EPLMXv9Tjfm2YnuYlbKiG+YUe4ZupP/vMeK
+	 AP5JHfQSVAWrw==
+Message-ID: <a70e0150-abae-4545-95bd-e9bf7f594458@kernel.org>
+Date: Fri, 27 Nov 2026 06:09:58 +0900
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -52,257 +52,152 @@ List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
 User-Agent: Mozilla Thunderbird
-Subject: Re: [PATCH v2 4/4] btrfs-progs: check: detect and repair exhausted
- zoned active zones
+Subject: Re: [PATCH 1/5] btrfs: zoned: search for hinted block-group in
+ prepare_allocation_zoned
 To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
  linux-btrfs@vger.kernel.org
-Cc: Qu Wenruo <wqu@suse.com>, Naohiro Aota <naohiro.aota@wdc.com>,
- David Sterba <dsterba@suse.com>, Dongjiang Zhu <zhudongjiang@fygo.io>,
- Mark Korenberg <socketpair@gmail.com>
-References: <20261126094815.479691-1-johannes.thumshirn@wdc.com>
- <20261126094815.479691-5-johannes.thumshirn@wdc.com>
+Cc: Christoph Hellwig <hch@lst.de>, Hans Holmberg <Hans.Holmberg@wdc.com>,
+ Naohiro Aota <naohiro.aota@wdc.com>, Josef Bacik <josef@toxicpanda.com>,
+ Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
+ Boris Burkov <boris@bur.io>, Qu Wenruo <wqu@suse.com>,
+ Wilfred Mallawa <wilfred.opensource@gmail.com>
+References: <20261126132820.570379-1-johannes.thumshirn@wdc.com>
+ <20261126132820.570379-2-johannes.thumshirn@wdc.com>
 Content-Language: en-US
 From: Damien Le Moal <dlemoal@kernel.org>
 Organization: Western Digital Research
-In-Reply-To: <20261126094815.479691-5-johannes.thumshirn@wdc.com>
+In-Reply-To: <20261126132820.570379-2-johannes.thumshirn@wdc.com>
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 7bit
 
-On 11/26/26 18:48, Johannes Thumshirn wrote:
-> Kernels before "btrfs: zoned: don't release active zone reservations
-> for conventional zones" can leave all active zones to data. The first
-> transaction commit after mount then can't activate a metadata
-> block-group and aborts with -EAGAIN.
+On 11/26/26 22:28, Johannes Thumshirn wrote:
+> When searching for a block-group to place to allocate data extents from,
+> honor the hint passed in if the hint falls within the range of an
+> already active block-group.
 > 
-> Report when the active zones in use exceed the kernel's limit minus its
-> metadata reservation. With --repair, finish the fullest single profile
-> data zones until it fits again, plus one zone for the relocation
-> block-group.
+> If the hint doesn't fall into an active block-group or the hinted
+> block-group does not have enough available space left, fall back to an
+> avtive block-group that has enough space left for the allocation.
 > 
 > Signed-off-by: Johannes Thumshirn <johannes.thumshirn@wdc.com>
 > ---
->  check/main.c | 190 +++++++++++++++++++++++++++++++++++++++++++++++++++
->  1 file changed, 190 insertions(+)
+>  fs/btrfs/extent-tree.c       | 41 ++++++++++++++++++++++++++++++------
+>  include/trace/events/btrfs.h | 29 +++++++++++++++++++++++++
+>  2 files changed, 64 insertions(+), 6 deletions(-)
 > 
-> diff --git a/check/main.c b/check/main.c
-> index 717d576f..fe209f22 100644
-> --- a/check/main.c
-> +++ b/check/main.c
-> @@ -9203,6 +9203,191 @@ static int check_zoned_active_zones(void)
->  
->  	return ret;
->  }
-> +
-> +static bool zone_is_active(const struct blk_zone *zone)
-> +{
-> +	if (zone->type == BLK_ZONE_TYPE_CONVENTIONAL)
-> +		return false;
-> +
-> +	switch (zone->cond) {
-> +	case BLK_ZONE_COND_IMP_OPEN:
-> +	case BLK_ZONE_COND_EXP_OPEN:
-> +	case BLK_ZONE_COND_CLOSED:
-> +	case BLK_ZONE_COND_ACTIVE:
-> +		return true;
-> +	default:
-> +		return false;
-> +	}
-> +}
-> +
-> +struct finish_candidate {
-> +	u32 zno;
-> +	u64 left;
-> +};
-> +
-> +static int cmp_finish_candidate(const void *a, const void *b)
-> +{
-> +	const struct finish_candidate *ca = a, *cb = b;
-> +
-> +	return ca->left < cb->left ? -1 : ca->left > cb->left;
-> +}
-> +
-> +/*
-> + * The kernel keeps active zones in reserve for a metadata, a tree-log and a
-> + * system block-group, and only activates metadata block-groups when writing
-> + * them. If more zones are active on disk than the kernel's limit minus that
-> + * reservation, the first transaction commit after mount can't activate a
-> + * metadata block-group and aborts with -EAGAIN. Older kernels could leave
-> + * filesystems in that state.
-> + *
-> + * Mirror the kernel's limit and reservation, see btrfs_get_max_active_zones()
-> + * and btrfs_check_active_zone_reservation(), and finish the zones of the
-> + * fullest single profile data block-groups until it fits again. Leave one
-> + * zone more, for the data relocation block-group activated on mount.
-> + *
-> + * Return 0 if fine or repaired, 1 if a problem was found, <0 on error.
-> + */
-> +static int check_dev_active_reservation(struct btrfs_device *dev, int reserved)
-> +{
-> +	struct btrfs_root *dev_root = gfs_info->dev_root;
-> +	struct btrfs_zoned_device_info *zinfo = dev->zone_info;
-> +	struct finish_candidate *cand;
-> +	BTRFS_PATH_AUTO_RELEASE(path);
-> +	struct btrfs_key key;
-> +	int max_active, nactive = 0, ncand = 0;
-> +	int shift = ilog2(zinfo->zone_size);
-> +	int left, need;
-> +	int ret;
-> +
-> +	max_active = btrfs_get_max_active_zones(dev);
-> +	for (int i = 0; i < zinfo->nr_zones; i++)
-> +		nactive += zone_is_active(&zinfo->zones[i]);
-> +	/* The kernel disables active zone tracking in this case. */
-> +	if (nactive > max_active && !zinfo->max_active_zones)
-> +		return 0;
-
-If zinfo->max_active_zones is 0, why even bother counting active zones>
-Shouldn't you just return immediately?
-
-> +
-> +	cand = calloc(zinfo->nr_zones, sizeof(*cand));
-> +	if (!cand)
-> +		return -ENOMEM;
-> +
-> +	key.objectid = dev->devid;
-> +	key.type = BTRFS_DEV_EXTENT_KEY;
-> +	key.offset = 0;
-> +	ret = btrfs_search_slot(NULL, dev_root, &key, &path, 0, 0);
-> +	if (ret < 0)
-> +		goto out;
-> +
-> +	while (1) {
-> +		struct btrfs_block_group *bg;
-> +		struct btrfs_dev_extent *devext;
-> +		u64 pstart, plen, chunk;
-> +
-> +		if (path.slots[0] >= btrfs_header_nritems(path.nodes[0])) {
-> +			ret = btrfs_next_leaf(dev_root, &path);
-> +			if (ret < 0)
-> +				goto out;
-> +			if (ret > 0)
-> +				break;
-> +		}
-> +
-> +		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
-> +		if (key.objectid != dev->devid || key.type != BTRFS_DEV_EXTENT_KEY)
-> +			break;
-> +
-> +		devext = btrfs_item_ptr(path.nodes[0], path.slots[0],
-> +					struct btrfs_dev_extent);
-> +		pstart = key.offset;
-> +		plen = btrfs_dev_extent_length(path.nodes[0], devext);
-> +		chunk = btrfs_dev_extent_chunk_offset(path.nodes[0], devext);
-> +		bg = btrfs_lookup_block_group(gfs_info, chunk);
-> +		path.slots[0]++;
-> +		if (!bg)
-> +			continue;
-> +
-> +		for (u64 zno = pstart >> shift;
-> +		     zno <= (pstart + plen - 1) >> shift && zno < zinfo->nr_zones;
-> +		     zno++) {
-> +			struct blk_zone *zone = &zinfo->zones[zno];
-> +
-> +			if (!zone_is_active(zone))
-> +				continue;
-> +			if (bg->flags & (BTRFS_BLOCK_GROUP_METADATA |
-> +					 BTRFS_BLOCK_GROUP_SYSTEM)) {
-> +				reserved--;
-> +			} else if (!(bg->flags & BTRFS_BLOCK_GROUP_PROFILE_MASK)) {
-> +				cand[ncand].zno = zno;
-> +				cand[ncand].left = (zone->start + zone->capacity -
-> +						    zone->wp) << SECTOR_SHIFT;
-> +				ncand++;
-> +			}
-> +		}
-> +	}
-> +
-> +	ret = 0;
-> +	reserved = max(reserved, 0);
-> +	left = max_active - nactive;
-> +	if (left >= reserved)
-> +		goto out;
-> +	need = reserved + 1 - left;
-> +
-> +	ret = 1;
-> +	error(
-> +"zoned: devid %llu has %d of %d active zones in use and %d reserved for metadata, the first commit after mount can fail",
-> +	      dev->devid, nactive, max_active, reserved);
-> +	if (!opt_check_repair)
-> +		goto out;
-> +
-> +	if (ncand < need) {
-> +		error("zoned: only %d data zones on devid %llu can be finished, need %d",
-> +		      ncand, dev->devid, need);
-> +		goto out;
-> +	}
-> +
-> +	qsort(cand, ncand, sizeof(*cand), cmp_finish_candidate);
-> +	for (int i = 0; i < need; i++) {
-> +		struct blk_zone *zone = &zinfo->zones[cand[i].zno];
-> +
-> +		ret = btrfs_finish_dev_zone(dev->fd, zone);
-> +		if (ret) {
-> +			errno = -ret;
-> +			error("zoned: failed to finish zone %u on devid %llu: %m",
-> +			      cand[i].zno, dev->devid);
-> +			goto out;
-> +		}
-> +		clear_bit(cand[i].zno, zinfo->active_zones);
-> +		if (zinfo->max_active_zones)
-> +			atomic_inc(&zinfo->active_zones_left);
-> +		printf("Finished zone %u on devid %llu, %llu bytes left unused\n",
-> +		       cand[i].zno, dev->devid, cand[i].left);
-> +	}
-> +out:
-> +	free(cand);
-> +	return ret;
-> +}
-> +
-> +static int check_zoned_active_reservation(void)
-> +{
-> +	struct btrfs_device *dev;
-> +	int reserved;
-> +	int ret = 0;
-> +
-> +	reserved = (gfs_info->avail_metadata_alloc_bits & BTRFS_BLOCK_GROUP_DUP) ? 4 : 2;
-> +	reserved += (gfs_info->avail_system_alloc_bits & BTRFS_BLOCK_GROUP_DUP) ? 2 : 1;
-> +
-> +	list_for_each_entry(dev, &gfs_info->fs_devices->devices, dev_list) {
-> +		int err;
-> +
-> +		if (!dev->zone_info || dev->zone_info->model != ZONED_HOST_MANAGED)
-> +			continue;
-> +
-> +		err = check_dev_active_reservation(dev, reserved);
-> +		if (err < 0)
-> +			return err;
-> +		ret |= err;
-> +	}
-> +
-> +	return ret;
-> +}
->  #endif
->  
->  /*
-> @@ -9219,6 +9404,7 @@ static int check_zoned_active_zones(void)
->  static int check_zoned(void)
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index d59289ce3294..0541b38129e5 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4472,7 +4472,8 @@ static int prepare_allocation_zoned(struct btrfs_fs_info *fs_info,
+>  				    struct find_free_extent_ctl *ffe_ctl,
+>  				    struct btrfs_space_info *space_info)
 >  {
->  	int ret = 0;
-> +	int err __maybe_unused;
+> -	struct btrfs_block_group *block_group;
+> +	struct btrfs_block_group *block_group, *fallback = NULL;
+> +	u64 hint = ffe_ctl->hint_byte;
 >  
->  	if (!btrfs_is_zoned(gfs_info))
->  		return 0;
-> @@ -9227,6 +9413,10 @@ static int check_zoned(void)
->  	ret = check_zoned_active_zones();
->  	if (ret < 0)
->  		return ret;
-> +	err = check_zoned_active_reservation();
-> +	if (err < 0)
-> +		return err;
-> +	ret |= err;
->  #endif
->  	return ret;
->  }
+>  	if (ffe_ctl->for_treelog) {
+>  		spin_lock(&fs_info->treelog_bg_lock);
+> @@ -4501,13 +4502,41 @@ static int prepare_allocation_zoned(struct btrfs_fs_info *fs_info,
+>  		 */
+>  		u64 avail = block_group->zone_capacity - block_group->alloc_offset;
+>  
+> -		if (block_group_bits(block_group, ffe_ctl->flags) &&
+> -		    block_group->space_info == space_info &&
+> -		    avail >= ffe_ctl->num_bytes) {
+> -			ffe_ctl->hint_byte = block_group->start;
+> +		if (!block_group_bits(block_group, ffe_ctl->flags))
+> +			continue;
+> +
+> +		if (block_group->space_info != space_info)
+> +			continue;
+> +
+> +		if (test_bit(BLOCK_GROUP_FLAG_ZONED_DATA_RELOC,
+> +					&block_group->runtime_flags))
+> +			continue;
+> +
+> +		if (avail < ffe_ctl->num_bytes)
+> +			continue;
+> +
+> +		/*
+> +		 * Remember the first block-group that fits the allocation. Then
+> +		 * check if the hint in ffe_ctl::hint_byte is in the active_bgs
+> +		 * list and has enough space available. If yes pick it. If not,
+> +		 * use the fallback block-group.
+> +		 */
+> +		if (!fallback)
+> +			fallback = block_group;
+> +
+> +		if (in_range(ffe_ctl->hint_byte, block_group->start,
+> +			     block_group->length))
+>  			break;
+> -		}
+>  	}
+> +
+> +	if (list_entry_is_head(block_group, &fs_info->zone_active_bgs,
+> +				active_bg_list))
+> +		block_group = fallback;
+
+It took me a while to understand what the test is... To make this easier to
+understand, why not use a "bg" variable for the loop, and set block_group to bg
+if the in_range() test is true? You can then simply have:
+
+	if (!block_group)
+		block_group = fallback;
+
+That would be a lot easier to understand and nicer to read :)
+
+Other than this, this looks all good to me.
+
+> +
+> +	if (block_group)
+> +		ffe_ctl->hint_byte = block_group->start;
+> +
+> +	trace_prepare_allocation_zoned(fs_info, hint, block_group);
+>  	spin_unlock(&fs_info->zone_active_bgs_lock);
+>  
+>  	return 0;
+> diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+> index dd862d1f2a2c..1378e697a46f 100644
+> --- a/include/trace/events/btrfs.h
+> +++ b/include/trace/events/btrfs.h
+> @@ -2241,6 +2241,35 @@ TRACE_EVENT(btrfs_find_free_extent_have_block_group,
+>  				 BTRFS_GROUP_FLAGS))
+>  );
+>  
+> +TRACE_EVENT(prepare_allocation_zoned,
+> +
+> +	TP_PROTO(const struct btrfs_fs_info *fs_info,
+> +		 u64 hint_byte, const struct btrfs_block_group *block_group),
+> +
+> +	TP_ARGS(fs_info, hint_byte, block_group),
+> +
+> +	TP_STRUCT__entry_btrfs(
+> +		__field(	u64,	hint_byte		)
+> +		__field(	u64,	bg_start		)
+> +		__field(	u64,	bg_flags		)
+> +		__field(	bool,	hit			)
+> +	),
+> +
+> +	TP_fast_assign_btrfs(fs_info,
+> +		__entry->hint_byte	= hint_byte;
+> +		__entry->bg_start	= block_group ? block_group->start : 0;
+> +		__entry->bg_flags	= block_group ? block_group->flags : 0;
+> +		__entry->hit		= block_group && in_range(hint_byte,
+> +						block_group->start,
+> +						block_group->length);
+> +	),
+> +
+> +	TP_printk_btrfs("hint=%llu block_group=%llu bg_flags=%llu(%s) hit=%d",
+> +			__entry->hint_byte, __entry->bg_start, __entry->bg_flags,
+> +			__print_flags((unsigned long)__entry->bg_flags, "|",
+> +				BTRFS_GROUP_FLAGS), __entry->hit)
+> +);
+> +
+>  DECLARE_EVENT_CLASS(btrfs__reserve_extent,
+>  
+>  	TP_PROTO(const struct btrfs_block_group *block_group,
 
 
 -- 

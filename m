@@ -1,82 +1,84 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=192.198.163.16
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795657583;
-	b=FaeXnt3LdcBvleK5Okxq/NYHI7doxKEzG00rRD5ce23jCR8SLmcyEKD/rogXxn2epk/s
-	 cjI9H5j2xSxjIXoJVMz/mw8VA8FOgXliYNGErUuGFF3ZCrJyHAVo55o5vgQwoUxrb0wEF
-	 ljmYHEU267DqR/W7zi9kXGpwhBgX518lp9SJlu0AHPjmcuC8yNbY6viIGfP0eQ2cXz/FF
-	 k9mEyhtGPXHw76Ho2hxGiJFJ+qkeE2kfkJ8zZLtUByYizX8vyjLuhEFpEdB/xOT6ufX86
-	 A0wnPYVPP/6+u/AMFM/GktcaFgnf1PrezgvwIALrColdUEbylxlCNmhaOONO3sDH2AA==
+	t=1795659044;
+	b=iaISXVCfr0zQ6OVFLNZCnx1oXLOnI2OMsoCvwUhnJCTy9LS5hEQLUdUwcRgISjj04b34
+	 quCGJiIbGYTfuXoZ3HrQ+NdUGTCMuuZnWGQ07wtX7dYOLUd+GdbVj+e8tgpUeDRwuXNqP
+	 KFqpHF3R6S0LWyUiCHjV8bd2qxGWMxeIk4YilEvozbr3JITNqEnkSZ65qsZwgwxvRUJ07
+	 S3ikr1JUZQZpLY21xwFOjgxI7oKYpvpRAJ+TjVIPnusEoPFHpz31lB1dSRBDIObg9oK0R
+	 Qaqy9k9RWlWRNEx80NOQwBb+naqL6Zqc9wHlQM9JMsUCOjEeoBAKDDOFpUfxdkS2NGQ==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795657583;
-	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
-	 Received:From:To:Cc:Subject:Date:Message-ID:X-Mailer:MIME-Version:
-	 Content-Transfer-Encoding:X-Spamd-Result:X-Spam-Score:X-Spam-Level:
-	 X-Spam-Flag;
-	bh=rTQibs8/o/dW90vH0yd86yddZhse5CdEmpfptRgvpO8=;
-	b=vaMDEUbo58SlTv/9N7ZhV6RGaMedADppE/s5q//PfbeCuyUjEGdSX3MphHkTaFXyC6VX
-	 76OerckQH+EUMHXaDOsES0VGyp90oJrvj0Ra6VElpNl719pcnqYQaR8G7l4yCen5YzNbQ
-	 V3vTmUU29m/Y5FWEEVqmF55NunnLyn6JsmtwxaysiPxbvcmWobv0iVMxi3xdul6IdvEYi
-	 F15PeCSxWwpDdcfIR+Lp7HJ/YhCt+0eTRlnGVzlG5OKxilueVu/oAt91OaInLou2r5Vnk
-	 hVrLXrh/lXbItptsyGIBBA8glrnHmI6z4FcgaJ4N6PP8R38rGibGpCj2YASnvqCrp6A==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795659044;
+	h=DMARC-Filter:DKIM-Signature:X-CSE-ConnectionGUID:X-CSE-MsgGUID:
+	 X-IronPort-AV:X-IronPort-AV:Received:X-CSE-ConnectionGUID:
+	 X-CSE-MsgGUID:X-ExtLoop1:X-IronPort-AV:Received:Received:Date:From:To:
+	 Cc:Subject:Message-ID:References:MIME-Version:Content-Type:
+	 Content-Disposition:In-Reply-To;
+	bh=7Xrm3Ii2UMn6o6i/Sx3ADDnGnCPb7sChuDPD//evDPc=;
+	b=sfDOs6if9V7LD5Vgi7Hr3oo2BB/mFplFHBWKO+p+Ac+FmXVJ7pZGgqX/sTqOh2buMXHa
+	 DiV2STqiCmlFDA2PycSFw2gyZhd5GWGSGMRzpw7utS8RfwnlXRCSVoDMB/Rh10cAd0YBk
+	 G/JVPwHYfkckW35iIlESvsyuqnao7QfkflzAPmi2iKUzGidKPkPlB6aLPrIZNMDu+QO0e
+	 5+w5RiBEhkZVApeYjh5UaZ94F+Z2vzj/JzDKkksp6itFMdFJTTH4BqMaF4GNRqGzOGuZt
+	 0J5v124sx2I7Upur8uqV82t44O5sW5Kd4JIE2hAjd4yr/094GEYFqA7dExra+CVu4dg==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=suse.com;
-	spf=pass smtp.mailfrom=suse.com;
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="RAMmUxy/";
-	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ulSRO3C1;
-	arc=none smtp.remote-ip=195.135.223.130
-Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+	dmarc=pass header.from=intel.com;
+	spf=pass smtp.mailfrom=intel.com;
+	dkim=pass header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=Gud3aQtn;
+	arc=none smtp.remote-ip=192.198.163.16
+Received: from mgamail.intel.com (mgamail.intel.com [192.198.163.16])
+	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 99713606A31E;
-	Thu, 26 Nov 2026 01:46:22 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 99713606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id B4250606A321
+	for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2026 02:10:43 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org B4250606A321
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=intel.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=intel.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=RAMmUxy/;
-	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=ulSRO3C1
-Received: from imap1.dmz-prg2.suse.org (unknown [10.150.64.97])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by smtp-out1.suse.de (Postfix) with ESMTPS id 57F9922525;
-	Thu, 26 Nov 2026 01:46:19 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795657580; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=rTQibs8/o/dW90vH0yd86yddZhse5CdEmpfptRgvpO8=;
-	b=RAMmUxy/fGkphMAGt5Cfazz5Y+mn1+V8WuTovSjbuQmbXyf/W3QjsKM+uBD1ux77HCgCrx
-	lIKD+VSV1UIETAeqQWMoGnT872Uslq/W3iZPYAwsXUMYl80aIT0MMCFhw22961crPerWFG
-	Em30SFZaEDLMktgtd8W8t8j/gwKC/jE=
-Authentication-Results: smtp-out1.suse.de;
-	none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
-	t=1795657579; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:cc:
-	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
-	bh=rTQibs8/o/dW90vH0yd86yddZhse5CdEmpfptRgvpO8=;
-	b=ulSRO3C1sAEtHXo0qcc3jtU4ag1wUSx6v5BOInEqmzVcPUJXxzSUxraStJed8mzt8BOc9q
-	wYtNTQG1ABs1zV9EpFMyZVXTLhAgwGXazKygNnDEdKpHNnjCUdNS+UAxU8QlpMm4nXwlG9
-	lDKjToKyUMcCMLx5kbYlht5kkSyLiWQ=
-Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
-	(No client certificate requested)
-	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 3170C134C1;
-	Thu, 26 Nov 2026 01:46:19 +0000 (UTC)
-Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
-	by imap1.dmz-prg2.suse.org with ESMTPSA
-	id xuXZA2uPB2uSFAAAD6G6ig
-	(envelope-from <dsterba@suse.com>); Thu, 26 Nov 2026 01:46:19 +0000
-From: David Sterba <dsterba@suse.com>
-To: torvalds@linux-foundation.org
-Cc: David Sterba <dsterba@suse.com>,
-	linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Subject: [GIT PULL] Btrfs fixes for 7.4-rc7
-Date: Thu, 26 Nov 2026 02:46:16 +0100
-Message-ID: <cover.1795641319.git.dsterba@suse.com>
-X-Mailer: git-send-email 2.56.0
+	dkim=pass (2048-bit key) header.d=intel.com header.i=@intel.com header.a=rsa-sha256 header.s=Intel header.b=Gud3aQtn
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple;
+  d=intel.com; i=@intel.com; q=dns/txt; s=Intel;
+  t=1795659044; x=1827195044;
+  h=date:from:to:cc:subject:message-id:references:
+   mime-version:in-reply-to;
+  bh=5cPPsvKVfKbmEot/zcim5f/Zke1K+AxY3gPtiCc13S0=;
+  b=Gud3aQtnxcZ1XLkS/UYWdpFW5daSVsen7onmhG+hMVqSMmilXDRyLyYg
+   c3CH9SmqO4/f8nry2rv/BemZQR/m2C12cjNfacsMpD59yy6u6tLkU+Eym
+   UB3yJwug00VvjLjnU48VgsQSum89LwHnZ5XkfjF/giVnoCsGqZMhantcW
+   izKzJ7mgTpbCgFbtoBjYjfssC8LBE/9MQ8vQxsW2DXdeTJeTufw6Tzbju
+   iEwBEdoJyoOqewiktyQB9gOhOH70o1/tf8cnyazLlw1xkI5YGNabawOnW
+   zbVuKRwAEFJIi453sszYiNYP+2MJPL4+7G1uAe8c4Dxd7sO9Xrmevu7s7
+   A==;
+X-CSE-ConnectionGUID: tT6R7Xx6SjicrmLfMHnopw==
+X-CSE-MsgGUID: aJnx5o2jQ72cChfZ+vipfg==
+X-IronPort-AV: E=McAfee;i="6800,10657,11977"; a="4576882"
+X-IronPort-AV: E=Sophos;i="6.27,233,1787036400"; 
+   d="scan'208";a="4576882"
+Received: from orviesa004.jf.intel.com ([10.64.159.144])
+  by fmvoesa110.fm.intel.com with ESMTP/TLS/ECDHE-RSA-AES256-GCM-SHA384; 25 Nov 2026 18:10:43 -0800
+X-CSE-ConnectionGUID: CFmCtIdJSgCv7Rg1Busaug==
+X-CSE-MsgGUID: pparLZx3QaeJTphX7N1TDQ==
+X-ExtLoop1: 1
+X-IronPort-AV: E=Sophos;i="6.27,233,1787036400"; 
+   d="scan'208";a="11904551"
+Received: from lkp-server01.sh.intel.com (HELO 0caa9d2d175c) ([10.239.97.150])
+  by orviesa004.jf.intel.com with ESMTP; 25 Nov 2026 18:10:41 -0800
+Received: from kbuild by 0caa9d2d175c with local (Exim 4.98.2)
+	(envelope-from <lkp@intel.com>)
+	id 1xWOwY-00000001T78-1FF6;
+	Thu, 26 Nov 2026 02:10:38 +0000
+Date: Thu, 26 Nov 2026 10:09:39 +0800
+From: kernel test robot <lkp@intel.com>
+To: Johannes Thumshirn <johannes.thumshirn@wdc.com>,
+	linux-btrfs@vger.kernel.org
+Cc: llvm@lists.linux.dev, oe-kbuild-all@lists.linux.dev,
+	Damien Le Moal <dlemoal@kernel.org>,
+	Naohiro Aota <naohiro.aota@wdc.com>, Boris Burkov <boris@bur.io>,
+	Filipe Manana <fdmanana@suse.com>, David Sterba <dsterba@suse.com>,
+	Josef Bacik <josef@toxicpanda.com>,
+	Johannes Thumshirn <johannes.thumshirn@wdc.com>
+Subject: Re: [PATCH v8 25/27] btrfs: zoned: keep a zone free for relocation
+ when allocating data chunks
+Message-ID: <20261126095818.PPaSJDyv-lkp@intel.com>
+References: <20261125102956.266389-26-johannes.thumshirn@wdc.com>
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,131 +88,44 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
-X-Spamd-Result: default: False [-11.80 / 50.00];
-	SUSE_INTERNAL_BYPASS(-9.00)[];
-	BAYES_HAM(-3.00)[100.00%];
-	MID_CONTAINS_FROM(1.00)[];
-	NEURAL_HAM_LONG(-1.00)[-1.000];
-	R_MISSING_CHARSET(0.50)[];
-	NEURAL_HAM_SHORT(-0.20)[-0.995];
-	MIME_GOOD(-0.10)[text/plain];
-	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:helo];
-	FROM_HAS_DN(0.00)[];
-	ARC_NA(0.00)[];
-	MIME_TRACE(0.00)[0:+];
-	TO_DN_SOME(0.00)[];
-	TO_MATCH_ENVRCPT_ALL(0.00)[];
-	RCVD_VIA_SMTP_AUTH(0.00)[];
-	RCVD_COUNT_TWO(0.00)[2];
-	FROM_EQ_ENVFROM(0.00)[];
-	DKIM_SIGNED(0.00)[suse.com:s=susede1];
-	RCPT_COUNT_THREE(0.00)[4];
-	RCVD_TLS_ALL(0.00)[]
-X-Spam-Score: -11.80
-X-Spam-Level: 
-X-Spam-Flag: NO
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+In-Reply-To: <20261125102956.266389-26-johannes.thumshirn@wdc.com>
 
-Hi,
+Hi Johannes,
 
-please pull a number of fixes as reported on Bugs page of Sashiko and
-usual bag of regular fixes.
+kernel test robot noticed the following build errors:
 
-Thanks.
+[auto build test ERROR on kdave/for-next]
+[also build test ERROR on btrfs/for-next]
+[cannot apply to linux-review/Johannes-Thumshirn/btrfs-zoned-don-t-wait-for-a-zone-finish-after-a-filesystem-error/20261117-195824 linus/master v7.4-rc4 next-20261125]
+[If your patch is applied to the wrong git tree, kindly drop us a note.
+And when submitting patch, we suggest to use '--base' as documented in
+https://git-scm.com/docs/git-format-patch#_base_tree_information]
 
-- send fixes:
-  - fix sending file hole punching command in incremental mode
-  - fix invalid memory access for inline extent
+url:    https://github.com/intel-lab-lkp/linux/commits/Johannes-Thumshirn/btrfs-zoned-don-t-wait-for-a-zone-finish-after-a-filesystem-error/20261125-112930
+base:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+patch link:    https://lore.kernel.org/r/20261125102956.266389-26-johannes.thumshirn%40wdc.com
+patch subject: [PATCH v8 25/27] btrfs: zoned: keep a zone free for relocation when allocating data chunks
+config: hexagon-randconfig-1000-20261126 (https://download.01.org/0day-ci/archive/20261126/20261126095818.PPaSJDyv-lkp@intel.com/config)
+compiler: clang version 21.1.8 (https://github.com/llvm/llvm-project 2078da43e25a4623cab2d0d60decddf709aaea28)
+reproduce (this is a W=1 build): (https://download.01.org/0day-ci/archive/20261126/20261126095818.PPaSJDyv-lkp@intel.com/reproduce)
 
-- fixes for nowait semantics
-  - fix memory allocation in encoding read ioctl
-  - don't wait for ordered extents in buffered write
+If you fix the issue in a separate patch/commit (i.e. not just a new version of
+the same patch/commit), kindly add following tags
+| Reported-by: kernel test robot <lkp@intel.com>
+| Closes: https://lore.kernel.org/oe-kbuild-all/20261126095818.PPaSJDyv-lkp@intel.com/
 
-- don't propagate nodatacow from mount option to files with compression
-  flag inherited from parent directory
+All errors (new ones prefixed by >>):
 
-- fix fsync mode in encoded write so the data are fully written
+>> ld.lld: error: undefined symbol: __hexagon_udivdi3
+   >>> referenced by zoned.c
+   >>>               fs/btrfs/zoned.o:(btrfs_zoned_data_chunk_allowed) in archive vmlinux.a
+   >>> referenced by zoned.c
+   >>>               fs/btrfs/zoned.o:(btrfs_zoned_data_chunk_allowed) in archive vmlinux.a
+   >>> did you mean: __hexagon_udivsi3
+   >>> defined in: vmlinux.a(arch/hexagon/lib/udivsi3.o)
 
-- fix race between reflink and compressed write on the same folio
-
-- fix rchar accounting in io_uring after error
-
-- drop link count for a deleted subvolume early so eventual open file
-  does not keep showing the subvolume in the list
-
-- fix livelock during transaction commit on RT kernel
-
-- fix inode locking inode for concurrent sync direct IO writes
-
-- reject subvolume ids that don't fit 32bit long
-
-- error handling and resource management fixes: sysfs objects, block
-  group refs, bio control structures, delayed inode refs
-
-----------------------------------------------------------------
-The following changes since commit d27d0039bc1334be8a72c769e14c0b0c3efc317d:
-
-  btrfs: fix bio counter and bioc leak when async checksumming fails (2026-11-09 18:50:58 +0100)
-
-are available in the Git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git tags/for-7.4-rc4-tag
-
-for you to fetch changes up to 3100f46985fd14148e79a0e79912180934ef7231:
-
-  btrfs: fix delayed inode count leak after failure to delete inode ref (2026-11-23 19:53:01 +0100)
-
-----------------------------------------------------------------
-Binbin Deng (1):
-      btrfs: wait for a grace period before freeing a new device
-
-Boris Burkov (1):
-      btrfs: fix block group ref leak when scrub races with unused bg deletion
-
-Cheng Yongkang (1):
-      btrfs: remove devid kobject when deleting a missing device
-
-Daniel Vacek (1):
-      btrfs: fix a livelock in wait_for_commit() on PREEMPT_RT
-
-Filipe Manana (13):
-      btrfs: send: fix missing hole punching during incremental send
-      btrfs: send: fix invalid access to inline extents in clone_range()
-      btrfs: don't propagate nodatacow mount option on files with inherited compression
-      btrfs: drop the link count of a subvolume inode when deleting the subvolume
-      btrfs: fix race between concurrent sync direct IO writes
-      btrfs: zstd: fix UAF due to race between putting workspace and reclaim
-      btrfs: fiemap: deal with inline extent in fiemap_find_last_extent_offset()
-      btrfs: fix off-by-one max tree level bound when replaying log trees
-      btrfs: fix double release of space when cloning compressed inline extent
-      btrfs: abort transaction on failure to update inode after hole punching
-      btrfs: fix blocking allocation for nowait encoded reads of inline extents
-      btrfs: fix incorrect task accounting on error during io_uring read
-      btrfs: fix delayed inode count leak after failure to delete inode ref
-
-Joseph Qi (1):
-      btrfs: don't wait for ordered extents in nowait buffered writes
-
-Qu Wenruo (3):
-      btrfs: reject subvolume ids that do not fit into unsigned long
-      btrfs: skip fast sync for inodes with encoded writes
-      btrfs: fix a race between reflink and compressed writes
-
- fs/btrfs/block-group.c   |  7 +++-
- fs/btrfs/delayed-inode.c |  3 +-
- fs/btrfs/direct-io.c     | 15 +++++++-
- fs/btrfs/disk-io.c       | 31 +++++++++------
- fs/btrfs/disk-io.h       | 18 +++++++++
- fs/btrfs/extent_io.c     |  5 +--
- fs/btrfs/extent_io.h     |  3 +-
- fs/btrfs/fiemap.c        |  2 +
- fs/btrfs/file.c          | 16 +++++++-
- fs/btrfs/inode.c         | 86 ++++++++++++++++++++++++------------------
- fs/btrfs/ioctl.c         |  9 +++--
- fs/btrfs/reflink.c       | 15 +++++++-
- fs/btrfs/send.c          | 98 +++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/transaction.c   | 15 +++-----
- fs/btrfs/tree-log.c      |  2 +-
- fs/btrfs/volumes.c       |  9 +++--
- fs/btrfs/zstd.c          |  8 +++-
- 17 files changed, 244 insertions(+), 98 deletions(-)
+-- 
+0-DAY CI Kernel Test Service
+https://github.com/intel/lkp-tests/wiki

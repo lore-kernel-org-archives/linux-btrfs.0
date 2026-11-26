@@ -1,100 +1,58 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.42
-ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
-	t=1795691899;
-	b=O5oato8K4N6skt9S9CKIEb/AmEhHAbi9UZ8zgcBl9bowgL8lBUCQIEOZdoyGyPij3x1f
-	 0gxE9vRJC73smZIPA3GaSnKhKmfnEHkP6ize/qFmhj9o45sFQGafKrJT+lT/8xCaN8Q9L
-	 wF9CSpO6T1fvrmjRq3GXA/xGCefjHTHqyev58QJjP/B6TZqf83+EpoWonglFL/TboT4bM
-	 bgS3F9mbRmbfeYXoEFJYn6Pf3GbWu9DYugX1EQG4pLp4At75Of5EciGO5Mx+pZT4bKDtb
-	 vApWGvKplOyN0bYmyOdrKJE1iuGZ9IrLsGYcgoZxHKotDz6wda/Rn/USnw2YUcVa7Ug==
-ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795691899;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
-	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
-	bh=X8WwWz6JnS6y65umA17S2axWzHpMAWvbUXb5Ah2q0Qs=;
-	b=oZSgFfdhws+ikUV6zrvyqApz/DOejSj462oP8JHJ2vSq6RdunuxSfJSYmtehBo5sUpOC
-	 R2UkYcFyFkMAwr7WnkckRSnVr3THdOwc6yU//ngA9Z3te9j/knReLhoXQINKNL1656ZYw
-	 vVUru6+NZYiW4/WzvM67irT8GndLQfd7xGslzXewL73fsAGWnsID8Nt9K3Xmin7WU9Z0k
-	 QK+J8L6MAOLFKa9WwNQIVyCpLGRJC0gwXYuhrZw7rivkXZNlKtTcU1z8cSmbcjyOeOPY4
-	 q1mWvSzAV3flfuZXIddx8qt2YdloQ4bLqiKbK6wLgJjIigsmPtLS1+/+qPODEr1MvqQ==
-ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=TQa1M6mK;
-	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.42
-Received: from mail-ej1-f42.google.com (mail-ej1-f42.google.com [209.85.218.42])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=113.46.200.217
+ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
+	t=1795699673;
+	b=1gKlcKlbH+JCJk2jPi4oXQQ3zb72vdBHvr8psUp/tGDYO25Nf+wE5e6xnpQei98GklmV
+	 VTWW2d04yxpT0uEAAWHZsz4JM6MNyCGw8t22TNF+M2iojjfHkXC+ziaRbtK7q+4SpPUno
+	 f8BDhpfn5qjW62FrK12Vu1yebWnbQmplbaXxa28zMi0l5DZ23cH/x2xX0gofxSDtO8pVj
+	 NtQ7MBQUe2kY6npZIIp9zTU94BT3n899/zWU7HfmLFhy4Kly0Zlcce5yL3yLZ/oV/7eyJ
+	 aaUxYU5nTsi7nalNsL3QnqDGJcqoMeEshwfoO8EWoBBDYqBLCXd5IqhOky1PhTEKzuQ==
+ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795699673;
+	h=DMARC-Filter:dkim-signature:Received:Received:Received:Message-ID:
+	 Date:MIME-Version:User-Agent:Subject:To:CC:References:
+	 Content-Language:From:In-Reply-To:Content-Type:
+	 Content-Transfer-Encoding:X-Originating-IP:X-ClientProxiedBy;
+	bh=gzzgXOgo3+SNm0ByCjOvIm/1n5ybZt8er0jBZ3680yc=;
+	b=eXdF9XV9OPiJgW1PhtOjNpnxNGH5pNtLUQ4L0OufmplxHKc9h38LgojsIOCyoVJrUqMM
+	 GIIdCdRnm/yT/p7Aw55oTMSpvio+Wt+Bbcg+GOwvmwjQ/jAJEhPJzbLHmJmTs4y/l+CmP
+	 9OcST+yVfgLhlxUYST7ttrqTpb5U51UVCvuilm9TXBUdkYprBVhJdJj1tMbOjKGCFaOeP
+	 ZMMok8in4HNHOwNtevIkjBgaNiUnUOy6FIzv6twHy/JHbyZA1LCF9L1n/9cb8SUBTqT87
+	 oMyv1sY9278/6EybPKiu+FiLE+DXcrIO6+c1nfYUoQ0K/YYRkOkY+s9IqPRvOsZ4WRw==
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=huawei.com;
+	spf=pass smtp.mailfrom=huawei.com;
+	dkim=pass header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=11fuKA0Q;
+	arc=none smtp.remote-ip=113.46.200.217
+Received: from canpmsgout02.his.huawei.com (canpmsgout02.his.huawei.com [113.46.200.217])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 18760606A31E
-	for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2026 11:18:18 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 18760606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9EDEA606A31C;
+	Thu, 26 Nov 2026 13:27:51 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 9EDEA606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=huawei.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=huawei.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=TQa1M6mK
-Received: by mail-ej1-f42.google.com with SMTP id a640c23a62f3a-c506a231b88so927166366b.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2026 03:18:18 -0800 (PST)
-ARC-Seal: i=1; a=rsa-sha256; t=1795691897; cv=none;
-        d=google.com; s=arc-20260327;
-        b=Jik+fZz2Eu+B9fReSMZGgkWVEoiXLoyPTKwAdOb53pyBBI/25EsCi4wUN+thZT7NDB
-         ua7MthoPuYqyq6yvzi17AZdwWf1nskzupdoVJ1mNlpW13o6ZIK+TRYSQAGqbPgRma5Ey
-         cZh893wGw/oPvcwHqAhsvsKEYC//zG5oz7cgtbAR2Pho8Hor5Rp1sWv//Zq6S55YiArV
-         utftRWU2oUKxxjmoGOJ4dH+yuJDJP30wQi3gq3BJ0b1X+8ckxhDPRh3Rz9v42g4L//+5
-         LUgN1khr6pY+sMtA/X22RpEYVZyNttgAmoPs/P3l9OCcH25cncyROxKvk5JXbjd/dXoT
-         OeHQ==
-ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
-        h=content-transfer-encoding:cc:to:subject:message-id:date:from
-         :in-reply-to:references:mime-version:dkim-signature;
-        bh=X8WwWz6JnS6y65umA17S2axWzHpMAWvbUXb5Ah2q0Qs=;
-        fh=8Q5Wbg9duNCpdAZor/T/aMWL2jKEFMKtGKwkxL2VgEo=;
-        b=nKgV76NECtKoqjtlZUx8sQVXkxzptHxu59rRow35cQeJDlOsDl3TA+wmGPkUTbauRE
-         3OfD4YTA/E7fGMlgL1NGzi/7aersYGhVRbQ2fbuyMUSmjXervNKmVW9cqNTIoVbaFQHg
-         LfCQdkPbdlbm4yI3MBuVHIDUEsYgnuTt+Jd1vRtsiA9zAGliw/Dzc3zu4LITycEKrMmn
-         RONQ6ACXeGe5r7+Dzgt+XvtocrwLjTtqj5sRNf6YECbm8vijWgrrOkgWFMvVQ6DDoei6
-         0ofP3fOXpVFNlRcGyhJn3e02hjC+FkTeXl/cefq44/5/oDNGEIQSykU0v/I+ZuAi/8+i
-         GwUA==;
-        darn=vger.kernel.org
-ARC-Authentication-Results: i=1; mx.google.com; arc=none
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795691897; x=1796296697; darn=vger.kernel.org;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
-         :date:message-id:reply-to:content-type;
-        bh=X8WwWz6JnS6y65umA17S2axWzHpMAWvbUXb5Ah2q0Qs=;
-        b=TQa1M6mKPCJFjBUSMOQU0t3e7hUnaXCb9Uj9gtpyXJKSLALQ3+MPJncfJh/ct231pB
-         uGCFDx/Ml3ajuFfausEbI+Uc1sLgJxzbWHT4ln0d1tCQuq1iapilG0D29JPVjKKnHwBg
-         zjYaHfR0uROA3tOBZpo1ArWIFY3kyVEgDLRfCPP+tG2Cw/ZrtnpQc1kIK/DzXGUuBO31
-         usA6Nc4yhic443m+UygHAlqBQ2x3JdnAOPlLlMCy2MnVCY4J6x2+mLrmzI+JksRxh/e4
-         kAkH8aRnl/UBTnrrDZkrFmt485Ux/eLIFuRwqT25Uxkk+PwrSI9rxL825UoURyxYHhQy
-         RQiw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795691897; x=1796296697;
-        h=content-transfer-encoding:content-type:cc:to:subject:message-id
-         :date:from:in-reply-to:references:mime-version:x-gm-gg
-         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
-         :content-type;
-        bh=X8WwWz6JnS6y65umA17S2axWzHpMAWvbUXb5Ah2q0Qs=;
-        b=SJSCRh5lrSeE7YcLJB9cZ0KLzqb8qH2yElt1JxQcD+HvbuRu72SrnoIa9EBcIZzifm
-         hs/TlYIpcpMlvGEu8VHhJF8pjbKOqot4AIRuC5K5teWVpi+ZPAZpmjxryB3bB07Lscpn
-         SQpxe5ePoJCiDkMxPaynDPgfbfCsGfuuHLy+WjXRgO8ke9S/UWgqNU6PzjKCKzdtyM2E
-         nVqIetlIS4fyQQDyCjtnWI6bdmvTNT831CRd0PtXJKzQJPkhU+Fd6vLNu0tE6jiZruZK
-         pEBGiSF9C13/sG909hWU0UD7YWafT+qf4mca02DWFQmnGrTBLW1XwfmxJcGa6d/GuuIh
-         Z99Q==
-X-Forwarded-Encrypted: i=1; AL+hErHxvS025OIDwMm8/A2EQ/GZzXvrzH25q/XDw8ImA8cJ01tIMhm8pUctsiq903PoD5pMVDc5HxFczBx7kg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z9X5PH+lx646jyy5x8Q8Lh3UXb52tBg/H9q9NlKfKUySQRKXL0u
-	KyFHSZJzmcTBHYSwc/J+Myk2LfQNSVwqUZiW4/tk3hkFzv2HILUso8sWdrp+0YrTp/7vhXsG0Y8
-	khBYTutGT+BCuV3sk/WMZpZ+70fLYi2A=
-X-Gm-Gg: AZFdTZduvrHO9K/WdEVimGJz8tf9hhxGG3PdyjHNud/csxi31XykSZp9CQL2XTqiTZT
-	nOu9/otFQ4VhTTfU1WMSnRva24bLTgVzYfMfOxwX3z22DEfsnlal1zJPZnB+3Vo02OGOhQ4oUBD
-	njBmCNHBiCa/Gjq42YtMLbfFv5XOcDxoljqGOmxHLH7jYXCdPcev2ElXdLC28puVuW6uWRLbbv0
-	4idzbgivFKoGD9eGVZCpHHeYmvaGzsxC0IZDz03cfO3WYOsaaSdT8YefI7RJXPu3Mf+L9dOhMTI
-	7WMyD+mWV9u3jYnKOxhmNGFiik/zYcdWZWmraq3w0iupUZeS3Sj1qyiGfhtOfOfo1shAyNhy97X
-	pH8lltNYafukaeZz1tDcSrUnplEP3SaP5ADs=
-X-Received: by 2002:a17:906:3e1b:b0:c50:93b6:52ed with SMTP id
- a640c23a62f3a-c513aab27ccmr1230543066b.40.1795691897317; Thu, 26 Nov 2026
- 03:18:17 -0800 (PST)
+	dkim=pass (1024-bit key, unprotected) header.d=huawei.com header.i=@huawei.com header.a=rsa-sha256 header.s=dkim header.b=11fuKA0Q
+dkim-signature: v=1; a=rsa-sha256; d=huawei.com; s=dkim;
+	c=relaxed/relaxed; q=dns/txt;
+	h=From;
+	bh=gzzgXOgo3+SNm0ByCjOvIm/1n5ybZt8er0jBZ3680yc=;
+	b=11fuKA0QNmqBcJC+Z7+EDBDEdopqwlPjiHPaNdUAff+L4Rfg5ecopOB7c41g4dYkKVWnsOz+7
+	diR70qy0hMLD9NrzKzTwcexrrEJpSqnu718+skXXx/Va432+IohJ+HmaImsfXw3HGXjPhG8bwg/
+	N0Q+ahJUMGyTnAubGLSqDU0=
+Received: from mail.maildlp.com (unknown [172.19.163.104])
+	by canpmsgout02.his.huawei.com (SkyGuard) with ESMTPS id 4jZy4b4NSrzcZxn;
+	Thu, 26 Nov 2026 21:26:39 +0800 (CST)
+Received: from whupemk100010.china.huawei.com (unknown [7.152.184.41])
+	by mail.maildlp.com (Postfix) with ESMTPS id 2EF9B4058C;
+	Thu, 26 Nov 2026 21:27:47 +0800 (CST)
+Received: from [10.67.110.140] (10.67.110.140) by
+ whupemk100010.china.huawei.com (7.152.184.41) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.56; Thu, 26 Nov 2026 21:27:38 +0800
+Message-ID: <2e7397bb-14fa-4d29-bfb5-620495a40245@huawei.com>
+Date: Thu, 26 Nov 2026 21:27:37 +0800
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -104,89 +62,93 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <20261028-b4-btrfs-fitrim-interruption-v1-0-bf5c53738b3a@gmail.com>
- <20261028-b4-btrfs-fitrim-interruption-v1-2-bf5c53738b3a@gmail.com>
- <b00f8fc5-89f1-4483-8986-947392837a6b@gmx.com> <CAO0HQ0VfHczGkTb0OOxXf38Cnu3sOufi24652UR0AJ5a7wzoSw@mail.gmail.com>
-In-Reply-To: <CAO0HQ0VfHczGkTb0OOxXf38Cnu3sOufi24652UR0AJ5a7wzoSw@mail.gmail.com>
-From: Luca Stefani <luca.stefani.ge1@gmail.com>
-Date: Thu, 26 Nov 2026 12:18:05 +0100
-X-Gm-Features: Aa3M54ojdEGLiceptP1aQHnxZ7c12hdMS3RYK5bPYgGle6EicdE7SBNpHTVl4kE
-Message-ID: <CAO0HQ0WMy0zAgSTJMVMLexv00YqJQp1K4e3tu47cSb=et4WkUw@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: don't report failure when trim is interrupted
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: David Sterba <dsterba@suse.com>, Chris Mason <mason@kernel.org>, 
-	Robbie Ko <robbieko@synology.com>, Filipe Manana <fdmanana@suse.com>, linux-btrfs@vger.kernel.org, 
-	linux-kernel@vger.kernel.org, Zhiwei Liang <zhiwei.liang@zliang.me>, 
-	Qu Wenruo <wqu@suse.com>
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+User-Agent: Mozilla Thunderbird
+Subject: Re: [PATCH -next -v4 01/17] fs: pass struct path to notify_change()
+To: Al Viro <viro@zeniv.linux.org.uk>
+CC: <mic@digikod.net>, <gnoack@google.com>, <paul@paul-moore.com>,
+	<brauner@kernel.org>, <jack@suse.cz>, <amir73il@gmail.com>,
+	<andrii@kernel.org>, <apparmor@lists.ubuntu.com>, <ast@kernel.org>,
+	<axboe@kernel.dk>, <bpf@vger.kernel.org>, <casey@schaufler-ca.com>,
+	<cel@kernel.org>, <cem@kernel.org>, <chenxiaosong@chenxiaosong.com>,
+	<code@tyhicks.com>, <corbet@lwn.net>, <Dai.Ngo@oracle.com>,
+	<dakr@kernel.org>, <daniel@iogearbox.net>, <dhowells@redhat.com>,
+	<dlemoal@kernel.org>, <dmitry.kasatkin@gmail.com>,
+	<driver-core@lists.linux.dev>, <dsterba@suse.com>,
+	<ecryptfs@vger.kernel.org>, <eddyz87@gmail.com>, <emil@etsalapatis.com>,
+	<eric.snowberg@oracle.com>, <exfat@lists.linux.dev>,
+	<georgia.garcia@canonical.com>, <gregkh@linuxfoundation.org>, <hch@lst.de>,
+	<hirofumi@mail.parknet.co.jp>, <hyc.lee@gmail.com>,
+	<ihor.solodrai@linux.dev>, <jlayton@kernel.org>, <jmorris@namei.org>,
+	<johan@kernel.org>, <john.fastabend@gmail.com>,
+	<john.johansen@canonical.com>, <jolsa@kernel.org>, <kpsingh@kernel.org>,
+	<linkinjeon@kernel.org>, <linux-api@vger.kernel.org>,
+	<linux-block@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+	<linux-cifs@vger.kernel.org>, <linux-doc@vger.kernel.org>,
+	<linux-fsdevel@vger.kernel.org>, <linux-integrity@vger.kernel.org>,
+	<linux-kernel@vger.kernel.org>, <linux-kselftest@vger.kernel.org>,
+	<linux-nfs@vger.kernel.org>, <linux-security-module@vger.kernel.org>,
+	<linux-trace-kernel@vger.kernel.org>, <linux-unionfs@vger.kernel.org>,
+	<linux-xfs@vger.kernel.org>, <liubaolin12138@163.com>,
+	<martin.lau@linux.dev>, <mason@kernel.org>, <mathieu.desnoyers@efficios.com>,
+	<matt@bobrowski.net>, <memxor@gmail.com>, <mhiramat@kernel.org>,
+	<miklos@szeredi.hu>, <neil@brown.name>, <netfs@lists.linux.dev>,
+	<ntfs@lists.linux.dev>, <okorniev@redhat.com>, <omosnacek@gmail.com>,
+	<penguin-kernel@i-love.sakura.ne.jp>, <rafael@kernel.org>,
+	<rdunlap@infradead.org>, <roberto.sassu@huawei.com>, <rostedt@goodmis.org>,
+	<selinux@vger.kernel.org>, <senozhatsky@chromium.org>, <serge@hallyn.com>,
+	<sj1557.seo@samsung.com>, <skhan@linuxfoundation.org>, <song@kernel.org>,
+	<stephen.smalley.work@gmail.com>, <takedakn@nttdata.co.jp>, <tom@talpey.com>,
+	<yonghong.song@linux.dev>, <yuezhang.mo@sony.com>, <zohar@linux.ibm.com>,
+	<utilityemal77@gmail.com>, <lujialin4@huawei.com>
+References: <20261117150542.1169451-1-caixinchen1@huawei.com>
+ <20261117150542.1169451-2-caixinchen1@huawei.com>
+ <20261117183059.GP989762@ZenIV>
+ <32b8d9c9-27d2-4da9-8618-ccfc44dee7a3@huawei.com>
+ <20261119052339.GT989762@ZenIV>
+Content-Language: en-US
+From: Cai Xinchen <caixinchen1@huawei.com>
+In-Reply-To: <20261119052339.GT989762@ZenIV>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Content-Transfer-Encoding: 8bit
+X-ClientProxiedBy: kwepems100001.china.huawei.com (7.221.188.238) To
+ whupemk100010.china.huawei.com (7.152.184.41)
 
-Sorry to ping, is this getting tracked somewhere?
-It's not an important fix, but one nonetheless :)
+oh, I get it.
 
-On Thu, 29 Oct 2026 at 09:56, Luca Stefani <luca.stefani.ge1@gmail.com> wro=
-te:
+I think it would be better to use a new function, such as 
+notify_change_internal，
+to bypass this upperpath check, while retaining the inode check.
+
+ovl_do_notify_change
+->notify_change_internal(...)
+     ->do_notify_change(..., true)
+          ->security_inode_setattr
+              if (!internal)
+                  security_path_setattr
+
+But this leads me to possibly needing to split the inode LSM hooks and 
+the path
+LSM hooks.
+
+On 11/19/2026 1:23 PM, Al Viro wrote:
+> On Wed, Nov 18, 2026 at 05:13:31PM +0800, Cai Xinchen wrote:
+>> On whether we want the mount references at all: they are not for NTFS.
+>> The path-based LSM hooks need them - Landlock's check walks the hierarchy
+>> up from the object with path->mnt->mnt_root and follow_up(), for every
+>> layer, and the idmap we pass has to be the one of the mount the path was
+>> checked in.
+> Then it won't be happy with overlayfs ones:
+>          upper_mnt = clone_private_mount(upperpath);
+> ...
+>          upper_layer->mnt = upper_mnt;
+> in ovl_get_upper(),
+>                  err = ovl_get_upper(sb, ofs, &layers[0], &ctx->upper);
+> in ovl_fill_super_creds()
+> combined with
+> static inline struct vfsmount *ovl_upper_mnt(struct ovl_fs *ofs)
+> {
+>          return ofs->layers[0].mnt;
+> }
 >
-> On Wed, 28 Oct 2026 at 22:07, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
-> >
-> >
-> >
-> > =E5=9C=A8 2026/10/29 04:25, Luca Stefani via B4 Relay =E5=86=99=E9=81=
-=93:
-> > > From: Luca Stefani <luca.stefani.ge1@gmail.com>
-> > >
-> > > Treat cancellation as a successful partial trim as ext4 and XFS do.
-> > >
-> > > Reported-by: Zhiwei Liang <zhiwei.liang@zliang.me>
-> > > Closes: https://lore.kernel.org/20261028-btrfs-fitrim-freezer-v1-1-0a=
-d1d58aa94d@zliang.me/
-> >
-> > In fact you should use Link tag here, for the original patch as a
-> > report. Not Closes tag.
-> I think that was my original intention, but I mixed up the patches.
-> >
-> > Otherwise looks good to me.
-> >
-> > I can change the tags at merge time, so you don't need to resend the
-> > series, unless there are other reviews that requires code changes.
-> Thanks! Will fix them up in case.
-> >
-> > Thanks,
-> > Qu
-> >
-> > > Suggested-by: Qu Wenruo <wqu@suse.com>
-> > > Signed-off-by: Luca Stefani <luca.stefani.ge1@gmail.com>
-> > > ---
-> > >   fs/btrfs/extent-tree.c | 5 ++---
-> > >   1 file changed, 2 insertions(+), 3 deletions(-)
-> > >
-> > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > > index 242db255cf1c..90e581c29609 100644
-> > > --- a/fs/btrfs/extent-tree.c
-> > > +++ b/fs/btrfs/extent-tree.c
-> > > @@ -6926,7 +6926,7 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
-, struct fstrim_range *range)
-> > >                       bg_failed, ERR_PTR(bg_ret));
-> > >
-> > >       if (ret =3D=3D -ERESTARTSYS || ret =3D=3D -EINTR)
-> > > -             return ret;
-> > > +             goto out;
-> > >
-> > >       ret =3D btrfs_trim_free_extents(fs_info, &group_trimmed, &dev_f=
-ailed, &dev_ret);
-> > >       trimmed +=3D group_trimmed;
-> > > @@ -6935,9 +6935,8 @@ int btrfs_trim_fs(struct btrfs_fs_info *fs_info=
-, struct fstrim_range *range)
-> > >               btrfs_warn(fs_info,
-> > >                       "failed to trim %llu device(s), first error %pe=
-",
-> > >                       dev_failed, ERR_PTR(dev_ret));
-> > > +out:
-> > >       range->len =3D trimmed;
-> > > -     if (ret =3D=3D -ERESTARTSYS || ret =3D=3D -EINTR)
-> > > -             return ret;
-> > >       if (bg_ret)
-> > >               return bg_ret;
-> > >       return dev_ret;
-> > >
-> >
+> mean that the mount you get won't be attached to anything.  How (un)happy
+> would landlock be with that?

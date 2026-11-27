@@ -1,83 +1,81 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=209.85.221.49
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.130
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795769326;
-	b=XprrZUTLWqIFubjzFSSE5s9irpjnc4GDDti937kOWAqhT5YY2JO3ZWNhiDKrCRriO+HY
-	 q2xTyRmGU1ezakviR1rreucEuWzA5Ere+TD5fdeZZx7ZW7a9IufCDrncSdtqXnzu5GXac
-	 Ir62YSnSJtFx3OJC+a1QUjzvoYvjwzB9pYIKMTHWfoP87VpFr6HBnrtHJMrnnDsqmrBa6
-	 FUugi3bxGfi554CJEApOMJa7vlrnx/db4gBQlSEYavf6iUKUOqwI7tgGy58jTfpn7gkHp
-	 tllEaDZdgXSr1lqavJLOZM7kKP0Iy7EmTaZO0iVszCq4YO1NkTCiAKds8dIravnJ7mw==
+	t=1795770586;
+	b=LdiGWbMPaXlj8TorATcuTE0pkHxfar7mNK6tscgb0No+r36TPpeC4+lYWXxLXYEE66g5
+	 X5MhYU5Wq8/iTpONQrzr/yfwSIUFrUiv9gYXO3CoFDNIFHh3oi3VpOkC2SsiUtXMcEL19
+	 pmptqzxieH1cVp8stlQm8Tv8FNVnLu2y57ohC5UXzyXX7WF82eRQRu/XS4Zdc+r3nHO6t
+	 atR4xpcHpJXXR/DH9gSByT9XrExbOvlt5YJR6/VEEjdS5D6Nlx6IFPo/SWXjW020f372R
+	 AIMq5U+K51bVZjntpB7eddyqisk7BoQLmA/fewa/LrY5wvJ4vHA5yeNTbLGKWZek9Mg==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795769326;
-	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
-	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:Received:
-	 Mime-Version:Content-Type:Date:Message-Id:Cc:Subject:From:To:X-Mailer:
-	 References:In-Reply-To;
-	bh=IDez9NqT7Tj1QDvV6FYEN7zWNFn2T031QM3aseBOhj8=;
-	b=5b8labWCupexsYFLCMWaOODDvXvhAUlQm4rlHmFR79hAgUFiZFgx20MralCnlx0SZDEt
-	 W6m8+1bC0cgan88P9b5Xu4Jx5P6ZwXMSTWBSJ82uWeJvjTxzL2tbcXTMO/ZyKyNzGZ42h
-	 eu08HXemVsifVCIO86vI9cvCCUHi9hFSa2bi7DbY/jTmLsTG+arH6+lc5eyUcpdC4UXvf
-	 x+GqlKip12KHBc6o2ykkN/QCaXRJsEW2xRNV8XN2U8Qxsurid4rTbXsjKbkqhR5ijK0/g
-	 /sueT0yJRI91dk0l6TyDVzrDS9VsL1jLuOR5RwIIXbae+GvRJjA5YBZWgX+zj2EseBw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795770586;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Rspamd-Queue-Id:X-Spam-Level:
+	 X-Rspamd-Server:X-Rspamd-Action:X-Spam-Flag:X-Spamd-Result:
+	 X-Spam-Score;
+	bh=cLKF4EcYEjWhoMdWJsYcN7MHJIbXuo2uEvp8+lV+IQ0=;
+	b=IJCrt2vohqWJS/i9x/QceggW+sTB/vycSQlt7XtEAfnrvuBgHNtXzi2IsQ1CRxFEeupc
+	 ECDFPJ+P/SuG6jOHZlmpxQR1QQMVpvQYFfK3394ydAlgPH/xU1mh/dJbKTtx2mRPGi+Ix
+	 OL/4ZAX4laD3LjT5HEMk39uIazI4uieYJQOUFKTQ3PMcVBD6TjgndujObnX7li0uhj4MQ
+	 BJrrp/oQX2dAJsbb/RR3KE4BVWKy2wsXHUI3RdXanQqPOvXLmtNNi15i2IUE79l1IoRZe
+	 t1QmRvjGFjLYFsFnCvCleUMmy3V0ioNpEerhrfzow1Ntf/Umfu+ko6PZ9zIY5E3vueQ==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dmarc=pass header.from=gmail.com;
-	spf=pass smtp.mailfrom=gmail.com;
-	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=dbJOZn5M;
-	arc=none smtp.remote-ip=209.85.221.49
-Received: from mail-wr1-f49.google.com (mail-wr1-f49.google.com [209.85.221.49])
-	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fobCm1kp;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fobCm1kp;
+	arc=none smtp.remote-ip=195.135.223.130
+Received: from smtp-out1.suse.de (smtp-out1.suse.de [195.135.223.130])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
 	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 8F674606A31E
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 08:48:45 +0000 (UTC)
-DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 8F674606A31E
-Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
-Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 37323606A31C
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:09:46 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 37323606A31C
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=dbJOZn5M
-Received: by mail-wr1-f49.google.com with SMTP id ffacd0b85a97d-4b52fcb410dso3031948f8f.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 00:48:45 -0800 (PST)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=gmail.com; s=20260707; t=1795769324; x=1796374124; darn=vger.kernel.org;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:from:to:cc:subject:date:message-id
-         :reply-to:content-type;
-        bh=IDez9NqT7Tj1QDvV6FYEN7zWNFn2T031QM3aseBOhj8=;
-        b=dbJOZn5M3rCgRLPPOUJ++VnJKMJQm3Ohn3x6VlLjqOyC2bNT9/mOFF1yxLOyrzF1bl
-         C+Kj5lfk/G5v+Ibl6kXxQpP75b5N2GOnPrygQfOpb+hL8pJdLWW2ruCSdOPWljpoOom9
-         3k2U5q90CgtKcvQNVpmkgFpbHw4JRD8hnkpuKZMsHjBoE3LC1jnUEnzmSEuovDxk9r9t
-         Wtqp53MEml1QkDIqwqCWvYw2/rzLoJc4/KbtnJ3GcoNMKSCSq01qjbob847q1eNmgWQu
-         Cney17f61yibRSRiKAu1tIAGEODdNaIqbSZsxA3cV2i7XAT3GC/VSTY+hR3Urp47LrxJ
-         8cOw==
-X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
-        d=1e100.net; s=20260707; t=1795769324; x=1796374124;
-        h=in-reply-to:references:to:from:subject:cc:message-id:date
-         :content-type:mime-version:x-gm-gg:x-gm-message-state:from:to:cc
-         :subject:date:message-id:reply-to:content-type;
-        bh=IDez9NqT7Tj1QDvV6FYEN7zWNFn2T031QM3aseBOhj8=;
-        b=XkHZFof4Edql488+S/KsGWboQlMJrOqmvvsPCp1mTqLIzjXIMzg7RLQB1+09yZgBCl
-         ChAXoWUYF1PglTPK8lNi4ftQoBIi7vAovKsew84FXi6op0YFfomeekmiH/tk6Ui+WVTN
-         pfg/Xbe/y4tDb5hm8SZlaejNRQLQe0jfM5uZLM9OvPvOQU17CdCH5wuYom+oyPrRw7Wr
-         l8jrkvPlF8lNUu91bg6N8cXmeGk0oamOLd00xlHIbTPNLa8bgat3m+zs+YUO+Omka60j
-         iDZ2TvB6ajRlcBf+ZMg8joPV41XoVnIvchb18c0+vT2vPSghpYA1P46YkOFazbRlm2hu
-         txEg==
-X-Forwarded-Encrypted: i=1; AL+hErGLeg1GZY+aEC13f5QHJv7Uv5jg2LGtd63txIfv8sR7pzV7ZVs2+pG3fkYkt23GJM3X8N6/eKU+WQ8ELg==@vger.kernel.org
-X-Gm-Message-State: APuU4Z/2MuZEUNSxI2KHGXTehsiLiptmVn3YaWZ4QyshIM3oqZ6GCHAn
-	qTXXGO2Qh7pusKyitQjZMKq/dQM2to+piO7IP1X3WqNiu01jgrqtQU2N
-X-Gm-Gg: AZFdTZe7GAzyTisMAlVRybNClSCKOzSXdSlqwnYHtDlrDo63PtbZswe53QCFLLy21Zk
-	KQqQrjr08mzx2jWg9q5CjDkR+L9Vmy/fvdyTTxcYCga5hOtqs1gYDIuD4Q7URq0ZJxe8a55/tpA
-	4QlbSy8xRCCQGhxzAnbrswqXhDLquQiqr/UoCHdWmlHGZM8p1QVKnKnR+ZeGelaVnnKg7L2H3tI
-	AL+UPhw3EpVrhVhjkldP3Hkkia+FfSMhUFLRz0D6MNh5zyFjec1/LfqAsUKXh8QnTfi0VUjpnaW
-	Io9qluPCC4TKsvRcAf7QPSBLlsNNR0F4Rm3YYWQx2iGhXVLeBp9sGioC1XO104YpmfyaMb1TYmN
-	ZY3VXrifm61eW/1uOkUvvyLP4S/N4eE+vCqyogfFM7b/eaIwuMePgOCZMnODP4baxaeeATUr1DN
-	8w5ZS1g5WE+hTYi6TRErTiywwNhWsGuaqFFWXHsYYua7YvqFQz7jg5V4Fdg48RAo3YgQvkr1mQv
-	c1DWjNFPZEoWu2vlSrbxdQeSK9To2U1Y+1lDRUf60PPjrIrE06DP+4+ihqyVNgY0FeqV7D3W1X3
-	muUHMukJu+a+6adihumfK8BFOS3u5kfBk5tMLix/nN8JgSZ4iDIvX/dhS8Z4us7d0OICnA==
-X-Received: by 2002:a05:600c:4f81:b0:4bb:5e8c:13bc with SMTP id 5b1f17b1804b1-4bb88805902mr454676765e9.7.1795769323802;
-        Fri, 27 Nov 2026 00:48:43 -0800 (PST)
-Received: from localhost ([130.192.98.149])
-        by smtp.gmail.com with ESMTPSA id 5b1f17b1804b1-4bb906635c7sm426511305e9.2.2026.11.27.00.48.39
-        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
-        Fri, 27 Nov 2026 00:48:43 -0800 (PST)
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fobCm1kp;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=fobCm1kp
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out1.suse.de (Postfix) with ESMTPS id 794E52277B
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:09:37 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795770577; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cLKF4EcYEjWhoMdWJsYcN7MHJIbXuo2uEvp8+lV+IQ0=;
+	b=fobCm1kpI6F12vxSNXTpPUBWRceqKlfNwJwaWXBUBGOI+dfxUhbF1x1a/ibyqEfKcv5+UA
+	raQH1458ALd0IPQSewTcWnD4c2J9cSQLE3Xd8cONygnE1n0kBBn7DmOOXWZO1vgWjDBCbo
+	Dw1Eu08+ARWcdxwucW5dJTIgk8+dNa0=
+Authentication-Results: smtp-out1.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b=fobCm1kp
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795770577; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=cLKF4EcYEjWhoMdWJsYcN7MHJIbXuo2uEvp8+lV+IQ0=;
+	b=fobCm1kpI6F12vxSNXTpPUBWRceqKlfNwJwaWXBUBGOI+dfxUhbF1x1a/ibyqEfKcv5+UA
+	raQH1458ALd0IPQSewTcWnD4c2J9cSQLE3Xd8cONygnE1n0kBBn7DmOOXWZO1vgWjDBCbo
+	Dw1Eu08+ARWcdxwucW5dJTIgk8+dNa0=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 545D5134E8
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:09:36 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id KmCXKM9ICWu6BwAAD6G6ig
+	(envelope-from <wqu@suse.com>)
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:09:36 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 0/3] btrfs: prepare and move async csum generation out of experimental feautres
+Date: Fri, 27 Nov 2026 19:39:14 +1030
+Message-ID: <cover.1795770362.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -86,75 +84,83 @@ List-Subscribe: <mailto:linux-btrfs+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
-Mime-Version: 1.0
-Content-Type: multipart/signed;
- boundary=c6f8ca06bd0087fb130def184d18448cb7c766d554c063c5f32d1cf88680;
- micalg=pgp-sha512; protocol="application/pgp-signature"
-Date: Fri, 27 Nov 2026 09:48:36 +0100
-Message-Id: <DN5V3F9BWZNC.ZIJY7Q6XMDOM@gmail.com>
-Cc: "Namjae Jeon" <linkinjeon@kernel.org>, "Hyunchul Lee"
- <hyc.lee@gmail.com>, "Eric Biggers" <ebiggers@kernel.org>, "Theodore Y .
- Ts'o" <tytso@mit.edu>, "Jaegeuk Kim" <jaegeuk@kernel.org>, "Alexander Viro"
- <viro@zeniv.linux.org.uk>, "Christian Brauner" <brauner@kernel.org>, "Chuck
- Lever" <cel@kernel.org>, "Jeff Layton" <jlayton@kernel.org>, "Jan Kara"
- <jack@suse.cz>, "Alexander Aring" <alex.aring@gmail.com>, "Darrick J .
- Wong" <djwong@kernel.org>, "Andrey Albershteyn" <aalbersh@kernel.org>,
- "Amir Goldstein" <amir73il@gmail.com>, =?utf-8?q?Pali_Roh=C3=A1r?=
- <pali@kernel.org>, "Lauri Gates" <lauri.gates@gmail.com>, "Christoph
- Hellwig" <hch@infradead.org>, "Dave Chinner" <dgc@kernel.org>,
- <linux-btrfs@vger.kernel.org>, <linux-xfs@vger.kernel.org>,
- <linux-kernel@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
- <ntfs@lists.linux.dev>, <linux-nfs@vger.kernel.org>,
- <linux-api@vger.kernel.org>
-Subject: Re: [PATCH v2 1/4] vfs: use goto out on error in vfs_fileattr_set()
-From: "koraynilay" <koray.fra@gmail.com>
-To: "Greg KH" <gregkh@linuxfoundation.org>, "koraynilay"
- <koray.fra@gmail.com>
-X-Mailer: aerc 0.22.0-0-gc2f86b7abde3
-References: <20261126163114.403846-1-koray.fra@gmail.com>
- <20261126163114.403846-2-koray.fra@gmail.com>
- <2026112647-earful-frosted-6ef3@gregkh>
-In-Reply-To: <2026112647-earful-frosted-6ef3@gregkh>
+MIME-Version: 1.0
+Content-Transfer-Encoding: 8bit
+X-Rspamd-Queue-Id: 794E52277B
+X-Spam-Level: 
+X-Rspamd-Server: rspamd2.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	MID_CONTAINS_FROM(1.00)[];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	FROM_HAS_DN(0.00)[];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	ARC_NA(0.00)[];
+	RBL_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:104:10:150:64:97:from];
+	RCPT_COUNT_ONE(0.00)[1];
+	PREVIOUSLY_DELIVERED(0.00)[linux-btrfs@vger.kernel.org];
+	FROM_EQ_ENVFROM(0.00)[];
+	RCVD_TLS_ALL(0.00)[];
+	RECEIVED_SPAMHAUS_BLOCKED_OPENRESOLVER(0.00)[2a07:de40:b281:106:10:150:64:167:received];
+	DWL_DNSWL_BLOCKED(0.00)[suse.com:dkim];
+	RCVD_COUNT_TWO(0.00)[2];
+	TO_DN_NONE(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	DKIM_TRACE(0.00)[suse.com:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[imap1.dmz-prg2.suse.org:rdns,imap1.dmz-prg2.suse.org:helo,suse.com:dkim]
+X-Spam-Score: -12.01
 
---c6f8ca06bd0087fb130def184d18448cb7c766d554c063c5f32d1cf88680
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=UTF-8
+[CHANGELOG]
+v3:
+- Rebased to the latest for-next branch
+  Which has all the extra ordered extent IO waiting to address the
+  possible race with fast fsync.
 
-On Thu Nov 26, 2026 at 8:05 PM CET, Greg KH wrote:
-> On Thu, Nov 26, 2026 at 05:31:11PM +0100, koraynilay wrote:
->> Switch from using if (!err) { ... } to the cleaner if (err) goto out;
->> in the main body of vfs_fileattr_set().
->>=20
->> Signed-off-by: koraynilay <koray.fra@gmail.com>
->
-> Real name please.
+- Update the last patch to show more reasons why the existing metadata
+  csum offloading is not beneficial
 
-Hello, this is the handle I use for everything online, thus my "known
-identity", and even Linus himself in Commit d4563201f33a
-("Documentation: simplify and clarify DCO contribution example
-language") said
-> And despite the language, we've always accepted nicknames and
-> that language was never meant to be any kind of exclusionary wording.
+v2:
+- Introduce a patch to fix a potential data loss with async direct
+  writes
+  This is an existing bug, not only affecting the async data csum
+  generation. Introduce a dedicated fix for it.
 
-Also, I already have a few accepted commits (here[1] and elsewhere[2])
-with this DCO, so it shuold stay like this.
+- Introduce a patch to fixx an ASSERT() false alert race
+  Again an existing bug.
 
-Thanks,
-koraynilay
+For the last iteration, the only remaining concern is the fast sync path
+race with async data csum generation.
 
-[1]: https://lore.kernel.org/linux-cifs/?q=3Dkoraynilay+%22Applied+it%22+f%=
-3Ajeon
-[2]: https://sourceware.org/git/?p=3Dglibc.git;a=3Dcommit;h=3D29803ed3ce
+That is already fixed by Josef's fixes that added extra ordered extent
+IO wait, so it's no longer a problem.
 
---c6f8ca06bd0087fb130def184d18448cb7c766d554c063c5f32d1cf88680
-Content-Type: application/pgp-signature; name="signature.asc"
+Now there should be no more blockage for enabling async data csum
+generation.
 
------BEGIN PGP SIGNATURE-----
+Qu Wenruo (3):
+  btrfs: fix an ASSERT() race with async csum generation
+  btrfs: make btrfs_fs_info::workers to be a regular workqueue
+  btrfs: move async data csum generation out of experimental features
 
-iHUEABYKAB0WIQRJ2XvJtXGwULYEerQ0bnTtJTDoOAUCawlD5AAKCRA0bnTtJTDo
-OA8rAQDeEx1D2WxXRvyGunXEuOW+Cj+dElpy7MJchlEm/WMNBwD+JvucXkEupO3z
-6yiHSY99QVuCP3aqlN/orccezZlLGQ4=
-=mM8H
------END PGP SIGNATURE-----
+ fs/btrfs/Kconfig     |   2 -
+ fs/btrfs/bio.c       | 139 +------------------------------------------
+ fs/btrfs/disk-io.c   |  47 ++++++---------
+ fs/btrfs/file-item.c |  15 ++---
+ fs/btrfs/file-item.h |   2 +-
+ fs/btrfs/fs.h        |  17 +-----
+ fs/btrfs/super.c     |   2 +-
+ 7 files changed, 32 insertions(+), 192 deletions(-)
 
---c6f8ca06bd0087fb130def184d18448cb7c766d554c063c5f32d1cf88680--
+-- 
+2.56.1
+

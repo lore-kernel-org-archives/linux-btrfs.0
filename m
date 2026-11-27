@@ -1,54 +1,100 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
-ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795800052;
-	b=dMW0KpmJSzyrkTZCM7LHsOiBp2YgDsaBMHBYS6izoQIEtQ6vY8xG/WF9SoMQpEzel7xQ
-	 cWBIJXqEy34qtpMfaMApELgx8elQiGtmhmaN6AdNFYBmMq8j+AxeBS/R2Tb1QF/4byKiq
-	 b4c5Wnh6/OVwLxBk1Nou60PRbrI+zTuVCbu1MLkMYxL17EfnOyvWlXIIscQQ1Rxk4UKWl
-	 Hvcw17LxBBnW+rNj+Fha4UvYyyxfCiQWbSbQ4Mwa22HpIfJ30JpEopPx5gDeRWFUubJw0
-	 UDSQxjYjUCOv/+Ys6cKaeAFoMcpcr0YFcpgRAldT8eQ1MiW7R2Bvd9DYzPJ9H0rkSsQ==
-ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795800052;
-	h=Received:DKIM-Signature:Received:X-Gm-Message-State:X-Received:
-	 MIME-Version:References:In-Reply-To:From:Date:
-	 X-Gmail-Original-Message-ID:X-Gm-Features:Message-ID:Subject:To:Cc:
-	 Content-Type:Content-Transfer-Encoding;
-	bh=5518uRaiYAcfgGomSLC/0QtXxuMjcu7WTODPF/FTBvE=;
-	b=WTAOTL+oXO1Bqu55hoo1xlz+iJWiDTNL9OJZYVQROQVQ6cSHlogYgeTLLqQxhl3zDRkq
-	 V1543gIzeAo/xgswLn08i1yZs23y2cEdNoLwAKjuhE9/mrxLBEO0EYs3Ok1KDLDQL9pYt
-	 L7YXwNIZ2cemfWwTo5xm+reHoPAgxb7i7Z4L3okxMDIw76otd/ZppC5u+yK+ukSWOGm2Q
-	 uqae6Ay0Fp8iCRf0VXdQomCsda4khYxK1dN4Rl/TzOrTeGmXi/A4nBVcTguzDf/wz0+nr
-	 gUAdFmawY8rVmXy69aQwNtkzGEWYSod8+G9L2eqBkVuS0unfTo6fSKrDB9o58dB8yvA==
-ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WpuHiBJs;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+Authentication-Results: smtp.subspace.kernel.org; arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.53
+ARC-Seal: i=2; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=pass;
+	t=1795801738;
+	b=v0qn9+K8nrezxr0WfklkvvZ5zwg3d+bXA4uJ7Ll9YT11Tsfm9VD9dsj4KdpPf6gW9Cx3
+	 pxIZKxhAVFP9gon369HA/NyyItrIkigDf5udMuyuDxCnNGrCdm3/OTUGKfiIAwylZDV/3
+	 H4P4sUhjANYZMbjI85xqgwFljaGzcOXBuLXgJK0bRR1FXG7+qQfPndC5fRGsUy4PQSdA+
+	 Y8Zs2MuKzhbKa2jbK+cQ0pSLsM9VhzJvbOMikw6k2mwfYfUCU/KVfLLJxuy8OHSSW+PzK
+	 BOZPDQ/0KQzPkbX/efvDKg1EwEux1DLrHq9bt33Gbdh5vlcUI6CbKvmNm4YQBakYMbg==
+ARC-Message-Signature: i=2; d=subspace.kernel.org; s=arc20261015;
+	a=rsa-sha256; c=relaxed/relaxed; t=1795801738;
+	h=DMARC-Filter:Received:DKIM-Signature:X-Google-DKIM-Signature:
+	 X-Forwarded-Encrypted:X-Gm-Message-State:X-Gm-Gg:X-Received:
+	 MIME-Version:References:In-Reply-To:From:Date:X-Gm-Features:
+	 Message-ID:Subject:To:Cc:Content-Type:Content-Transfer-Encoding;
+	bh=4NP3xmdcvcjCS2SZQyHbU7Q7bT0EyXEC69nEAnrWWLo=;
+	b=xbs4Wf9O5blDSwGl8Ms9QK9ckz8xmTtOyWqZYL3961eSSl9uOgNO/gTMqhuk19/Ox5J/
+	 OjZofYOgVfMy62Nv+eM373YR2dSN/+Vf2Zj/0H4ZfqvClNvKzNLjOKA2ZJG+fuxd70/4N
+	 27mbUT8SLvpEe1bxSWQ1baQ3g7wg6Prb9q+eAXb6/5xTFtl80Zr5GV/6ePsDM6Ep3Vl8U
+	 huPMnwlY8KQFXm7iuZ3a4Imm7w4XeLjoaOKDNc+pQ8gDmM9KpzvzxAXG1GkK695zglku+
+	 1Dc9Wsfm18pz3GqSIW6uHlcaeQ0Zv6wvC99EVhg50MvEu1U+HGz5+E8bNUF60rzn/Ew==
+ARC-Authentication-Results: i=2; smtp.subspace.kernel.org; 
+	dmarc=pass header.from=gmail.com;
+	spf=pass smtp.mailfrom=gmail.com;
+	dkim=pass header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=jywcCjsi;
+	arc=pass header.oldest-pass=0 smtp.remote-ip=209.85.218.53
+Received: from mail-ej1-f53.google.com (mail-ej1-f53.google.com [209.85.218.53])
+	(using TLSv1.3 with cipher TLS_AES_128_GCM_SHA256 (128/128 bits)
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 840CE606A31E
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 17:20:52 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id DE5F1606A324
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 17:48:57 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org DE5F1606A324
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=none dis=none) header.from=gmail.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=gmail.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=WpuHiBJs
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 189271F0092B
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 17:20:52 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795800052;
-	bh=5518uRaiYAcfgGomSLC/0QtXxuMjcu7WTODPF/FTBvE=;
-	h=References:In-Reply-To:From:Date:Subject:To:Cc;
-	b=WpuHiBJsHsXaKsL6CRyL2gS44wpFKse8ahuNHpr5Wbo9s8kRvdrcW7ac4EAtGBHaL
-	 kBandPZcZJpAYlgAxznNoz1f0pMrjeJF21e8XbNBDbZdfOlqZf/KbLaaSv0cEnGrbh
-	 ntFLleKbz4FzklA8rL8vZDmsIFXpnFTs1YuUvqS0Jw4rAxRjxySWCCHVrri9A2iF7S
-	 93JZLmWaGMqj5oJThOaiAVpcPz8hiyFSmxGYHoO+DAlTTv9pn5jW8DDhhg7BVmd8fv
-	 71e/+QpU0XilclaL2W6mPe/k9VgXJ02X87HKUfzlAwtQ0zZ3QNtep+npFZwxqw/gYn
-	 gf693ffUzaDRA==
-Received: by mail-vk1-f170.google.com with SMTP id 71dfb90a1353d-5ee36376a0dso4571635e0c.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:20:52 -0800 (PST)
-X-Gm-Message-State: APuU4Z/PnKIo/Hn/GnqKQsOf2fexf0huBwVzWokjIFpw3dhcfcVUI/db
-	nTH+p/THqNtNO3j6lenXNt1IiTg87FFwEyJDfuv9BtXY7PDd5oLyfawXFO4FkSBQkLKQDt9f39+
-	qsdk6gUZFU57Kxd9WYr9UQhQIAL0maO8=
-X-Received: by 2002:a05:6122:c88:b0:5ca:f811:25ac with SMTP id
- 71dfb90a1353d-5ee8aefbb61mr15829092e0c.14.1795800051199; Fri, 27 Nov 2026
- 09:20:51 -0800 (PST)
+	dkim=pass (2048-bit key) header.d=gmail.com header.i=@gmail.com header.a=rsa-sha256 header.s=20260707 header.b=jywcCjsi
+Received: by mail-ej1-f53.google.com with SMTP id a640c23a62f3a-c5198302d38so658756966b.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2026 09:48:57 -0800 (PST)
+ARC-Seal: i=1; a=rsa-sha256; t=1795801736; cv=none;
+        d=google.com; s=arc-20260327;
+        b=EpWViK8HSMVpUI+OHjLMPTdCuw3QawPrToYi3zfG3hwh1z2Rs1HX42sjWZcx1Cuf6C
+         VPpKbHEf/XsJjk1NytbJsA2+5WEOsAgyV2WRd9xl3d53AwWxVzdjT+mGVPuhsToVQ6dp
+         v4Cyt3NW/3w4YypivjtDAn687ZgU8SLElKVn7EwO4ZaKB6d+r9bwBUM9VIOC2KBJ9Ddz
+         PZVvna+k/t/6FnTjTgQXMOh1Lkipjthy+JurGg3anCMgpbyfCiQguEhxffQHrgY3GEra
+         tKQBmMaS8L1JVPh01PaxxFZsmyehk6Xa3xPQR+ug4nKlYXmlTp4um0VPJU2hvNrl15WF
+         boIA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=content-transfer-encoding:cc:to:subject:message-id:date:from
+         :in-reply-to:references:mime-version:dkim-signature;
+        bh=4NP3xmdcvcjCS2SZQyHbU7Q7bT0EyXEC69nEAnrWWLo=;
+        fh=uaJHkyuvUv74VYBNGpzukd5GGB+x44cFlRUD3gZlRyU=;
+        b=DagPZFflXJsgj6AmKSINRbhPVZkr1gLFGqIYltZyEnRXGziLb6/yd82u8nZyPHRatD
+         koMeSPhIQRgt7nlONFrBxhizfuZItjCObNmuqwiT/BSAI3Eno3IfuS4stCCQxv/tOa6C
+         k2rQkndoKnhv2hYf60u4iAgRvD91BHTclakAKjPyBg0tsWW+tiOkcRBUT2d5+Yu30ii/
+         RULGCjneDSPNxeG1E4iGXnJoRKI6KpSSKEXDUR5rHQgdJR0qNI8iWqxnToFgC929goHX
+         BLyZ9y3b3v5S5YaCsWtXp6/e6L8MGt7Bl4E7AntM1TZ/JyFzOdwCazOUp3xNXl+2lvM1
+         7Ojw==;
+        darn=vger.kernel.org
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20260707; t=1795801736; x=1796406536; darn=vger.kernel.org;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:from:to:cc:subject
+         :date:message-id:reply-to:content-type;
+        bh=4NP3xmdcvcjCS2SZQyHbU7Q7bT0EyXEC69nEAnrWWLo=;
+        b=jywcCjsiFCZrPcjxACDnJ5FdOK31KjFc3GBaicfYGk7iiBC6UG3K0qMaAjw9Ar7fSH
+         Q0PGguglpEzEJ3+8LOwFG6a/YmHegNfY0vOdp44ZCDyC4NnFmSxzLJCBPRevj8rLQ/jl
+         wJ1boUAUclJI/vR8Mdz/j4JHWRtxPKvkIhIn7jHB0eTf7hoI5D0xXtEJK7OMu2IcPtjL
+         43D3LGlw1FWKEj4Dl/eo2Oba5rUgKCSsnOknaOLB2xtGlhIWPble2Vn3nE8ULGJigqiW
+         aCccX2I5jSQzy13X0wKwYpT7zY1QnyY/znLD+P+sbQwP/ZsF77XT3taKYms8g2oIJxc8
+         TlKw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20260707; t=1795801736; x=1796406536;
+        h=content-transfer-encoding:content-type:cc:to:subject:message-id
+         :date:from:in-reply-to:references:mime-version:x-gm-gg
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to
+         :content-type;
+        bh=4NP3xmdcvcjCS2SZQyHbU7Q7bT0EyXEC69nEAnrWWLo=;
+        b=X/4tqTY+OikcT57WByZKH2/w4jC9G8bhi0wE807x9OLBqj8jJSWQ9p8T3ZzGYljCgC
+         zKJj5xZTV+jj/zEaDMnigoizfJAYxY48dgdlvyE8NJLrR39WZQPeX3EBfo1nhVQ+fn7V
+         mulWP2rFzrX/ZN3mn/Jaa8zGWdJWCNIfmoubK5MYjGSlnwvobViWZ9Z41jNm7gOFAhf2
+         m5x8cAxN7eGSjYCzHaneqx5MM7WCV/D+QsTYfBHNF5exsu20enlYzEswSN3QsWRRJXAC
+         tJLdPWMRHrk/s5j5sIfBqc8cqGWjMEVnIxjc3JClcYvEDB+f9Ew1L4ALjVapnvRZN697
+         k2sg==
+X-Forwarded-Encrypted: i=1; AL+hErEmpiT4b78LP9t0ggRot/Dv+uUPuzfkmCB+ALTBfeW9FoFZKaZP5XzqYIQxdEhcmsjRCyIoCw7iO2HkQQ==@vger.kernel.org
+X-Gm-Message-State: APuU4Z/oEGa05S+8IqWXMYj2O0+W2fe6uoclU7i+DTRe/h315Lkvrg2k
+	TcwRjYhJI+m3sT838vOFVbNYh/3xoOi+aROBl0BcdTpHSSyLgQbDX/eFoBArTypZi0nNN0O71Mk
+	PpMv52lWHXB26gX28qudL1vkhq1+YilU=
+X-Gm-Gg: AZFdTZceMCXLWeG4d7EUWkb5Cr2d51F9AWNYVw8eK9i9x2aLi99SKEcwTbaFGcYjf2p
+	gJr6LAgA0kDLIZDeAksOavCqlZHVkKYVbgxWUqSwDtd2t0mnVtrlkAURJoIckXJkHf+5EnbXmJd
+	H3OpPA6ha4fN02KfFsXt3U0sfx6fOBFGTpxEd95paucxGmw0Zh/rRJ7JV7ZOXcVC9Bh8rj4hTar
+	XHUYBsdItl0jFVM1gxrVjZ8SMQ8CySHJH/bmNjsaAe8wJGnbHgXTfY6GJqyamOhQZzsVV3G+Fuk
+	CoOAHTnaxGCgnogl/QyTTXIl0tbAKnBKT0zOouKbQqTw3JDV4Cx5WHmZnt1vFSKu7olIR8ZQRrb
+	CM9OFgnjlpECzLbm1PMU8v778/Z6hpNMCbeISNovjfa4pA4rR4v/r+SG5fF3ABKyv8XayKA==
+X-Received: by 2002:a17:906:fa82:b0:c50:4b6e:329 with SMTP id
+ a640c23a62f3a-c513a5eaea2mr1670240066b.15.1795801736044; Fri, 27 Nov 2026
+ 09:48:56 -0800 (PST)
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -58,157 +104,408 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-References: <TY8P153MB237624AA8DAAC5323DE20B46DF412@TY8P153MB2376.APCP153.PROD.OUTLOOK.COM>
-In-Reply-To: <TY8P153MB237624AA8DAAC5323DE20B46DF412@TY8P153MB2376.APCP153.PROD.OUTLOOK.COM>
-From: Filipe Manana <fdmanana@kernel.org>
-Date: Fri, 27 Nov 2026 17:20:14 +0000
-X-Gmail-Original-Message-ID: <CAL3q7H5OMMDJYzHsPiSqQ8pMMQM8rg2RksFncEb82yosKiBL_Q@mail.gmail.com>
-X-Gm-Features: Aa3M54piqCF-CDxc5m15NPX1PLDzN8atOS_7AppjviKHHB6pnxHPr5wzAvtSNjs
-Message-ID: <CAL3q7H5OMMDJYzHsPiSqQ8pMMQM8rg2RksFncEb82yosKiBL_Q@mail.gmail.com>
-Subject: Re: [BUG] btrfs: RENAME_EXCHANGE with a snapshot's subvolume
- placeholder aborts the transaction
-To: Tianyu Chen <chentianyu@microsoft.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>, 
-	"mason@kernel.org" <mason@kernel.org>, Ruize Tang <ruizetang@microsoft.com>
+References: <20261126163114.403846-1-koray.fra@gmail.com> <20261126163114.403846-4-koray.fra@gmail.com>
+In-Reply-To: <20261126163114.403846-4-koray.fra@gmail.com>
+From: Amir Goldstein <amir73il@gmail.com>
+Date: Fri, 27 Nov 2026 18:48:44 +0100
+X-Gm-Features: Aa3M54rplZXRDBhv3WQRBlPtKHvT79Bv4I4ULdt4TzjSZUQl0v3AcaIQB8R9sLk
+Message-ID: <CAOQ4uxhA+93bo5WseLxe7cAvJHJ8eQodoQHLwh=iToyEVkeXEA@mail.gmail.com>
+Subject: Re: [PATCH v2 3/4] vfs: add xflags mask to fileattr API
+To: koraynilay <koray.fra@gmail.com>
+Cc: Namjae Jeon <linkinjeon@kernel.org>, Hyunchul Lee <hyc.lee@gmail.com>, 
+	Eric Biggers <ebiggers@kernel.org>, "Theodore Y . Ts'o" <tytso@mit.edu>, Jaegeuk Kim <jaegeuk@kernel.org>, 
+	Alexander Viro <viro@zeniv.linux.org.uk>, Christian Brauner <brauner@kernel.org>, 
+	Chuck Lever <cel@kernel.org>, Jeff Layton <jlayton@kernel.org>, Jan Kara <jack@suse.cz>, 
+	Alexander Aring <alex.aring@gmail.com>, "Darrick J . Wong" <djwong@kernel.org>, 
+	Andrey Albershteyn <aalbersh@kernel.org>, =?UTF-8?Q?Pali_Roh=C3=A1r?= <pali@kernel.org>, 
+	Lauri Gates <lauri.gates@gmail.com>, Christoph Hellwig <hch@infradead.org>, Dave Chinner <dgc@kernel.org>, 
+	linux-btrfs@vger.kernel.org, linux-xfs@vger.kernel.org, 
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org, 
+	ntfs@lists.linux.dev, linux-nfs@vger.kernel.org, linux-api@vger.kernel.org
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Nov 27, 2026 at 6:31=E2=80=AFAM Tianyu Chen <chentianyu@microsoft.c=
-om> wrote:
+On Thu, Nov 26, 2026 at 5:31=E2=80=AFPM koraynilay <koray.fra@gmail.com> wr=
+ote:
 >
-> Dear BTRFS maintainer,
+> Add fa_xflags_rw_mask and fa_xflags_ro_mask to struct file_attr, both
+> __u64 to match fa_xflags' size, and bump FILE_ATTR_SIZE_LATEST to
+> FILE_ATTR_SIZE_VER1, which is now 40 bytes.
 >
-> I found a bug in Btrfs.
+> Add equivalent masks and a has_masks selector to struct file_kattr, so
+> we can know when a user of this API (userspace or filesystem) supports
+> them.
 >
-> Summary:
+> This lets filesystems advertise their support for specific xflags, like
+> statx.stx_attributes_mask does, and userspace can specify only which
+> xflags it wants to change without needing a RMW cycle.
 >
-> renameat2(RENAME_EXCHANGE) between a file and the placeholder that a snap=
-shot shows in place of a nested subvolume aborts the transaction with -ENOE=
-NT and forces the filesystem read-only. No privileges are needed: any user =
-who can create a subvolume and snapshot it can do this.
+> These masks have the following semantics:
+> - fsx_xflags_rw_mask:
+>   * for filesystems: advertise which xflags they support changing
+>   * for userspace:   specify which xflags it wants to modify
+> - fsx_xflags_ro_mask:
+>   * for filesystems: advertise which xflags they support only reading
+>   * for userspace:   ignored
 >
-> The placeholder is not an ordinary empty directory. Its dir item points a=
-t the nested subvolume's root item, and no root ref links that subvolume to=
- the snapshot, so lookup returns an in-memory stub directory with inode num=
-ber 2 (BTRFS_EMPTY_SUBVOL_DIR_OBJECTID) that has no inode item and no inode=
- ref.
+> And they should be filled according to the following:
+> - GET:
+>   each filesystem that wants to implement this new API fills the masks
+>   according to its supported read-write and read-only xflags,
+>   then:
+>   * for boolean xflags: it fills fsx_xflags with the current on-disk valu=
+e;
+>   * for value xflags: it sets the xflag bit to 1 in fsx_xflags and the
+>     xflag value in the struct field;
+> - SET:
+>   userspace fills the rw_mask with the bits of the xflags it wants to
+>   change, then:
+>   * for boolean xflags: it provides the xflag value as a bit in fa_xflags=
+;
+>   * for value xflags: it sets the xflag bit to 1 in fa_xflags and then
+>     provides the value in the struct field; if the xflag bit is set to 0
+>     instead, this informs the kernel to unset/clear that value.
 >
-> Reproduction (as attached):
+> Add AT_FILE_ATTR_MASKS at_flags option that userspace needs to pass
+> (with usize >=3D FILE_ATTR_SIZE_VER1) in order to be able to use masks,
+> otherwise legacy RMW semantics are used.
 >
->   btrfs subvolume create sv
->   btrfs subvolume create sv/inner
->   touch sv/f
->   btrfs subvolume snapshot sv snap    # snap/inner is the placeholder
->   python3 -c 'import ctypes, os; libc =3D ctypes.CDLL(None, use_errno=3DT=
-rue); ret =3D libc.renameat2(-100, b"snap/f", -100, b"snap/inner", 2); err =
-=3D ctypes.get_errno(); print(f"ret=3D{ret}, errno=3D{err} ({os.strerror(er=
-r)})")'
+> If AT_FILE_ATTR_MASKS is not specified:
+> - on GET, zero fa_xflags_rw_mask and fa_xflags_ro_mask and strip new
+>   xflags added in or after VER1, so older programs doing RMW don't pass
+>   them back;
+> - on SET, reject non-zero fa_xflags_{rw,ro}_mask with -EINVAL.
+>
+> If AT_FILE_ATTR_MASKS is specified on SET with fa_xflags_rw_mask =3D 0,
+> return early as a no-op after permission and support checks.
+>
+> To make both legacy and new programs interact correctly with both legacy
+> and new/upgraded filesystems, add:
+> - xflags_to_flags() / flags_to_xflags(): use fileattr_fill_*() to
+>   convert xflags to their flags counterpart and vice-versa;
+> - fileattr_set_mask_to_legacy() / fileattr_set_legacy_to_mask(): convert
+>   between legacy read-modify-write API and modern rw_mask/ro_mask API.
+>
+> Also add the missing FS_XFLAG_PROJID xflag, to allow userspace to set
+> the projid using file_[gs]etattr() by leveraging the new masks.
+> In order to prevent the legacy FS_IOC_FSSETXATTR from accepting
+> FS_XFLAG_PROJID, add a FS_FILE_ATTR_XFLAGS_MASK to support new xflags
+> and use it to validate/clamp both the _xflags fields and the masks.
+>
+> Assisted-by: Gemini:3.8-flash-high antigravity-cli-1.5.11
+> Signed-off-by: koraynilay <koray.fra@gmail.com>
+> ---
+>  fs/file_attr.c             | 332 +++++++++++++++++++++++++++++++++----
+>  include/linux/fileattr.h   |   7 +
+>  include/uapi/linux/fcntl.h |   6 +
+>  include/uapi/linux/fs.h    |   7 +-
+>  4 files changed, 320 insertions(+), 32 deletions(-)
+>
+> diff --git a/fs/file_attr.c b/fs/file_attr.c
+...
 
-Btw, there's no need for Python to perform a rename exchange.
+> +/*
+> + * Convert legacy RMW input format without masks, coming from userspace,=
+ to new
+> + * input format with masks, for filesystems that already support masks.
+> + */
 
-Just pass the --exchange and -T options to mv.
+The term "legacy" is always a bit ambiguous so best to avoid if possible
 
+So maybe something more explicit like v0_to_v1
+...
+
+> @@ -283,20 +485,62 @@ int vfs_fileattr_set(const struct mnt_idmap *idmap,=
+ struct dentry *dentry,
+>         if (!inode_owner_or_capable(idmap, inode))
+>                 return -EPERM;
 >
-> renameat2() fails with ENOENT (ret=3D-1, errno=3D2), and the filesystem i=
-s read-only from then on. Kernel log from running these steps on a fresh 1G=
- loop image (mkfs.btrfs from btrfs-progs v6.6.3, default mkfs and mount opt=
-ions; 6.17.0-1022-azure, Ubuntu; the W taint is from an earlier hit of the =
-same bug):
->
->   BTRFS critical (device loop8): failed to delete reference to inner, roo=
-t 258 inode 2 parent 256
->   ------------[ cut here ]------------
->   BTRFS: Transaction aborted (error -2)
->   WARNING: CPU: 32 PID: 3839527 at fs/btrfs/inode.c:4291 __btrfs_unlink_i=
-node+0x3bf/0x3e0 [btrfs]
->   CPU: 32 UID: 1000 PID: 3839527 Comm: python3 Tainted: G        W       =
-    6.17.0-1022-azure #22-Ubuntu VOLUNTARY
->   Tainted: [W]=3DWARN
->   Hardware name: Microsoft Corporation Virtual Machine/Virtual Machine, B=
-IOS Hyper-V UEFI Release v4.1 04/22/2026
->   RIP: 0010:__btrfs_unlink_inode+0x3bf/0x3e0 [btrfs]
->   Call Trace:
->    <TASK>
->    btrfs_rename_exchange+0x744/0xe20 [btrfs]
->    btrfs_rename2+0x59/0x70 [btrfs]
->    vfs_rename+0x787/0xc20
->    do_renameat2+0x425/0x620
->    __x64_sys_renameat2+0x4c/0x60
->    x64_sys_call+0x420/0x20d0
->    do_syscall_64+0x7b/0xb40
->    entry_SYSCALL_64_after_hwframe+0x76/0x7e
->    </TASK>
->   BTRFS: error (device loop8 state A) in __btrfs_unlink_inode:4291: errno=
-=3D-2 No such entry
->   BTRFS info (device loop8 state EA): forced readonly
->   BTRFS: error (device loop8 state EA) in btrfs_rename_exchange:8285: err=
-no=3D-2 No such entry
->
->
-> Root Cause, (using the names from the reproducer: f is the file and inner=
- is the placeholder):
-> btrfs_rename_exchange() handles subvolume roots (inode 256) specially, bu=
-t does not handle empty subvolume placeholders (inode 2). As a result, the =
-placeholder follows the ordinary-inode code paths.
-> It first inserts an inode ref named "inner" for f's inode, then an inode =
-ref named "f" for inode 2.
-> __btrfs_unlink_inode(old_dir, f's inode, "f") removes the original "f" en=
-try.
-> Next, __btrfs_unlink_inode(new_dir, inode 2, "inner") tries to remove an =
-inode ref named "inner" for inode 2. However, the only inode ref for inode =
-2 is the "f" ref inserted above. Consequently, btrfs_del_inode_ref() return=
-s -ENOENT, aborting the transaction. This matches the kernel log: failed to=
- delete reference to inner ... inode 2.
-> If the placeholder is the source instead, the corresponding __btrfs_unlin=
-k_inode() call for the source should fail for the same reason, although I h=
-ave not tested this case.
-> In contrast, btrfs_rename() explicitly handles empty subvolume placeholde=
-rs: it returns -EPERM when one is used as the new parent, -ENOTEMPTY when o=
-ne is the source, and calls btrfs_unlink_subvol() when one is the target be=
-ing replaced.
->
-> btrfs_rename_exchange() has the same relevant implementation in mainline =
-(9437ee8b6cf6) and btrfs for-next (14bf1d1d3641), so both appear to be affe=
-cted. I have not built or tested mainline, nor have I bisected the issue.
->
->
-> Suggested fix. I used -ENOTEMPTY to match the error returned by btrfs_ren=
-ame() when the placeholder is the source.
->
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -8256,6 +8256,15 @@ static int btrfs_rename_exchange(struct
-> new_ino !=3D BTRFS_FIRST_FREE_OBJECTID))
-> return -EXDEV;
-> + /*
-> + * An empty subvolume placeholder (what a snapshot holds in place of a
-> + * nested subvolume) has no inode item or inode ref to swap, so
-> + * __btrfs_unlink_inode() would fail and abort the transaction.
-> + /
-> + if (old_ino =3D=3D BTRFS_EMPTY_SUBVOL_DIR_OBJECTID ||
-> + new_ino =3D=3D BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)
-> + return -ENOTEMPTY;
-
--EPERM is a better choice here, since subvolume stubs are actually
-dummy dentries that are always empty.
-
-Sent a patch for this here:
-
-https://lore.kernel.org/linux-btrfs/db82ae780edd7572f150da6b25f2fb73af1e31a=
-9.1795798503.git.fdmanana@suse.com/
-
-And a test case for fstests:
-
-https://lore.kernel.org/linux-btrfs/35ae48a4921b42b89843f00b24608eba25f4647=
-b.1795799439.git.fdmanana@suse.com/
-
-Thanks for the report.
-
+> +       if (fa->has_masks && !fa->fsx_xflags_rw_mask)
+> +               return 0;
 > +
-> ret =3D fscrypt_setup_filename(old_dir, &old_dentry->d_name, 0, &old_fnam=
-e);
-> if (ret)
-> return ret;
+>         inode_lock(inode);
+>         err =3D vfs_fileattr_get(dentry, &old_ma);
+>         if (err)
+>                 goto out;
 >
-> Best,
-> Tianyu
+> -       /* initialize missing bits from old_ma */
+> +       if (old_ma.has_masks) {
+> +               old_ma.fsx_xflags_rw_mask &=3D FS_FILE_ATTR_XFLAGS_MASK;
+> +               old_ma.fsx_xflags_ro_mask &=3D FS_FILE_ATTR_XFLAGS_MASK;
+> +       }
+> +       old_ma.fsx_xflags &=3D FS_FILE_ATTR_XFLAGS_MASK;
+> +
+> +       /* Convert between formats and initialize missing bits from old_m=
+a */
+>         if (fa->flags_valid) {
+> -               fa->fsx_xflags |=3D old_ma.fsx_xflags & ~FS_XFLAG_COMMON;
+> -               fa->fsx_extsize =3D old_ma.fsx_extsize;
+> -               fa->fsx_nextents =3D old_ma.fsx_nextents;
+> -               fa->fsx_projid =3D old_ma.fsx_projid;
+> -               fa->fsx_cowextsize =3D old_ma.fsx_cowextsize;
+> +               if (!old_ma.has_masks) {
+> +                       /* FS_IOC_SETFLAGS */
+> +                       fa->fsx_xflags_rw_mask =3D 0;
+> +                       fa->fsx_xflags |=3D old_ma.fsx_xflags & ~FS_XFLAG=
+_COMMON;
+> +                       fa->fsx_extsize =3D old_ma.fsx_extsize;
+> +                       fa->fsx_nextents =3D old_ma.fsx_nextents;
+> +                       fa->fsx_projid =3D old_ma.fsx_projid;
+> +                       fa->fsx_cowextsize =3D old_ma.fsx_cowextsize;
+> +               } else {
+> +                       err =3D fileattr_set_legacy_to_mask(fa, &old_ma);
+> +                       if (err)
+> +                               goto out;
+> +               }
+> +       } else if (!fa->has_masks) {
+> +               if (!old_ma.has_masks) {
+> +                       /* FS_IOC_FSSETXATTR / file_attr VER0 */
+> +                       fa->flags |=3D old_ma.flags & ~FS_COMMON_FL;
+> +               } else {
+> +                       err =3D fileattr_set_legacy_to_mask(fa, &old_ma);
+> +                       if (err)
+> +                               goto out;
+> +               }
+>         } else {
+> -               fa->flags |=3D old_ma.flags & ~FS_COMMON_FL;
+> +               /* file_attr VER1 */
+> +               if (old_ma.has_masks) {
+> +                       /*
+> +                        * Don't preserve non-common flags since filesyst=
+ems
+> +                        * with masks only use xflags
+> +                        */
+> +               } else {
+> +                       /*
+> +                        * Filesystem doesn't support _mask API yet, swit=
+ch to
+> +                        * old rmw format.
+> +                        * PROJID is supported like the legacy masks, but=
+ will
+> +                        * be stripped during conversion.
+> +                        */
+> +                       err =3D fileattr_set_mask_to_legacy(fa, &old_ma);
+> +                       if (err)
+> +                               goto out;
+> +               }
+
+I stand behind my earlier comment - this is too much for open coding
+here. I won't suggest a better factoring I am sure you will figure out
+one by yourself. focus on readability and reviewability please.
+
+>         }
+>
+>         err =3D fileattr_set_prepare(inode, &old_ma, fa);
+> @@ -390,7 +634,8 @@ SYSCALL_DEFINE5(file_getattr, int, dfd, const char __=
+user *, filename,
+>         BUILD_BUG_ON(sizeof(struct file_attr) < FILE_ATTR_SIZE_VER0);
+>         BUILD_BUG_ON(sizeof(struct file_attr) !=3D FILE_ATTR_SIZE_LATEST)=
+;
+>
+> -       if ((at_flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) !=3D 0)
+> +       if ((at_flags &
+> +            ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH | AT_FILE_ATTR_MASKS))=
+ !=3D 0)
+>                 return -EINVAL;
+>
+>         if (!(at_flags & AT_SYMLINK_NOFOLLOW))
+> @@ -399,7 +644,10 @@ SYSCALL_DEFINE5(file_getattr, int, dfd, const char _=
+_user *, filename,
+>         if (usize > PAGE_SIZE)
+>                 return -E2BIG;
+>
+> -       if (usize < FILE_ATTR_SIZE_VER0)
+> +       if (usize !=3D FILE_ATTR_SIZE_VER0 && usize < FILE_ATTR_SIZE_VER1=
+)
+> +               return -EINVAL;
+> +
+> +       if ((at_flags & AT_FILE_ATTR_MASKS) && usize < FILE_ATTR_SIZE_VER=
+1)
+>                 return -EINVAL;
+>
+>         CLASS(filename_maybe_null, name)(filename, at_flags);
+> @@ -424,6 +672,17 @@ SYSCALL_DEFINE5(file_getattr, int, dfd, const char _=
+_user *, filename,
+>                 return error;
+>
+>         fileattr_to_file_attr(&fa, &fattr);
+> +       /*
+> +        * Caller doesn't know about masks, so it also doesn't know about
+> +        * xflags added in or after VER1.
+> +        * Zero out the masks and strip VER1+ xflags.
+> +        */
+> +       if (!(at_flags & AT_FILE_ATTR_MASKS)) {
+> +               fattr.fa_xflags &=3D FS_XFLAGS_MASK;
+> +               fattr.fa_xflags_rw_mask =3D 0;
+> +               fattr.fa_xflags_ro_mask =3D 0;
+> +       }
+> +
+>         error =3D copy_struct_to_user(ufattr, usize, &fattr,
+>                                     sizeof(struct file_attr), NULL);
+>
+> @@ -443,7 +702,8 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const char __=
+user *, filename,
+>         BUILD_BUG_ON(sizeof(struct file_attr) < FILE_ATTR_SIZE_VER0);
+>         BUILD_BUG_ON(sizeof(struct file_attr) !=3D FILE_ATTR_SIZE_LATEST)=
+;
+>
+> -       if ((at_flags & ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH)) !=3D 0)
+> +       if ((at_flags &
+> +            ~(AT_SYMLINK_NOFOLLOW | AT_EMPTY_PATH | AT_FILE_ATTR_MASKS))=
+ !=3D 0)
+>                 return -EINVAL;
+>
+>         if (!(at_flags & AT_SYMLINK_NOFOLLOW))
+> @@ -452,7 +712,10 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const char _=
+_user *, filename,
+>         if (usize > PAGE_SIZE)
+>                 return -E2BIG;
+>
+> -       if (usize < FILE_ATTR_SIZE_VER0)
+> +       if (usize !=3D FILE_ATTR_SIZE_VER0 && usize < FILE_ATTR_SIZE_VER1=
+)
+> +               return -EINVAL;
+> +
+> +       if ((at_flags & AT_FILE_ATTR_MASKS) && usize < FILE_ATTR_SIZE_VER=
+1)
+>                 return -EINVAL;
+>
+>         error =3D copy_struct_from_user(&fattr, sizeof(struct file_attr),=
+ ufattr,
+> @@ -460,9 +723,9 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const char __=
+user *, filename,
+>         if (error)
+>                 return error;
+>
+> -       error =3D file_attr_to_fileattr(&fattr, &fa);
+> -       if (error)
+> -               return error;
+> +       if (!(at_flags & AT_FILE_ATTR_MASKS) &&
+> +           (fattr.fa_xflags_rw_mask || fattr.fa_xflags_ro_mask))
+> +               return -EINVAL;
+>
+>         CLASS(filename_maybe_null, name)(filename, at_flags);
+>         if (!name && dfd >=3D 0) {
+> @@ -479,6 +742,13 @@ SYSCALL_DEFINE5(file_setattr, int, dfd, const char _=
+_user *, filename,
+>                         return error;
+>         }
+>
+> +       if (at_flags & AT_FILE_ATTR_MASKS)
+> +               fa.has_masks =3D true;
+> +
+> +       error =3D file_attr_to_fileattr(&fattr, &fa);
+> +       if (error)
+> +               return error;
+> +
+>         error =3D mnt_want_write(filepath.mnt);
+>         if (!error) {
+>                 error =3D vfs_fileattr_set(mnt_idmap(filepath.mnt),
+> diff --git a/include/linux/fileattr.h b/include/linux/fileattr.h
+> index 09e32b84e02a..725efac15e76 100644
+> --- a/include/linux/fileattr.h
+> +++ b/include/linux/fileattr.h
+> @@ -35,6 +35,10 @@
+>         (FS_XFLAG_COMMON | FS_XFLAG_RDONLY_MASK | FS_XFLAG_VALUES_MASK | =
+\
+>          FS_XFLAG_DIRONLY_MASK | FS_XFLAG_MISC_MASK)
+>
+> +/* Flags only for fa_ fields */
+> +#define FS_FILE_ATTR_XFLAGS_MASK \
+> +       (FS_XFLAGS_MASK | FS_XFLAG_PROJID)
+> +
+>  /*
+>   * Merged interface for miscellaneous file attributes.  'flags' originat=
+es from
+>   * ext* and 'fsx_flags' from xfs.  There's some overlap between the two,=
+ which
+> @@ -45,6 +49,8 @@ struct file_kattr {
+>         u32     flags;          /* flags (FS_IOC_GETFLAGS/FS_IOC_SETFLAGS=
+) */
+>         /* struct fsxattr: */
+>         u32     fsx_xflags;     /* xflags field value (get/set) */
+> +       u32     fsx_xflags_rw_mask; /* supported writeable xflags (get) /=
+ flags to set (set) */
+> +       u32     fsx_xflags_ro_mask; /* supported read-only xflags (get) *=
+/
+>         u32     fsx_extsize;    /* extsize field value (get/set)*/
+>         u32     fsx_nextents;   /* nextents field value (get)   */
+>         u32     fsx_projid;     /* project identifier (get/set) */
+> @@ -52,6 +58,7 @@ struct file_kattr {
+>         /* selectors: */
+>         bool    flags_valid:1;
+>         bool    fsx_valid:1;
+> +       bool    has_masks:1;
+>  };
+>
+>  int copy_fsxattr_to_user(const struct file_kattr *fa, struct fsxattr __u=
+ser *ufa);
+> diff --git a/include/uapi/linux/fcntl.h b/include/uapi/linux/fcntl.h
+> index e43e3de3e9ee..a6ecca6f5e63 100644
+> --- a/include/uapi/linux/fcntl.h
+> +++ b/include/uapi/linux/fcntl.h
+> @@ -191,4 +191,10 @@ struct delegation {
+>  #define AT_EXECVE_CHECK                0x10000 /* Only perform a check i=
+f execution
+>                                            would be allowed. */
+>
+> +/* Flags for file_getattr(2) / file_setattr(2). */
+> +#define AT_FILE_ATTR_MASKS     0x001   /* Advertise knowing and being ab=
+le to
+> +                                          handle the struct file_attr fi=
+elds
+> +                                          fa_xflags_rw_mask and
+> +                                          fa_xflags_ro_mask */
+> +
+
+I prefer AT_FILEATTR_
+This is consistent with other AT_<SYSCALL> using a single word.
+And there is no risk of misunderstanding what FILEATTR refers to.
+
+
+>  #endif /* _UAPI_LINUX_FCNTL_H */
+> diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+> index a13c7b32a1bd..63d88ebe3420 100644
+> --- a/include/uapi/linux/fs.h
+> +++ b/include/uapi/linux/fs.h
+> @@ -238,10 +238,13 @@ struct file_attr {
+>         __u32 fa_nextents;      /* nextents field value (get)   */
+>         __u32 fa_projid;        /* project identifier (get/set) */
+>         __u32 fa_cowextsize;    /* CoW extsize field value (get/set) */
+> +       __u64 fa_xflags_rw_mask;/* supported writeable xflags (get) / fla=
+gs to set (set) */
+> +       __u64 fa_xflags_ro_mask;/* supported read-only xflags (get) */
+>  };
+>
+>  #define FILE_ATTR_SIZE_VER0 24
+> -#define FILE_ATTR_SIZE_LATEST FILE_ATTR_SIZE_VER0
+> +#define FILE_ATTR_SIZE_VER1 40
+> +#define FILE_ATTR_SIZE_LATEST FILE_ATTR_SIZE_VER1
+>
+
+Man... we really need a bot to review all UAPI changes
+Please someone tell the bot to check
+NO LATEST/LAST/ALL constants in UAPI headers!!!
+
+Your patch does not introduce this constant in UAPI but if we change
+it we risk spreading different versions in installed headers.
+
+Honestly I see no reason for FILE_ATTR_SIZE_VER* to be in UAPI
+either. For other UAPIs those constants are not in the UAPI header:
+
+~/src/linux$ git grep SIZE_LATEST include/linux/
+include/linux/fcntl.h:#define OPEN_HOW_SIZE_LATEST      OPEN_HOW_SIZE_VER0
+include/linux/seccomp.h:#define SECCOMP_NOTIFY_ADDFD_SIZE_LATEST
+SECCOMP_NOTIFY_ADDFD_SIZE_VER0
+include/linux/xattr.h:#define XATTR_ARGS_SIZE_LATEST    XATTR_ARGS_SIZE_VER=
+0
+
+So please move those contacts before adding/changing them
+(can be in the same patch IMO).
+
+This is a high level review.
+I did not look at the details of the conversions and validations
+Will do that for v3.
+
+Thanks,
+Amir.

@@ -1,59 +1,82 @@
-Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=100.103.45.18
+Authentication-Results: smtp.subspace.kernel.org; arc=none smtp.remote-ip=195.135.223.131
 ARC-Seal: i=1; d=subspace.kernel.org; s=arc20261015; a=rsa-sha256; cv=none;
-	t=1795846795;
-	b=tTnUTA1iaBJZgak5/d4LNyLqXPghGMu8wqSyPFdBQKwUsAiT8BNP7BI0O4z/d0fNm4Ma
-	 j0tgzhiljw2XhQ2/hNuGT3pQfjD+qILjqszbnP6BeaGqHqro/L9fkfkVV7HmG44eFghHX
-	 ko6sMV7U5kMmPlQJr/kHYnS9IpgORceo1XH8tF0TmrPwNMIh6/sbkfIw9E0GeqaYYlY0o
-	 J+EsQHlYGAANAOp8nczzcaoMERCazcyhZoopfpA8eSLhUJ9yEDA4WtQJh3+XN1GxwdA2f
-	 2WIacfLaALwW2Q/HS10ixiJ6WMrMp5PCm7niTJjhdlkUExGkgS14FXl5ofhHcd0xv0A==
+	t=1795849705;
+	b=F7GaN+FCurX0KBUs0L/uKcPOwxClKpCCsDPKLHRfgd3vlSqaDxAMbcrCjpuIa3XwivMk
+	 pMqmGBUk8OVs+vy5VmYSerhMEJjzdicLlFWPdEk2z3g05rTJPEjaMG7hO7mMMZcmu0vfA
+	 OQ8luWW/yUb6+Z+cbFmWBsTfpQtflUUvDhOIkfCjhybuzLgx2AsGIZLZ8MSRS4pzfFXA8
+	 veAtHRKQT/kP1xu2yVFkpiFGwSJlo3ste656Xk5b23GAahiSpQPjFMJwYovTsW99PbR8G
+	 WDEed3ZgioETxwoZGMtgZ3v6HiRqZbENoLvTQBMjBVn9gMBAM+6wFOYMGR/wkTy4Mew==
 ARC-Message-Signature: i=1; d=subspace.kernel.org; s=arc20261015;
-	a=rsa-sha256; c=relaxed/relaxed; t=1795846795;
-	h=Received:DKIM-Signature:Date:From:To:Cc:Subject:Message-ID:
-	 References:MIME-Version:Content-Type:Content-Disposition:
-	 Content-Transfer-Encoding:In-Reply-To;
-	bh=20Aomw9N3j1CSSz23mLXNHXgwt0Oq0NUIdP3n+DrOTM=;
-	b=bEUNP3WbMAcKd3gI/KFtPdXq78pzZ+2qen/pDDhs7tAhDaYSRCwf1qgRMT3TTN6fyzmp
-	 Wmz6gMZLzkRHl/5K6Od69eMFcur+BG+yHfakGqGXNmpD9oBgDEojRggDRNwL/4XsQ4keq
-	 5A6271ubf1FUEzmzTDpPzEoOkS9KETX/6Gb38UPhxYbB1UW3wNDNXxZNWYnY7nV1rJhNU
-	 C/PRf/KYo8FXVIGqaBAqw4sjGbr1KiQgyG7WbzRGIh4qQQyu2sGylWaqvT9fim2hLVWDQ
-	 QPvCdvowyTf+ckgdCO/jKf5kc7db0/SPq8w14PgZMa2EWfJ2oiLuG5/M/A9pIm+C9cw==
+	a=rsa-sha256; c=relaxed/relaxed; t=1795849705;
+	h=DMARC-Filter:Received:DKIM-Signature:DKIM-Signature:Received:
+	 Received:From:To:Subject:Date:Message-ID:X-Mailer:MIME-Version:
+	 Content-Transfer-Encoding:X-Spamd-Result:X-Rspamd-Server:
+	 X-Rspamd-Action:X-Spam-Flag:X-Spam-Score:X-Spam-Level:
+	 X-Rspamd-Queue-Id;
+	bh=XfEEoSJFgzMetF57SCANOcGdqV62ZCpl7CbllG9K30Q=;
+	b=Et0FAklr4BnNFoxc0yrkcaSzEVapquZ4/tspuAPxcH4zo+oTu++h3/It3sF4PAZCE/O5
+	 kzuCdlvqwsDeQMqLfKdLdYxQPizuPaHgIl2umWcsp2L4/TuDpVDyS9EjlEdAIPPXpCw4o
+	 R0KUFzB9g/lwzVjop9rMEL2MZWx/ZiD+XUp/OWfz7GZFd4l0w5QR/lSps3gV/Ar5yc+8E
+	 pwKHvDrg1h5pDtMLlz0nb9UXsVPGXyjqPoBZStlutdUMjNy6fVlxRLtLxOeafd4bGv41Q
+	 +Z7fXULLFaxKcVb2r1Lw9N+zZua7XNrDKS7Q/j9Ubm3N6jDpxz99omuIEK6bsZ1NNHw==
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org; 
-	dkim=pass header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OjNx7os2;
-	arc=none smtp.remote-ip=100.103.45.18
-Received: from smtp.kernel.org (quasi.space.kernel.org [100.103.45.18])
+	dmarc=pass header.from=suse.com;
+	spf=pass smtp.mailfrom=suse.com;
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="QyWl2/tH";
+	dkim=pass header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b="QyWl2/tH";
+	arc=none smtp.remote-ip=195.135.223.131
+Received: from smtp-out2.suse.de (smtp-out2.suse.de [195.135.223.131])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (prime256v1))
+	 key-exchange X25519 server-signature ECDSA (prime256v1) server-digest SHA256)
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id D1F31606A31C;
-	Sat, 28 Nov 2026 06:19:55 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 4D657606A31F;
+	Sat, 28 Nov 2026 07:08:25 +0000 (UTC)
+DMARC-Filter: OpenDMARC Filter v1.4.2 smtp.subspace.kernel.org 4D657606A31F
+Authentication-Results: smtp.subspace.kernel.org; dmarc=pass (p=quarantine dis=none) header.from=suse.com
+Authentication-Results: smtp.subspace.kernel.org; spf=pass smtp.mailfrom=suse.com
 Authentication-Results: smtp.subspace.kernel.org;
-	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256 header.s=k20260515 header.b=OjNx7os2
-Received: by smtp.kernel.org (Postfix) with ESMTPSA id 8CBF91F00893;
-	Sat, 28 Nov 2026 06:19:54 +0000 (UTC)
-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=kernel.org;
-	s=k20260515; t=1795846795;
-	bh=20Aomw9N3j1CSSz23mLXNHXgwt0Oq0NUIdP3n+DrOTM=;
-	h=Date:From:To:Cc:Subject:References:In-Reply-To;
-	b=OjNx7os2OYdUk4EdxyuBHc8oIcEuNT37tHhp84PEgHxu+46C+yarQQr9v9n02SY8x
-	 Jrn9rYIuiCAmXfyAVsg5eOSa3vvEz8KJi2KmkbcWXpyNA0LC1JEmBywLiSOv8LvkTb
-	 OjlSc3vvwsSBgdVQUpveivCXaqDrEojNW8p2wfKZxaImsdXNI/wn7ASPWm5KE+INMN
-	 eHWfm387u+wK5KF3EsJTfEIcZhA7pnOzw9abB00bHdGdZDMqWlzaO+uFbI9jxtRPae
-	 Wv+CBo3C9M828VBlvjZQRzgyML4VTHybfu5TakEP/i8l/Y0SJoCeuPXB2V6ej5G0lp
-	 rAnFUK+3Jjv6A==
-Date: Sat, 28 Nov 2026 08:19:50 +0200
-From: Leon Romanovsky <leon@kernel.org>
-To: Qu Wenruo <wqu@suse.com>
-Cc: linux-btrfs@vger.kernel.org, workflows@vger.kernel.org,
+	dkim=pass (1024-bit key, unprotected) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QyWl2/tH;
+	dkim=pass (1024-bit key) header.d=suse.com header.i=@suse.com header.a=rsa-sha256 header.s=susede1 header.b=QyWl2/tH
+Received: from imap1.dmz-prg2.suse.org (imap1.dmz-prg2.suse.org [IPv6:2a07:de40:b281:104:10:150:64:97])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by smtp-out2.suse.de (Postfix) with ESMTPS id 47FA71F7A9;
+	Sat, 28 Nov 2026 07:08:23 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795849703; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=XfEEoSJFgzMetF57SCANOcGdqV62ZCpl7CbllG9K30Q=;
+	b=QyWl2/tHZ7T42S4o4gBrnisd/R2qtd5aMMxjaH3UXk+h2eSo9S2C1lLCkEGEFd/1oTKmxU
+	FktpxmnH88zN2FBPDklY6go3Mfv6KUlOTClskXl86hd2Cc5/Ngth07ComNrkTaE/TmFXZw
+	kc+ScqbVkS7EGlg5aSL46ksN3Prig6U=
+Authentication-Results: smtp-out2.suse.de;
+	dkim=pass header.d=suse.com header.s=susede1 header.b="QyWl2/tH"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=suse.com; s=susede1;
+	t=1795849703; h=from:from:reply-to:date:date:message-id:message-id:to:to:cc:
+	 mime-version:mime-version:  content-transfer-encoding:content-transfer-encoding;
+	bh=XfEEoSJFgzMetF57SCANOcGdqV62ZCpl7CbllG9K30Q=;
+	b=QyWl2/tHZ7T42S4o4gBrnisd/R2qtd5aMMxjaH3UXk+h2eSo9S2C1lLCkEGEFd/1oTKmxU
+	FktpxmnH88zN2FBPDklY6go3Mfv6KUlOTClskXl86hd2Cc5/Ngth07ComNrkTaE/TmFXZw
+	kc+ScqbVkS7EGlg5aSL46ksN3Prig6U=
+Received: from imap1.dmz-prg2.suse.org (localhost [127.0.0.1])
+	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
+	 key-exchange X25519 server-signature RSA-PSS (4096 bits) server-digest SHA256)
+	(No client certificate requested)
+	by imap1.dmz-prg2.suse.org (Postfix) with ESMTPS id 7E8D613432;
+	Sat, 28 Nov 2026 07:08:21 +0000 (UTC)
+Received: from dovecot-director2.suse.de ([2a07:de40:b281:106:10:150:64:167])
+	by imap1.dmz-prg2.suse.org with ESMTPSA
+	id Ktc7M+R9Cmu9OgAAD6G6ig
+	(envelope-from <wqu@suse.com>); Sat, 28 Nov 2026 07:08:21 +0000
+From: Qu Wenruo <wqu@suse.com>
+To: linux-btrfs@vger.kernel.org,
+	workflows@vger.kernel.org,
 	linux-doc@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add a maintainer entry profile
-Message-ID: <20261128061950.GF774860@unreal>
-References: <0037554862c0d9dce3ddafd1238347e4b16a5079.1795581896.git.wqu@suse.com>
- <20261126133712.GN774860@unreal>
- <978c5ae0-8cf2-47d4-8fb5-1d96896132be@suse.com>
- <20261127151418.GY774860@unreal>
- <138ba3eb-7225-429b-9791-2de9d49e1fdf@suse.com>
- <20261128045649.GE774860@unreal>
- <05837923-9377-4ab5-b46d-ef0124784c74@suse.com>
+Subject: [PATCH v2] btrfs: add a maintainer's profile
+Date: Sat, 28 Nov 2026 17:37:58 +1030
+Message-ID: <ad3da11045fe4a98239a5ad04325b53efa1bc42b.1795849581.git.wqu@suse.com>
+X-Mailer: git-send-email 2.56.1
 X-Mailing-List: linux-btrfs@vger.kernel.org
 List-Id: <linux-btrfs.vger.kernel.org>
 List-Post: <mailto:linux-btrfs@vger.kernel.org>
@@ -63,77 +86,92 @@ List-Unsubscribe: <mailto:linux-btrfs+unsubscribe@vger.kernel.org>
 List-Owner: <mailto:linux-btrfs+owner@vger.kernel.org>
 Precedence: list
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
 Content-Transfer-Encoding: 8bit
-In-Reply-To: <05837923-9377-4ab5-b46d-ef0124784c74@suse.com>
+X-Spamd-Result: default: False [-12.01 / 50.00];
+	SUSE_INTERNAL_BYPASS(-9.00)[];
+	BAYES_HAM(-3.00)[100.00%];
+	NEURAL_HAM_LONG(-1.00)[-1.000];
+	MID_CONTAINS_FROM(1.00)[];
+	R_MISSING_CHARSET(0.50)[];
+	R_DKIM_ALLOW(-0.20)[suse.com:s=susede1];
+	NEURAL_HAM_SHORT(-0.20)[-1.000];
+	MIME_GOOD(-0.10)[text/plain];
+	MX_GOOD(-0.01)[];
+	ARC_NA(0.00)[];
+	RCVD_VIA_SMTP_AUTH(0.00)[];
+	MIME_TRACE(0.00)[0:+];
+	DBL_BLOCKED_OPENRESOLVER(0.00)[suse.com:email,suse.com:dkim];
+	DKIM_SIGNED(0.00)[suse.com:s=susede1];
+	TO_MATCH_ENVRCPT_ALL(0.00)[];
+	FROM_EQ_ENVFROM(0.00)[];
+	FROM_HAS_DN(0.00)[];
+	RCPT_COUNT_THREE(0.00)[3];
+	RCVD_TLS_ALL(0.00)[];
+	TO_DN_NONE(0.00)[];
+	RCVD_COUNT_TWO(0.00)[2];
+	DKIM_TRACE(0.00)[suse.com:+]
+X-Rspamd-Server: rspamd1.dmz-prg2.suse.org
+X-Rspamd-Action: no action
+X-Spam-Flag: NO
+X-Spam-Score: -12.01
+X-Spam-Level: 
+X-Rspamd-Queue-Id: 47FA71F7A9
 
-On Sat, Nov 28, 2026 at 04:13:32PM +1030, Qu Wenruo wrote:
-> 
-> 
-> 在 2026/11/28 15:26, Leon Romanovsky 写道:
-> > On Sat, Nov 28, 2026 at 08:31:09AM +1030, Qu Wenruo wrote:
-> > > 
-> > > 
-> > > 在 2026/11/28 01:44, Leon Romanovsky 写道:
-> > > > On Fri, Nov 27, 2026 at 08:23:13PM +1030, Qu Wenruo wrote:
-> > > > > 
-> > > > > 
-> > > > > 在 2026/11/27 00:07, Leon Romanovsky 写道:
-> > > > > > On Wed, Nov 25, 2026 at 03:16:21PM +1030, Qu Wenruo wrote:
-> > > > > > > This new file is mostly based on my personal preferences, focusing on
-> > > > > > > how to improve the human readability in the LLM era.
-> > > > > > > 
-> > > > > > > The new file should also act as a guide for humans that want to be a
-> > > > > > > long term contributor to btrfs.
-> > > > > > 
-> > > > > > My previous comment still applies. Most of it is relevant to other
-> > > > > > subsystems as well, and some of the suggestions duplicate existing
-> > > > > > documentation.
-> > > > > 
-> > > > > One question is, I can't find a generic one, nor there is a generic entry
-> > > > > inside the MAINTAINERS file.
-> > > > > 
-> > > > > If we're going to create a generic one, shouldn't we just update the
-> > > > > existing docs like `Documentation/process/submitting-patches.rst` instead?
-> > > > 
-> > > > See Documentation/process/coding-assistants.rst file.
-> > > > For example, this series from Sasha changes it
-> > > > https://lore.kernel.org/workflows/20261126171926.2766137-1-sashal@kernel.org/
-> > > 
-> > > I think this is against Krzysztof's comment:
-> > > 
-> > > 
-> > > > Then it should be a maintainer profile. We should write docs for humans,
-> > > > which can be used by agents. Not the other way around.
-> > > 
-> > > I agree with that comment.
-> > > 
-> > > But putting that into code-assistants.rst means it's only for LLMs, not
-> > > humans.
-> > 
-> > Please decide to whom you are writing first.
-> > Almost everything written in your proposal is for LLMs.
-> 
-> LLM will also refer to maintainer's profile, through MAINTAINER's P: line.
-> 
-> > 
-> > LLMs instructions go to the coding-assistants, instructions for humans
-> > to submitting-patches and specific to BTFS goes to maintainer profile.
-> 
-> LLM will also refer to that submitting-patches file through the current
-> coding-assitants.rst:16.
-> 
-> So I don't know you are pushing so hard to distinguish files for human and
-> LLMs.
+Since btrfs already has its own development notes and quick start FAQ
+for developers, it's easier to redirect human developers and agents
+to there.
 
-Please don't misrepresent what I said. I asked that general instructions
-applicable to everyone be placed in the general Documentation section.
+It's also easier for us to update the guides based on future feedbacks.
 
-You were the one who argued that submitting-patches is not human-readable,
-not me. You also did not check whether your proposal duplicates existing
-instructions.
+Signed-off-by: Qu Wenruo <wqu@suse.com>
+---
+Changelog:
+v2:
+- Use the existing developer's FAQ and development notes directly
+---
+ Documentation/process/maintainer-btrfs.rst | 20 ++++++++++++++++++++
+ MAINTAINERS                                |  1 +
+ 2 files changed, 21 insertions(+)
+ create mode 100644 Documentation/process/maintainer-btrfs.rst
 
-Make sure that profile-btrfs include only specific to BTRFS things.
+diff --git a/Documentation/process/maintainer-btrfs.rst b/Documentation/process/maintainer-btrfs.rst
+new file mode 100644
+index 000000000000..96cccfa683e3
+--- /dev/null
++++ b/Documentation/process/maintainer-btrfs.rst
+@@ -0,0 +1,20 @@
++.. SPDX-License-Identifier: GPL-2.0
++
++Btrfs development guide
++=======================
++
++
++There is a quick start FAQ for developers that should always be followed:
++
++  https://btrfs.readthedocs.io/en/latest/dev/Developer-s-FAQ.html
++
++
++For more detailed instructions, see:
++
++  https://btrfs.readthedocs.io/en/latest/dev/Development-notes.html
++
++For humans who want to contribute to btrfs consistently, it's strongly
++recommended to also read the development notes.
++
++An AI agent *MUST* read and follow both documents above before submitting
++a patch.
+diff --git a/MAINTAINERS b/MAINTAINERS
+index c72a281a8167..26540b018ec1 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -5838,6 +5838,7 @@ S:	Maintained
+ W:	https://btrfs.readthedocs.io
+ Q:	https://patchwork.kernel.org/project/linux-btrfs/list/
+ C:	irc://irc.libera.chat/btrfs
++P:	Documentation/process/maintainer-btrfs.rst
+ T:	git https://github.com/btrfs/linux.git for-next
+ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-next
+ F:	Documentation/filesystems/btrfs.rst
+-- 
+2.56.1
 
-Thanks
